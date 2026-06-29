@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { BoardProps } from 'boardgame.io/react';
 import type { BuildingInstance, GameState, Resources } from '../rules';
 import {
@@ -14,12 +15,13 @@ import styles from './Board.module.css';
 
 const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬' };
 
-/** Presentation-only cost label, e.g. "2🌾" · "3🔨" · "free". */
-function describeCost(cost: Partial<Resources>): string {
-  const parts = (Object.entries(cost) as [keyof Resources, number][])
+/** Presentation-only cost label, e.g. "2🌾" · "3🔨 · discard 1" · "free". */
+function describeCost(c: CardDef): string {
+  const parts = (Object.entries(c.cost) as [keyof Resources, number][])
     .filter(([, v]) => v)
     .map(([k, v]) => `${v}${COST_ICON[k]}`);
-  return parts.join(' ') || 'free';
+  if (c.discardCost) parts.push(`discard ${c.discardCost}`);
+  return parts.join(' · ') || 'free';
 }
 
 /** Presentation-only summary of what a card does (no game logic here). */
@@ -99,8 +101,39 @@ function groupTableau(tableau: BuildingInstance[]): BuildingGroup[] {
   });
 }
 
+/** A card play awaiting its discard cost: which card (by hand index) and the sacrifices picked so far. */
+interface PendingPlay {
+  cardId: string;
+  handIdx: number;
+  need: number;
+  discards: number[]; // hand indices marked to discard
+}
+
 export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
   const mission = MISSIONS[G.missionId];
+  const [pending, setPending] = useState<PendingPlay | null>(null);
+
+  /** Handle a click on a hand card at index `i`. */
+  function onPlay(id: string, i: number) {
+    if (pending) {
+      if (i === pending.handIdx) return setPending(null); // click the pending card again to cancel
+      const discards = pending.discards.includes(i)
+        ? pending.discards.filter((d) => d !== i)
+        : [...pending.discards, i];
+      if (discards.length === pending.need) {
+        moves.playCard(pending.cardId, discards.map((d) => G.hand[d]));
+        setPending(null);
+      } else {
+        setPending({ ...pending, discards });
+      }
+      return;
+    }
+    const need = CARDS[id].discardCost ?? 0;
+    // Only prompt for discards if you actually have that many other cards to spare;
+    // otherwise it plays free.
+    if (need > 0 && G.hand.length - 1 >= need) setPending({ cardId: id, handIdx: i, need, discards: [] });
+    else moves.playCard(id);
+  }
 
   if (ctx.gameover) {
     const won = ctx.gameover.outcome === 'victory';
@@ -181,19 +214,37 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
       <section>
         <h2>Hand</h2>
         {G.hand.length === 0 && <p className={styles.empty}>No cards in hand.</p>}
+        {pending && (
+          <p className={styles.discardPrompt}>
+            Playing <strong>{CARDS[pending.cardId].name}</strong> — pick{' '}
+            {pending.need - pending.discards.length} card to discard, or click{' '}
+            {CARDS[pending.cardId].name} again to cancel.
+          </p>
+        )}
         <div className={styles.cards}>
           {G.hand.map((id, i) => {
             const c = CARDS[id];
+            // The discard cost never blocks play — it's waived when you can't cover it.
+            const affordable = canAfford(G.resources, c.cost);
+            const isPending = pending?.handIdx === i;
+            const isSacrifice = pending?.discards.includes(i) ?? false;
+            const className = [
+              c.kind === 'recurring' ? styles.action : styles.permanent,
+              isPending ? styles.pending : '',
+              isSacrifice ? styles.sacrifice : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
             return (
               <button
                 key={`${id}-${i}`}
-                className={c.kind === 'recurring' ? styles.action : styles.permanent}
-                disabled={!canAfford(G.resources, c.cost)}
-                onClick={() => moves.playCard(id)}
+                className={className}
+                disabled={pending ? false : !affordable}
+                onClick={() => onPlay(id, i)}
                 title={describeCard(c)}
               >
                 <span className={styles.cardName}>{c.name}</span>
-                <span className={styles.cardCost}>{describeCost(c.cost)}</span>
+                <span className={styles.cardCost}>{describeCost(c)}</span>
                 <span className={styles.cardText}>{describeCard(c)}</span>
               </button>
             );

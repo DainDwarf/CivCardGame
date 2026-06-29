@@ -33,12 +33,45 @@ describe('run loop (headless integration)', () => {
 
   it('auto-staffing stops once the idle pool is exhausted', () => {
     const client = start('enlightenment'); // population 2 idle, production 5
-    client.moves.playCard('forced_labor'); // +3 production -> 8 (recurring, no workers)
+    client.moves.playCard('forced_labor', ['harvest']); // discard harvest -> +3 production -> 8
     client.moves.playCard('workshop'); // staffs 1 -> 1 idle
     client.moves.playCard('farm'); // staffs 1 -> 0 idle
     client.moves.playCard('library'); // no idle left -> committed unstaffed
     const lib = client.getState()!.G.tableau.find((b) => b.cardId === 'library')!;
     expect(lib.workers).toBe(0);
+    client.stop();
+  });
+
+  it('a discard-cost action sacrifices a chosen card to resolve', () => {
+    const client = start('enlightenment'); // hand: farm, workshop, forced_labor, library, harvest
+    client.moves.playCard('forced_labor', ['farm']); // discard farm -> gain 3 production
+    const { G } = client.getState()!;
+    expect(G.resources.production).toBe(8); // 5 + 3
+    expect(G.hand).toEqual(['workshop', 'library', 'harvest']); // both played + sacrificed card gone
+    expect(G.discard).toEqual(['farm', 'forced_labor']); // sacrifice, then the action itself
+    client.stop();
+  });
+
+  it('a discard-cost action is rejected when a discard is owed but not paid', () => {
+    const client = start('enlightenment'); // full hand -> a discard is owed
+    const prodBefore = client.getState()!.G.resources.production;
+    const handBefore = [...client.getState()!.G.hand];
+    client.moves.playCard('forced_labor'); // no discard provided
+    const { G } = client.getState()!;
+    expect(G.resources.production).toBe(prodBefore);
+    expect(G.hand).toEqual(handBefore);
+    client.stop();
+  });
+
+  it('a discard-cost action plays free when nothing is left to discard', () => {
+    const client = start('enlightenment'); // hand: farm, workshop, forced_labor, library, harvest
+    client.moves.playCard('harvest', ['library']); // -> hand: farm, workshop, forced_labor
+    client.moves.playCard('farm'); // permanent -> tableau
+    client.moves.playCard('workshop'); // permanent -> tableau; hand now just forced_labor
+    client.moves.playCard('forced_labor'); // last card -> discard cost waived, plays free
+    const { G } = client.getState()!;
+    expect(G.hand).toEqual([]);
+    expect(G.discard).toContain('forced_labor');
     client.stop();
   });
 

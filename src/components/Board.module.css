@@ -142,6 +142,28 @@
   border-left: 4px solid #c9772f !important;
 }
 
+.discardPrompt {
+  margin: 0 0 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: #fff4e5;
+  border: 1px solid #e0a96d;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+/* The card whose discard cost we're paying. */
+.pending {
+  outline: 2px solid #c9772f;
+  outline-offset: 1px;
+}
+
+/* A card marked to be sacrificed. */
+.sacrifice {
+  opacity: 0.5;
+  text-decoration: line-through;
+  background: #fdecec !important;
+}
+
 .cardName {
   font-weight: 600;
 }

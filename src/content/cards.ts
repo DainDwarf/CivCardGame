@@ -9,6 +9,8 @@ export interface CardDef {
   kind: CardKind;
   /** Resources required to play the card. Absent keys are free (e.g. {} = no cost). */
   cost: Partial<Resources>;
+  /** Extra cost: number of other cards you must discard from hand to play this. */
+  discardCost?: number;
   /** Permanents only: per-turn output once committed AND staffed. */
   produces?: Partial<Resources>;
   /** Recurring only: immediate effect when played. */
@@ -45,8 +47,8 @@ export const CARDS: Record<string, CardDef> = {
 
   // --- Recurring actions (no workers needed) ---
   settlers: { id: 'settlers', name: 'Settlers', kind: 'recurring', cost: { food: 2 }, effect: { population: 1 }, tags: ['action'] },
-  forced_labor: { id: 'forced_labor', name: 'Forced Labor', kind: 'recurring', cost: {}, effect: { gain: { production: 3 } }, tags: ['action'] },
+  forced_labor: { id: 'forced_labor', name: 'Forced Labor', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { production: 3 } }, tags: ['action'] },
   eureka: { id: 'eureka', name: 'Eureka!', kind: 'recurring', cost: { production: 1 }, effect: { gain: { science: 3 } }, tags: ['action'] },
-  harvest: { id: 'harvest', name: 'Harvest', kind: 'recurring', cost: {}, effect: { gain: { food: 3 } }, tags: ['action'] },
+  harvest: { id: 'harvest', name: 'Harvest', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { food: 3 } }, tags: ['action'] },
   inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'recurring', cost: { production: 1 }, effect: { draw: 2 }, tags: ['action'] },
 };
