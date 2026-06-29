@@ -28,11 +28,17 @@ _(empty)_
 
 ## UI (`src/components/`)
 
-_(empty)_
+- **Bug:** End Round not disabled during pending discard-pick — firing it mid-pick sends stale `handIdx`/`discards` to `playCard`, silently playing/sacrificing wrong cards (`Board.tsx:432`) `[size: S]`
+- **Bug:** End Round not disabled during active drag — a second tap fires `endTurn` while `drag.handIdx` is stale, causing the wrong card to play on pointer-up (`Board.tsx:348`) `[size: S]`
+- **Bug:** `pending` state not cleared on `G.hand` change — after `endTurn` fires mid-pending, `isPending`/`isSacrifice` highlights and cancel-click attach to the wrong cards in the new hand (`Board.tsx:584`) `[size: S]`
+- **Bug:** `warnEndRound` never reset when `shouldWarn` goes false — warning dialog ghost-triggers if player assigns then unassigns a worker without dismissing it (`Board.tsx:298`) `[size: S]`
+- Cleanup: `hasUnstaffedCapacity` re-implements `!isOperating()` which is already imported; replace with `G.tableau.some(b => !isOperating(b))` (`Board.tsx:467`) `[size: S]`
 
 ## Tech debt & infra (build, tests, tooling)
 
-_(empty)_
+- **Bug (latent):** Sacrificed cards pushed to `G.discard` before `applyEffect` — a future card with both `discardCost` and `effect.draw` could trigger a reshuffle that returns the sacrifice to hand, nullifying the cost (`moves.ts:40`) `[size: S]`
+- **Bug (test reliability):** `playByName` / `play` helpers pass `-1` silently when a card name isn't in hand — rejection tests can pass vacuously after a rename (`run.test.ts:14`, `moves.test.ts:7`) `[size: S]`
+- Cleanup: JSDoc on `playCard` still says "discardIds" and "duplicates allowed" — both wrong after the index-based refactor (`moves.ts:12`) `[size: S]`
 
 ## Game design & balance
 
