@@ -28,3 +28,14 @@ export function freePopulation(G: GameState): number {
 export function foodUpkeep(G: GameState): number {
   return G.population * FOOD_PER_POP;
 }
+
+/**
+ * Idle workers to auto-assign to a freshly built building. All-or-nothing: staff it
+ * to its full requirement only if that many are free, otherwise leave it unstaffed
+ * (no workers parked on a building that can't operate yet). 0 for self-sufficient
+ * buildings too.
+ */
+export function autoStaffCount(G: GameState, cardId: string): number {
+  const req = requiredWorkers(cardId);
+  return freePopulation(G) >= req ? req : 0;
+}

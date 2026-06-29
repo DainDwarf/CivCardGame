@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   assignedWorkers,
+  autoStaffCount,
   foodUpkeep,
   freePopulation,
   isOperating,
@@ -37,5 +38,26 @@ describe('population accounting', () => {
     const G = blankState('enlightenment');
     G.population = 4;
     expect(foodUpkeep(G)).toBe(4);
+  });
+});
+
+describe('auto-staffing a new building (all-or-nothing)', () => {
+  it('fully staffs a building when enough are idle', () => {
+    const G = blankState('enlightenment');
+    G.population = 3; // all idle
+    expect(autoStaffCount(G, 'farm')).toBe(1); // farm needs 1
+  });
+
+  it('leaves it unstaffed unless its full requirement can be met', () => {
+    const G = blankState('enlightenment');
+    G.population = 1;
+    G.tableau = [{ cardId: 'farm', workers: 1 }]; // 0 idle -> cannot staff
+    expect(autoStaffCount(G, 'farm')).toBe(0);
+  });
+
+  it('self-sufficient buildings need no workers', () => {
+    const G = blankState('enlightenment');
+    G.population = 3;
+    expect(autoStaffCount(G, 'walls')).toBe(0);
   });
 });

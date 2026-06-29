@@ -19,19 +19,32 @@ describe('run loop (headless integration)', () => {
     client.stop();
   });
 
-  it('building a permanent creates an unstaffed instance you then staff', () => {
-    const client = start('enlightenment');
-    client.moves.playCard('farm');
-    expect(client.getState()!.G.tableau).toEqual([{ cardId: 'farm', workers: 0 }]);
+  it('building a permanent auto-staffs it from the idle population', () => {
+    const client = start('enlightenment'); // population 2, all idle
+    client.moves.playCard('farm'); // farm needs 1 worker -> auto-staffed on play
+    expect(client.getState()!.G.tableau).toEqual([{ cardId: 'farm', workers: 1 }]);
+    // staffing is still hand-adjustable: return the worker, then reassign it
+    client.moves.unassignWorker('farm');
+    expect(client.getState()!.G.tableau[0].workers).toBe(0);
     client.moves.assignWorker('farm');
     expect(client.getState()!.G.tableau[0].workers).toBe(1);
     client.stop();
   });
 
+  it('auto-staffing stops once the idle pool is exhausted', () => {
+    const client = start('enlightenment'); // population 2 idle, production 5
+    client.moves.playCard('forced_labor'); // +3 production -> 8 (recurring, no workers)
+    client.moves.playCard('workshop'); // staffs 1 -> 1 idle
+    client.moves.playCard('farm'); // staffs 1 -> 0 idle
+    client.moves.playCard('library'); // no idle left -> committed unstaffed
+    const lib = client.getState()!.G.tableau.find((b) => b.cardId === 'library')!;
+    expect(lib.workers).toBe(0);
+    client.stop();
+  });
+
   it('at end of round, only staffed buildings produce and the population eats food', () => {
     const client = start('enlightenment');
-    client.moves.playCard('workshop'); // cost 2 -> production 3
-    client.moves.assignWorker('workshop'); // staff it
+    client.moves.playCard('workshop'); // cost 2 -> production 3; auto-staffed from idle pop
     client.events.endTurn!();
     const { G } = client.getState()!;
     expect(G.resources.production).toBe(3 + 2); // staffed workshop produced 2

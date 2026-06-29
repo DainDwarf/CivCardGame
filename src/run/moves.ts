@@ -1,7 +1,7 @@
 import { INVALID_MOVE } from 'boardgame.io/core';
 import type { Move } from 'boardgame.io';
 import type { GameState } from '../rules';
-import { applyEffect, canAfford, freePopulation, requiredWorkers } from '../rules';
+import { applyEffect, autoStaffCount, canAfford, freePopulation, requiredWorkers } from '../rules';
 import { CARDS } from '../content/cards';
 
 /**
@@ -20,7 +20,8 @@ export const playCard: Move<GameState> = ({ G }, cardId: string) => {
   G.hand.splice(idx, 1);
 
   if (card.kind === 'permanent') {
-    G.tableau.push({ cardId, workers: 0 });
+    // Auto-staff the new building from the idle pool, up to what it needs.
+    G.tableau.push({ cardId, workers: autoStaffCount(G, cardId) });
   } else {
     applyEffect(G, card.effect);
     G.discard.push(cardId);
