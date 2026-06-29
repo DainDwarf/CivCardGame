@@ -345,7 +345,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
       return;
     }
     spawnGhost(d.cardId, { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h }, 'drop');
-    moves.playCard(d.cardId);
+    moves.playCard(d.handIdx);
   }
 
   /** Resolve a finished drag: a non-drag press zooms; a drag over the board plays. */
@@ -429,7 +429,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
       : [...pending.discards, i];
     if (discards.length === pending.need) {
       ghostFromSlot(pending.playedKey, pending.cardId);
-      moves.playCard(pending.cardId, discards.map((d) => G.hand[d]));
+      moves.playCard(pending.handIdx, discards);
       setPending(null);
     } else {
       setPending({ ...pending, discards });

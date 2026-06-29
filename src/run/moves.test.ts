@@ -3,8 +3,10 @@ import { playCard } from './moves';
 import { blankState, type GameState } from '../rules';
 
 /** Invoke the move directly with a minimal context (it only reads `G`). */
-function play(G: GameState, cardId: string, discards: string[] = []) {
-  (playCard as unknown as (ctx: { G: GameState }, id: string, d?: string[]) => unknown)({ G }, cardId, discards);
+function play(G: GameState, cardId: string, discardCardIds: string[] = []) {
+  const idx = G.hand.indexOf(cardId);
+  const discardIdxs = discardCardIds.map((d) => G.hand.indexOf(d));
+  (playCard as unknown as (ctx: { G: GameState }, idx: number, d?: number[]) => unknown)({ G }, idx, discardIdxs);
 }
 
 describe('playCard: cards vs. buildings', () => {

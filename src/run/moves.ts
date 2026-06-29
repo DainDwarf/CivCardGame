@@ -12,9 +12,9 @@ import { CARDS } from '../content/cards';
  * discard cost: `discardIds` names the other hand cards to sacrifice (one entry per card,
  * duplicates allowed). Moves are the only place `G` may change.
  */
-export const playCard: Move<GameState> = ({ G }, cardId: string, discardIds: string[] = []) => {
-  const playIdx = G.hand.indexOf(cardId);
-  if (playIdx === -1) return INVALID_MOVE;
+export const playCard: Move<GameState> = ({ G }, playHandIdx: number, discardHandIdxs: number[] = []) => {
+  if (playHandIdx < 0 || playHandIdx >= G.hand.length) return INVALID_MOVE;
+  const cardId = G.hand[playHandIdx];
 
   const card = CARDS[cardId];
   if (!card || !canAfford(G.resources, card.cost)) return INVALID_MOVE;
@@ -23,24 +23,22 @@ export const playCard: Move<GameState> = ({ G }, cardId: string, discardIds: str
 
   // Discard-as-cost: sacrifice `discardCost` other cards — but only if you have that many
   // to spare. Played with an otherwise-empty hand it costs no discard (a reward for
-  // sequencing the turn so this card comes last). Resolve each to a distinct hand instance.
+  // sequencing the turn so this card comes last). Each index must be in range, distinct,
+  // and not the played card itself.
   const want = card.discardCost ?? 0;
   const required = G.hand.length - 1 >= want ? want : 0;
-  if (discardIds.length !== required) return INVALID_MOVE;
-  const reserved = new Set<number>([playIdx]);
-  const discardIdxs: number[] = [];
-  for (const did of discardIds) {
-    const i = G.hand.findIndex((c, j) => c === did && !reserved.has(j));
-    if (i === -1) return INVALID_MOVE;
+  if (discardHandIdxs.length !== required) return INVALID_MOVE;
+  const reserved = new Set<number>([playHandIdx]);
+  for (const i of discardHandIdxs) {
+    if (i < 0 || i >= G.hand.length || reserved.has(i)) return INVALID_MOVE;
     reserved.add(i);
-    discardIdxs.push(i);
   }
 
   // All validated — pay costs and remove cards (highest index first so the rest stay valid).
   subtractResources(G.resources, card.cost);
   if (card.popCost) G.population -= card.popCost;
-  for (const i of discardIdxs) G.discard.push(G.hand[i]);
-  for (const i of [playIdx, ...discardIdxs].sort((a, b) => b - a)) G.hand.splice(i, 1);
+  for (const i of discardHandIdxs) G.discard.push(G.hand[i]);
+  for (const i of [playHandIdx, ...discardHandIdxs].sort((a, b) => b - a)) G.hand.splice(i, 1);
 
   // Resolve the card's effect (build / gain / draw / grow), then file the card itself.
   applyEffect(G, card.effect);

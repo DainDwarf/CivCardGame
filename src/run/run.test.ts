@@ -8,6 +8,12 @@ function start(missionId: string) {
   return client;
 }
 
+/** Play a card by name, resolving hand indices at call time. */
+function playByName(client: ReturnType<typeof start>, cardId: string, discardIds: string[] = []) {
+  const hand = client.getState()!.G.hand;
+  client.moves.playCard(hand.indexOf(cardId), discardIds.map((d) => hand.indexOf(d)));
+}
+
 describe('run loop (headless integration)', () => {
   it('opens round 1 with a full hand and starting population, before any upkeep', () => {
     const client = start('enlightenment');
@@ -21,7 +27,7 @@ describe('run loop (headless integration)', () => {
 
   it('building a permanent erects a building, auto-staffs it, and removes the card from the deck', () => {
     const client = start('enlightenment'); // population 2, all idle
-    client.moves.playCard('farm'); // farm card builds a farm building -> auto-staffed on play
+    playByName(client, 'farm'); // farm card builds a farm building -> auto-staffed on play
     const after = client.getState()!.G;
     expect(after.tableau).toEqual([{ buildingId: 'farm', workers: 1 }]);
     expect(after.removed).toEqual(['farm']); // the card itself is gone from the deck
@@ -36,10 +42,10 @@ describe('run loop (headless integration)', () => {
 
   it('auto-staffing stops once the idle pool is exhausted', () => {
     const client = start('enlightenment'); // population 2 idle, production 5
-    client.moves.playCard('forced_labor', ['harvest']); // discard harvest -> +3 production -> 8
-    client.moves.playCard('workshop'); // staffs 1 -> 1 idle
-    client.moves.playCard('farm'); // staffs 1 -> 0 idle
-    client.moves.playCard('library'); // no idle left -> committed unstaffed
+    playByName(client, 'forced_labor', ['harvest']); // discard harvest -> +3 production -> 8
+    playByName(client, 'workshop'); // staffs 1 -> 1 idle
+    playByName(client, 'farm'); // staffs 1 -> 0 idle
+    playByName(client, 'library'); // no idle left -> committed unstaffed
     const lib = client.getState()!.G.tableau.find((b) => b.buildingId === 'library')!;
     expect(lib.workers).toBe(0);
     client.stop();
@@ -47,7 +53,7 @@ describe('run loop (headless integration)', () => {
 
   it('a discard-cost action sacrifices a chosen card to resolve', () => {
     const client = start('enlightenment'); // hand: farm, workshop, forced_labor, library, harvest
-    client.moves.playCard('forced_labor', ['farm']); // discard farm -> gain 3 production
+    playByName(client, 'forced_labor', ['farm']); // discard farm -> gain 3 production
     const { G } = client.getState()!;
     expect(G.resources.production).toBe(8); // 5 + 3
     expect(G.hand).toEqual(['workshop', 'library', 'harvest']); // both played + sacrificed card gone
@@ -59,7 +65,7 @@ describe('run loop (headless integration)', () => {
     const client = start('enlightenment'); // full hand -> a discard is owed
     const prodBefore = client.getState()!.G.resources.production;
     const handBefore = [...client.getState()!.G.hand];
-    client.moves.playCard('forced_labor'); // no discard provided
+    playByName(client, 'forced_labor'); // no discard provided
     const { G } = client.getState()!;
     expect(G.resources.production).toBe(prodBefore);
     expect(G.hand).toEqual(handBefore);
@@ -68,10 +74,10 @@ describe('run loop (headless integration)', () => {
 
   it('a discard-cost action plays free when nothing is left to discard', () => {
     const client = start('enlightenment'); // hand: farm, workshop, forced_labor, library, harvest
-    client.moves.playCard('harvest', ['library']); // -> hand: farm, workshop, forced_labor
-    client.moves.playCard('farm'); // permanent -> tableau
-    client.moves.playCard('workshop'); // permanent -> tableau; hand now just forced_labor
-    client.moves.playCard('forced_labor'); // last card -> discard cost waived, plays free
+    playByName(client, 'harvest', ['library']); // -> hand: farm, workshop, forced_labor
+    playByName(client, 'farm'); // permanent -> tableau
+    playByName(client, 'workshop'); // permanent -> tableau; hand now just forced_labor
+    playByName(client, 'forced_labor'); // last card -> discard cost waived, plays free
     const { G } = client.getState()!;
     expect(G.hand).toEqual([]);
     expect(G.discard).toContain('forced_labor');
@@ -80,7 +86,7 @@ describe('run loop (headless integration)', () => {
 
   it('at end of round, only staffed buildings produce and the population eats food', () => {
     const client = start('enlightenment');
-    client.moves.playCard('workshop'); // cost 2 -> production 3; auto-staffed from idle pop
+    playByName(client, 'workshop'); // cost 2 -> production 3; auto-staffed from idle pop
     client.events.endTurn!();
     const { G } = client.getState()!;
     expect(G.resources.production).toBe(3 + 2); // staffed workshop produced 2
