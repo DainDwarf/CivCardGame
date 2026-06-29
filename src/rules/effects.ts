@@ -11,6 +11,8 @@ export interface CardEffect {
   draw?: number;
   /** Population gained immediately (e.g. Settlers). */
   population?: number;
+  /** Territory gained immediately — raises the cap on tableau size (e.g. Conquest, Develop). */
+  territory?: number;
   /** Construct a building (by id) in the tableau, auto-staffed from idle population. */
   build?: string;
 }
@@ -22,5 +24,6 @@ export function applyEffect(G: GameState, effect?: CardEffect): void {
     for (let i = 0; i < effect.draw; i++) drawCard(G);
   }
   if (effect.population) G.population += effect.population;
+  if (effect.territory) G.territory += effect.territory;
   if (effect.build) addBuilding(G, effect.build);
 }

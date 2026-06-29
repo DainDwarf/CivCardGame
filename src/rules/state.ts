@@ -36,6 +36,12 @@ export interface GameState {
   removed: string[];
   /** Committed permanents, each tracking its assigned workers. */
   tableau: BuildingInstance[];
+  /**
+   * Territory available — the tableau may hold at most this many buildings. Each building
+   * fills one slot; building cards become unplayable when it is full. Expanded by territory
+   * cards (Conquest, Develop).
+   */
+  territory: number;
   /** How many cards to draw up to at the start of each round. */
   handSize: number;
   /** Which mission this run is playing (looked up in the MISSIONS registry). */
@@ -55,6 +61,7 @@ export function blankState(missionId: string): GameState {
     discard: [],
     removed: [],
     tableau: [],
+    territory: 6,
     handSize: 5,
     missionId,
     vars: {},

@@ -51,6 +51,10 @@ export const CARDS: Record<string, CardDef> = {
   harvest: { id: 'harvest', name: 'Harvest', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { food: 3 } } },
   inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'recurring', cost: { production: 1 }, effect: { draw: 2 } },
 
+  // --- Territory expansion: recurring cards that raise the building-slot cap. ---
+  conquest: { id: 'conquest', name: 'Conquest', kind: 'recurring', cost: { military: 3 }, effect: { territory: 1 } },
+  develop: { id: 'develop', name: 'Develop', kind: 'recurring', cost: { production: 3 }, effect: { territory: 1 } },
+
   // --- Recurring builder: a recycling card that still erects a permanent building. ---
   village_settlement: { id: 'village_settlement', name: 'Village Settlement', kind: 'recurring', cost: { food: 10 }, popCost: 2, effect: { build: 'farm' } },
 };

@@ -4,9 +4,11 @@ import { useGame } from '../run/GameContext';
 import {
   canAfford,
   freePopulation,
+  freeTerritory,
   isOperating,
   projectedDelta,
   requiredWorkers,
+  usedTerritory,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
 import { BUILDINGS, type BuildingDef } from '../content/buildings';
@@ -33,6 +35,8 @@ const CARD_ART: Record<string, string> = {
   harvest: '🧺',
   inspiration: '✨',
   village_settlement: '🏘️',
+  conquest: '🗡️',
+  develop: '🏗️',
 };
 const artFor = (id: string) => CARD_ART[id] ?? '🏛️';
 
@@ -63,6 +67,7 @@ function describeCard(c: CardDef): string {
   if (e?.gain) parts.push('+' + Object.entries(e.gain).map(([k, v]) => `${v} ${k}`).join(', '));
   if (e?.draw) parts.push(`draw ${e.draw}`);
   if (e?.population) parts.push(`+${e.population} 👥`);
+  if (e?.territory) parts.push(`+${e.territory} 🗺️ territory`);
   if (e?.build) {
     const bld = BUILDINGS[e.build];
     // A permanent card *is* the building, so just show its stats; a recurring builder
@@ -333,8 +338,12 @@ export function Board() {
   /** Try to play a dragged card released over the board. */
   function attemptPlay(d: DragState, x: number, y: number) {
     const card = CARDS[d.cardId];
-    // Unaffordable (resources or idle population) → snap back + shake.
-    if (!canAfford(G.resources, card.cost) || (card.popCost ?? 0) > freePopulation(G)) {
+    // Unaffordable (resources, idle population, or no open building slot) → snap back + shake.
+    if (
+      !canAfford(G.resources, card.cost) ||
+      (card.popCost ?? 0) > freePopulation(G) ||
+      (card.effect?.build && freeTerritory(G) <= 0)
+    ) {
       return rejectShake(d.key);
     }
     const need = card.discardCost ?? 0;
@@ -419,6 +428,7 @@ export function Board() {
   }, [zoom, pileView]);
 
   const idle = freePopulation(G);
+  const territory = freeTerritory(G);
   const hasUnstaffedCapacity = G.tableau.some((b) => !isOperating(b));
   const shouldWarn = idle > 0 && hasUnstaffedCapacity;
 
@@ -524,11 +534,18 @@ export function Board() {
           description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them; grow them with Settlers cards."
           value={`${G.population} (${idle} idle)`}
         />
+        <Stat
+          icon="🗺️"
+          label="Territory"
+          description="Building slots. Each building you construct fills one; building cards can't be played once it's full. Certain cards expand it."
+          value={`${usedTerritory(G.tableau)}/${G.territory}`}
+        />
       </div>
 
       <section className={styles.civSection}>
         <h2>
           Civilization{' '}
+          <span className={styles.idleHint}>· {usedTerritory(G.tableau)}/{G.territory} 🗺️ territory</span>
           {idle > 0 && <span className={styles.idleHint}>· {idle} idle 👷 to assign</span>}
         </h2>
         {groups.length === 0 && <p className={styles.empty}>Nothing built yet.</p>}
@@ -592,7 +609,11 @@ export function Board() {
               {hand.map((card) => {
                 const c = CARDS[card.cardId];
                 // The discard cost never blocks play — it's waived when you can't cover it.
-                const affordable = canAfford(G.resources, c.cost) && (c.popCost ?? 0) <= idle;
+                // A building card also needs an open slot in the tableau.
+                const affordable =
+                  canAfford(G.resources, c.cost) &&
+                  (c.popCost ?? 0) <= idle &&
+                  (!c.effect?.build || territory > 0);
                 const isPending = pending?.handIdx === card.handIdx;
                 const isSacrifice = pending?.discards.includes(card.handIdx) ?? false;
                 const isDragging = drag?.active === true && drag.key === card.key;

@@ -31,6 +31,13 @@ describe('applyEffect', () => {
     expect(G.tableau).toEqual([{ buildingId: 'farm', workers: 1 }]);
   });
 
+  it('raises the building-slot cap (Conquest / Develop)', () => {
+    const G = blankState('enlightenment');
+    const before = G.territory;
+    applyEffect(G, { territory: 1 });
+    expect(G.territory).toBe(before + 1);
+  });
+
   it('does nothing for an undefined effect', () => {
     const G = blankState('enlightenment');
     applyEffect(G, undefined);

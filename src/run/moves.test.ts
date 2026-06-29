@@ -40,6 +40,34 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.removed).toEqual([]);
   });
 
+  it('rejects a building when the tableau is at its territory cap', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['farm'];
+    G.resources.production = 5;
+    G.population = 2;
+    G.territory = 1;
+    G.tableau = [{ buildingId: 'workshop', workers: 1 }]; // sole slot already taken
+    play(G, 'farm');
+    expect(G.tableau).toHaveLength(1); // farm not built
+    expect(G.hand).toEqual(['farm']); // card stays in hand, nothing paid
+    expect(G.resources.production).toBe(5);
+  });
+
+  it('a territory card opens a slot so the next building can be played', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['develop', 'farm'];
+    G.resources.production = 5;
+    G.population = 2;
+    G.territory = 1;
+    G.tableau = [{ buildingId: 'workshop', workers: 1 }]; // full at territory 1
+    play(G, 'develop'); // +1 territory (cost 3 production) -> room for one more
+    expect(G.territory).toBe(2);
+    expect(G.discard).toEqual(['develop']); // recurring -> recycles
+    play(G, 'farm'); // now fits
+    expect(G.tableau).toHaveLength(2);
+    expect(G.tableau.some((b) => b.buildingId === 'farm')).toBe(true);
+  });
+
   it('rejects a population cost the idle pool cannot cover', () => {
     const G = blankState('enlightenment');
     G.hand = ['village_settlement'];

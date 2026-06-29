@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { applyEffect, canAfford, freePopulation, requiredWorkers, subtractResources } from '../rules';
+import { applyEffect, canAfford, freePopulation, freeTerritory, requiredWorkers, subtractResources } from '../rules';
 import { CARDS } from '../content/cards';
 
 /**
@@ -18,6 +18,8 @@ export function playCard(G: GameState, playHandIdx: number, discardHandIdxs: num
   if (!card || !canAfford(G.resources, card.cost)) return 'invalid';
   // Population cost is paid from idle workers only (never by un-staffing buildings).
   if ((card.popCost ?? 0) > freePopulation(G)) return 'invalid';
+  // A building needs an open slot — reject the play if the tableau is at its territory cap.
+  if (card.effect?.build && freeTerritory(G) <= 0) return 'invalid';
 
   // Discard-as-cost: sacrifice `discardCost` other cards — but only if you have that many
   // to spare. Played with an otherwise-empty hand it costs no discard (a reward for

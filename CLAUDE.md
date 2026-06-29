@@ -40,14 +40,15 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 
 - `src/rules/` — all real game logic *and* the core state type. `state.ts` defines
   `GameState` (boardgame.io's `G` — the serializable run state, including `population`,
-  each tableau building's assigned `workers`, and the card zones `deck`/`hand`/`discard`/
-  `removed` — plus `blankState()`); it lives here, not in the shell, because the mission
+  each tableau building's assigned `workers`, the `territory` cap on tableau size, and the
+  card zones `deck`/`hand`/`discard`/`removed` — plus `blankState()`); it lives here, not in the shell, because the mission
   evaluators reason over it. Also `resources.ts` (`Resources` + arithmetic), `deck.ts`
-  (draw/reshuffle), `effects.ts` (card effects — gain/draw/population/`build`),
+  (draw/reshuffle), `effects.ts` (card effects — gain/draw/population/`territory`/`build`),
   `population.ts` (worker staffing — `requiredWorkers` / `isOperating` / `freePopulation`,
   `addBuilding` — plus `foodUpkeep`), `upkeep.ts` (`applyUpkeep`: operating buildings
   produce → mission ticks → population eats food; plus `projectedDelta` for the UI), and
-  `production.ts` / `tableau.ts` (derived stats). Unit tests sit alongside. **When adding
+  `production.ts` / `tableau.ts` (derived stats — including `usedTerritory` / `freeTerritory`,
+  the territory cap that gates how many buildings can occupy the tableau). Unit tests sit alongside. **When adding
   a rule, put the logic here and test it directly — never bury it in a move or a
   component.**
 - `src/content/` — typed game data, separate from logic. **Cards and buildings are

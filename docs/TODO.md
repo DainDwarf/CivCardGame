@@ -31,7 +31,7 @@ _(empty)_
 
 ## UI (`src/components/`)
 
-_(empty)_
+- Pass over stat tooltips to strip specifics — they name particular cards/missions (e.g. Barbarian Tide, Settlers); keep them generic about the mechanic
 
 ## Tech debt & infra (build, tests, tooling)
 
@@ -40,8 +40,8 @@ _(empty)_
 ## Game design & balance
 
 - Add a "Culture" resource; some cards require a Culture threshold to be playable `[?]`
-- "Space" resource capping how many buildings you can have; cards to remove buildings to free space; military expands space with exponentially rising thresholds `[?]`
-- Card that gives a draw when expanding space `[?]`
+- Territory: cards to *remove* buildings to free a slot; exponentially rising expansion cost (each territory card costs more than the last) `[?]`
+- Card that gives a draw when expanding territory `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
 
 
@@ -52,6 +52,7 @@ _(empty)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- Territory limitation — a building-slot cap (`G.territory`, starts at 6) gates how many buildings the tableau holds; building cards are unplayable when full. Two recurring expansion cards: **Conquest** (3⚔️ → +1 territory) and **Develop** (3🔨 → +1 territory), seeded into the default deck.
 - All 8 code-review bugs fixed: End Round disabled mid-drag/mid-pending; `pending`/`warnEndRound` auto-cleared on round change; `shouldWarn` drives `warnEndRound` cleanup; `hasUnstaffedCapacity` simplified to `!isOperating()`; sacrifice-before-draw ordering fixed in `playCard`; test helpers throw on missing card.
 - Recurring buildings — permanent/recurring hybrid card type (village_settlement etc.).
 - Discard-as-cost actions — Forced Labor & Harvest now sacrifice a hand card (waived if you can't cover it).
