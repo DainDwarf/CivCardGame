@@ -1,5 +1,3 @@
-import { INVALID_MOVE } from 'boardgame.io/core';
-import type { Move } from 'boardgame.io';
 import type { GameState } from '../rules';
 import { applyEffect, canAfford, freePopulation, requiredWorkers, subtractResources } from '../rules';
 import { CARDS } from '../content/cards';
@@ -12,14 +10,14 @@ import { CARDS } from '../content/cards';
  * discard cost: `discardHandIdxs` gives the hand positions of cards to sacrifice (distinct
  * indices, not the played card's slot). Moves are the only place `G` may change.
  */
-export const playCard: Move<GameState> = ({ G }, playHandIdx: number, discardHandIdxs: number[] = []) => {
-  if (playHandIdx < 0 || playHandIdx >= G.hand.length) return INVALID_MOVE;
+export function playCard(G: GameState, playHandIdx: number, discardHandIdxs: number[] = []): 'invalid' | void {
+  if (playHandIdx < 0 || playHandIdx >= G.hand.length) return 'invalid';
   const cardId = G.hand[playHandIdx];
 
   const card = CARDS[cardId];
-  if (!card || !canAfford(G.resources, card.cost)) return INVALID_MOVE;
+  if (!card || !canAfford(G.resources, card.cost)) return 'invalid';
   // Population cost is paid from idle workers only (never by un-staffing buildings).
-  if ((card.popCost ?? 0) > freePopulation(G)) return INVALID_MOVE;
+  if ((card.popCost ?? 0) > freePopulation(G)) return 'invalid';
 
   // Discard-as-cost: sacrifice `discardCost` other cards — but only if you have that many
   // to spare. Played with an otherwise-empty hand it costs no discard (a reward for
@@ -27,10 +25,10 @@ export const playCard: Move<GameState> = ({ G }, playHandIdx: number, discardHan
   // and not the played card itself.
   const want = card.discardCost ?? 0;
   const required = G.hand.length - 1 >= want ? want : 0;
-  if (discardHandIdxs.length !== required) return INVALID_MOVE;
+  if (discardHandIdxs.length !== required) return 'invalid';
   const reserved = new Set<number>([playHandIdx]);
   for (const i of discardHandIdxs) {
-    if (i < 0 || i >= G.hand.length || reserved.has(i)) return INVALID_MOVE;
+    if (i < 0 || i >= G.hand.length || reserved.has(i)) return 'invalid';
     reserved.add(i);
   }
 
@@ -46,23 +44,23 @@ export const playCard: Move<GameState> = ({ G }, playHandIdx: number, discardHan
   for (const id of sacrificeIds) G.discard.push(id);
   if (card.kind === 'permanent') G.removed.push(cardId);
   else G.discard.push(cardId);
-};
+}
 
 /**
  * Assign one idle population to the next understaffed building of a type. Buildings
  * of the same type are fungible, so allocation is by buildingId — each worker staffs one
  * more instance (e.g. one of your farms).
  */
-export const assignWorker: Move<GameState> = ({ G }, buildingId: string) => {
-  if (freePopulation(G) <= 0) return INVALID_MOVE;
+export function assignWorker(G: GameState, buildingId: string): 'invalid' | void {
+  if (freePopulation(G) <= 0) return 'invalid';
   const b = G.tableau.find((x) => x.buildingId === buildingId && x.workers < requiredWorkers(x.buildingId));
-  if (!b) return INVALID_MOVE;
+  if (!b) return 'invalid';
   b.workers += 1;
-};
+}
 
 /** Return one worker from a staffed building of a type to the idle pool. */
-export const unassignWorker: Move<GameState> = ({ G }, buildingId: string) => {
+export function unassignWorker(G: GameState, buildingId: string): 'invalid' | void {
   const b = G.tableau.find((x) => x.buildingId === buildingId && x.workers > 0);
-  if (!b) return INVALID_MOVE;
+  if (!b) return 'invalid';
   b.workers -= 1;
-};
+}

@@ -11,7 +11,7 @@ function play(G: GameState, cardId: string, discardCardIds: string[] = []) {
     if (i === -1) throw new Error(`play: discard '${d}' not in hand`);
     return i;
   });
-  (playCard as unknown as (ctx: { G: GameState }, idx: number, d?: number[]) => unknown)({ G }, idx, discardIdxs);
+  playCard(G, idx, discardIdxs);
 }
 
 describe('playCard: cards vs. buildings', () => {

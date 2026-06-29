@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BoardProps } from 'boardgame.io/react';
-import type { BuildingInstance, GameState, Resources } from '../rules';
+import type { BuildingInstance, Resources } from '../rules';
+import { useGame } from '../run/GameContext';
 import {
   canAfford,
   freePopulation,
@@ -287,7 +287,8 @@ interface DragState {
 /** Pointer travel (px) before a press becomes a drag rather than a click. */
 const DRAG_THRESHOLD = 6;
 
-export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
+export function Board() {
+  const { G, gameover, moves, endTurn } = useGame();
   const mission = MISSIONS[G.missionId];
   const [pending, setPending] = useState<PendingPlay | null>(null);
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
@@ -458,9 +459,9 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
     else setZoom(card.cardId);
   }
 
-  if (ctx.gameover) {
-    const won = ctx.gameover.outcome === 'victory';
-    const famine = ctx.gameover.reason === 'famine';
+  if (gameover) {
+    const won = gameover.outcome === 'victory';
+    const famine = gameover.reason === 'famine';
     return (
       <div className={styles.app}>
         <h1>{won ? '🏛️ Victory' : '💀 Defeat'}</h1>
@@ -657,7 +658,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
                 <button
                   className={styles.endRoundConfirm}
                   disabled={!canEndRound}
-                  onClick={() => { setWarnEndRound(false); events.endTurn?.(); }}
+                  onClick={() => { setWarnEndRound(false); endTurn(); }}
                 >
                   End anyway
                 </button>
@@ -673,7 +674,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
             <button
               className={styles.endRound}
               disabled={!canEndRound}
-              onClick={() => { if (shouldWarn) setWarnEndRound(true); else events.endTurn?.(); }}
+              onClick={() => { if (shouldWarn) setWarnEndRound(true); else endTurn(); }}
             >
               End Round →
             </button>

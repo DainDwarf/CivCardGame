@@ -24,7 +24,9 @@ Two consequences we deliberately design toward:
    condition. The same deck is a different test in every mission.
 2. Because the deck is fixed and runs are **seeded**, runs are reproducible — which
    enables replays and **headless simulation** (run a deck vs. a mission over many
-   seeds to measure win rate). This is our balancing tool. ✅
+   seeds to measure win rate). This is our balancing tool. ✅ (Seeded RNG is planned;
+   the engine currently uses a deterministic deck order — shuffle + seed wiring arrives
+   with the meta/sim phase.)
 
 ## Theme & framing
 
@@ -42,8 +44,8 @@ Two consequences we deliberately design toward:
 
 ## The contract — the spine between the loops ✅
 
-The two loops are different kinds of software (the run is boardgame.io and
-turn-based; the meta is plain React, menu/UI-driven). They communicate only
+The two loops are different kinds of software (the run is turn-based, driven by
+`src/run/engine.ts`; the meta is plain React, menu/UI-driven). They communicate only
 through a narrow, serializable contract — `src/contract.ts`:
 
 ```
@@ -73,7 +75,7 @@ Cards differ by how they leave your hand:
 
 ### Turn structure 🔧
 
-A "round" = one boardgame.io turn:
+A "round" = one turn:
 
 1. **Upkeep / Produce** — tableau generates resources; mission pressure ticks.
 2. **Draw** — draw up to hand size.
@@ -162,16 +164,16 @@ framework-free; each loop is its own shell over them.
 src/
   rules/        # pure logic, shared (production, scoring, objective/failure evaluators)
   content/      # data, shared (cards/, missions/, shop)
-  run/          # boardgame.io Game — the gauntlet           (was src/game/)
+  run/          # turn engine + React context — the gauntlet
   meta/         # React + store + persistence — the workshop
   contract.ts   # RunConfig / RunResult
-  app/          # top-level shell: routes Meta UI <-> Run client, owns the save
+  app/          # top-level shell: routes Meta UI <-> Run, owns the save
   sim/          # (later) headless run simulator for balancing
 ```
 
 ## Build roadmap 🔧
 
-- **Phase 0 — Skeleton** ✅ done: a runnable boardgame.io run with a tiny card set.
+- **Phase 0 — Skeleton** ✅ done: a runnable turn-based run with a tiny card set.
 - **Phase 1 — Real run loop** ✅ done: `src/game/` → `src/run/`; hybrid cards
   (permanent vs. recurring), the 3-resource core, the turn phases, and
   **mission-driven objective + failure** evaluators; 3 missions (The Enlightenment,
