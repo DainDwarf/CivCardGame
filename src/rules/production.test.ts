@@ -10,10 +10,11 @@ describe('tableauProduction', () => {
       food: 2, // only the one staffed farm
       production: 2, // staffed workshop
       science: 0,
+      military: 0,
     });
   });
 
-  it('ignores buildings that produce nothing (e.g. City Walls)', () => {
-    expect(tableauProduction([b('walls', 0)])).toEqual({ food: 0, production: 0, science: 0 });
+  it('self-sufficient walls produce military without workers', () => {
+    expect(tableauProduction([b('walls', 0)])).toEqual({ food: 0, production: 0, science: 0, military: 3 });
   });
 });

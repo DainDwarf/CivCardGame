@@ -7,14 +7,13 @@ import {
   isOperating,
   projectedDelta,
   requiredWorkers,
-  totalDefense,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
 import { BUILDINGS, type BuildingDef } from '../content/buildings';
 import { MISSIONS } from '../content/missions';
 import styles from './Board.module.css';
 
-const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬' };
+const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️' };
 
 /** Presentation-only "art" glyph shown on each card face. */
 const CARD_ART: Record<string, string> = {
@@ -53,7 +52,6 @@ function describeBuilding(b: BuildingDef): string {
   if (b.produces) {
     parts.push(Object.entries(b.produces).map(([k, v]) => `+${v} ${k}/turn`).join(', '));
   }
-  if (b.defense) parts.push(`🛡️${b.defense}`);
   if (b.workers) parts.push(`👷${b.workers}`);
   return parts.join(' · ');
 }
@@ -513,17 +511,18 @@ export function Board() {
           delta={proj.science}
         />
         <Stat
+          icon="⚔️"
+          label="Military"
+          description="Military power stockpiled from your operating defenses. In Barbarian Tide, threat drains it each round — let it hit zero and the city falls."
+          value={G.resources.military}
+          delta={proj.military}
+        />
+        <span className={styles.sep} aria-hidden="true">|</span>
+        <Stat
           icon="👥"
           label="Population"
           description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them; grow them with Settlers cards."
           value={`${G.population} (${idle} idle)`}
-        />
-        <span className={styles.sep} aria-hidden="true">|</span>
-        <Stat
-          icon="🛡️"
-          label="Defense"
-          description="Protection from your operating buildings and wonders (an unstaffed barracks defends nothing). In threat missions, keep it above the rising Threat."
-          value={totalDefense(G.tableau)}
         />
       </div>
 

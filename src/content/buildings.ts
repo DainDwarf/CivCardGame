@@ -11,8 +11,6 @@ export interface BuildingDef {
   name: string;
   /** Per-round output once staffed. */
   produces?: Partial<Resources>;
-  /** Static defense while operating. */
-  defense?: number;
   /** Workers required to operate. 0 = self-sufficient. Defaults to 1. */
   workers?: number;
   /** 'building' | 'wonder' | ... */
@@ -26,12 +24,12 @@ export const BUILDINGS: Record<string, BuildingDef> = {
   library: { id: 'library', name: 'Library', produces: { science: 2 }, workers: 1, tags: ['building'] },
   university: { id: 'university', name: 'University', produces: { science: 3 }, workers: 1, tags: ['building'] },
 
-  // Defensive buildings.
-  walls: { id: 'walls', name: 'City Walls', defense: 3, workers: 0, tags: ['building'] },
-  barracks: { id: 'barracks', name: 'Barracks', produces: { production: 1 }, defense: 2, workers: 1, tags: ['building'] },
+  // Military buildings.
+  walls: { id: 'walls', name: 'City Walls', produces: { military: 3 }, workers: 0, tags: ['building'] },
+  barracks: { id: 'barracks', name: 'Barracks', produces: { production: 1, military: 2 }, workers: 1, tags: ['building'] },
 
   // Wonders.
-  pyramids: { id: 'pyramids', name: 'The Pyramids', produces: { production: 1 }, defense: 1, workers: 1, tags: ['wonder'] },
+  pyramids: { id: 'pyramids', name: 'The Pyramids', produces: { production: 1, military: 1 }, workers: 1, tags: ['wonder'] },
   great_library: { id: 'great_library', name: 'The Great Library', produces: { science: 2 }, workers: 1, tags: ['wonder'] },
-  colossus: { id: 'colossus', name: 'The Colossus', produces: { food: 1, science: 1 }, defense: 1, workers: 1, tags: ['wonder'] },
+  colossus: { id: 'colossus', name: 'The Colossus', produces: { food: 1, science: 1, military: 1 }, workers: 1, tags: ['wonder'] },
 };

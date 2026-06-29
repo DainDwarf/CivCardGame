@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
-import { blankState, type BuildingInstance } from '../rules';
+import { applyUpkeep, blankState, type BuildingInstance } from '../rules';
 
 const b = (buildingId: string, workers = 0): BuildingInstance => ({ buildingId, workers });
 
@@ -49,18 +49,21 @@ describe('mission: barbarian_tide', () => {
     expect(m.objective(G)).toBe(true);
   });
 
-  it('threat overwhelms an undefended city', () => {
+  it('threat depletes military from an undefended city', () => {
     const G = blankState('barbarian_tide');
-    m.setup!(G);
-    for (let i = 0; i < 4; i++) m.onUpkeep!(G); // threat = 8
-    expect(m.failure(G)).toBe(true); // 8 > 0 + BASE_DEFENSE(4)
+    m.setup!(G); // military = 4, threat = 0
+    // Round 1: military 4 + 0 - 2 = 2; Round 2: military 2 + 0 - 4 = -2
+    applyUpkeep(G, m.onUpkeep);
+    applyUpkeep(G, m.onUpkeep);
+    expect(m.failure(G)).toBe(true); // military < 0
   });
 
-  it('a staffed barracks behind walls holds the line', () => {
+  it('walls and a staffed barracks keep military positive through four rounds of rising threat', () => {
     const G = blankState('barbarian_tide');
-    m.setup!(G);
-    G.tableau = [b('walls', 0), b('barracks', 1)]; // defense 5
-    for (let i = 0; i < 4; i++) m.onUpkeep!(G); // threat = 8
-    expect(m.failure(G)).toBe(false); // 8 > 5 + 4 is false
+    m.setup!(G); // military = 4
+    G.tableau = [b('walls', 0), b('barracks', 1)]; // 3 + 2 = 5 military/round
+    // Round 1: 4+5-2=7, Round 2: 7+5-4=8, Round 3: 8+5-6=7, Round 4: 7+5-8=4
+    for (let i = 0; i < 4; i++) applyUpkeep(G, m.onUpkeep);
+    expect(m.failure(G)).toBe(false); // military = 4 >= 0
   });
 });

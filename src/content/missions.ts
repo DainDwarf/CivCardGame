@@ -1,5 +1,5 @@
 import type { GameState } from '../rules/state';
-import { countTag, totalDefense } from '../rules';
+import { countTag } from '../rules';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -23,9 +23,6 @@ export interface MissionDef {
   /** Short human-readable progress line for the UI. */
   progress: (G: GameState) => string;
 }
-
-/** Inherent defense every civilization starts with (its capital). */
-const BASE_DEFENSE = 4;
 
 export const MISSIONS: Record<string, MissionDef> = {
   enlightenment: {
@@ -55,18 +52,18 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'barbarian_tide',
     name: 'Barbarian Tide',
     description:
-      'Build 3 Wonders before the rising Threat overwhelms your defenses. Threat grows every round — and a barracks only defends if a soldier is stationed there.',
+      'Build 3 Wonders before the Threat drains your Military. Threat grows every round — each round it consumes that much Military from your stockpile.',
     setup: (G) => {
       G.vars.threat = 0;
+      G.resources.military = 4; // capital garrison
     },
     onUpkeep: (G) => {
       G.vars.threat += 2;
+      G.resources.military -= G.vars.threat;
     },
     objective: (G) => countTag(G.tableau, 'wonder') >= 3,
-    failure: (G) => (G.vars.threat ?? 0) > totalDefense(G.tableau) + BASE_DEFENSE,
+    failure: (G) => G.resources.military < 0,
     progress: (G) =>
-      `Wonders ${countTag(G.tableau, 'wonder')}/3 · Threat ${G.vars.threat ?? 0} vs Defense ${
-        totalDefense(G.tableau) + BASE_DEFENSE
-      }`,
+      `Wonders ${countTag(G.tableau, 'wonder')}/3 · Military ${G.resources.military} · Threat ${G.vars.threat ?? 0}`,
   },
 };
