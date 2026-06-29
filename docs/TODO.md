@@ -28,17 +28,11 @@ _(empty)_
 
 ## UI (`src/components/`)
 
-- **Bug:** End Round not disabled during pending discard-pick — firing it mid-pick sends stale `handIdx`/`discards` to `playCard`, silently playing/sacrificing wrong cards (`Board.tsx:432`) `[size: S]`
-- **Bug:** End Round not disabled during active drag — a second tap fires `endTurn` while `drag.handIdx` is stale, causing the wrong card to play on pointer-up (`Board.tsx:348`) `[size: S]`
-- **Bug:** `pending` state not cleared on `G.hand` change — after `endTurn` fires mid-pending, `isPending`/`isSacrifice` highlights and cancel-click attach to the wrong cards in the new hand (`Board.tsx:584`) `[size: S]`
-- **Bug:** `warnEndRound` never reset when `shouldWarn` goes false — warning dialog ghost-triggers if player assigns then unassigns a worker without dismissing it (`Board.tsx:298`) `[size: S]`
-- Cleanup: `hasUnstaffedCapacity` re-implements `!isOperating()` which is already imported; replace with `G.tableau.some(b => !isOperating(b))` (`Board.tsx:467`) `[size: S]`
+_(empty)_
 
 ## Tech debt & infra (build, tests, tooling)
 
-- **Bug (latent):** Sacrificed cards pushed to `G.discard` before `applyEffect` — a future card with both `discardCost` and `effect.draw` could trigger a reshuffle that returns the sacrifice to hand, nullifying the cost (`moves.ts:40`) `[size: S]`
-- **Bug (test reliability):** `playByName` / `play` helpers pass `-1` silently when a card name isn't in hand — rejection tests can pass vacuously after a rename (`run.test.ts:14`, `moves.test.ts:7`) `[size: S]`
-- Cleanup: JSDoc on `playCard` still says "discardIds" and "duplicates allowed" — both wrong after the index-based refactor (`moves.ts:12`) `[size: S]`
+_(empty)_
 
 ## Game design & balance
 
@@ -53,5 +47,6 @@ _(empty)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- All 8 code-review bugs fixed: End Round disabled mid-drag/mid-pending; `pending`/`warnEndRound` auto-cleared on round change; `shouldWarn` drives `warnEndRound` cleanup; `hasUnstaffedCapacity` simplified to `!isOperating()`; sacrifice-before-draw ordering fixed in `playCard`; test helpers throw on missing card.
 - Recurring buildings — permanent/recurring hybrid card type (village_settlement etc.).
 - Discard-as-cost actions — Forced Labor & Harvest now sacrifice a hand card (waived if you can't cover it).

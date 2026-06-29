@@ -9,8 +9,8 @@ import { CARDS } from '../content/cards';
  * tableau, auto-staffed from idle pop); then the *card itself* is routed by `kind` —
  * `permanent` cards are removed from the deck (the removed pile), `recurring` cards recycle
  * to the discard. Costs may include resources, population (paid from idle workers), and a
- * discard cost: `discardIds` names the other hand cards to sacrifice (one entry per card,
- * duplicates allowed). Moves are the only place `G` may change.
+ * discard cost: `discardHandIdxs` gives the hand positions of cards to sacrifice (distinct
+ * indices, not the played card's slot). Moves are the only place `G` may change.
  */
 export const playCard: Move<GameState> = ({ G }, playHandIdx: number, discardHandIdxs: number[] = []) => {
   if (playHandIdx < 0 || playHandIdx >= G.hand.length) return INVALID_MOVE;
@@ -34,14 +34,16 @@ export const playCard: Move<GameState> = ({ G }, playHandIdx: number, discardHan
     reserved.add(i);
   }
 
-  // All validated — pay costs and remove cards (highest index first so the rest stay valid).
+  // All validated — pay costs and remove all played/sacrificed cards from hand first.
   subtractResources(G.resources, card.cost);
   if (card.popCost) G.population -= card.popCost;
-  for (const i of discardHandIdxs) G.discard.push(G.hand[i]);
+  const sacrificeIds = discardHandIdxs.map((i) => G.hand[i]);
   for (const i of [playHandIdx, ...discardHandIdxs].sort((a, b) => b - a)) G.hand.splice(i, 1);
 
-  // Resolve the card's effect (build / gain / draw / grow), then file the card itself.
+  // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
+  // return the not-yet-filed sacrifices back into the deck.
   applyEffect(G, card.effect);
+  for (const id of sacrificeIds) G.discard.push(id);
   if (card.kind === 'permanent') G.removed.push(cardId);
   else G.discard.push(cardId);
 };

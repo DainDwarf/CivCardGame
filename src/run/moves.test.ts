@@ -5,7 +5,12 @@ import { blankState, type GameState } from '../rules';
 /** Invoke the move directly with a minimal context (it only reads `G`). */
 function play(G: GameState, cardId: string, discardCardIds: string[] = []) {
   const idx = G.hand.indexOf(cardId);
-  const discardIdxs = discardCardIds.map((d) => G.hand.indexOf(d));
+  if (idx === -1) throw new Error(`play: '${cardId}' not in hand`);
+  const discardIdxs = discardCardIds.map((d) => {
+    const i = G.hand.indexOf(d);
+    if (i === -1) throw new Error(`play: discard '${d}' not in hand`);
+    return i;
+  });
   (playCard as unknown as (ctx: { G: GameState }, idx: number, d?: number[]) => unknown)({ G }, idx, discardIdxs);
 }
 

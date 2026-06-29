@@ -11,7 +11,13 @@ function start(missionId: string) {
 /** Play a card by name, resolving hand indices at call time. */
 function playByName(client: ReturnType<typeof start>, cardId: string, discardIds: string[] = []) {
   const hand = client.getState()!.G.hand;
-  client.moves.playCard(hand.indexOf(cardId), discardIds.map((d) => hand.indexOf(d)));
+  const idx = hand.indexOf(cardId);
+  if (idx === -1) throw new Error(`playByName: '${cardId}' not in hand`);
+  client.moves.playCard(idx, discardIds.map((d) => {
+    const i = hand.indexOf(d);
+    if (i === -1) throw new Error(`playByName: discard '${d}' not in hand`);
+    return i;
+  }));
 }
 
 describe('run loop (headless integration)', () => {

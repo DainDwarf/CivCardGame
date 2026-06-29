@@ -419,6 +419,22 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
     return () => window.removeEventListener('keydown', onKey);
   }, [zoom, pileView]);
 
+  const idle = freePopulation(G);
+  const hasUnstaffedCapacity = G.tableau.some((b) => !isOperating(b));
+  const shouldWarn = idle > 0 && hasUnstaffedCapacity;
+
+  // Clear pending sacrifice-pick and end-round warning at the start of each new round.
+  useEffect(() => {
+    setPending(null);
+    setWarnEndRound(false);
+  }, [G.round]);
+
+  // warnEndRound is only meaningful while shouldWarn is true; reset it if the player
+  // staffs all buildings after triggering the dialog (so it can't ghost-trigger later).
+  useEffect(() => {
+    if (!shouldWarn) setWarnEndRound(false);
+  }, [shouldWarn]);
+
   /** In sacrifice-pick mode, a click toggles a card as the discard (or cancels the play). */
   function handlePendingClick(card: HandCard) {
     if (!pending) return;
@@ -461,13 +477,9 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
     );
   }
 
-  const idle = freePopulation(G);
   const proj = projectedDelta(G, mission.onUpkeep);
   const groups = groupTableau(G.tableau);
-  const hasUnstaffedCapacity = G.tableau.some(
-    (b) => requiredWorkers(b.buildingId) > 0 && b.workers < requiredWorkers(b.buildingId),
-  );
-  const shouldWarn = idle > 0 && hasUnstaffedCapacity;
+  const canEndRound = !pending && !drag;
 
   return (
     <div className={styles.app}>
@@ -644,6 +656,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
               <div className={styles.endRoundWarnBtns}>
                 <button
                   className={styles.endRoundConfirm}
+                  disabled={!canEndRound}
                   onClick={() => { setWarnEndRound(false); events.endTurn?.(); }}
                 >
                   End anyway
@@ -659,6 +672,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
           ) : (
             <button
               className={styles.endRound}
+              disabled={!canEndRound}
               onClick={() => { if (shouldWarn) setWarnEndRound(true); else events.endTurn?.(); }}
             >
               End Round →
