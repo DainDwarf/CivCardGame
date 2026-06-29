@@ -460,6 +460,64 @@
   background: #000;
 }
 
+.endRoundWarn {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  min-width: 100px;
+  height: 92px;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  background: #7a2e0a;
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.endRoundWarnMsg {
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.endRoundWarnBtns {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.endRoundConfirm {
+  padding: 0.2rem 0.45rem;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #e65c00;
+  color: #fff;
+}
+
+.endRoundConfirm:hover {
+  background: #c94f00;
+}
+
+.endRoundCancel {
+  padding: 0.2rem 0.45rem;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #fff;
+  color: #2c2c2c;
+}
+
+.endRoundCancel:hover {
+  background: #e8e8e8;
+}
+
 /* --- Animations --- */
 
 /* Newly drawn cards rise and fade into the hand, staggered via animation-delay. */

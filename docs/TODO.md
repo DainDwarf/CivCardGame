@@ -38,7 +38,6 @@ _(empty)_
 
 - Add a "Culture" resource; some cards require a Culture threshold to be playable `[?]`
 - "Space" resource capping how many buildings you can have; cards to remove buildings to free space; military expands space with exponentially rising thresholds `[?]`
-- Recurring buildings? (a permanent/recurring hybrid card type) `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
 
 ---
@@ -48,4 +47,5 @@ _(empty)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- Recurring buildings — permanent/recurring hybrid card type (village_settlement etc.).
 - Discard-as-cost actions — Forced Labor & Harvest now sacrifice a hand card (waived if you can't cover it).

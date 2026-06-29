@@ -295,6 +295,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
   const [pileView, setPileView] = useState<{ title: string; cards: string[] } | null>(null);
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
+  const [warnEndRound, setWarnEndRound] = useState(false);
   const dragRef = useRef<DragState | null>(null);
   const cardEls = useRef<Map<number, HTMLButtonElement>>(new Map());
   const handBarRef = useRef<HTMLDivElement>(null);
@@ -463,6 +464,10 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
   const idle = freePopulation(G);
   const proj = projectedDelta(G, mission.onUpkeep);
   const groups = groupTableau(G.tableau);
+  const hasUnstaffedCapacity = G.tableau.some(
+    (b) => requiredWorkers(b.buildingId) > 0 && b.workers < requiredWorkers(b.buildingId),
+  );
+  const shouldWarn = idle > 0 && hasUnstaffedCapacity;
 
   return (
     <div className={styles.app}>
@@ -631,9 +636,34 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
             onView={() => setPileView({ title: 'Removed from deck', cards: [...G.removed] })}
           />
 
-          <button className={styles.endRound} onClick={() => events.endTurn?.()}>
-            End Round →
-          </button>
+          {warnEndRound && shouldWarn ? (
+            <div className={styles.endRoundWarn}>
+              <span className={styles.endRoundWarnMsg}>
+                {idle} idle 👷<br />unstaffed buildings
+              </span>
+              <div className={styles.endRoundWarnBtns}>
+                <button
+                  className={styles.endRoundConfirm}
+                  onClick={() => { setWarnEndRound(false); events.endTurn?.(); }}
+                >
+                  End anyway
+                </button>
+                <button
+                  className={styles.endRoundCancel}
+                  onClick={() => setWarnEndRound(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className={styles.endRound}
+              onClick={() => { if (shouldWarn) setWarnEndRound(true); else events.endTurn?.(); }}
+            >
+              End Round →
+            </button>
+          )}
         </div>
       </div>
 
