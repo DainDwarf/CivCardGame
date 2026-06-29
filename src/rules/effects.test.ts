@@ -17,7 +17,7 @@ describe('applyEffect', () => {
     expect(G.hand).toEqual(['a', 'b']);
   });
 
-  it('grows population (House)', () => {
+  it('grows population (Settlers)', () => {
     const G = blankState('enlightenment');
     G.population = 2;
     applyEffect(G, { population: 1 });

@@ -1,5 +1,5 @@
 import type { BoardProps } from 'boardgame.io/react';
-import type { BuildingInstance, GameState } from '../rules';
+import type { BuildingInstance, GameState, Resources } from '../rules';
 import {
   canAfford,
   freePopulation,
@@ -11,6 +11,16 @@ import {
 import { CARDS, type CardDef } from '../content/cards';
 import { MISSIONS } from '../content/missions';
 import styles from './Board.module.css';
+
+const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬' };
+
+/** Presentation-only cost label, e.g. "2🌾" · "3🔨" · "free". */
+function describeCost(cost: Partial<Resources>): string {
+  const parts = (Object.entries(cost) as [keyof Resources, number][])
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${v}${COST_ICON[k]}`);
+  return parts.join(' ') || 'free';
+}
 
 /** Presentation-only summary of what a card does (no game logic here). */
 function describeCard(c: CardDef): string {
@@ -148,7 +158,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
         <Stat
           icon="👥"
           label="Population"
-          description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them; grow them with House cards."
+          description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them; grow them with Settlers cards."
           value={`${G.population} (${idle} idle)`}
         />
         <span className={styles.sep} aria-hidden="true">|</span>
@@ -183,7 +193,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
                 title={describeCard(c)}
               >
                 <span className={styles.cardName}>{c.name}</span>
-                <span className={styles.cardCost}>{c.cost}🔨</span>
+                <span className={styles.cardCost}>{describeCost(c.cost)}</span>
                 <span className={styles.cardText}>{describeCard(c)}</span>
               </button>
             );

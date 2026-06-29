@@ -1,7 +1,14 @@
 import { INVALID_MOVE } from 'boardgame.io/core';
 import type { Move } from 'boardgame.io';
 import type { GameState } from '../rules';
-import { applyEffect, autoStaffCount, canAfford, freePopulation, requiredWorkers } from '../rules';
+import {
+  applyEffect,
+  autoStaffCount,
+  canAfford,
+  freePopulation,
+  requiredWorkers,
+  subtractResources,
+} from '../rules';
 import { CARDS } from '../content/cards';
 
 /**
@@ -16,7 +23,7 @@ export const playCard: Move<GameState> = ({ G }, cardId: string) => {
   const card = CARDS[cardId];
   if (!card || !canAfford(G.resources, card.cost)) return INVALID_MOVE;
 
-  G.resources.production -= card.cost;
+  subtractResources(G.resources, card.cost);
   G.hand.splice(idx, 1);
 
   if (card.kind === 'permanent') {

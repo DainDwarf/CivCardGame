@@ -4,8 +4,8 @@
  */
 export const DEFAULT_DECK: string[] = [
   'farm', 'workshop', 'forced_labor', 'library', 'harvest',
-  'house', 'farm', 'eureka', 'granary', 'house',
-  'workshop', 'walls', 'library', 'inspiration', 'house',
+  'settlers', 'farm', 'eureka', 'granary', 'settlers',
+  'workshop', 'walls', 'library', 'inspiration', 'settlers',
   'barracks', 'university', 'eureka', 'forced_labor',
   'pyramids', 'great_library', 'colossus',
 ];

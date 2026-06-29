@@ -8,7 +8,7 @@ export interface CardEffect {
   gain?: Partial<Resources>;
   /** Cards drawn immediately. */
   draw?: number;
-  /** Population gained immediately (e.g. a House). */
+  /** Population gained immediately (e.g. Settlers). */
   population?: number;
 }
 
