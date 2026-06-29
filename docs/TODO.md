@@ -25,6 +25,9 @@ _(empty)_
 - New mission: "Build the Wonder" `[?]`
 - Culture-based missions (depend on the Culture resource) `[?]`
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]`
+- I dont like the military we have right now.
+- Ressources transformation? Like a building that transforms production into science for example
+- New resource: Money
 
 ## UI (`src/components/`)
 
@@ -38,7 +41,9 @@ _(empty)_
 
 - Add a "Culture" resource; some cards require a Culture threshold to be playable `[?]`
 - "Space" resource capping how many buildings you can have; cards to remove buildings to free space; military expands space with exponentially rising thresholds `[?]`
+- Card that gives a draw when expanding space `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
+
 
 ---
 
