@@ -24,6 +24,13 @@ describe('applyEffect', () => {
     expect(G.population).toBe(3);
   });
 
+  it('constructs a building, auto-staffed from idle population', () => {
+    const G = blankState('enlightenment');
+    G.population = 1; // 1 idle worker
+    applyEffect(G, { build: 'farm' });
+    expect(G.tableau).toEqual([{ buildingId: 'farm', workers: 1 }]);
+  });
+
   it('does nothing for an undefined effect', () => {
     const G = blankState('enlightenment');
     applyEffect(G, undefined);

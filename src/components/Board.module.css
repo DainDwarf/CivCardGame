@@ -1,8 +1,9 @@
 .app {
   font-family: system-ui, -apple-system, sans-serif;
-  max-width: 760px;
-  margin: 1.5rem auto;
-  padding: 0 1rem 3rem;
+  max-width: 860px;
+  /* Bottom padding clears the fixed hand bar so content never hides behind it. */
+  margin: 1.25rem auto 0;
+  padding: 0 1rem 250px;
   line-height: 1.5;
   color: #1a1a1a;
 }
@@ -22,14 +23,18 @@
 }
 
 .resources {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem 0.85rem;
   font-size: 1.05rem;
   background: #f3f3f0;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .sep {
@@ -53,7 +58,7 @@
   visibility: hidden;
   opacity: 0;
   position: absolute;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -75,11 +80,11 @@
 .tooltip::after {
   content: '';
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: #222;
+  border-bottom-color: #222;
 }
 
 .stat:hover .tooltip,
@@ -105,77 +110,10 @@
   font-size: 0.9em;
 }
 
-.cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
+/* --- Civilization (tableau) --- */
 
-.cards button {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.15rem;
-  min-width: 140px;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid #bbb;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  text-align: left;
-}
-
-.cards button:hover:not(:disabled) {
-  border-color: #444;
-}
-
-.cards button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.permanent {
-  border-left: 4px solid #3b7dd8 !important;
-}
-
-.action {
-  border-left: 4px solid #c9772f !important;
-}
-
-.discardPrompt {
-  margin: 0 0 0.5rem;
-  padding: 0.4rem 0.6rem;
-  background: #fff4e5;
-  border: 1px solid #e0a96d;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-/* The card whose discard cost we're paying. */
-.pending {
-  outline: 2px solid #c9772f;
-  outline-offset: 1px;
-}
-
-/* A card marked to be sacrificed. */
-.sacrifice {
-  opacity: 0.5;
-  text-decoration: line-through;
-  background: #fdecec !important;
-}
-
-.cardName {
-  font-weight: 600;
-}
-
-.cardCost {
-  font-size: 0.85rem;
-  color: #333;
-}
-
-.cardText {
-  font-size: 0.8rem;
-  color: #555;
+.civSection {
+  margin-top: 1.25rem;
 }
 
 .idleHint {
@@ -250,18 +188,552 @@
   font-style: italic;
 }
 
-.end {
-  margin-top: 1.25rem;
-  padding: 0.6rem 1.1rem;
-  font-weight: 600;
-  font-size: 1rem;
-  border: none;
+/* --- The hand: a fixed bar of real cards at the bottom of the screen --- */
+
+.handBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  background: linear-gradient(180deg, rgba(236, 233, 227, 0) 0%, #ece9e3 30%, #e3ded5 100%);
+  border-top: 1px solid #d6d1c7;
+  padding: 0.35rem 1rem 0.7rem;
+}
+
+.handBarInner {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.85rem;
+}
+
+/* The piles flanking the hand: deck (draw), discard (recycles), removed (out of the deck). */
+.pile {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 92px;
   border-radius: 8px;
+  border: 1px solid #25324a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25), inset 0 0 0 4px rgba(255, 255, 255, 0.06);
+  font: inherit;
+}
+
+.pile:disabled {
+  cursor: default;
+}
+
+.pile:not(:disabled) {
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.pile:not(:disabled):hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 4px rgba(255, 255, 255, 0.06);
+}
+
+/* Face-down draw pile. */
+.pileDeck {
+  background: repeating-linear-gradient(135deg, #3a4a63 0, #3a4a63 6px, #32415a 6px, #32415a 12px);
+  border-color: #25324a;
+  color: #fff;
+}
+
+/* Discard — played recurring cards waiting to reshuffle. */
+.pileDiscard {
+  background: linear-gradient(180deg, #e8ddc8, #d8c8a8);
+  border-color: #b79f72;
+  color: #5a4a2a;
+}
+
+/* Removed — permanents committed to the tableau, gone from the deck for good. */
+.pileRemoved {
+  background: linear-gradient(180deg, #4a4a52, #36363d);
+  border: 1px dashed #8a8a96;
+  color: #e6e6ea;
+}
+
+.pileCount {
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pileLabel {
+  margin-top: 2px;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+
+.handArea {
+  flex: 1;
+  min-width: 0;
+}
+
+.hand {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 162px;
+  padding-top: 20px; /* headroom for the hover lift */
+}
+
+.card {
+  position: relative;
+  flex: 0 0 auto;
+  width: 118px;
+  height: 162px;
+  margin: 0 -7px; /* overlap, like cards held in a hand */
+  padding: 0.45rem 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #c8c2b6;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff, #f6f4ef);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+  cursor: grab;
+  text-align: left;
+  transform-origin: bottom center;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  touch-action: none; /* let pointer drags work without the browser scrolling/panning */
+  user-select: none;
+}
+
+.card:hover {
+  transform: translateY(-16px);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.28);
+  z-index: 3;
+}
+
+.card:focus-visible {
+  outline: 2px solid #3b7dd8;
+  outline-offset: 2px;
+}
+
+/* Can't currently afford it — dimmed, but still inspectable (click to zoom). */
+.unaffordable {
+  opacity: 0.5;
+  filter: grayscale(0.4);
+}
+
+/* The source card while its clone is being dragged — held in place, faded, no hover lift. */
+.dragging,
+.dragging:hover {
+  transform: none;
+  opacity: 0.28;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+  cursor: grabbing;
+}
+
+.cardTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+  margin: -0.45rem -0.5rem 0; /* bleed the title band to the card edges; banner follows directly */
+  padding: 0.3rem 0.4rem 0.25rem;
+  border-radius: 9px 9px 0 0;
+}
+
+/* Full-width type banner under the name (Wonder / Building / Action). */
+.cardBanner {
+  margin: 0 -0.5rem 0.45rem; /* bleed to the side edges */
+  padding: 2px 4px;
+  text-align: center;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.bannerWonder {
+  background: #b8860b;
+}
+
+.bannerBuilding {
+  background: #3b7dd8;
+}
+
+.bannerAction {
+  background: #c9772f;
+}
+
+/* Colour the title band by card kind (blue = permanent building, orange = action). */
+.permanent .cardTop {
+  background: #e7f0fb;
+}
+
+.action .cardTop {
+  background: #fbeede;
+}
+
+.cardName {
+  font-weight: 700;
+  font-size: 0.72rem;
+  line-height: 1.1;
+}
+
+.cardCost {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #444;
+  white-space: nowrap;
+}
+
+.cardArt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  line-height: 1;
+}
+
+.cardText {
+  font-size: 0.64rem;
+  color: #555;
+  line-height: 1.25;
+  min-height: 2.4em;
+}
+
+/* The card whose discard cost we're paying. */
+.pending {
+  outline: 2px solid #c9772f;
+  outline-offset: 1px;
+}
+
+/* A card marked to be sacrificed — dimmed, with an X struck over it. */
+.sacrifice {
+  opacity: 0.5;
+  filter: saturate(0.35);
+}
+
+.sacrifice::after {
+  content: '✕';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.8rem;
+  color: #c0392b;
+  opacity: 0.6;
+}
+
+.discardPrompt {
+  margin: 0 auto 0.35rem;
+  max-width: 460px;
+  padding: 0.35rem 0.6rem;
+  text-align: center;
+  background: #fff4e5;
+  border: 1px solid #e0a96d;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.endRound {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  height: 92px;
+  min-width: 100px;
+  padding: 0 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 10px;
   background: #2c2c2c;
   color: #fff;
   cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
 
-.end:hover {
+.endRound:hover {
   background: #000;
+}
+
+/* --- Animations --- */
+
+/* Newly drawn cards rise and fade into the hand, staggered via animation-delay. */
+@keyframes dealIn {
+  0% {
+    opacity: 0;
+    transform: translateY(48px) scale(0.85) rotate(-4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+
+.dealIn {
+  /* `both` holds the hidden start frame through the stagger delay and settles at rest. */
+  animation: dealIn 0.34s ease both;
+}
+
+/* A rejected (unaffordable) drop snaps the card back with a brief shake + red flash. */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+.shake {
+  animation: shake 0.4s ease;
+  border-color: #c0392b;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.35), 0 3px 8px rgba(0, 0, 0, 0.18);
+}
+
+/* A played card's clone flies up and fades — covers the card vanishing from the hand. */
+.ghostLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.ghostCard {
+  position: fixed;
+  padding: 0.45rem 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #c8c2b6;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff, #f6f4ef);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
+}
+
+/* Played from the hand (discard-cost flow): fly up and fade. */
+.ghostPlay {
+  animation: playFly 0.44s ease-out forwards;
+}
+
+/* Dropped onto the board: absorb in place. */
+.ghostDrop {
+  animation: playDrop 0.34s ease-in forwards;
+}
+
+@keyframes playFly {
+  0% {
+    transform: translateY(0) scale(1) rotate(0);
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-160px) scale(1.18) rotate(3deg);
+    opacity: 0;
+  }
+}
+
+@keyframes playDrop {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.55) translateY(12px);
+    opacity: 0;
+  }
+}
+
+/* --- Drag to play --- */
+
+.dragLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* The card clone that tracks the cursor during a drag. */
+.dragCard {
+  position: fixed;
+  padding: 0.45rem 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #c8c2b6;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff, #f6f4ef);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.4);
+  transform: rotate(-3deg) scale(1.05);
+  transform-origin: center;
+}
+
+/* The board area lights up as a drop target while dragging. */
+.dropZone {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  z-index: 30;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 1.5rem;
+  border: 3px dashed transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dropZoneActive {
+  background: rgba(59, 125, 216, 0.1);
+  border-color: rgba(59, 125, 216, 0.55);
+}
+
+.dropZone span {
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  color: #2c2c2c;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.dropZoneActive span {
+  opacity: 1;
+}
+
+/* --- Zoomed card preview --- */
+
+.zoomBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  background: rgba(20, 20, 20, 0.6);
+  cursor: zoom-out;
+  animation: fadeIn 0.15s ease;
+}
+
+.zoomWrap {
+  width: 260px;
+  height: 356px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: zoomIn 0.16s ease-out;
+}
+
+/* Reuse the card face at ~2.2× with no hover lift. */
+.zoomCard,
+.zoomCard:hover {
+  margin: 0;
+  transform: scale(2.2);
+  transform-origin: center;
+  cursor: default;
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.5);
+  z-index: auto;
+}
+
+.zoomHint {
+  margin: 0;
+  color: #f0f0f0;
+  font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* --- Pile viewer (discard / removed contents) --- */
+
+.pilePanel {
+  max-width: min(680px, 92vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 1rem 1.25rem 1.25rem;
+  border-radius: 12px;
+  background: #faf8f4;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  animation: zoomIn 0.16s ease-out;
+  cursor: default;
+}
+
+.pileTitle {
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+
+.pileGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 0.6rem;
+  justify-content: center;
+}
+
+.pileGridItem {
+  position: relative;
+}
+
+/* A non-interactive card face used inside the pile viewer. */
+.staticCard,
+.staticCard:hover {
+  margin: 0;
+  transform: none;
+  cursor: default;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+  z-index: auto;
+}
+
+.pileQty {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 11px;
+  background: #2c2c2c;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }

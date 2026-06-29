@@ -1,4 +1,4 @@
-import { CARDS } from '../content/cards';
+import { BUILDINGS } from '../content/buildings';
 import { isOperating } from './population';
 import { addResources, emptyResources, type Resources } from './resources';
 import type { BuildingInstance } from './state';
@@ -6,7 +6,7 @@ import type { BuildingInstance } from './state';
 /** Per-round output of all OPERATING (staffed) buildings. */
 export function tableauProduction(tableau: BuildingInstance[]): Resources {
   return tableau.reduce(
-    (acc, b) => (isOperating(b) ? addResources(acc, CARDS[b.cardId].produces ?? {}) : acc),
+    (acc, b) => (isOperating(b) ? addResources(acc, BUILDINGS[b.buildingId].produces ?? {}) : acc),
     emptyResources(),
   );
 }

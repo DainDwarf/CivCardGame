@@ -1,8 +1,10 @@
 import { emptyResources, type Resources } from './resources';
 
-/** A committed permanent card on the table, tracking the workers assigned to it. */
+/** A building erected in the tableau, tracking the workers assigned to it. Identified by
+ *  its `buildingId` (a key into the BUILDINGS catalogue), *not* by the card that built it —
+ *  several different cards can construct the same building. */
 export interface BuildingInstance {
-  cardId: string;
+  buildingId: string;
   /** Population currently assigned to this building. */
   workers: number;
 }
@@ -24,6 +26,14 @@ export interface GameState {
   deck: string[];
   /** Discard pile — recurring cards return here and reshuffle when the deck empties. */
   discard: string[];
+  /**
+   * Exile pile — cards permanently removed from the deck for the rest of the run (never
+   * drawn again, never reshuffled). This is *not* the tableau: a building in play is an
+   * active entity, whereas a removed card is gone from the deck. They diverge especially
+   * for future cards that stay in the deck cycle yet spawn a permanent building as an
+   * effect (the building enters `tableau`; the card goes to `discard` or here).
+   */
+  removed: string[];
   /** Committed permanents, each tracking its assigned workers. */
   tableau: BuildingInstance[];
   /** How many cards to draw up to at the start of each round. */
@@ -43,6 +53,7 @@ export function blankState(missionId: string): GameState {
     hand: [],
     deck: [],
     discard: [],
+    removed: [],
     tableau: [],
     handSize: 5,
     missionId,

@@ -19,10 +19,13 @@ describe('run loop (headless integration)', () => {
     client.stop();
   });
 
-  it('building a permanent auto-staffs it from the idle population', () => {
+  it('building a permanent erects a building, auto-staffs it, and removes the card from the deck', () => {
     const client = start('enlightenment'); // population 2, all idle
-    client.moves.playCard('farm'); // farm needs 1 worker -> auto-staffed on play
-    expect(client.getState()!.G.tableau).toEqual([{ cardId: 'farm', workers: 1 }]);
+    client.moves.playCard('farm'); // farm card builds a farm building -> auto-staffed on play
+    const after = client.getState()!.G;
+    expect(after.tableau).toEqual([{ buildingId: 'farm', workers: 1 }]);
+    expect(after.removed).toEqual(['farm']); // the card itself is gone from the deck
+    expect(after.discard).toEqual([]); // permanents don't recycle
     // staffing is still hand-adjustable: return the worker, then reassign it
     client.moves.unassignWorker('farm');
     expect(client.getState()!.G.tableau[0].workers).toBe(0);
@@ -37,7 +40,7 @@ describe('run loop (headless integration)', () => {
     client.moves.playCard('workshop'); // staffs 1 -> 1 idle
     client.moves.playCard('farm'); // staffs 1 -> 0 idle
     client.moves.playCard('library'); // no idle left -> committed unstaffed
-    const lib = client.getState()!.G.tableau.find((b) => b.cardId === 'library')!;
+    const lib = client.getState()!.G.tableau.find((b) => b.buildingId === 'library')!;
     expect(lib.workers).toBe(0);
     client.stop();
   });

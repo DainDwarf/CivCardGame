@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
 import { blankState, type BuildingInstance } from '../rules';
 
-const b = (cardId: string, workers = 0): BuildingInstance => ({ cardId, workers });
+const b = (buildingId: string, workers = 0): BuildingInstance => ({ buildingId, workers });
 
 describe('mission: enlightenment', () => {
   const m = MISSIONS.enlightenment;

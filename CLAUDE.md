@@ -44,20 +44,27 @@ unit-testable without spinning up a client.
 **Core (framework-free — no boardgame.io, no React, no I/O):**
 
 - `src/rules/` — all real game logic *and* the core state type. `state.ts` defines
-  `GameState` (boardgame.io's `G` — the serializable run state, including `population`
-  and each tableau building's assigned `workers` — plus `blankState()`); it lives here,
-  not in the shell, because the mission evaluators reason over it. Also `resources.ts`
-  (`Resources` + arithmetic), `deck.ts` (draw/reshuffle), `effects.ts` (recurring-card
-  effects), `population.ts` (worker staffing — `requiredWorkers` / `isOperating` /
-  `freePopulation` — plus `foodUpkeep`), `upkeep.ts` (`applyUpkeep`: operating buildings
+  `GameState` (boardgame.io's `G` — the serializable run state, including `population`,
+  each tableau building's assigned `workers`, and the card zones `deck`/`hand`/`discard`/
+  `removed` — plus `blankState()`); it lives here, not in the shell, because the mission
+  evaluators reason over it. Also `resources.ts` (`Resources` + arithmetic), `deck.ts`
+  (draw/reshuffle), `effects.ts` (card effects — gain/draw/population/`build`),
+  `population.ts` (worker staffing — `requiredWorkers` / `isOperating` / `freePopulation`,
+  `addBuilding` — plus `foodUpkeep`), `upkeep.ts` (`applyUpkeep`: operating buildings
   produce → mission ticks → population eats food; plus `projectedDelta` for the UI), and
-  `production.ts` / `scoring.ts` / `tableau.ts` (derived stats). Unit tests sit
-  alongside. **When adding a rule, put the logic here and test it directly — never bury
-  it in a move or a component.**
-- `src/content/` — typed game data, separate from logic: `cards.ts` (`CARDS`, each
-  `permanent` or `recurring`), `decks.ts` (the Phase 1 `DEFAULT_DECK`), and
-  `missions.ts` (`MISSIONS` — each mission supplies its `objective` and `failure` as
-  pure predicates over `GameState`, plus an optional `onUpkeep`).
+  `production.ts` / `tableau.ts` (derived stats). Unit tests sit alongside. **When adding
+  a rule, put the logic here and test it directly — never bury it in a move or a
+  component.**
+- `src/content/` — typed game data, separate from logic. **Cards and buildings are
+  distinct:** `buildings.ts` (`BUILDINGS` — building entities with `produces`/`defense`/
+  `workers`/`tags`) holds what lives in the tableau; `cards.ts` (`CARDS`, each `permanent`
+  or `recurring`) holds what lives in the deck. A card *constructs* a building via
+  `effect.build` — the building enters `tableau`, the card is then filed by `kind`
+  (`permanent` → `removed` pile, `recurring` → `discard`). So the same building can come
+  from different cards (the `farm` card vs. the recurring `village_settlement`), and a
+  `BuildingInstance` references a `buildingId`, never a card. Also `decks.ts` (the Phase 1
+  `DEFAULT_DECK`) and `missions.ts` (`MISSIONS` — each mission supplies its `objective`
+  and `failure` as pure predicates over `GameState`, plus an optional `onUpkeep`).
 
 **Shell — the run loop (`src/run/`, boardgame.io) + React:**
 
@@ -68,8 +75,11 @@ unit-testable without spinning up a client.
   arrives with the meta/sim seed wiring.)
 - `src/run/moves.ts` — the moves (`playCard`, `assignWorker`, `unassignWorker`) — the
   **only** place `G` may change: validate, mutate the immer draft, delegate computation
-  to `src/rules/`, return `INVALID_MOVE` (from `boardgame.io/core`) to reject. (Workers
-  are allocated by `cardId`, since same-type buildings are fungible.)
+  to `src/rules/`, return `INVALID_MOVE` (from `boardgame.io/core`) to reject. `playCard`
+  pays costs (resources, `popCost` from idle workers, discard cost), resolves the card's
+  `effect`, then files the card by `kind` (`permanent` → `removed`, `recurring` →
+  `discard`). (Workers are allocated by `buildingId`, since same-type buildings are
+  fungible.)
 - `src/run/index.ts` — `createCivGame(missionId)` builds the `Game<GameState>`. The
   round is driven by the turn lifecycle: `onBegin` advances the round and draws; `onEnd`
   resolves upkeep (`applyUpkeep` — only staffed buildings produce, then the mission's

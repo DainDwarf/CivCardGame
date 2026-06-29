@@ -1,17 +1,17 @@
-import { CARDS } from '../content/cards';
+import { BUILDINGS } from '../content/buildings';
 import type { BuildingInstance, GameState } from './state';
 
 /** Food eaten per unit of population each round. */
 export const FOOD_PER_POP = 1;
 
 /** Workers needed for a building to operate. 0 = self-sufficient (e.g. City Walls). */
-export function requiredWorkers(cardId: string): number {
-  return CARDS[cardId].workers ?? 1;
+export function requiredWorkers(buildingId: string): number {
+  return BUILDINGS[buildingId].workers ?? 1;
 }
 
 /** Is this building staffed enough to operate (produce / defend)? */
 export function isOperating(b: BuildingInstance): boolean {
-  return b.workers >= requiredWorkers(b.cardId);
+  return b.workers >= requiredWorkers(b.buildingId);
 }
 
 /** Total population currently assigned to buildings. */
@@ -35,7 +35,12 @@ export function foodUpkeep(G: GameState): number {
  * (no workers parked on a building that can't operate yet). 0 for self-sufficient
  * buildings too.
  */
-export function autoStaffCount(G: GameState, cardId: string): number {
-  const req = requiredWorkers(cardId);
+export function autoStaffCount(G: GameState, buildingId: string): number {
+  const req = requiredWorkers(buildingId);
   return freePopulation(G) >= req ? req : 0;
+}
+
+/** Erect a building in the tableau, auto-staffing it from the idle pool (all-or-nothing). */
+export function addBuilding(G: GameState, buildingId: string): void {
+  G.tableau.push({ buildingId, workers: autoStaffCount(G, buildingId) });
 }

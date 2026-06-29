@@ -1,8 +1,9 @@
 import { addResources, type Resources } from './resources';
 import { drawCard } from './deck';
+import { addBuilding } from './population';
 import type { GameState } from './state';
 
-/** The immediate, one-shot effect a recurring card applies when played. */
+/** The immediate, one-shot effect a card applies when played. */
 export interface CardEffect {
   /** Resources gained immediately. */
   gain?: Partial<Resources>;
@@ -10,6 +11,8 @@ export interface CardEffect {
   draw?: number;
   /** Population gained immediately (e.g. Settlers). */
   population?: number;
+  /** Construct a building (by id) in the tableau, auto-staffed from idle population. */
+  build?: string;
 }
 
 export function applyEffect(G: GameState, effect?: CardEffect): void {
@@ -19,4 +22,5 @@ export function applyEffect(G: GameState, effect?: CardEffect): void {
     for (let i = 0; i < effect.draw; i++) drawCard(G);
   }
   if (effect.population) G.population += effect.population;
+  if (effect.build) addBuilding(G, effect.build);
 }
