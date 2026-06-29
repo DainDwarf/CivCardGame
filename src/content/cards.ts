@@ -38,6 +38,8 @@ export const CARDS: Record<string, CardDef> = {
   university: { id: 'university', name: 'University', kind: 'permanent', cost: { production: 4 }, effect: { build: 'university' } },
   walls: { id: 'walls', name: 'City Walls', kind: 'permanent', cost: { production: 2 }, effect: { build: 'walls' } },
   barracks: { id: 'barracks', name: 'Barracks', kind: 'permanent', cost: { production: 2 }, effect: { build: 'barracks' } },
+  market: { id: 'market', name: 'Market', kind: 'permanent', cost: { production: 2 }, effect: { build: 'market' } },
+  trading_post: { id: 'trading_post', name: 'Trading Post', kind: 'permanent', cost: { production: 3 }, effect: { build: 'trading_post' } },
 
   // --- Wonder cards. ---
   pyramids: { id: 'pyramids', name: 'The Pyramids', kind: 'permanent', cost: { production: 4 }, effect: { build: 'pyramids' } },
@@ -47,9 +49,9 @@ export const CARDS: Record<string, CardDef> = {
   // --- Recurring actions (recycle to the discard). ---
   settlers: { id: 'settlers', name: 'Settlers', kind: 'recurring', cost: { food: 2 }, effect: { population: 1 } },
   forced_labor: { id: 'forced_labor', name: 'Forced Labor', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { production: 3 } } },
-  eureka: { id: 'eureka', name: 'Eureka!', kind: 'recurring', cost: { production: 1 }, effect: { gain: { science: 3 } } },
+  eureka: { id: 'eureka', name: 'Eureka!', kind: 'recurring', cost: { money: 1 }, effect: { gain: { science: 3 } } },
   harvest: { id: 'harvest', name: 'Harvest', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { food: 3 } } },
-  inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'recurring', cost: { production: 1 }, effect: { draw: 2 } },
+  inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'recurring', cost: { money: 1 }, effect: { draw: 2 } },
 
   // --- Territory expansion: recurring cards that raise the building-slot cap. ---
   conquest: { id: 'conquest', name: 'Conquest', kind: 'recurring', cost: { military: 3 }, effect: { territory: 1 } },

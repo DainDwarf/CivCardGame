@@ -4,10 +4,11 @@ export interface Resources {
   production: number;
   science: number;
   military: number;
+  money: number;
 }
 
 export function emptyResources(): Resources {
-  return { food: 0, production: 0, science: 0, military: 0 };
+  return { food: 0, production: 0, science: 0, military: 0, money: 0 };
 }
 
 /** Mutates and returns `target` with `delta` added in. */
@@ -16,6 +17,7 @@ export function addResources(target: Resources, delta: Partial<Resources>): Reso
   target.production += delta.production ?? 0;
   target.science += delta.science ?? 0;
   target.military += delta.military ?? 0;
+  target.money += delta.money ?? 0;
   return target;
 }
 
@@ -25,6 +27,7 @@ export function subtractResources(target: Resources, delta: Partial<Resources>):
   target.production -= delta.production ?? 0;
   target.science -= delta.science ?? 0;
   target.military -= delta.military ?? 0;
+  target.money -= delta.money ?? 0;
   return target;
 }
 
@@ -34,6 +37,7 @@ export function canAfford(resources: Resources, cost: Partial<Resources>): boole
     resources.food >= (cost.food ?? 0) &&
     resources.production >= (cost.production ?? 0) &&
     resources.science >= (cost.science ?? 0) &&
-    resources.military >= (cost.military ?? 0)
+    resources.military >= (cost.military ?? 0) &&
+    resources.money >= (cost.money ?? 0)
   );
 }

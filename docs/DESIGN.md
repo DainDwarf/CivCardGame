@@ -83,13 +83,17 @@ A "round" = one turn:
 4. **End** — evaluate the mission's objective (win?) and failure (lose?); discard;
    advance the round.
 
-### Resources 🔧
+### Resources ✅
 
-- **v1 core:** `Food`, `Production`, `Science` (already in the skeleton).
-  - Food → growth / hand size. Production → the build currency for permanents.
-    Science → advancement and a common objective metric.
-- **Expansion (as missions/cards demand):** `Gold`, `Culture`, `Military`, `Faith`
-  — extra "victory axes" so missions can target different strategies.
+Five resources are implemented, each with a distinct role:
+
+- **Food** — survival. Population eats 1 food/round; hitting zero triggers famine (run loss).
+- **Production** — the build currency. Spent to play permanent building cards.
+- **Money** — the action currency. Spent to play recurring action cards (Eureka, Inspiration, …). Produced by Market / Trading Post buildings.
+- **Science** — advancement metric. Produced by Libraries and Universities; the win target for science missions.
+- **Military** — defense metric. Produced by walls and barracks; the buffer against threat in military missions.
+
+Further expansion axes (`Culture`, `Faith`) remain possible for future missions.
 
 ## Mission system — objective & failure as data ✅
 
@@ -175,10 +179,11 @@ src/
 
 - **Phase 0 — Skeleton** ✅ done: a runnable turn-based run with a tiny card set.
 - **Phase 1 — Real run loop** ✅ done: `src/game/` → `src/run/`; hybrid cards
-  (permanent vs. recurring), the 3-resource core, the turn phases, and
-  **mission-driven objective + failure** evaluators; 3 missions (The Enlightenment,
-  The Long Winter, Barbarian Tide). Rules unit-tested + a headless run integration
-  test (`src/run/run.test.ts`). A run is now genuinely winnable *and* losable.
+  (permanent vs. recurring), the 5-resource core (Food / Production / Money / Science /
+  Military), the turn phases, and **mission-driven objective + failure** evaluators;
+  3 missions (The Enlightenment, The Long Winter, Barbarian Tide). Rules unit-tested +
+  a headless run integration test (`src/run/run.test.ts`). A run is now genuinely
+  winnable *and* losable.
 - **Phase 2 — Contract + meta shell:** define `contract.ts`; build a minimal meta
   layer (collection + deck construction + mission select) that emits a `RunConfig`,
   launches a run, and consumes the `RunResult`. Persist to localStorage. → the loop
@@ -194,8 +199,7 @@ branching tech tree of human history) — see *Theme & framing* and *Campaign ma
 
 Still open, deferred until the phase that needs them:
 
-- **Resource set** ❓ — proceed with the v1 core (Food/Production/Science); revisit
-  during **Phase 1**, when card effects make the right set obvious.
+- **Resource set** ✅ — resolved in Phase 1: Food / Production / Money / Science / Military. See *Resources* section above.
 - **Deck construction constraints** ❓ (deck size, copy/rarity limits, a
   "civilization" identity that gates combos) — revisit during **Phase 2**, when we
   build the deck editor.

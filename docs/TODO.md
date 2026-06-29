@@ -26,7 +26,6 @@ _(empty)_
 - Culture-based missions (depend on the Culture resource) `[?]`
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]`
 - Resources transformation? Like a building that transforms production into science for example
-- New resource: Money
 
 ## UI (`src/components/`)
 
@@ -52,6 +51,7 @@ _(empty)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- **Money resource** — new 🪙 resource produced by Market and Trading Post buildings; Eureka and Inspiration now cost money instead of production.
 - **Remove keyboard shortcuts** — removed the global Escape handler (overlays close on backdrop click) and the Enter/Space onKeyDown on card buttons.
 - **Destroy** card — 1🔨 recurring; demolishes a chosen building from the tableau, freeing its territory slot and returning its workers to the idle pool.
 - Territory limitation — a building-slot cap (`G.territory`, starts at 6) gates how many buildings the tableau holds; building cards are unplayable when full. Two recurring expansion cards: **Conquest** (3⚔️ → +1 territory) and **Develop** (3🔨 → +1 territory), seeded into the default deck.

@@ -11,10 +11,11 @@ describe('tableauProduction', () => {
       production: 2, // staffed workshop
       science: 0,
       military: 0,
+      money: 0,
     });
   });
 
   it('self-sufficient walls produce military without workers', () => {
-    expect(tableauProduction([b('walls', 0)])).toEqual({ food: 0, production: 0, science: 0, military: 3 });
+    expect(tableauProduction([b('walls', 0)])).toEqual({ food: 0, production: 0, science: 0, military: 3, money: 0 });
   });
 });

@@ -15,7 +15,7 @@ import { BUILDINGS, type BuildingDef } from '../content/buildings';
 import { MISSIONS } from '../content/missions';
 import styles from './Board.module.css';
 
-const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️' };
+const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
 
 /** Presentation-only "art" glyph shown on each card face. */
 const CARD_ART: Record<string, string> = {
@@ -473,15 +473,6 @@ export function Board() {
     setPendingDestroy(null);
   }
 
-  /** Keyboard / click activation: select a sacrifice while pending, cancel destroy, otherwise zoom. */
-  function activateCard(card: HandCard) {
-    if (pending) handlePendingClick(card);
-    else if (pendingDestroy) {
-      if (card.handIdx === pendingDestroy.handIdx) setPendingDestroy(null); // cancel
-    } else {
-      setZoom(card.cardId);
-    }
-  }
 
   if (gameover) {
     const won = gameover.outcome === 'victory';
@@ -542,6 +533,13 @@ export function Board() {
           description="Military power stockpiled from your operating defenses. In Barbarian Tide, threat drains it each round — let it hit zero and the city falls."
           value={G.resources.military}
           delta={proj.military}
+        />
+        <Stat
+          icon="🪙"
+          label="Money"
+          description="Coin from your markets and trade. Spent on action cards."
+          value={G.resources.money}
+          delta={proj.money}
         />
         <span className={styles.sep} aria-hidden="true">|</span>
         <Stat

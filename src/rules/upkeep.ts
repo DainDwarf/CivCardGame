@@ -25,5 +25,6 @@ export function projectedDelta(G: GameState, missionUpkeep?: MissionUpkeep): Res
     production: clone.resources.production - G.resources.production,
     science: clone.resources.science - G.resources.science,
     military: clone.resources.military - G.resources.military,
+    money: clone.resources.money - G.resources.money,
   };
 }

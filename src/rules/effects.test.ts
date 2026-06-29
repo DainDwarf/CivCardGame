@@ -41,6 +41,6 @@ describe('applyEffect', () => {
   it('does nothing for an undefined effect', () => {
     const G = blankState('enlightenment');
     applyEffect(G, undefined);
-    expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 0 });
+    expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 0, money: 0 });
   });
 });

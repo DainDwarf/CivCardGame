@@ -24,6 +24,10 @@ export const BUILDINGS: Record<string, BuildingDef> = {
   library: { id: 'library', name: 'Library', produces: { science: 2 }, workers: 1, tags: ['building'] },
   university: { id: 'university', name: 'University', produces: { science: 3 }, workers: 1, tags: ['building'] },
 
+  // Commerce buildings.
+  market: { id: 'market', name: 'Market', produces: { money: 2 }, workers: 1, tags: ['building'] },
+  trading_post: { id: 'trading_post', name: 'Trading Post', produces: { money: 3 }, workers: 1, tags: ['building'] },
+
   // Military buildings.
   walls: { id: 'walls', name: 'City Walls', produces: { military: 3 }, workers: 0, tags: ['building'] },
   barracks: { id: 'barracks', name: 'Barracks', produces: { production: 1, military: 2 }, workers: 1, tags: ['building'] },
