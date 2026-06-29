@@ -25,6 +25,8 @@ export function playCard(
   if (!card || !canAfford(G.resources, card.cost)) return 'invalid';
   // Population cost is paid from idle workers only (never by un-staffing buildings).
   if ((card.popCost ?? 0) > freePopulation(G)) return 'invalid';
+  // Culture threshold is a gate, not a cost — culture is never consumed on play.
+  if ((card.cultureThreshold ?? 0) > G.culture) return 'invalid';
   // A building needs an open slot — reject the play if the tableau is at its territory cap.
   if (card.effect?.build && freeTerritory(G) <= 0) return 'invalid';
   // A destroy card needs a valid target in the tableau.

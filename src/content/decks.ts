@@ -10,4 +10,5 @@ export const DEFAULT_DECK: string[] = [
   'pyramids', 'great_library', 'colossus', 'village_settlement',
   'develop', 'develop', 'conquest', 'destroy',
   'market', 'trading_post',
+  'theater', 'cultural_festival', 'philosopher',
 ];

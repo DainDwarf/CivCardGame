@@ -1,5 +1,5 @@
 import { addResources, type Resources } from './resources';
-import { tableauProduction } from './production';
+import { tableauProduction, tableauCultureOutput } from './production';
 import { foodUpkeep } from './population';
 import type { GameState } from './state';
 
@@ -12,12 +12,13 @@ export type MissionUpkeep = (G: GameState) => void;
  */
 export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
   addResources(G.resources, tableauProduction(G.tableau));
+  G.culture += tableauCultureOutput(G.tableau);
   missionUpkeep?.(G);
   G.resources.food -= foodUpkeep(G);
 }
 
-/** The net resource change the player would see if they ended the round right now. */
-export function projectedDelta(G: GameState, missionUpkeep?: MissionUpkeep): Resources {
+/** The net change the player would see if they ended the round right now. */
+export function projectedDelta(G: GameState, missionUpkeep?: MissionUpkeep): Resources & { culture: number } {
   const clone = structuredClone(G);
   applyUpkeep(clone, missionUpkeep);
   return {
@@ -26,5 +27,6 @@ export function projectedDelta(G: GameState, missionUpkeep?: MissionUpkeep): Res
     science: clone.resources.science - G.resources.science,
     military: clone.resources.military - G.resources.military,
     money: clone.resources.money - G.resources.money,
+    culture: clone.culture - G.culture,
   };
 }

@@ -24,6 +24,7 @@ const CARD_ART: Record<string, string> = {
   workshop: '⚒️',
   library: '📚',
   university: '🎓',
+  theater: '🎭',
   walls: '🧱',
   barracks: '⚔️',
   pyramids: '🔺',
@@ -34,6 +35,8 @@ const CARD_ART: Record<string, string> = {
   eureka: '💡',
   harvest: '🧺',
   inspiration: '✨',
+  cultural_festival: '🎉',
+  philosopher: '🏛️',
   village_settlement: '🏘️',
   conquest: '🗡️',
   develop: '🏗️',
@@ -57,6 +60,7 @@ function describeBuilding(b: BuildingDef): string {
   if (b.produces) {
     parts.push(Object.entries(b.produces).map(([k, v]) => `+${v} ${k}/turn`).join(', '));
   }
+  if (b.cultureOutput) parts.push(`+${b.cultureOutput} 🎭/turn`);
   if (b.workers) parts.push(`👷${b.workers}`);
   return parts.join(' · ');
 }
@@ -65,10 +69,12 @@ function describeBuilding(b: BuildingDef): string {
 function describeCard(c: CardDef): string {
   const e = c.effect;
   const parts: string[] = [];
+  if (c.cultureThreshold) parts.push(`requires 🎭 ${c.cultureThreshold}`);
   if (e?.gain) parts.push('+' + Object.entries(e.gain).map(([k, v]) => `${v} ${k}`).join(', '));
   if (e?.draw) parts.push(`draw ${e.draw}`);
   if (e?.population) parts.push(`+${e.population} 👥`);
   if (e?.territory) parts.push(`+${e.territory} 🗺️ territory`);
+  if (e?.culture) parts.push(`+${e.culture} 🎭`);
   if (e?.destroy) parts.push('demolish a building → free its slot');
   if (e?.build) {
     const bld = BUILDINGS[e.build];
@@ -352,6 +358,7 @@ export function Board() {
     if (
       !canAfford(G.resources, card.cost) ||
       (card.popCost ?? 0) > freePopulation(G) ||
+      (card.cultureThreshold && G.culture < card.cultureThreshold) ||
       (card.effect?.build && freeTerritory(G) <= 0) ||
       (card.effect?.destroy && G.tableau.length === 0)
     ) {
@@ -554,6 +561,13 @@ export function Board() {
           description="Building slots. Each building you construct fills one; building cards can't be played once it's full. Certain cards expand it."
           value={`${usedTerritory(G.tableau)}/${G.territory}`}
         />
+        <Stat
+          icon="🎭"
+          label="Culture"
+          description="Your civilization's cultural level — it grows but is never spent. Cultural buildings add to it each round; certain action cards give an immediate boost. Some cards require a minimum culture level to play."
+          value={G.culture}
+          delta={proj.culture}
+        />
       </div>
 
       <section className={styles.civSection}>
@@ -643,6 +657,7 @@ export function Board() {
                 const affordable =
                   canAfford(G.resources, c.cost) &&
                   (c.popCost ?? 0) <= idle &&
+                  (!c.cultureThreshold || G.culture >= c.cultureThreshold) &&
                   (!c.effect?.build || territory > 0) &&
                   (!c.effect?.destroy || G.tableau.length > 0);
                 const isPending = pending?.handIdx === card.handIdx;

@@ -39,7 +39,6 @@ _(empty)_
 
 ## Game design & balance
 
-- Add a "Culture" resource; some cards require a Culture threshold to be playable `[?]`
 - Exponentially rising expansion cost (each territory card costs more than the last) `[?]`
 - Card that gives a draw when expanding territory `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
@@ -52,6 +51,7 @@ _(empty)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- **Culture resource** — `G.culture` accumulates but is never spent; two growth paths: Theater building (+2/round while staffed) and Cultural Festival card (+3 immediately); The Philosopher card demonstrates the threshold gate (requires culture ≥ 5). Displayed alongside population and territory in the UI.
 - **Money resource** — new 🪙 resource produced by Market and Trading Post buildings; Eureka and Inspiration now cost money instead of production.
 - **Remove keyboard shortcuts** — removed the global Escape handler (overlays close on backdrop click) and the Enter/Space onKeyDown on card buttons.
 - **Destroy** card — 1🔨 recurring; demolishes a chosen building from the tableau, freeing its territory slot and returning its workers to the idle pool.

@@ -13,6 +13,8 @@ export interface CardEffect {
   population?: number;
   /** Territory gained immediately — raises the cap on tableau size (e.g. Conquest, Develop). */
   territory?: number;
+  /** Culture gained immediately — adds to G.culture (e.g. Cultural Festival). */
+  culture?: number;
   /** Construct a building (by id) in the tableau, auto-staffed from idle population. */
   build?: string;
   /**
@@ -31,5 +33,6 @@ export function applyEffect(G: GameState, effect?: CardEffect): void {
   }
   if (effect.population) G.population += effect.population;
   if (effect.territory) G.territory += effect.territory;
+  if (effect.culture) G.culture += effect.culture;
   if (effect.build) addBuilding(G, effect.build);
 }

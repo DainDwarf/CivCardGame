@@ -42,6 +42,12 @@ export interface GameState {
    * cards (Conquest, Develop).
    */
   territory: number;
+  /**
+   * Culture accumulated so far — a civilization-wide gauge, not a spendable currency.
+   * Grows each round from operating cultural buildings (e.g. Theater) and from card
+   * effects (e.g. Cultural Festival). Some cards require a minimum culture level to play.
+   */
+  culture: number;
   /** How many cards to draw up to at the start of each round. */
   handSize: number;
   /** Which mission this run is playing (looked up in the MISSIONS registry). */
@@ -62,6 +68,7 @@ export function blankState(missionId: string): GameState {
     removed: [],
     tableau: [],
     territory: 6,
+    culture: 0,
     handSize: 5,
     missionId,
     vars: {},

@@ -11,6 +11,8 @@ export interface BuildingDef {
   name: string;
   /** Per-round output once staffed. */
   produces?: Partial<Resources>;
+  /** Per-round culture gained while staffed — accumulates on G.culture, never spent. */
+  cultureOutput?: number;
   /** Workers required to operate. 0 = self-sufficient. Defaults to 1. */
   workers?: number;
   /** 'building' | 'wonder' | ... */
@@ -23,6 +25,9 @@ export const BUILDINGS: Record<string, BuildingDef> = {
   workshop: { id: 'workshop', name: 'Workshop', produces: { production: 2 }, workers: 1, tags: ['building'] },
   library: { id: 'library', name: 'Library', produces: { science: 2 }, workers: 1, tags: ['building'] },
   university: { id: 'university', name: 'University', produces: { science: 3 }, workers: 1, tags: ['building'] },
+
+  // Culture buildings.
+  theater: { id: 'theater', name: 'Theater', cultureOutput: 2, workers: 1, tags: ['building'] },
 
   // Commerce buildings.
   market: { id: 'market', name: 'Market', produces: { money: 2 }, workers: 1, tags: ['building'] },
