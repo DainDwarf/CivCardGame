@@ -25,13 +25,13 @@ _(empty)_
 - New mission: "Build the Wonder" `[?]`
 - Culture-based missions (depend on the Culture resource) `[?]`
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]`
-- I dont like the military we have right now.
-- Ressources transformation? Like a building that transforms production into science for example
+- Resources transformation? Like a building that transforms production into science for example
 - New resource: Money
 
 ## UI (`src/components/`)
 
 - Pass over stat tooltips to strip specifics — they name particular cards/missions (e.g. Barbarian Tide, Settlers); keep them generic about the mechanic
+- A more pleasant interface for buildings. Maybe a draggable map? And draggable workers? Or is it too much busywork?
 
 ## Tech debt & infra (build, tests, tooling)
 
@@ -52,6 +52,7 @@ _(empty)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- **Remove keyboard shortcuts** — removed the global Escape handler (overlays close on backdrop click) and the Enter/Space onKeyDown on card buttons.
 - **Destroy** card — 1🔨 recurring; demolishes a chosen building from the tableau, freeing its territory slot and returning its workers to the idle pool.
 - Territory limitation — a building-slot cap (`G.territory`, starts at 6) gates how many buildings the tableau holds; building cards are unplayable when full. Two recurring expansion cards: **Conquest** (3⚔️ → +1 territory) and **Develop** (3🔨 → +1 territory), seeded into the default deck.
 - All 8 code-review bugs fixed: End Round disabled mid-drag/mid-pending; `pending`/`warnEndRound` auto-cleared on round change; `shouldWarn` drives `warnEndRound` cleanup; `hasUnstaffedCapacity` simplified to `!isOperating()`; sacrifice-before-draw ordering fixed in `playCard`; test helpers throw on missing card.

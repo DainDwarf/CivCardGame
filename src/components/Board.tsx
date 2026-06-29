@@ -430,19 +430,6 @@ export function Board() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drag?.key]);
 
-  // Close any open overlay (zoom / pile viewer) on Escape.
-  useEffect(() => {
-    if (!zoom && !pileView) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setZoom(null);
-        setPileView(null);
-      }
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [zoom, pileView]);
-
   const idle = freePopulation(G);
   const territory = freeTerritory(G);
   const hasUnstaffedCapacity = G.tableau.some((b) => !isOperating(b));
@@ -689,12 +676,6 @@ export function Board() {
                     onClick={() => {
                       if (pending) handlePendingClick(card);
                       else if (pendingDestroy && card.handIdx === pendingDestroy.handIdx) setPendingDestroy(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        activateCard(card);
-                      }
                     }}
                   >
                     <CardFace card={c} />
