@@ -240,9 +240,6 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
                     >
                       +
                     </button>
-                    {operatingCount < g.count && (
-                      <span className={styles.warn}>{g.count - operatingCount} idle</span>
-                    )}
                   </span>
                 )}
               </li>
