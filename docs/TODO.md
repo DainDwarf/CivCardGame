@@ -40,7 +40,8 @@ _(empty)_
 ## Game design & balance
 
 - Add a "Culture" resource; some cards require a Culture threshold to be playable `[?]`
-- Territory: cards to *remove* buildings to free a slot; exponentially rising expansion cost (each territory card costs more than the last) `[?]`
+- Territory: cards to *remove* buildings to free a slot
+- Exponentially rising expansion cost (each territory card costs more than the last) `[?]`
 - Card that gives a draw when expanding territory `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
 
