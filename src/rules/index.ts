@@ -4,6 +4,5 @@ export * from './deck';
 export * from './effects';
 export * from './population';
 export * from './production';
-export * from './scoring';
 export * from './tableau';
 export * from './upkeep';

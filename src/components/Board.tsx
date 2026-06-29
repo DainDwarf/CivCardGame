@@ -6,7 +6,6 @@ import {
   isOperating,
   projectedDelta,
   requiredWorkers,
-  score,
   totalDefense,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
@@ -30,7 +29,6 @@ function describeCard(c: CardDef): string {
     parts.push(Object.entries(c.produces).map(([k, v]) => `+${v} ${k}/turn`).join(', '));
   }
   if (c.defense) parts.push(`🛡️${c.defense}`);
-  if (c.vp) parts.push(`⭐${c.vp}`);
   if (c.workers) parts.push(`👷${c.workers}`);
   return parts.join(' · ');
 }
@@ -108,7 +106,7 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
               ? 'famine struck — your people starved.'
               : 'your civilization has fallen.'}
         </p>
-        <p>Reached round {G.round} · Final score {score(G.tableau)}</p>
+        <p>Reached round {G.round}</p>
       </div>
     );
   }
@@ -159,12 +157,6 @@ export function Board({ G, ctx, moves, events }: BoardProps<GameState>) {
           label="Defense"
           description="Protection from your operating buildings and wonders (an unstaffed barracks defends nothing). In threat missions, keep it above the rising Threat."
           value={totalDefense(G.tableau)}
-        />
-        <Stat
-          icon="⭐"
-          label="Score"
-          description="Victory points from the cards in your civilization. Each built card shows its own ⭐ value."
-          value={score(G.tableau)}
         />
         <span className={styles.sep} aria-hidden="true">|</span>
         <Stat icon="🃏" label="Deck" description="Cards left to draw this run." value={G.deck.length} />
