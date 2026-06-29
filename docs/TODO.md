@@ -29,6 +29,7 @@ _(empty)_
 
 ## UI (`src/components/`)
 
+- Top banner: merge the header (mission name, round, objective progress) and the sticky resources bar into one fixed top strip so key info is always visible at a glance `[size: S]`
 - Pass over stat tooltips to strip specifics — they name particular cards/missions (e.g. Barbarian Tide, Settlers); keep them generic about the mechanic
 - A more pleasant interface for buildings. Maybe a draggable map? And draggable workers? Or is it too much busywork?
 
