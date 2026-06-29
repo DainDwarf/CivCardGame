@@ -178,6 +178,22 @@
   cursor: not-allowed;
 }
 
+.demolishBtn {
+  margin-left: 0.6rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #c44;
+  border-radius: 4px;
+  background: #fff0f0;
+  color: #a00;
+  cursor: pointer;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.demolishBtn:hover {
+  background: #fdd;
+}
+
 .muted {
   color: #888;
   font-size: 0.85rem;

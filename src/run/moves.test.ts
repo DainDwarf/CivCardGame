@@ -3,7 +3,7 @@ import { playCard } from './moves';
 import { blankState, type GameState } from '../rules';
 
 /** Invoke the move directly with a minimal context (it only reads `G`). */
-function play(G: GameState, cardId: string, discardCardIds: string[] = []) {
+function play(G: GameState, cardId: string, discardCardIds: string[] = [], destroyBuildingId?: string) {
   const idx = G.hand.indexOf(cardId);
   if (idx === -1) throw new Error(`play: '${cardId}' not in hand`);
   const discardIdxs = discardCardIds.map((d) => {
@@ -11,7 +11,7 @@ function play(G: GameState, cardId: string, discardCardIds: string[] = []) {
     if (i === -1) throw new Error(`play: discard '${d}' not in hand`);
     return i;
   });
-  playCard(G, idx, discardIdxs);
+  playCard(G, idx, discardIdxs, destroyBuildingId);
 }
 
 describe('playCard: cards vs. buildings', () => {
@@ -51,6 +51,81 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.tableau).toHaveLength(1); // farm not built
     expect(G.hand).toEqual(['farm']); // card stays in hand, nothing paid
     expect(G.resources.production).toBe(5);
+  });
+
+  it('destroy removes a building from the tableau and frees its territory slot', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['destroy'];
+    G.resources.production = 5;
+    G.tableau = [
+      { buildingId: 'farm', workers: 1 },
+      { buildingId: 'workshop', workers: 1 },
+    ];
+    G.population = 2;
+    play(G, 'destroy', [], 'farm');
+    expect(G.tableau).toEqual([{ buildingId: 'workshop', workers: 1 }]);
+    expect(G.resources.production).toBe(4); // paid 1 production
+    expect(G.discard).toEqual(['destroy']); // recurring → recycles
+  });
+
+  it('destroy frees assigned workers back to the idle pool', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['destroy'];
+    G.resources.production = 5;
+    G.population = 2;
+    G.tableau = [{ buildingId: 'farm', workers: 1 }];
+    play(G, 'destroy', [], 'farm');
+    expect(G.tableau).toEqual([]);
+    // The removed worker is now idle (freePopulation = population - assignedWorkers)
+    // Population is still 2, no workers assigned => 2 idle.
+    expect(G.population).toBe(2);
+  });
+
+  it('destroy is rejected without a target building id', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['destroy'];
+    G.resources.production = 5;
+    G.tableau = [{ buildingId: 'farm', workers: 1 }];
+    play(G, 'destroy'); // no destroyBuildingId
+    expect(G.tableau).toHaveLength(1); // nothing removed
+    expect(G.resources.production).toBe(5); // nothing paid
+  });
+
+  it('destroy is rejected when the target building is not in the tableau', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['destroy'];
+    G.resources.production = 5;
+    G.tableau = [{ buildingId: 'farm', workers: 1 }];
+    play(G, 'destroy', [], 'workshop'); // workshop not in tableau
+    expect(G.tableau).toHaveLength(1);
+    expect(G.resources.production).toBe(5);
+  });
+
+  it('destroy removes an unstaffed instance before a staffed one of the same type', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['destroy'];
+    G.resources.production = 5;
+    G.population = 1;
+    G.tableau = [
+      { buildingId: 'farm', workers: 1 }, // staffed
+      { buildingId: 'farm', workers: 0 }, // empty
+    ];
+    play(G, 'destroy', [], 'farm');
+    expect(G.tableau).toEqual([{ buildingId: 'farm', workers: 1 }]); // empty instance removed
+  });
+
+  it('destroy enables a building card to be played after demolishing a full tableau', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['destroy', 'granary'];
+    G.resources.production = 5;
+    G.population = 2;
+    G.territory = 1;
+    G.tableau = [{ buildingId: 'farm', workers: 1 }]; // tableau at cap
+    play(G, 'destroy', [], 'farm');
+    expect(G.tableau).toHaveLength(0);
+    expect(G.territory).toBe(1); // territory cap unchanged — just freed a slot
+    play(G, 'granary'); // now a slot is free
+    expect(G.tableau.some((b) => b.buildingId === 'granary')).toBe(true);
   });
 
   it('a territory card opens a slot so the next building can be played', () => {

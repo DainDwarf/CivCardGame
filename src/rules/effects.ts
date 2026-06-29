@@ -15,6 +15,12 @@ export interface CardEffect {
   territory?: number;
   /** Construct a building (by id) in the tableau, auto-staffed from idle population. */
   build?: string;
+  /**
+   * Remove a player-chosen building from the tableau, freeing its territory slot and
+   * returning its workers to the idle pool. Requires a `destroyBuildingId` argument
+   * to `playCard` — handled there, not in `applyEffect`.
+   */
+  destroy?: true;
 }
 
 export function applyEffect(G: GameState, effect?: CardEffect): void {

@@ -7,7 +7,7 @@ interface GameContextValue {
   G: GameState;
   gameover: Gameover | undefined;
   moves: {
-    playCard: (handIdx: number, discardHandIdxs?: number[]) => void;
+    playCard: (handIdx: number, discardHandIdxs?: number[], destroyBuildingId?: string) => void;
     assignWorker: (buildingId: string) => void;
     unassignWorker: (buildingId: string) => void;
   };
@@ -20,8 +20,8 @@ export function GameProvider({ missionId, children }: { missionId: string; child
   const [state, setState] = useState<RunState>(() => createRun(missionId));
 
   const moves = useMemo(() => ({
-    playCard: (handIdx: number, discardHandIdxs: number[] = []) =>
-      setState((s) => applyMove(s, playCard, handIdx, discardHandIdxs)),
+    playCard: (handIdx: number, discardHandIdxs: number[] = [], destroyBuildingId?: string) =>
+      setState((s) => applyMove(s, playCard, handIdx, discardHandIdxs, destroyBuildingId)),
     assignWorker: (buildingId: string) =>
       setState((s) => applyMove(s, assignWorker, buildingId)),
     unassignWorker: (buildingId: string) =>

@@ -37,6 +37,7 @@ const CARD_ART: Record<string, string> = {
   village_settlement: '🏘️',
   conquest: '🗡️',
   develop: '🏗️',
+  destroy: '💥',
 };
 const artFor = (id: string) => CARD_ART[id] ?? '🏛️';
 
@@ -68,6 +69,7 @@ function describeCard(c: CardDef): string {
   if (e?.draw) parts.push(`draw ${e.draw}`);
   if (e?.population) parts.push(`+${e.population} 👥`);
   if (e?.territory) parts.push(`+${e.territory} 🗺️ territory`);
+  if (e?.destroy) parts.push('demolish a building → free its slot');
   if (e?.build) {
     const bld = BUILDINGS[e.build];
     // A permanent card *is* the building, so just show its stats; a recurring builder
@@ -258,6 +260,13 @@ interface PendingPlay {
   discards: number[]; // hand indices marked to discard
 }
 
+/** A destroy card play awaiting a building target selection. */
+interface PendingDestroy {
+  cardId: string;
+  handIdx: number;
+  playedKey: number;
+}
+
 type Rect = { left: number; top: number; width: number; height: number };
 
 /** A transient clone that animates a card leaving the hand: 'play' flies up, 'drop' absorbs. */
@@ -294,6 +303,7 @@ export function Board() {
   const { G, gameover, moves, endTurn } = useGame();
   const mission = MISSIONS[G.missionId];
   const [pending, setPending] = useState<PendingPlay | null>(null);
+  const [pendingDestroy, setPendingDestroy] = useState<PendingDestroy | null>(null);
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
   const [zoom, setZoom] = useState<string | null>(null);
   const [pileView, setPileView] = useState<{ title: string; cards: string[] } | null>(null);
@@ -338,13 +348,19 @@ export function Board() {
   /** Try to play a dragged card released over the board. */
   function attemptPlay(d: DragState, x: number, y: number) {
     const card = CARDS[d.cardId];
-    // Unaffordable (resources, idle population, or no open building slot) → snap back + shake.
+    // Unaffordable (resources, idle population, no open building slot, or no building to destroy).
     if (
       !canAfford(G.resources, card.cost) ||
       (card.popCost ?? 0) > freePopulation(G) ||
-      (card.effect?.build && freeTerritory(G) <= 0)
+      (card.effect?.build && freeTerritory(G) <= 0) ||
+      (card.effect?.destroy && G.tableau.length === 0)
     ) {
       return rejectShake(d.key);
+    }
+    // Destroy card: player must choose a building target before the move fires.
+    if (card.effect?.destroy) {
+      setPendingDestroy({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key });
+      return;
     }
     const need = card.discardCost ?? 0;
     // A discard cost only applies if you have spare cards; then pick the sacrifice by clicking.
@@ -368,7 +384,7 @@ export function Board() {
   }
 
   function onCardPointerDown(e: React.PointerEvent, card: HandCard) {
-    if (e.button !== 0 || pending) return; // in sacrifice-pick mode, clicks select instead
+    if (e.button !== 0 || pending || pendingDestroy) return; // in selection mode, clicks select instead
     const r = cardEls.current.get(card.key)?.getBoundingClientRect();
     if (!r) return;
     setDrag({
@@ -432,9 +448,10 @@ export function Board() {
   const hasUnstaffedCapacity = G.tableau.some((b) => !isOperating(b));
   const shouldWarn = idle > 0 && hasUnstaffedCapacity;
 
-  // Clear pending sacrifice-pick and end-round warning at the start of each new round.
+  // Clear pending sacrifice-pick, pending destroy, and end-round warning at the start of each new round.
   useEffect(() => {
     setPending(null);
+    setPendingDestroy(null);
     setWarnEndRound(false);
   }, [G.round]);
 
@@ -461,10 +478,22 @@ export function Board() {
     }
   }
 
-  /** Keyboard / click activation: select a sacrifice while pending, otherwise zoom. */
+  /** Fire the destroy move against a chosen building, then exit targeting mode. */
+  function handleDestroyTarget(buildingId: string) {
+    if (!pendingDestroy) return;
+    ghostFromSlot(pendingDestroy.playedKey, pendingDestroy.cardId);
+    moves.playCard(pendingDestroy.handIdx, [], buildingId);
+    setPendingDestroy(null);
+  }
+
+  /** Keyboard / click activation: select a sacrifice while pending, cancel destroy, otherwise zoom. */
   function activateCard(card: HandCard) {
     if (pending) handlePendingClick(card);
-    else setZoom(card.cardId);
+    else if (pendingDestroy) {
+      if (card.handIdx === pendingDestroy.handIdx) setPendingDestroy(null); // cancel
+    } else {
+      setZoom(card.cardId);
+    }
   }
 
   if (gameover) {
@@ -488,7 +517,7 @@ export function Board() {
 
   const proj = projectedDelta(G, mission.onUpkeep);
   const groups = groupTableau(G.tableau);
-  const canEndRound = !pending && !drag;
+  const canEndRound = !pending && !pendingDestroy && !drag;
 
   return (
     <div className={styles.app}>
@@ -586,6 +615,15 @@ export function Board() {
                     </button>
                   </span>
                 )}
+                {pendingDestroy && (
+                  <button
+                    className={styles.demolishBtn}
+                    onClick={() => handleDestroyTarget(g.buildingId)}
+                    aria-label={`demolish ${bld.name}`}
+                  >
+                    💥 Demolish
+                  </button>
+                )}
               </li>
             );
           })}
@@ -604,27 +642,36 @@ export function Board() {
                 {CARDS[pending.cardId].name} again to cancel.
               </p>
             )}
+            {pendingDestroy && (
+              <p className={styles.discardPrompt}>
+                Playing <strong>{CARDS[pendingDestroy.cardId].name}</strong> — click a building
+                above to demolish it, or click{' '}
+                {CARDS[pendingDestroy.cardId].name} again to cancel.
+              </p>
+            )}
             <div className={styles.hand}>
               {hand.length === 0 && <p className={styles.empty}>No cards in hand.</p>}
               {hand.map((card) => {
                 const c = CARDS[card.cardId];
                 // The discard cost never blocks play — it's waived when you can't cover it.
-                // A building card also needs an open slot in the tableau.
+                // A building card also needs an open slot; a destroy card needs a building to target.
                 const affordable =
                   canAfford(G.resources, c.cost) &&
                   (c.popCost ?? 0) <= idle &&
-                  (!c.effect?.build || territory > 0);
+                  (!c.effect?.build || territory > 0) &&
+                  (!c.effect?.destroy || G.tableau.length > 0);
                 const isPending = pending?.handIdx === card.handIdx;
+                const isPendingDestroy = pendingDestroy?.handIdx === card.handIdx;
                 const isSacrifice = pending?.discards.includes(card.handIdx) ?? false;
                 const isDragging = drag?.active === true && drag.key === card.key;
                 const className = [
                   styles.card,
                   c.kind === 'recurring' ? styles.action : styles.permanent,
                   card.isNew ? styles.dealIn : '',
-                  isPending ? styles.pending : '',
+                  isPending || isPendingDestroy ? styles.pending : '',
                   isSacrifice ? styles.sacrifice : '',
                   isDragging ? styles.dragging : '',
-                  !affordable && !pending ? styles.unaffordable : '',
+                  !affordable && !pending && !pendingDestroy ? styles.unaffordable : '',
                   shake?.key === card.key ? styles.shake : '',
                 ]
                   .filter(Boolean)
@@ -641,6 +688,7 @@ export function Board() {
                     onPointerDown={(e) => onCardPointerDown(e, card)}
                     onClick={() => {
                       if (pending) handlePendingClick(card);
+                      else if (pendingDestroy && card.handIdx === pendingDestroy.handIdx) setPendingDestroy(null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {

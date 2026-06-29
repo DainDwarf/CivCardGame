@@ -8,5 +8,5 @@ export const DEFAULT_DECK: string[] = [
   'workshop', 'walls', 'library', 'inspiration', 'settlers',
   'barracks', 'university', 'eureka', 'forced_labor',
   'pyramids', 'great_library', 'colossus', 'village_settlement',
-  'develop', 'develop', 'conquest',
+  'develop', 'develop', 'conquest', 'destroy',
 ];

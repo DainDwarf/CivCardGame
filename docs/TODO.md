@@ -40,7 +40,6 @@ _(empty)_
 ## Game design & balance
 
 - Add a "Culture" resource; some cards require a Culture threshold to be playable `[?]`
-- Territory: cards to *remove* buildings to free a slot
 - Exponentially rising expansion cost (each territory card costs more than the last) `[?]`
 - Card that gives a draw when expanding territory `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
@@ -53,6 +52,7 @@ _(empty)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- **Destroy** card — 1🔨 recurring; demolishes a chosen building from the tableau, freeing its territory slot and returning its workers to the idle pool.
 - Territory limitation — a building-slot cap (`G.territory`, starts at 6) gates how many buildings the tableau holds; building cards are unplayable when full. Two recurring expansion cards: **Conquest** (3⚔️ → +1 territory) and **Develop** (3🔨 → +1 territory), seeded into the default deck.
 - All 8 code-review bugs fixed: End Round disabled mid-drag/mid-pending; `pending`/`warnEndRound` auto-cleared on round change; `shouldWarn` drives `warnEndRound` cleanup; `hasUnstaffedCapacity` simplified to `!isOperating()`; sacrifice-before-draw ordering fixed in `playCard`; test helpers throw on missing card.
 - Recurring buildings — permanent/recurring hybrid card type (village_settlement etc.).

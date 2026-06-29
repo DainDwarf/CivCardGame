@@ -8,9 +8,16 @@ import { CARDS } from '../content/cards';
  * `permanent` cards are removed from the deck (the removed pile), `recurring` cards recycle
  * to the discard. Costs may include resources, population (paid from idle workers), and a
  * discard cost: `discardHandIdxs` gives the hand positions of cards to sacrifice (distinct
- * indices, not the played card's slot). Moves are the only place `G` may change.
+ * indices, not the played card's slot). Cards with `effect.destroy` require a
+ * `destroyBuildingId` — the building to demolish (frees its territory slot and workers).
+ * Moves are the only place `G` may change.
  */
-export function playCard(G: GameState, playHandIdx: number, discardHandIdxs: number[] = []): 'invalid' | void {
+export function playCard(
+  G: GameState,
+  playHandIdx: number,
+  discardHandIdxs: number[] = [],
+  destroyBuildingId?: string,
+): 'invalid' | void {
   if (playHandIdx < 0 || playHandIdx >= G.hand.length) return 'invalid';
   const cardId = G.hand[playHandIdx];
 
@@ -20,6 +27,11 @@ export function playCard(G: GameState, playHandIdx: number, discardHandIdxs: num
   if ((card.popCost ?? 0) > freePopulation(G)) return 'invalid';
   // A building needs an open slot — reject the play if the tableau is at its territory cap.
   if (card.effect?.build && freeTerritory(G) <= 0) return 'invalid';
+  // A destroy card needs a valid target in the tableau.
+  if (card.effect?.destroy) {
+    if (!destroyBuildingId) return 'invalid';
+    if (!G.tableau.some((b) => b.buildingId === destroyBuildingId)) return 'invalid';
+  }
 
   // Discard-as-cost: sacrifice `discardCost` other cards — but only if you have that many
   // to spare. Played with an otherwise-empty hand it costs no discard (a reward for
@@ -43,6 +55,11 @@ export function playCard(G: GameState, playHandIdx: number, discardHandIdxs: num
   // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
   // return the not-yet-filed sacrifices back into the deck.
   applyEffect(G, card.effect);
+  if (card.effect?.destroy && destroyBuildingId) {
+    const emptyIdx = G.tableau.findIndex((b) => b.buildingId === destroyBuildingId && b.workers === 0);
+    const idx = emptyIdx !== -1 ? emptyIdx : G.tableau.findIndex((b) => b.buildingId === destroyBuildingId);
+    if (idx !== -1) G.tableau.splice(idx, 1);
+  }
   for (const id of sacrificeIds) G.discard.push(id);
   if (card.kind === 'permanent') G.removed.push(cardId);
   else G.discard.push(cardId);
