@@ -585,7 +585,7 @@ export function Board() {
           <Stat
             icon="⚔️"
             label="Military"
-            description="Military power stockpiled from your operating defenses. In Barbarian Tide, threat drains it each round — let it hit zero and the city falls."
+            description="Military power stockpiled from your operating defenses. Some missions drain it each round — if it goes negative, revolt ends the run."
             value={G.resources.military}
             delta={proj.military}
             warn={collapseRisk('military')}

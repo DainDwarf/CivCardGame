@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
-import { applyUpkeep, blankState, type BuildingInstance } from '../rules';
+import { applyUpkeep, blankState, coreCollapse, type BuildingInstance } from '../rules';
 
 const b = (buildingId: string, workers = 0): BuildingInstance => ({ buildingId, workers });
 
@@ -49,13 +49,14 @@ describe('mission: barbarian_tide', () => {
     expect(m.objective(G)).toBe(true);
   });
 
-  it('threat depletes military from an undefended city', () => {
+  it('threat depletes military from an undefended city (revolt is the universal floor, not the mission)', () => {
     const G = blankState('barbarian_tide');
     m.setup!(G); // military = 4, threat = 0
     // Round 1: military 4 + 0 - 2 = 2; Round 2: military 2 + 0 - 4 = -2
     applyUpkeep(G, m.onUpkeep);
     applyUpkeep(G, m.onUpkeep);
-    expect(m.failure(G)).toBe(true); // military < 0
+    expect(m.failure(G)).toBe(false); // the mission owns no failure
+    expect(coreCollapse(G.resources)).toBe('revolt'); // defeat comes from the universal core floor
   });
 
   it('walls and a staffed barracks keep military positive through four rounds of rising threat', () => {
@@ -64,6 +65,6 @@ describe('mission: barbarian_tide', () => {
     G.tableau = [b('walls', 0), b('barracks', 1)]; // 3 + 2 = 5 military/round
     // Round 1: 4+5-2=7, Round 2: 7+5-4=8, Round 3: 8+5-6=7, Round 4: 7+5-8=4
     for (let i = 0; i < 4; i++) applyUpkeep(G, m.onUpkeep);
-    expect(m.failure(G)).toBe(false); // military = 4 >= 0
+    expect(coreCollapse(G.resources)).toBeNull(); // military = 4 >= 0, no collapse
   });
 });

@@ -38,7 +38,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Tech debt & infra (build, tests, tooling)
 
-_(empty)_
+- `projectedDelta` returns `Resources & { culture: number }` — folds one strategic resource (culture) into a core-resource delta shape while excluding population/territory. Slightly muddies the core/strategic split; consider modelling the strategic deltas separately `[size: S] [?]`
 
 ## Game design & balance
 

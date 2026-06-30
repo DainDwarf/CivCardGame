@@ -64,7 +64,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'Build 3 Wonders before the Threat drains your Military. Threat grows every round — each round it consumes that much Military from your stockpile.',
     setup: (G) => {
       G.vars.threat = 0;
-      G.resources.military = 4; // capital garrison
+      G.resources.military += 4; // capital garrison — layer on top of the starting baseline
     },
     onUpkeep: (G) => {
       G.vars.threat += 2;

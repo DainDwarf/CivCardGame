@@ -97,8 +97,6 @@ Five spendable/trackable resources, each with a **mechanical role** and a **them
 - **Science** — anticipation and planning. Primarily expressed through card manipulation: drawing extra cards, discarding strategically, retrieving cards from the discard pile, peeking at the top of the deck. Going negative: **Dark Age**.
 - **Military** — power projection, both defensive and offensive. Defends against external threats (disasters, invasion event cards) and enables aggression: expanding territory and pillaging resources. Going negative: **Revolt**.
 
-Further expansion axes (`Faith`, …) remain possible.
-
 #### Strategic resources
 
 Three civilization-level gauges that constrain and enable play. They are never directly spent; they define the shape of your civilization.
@@ -106,6 +104,8 @@ Three civilization-level gauges that constrain and enable play. They are never d
 - **Population** — your workforce. Workers are drawn from the idle population pool to staff buildings (which need workers to operate) and to pay for population-reserving actions. Food production determines how large a population you can sustain.
 - **Territory** — the land your civilization controls. You cannot build more buildings than your territory allows. Expand by conquest or development; or free up slots by demolishing existing buildings.
 - **Culture** — how much your civilization shines. Accumulated over time; the more you have, the more willing your people are to act. Mechanically: culture thresholds increase hand size, and some cards require a minimum culture to be playable.
+
+Further expansion axes (`Faith`, …) remain possible.
 
 ## Mission system — objective & failure as data ✅
 
@@ -130,9 +130,9 @@ unit-testable and reusable by the headless simulator.
 - **The Enlightenment** (race the clock): *Objective* reach 30 Science by round 12.
   *Failure* round 12 ends without it.
 - **The Long Winter** (resource collapse): *Objective* survive 15 rounds.
-  *Failure* Food < 0 at any upkeep.
+  *Failure* the universal core-resource floor — extra Food drain each round risks **Famine**.
 - **Barbarian Tide** (escalating threat): *Objective* build 3 Wonders.
-  *Failure* a rising Threat track reaches your Defense.
+  *Failure* the universal core-resource floor — a rising Threat drains Military each round, and hitting negative triggers **Revolt**.
 
 Same deck, three completely different tests — and the player tailors their deck in
 the meta loop to the mission they pick.
@@ -162,8 +162,6 @@ procedurally generated map.
   development, milestone). ✅
 - **Edges are prerequisites** — you reach a node only after its predecessor(s). The
   tree's shape provides the branching. ✅
-- **Branches are strategic paths** (science / culture / military / economic lineages),
-  so a campaign can't grab everything at once — you choose a route. 🔧
 - **Victory unlocks the advancement**: it is marked achieved on the tree, opens the
   next nodes, and grants **card unlocks themed to that advancement** (e.g. clearing
   *Writing* adds Library/scribe cards to your collection). 🔧 This ties unlock content
