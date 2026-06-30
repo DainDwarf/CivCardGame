@@ -17,7 +17,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Meta loop (`src/meta/` — not built yet)
 
-_(empty)_
+- **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]`
+- **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]`
+- **Government boards** — alongside deckbuilding, the meta lets the player choose a "board" (themed as government type: monarchy, republic, etc.); the board sets starting resources and scales with the player's progression on the mission tech map (i.e. what the player has already unlocked determines how powerful the starting board is) `[?]`
 
 ## Cards & content (`src/content/`)
 
@@ -31,7 +33,7 @@ _(empty)_
 
 - Top banner: merge the header (mission name, round, objective progress) and the sticky resources bar into one fixed top strip so key info is always visible at a glance `[size: S]`
 - Pass over stat tooltips to strip specifics — they name particular cards/missions (e.g. Barbarian Tide, Settlers); keep them generic about the mechanic
-- A more pleasant interface for buildings. Maybe a draggable map? And draggable workers? Or is it too much busywork?
+- **Buildings board** — replace the current buildings list with a free-form canvas; buildings render as draggable boxes the player can spatially rearrange; population tokens are drag-and-dropped directly between buildings to assign/unassign workers. Requires moving the resources UI out of that area first. `[size: L] [?]`
 
 ## Tech debt & infra (build, tests, tooling)
 
@@ -42,6 +44,9 @@ _(empty)_
 - Exponentially rising expansion cost (each territory card costs more than the last) `[?]`
 - Card that gives a draw when expanding territory `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
+- **Population-reserving actions** — some cards (Harvest, Forced Labor / rename to something like "Gather Resource") cost no resources but reserve one population for the current turn instead of paying a traditional price; reserved pop can't be assigned to buildings until next turn `[?]`
+- **Resource design intent (thematic "feeling", not hard rules):** Food = population management & upkeep; Production = building structures; Science = deck manipulation (draw, pick from discard, peek top N, …); Military = expansion + disaster prevention (see disasters below); Money = immediate/flexible actions `[?]`
+- **Disasters** — a future system Military helps prevent/mitigate (details TBD) `[?]`
 
 
 ---
