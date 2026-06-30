@@ -252,6 +252,22 @@
   background: #faf6ef;
 }
 
+.reserveBox {
+  border: 2px dashed #d4924a !important;
+  background: #fdf5e8;
+  cursor: default;
+}
+
+.reserveBox:hover {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+}
+
+.reserveLocked {
+  font-size: 0.8rem;
+  color: #a06020;
+  letter-spacing: 0.02em;
+}
+
 .bName {
   font-weight: 600;
   text-align: center;

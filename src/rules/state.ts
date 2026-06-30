@@ -20,6 +20,12 @@ export interface GameState {
   resources: Resources;
   /** Total population — a pool of workers. Everyone eats food each round. */
   population: number;
+  /** Population reserved by action cards played this turn — cannot be assigned to buildings. Resets at beginTurn. */
+  reservedPop: number;
+  /** Card IDs whose pop-reserve cost was paid this turn — drives the reserved-action boxes on the canvas. Resets at beginTurn. */
+  reservedActions: string[];
+  /** Resource gains queued by pop-reserve cards this turn — applied during upkeep so they show in projectedDelta. Resets at beginTurn. */
+  reservedGains: Resources;
   /** Cards in hand. */
   hand: string[];
   /** Draw pile. */
@@ -62,6 +68,9 @@ export function blankState(missionId: string): GameState {
     round: 0,
     resources: emptyResources(),
     population: 0,
+    reservedPop: 0,
+    reservedActions: [],
+    reservedGains: emptyResources(),
     hand: [],
     deck: [],
     discard: [],

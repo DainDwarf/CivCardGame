@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { applyEffect, canAfford, freePopulation, freeTerritory, requiredWorkers, subtractResources } from '../rules';
+import { addResources, applyEffect, canAfford, freePopulation, freeTerritory, requiredWorkers, subtractResources } from '../rules';
 import { CARDS } from '../content/cards';
 
 /**
@@ -25,6 +25,8 @@ export function playCard(
   if (!card || !canAfford(G.resources, card.cost)) return 'invalid';
   // Population cost is paid from idle workers only (never by un-staffing buildings).
   if ((card.popCost ?? 0) > freePopulation(G)) return 'invalid';
+  // Population reserve locks idle workers for the rest of this turn — hard gate, not waivable.
+  if ((card.popReserve ?? 0) > freePopulation(G)) return 'invalid';
   // Culture threshold is a gate, not a cost — culture is never consumed on play.
   if ((card.cultureThreshold ?? 0) > G.culture) return 'invalid';
   // A building needs an open slot — reject the play if the tableau is at its territory cap.
@@ -51,12 +53,22 @@ export function playCard(
   // All validated — pay costs and remove all played/sacrificed cards from hand first.
   subtractResources(G.resources, card.cost);
   if (card.popCost) G.population -= card.popCost;
+  if (card.popReserve) {
+    G.reservedPop += card.popReserve;
+    G.reservedActions.push(cardId);
+  }
   const sacrificeIds = discardHandIdxs.map((i) => G.hand[i]);
   for (const i of [playHandIdx, ...discardHandIdxs].sort((a, b) => b - a)) G.hand.splice(i, 1);
 
   // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
   // return the not-yet-filed sacrifices back into the deck.
-  applyEffect(G, card.effect);
+  // Pop-reserve cards defer their resource gain to upkeep; everything else applies immediately.
+  if (card.popReserve && card.effect?.gain) {
+    addResources(G.reservedGains, card.effect.gain);
+    applyEffect(G, { ...card.effect, gain: undefined });
+  } else {
+    applyEffect(G, card.effect);
+  }
   if (card.effect?.destroy && destroyBuildingId) {
     const emptyIdx = G.tableau.findIndex((b) => b.buildingId === destroyBuildingId && b.workers === 0);
     const idx = emptyIdx !== -1 ? emptyIdx : G.tableau.findIndex((b) => b.buildingId === destroyBuildingId);

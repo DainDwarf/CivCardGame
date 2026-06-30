@@ -18,6 +18,8 @@ export interface CardDef {
   cost: Partial<Resources>;
   /** Extra cost: population consumed to play, paid from idle workers. */
   popCost?: number;
+  /** Extra cost: number of idle workers to lock for the rest of this turn (released at beginTurn). */
+  popReserve?: number;
   /** Extra cost: number of other cards you must discard from hand to play this. */
   discardCost?: number;
   /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
@@ -51,9 +53,9 @@ export const CARDS: Record<string, CardDef> = {
 
   // --- Recurring actions (recycle to the discard). ---
   settlers: { id: 'settlers', name: 'Settlers', kind: 'recurring', cost: { food: 2 }, effect: { population: 1 } },
-  forced_labor: { id: 'forced_labor', name: 'Forced Labor', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { production: 3 } } },
+  corvee: { id: 'corvee', name: 'Corvée', kind: 'recurring', cost: {}, popReserve: 1, effect: { gain: { production: 3 } } },
   eureka: { id: 'eureka', name: 'Eureka!', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { science: 3 } } },
-  harvest: { id: 'harvest', name: 'Harvest', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { food: 3 } } },
+  harvest: { id: 'harvest', name: 'Harvest', kind: 'recurring', cost: {}, popReserve: 1, effect: { gain: { food: 3 } } },
   inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'recurring', cost: { money: 1 }, effect: { draw: 2 } },
 
   // --- Territory expansion: recurring cards that raise the building-slot cap. ---

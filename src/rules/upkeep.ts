@@ -12,6 +12,7 @@ export type MissionUpkeep = (G: GameState) => void;
  */
 export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
   addResources(G.resources, tableauProduction(G.tableau));
+  addResources(G.resources, G.reservedGains);
   G.culture += tableauCultureOutput(G.tableau);
   missionUpkeep?.(G);
   G.resources.food -= foodUpkeep(G);

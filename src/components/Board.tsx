@@ -34,7 +34,7 @@ const CARD_ART: Record<string, string> = {
   great_library: '📜',
   colossus: '🗿',
   settlers: '⛺',
-  forced_labor: '⛓️',
+  corvee: '⛓️',
   eureka: '💡',
   harvest: '🧺',
   inspiration: '✨',
@@ -53,6 +53,7 @@ function describeCost(c: CardDef): string {
     .filter(([, v]) => v)
     .map(([k, v]) => `${v}${COST_ICON[k]}`);
   if (c.popCost) parts.push(`${c.popCost}👥`);
+  if (c.popReserve) parts.push(`reserve ${c.popReserve}👥`);
   if (c.discardCost) parts.push(`discard ${c.discardCost}`);
   return parts.join(' · ') || 'free';
 }
@@ -425,6 +426,7 @@ export function Board() {
     if (
       !canAfford(G.resources, card.cost) ||
       (card.popCost ?? 0) > freePopulation(G) ||
+      (card.popReserve ?? 0) > freePopulation(G) ||
       (card.cultureThreshold && G.culture < card.cultureThreshold) ||
       (card.effect?.build && freeTerritory(G) <= 0) ||
       (card.effect?.destroy && G.tableau.length === 0)
@@ -452,6 +454,16 @@ export function Board() {
         const px = Math.max(0, Math.min(x - d.grabX - rect.left, rect.width - BOX_W));
         const py = Math.max(0, Math.min(y - d.grabY - rect.top - insets.top, rect.height - insets.top - BOX_H));
         setPositions((p) => (built in p ? p : { ...p, [built]: { x: px, y: py } }));
+      }
+    }
+    // A pop-reserve card also drops a box at the release point.
+    if (card.popReserve) {
+      const rect = gameareaRef.current?.getBoundingClientRect();
+      if (rect) {
+        const px = Math.max(0, Math.min(x - d.grabX - rect.left, rect.width - BOX_W));
+        const py = Math.max(0, Math.min(y - d.grabY - rect.top - insets.top, rect.height - insets.top - BOX_H));
+        const reserveKey = `__reserve_${G.reservedActions.length}`;
+        setPositions((p) => ({ ...p, [reserveKey]: { x: px, y: py } }));
       }
     }
     spawnGhost(d.cardId, { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h }, 'drop');
@@ -587,11 +599,12 @@ export function Board() {
   const hasUnstaffedCapacity = G.tableau.some((b) => !isOperating(b));
   const shouldWarn = idle > 0 && hasUnstaffedCapacity;
 
-  // Clear pending sacrifice-pick, pending destroy, and end-round warning at the start of each new round.
+  // Clear pending sacrifice-pick, pending destroy, end-round warning, and reserve box positions at the start of each new round.
   useEffect(() => {
     setPending(null);
     setPendingDestroy(null);
     setWarnEndRound(false);
+    setPositions((p) => Object.fromEntries(Object.entries(p).filter(([k]) => !k.startsWith('__reserve_'))));
   }, [G.round]);
 
   // warnEndRound is only meaningful while shouldWarn is true; reset it if the player
@@ -800,6 +813,31 @@ export function Board() {
                 </div>
               );
             })}
+        {G.reservedActions.map((cardId, i) => {
+          const card = CARDS[cardId];
+          const reserveKey = `__reserve_${i}`;
+          const pos = positions[reserveKey] ?? slotPos(Object.keys(positions).length + i);
+          const isDraggingReserve = bDrag?.buildingId === reserveKey;
+          return (
+            <div
+              key={reserveKey}
+              className={[styles.buildingBox, styles.reserveBox, isDraggingReserve ? styles.boxDragging : ''].filter(Boolean).join(' ')}
+              style={{ left: pos.x, top: insets.top + pos.y }}
+              onPointerDown={(e) => onBoxPointerDown(e, reserveKey)}
+            >
+              <span className={styles.bName}>{card.name}</span>
+              <div className={styles.bldFace}>
+                <span className={styles.bldIcon} aria-hidden="true">{artFor(cardId)}</span>
+                <span className={styles.bldOutput} aria-hidden="true">
+                  {Object.entries(card.effect?.gain ?? {}).map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`).join(' ')}
+                </span>
+              </div>
+              <div className={styles.boxControls}>
+                <span className={styles.reserveLocked}>👷</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className={styles.handBar} ref={handBarRef}>
@@ -830,6 +868,7 @@ export function Board() {
                 const affordable =
                   canAfford(G.resources, c.cost) &&
                   (c.popCost ?? 0) <= idle &&
+                  (c.popReserve ?? 0) <= idle &&
                   (!c.cultureThreshold || G.culture >= c.cultureThreshold) &&
                   (!c.effect?.build || territory > 0) &&
                   (!c.effect?.destroy || G.tableau.length > 0);

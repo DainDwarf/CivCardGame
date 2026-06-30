@@ -1,5 +1,5 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, coreCollapse, drawUpTo, type CollapseReason, type GameState } from '../rules';
+import { applyUpkeep, coreCollapse, drawUpTo, emptyResources, type CollapseReason, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
 
 export type Gameover = { outcome: 'victory' | 'defeat'; reason?: CollapseReason; missionId: string };
@@ -23,6 +23,9 @@ function checkEndIf(state: RunState): RunState {
 function beginTurn(state: RunState): RunState {
   const G = structuredClone(state.G);
   G.round += 1;
+  G.reservedPop = 0;
+  G.reservedActions = [];
+  G.reservedGains = emptyResources();
   drawUpTo(G);
   return checkEndIf({ ...state, G });
 }

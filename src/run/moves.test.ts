@@ -154,4 +154,24 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.population).toBe(1);
     expect(G.hand).toEqual(['village_settlement']);
   });
+
+  it('a pop-reserve card increments reservedPop, defers its gain, and is blocked when idle pool is too small', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['corvee', 'harvest'];
+    G.population = 2;
+    play(G, 'corvee'); // reserve 1 -> reservedPop = 1, free pop = 1; gain deferred
+    expect(G.reservedPop).toBe(1);
+    expect(G.resources.production).toBe(0); // not yet applied
+    expect(G.reservedGains.production).toBe(3); // queued for upkeep
+    play(G, 'harvest'); // reserve another 1 -> reservedPop = 2, free pop = 0; gain deferred
+    expect(G.reservedPop).toBe(2);
+    expect(G.resources.food).toBe(0); // not yet applied
+    expect(G.reservedGains.food).toBe(3); // queued for upkeep
+    // Both reserved, free pop = 0 — playing a third pop-reserve card is blocked
+    G.hand = ['corvee'];
+    play(G, 'corvee'); // rejected: no idle pop
+    expect(G.reservedPop).toBe(2); // unchanged
+    expect(G.reservedGains.production).toBe(3); // unchanged
+    expect(G.hand).toEqual(['corvee']); // card stays
+  });
 });

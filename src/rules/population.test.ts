@@ -34,6 +34,13 @@ describe('population accounting', () => {
     expect(freePopulation(G)).toBe(1);
   });
 
+  it('reserved population is not available for building assignment', () => {
+    const G = blankState('enlightenment');
+    G.population = 3;
+    G.reservedPop = 2;
+    expect(freePopulation(G)).toBe(1);
+  });
+
   it('food upkeep equals population', () => {
     const G = blankState('enlightenment');
     G.population = 4;

@@ -34,7 +34,7 @@ describe('run loop (headless integration)', () => {
     const { G } = client.getState();
     expect(G.round).toBe(1);
     expect(G.population).toBe(2);
-    expect(G.hand).toEqual(['farm', 'workshop', 'forced_labor', 'library', 'harvest']);
+    expect(G.hand).toEqual(['farm', 'workshop', 'corvee', 'library', 'harvest']);
     expect(G.resources.production).toBe(5);
     client.stop();
   });
@@ -56,45 +56,53 @@ describe('run loop (headless integration)', () => {
 
   it('auto-staffing stops once the idle pool is exhausted', () => {
     const client = start('enlightenment'); // population 2 idle, production 5
-    playByName(client, 'forced_labor', ['harvest']); // discard harvest -> +3 production -> 8
-    playByName(client, 'workshop'); // staffs 1 -> 1 idle
-    playByName(client, 'farm'); // staffs 1 -> 0 idle
-    playByName(client, 'library'); // no idle left -> committed unstaffed
-    const lib = client.getState().G.tableau.find((b) => b.buildingId === 'library')!;
-    expect(lib.workers).toBe(0);
+    playByName(client, 'corvee'); // reserve 1 pop -> free pop = 1; gain deferred to upkeep
+    playByName(client, 'workshop'); // costs 2 prod -> 3; auto-staffs 1 -> free pop = 0
+    playByName(client, 'farm'); // costs 1 prod -> 2; no idle left -> unstaffed
+    const G = client.getState().G;
+    expect(G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(1);
+    expect(G.tableau.find((b) => b.buildingId === 'farm')!.workers).toBe(0);
     client.stop();
   });
 
-  it('a discard-cost action sacrifices a chosen card to resolve', () => {
-    const client = start('enlightenment'); // hand: farm, workshop, forced_labor, library, harvest
-    playByName(client, 'forced_labor', ['farm']); // discard farm -> gain 3 production
+  it('a pop-reserve action reserves idle population and defers its gain to upkeep', () => {
+    const client = start('enlightenment'); // hand: farm, workshop, corvee, library, harvest; pop 2
+    playByName(client, 'corvee'); // reserve 1 pop; +3 production deferred
     const { G } = client.getState();
-    expect(G.resources.production).toBe(8); // 5 + 3
-    expect(G.hand).toEqual(['workshop', 'library', 'harvest']); // both played + sacrificed card gone
-    expect(G.discard).toEqual(['farm', 'forced_labor']); // sacrifice, then the action itself
+    expect(G.resources.production).toBe(5); // gain not yet applied
+    expect(G.reservedGains.production).toBe(3); // queued for upkeep
+    expect(G.reservedPop).toBe(1);
+    expect(G.hand).toEqual(['farm', 'workshop', 'library', 'harvest']);
+    expect(G.discard).toEqual(['corvee']);
+    client.events.endTurn();
+    expect(client.getState().G.reservedGains.production).toBe(0); // cleared after upkeep
     client.stop();
   });
 
-  it('a discard-cost action is rejected when a discard is owed but not paid', () => {
-    const client = start('enlightenment'); // full hand -> a discard is owed
-    const prodBefore = client.getState().G.resources.production;
-    const handBefore = [...client.getState().G.hand];
-    playByName(client, 'forced_labor'); // no discard provided
+  it('a pop-reserve action is rejected when no idle population is available', () => {
+    const client = start('enlightenment'); // pop 2
+    playByName(client, 'farm'); // costs 1 prod -> auto-staffs 1 pop
+    playByName(client, 'workshop'); // costs 2 prod -> auto-staffs 1 pop; 0 idle
+    const { G: before } = client.getState();
+    playByName(client, 'corvee'); // no idle pop -> rejected
     const { G } = client.getState();
-    expect(G.resources.production).toBe(prodBefore);
-    expect(G.hand).toEqual(handBefore);
+    expect(G.resources.production).toBe(before.resources.production);
+    expect(G.hand).toContain('corvee');
     client.stop();
   });
 
-  it('a discard-cost action plays free when nothing is left to discard', () => {
-    const client = start('enlightenment'); // hand: farm, workshop, forced_labor, library, harvest
-    playByName(client, 'harvest', ['library']); // -> hand: farm, workshop, forced_labor
-    playByName(client, 'farm'); // permanent -> tableau
-    playByName(client, 'workshop'); // permanent -> tableau; hand now just forced_labor
-    playByName(client, 'forced_labor'); // last card -> discard cost waived, plays free
-    const { G } = client.getState();
-    expect(G.hand).toEqual([]);
-    expect(G.discard).toContain('forced_labor');
+  it('reserved population is released at the start of the next turn', () => {
+    const client = start('enlightenment'); // pop 2
+    playByName(client, 'corvee'); // reserve 1 -> free pop = 1
+    playByName(client, 'farm'); // auto-staffs 1 -> free pop = 0
+    playByName(client, 'workshop'); // builds unstaffed (free pop = 0)
+    expect(client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(0);
+    client.moves.assignWorker('workshop'); // blocked — no free pop
+    expect(client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(0);
+    client.events.endTurn(); // beginTurn resets reservedPop to 0
+    expect(client.getState().G.reservedPop).toBe(0);
+    client.moves.assignWorker('workshop'); // now free pop = 1 -> succeeds
+    expect(client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(1);
     client.stop();
   });
 

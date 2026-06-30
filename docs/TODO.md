@@ -33,6 +33,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
+- **End of run screen** — rework the victory/defeat screen `[?]` `[phase: 1]`
+
 - **Game menu** — save, config, codex, and other global actions; the codex is where in-depth mechanic explanations live (not tooltips) `[?]` `[phase: 2]`
 - **Buildings board: worker drag** — buildings now render as draggable boxes on a free-form canvas, but staffing is still +/- buttons. Remaining: drag-and-drop population tokens directly between buildings to assign/unassign workers. `[size: M] [?]` `[phase: 1]`
 
@@ -44,7 +46,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - Card that gives a draw when expanding territory `[?]` `[phase: 4]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]` `[phase: 4]`
-- **Population-reserving actions** — some cards (Harvest, Forced Labor / rename to something like "Gather Resource") cost no resources but reserve one population for the current turn instead of paying a traditional price; reserved pop can't be assigned to buildings until next turn `[?]` `[phase: 1]`
 
 
 
@@ -66,4 +67,5 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Core resource floor failure** — any core resource going negative ends the run: Famine (Food), Ruin (Production), Bankruptcy (Money), Dark Age (Science), Revolt (Military). Pure `coreCollapse()` helper in `src/rules/collapse.ts`; defeat screen shows the matching message.
 - All 8 code-review bugs fixed: End Round disabled mid-drag/mid-pending; `pending`/`warnEndRound` auto-cleared on round change; `shouldWarn` drives `warnEndRound` cleanup; `hasUnstaffedCapacity` simplified to `!isOperating()`; sacrifice-before-draw ordering fixed in `playCard`; test helpers throw on missing card.
 - Recurring buildings — permanent/recurring hybrid card type (village_settlement etc.).
+- **Population-reserving actions (Corvée & Harvest)** — Forced Labor renamed to Corvée; both cards now cost `popReserve: 1` instead of a discard. Playing either locks 1 idle worker for the rest of the turn (hard gate: unplayable with 0 idle); `G.reservedPop` resets to 0 at `beginTurn`.
 - Discard-as-cost actions — Forced Labor & Harvest now sacrifice a hand card (waived if you can't cover it).

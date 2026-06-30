@@ -19,9 +19,9 @@ export function assignedWorkers(tableau: BuildingInstance[]): number {
   return tableau.reduce((sum, b) => sum + b.workers, 0);
 }
 
-/** Population not currently assigned to any building. */
+/** Population not currently assigned to any building or reserved by action cards this turn. */
 export function freePopulation(G: GameState): number {
-  return G.population - assignedWorkers(G.tableau);
+  return G.population - assignedWorkers(G.tableau) - G.reservedPop;
 }
 
 /** Food the whole population eats each round (working or idle). */
