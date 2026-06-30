@@ -137,7 +137,7 @@ function Stat({
   return (
     <span className={`${styles.stat}${warn ? ` ${styles.statWarn}` : ''}`} tabIndex={0}>
       <span aria-hidden="true">{icon}</span> {value}
-      {delta !== undefined && (
+      {delta !== undefined && delta !== 0 && (
         <span className={delta > 0 ? styles.deltaPos : delta < 0 ? styles.deltaNeg : styles.deltaZero}>
           {' '}
           ({delta >= 0 ? '+' : ''}

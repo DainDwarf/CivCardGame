@@ -67,8 +67,9 @@
 .strategicGroup {
   display: flex;
   align-items: center;
-  gap: 0.35rem 0.75rem;
-  padding: 0 0.75rem;
+  justify-content: space-evenly;
+  min-width: 12rem;
+  padding: 0 0.5rem;
   border-right: 1px solid #d0cfc9;
 }
 
@@ -77,8 +78,8 @@
   display: flex;
   align-items: center;
   gap: 0.35rem 0.75rem;
-  justify-content: flex-end;
-  padding-left: 0.1rem;
+  justify-content: space-evenly;
+  flex: 1;
 }
 
 /* Tooltip variant for the mission widget: left-aligned, wider, arrow near left edge */
