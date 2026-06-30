@@ -22,6 +22,10 @@ export interface MissionDef {
   failure: (G: GameState) => boolean;
   /** Short human-readable progress line for the UI. */
   progress: (G: GameState) => string;
+  /** One-liner describing the victory condition shown in the mission tooltip. */
+  victoryHint: string;
+  /** One-liner describing the mission-specific defeat condition; null if famine is the only loss. */
+  failureHint: string | null;
 }
 
 export const MISSIONS: Record<string, MissionDef> = {
@@ -32,6 +36,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     objective: (G) => G.resources.science >= 30,
     failure: (G) => G.round > 12 && G.resources.science < 30,
     progress: (G) => `Science ${G.resources.science}/30 · round ${Math.min(G.round, 12)}/12`,
+    victoryHint: 'Accumulate 30 Science before round 12 ends.',
+    failureHint: 'Failing to reach 30 Science by round 12.',
   },
 
   long_winter: {
@@ -46,6 +52,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     // No mission-specific failure: starving (famine) is the universal loss condition.
     failure: () => false,
     progress: (G) => `Endured ${Math.min(G.round, 15)}/15 · Food ${G.resources.food}`,
+    victoryHint: 'Endure 15 rounds of brutal winter without starving.',
+    failureHint: null,
   },
 
   barbarian_tide: {
@@ -65,5 +73,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     failure: (G) => G.resources.military < 0,
     progress: (G) =>
       `Wonders ${countTag(G.tableau, 'wonder')}/3 · Military ${G.resources.military} · Threat ${G.vars.threat ?? 0}`,
+    victoryHint: 'Construct 3 Wonders before the barbarians overwhelm you.',
+    failureHint: 'Military drops below 0 (barbarian sack).',
   },
 };

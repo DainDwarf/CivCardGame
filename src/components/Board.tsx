@@ -12,7 +12,8 @@ import {
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
 import { BUILDINGS, type BuildingDef } from '../content/buildings';
-import { MISSIONS } from '../content/missions';
+import { MISSIONS, type MissionDef } from '../content/missions';
+import type { GameState } from '../rules';
 import styles from './Board.module.css';
 
 const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
@@ -142,6 +143,25 @@ function Stat({
         <strong>{label}</strong> — {description}
       </span>
     </span>
+  );
+}
+
+/** Left-column widget in the top banner: shows mission name, round, live progress, and a tooltip. */
+function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
+  return (
+    <div className={styles.missionWidget} tabIndex={0}>
+      <div className={styles.missionName}>{mission.name} · Rd {G.round}</div>
+      <div className={styles.missionProgress}>🎯 {mission.progress(G)}</div>
+      <div className={`${styles.tooltip} ${styles.tooltipLeft} ${styles.tooltipWide}`} role="tooltip">
+        <strong>{mission.name}</strong>
+        <span className={styles.ttBody}>{mission.description}</span>
+        <span className={styles.ttRule}>🏆 {mission.victoryHint}</span>
+        {mission.failureHint && <span className={styles.ttRule}>💀 {mission.failureHint}</span>}
+        <span className={styles.ttFamine}>
+          {mission.failureHint ? '☠️ Famine also ends all runs.' : '☠️ Famine (food going negative) ends all runs.'}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -506,76 +526,72 @@ export function Board() {
 
   return (
     <div className={styles.app}>
-      <header className={styles.header}>
-        <h1>{mission.name} — Round {G.round}</h1>
-        <p className={styles.desc}>{mission.description}</p>
-        <p className={styles.progress}>🎯 {mission.progress(G)}</p>
+      <header className={styles.topBanner}>
+        <MissionWidget mission={mission} G={G} />
+
+        <div className={styles.strategicGroup}>
+          <Stat
+            icon="👥"
+            label="Population"
+            description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them; grow them with Settlers cards."
+            value={`${G.population} (${idle} idle)`}
+          />
+          <Stat
+            icon="🗺️"
+            label="Territory"
+            description="Building slots. Each building you construct fills one; building cards can't be played once it's full. Certain cards expand it."
+            value={`${usedTerritory(G.tableau)}/${G.territory}`}
+          />
+          <Stat
+            icon="🎭"
+            label="Culture"
+            description="Your civilization's cultural level — it grows but is never spent. Cultural buildings add to it each round; certain action cards give an immediate boost. Some cards require a minimum culture level to play."
+            value={G.culture}
+            delta={proj.culture}
+          />
+        </div>
+
+        <div className={styles.coreGroup}>
+          <Stat
+            icon="🌾"
+            label="Food"
+            description="Sustenance from staffed farms. Your population eats it each round — if it goes negative, famine ends the run. The (±) is the net change if you end the round now."
+            value={G.resources.food}
+            delta={proj.food}
+          />
+          <Stat
+            icon="🔨"
+            label="Production"
+            description="Your build budget, spent to play cards. The (±) is what your staffed buildings will add at end of round."
+            value={G.resources.production}
+            delta={proj.production}
+          />
+          <Stat
+            icon="🪙"
+            label="Money"
+            description="Coin from your markets and trade. Spent on action cards."
+            value={G.resources.money}
+            delta={proj.money}
+          />
+          <Stat
+            icon="⚔️"
+            label="Military"
+            description="Military power stockpiled from your operating defenses. In Barbarian Tide, threat drains it each round — let it hit zero and the city falls."
+            value={G.resources.military}
+            delta={proj.military}
+          />
+          <Stat
+            icon="🔬"
+            label="Science"
+            description="Knowledge from staffed libraries; the goal of science missions. The (±) is end-of-round output."
+            value={G.resources.science}
+            delta={proj.science}
+          />
+        </div>
       </header>
 
-      <div className={styles.resources}>
-        <Stat
-          icon="🌾"
-          label="Food"
-          description="Sustenance from staffed farms. Your population eats it each round — if it goes negative, famine ends the run. The (±) is the net change if you end the round now."
-          value={G.resources.food}
-          delta={proj.food}
-        />
-        <Stat
-          icon="🔨"
-          label="Production"
-          description="Your build budget, spent to play cards. The (±) is what your staffed buildings will add at end of round."
-          value={G.resources.production}
-          delta={proj.production}
-        />
-        <Stat
-          icon="🔬"
-          label="Science"
-          description="Knowledge from staffed libraries; the goal of science missions. The (±) is end-of-round output."
-          value={G.resources.science}
-          delta={proj.science}
-        />
-        <Stat
-          icon="⚔️"
-          label="Military"
-          description="Military power stockpiled from your operating defenses. In Barbarian Tide, threat drains it each round — let it hit zero and the city falls."
-          value={G.resources.military}
-          delta={proj.military}
-        />
-        <Stat
-          icon="🪙"
-          label="Money"
-          description="Coin from your markets and trade. Spent on action cards."
-          value={G.resources.money}
-          delta={proj.money}
-        />
-        <span className={styles.sep} aria-hidden="true">|</span>
-        <Stat
-          icon="👥"
-          label="Population"
-          description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them; grow them with Settlers cards."
-          value={`${G.population} (${idle} idle)`}
-        />
-        <Stat
-          icon="🗺️"
-          label="Territory"
-          description="Building slots. Each building you construct fills one; building cards can't be played once it's full. Certain cards expand it."
-          value={`${usedTerritory(G.tableau)}/${G.territory}`}
-        />
-        <Stat
-          icon="🎭"
-          label="Culture"
-          description="Your civilization's cultural level — it grows but is never spent. Cultural buildings add to it each round; certain action cards give an immediate boost. Some cards require a minimum culture level to play."
-          value={G.culture}
-          delta={proj.culture}
-        />
-      </div>
-
       <section className={styles.civSection}>
-        <h2>
-          Civilization{' '}
-          <span className={styles.idleHint}>· {usedTerritory(G.tableau)}/{G.territory} 🗺️ territory</span>
-          {idle > 0 && <span className={styles.idleHint}>· {idle} idle 👷 to assign</span>}
-        </h2>
+        <h2>Civilization</h2>
         {groups.length === 0 && <p className={styles.empty}>Nothing built yet.</p>}
         <ul className={styles.tableau}>
           {groups.map((g) => {

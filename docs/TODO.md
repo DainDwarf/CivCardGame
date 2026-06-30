@@ -23,6 +23,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Cards & content (`src/content/`)
 
+- **Mission-driven adverse cards** — some missions can inject disaster/event cards (negative effects) into the player's deck as a pressure mechanic `[?]`
 - New mission type: "Metropolis" `[?]`
 - New mission: "Build the Wonder" `[?]`
 - Culture-based missions (depend on the Culture resource) `[?]`
@@ -31,7 +32,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- Top banner: merge the header (mission name, round, objective progress) and the sticky resources bar into one fixed top strip so key info is always visible at a glance `[size: S]`
 - Pass over stat tooltips to strip specifics — they name particular cards/missions (e.g. Barbarian Tide, Settlers); keep them generic about the mechanic
 - **Buildings board** — replace the current buildings list with a free-form canvas; buildings render as draggable boxes the player can spatially rearrange; population tokens are drag-and-dropped directly between buildings to assign/unassign workers. Requires moving the resources UI out of that area first. `[size: L] [?]`
 
