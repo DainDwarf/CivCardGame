@@ -23,11 +23,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Cards & content (`src/content/`)
 
-- **Mission-driven adverse cards** — some missions can inject disaster/event cards (negative effects) into the player's deck as a pressure mechanic `[?]`
+- **Disasters** — some missions inject disaster/event cards (negative effects) into the player's deck as pressure; Military helps prevent/mitigate them (details TBD) `[?]`
 - New mission type: "Metropolis" `[?]`
 - New mission: "Build the Wonder" `[?]`
 - Culture-based missions (depend on the Culture resource) `[?]`
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]`
+- Culture thresholds change hand size by default (no building required) — culture as a passive progression axis `[?]`
 - Resources transformation? Like a building that transforms production into science for example
 
 ## UI (`src/components/`)
@@ -41,12 +42,11 @@ _(empty)_
 
 ## Game design & balance
 
-- Exponentially rising expansion cost (each territory card costs more than the last) `[?]`
 - Card that gives a draw when expanding territory `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
 - **Population-reserving actions** — some cards (Harvest, Forced Labor / rename to something like "Gather Resource") cost no resources but reserve one population for the current turn instead of paying a traditional price; reserved pop can't be assigned to buildings until next turn `[?]`
 - **Resource design intent (thematic "feeling", not hard rules):** Food = population management & upkeep; Production = building structures; Science = deck manipulation (draw, pick from discard, peek top N, …); Military = expansion + disaster prevention (see disasters below); Money = immediate/flexible actions `[?]`
-- **Disasters** — a future system Military helps prevent/mitigate (details TBD) `[?]`
+
 
 
 ---
