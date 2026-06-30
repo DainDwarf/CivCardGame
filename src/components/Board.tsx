@@ -372,7 +372,7 @@ function whyUnplayable(card: CardDef, G: GameState): string | null {
 }
 
 export function Board() {
-  const { G, gameover, moves, endTurn, restart } = useGame();
+  const { G, gameover, moves, endTurn, undo, canUndo, restart } = useGame();
   const mission = MISSIONS[G.missionId];
   const [pending, setPending] = useState<PendingPlay | null>(null);
   const [pendingDestroy, setPendingDestroy] = useState<PendingDestroy | null>(null);
@@ -861,7 +861,17 @@ export function Board() {
 
       <div className={styles.handBar} ref={handBarRef}>
         <div className={styles.handBarInner}>
-          <Pile variant={styles.pileDeck} label="deck" count={G.deck.length} />
+          <div className={styles.deckColumn}>
+            <Pile variant={styles.pileDeck} label="deck" count={G.deck.length} />
+            <button
+              className={styles.undoBtn}
+              disabled={!canUndo || !!pending || !!pendingDestroy || drag?.active === true}
+              onClick={undo}
+              title="Undo your last action (cleared when you draw or end the round)"
+            >
+              ↶ Undo
+            </button>
+          </div>
 
           <div className={styles.handArea}>
             {pending && (

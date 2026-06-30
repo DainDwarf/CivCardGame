@@ -375,6 +375,40 @@
   gap: 0.85rem;
 }
 
+/* Deck pile + its Undo control, stacked so the pile stays bottom-aligned with the other piles. */
+.deckColumn {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.undoBtn {
+  width: 64px;
+  padding: 0.28rem 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #cdd6e6;
+  background: #2a3346;
+  border: 1px solid #3a465f;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+
+.undoBtn:not(:disabled):hover {
+  background: #36425a;
+  transform: translateY(-1px);
+}
+
+.undoBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* The piles flanking the hand: deck (draw), discard (recycles), removed (out of the deck). */
 .pile {
   flex: 0 0 auto;

@@ -13,8 +13,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Run loop (`src/run/`, `src/rules/`)
 
-- Undo feature — but disallow undoing past a move that revealed new info (e.g. a draw) `[?]` `[phase: 1]`
-
 ## Meta loop (`src/meta/` — not built yet)
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
@@ -55,6 +53,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- **Undo feature** — `↶ Undo` button above the deck pile steps back through the turn's actions. Undo history lives in the shell (`GameContext`, `useReducer` over `{ present, past }`); each undoable move pushes the prior `RunState` snapshot. A move that touches the draw pile (drew cards / reshuffled, detected by diffing `G.deck`) is a hard boundary that clears the whole stack; ending a round and restarting also clear it; undo is disabled at gameover and mid-pending/drag. Known gap: a future *peek top-N* reveals info without changing the deck, so deck-diff won't catch it — that move will need an explicit "revealed" flag.
 - **Zoomable cards in list views** — clicking a card in the discard/removed pile viewer opens the same zoom overlay as clicking a hand card; hint text updated accordingly.
 - **Unplayable card feedback** — dragging an unplayable card onto the board shows a brief red toast explaining why (e.g. "need 2🌾", "territory full", "need 5 🎭 culture") in addition to the shake; `whyUnplayable` helper consolidates the three previous copies of playability checks into one.
 - **End of run screen** — victory/defeat no longer navigates away; an overlay appears in place with Restart, Inspect (minimizes to a pill so the player can browse the final board), and End Run. Inspect mode blocks game actions but keeps tooltips, card zoom, and pile viewers fully functional.
