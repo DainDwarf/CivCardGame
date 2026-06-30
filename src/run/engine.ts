@@ -1,8 +1,8 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, drawUpTo, type GameState } from '../rules';
+import { applyUpkeep, coreCollapse, drawUpTo, type CollapseReason, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
 
-export type Gameover = { outcome: 'victory' | 'defeat'; reason?: string; missionId: string };
+export type Gameover = { outcome: 'victory' | 'defeat'; reason?: CollapseReason; missionId: string };
 
 export interface RunState {
   G: GameState;
@@ -14,7 +14,8 @@ function checkEndIf(state: RunState): RunState {
   const mission = MISSIONS[G.missionId];
   if (!mission) return state;
   if (mission.objective(G)) return { ...state, gameover: { outcome: 'victory', missionId: G.missionId } };
-  if (G.resources.food < 0) return { ...state, gameover: { outcome: 'defeat', reason: 'famine', missionId: G.missionId } };
+  const collapse = coreCollapse(G.resources);
+  if (collapse) return { ...state, gameover: { outcome: 'defeat', reason: collapse, missionId: G.missionId } };
   if (mission.failure(G)) return { ...state, gameover: { outcome: 'defeat', missionId: G.missionId } };
   return state;
 }

@@ -4,9 +4,10 @@ import { countTag } from '../rules';
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
  * mission-specific lose condition (failure) as predicates over the run state, plus
- * optional per-turn effects. (Famine — food going negative — is a *universal* failure
- * enforced by the run loop, not by individual missions.) Objective/failure are pure
- * functions so they are unit-testable and reusable by the headless simulator.
+ * optional per-turn effects. Core resource floors (any of the 5 resources going
+ * negative) are a *universal* failure enforced by the run loop via `coreCollapse`,
+ * not by individual missions. Objective/failure are pure functions so they are
+ * unit-testable and reusable by the headless simulator.
  */
 export interface MissionDef {
   id: string;
@@ -18,7 +19,7 @@ export interface MissionDef {
   onUpkeep?: (G: GameState) => void;
   /** Win condition. */
   objective: (G: GameState) => boolean;
-  /** Mission-specific lose condition (famine is handled universally elsewhere). */
+  /** Mission-specific lose condition (core resource floors are handled universally elsewhere). */
   failure: (G: GameState) => boolean;
   /** Short human-readable progress line for the UI. */
   progress: (G: GameState) => string;
@@ -49,7 +50,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       G.resources.food -= 2;
     },
     objective: (G) => G.round > 15,
-    // No mission-specific failure: starving (famine) is the universal loss condition.
+    // No mission-specific failure: the universal core resource floor handles defeat here.
     failure: () => false,
     progress: (G) => `Endured ${Math.min(G.round, 15)}/15 · Food ${G.resources.food}`,
     victoryHint: 'Endure 15 rounds of brutal winter without starving.',

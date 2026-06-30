@@ -117,4 +117,15 @@ describe('run loop (headless integration)', () => {
     expect(ctx.gameover).toEqual({ outcome: 'defeat', reason: 'famine', missionId: 'enlightenment' });
     client.stop();
   });
+
+  it('revolt is a universal defeat when military goes negative (barbarian_tide)', () => {
+    // military 4, threat grows by 2/round: upkeep R1 → military 2, upkeep R2 → military -2
+    // food 5, pop eats 2/round: after 2 rounds food is still 1 (positive), so revolt wins the check
+    const client = start('barbarian_tide');
+    client.events.endTurn();
+    client.events.endTurn();
+    const { ctx } = client.getState();
+    expect(ctx.gameover).toMatchObject({ outcome: 'defeat', reason: 'revolt' });
+    client.stop();
+  });
 });

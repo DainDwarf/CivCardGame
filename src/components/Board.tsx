@@ -503,17 +503,20 @@ export function Board() {
 
   if (gameover) {
     const won = gameover.outcome === 'victory';
-    const famine = gameover.reason === 'famine';
+    const COLLAPSE_MESSAGES: Record<string, string> = {
+      famine:     'famine struck — your people starved.',
+      ruin:       'ruin befell — your economy collapsed.',
+      bankruptcy: 'bankruptcy struck — your treasury ran dry.',
+      dark_age:   'a dark age descended — knowledge was lost.',
+      revolt:     'revolt erupted — your people rose against you.',
+    };
+    const defeatMessage = (gameover.reason && COLLAPSE_MESSAGES[gameover.reason]) ?? 'your civilization has fallen.';
     return (
       <div className={styles.app}>
         <h1>{won ? '🏛️ Victory' : '💀 Defeat'}</h1>
         <p>
           <strong>{mission.name}</strong> —{' '}
-          {won
-            ? 'objective achieved.'
-            : famine
-              ? 'famine struck — your people starved.'
-              : 'your civilization has fallen.'}
+          {won ? 'objective achieved.' : defeatMessage}
         </p>
         <p>Reached round {G.round}</p>
       </div>
