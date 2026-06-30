@@ -18,7 +18,7 @@ import styles from './Board.module.css';
 
 const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
 
-/** Presentation-only "art" glyph shown on each card face. */
+/** Presentation-only "art" glyph shown on each card face and building box. */
 const CARD_ART: Record<string, string> = {
   farm: '🌾',
   granary: '🌽',
@@ -26,6 +26,8 @@ const CARD_ART: Record<string, string> = {
   library: '📚',
   university: '🎓',
   theater: '🎭',
+  market: '🏪',
+  trading_post: '⛵',
   walls: '🧱',
   barracks: '⚔️',
   pyramids: '🔺',
@@ -754,11 +756,19 @@ export function Board() {
                     {bld.name}
                     {g.count > 1 ? ` ×${g.count}` : ''}
                   </span>
-                  <span className={styles.muted}>{describeBuilding(bld)}</span>
+                  <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
+                    <span className={styles.bldIcon} aria-hidden="true">{artFor(bld.id)}</span>
+                    <span className={styles.bldOutput} aria-hidden="true">
+                      {[
+                        ...Object.entries(bld.produces ?? {})
+                          .filter(([, v]) => v)
+                          .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`),
+                        ...(bld.cultureOutput ? [`+${bld.cultureOutput}🎭`] : []),
+                      ].join(' ')}
+                    </span>
+                  </div>
                   <div className={styles.boxControls}>
-                    {selfSufficient ? (
-                      <span className={styles.staff}>self-sufficient</span>
-                    ) : (
+                    {!selfSufficient && (
                       <span className={styles.staff}>
                         <button
                           onClick={() => moves.unassignWorker(g.buildingId)}

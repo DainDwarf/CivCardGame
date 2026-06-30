@@ -254,12 +254,14 @@
 
 .bName {
   font-weight: 600;
+  text-align: center;
 }
 
 /* Footer row inside a building box: staffing controls + (in targeting mode) demolish. */
 .boxControls {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   flex-wrap: wrap;
   margin-top: auto;
@@ -307,6 +309,27 @@
 .muted {
   color: #888;
   font-size: 0.85rem;
+}
+
+.bldFace {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 0.15rem;
+  padding: 0.15rem 0;
+}
+
+.bldIcon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.bldOutput {
+  font-size: 1rem;
+  color: #555;
+  letter-spacing: 0.08em;
 }
 
 .empty {
