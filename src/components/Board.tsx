@@ -327,6 +327,26 @@ interface DragState {
 /** Pointer travel (px) before a press becomes a drag rather than a click. */
 const DRAG_THRESHOLD = 6;
 
+/** A building box being dragged around the civilization canvas. */
+interface BuildingDrag {
+  buildingId: string;
+  pointerId: number;
+  /** Offset from the box's top-left to the grab point, so it tracks the cursor. */
+  grabX: number;
+  grabY: number;
+}
+
+/** Box width (px) — must match `.buildingBox` in the stylesheet. */
+const BOX_W = 200;
+/** Rough box height used only for canvas-height and default-layout math. */
+const BOX_H = 120;
+/** Default grid slot for a freshly built box, before the player rearranges it. */
+function slotPos(i: number): { x: number; y: number } {
+  const COLS = 3;
+  const GAP = 12;
+  return { x: (i % COLS) * (BOX_W + GAP), y: Math.floor(i / COLS) * (BOX_H + GAP) };
+}
+
 export function Board() {
   const { G, gameover, moves, endTurn } = useGame();
   const mission = MISSIONS[G.missionId];
@@ -338,6 +358,15 @@ export function Board() {
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
   const [warnEndRound, setWarnEndRound] = useState(false);
+  // Free-form layout of the civilization canvas: each building type's box position, keyed
+  // by buildingId. Pure UI state — the core never knows where boxes sit.
+  const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const [bDrag, setBDragState] = useState<BuildingDrag | null>(null);
+  // The canvas is a fixed backdrop; these insets keep it between the banner and hand bar.
+  const [insets, setInsets] = useState({ top: 0, bottom: 0 });
+  const bDragRef = useRef<BuildingDrag | null>(null);
+  const gameareaRef = useRef<HTMLDivElement>(null);
+  const bannerRef = useRef<HTMLElement>(null);
   const dragRef = useRef<DragState | null>(null);
   const cardEls = useRef<Map<number, HTMLButtonElement>>(new Map());
   const handBarRef = useRef<HTMLDivElement>(null);
@@ -356,6 +385,20 @@ export function Board() {
   function setDrag(d: DragState | null) {
     dragRef.current = d;
     setDragState(d);
+  }
+
+  // Same lockstep pattern for the building-box drag.
+  function setBDrag(d: BuildingDrag | null) {
+    bDragRef.current = d;
+    setBDragState(d);
+  }
+
+  /** Begin dragging a building box — unless the press landed on a control (the +/-/demolish buttons). */
+  function onBoxPointerDown(e: React.PointerEvent, buildingId: string) {
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('button')) return; // let staffing/demolish clicks through
+    const r = e.currentTarget.getBoundingClientRect();
+    setBDrag({ buildingId, pointerId: e.pointerId, grabX: e.clientX - r.left, grabY: e.clientY - r.top });
   }
 
   /** Spawn a transient clone that animates a card out, then clean it up. */
@@ -396,6 +439,18 @@ export function Board() {
     if (need > 0 && G.hand.length - 1 >= need) {
       setPending({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key, need, discards: [] });
       return;
+    }
+    // A card that erects a new building type drops its box where the card landed (its top-left
+    // matching the absorbing ghost), overriding the default grid slot. An existing type keeps
+    // its already-placed box, so a second farm doesn't yank the farm box to the cursor.
+    const built = card.effect?.build;
+    if (built && !(built in positions)) {
+      const rect = gameareaRef.current?.getBoundingClientRect();
+      if (rect) {
+        const px = Math.max(0, Math.min(x - d.grabX - rect.left, rect.width - BOX_W));
+        const py = Math.max(0, Math.min(y - d.grabY - rect.top - insets.top, rect.height - insets.top - BOX_H));
+        setPositions((p) => (built in p ? p : { ...p, [built]: { x: px, y: py } }));
+      }
     }
     spawnGhost(d.cardId, { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h }, 'drop');
     moves.playCard(d.handIdx);
@@ -458,6 +513,72 @@ export function Board() {
     // Re-bind only when a drag begins/ends; mid-drag updates flow through dragRef.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drag?.key]);
+
+  // While a building box is being dragged, track the pointer on the window and write its
+  // new canvas-relative position (clamped inside the canvas).
+  useEffect(() => {
+    if (!bDrag) return;
+    function onMove(e: PointerEvent) {
+      const d = bDragRef.current;
+      const rect = gameareaRef.current?.getBoundingClientRect();
+      if (!d || !rect || e.pointerId !== d.pointerId) return;
+      // Box positions are stored relative to the play area *below* the banner, so subtract the
+      // banner inset here and keep boxes from sliding up under it.
+      const x = Math.max(0, Math.min(e.clientX - rect.left - d.grabX, rect.width - BOX_W));
+      const y = Math.max(
+        0,
+        Math.min(e.clientY - rect.top - insets.top - d.grabY, rect.height - insets.top - BOX_H),
+      );
+      setPositions((p) => ({ ...p, [d.buildingId]: { x, y } }));
+    }
+    function onUp(e: PointerEvent) {
+      const d = bDragRef.current;
+      if (!d || e.pointerId !== d.pointerId) return;
+      setBDrag(null);
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bDrag?.buildingId, insets.top]);
+
+  // Seed a default grid slot for any building type that has just appeared in the tableau.
+  // Existing positions (including ones the player has dragged) are left untouched; a type
+  // that was destroyed and later rebuilt simply reuses its remembered spot.
+  const tableauKey = Array.from(new Set(G.tableau.map((b) => b.buildingId))).join(',');
+  useEffect(() => {
+    setPositions((prev) => {
+      const ids = Array.from(new Set(G.tableau.map((b) => b.buildingId)));
+      const missing = ids.filter((id) => !(id in prev));
+      if (missing.length === 0) return prev;
+      const next = { ...prev };
+      let slot = Object.keys(prev).length;
+      for (const id of missing) next[id] = slotPos(slot++);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableauKey]);
+
+  // The canvas fills the gap between the banner and the hand bar; track their heights so it
+  // stays flush as they reflow (e.g. the hand bar grows when a discard/destroy prompt shows).
+  useEffect(() => {
+    const measure = () =>
+      setInsets({ top: bannerRef.current?.offsetHeight ?? 0, bottom: handBarRef.current?.offsetHeight ?? 0 });
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (bannerRef.current) ro.observe(bannerRef.current);
+    if (handBarRef.current) ro.observe(handBarRef.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
 
   const idle = freePopulation(G);
   const territory = freeTerritory(G);
@@ -532,7 +653,7 @@ export function Board() {
 
   return (
     <div className={styles.app}>
-      <header className={styles.topBanner}>
+      <header className={styles.topBanner} ref={bannerRef}>
         <MissionWidget mission={mission} G={G} />
 
         <div className={styles.strategicGroup}>
@@ -601,60 +722,75 @@ export function Board() {
         </div>
       </header>
 
-      <section className={styles.civSection}>
-        <h2>Civilization</h2>
-        {groups.length === 0 && <p className={styles.empty}>Nothing built yet.</p>}
-        <ul className={styles.tableau}>
-          {groups.map((g) => {
-            const bld = BUILDINGS[g.buildingId];
-            const req = requiredWorkers(g.buildingId);
-            const selfSufficient = req === 0;
-            const capacity = req * g.count;
-            const assigned = g.instances.reduce((sum, b) => sum + b.workers, 0);
-            const operatingCount = g.instances.filter(isOperating).length;
-            const allOperating = operatingCount === g.count;
-            return (
-              <li key={g.buildingId} className={allOperating ? styles.operating : styles.idleBuilding}>
-                <span className={styles.bName}>
-                  {bld.name}
-                  {g.count > 1 ? ` ×${g.count}` : ''}
-                </span>
-                <span className={styles.muted}>{describeBuilding(bld)}</span>
-                {selfSufficient ? (
-                  <span className={styles.staff}>self-sufficient</span>
-                ) : (
-                  <span className={styles.staff}>
-                    <button
-                      onClick={() => moves.unassignWorker(g.buildingId)}
-                      disabled={assigned <= 0}
-                      aria-label={`unassign worker from ${bld.name}`}
-                    >
-                      −
-                    </button>
-                    👷 {assigned}/{capacity}
-                    <button
-                      onClick={() => moves.assignWorker(g.buildingId)}
-                      disabled={idle <= 0 || assigned >= capacity}
-                      aria-label={`assign worker to ${bld.name}`}
-                    >
-                      +
-                    </button>
+      <div
+        className={styles.gamearea}
+        ref={gameareaRef}
+        style={{ top: 0, bottom: insets.bottom }}
+      >
+        {groups.map((g) => {
+              const bld = BUILDINGS[g.buildingId];
+              const req = requiredWorkers(g.buildingId);
+              const selfSufficient = req === 0;
+              const capacity = req * g.count;
+              const assigned = g.instances.reduce((sum, b) => sum + b.workers, 0);
+              const operatingCount = g.instances.filter(isOperating).length;
+              const allOperating = operatingCount === g.count;
+              const pos = positions[g.buildingId] ?? { x: 0, y: 0 };
+              const className = [
+                styles.buildingBox,
+                allOperating ? styles.operating : styles.idleBuilding,
+                bDrag?.buildingId === g.buildingId ? styles.boxDragging : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+              return (
+                <div
+                  key={g.buildingId}
+                  className={className}
+                  style={{ left: pos.x, top: insets.top + pos.y }}
+                  onPointerDown={(e) => onBoxPointerDown(e, g.buildingId)}
+                >
+                  <span className={styles.bName}>
+                    {bld.name}
+                    {g.count > 1 ? ` ×${g.count}` : ''}
                   </span>
-                )}
-                {pendingDestroy && (
-                  <button
-                    className={styles.demolishBtn}
-                    onClick={() => handleDestroyTarget(g.buildingId)}
-                    aria-label={`demolish ${bld.name}`}
-                  >
-                    💥 Demolish
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+                  <span className={styles.muted}>{describeBuilding(bld)}</span>
+                  <div className={styles.boxControls}>
+                    {selfSufficient ? (
+                      <span className={styles.staff}>self-sufficient</span>
+                    ) : (
+                      <span className={styles.staff}>
+                        <button
+                          onClick={() => moves.unassignWorker(g.buildingId)}
+                          disabled={assigned <= 0}
+                          aria-label={`unassign worker from ${bld.name}`}
+                        >
+                          −
+                        </button>
+                        👷 {assigned}/{capacity}
+                        <button
+                          onClick={() => moves.assignWorker(g.buildingId)}
+                          disabled={idle <= 0 || assigned >= capacity}
+                          aria-label={`assign worker to ${bld.name}`}
+                        >
+                          +
+                        </button>
+                      </span>
+                    )}
+                    {pendingDestroy && (
+                      <button
+                        className={styles.demolishBtn}
+                        onClick={() => handleDestroyTarget(g.buildingId)}
+                        aria-label={`demolish ${bld.name}`}
+                      >
+                        💥 Demolish
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+      </div>
 
       <div className={styles.handBar} ref={handBarRef}>
         <div className={styles.handBarInner}>
