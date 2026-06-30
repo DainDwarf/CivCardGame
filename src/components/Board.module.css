@@ -871,10 +871,10 @@
 
 /* --- Zoomed card preview --- */
 
-.zoomBackdrop {
+.zoomBackdrop,
+.pileBackdrop {
   position: fixed;
   inset: 0;
-  z-index: 80;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -883,6 +883,15 @@
   background: rgba(20, 20, 20, 0.6);
   cursor: zoom-out;
   animation: fadeIn 0.15s ease;
+}
+
+/* Pile viewer sits below the zoom overlay so zoom always wins. */
+.pileBackdrop {
+  z-index: 75;
+}
+
+.zoomBackdrop {
+  z-index: 80;
 }
 
 .zoomWrap {
@@ -961,12 +970,10 @@
   position: relative;
 }
 
-/* A non-interactive card face used inside the pile viewer. */
-.staticCard,
-.staticCard:hover {
+/* A pile-viewer card face — click to zoom. */
+.staticCard {
   margin: 0;
-  transform: none;
-  cursor: default;
+  cursor: pointer;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
   z-index: auto;
 }

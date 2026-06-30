@@ -1020,26 +1020,10 @@ export function Board() {
         </>
       )}
 
-      {/* Zoomed card preview, opened by clicking a card. */}
-      {zoom && (
-        <div className={styles.zoomBackdrop} onClick={() => setZoom(null)} role="dialog" aria-modal="true">
-          <div className={styles.zoomWrap}>
-            <div
-              className={`${styles.card} ${styles.zoomCard} ${
-                CARDS[zoom].kind === 'recurring' ? styles.action : styles.permanent
-              }`}
-            >
-              <CardFace card={CARDS[zoom]} />
-            </div>
-          </div>
-          <p className={styles.zoomHint}>Drag a card onto the board to play · click anywhere to close</p>
-        </div>
-      )}
-
       {/* Discard / removed pile contents, opened by clicking a pile. */}
       {pileView && (
         <div
-          className={styles.zoomBackdrop}
+          className={styles.pileBackdrop}
           onClick={() => setPileView(null)}
           role="dialog"
           aria-modal="true"
@@ -1058,6 +1042,15 @@ export function Board() {
                       className={`${styles.card} ${styles.staticCard} ${
                         CARDS[g.cardId].kind === 'recurring' ? styles.action : styles.permanent
                       }`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); setZoom(g.cardId); }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.stopPropagation();
+                          setZoom(g.cardId);
+                        }
+                      }}
                     >
                       <CardFace card={CARDS[g.cardId]} />
                     </div>
@@ -1066,8 +1059,24 @@ export function Board() {
                 ))}
               </div>
             )}
-            <p className={styles.zoomHint}>Click anywhere to close</p>
+            <p className={styles.zoomHint}>Click a card to zoom · click outside to close</p>
           </div>
+        </div>
+      )}
+
+      {/* Zoomed card preview, opened by clicking a card. zoomBackdrop (z-index 80) sits above pileBackdrop (75). */}
+      {zoom && (
+        <div className={styles.zoomBackdrop} onClick={() => setZoom(null)} role="dialog" aria-modal="true">
+          <div className={styles.zoomWrap}>
+            <div
+              className={`${styles.card} ${styles.zoomCard} ${
+                CARDS[zoom].kind === 'recurring' ? styles.action : styles.permanent
+              }`}
+            >
+              <CardFace card={CARDS[zoom]} />
+            </div>
+          </div>
+          <p className={styles.zoomHint}>Drag a card onto the board to play · click anywhere to close</p>
         </div>
       )}
 
