@@ -71,10 +71,11 @@ export const MISSIONS: Record<string, MissionDef> = {
       G.resources.military -= G.vars.threat;
     },
     objective: (G) => countTag(G.tableau, 'wonder') >= 3,
-    failure: (G) => G.resources.military < 0,
+    // No mission-specific failure: the universal core resource floor handles defeat here.
+    failure: () => false,
     progress: (G) =>
       `Wonders ${countTag(G.tableau, 'wonder')}/3 · Military ${G.resources.military} · Threat ${G.vars.threat ?? 0}`,
     victoryHint: 'Construct 3 Wonders before the barbarians overwhelm you.',
-    failureHint: 'Military drops below 0 (barbarian sack).',
+    failureHint: null,
   },
 };
