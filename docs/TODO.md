@@ -13,6 +13,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Run loop (`src/run/`, `src/rules/`)
 
+- **Core resource floor failure** — any core resource going negative ends the run: Famine (Food), Ruin (Production), Bankruptcy (Money), Dark Age (Science), Revolt (Military). Currently only Food hitting zero is implemented. `[size: S]`
+
 - Undo feature — but disallow undoing past a move that revealed new info (e.g. a draw) `[?]`
 
 ## Meta loop (`src/meta/` — not built yet)
@@ -45,7 +47,6 @@ _(empty)_
 - Card that gives a draw when expanding territory `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
 - **Population-reserving actions** — some cards (Harvest, Forced Labor / rename to something like "Gather Resource") cost no resources but reserve one population for the current turn instead of paying a traditional price; reserved pop can't be assigned to buildings until next turn `[?]`
-- **Resource design intent (thematic "feeling", not hard rules):** Food = population management & upkeep; Production = building structures; Science = deck manipulation (draw, pick from discard, peek top N, …); Military = expansion + disaster prevention (see disasters below); Money = immediate/flexible actions `[?]`
 
 
 

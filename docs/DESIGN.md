@@ -85,15 +85,27 @@ A "round" = one turn:
 
 ### Resources ✅
 
-Five resources are implemented, each with a distinct role:
+All resources know nothing about missions. Missions sit on top: they reference resources as objective targets, failure triggers, or pressure multipliers. The resource definitions don't change; only the mission's lens on them does.
 
-- **Food** — survival. Population eats 1 food/round; hitting zero triggers famine (run loss).
-- **Production** — the build currency. Spent to play permanent building cards.
-- **Money** — the action currency. Spent to play recurring action cards (Eureka, Inspiration, …). Produced by Market / Trading Post buildings.
-- **Science** — advancement metric. Produced by Libraries and Universities; the win target for science missions.
-- **Military** — defense metric. Produced by walls and barracks; the buffer against threat in military missions.
+#### Core resources
 
-Further expansion axes (`Culture`, `Faith`) remain possible for future missions.
+Five spendable/trackable resources, each with a **mechanical role** and a **thematic feel** (design guidelines, not hard rules). Any core resource going negative ends the run immediately, regardless of the active mission:
+
+- **Food** — population management. Population eats food each round. Going negative: **Famine**. More food supports more population, which means more workers available to staff buildings.
+- **Production** — the build currency. Represents the material the civilization has accumulated — housing, industry, infrastructure. Spent to play permanent building cards. Going negative: **Ruin**.
+- **Money** — the treasury. Spent on immediate, temporary actions. Not a universal wildcard: its value depends on which action cards and buildings you run. It complements your economy rather than replacing it. Going negative: **Bankruptcy**.
+- **Science** — anticipation and planning. Primarily expressed through card manipulation: drawing extra cards, discarding strategically, retrieving cards from the discard pile, peeking at the top of the deck. Going negative: **Dark Age**.
+- **Military** — power projection, both defensive and offensive. Defends against external threats (disasters, invasion event cards) and enables aggression: expanding territory and pillaging resources. Going negative: **Revolt**.
+
+Further expansion axes (`Faith`, …) remain possible.
+
+#### Strategic resources
+
+Three civilization-level gauges that constrain and enable play. They are never directly spent; they define the shape of your civilization.
+
+- **Population** — your workforce. Workers are drawn from the idle population pool to staff buildings (which need workers to operate) and to pay for population-reserving actions. Food production determines how large a population you can sustain.
+- **Territory** — the land your civilization controls. You cannot build more buildings than your territory allows. Expand by conquest or development; or free up slots by demolishing existing buildings.
+- **Culture** — how much your civilization shines. Accumulated over time; the more you have, the more willing your people are to act. Mechanically: culture thresholds increase hand size, and some cards require a minimum culture to be playable.
 
 ## Mission system — objective & failure as data ✅
 
