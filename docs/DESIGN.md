@@ -14,7 +14,7 @@ civilization. It has two game loops with a strict separation of concerns:
 ## Core philosophy ✅
 
 **Strategy lives in the meta loop; the run is the verdict.** The deck is *fixed*
-for the entire run — there is no mid-run drafting (unlike Slay the Spire). Deck
+for the entire run — there is no mid-run drafting. Deck
 construction is the strategic puzzle; a run answers one question: *does this build
 survive this mission under the variance of the draw?*
 
