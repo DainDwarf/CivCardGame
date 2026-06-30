@@ -35,6 +35,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
+- **Collapse warning** — visual warning when a core resource is about to go negative; needs core resource floor failure first `[blocked]`
+
 - Pass over stat tooltips to strip specifics — they name particular cards/missions (e.g. Barbarian Tide, Settlers); keep them generic about the mechanic
 - **Buildings board** — replace the current buildings list with a free-form canvas; buildings render as draggable boxes the player can spatially rearrange; population tokens are drag-and-dropped directly between buildings to assign/unassign workers. Requires moving the resources UI out of that area first. `[size: L] [?]`
 
