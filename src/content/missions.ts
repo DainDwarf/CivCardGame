@@ -35,7 +35,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     description: 'Reach 30 Science by the end of round 12.',
     objective: (G) => G.resources.science >= 30,
     failure: (G) => G.round > 12 && G.resources.science < 30,
-    progress: (G) => `Science ${G.resources.science}/30 · round ${Math.min(G.round, 12)}/12`,
+    progress: (G) => `Science ${G.resources.science}/30`,
     victoryHint: 'Accumulate 30 Science before round 12 ends.',
     failureHint: 'Failing to reach 30 Science by round 12.',
   },

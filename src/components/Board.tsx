@@ -150,7 +150,7 @@ function Stat({
 function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
   return (
     <div className={styles.missionWidget} tabIndex={0}>
-      <div className={styles.missionName}>{mission.name} · Rd {G.round}</div>
+      <div className={styles.missionName}>{mission.name}</div>
       <div className={styles.missionProgress}>🎯 {mission.progress(G)}</div>
       <div className={`${styles.tooltip} ${styles.tooltipLeft} ${styles.tooltipWide}`} role="tooltip">
         <strong>{mission.name}</strong>
@@ -754,7 +754,8 @@ export function Board() {
               disabled={!canEndRound}
               onClick={() => { if (shouldWarn) setWarnEndRound(true); else endTurn(); }}
             >
-              End Round →
+              <span className={styles.endRoundLabel}>End Round</span>
+              <span className={styles.endRoundRound}>Rd {G.round}</span>
             </button>
           )}
         </div>
