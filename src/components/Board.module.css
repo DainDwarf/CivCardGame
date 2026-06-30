@@ -975,3 +975,132 @@
   justify-content: center;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
+
+/* --- End-of-run overlay --- */
+
+/* Full-screen dimmed backdrop. */
+.gameoverOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  animation: fadeIn 0.2s ease;
+}
+
+/* Centered result card. */
+.gameoverPanel {
+  max-width: 380px;
+  width: 90%;
+  padding: 2rem 2.5rem 1.75rem;
+  border-radius: 16px;
+  background: #faf8f4;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55);
+  text-align: center;
+  animation: zoomIn 0.2s ease-out;
+}
+
+.gameoverTitle {
+  margin: 0 0 0.4rem;
+  font-size: 2rem;
+  line-height: 1.15;
+}
+
+.gameoverMission {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin: 0 0 0.35rem;
+}
+
+.gameoverResult {
+  color: #555;
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+}
+
+.gameoverRound {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 0 0 1.75rem;
+}
+
+.gameoverBtns {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.gameoverBtn {
+  padding: 0.55rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.gameoverBtnRestart {
+  background: #2c2c2c;
+  color: #fff;
+}
+
+.gameoverBtnRestart:hover {
+  background: #000;
+}
+
+.gameoverBtnInspect {
+  background: #e4e2de;
+  color: #2c2c2c;
+}
+
+.gameoverBtnInspect:hover {
+  background: #d4d2ce;
+}
+
+.gameoverBtnEnd {
+  background: #e4e2de;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+/* Minimized pill shown when player clicks Inspect. Lives inside .app but re-enables pointer events. */
+.gameoverPill {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.65rem 0.45rem 1rem;
+  border-radius: 999px;
+  background: rgba(28, 28, 28, 0.88);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+
+.gameoverPillReturn {
+  padding: 0.25rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.gameoverPillReturn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

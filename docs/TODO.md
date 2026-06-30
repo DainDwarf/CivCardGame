@@ -33,7 +33,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- **End of run screen** — rework the victory/defeat screen `[?]` `[phase: 1]`
+- **Zoomable cards in list views** — clicking a card in the discard pile viewer (and similar listings) should open the same zoom overlay as clicking a hand card `[size: S]` `[phase: 1]`
+- **Unplayable card feedback** — when the player tries to play a card they can't afford or that has no valid target, show a brief error message explaining why (e.g. "not enough food", "territory full") rather than just a shake `[size: S]` `[phase: 1]`
 
 - **Game menu** — save, config, codex, and other global actions; the codex is where in-depth mechanic explanations live (not tooltips) `[?]` `[phase: 2]`
 - **Buildings board: worker drag** — buildings now render as draggable boxes on a free-form canvas, but staffing is still +/- buttons. Remaining: drag-and-drop population tokens directly between buildings to assign/unassign workers. `[size: M] [?]` `[phase: 1]`
@@ -56,6 +57,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- **End of run screen** — victory/defeat no longer navigates away; an overlay appears in place with Restart, Inspect (minimizes to a pill so the player can browse the final board), and End Run. Inspect mode blocks game actions but keeps tooltips, card zoom, and pile viewers fully functional.
 - **Buildings board (canvas)** — the tableau list is now a free-form canvas; each building type is a draggable box the player can spatially rearrange (positions are pure UI state in `Board`, keyed by `buildingId`; new buildings auto-place into a grid slot). Worker staffing kept as +/- buttons for now.
 - Stat tooltips are glanceable one-liners — no card/mission names, no mechanic explanations (those belong in the future codex).
 - **Culture resource** — `G.culture` accumulates but is never spent; two growth paths: Theater building (+2/round while staffed) and Cultural Festival card (+3 immediately); The Philosopher card demonstrates the threshold gate (requires culture ≥ 5). Displayed alongside population and territory in the UI.

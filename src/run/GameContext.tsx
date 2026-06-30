@@ -12,6 +12,7 @@ interface GameContextValue {
     unassignWorker: (buildingId: string) => void;
   };
   endTurn: () => void;
+  restart: () => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -29,9 +30,10 @@ export function GameProvider({ missionId, children }: { missionId: string; child
   }), []);
 
   const handleEndTurn = useMemo(() => () => setState(endTurn), []);
+  const handleRestart = useMemo(() => () => setState((s) => createRun(s.G.missionId)), []);
 
   return (
-    <GameContext.Provider value={{ G: state.G, gameover: state.gameover, moves, endTurn: handleEndTurn }}>
+    <GameContext.Provider value={{ G: state.G, gameover: state.gameover, moves, endTurn: handleEndTurn, restart: handleRestart }}>
       {children}
     </GameContext.Provider>
   );

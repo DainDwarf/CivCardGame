@@ -38,10 +38,11 @@ export function endTurn(state: RunState): RunState {
   if (state.gameover) return state;
   const G = structuredClone(state.G);
   applyUpkeep(G, MISSIONS[G.missionId]?.onUpkeep);
-  G.discard.push(...G.hand);
-  G.hand = [];
+  // Check for collapse/victory before clearing the hand so that the hand is visible for inspection.
   const afterUpkeep = checkEndIf({ ...state, G });
   if (afterUpkeep.gameover) return afterUpkeep;
+  G.discard.push(...G.hand);
+  G.hand = [];
   return beginTurn(afterUpkeep);
 }
 

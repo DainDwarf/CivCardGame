@@ -351,7 +351,7 @@ function slotPos(i: number): { x: number; y: number } {
 }
 
 export function Board() {
-  const { G, gameover, moves, endTurn } = useGame();
+  const { G, gameover, moves, endTurn, restart } = useGame();
   const mission = MISSIONS[G.missionId];
   const [pending, setPending] = useState<PendingPlay | null>(null);
   const [pendingDestroy, setPendingDestroy] = useState<PendingDestroy | null>(null);
@@ -361,6 +361,7 @@ export function Board() {
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
   const [warnEndRound, setWarnEndRound] = useState(false);
+  const [overlayMinimized, setOverlayMinimized] = useState(false);
   // Free-form layout of the civilization canvas: each building type's box position, keyed
   // by buildingId. Pure UI state — the core never knows where boxes sit.
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
@@ -399,6 +400,7 @@ export function Board() {
   /** Begin dragging a building box — unless the press landed on a control (the +/-/demolish buttons). */
   function onBoxPointerDown(e: React.PointerEvent, buildingId: string) {
     if (e.button !== 0) return;
+    if (gameover && overlayMinimized) return; // inspect mode — board is view-only
     if ((e.target as HTMLElement).closest('button')) return; // let staffing/demolish clicks through
     const r = e.currentTarget.getBoundingClientRect();
     setBDrag({ buildingId, pointerId: e.pointerId, grabX: e.clientX - r.left, grabY: e.clientY - r.top });
@@ -421,6 +423,7 @@ export function Board() {
 
   /** Try to play a dragged card released over the board. */
   function attemptPlay(d: DragState, x: number, y: number) {
+    if (gameover) return; // run is over — drags may still zoom on click, but never play
     const card = CARDS[d.cardId];
     // Unaffordable (resources, idle population, no open building slot, or no building to destroy).
     if (
@@ -483,6 +486,7 @@ export function Board() {
 
   function onCardPointerDown(e: React.PointerEvent, card: HandCard) {
     if (e.button !== 0 || pending || pendingDestroy) return; // in selection mode, clicks select instead
+    if (gameover && overlayMinimized) return; // inspect mode — zoom handled by onClick instead
     const r = cardEls.current.get(card.key)?.getBoundingClientRect();
     if (!r) return;
     setDrag({
@@ -599,6 +603,11 @@ export function Board() {
   const hasUnstaffedCapacity = G.tableau.some((b) => !isOperating(b));
   const shouldWarn = idle > 0 && hasUnstaffedCapacity;
 
+  // Restore the overlay when a new run starts.
+  useEffect(() => {
+    if (!gameover) setOverlayMinimized(false);
+  }, [gameover]);
+
   // Clear pending sacrifice-pick, pending destroy, end-round warning, and reserve box positions at the start of each new round.
   useEffect(() => {
     setPending(null);
@@ -639,27 +648,13 @@ export function Board() {
   }
 
 
-  if (gameover) {
-    const won = gameover.outcome === 'victory';
-    const COLLAPSE_MESSAGES: Record<string, string> = {
-      famine:     'famine struck — your people starved.',
-      ruin:       'ruin befell — your economy collapsed.',
-      bankruptcy: 'bankruptcy struck — your treasury ran dry.',
-      dark_age:   'a dark age descended — knowledge was lost.',
-      revolt:     'revolt erupted — your people rose against you.',
-    };
-    const defeatMessage = (gameover.reason && COLLAPSE_MESSAGES[gameover.reason]) ?? 'your civilization has fallen.';
-    return (
-      <div className={styles.app}>
-        <h1>{won ? '🏛️ Victory' : '💀 Defeat'}</h1>
-        <p>
-          <strong>{mission.name}</strong> —{' '}
-          {won ? 'objective achieved.' : defeatMessage}
-        </p>
-        <p>Reached round {G.round}</p>
-      </div>
-    );
-  }
+  const COLLAPSE_MESSAGES: Record<string, string> = {
+    famine:     'famine struck — your people starved.',
+    ruin:       'ruin befell — your economy collapsed.',
+    bankruptcy: 'bankruptcy struck — your treasury ran dry.',
+    dark_age:   'a dark age descended — knowledge was lost.',
+    revolt:     'revolt erupted — your people rose against you.',
+  };
 
   const proj = projectedDelta(G, mission.onUpkeep);
   const collapseRisk = (key: keyof typeof G.resources) => G.resources[key] + proj[key] < 0;
@@ -667,6 +662,7 @@ export function Board() {
   const canEndRound = !pending && !pendingDestroy && !drag;
 
   return (
+    <>
     <div className={styles.app}>
       <header className={styles.topBanner} ref={bannerRef}>
         <MissionWidget mission={mission} G={G} />
@@ -785,7 +781,7 @@ export function Board() {
                       <span className={styles.staff}>
                         <button
                           onClick={() => moves.unassignWorker(g.buildingId)}
-                          disabled={assigned <= 0}
+                          disabled={!!gameover || assigned <= 0}
                           aria-label={`unassign worker from ${bld.name}`}
                         >
                           −
@@ -793,7 +789,7 @@ export function Board() {
                         👷 {assigned}/{capacity}
                         <button
                           onClick={() => moves.assignWorker(g.buildingId)}
-                          disabled={idle <= 0 || assigned >= capacity}
+                          disabled={!!gameover || idle <= 0 || assigned >= capacity}
                           aria-label={`assign worker to ${bld.name}`}
                         >
                           +
@@ -899,6 +895,7 @@ export function Board() {
                     style={card.isNew ? { animationDelay: `${Math.min(card.newOrder, 6) * 70}ms` } : undefined}
                     onPointerDown={(e) => onCardPointerDown(e, card)}
                     onClick={() => {
+                      if (gameover && overlayMinimized) { setZoom(card.cardId); return; }
                       if (pending) handlePendingClick(card);
                       else if (pendingDestroy && card.handIdx === pendingDestroy.handIdx) setPendingDestroy(null);
                     }}
@@ -947,7 +944,7 @@ export function Board() {
           ) : (
             <button
               className={styles.endRound}
-              disabled={!canEndRound}
+              disabled={!!gameover || !canEndRound}
               onClick={() => { if (shouldWarn) setWarnEndRound(true); else endTurn(); }}
             >
               <span className={styles.endRoundLabel}>End Round</span>
@@ -1054,6 +1051,44 @@ export function Board() {
           </div>
         </div>
       )}
+
+      {/* Minimized inspect pill — lives inside .app but pointer-events: auto overrides boardInert. */}
+      {gameover && overlayMinimized && (
+        <div className={styles.gameoverPill} style={{ bottom: insets.bottom + 8 }}>
+          {gameover.outcome === 'victory' ? '🏛️ Victory' : '💀 Defeat'} — {mission.name}
+          <button className={styles.gameoverPillReturn} onClick={() => setOverlayMinimized(false)}>
+            Return to result
+          </button>
+        </div>
+      )}
     </div>
+
+    {/* End-of-run overlay — outside .app so boardInert doesn't affect it. */}
+    {gameover && !overlayMinimized && (() => {
+      const won = gameover.outcome === 'victory';
+      const defeatMessage = (gameover.reason && COLLAPSE_MESSAGES[gameover.reason]) ?? 'your civilization has fallen.';
+      return (
+        <div className={styles.gameoverOverlay}>
+          <div className={styles.gameoverPanel}>
+            <h1 className={styles.gameoverTitle}>{won ? '🏛️ Victory' : '💀 Defeat'}</h1>
+            <p className={styles.gameoverMission}>{mission.name}</p>
+            <p className={styles.gameoverResult}>{won ? 'Objective achieved.' : defeatMessage}</p>
+            <p className={styles.gameoverRound}>Reached round {G.round}</p>
+            <div className={styles.gameoverBtns}>
+              <button className={`${styles.gameoverBtn} ${styles.gameoverBtnRestart}`} onClick={restart}>
+                Restart
+              </button>
+              <button className={`${styles.gameoverBtn} ${styles.gameoverBtnInspect}`} onClick={() => setOverlayMinimized(true)}>
+                Inspect
+              </button>
+              <button className={`${styles.gameoverBtn} ${styles.gameoverBtnEnd}`} disabled>
+                End Run
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    })()}
+    </>
   );
 }
