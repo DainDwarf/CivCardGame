@@ -9,42 +9,42 @@ the idea lands here as a one-liner without derailing what we're doing. We triage
 later — promote items into `DESIGN.md` / real work, or drop them.
 
 > Tags (optional): `[size: S/M/L]` rough effort · `[?]` needs design discussion ·
-> `[blocked]` waiting on something else.
+> `[blocked]` waiting on something else · `[phase: N]` roadmap phase (1 = run loop · 2 = contract + meta shell · 3 = economy & progression · 4 = content & balance).
 
 ## Run loop (`src/run/`, `src/rules/`)
 
-- Undo feature — but disallow undoing past a move that revealed new info (e.g. a draw) `[?]`
+- Undo feature — but disallow undoing past a move that revealed new info (e.g. a draw) `[?]` `[phase: 1]`
 
 ## Meta loop (`src/meta/` — not built yet)
 
-- **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]`
-- **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]`
-- **Government boards** — alongside deckbuilding, the meta lets the player choose a "board" (themed as government type: monarchy, republic, etc.); the board sets starting resources and scales with the player's progression on the mission tech map (i.e. what the player has already unlocked determines how powerful the starting board is) `[?]`
+- **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
+- **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
+- **Government boards** — alongside deckbuilding, the meta lets the player choose a "board" (themed as government type: monarchy, republic, etc.); the board sets starting resources and scales with the player's progression on the mission tech map (i.e. what the player has already unlocked determines how powerful the starting board is) `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
 
-- **Disasters** — some missions inject disaster/event cards (negative effects) into the player's deck as pressure; Military helps prevent/mitigate them (details TBD) `[?]`
-- New mission type: "Metropolis" `[?]`
-- New mission: "Build the Wonder" `[?]`
-- Culture-based missions (depend on the Culture resource) `[?]`
-- Building that changes hand size (e.g. +1 card drawn per round) `[?]`
-- Culture thresholds change hand size by default (no building required) — culture as a passive progression axis `[?]`
-- Resources transformation? Like a building that transforms production into science for example
+- **Disasters** — some missions inject disaster/event cards (negative effects) into the player's deck as pressure; Military helps prevent/mitigate them (details TBD) `[?]` `[phase: 4]`
+- New mission type: "Metropolis" `[?]` `[phase: 4]`
+- New mission: "Build the Wonder" `[?]` `[phase: 4]`
+- Culture-based missions (depend on the Culture resource) `[?]` `[phase: 4]`
+- Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
+- Culture thresholds change hand size by default (no building required) — culture as a passive progression axis `[?]` `[phase: 4]`
+- Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
 
 ## UI (`src/components/`)
 
-- Pass over stat tooltips to strip specifics — they name particular cards/missions (e.g. Barbarian Tide, Settlers); keep them generic about the mechanic
-- **Buildings board** — replace the current buildings list with a free-form canvas; buildings render as draggable boxes the player can spatially rearrange; population tokens are drag-and-dropped directly between buildings to assign/unassign workers. Requires moving the resources UI out of that area first. `[size: L] [?]`
+- Pass over stat tooltips to strip specifics — they name particular cards/missions (e.g. Barbarian Tide, Settlers); keep them generic about the mechanic `[phase: 1]`
+- **Buildings board** — replace the current buildings list with a free-form canvas; buildings render as draggable boxes the player can spatially rearrange; population tokens are drag-and-dropped directly between buildings to assign/unassign workers. Requires moving the resources UI out of that area first. `[size: L] [?]` `[phase: 4]`
 
 ## Tech debt & infra (build, tests, tooling)
 
-- `projectedDelta` returns `Resources & { culture: number }` — folds one strategic resource (culture) into a core-resource delta shape while excluding population/territory. Slightly muddies the core/strategic split; consider modelling the strategic deltas separately `[size: S] [?]`
+- `projectedDelta` returns `Resources & { culture: number }` — folds one strategic resource (culture) into a core-resource delta shape while excluding population/territory. Slightly muddies the core/strategic split; consider modelling the strategic deltas separately `[size: S] [?]` `[phase: 2]`
 
 ## Game design & balance
 
-- Card that gives a draw when expanding territory `[?]`
-- Card effects that trigger on discard / on draw, to enable combos `[?]`
-- **Population-reserving actions** — some cards (Harvest, Forced Labor / rename to something like "Gather Resource") cost no resources but reserve one population for the current turn instead of paying a traditional price; reserved pop can't be assigned to buildings until next turn `[?]`
+- Card that gives a draw when expanding territory `[?]` `[phase: 4]`
+- Card effects that trigger on discard / on draw, to enable combos `[?]` `[phase: 4]`
+- **Population-reserving actions** — some cards (Harvest, Forced Labor / rename to something like "Gather Resource") cost no resources but reserve one population for the current turn instead of paying a traditional price; reserved pop can't be assigned to buildings until next turn `[?]` `[phase: 4]`
 
 
 
