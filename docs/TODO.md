@@ -33,7 +33,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- Pass over stat tooltips to strip specifics — they name particular cards/missions (e.g. Barbarian Tide, Settlers); keep them generic about the mechanic `[phase: 1]`
+- **Game menu** — save, config, codex, and other global actions; the codex is where in-depth mechanic explanations live (not tooltips) `[?]` `[phase: 2]`
 - **Buildings board** — replace the current buildings list with a free-form canvas; buildings render as draggable boxes the player can spatially rearrange; population tokens are drag-and-dropped directly between buildings to assign/unassign workers. Requires moving the resources UI out of that area first. `[size: L] [?]` `[phase: 1]`
 
 ## Tech debt & infra (build, tests, tooling)
@@ -55,6 +55,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- Stat tooltips are glanceable one-liners — no card/mission names, no mechanic explanations (those belong in the future codex).
 - **Culture resource** — `G.culture` accumulates but is never spent; two growth paths: Theater building (+2/round while staffed) and Cultural Festival card (+3 immediately); The Philosopher card demonstrates the threshold gate (requires culture ≥ 5). Displayed alongside population and territory in the UI.
 - **Money resource** — new 🪙 resource produced by Market and Trading Post buildings; Eureka and Inspiration now cost money instead of production.
 - **Remove keyboard shortcuts** — removed the global Escape handler (overlays close on backdrop click) and the Enter/Space onKeyDown on card buttons.

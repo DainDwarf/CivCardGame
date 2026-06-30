@@ -539,19 +539,19 @@ export function Board() {
           <Stat
             icon="👥"
             label="Population"
-            description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them; grow them with Settlers cards."
+            description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them."
             value={`${G.population} (${idle} idle)`}
           />
           <Stat
             icon="🗺️"
             label="Territory"
-            description="Building slots. Each building you construct fills one; building cards can't be played once it's full. Certain cards expand it."
+            description="Building slots. Each building you construct fills one; building cards can't be played once it's full."
             value={`${usedTerritory(G.tableau)}/${G.territory}`}
           />
           <Stat
             icon="🎭"
             label="Culture"
-            description="Your civilization's cultural level — it grows but is never spent. Cultural buildings add to it each round; certain action cards give an immediate boost. Some cards require a minimum culture level to play."
+            description="Your civilization's cultural level — it grows but is never spent."
             value={G.culture}
             delta={proj.culture}
           />
@@ -561,7 +561,7 @@ export function Board() {
           <Stat
             icon="🌾"
             label="Food"
-            description="Sustenance from staffed farms. Your population eats it each round — if it goes negative, famine ends the run. The (±) is the net change if you end the round now."
+            description="Sustenance from food-producing buildings. Your population eats it each round."
             value={G.resources.food}
             delta={proj.food}
             warn={collapseRisk('food')}
@@ -569,7 +569,7 @@ export function Board() {
           <Stat
             icon="🔨"
             label="Production"
-            description="Your build budget, spent to play cards. The (±) is what your staffed buildings will add at end of round."
+            description="Your build budget, spent to construct buildings."
             value={G.resources.production}
             delta={proj.production}
             warn={collapseRisk('production')}
@@ -577,7 +577,7 @@ export function Board() {
           <Stat
             icon="🪙"
             label="Money"
-            description="Coin from your markets and trade. Spent on action cards."
+            description="Coin from commercial buildings. Spent on action cards."
             value={G.resources.money}
             delta={proj.money}
             warn={collapseRisk('money')}
@@ -585,7 +585,7 @@ export function Board() {
           <Stat
             icon="⚔️"
             label="Military"
-            description="Military power stockpiled from your operating defenses. Some missions drain it each round — if it goes negative, revolt ends the run."
+            description="Military power of your civilization."
             value={G.resources.military}
             delta={proj.military}
             warn={collapseRisk('military')}
@@ -593,7 +593,7 @@ export function Board() {
           <Stat
             icon="🔬"
             label="Science"
-            description="Knowledge from staffed libraries; the goal of science missions. The (±) is end-of-round output."
+            description="Knowledge from research buildings."
             value={G.resources.science}
             delta={proj.science}
             warn={collapseRisk('science')}
