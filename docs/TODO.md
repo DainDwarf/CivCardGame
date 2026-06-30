@@ -11,8 +11,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Tags (optional): `[size: S/M/L]` rough effort · `[?]` needs design discussion ·
 > `[blocked]` waiting on something else · `[phase: N]` roadmap phase (1 = run loop · 2 = contract + meta shell · 3 = economy & progression · 4 = content & balance).
 
-## Run loop (`src/run/`, `src/rules/`)
-
 ## Meta loop (`src/meta/` — not built yet)
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
@@ -32,7 +30,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## UI (`src/components/`)
 
 - **Game menu** — save, config, codex, and other global actions; the codex is where in-depth mechanic explanations live (not tooltips) `[?]` `[phase: 2]`
-- **Buildings board: worker drag** — buildings now render as draggable boxes on a free-form canvas, but staffing is still +/- buttons. Remaining: drag-and-drop population tokens directly between buildings to assign/unassign workers. `[size: M] [?]` `[phase: 1]`
+- **Buildings board: worker drag** — buildings now render as draggable boxes on a free-form canvas, but staffing is still +/- buttons. Recommended direction: **pip-based drag where building→building is the headline gesture, click-toggle as the quick staff/unstaff, and a visible idle dock so the pool isn't invisible.** Rationale: every building is `workers: 0` or `1` today, so staffing-from-idle is really a binary on/off (a click beats a drag); the genuine friction is *reorganizing* labor A→B, which is a transfer — the one verb +/- handles badly (two gestures + invisible pool middleman). Direct building→building pip drag collapses that to one visible gesture. Multi-worker buildings (`req` 2–3) **are** on the roadmap, so the drag layer earns its keep: with `req` > 1, partial-staffing trade-offs and "move N workers from A to B" become real decisions, and a pip-per-instance drag (with a bulk-move modifier for groups) expresses them far better than +/-. `[size: M] [?]` `[phase: 1]`
 
 ## Tech debt & infra (build, tests, tooling)
 
@@ -47,6 +45,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 
 ---
+
+## Rejected
+
+> Considered and turned down — kept (not deleted) so we don't re-litigate the same idea
+> without new information.
+
+- **Ignore worker assignment in the undo list** — assign/unassign worker moves would skip pushing undo snapshots, so undo only steps through "meaningful" turn actions. Tried it (a `quietMove` action updating `present` without touching `past`), then reverted: having worker reassignment silently bundled into the prior card-play's undo step is confusing to the player, while the alternative — reconciling worker state done in the "present" back onto a restored past snapshot — is deeply error-prone (instance-count and population-total edge cases). For now, worker reassignments stay part of the regular undo list; revisit if a cleaner solution presents itself.
 
 ## Done / shipped
 
