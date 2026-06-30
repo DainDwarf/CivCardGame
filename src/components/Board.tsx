@@ -350,6 +350,27 @@ function slotPos(i: number): { x: number; y: number } {
   return { x: (i % COLS) * (BOX_W + GAP), y: Math.floor(i / COLS) * (BOX_H + GAP) };
 }
 
+/**
+ * Returns the reason a card cannot be played right now, or null if it's playable.
+ * Consolidates all shell-side playability checks into one place so the dimming logic,
+ * drag gate, and rejection message all stay in sync.
+ */
+function whyUnplayable(card: CardDef, G: GameState): string | null {
+  if (!canAfford(G.resources, card.cost)) {
+    const missing = (Object.entries(card.cost) as [keyof Resources, number][])
+      .filter(([k, v]) => v > 0 && G.resources[k] < v)
+      .map(([k, v]) => `${v - G.resources[k]}${COST_ICON[k]}`);
+    return `need ${missing.join(' ')}`;
+  }
+  if ((card.popCost ?? 0) > freePopulation(G)) return 'not enough idle workers';
+  if ((card.popReserve ?? 0) > freePopulation(G)) return 'not enough idle workers';
+  if (card.cultureThreshold && G.culture < card.cultureThreshold)
+    return `need ${card.cultureThreshold} 🎭 culture`;
+  if (card.effect?.build && freeTerritory(G) <= 0) return 'territory full';
+  if (card.effect?.destroy && G.tableau.length === 0) return 'no buildings to demolish';
+  return null;
+}
+
 export function Board() {
   const { G, gameover, moves, endTurn, restart } = useGame();
   const mission = MISSIONS[G.missionId];
@@ -360,6 +381,7 @@ export function Board() {
   const [pileView, setPileView] = useState<{ title: string; cards: string[] } | null>(null);
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
+  const [rejectMsg, setRejectMsg] = useState<string | null>(null);
   const [warnEndRound, setWarnEndRound] = useState(false);
   const [overlayMinimized, setOverlayMinimized] = useState(false);
   // Free-form layout of the civilization canvas: each building type's box position, keyed
@@ -376,13 +398,21 @@ export function Board() {
   const handBarRef = useRef<HTMLDivElement>(null);
   const ghostSeq = useRef(0);
   const shakeSeq = useRef(0);
+  const rejectMsgSeq = useRef(0);
   const hand = useAnimatedHand(G.hand);
 
-  /** Flash a "can't afford" shake on a card that snapped back to the hand. */
-  function rejectShake(key: number) {
+  /** Shake a card that can't be played and briefly show why. */
+  function rejectShake(key: number, reason?: string) {
     const n = ++shakeSeq.current;
     setShake({ key, n });
     window.setTimeout(() => setShake((s) => (s && s.n === n ? null : s)), 420);
+    if (reason !== undefined) {
+      const msgN = ++rejectMsgSeq.current;
+      setRejectMsg(reason);
+      window.setTimeout(() => {
+        if (rejectMsgSeq.current === msgN) setRejectMsg(null);
+      }, 2500);
+    }
   }
 
   // Keep a ref in lockstep with drag state so the window pointer listeners read fresh values.
@@ -425,16 +455,10 @@ export function Board() {
   function attemptPlay(d: DragState, x: number, y: number) {
     if (gameover) return; // run is over — drags may still zoom on click, but never play
     const card = CARDS[d.cardId];
-    // Unaffordable (resources, idle population, no open building slot, or no building to destroy).
-    if (
-      !canAfford(G.resources, card.cost) ||
-      (card.popCost ?? 0) > freePopulation(G) ||
-      (card.popReserve ?? 0) > freePopulation(G) ||
-      (card.cultureThreshold && G.culture < card.cultureThreshold) ||
-      (card.effect?.build && freeTerritory(G) <= 0) ||
-      (card.effect?.destroy && G.tableau.length === 0)
-    ) {
-      return rejectShake(d.key);
+    const reason = whyUnplayable(card, G);
+    if (reason) {
+      rejectShake(d.key, reason);
+      return;
     }
     // Destroy card: player must choose a building target before the move fires.
     if (card.effect?.destroy) {
@@ -599,7 +623,6 @@ export function Board() {
   }, []);
 
   const idle = freePopulation(G);
-  const territory = freeTerritory(G);
   const hasUnstaffedCapacity = G.tableau.some((b) => !isOperating(b));
   const shouldWarn = idle > 0 && hasUnstaffedCapacity;
 
@@ -855,19 +878,15 @@ export function Board() {
                 {CARDS[pendingDestroy.cardId].name} again to cancel.
               </p>
             )}
+            {rejectMsg && (
+              <p className={styles.rejectToast} role="alert">{rejectMsg}</p>
+            )}
             <div className={styles.hand}>
               {hand.length === 0 && <p className={styles.empty}>No cards in hand.</p>}
               {hand.map((card) => {
                 const c = CARDS[card.cardId];
-                // The discard cost never blocks play — it's waived when you can't cover it.
-                // A building card also needs an open slot; a destroy card needs a building to target.
-                const affordable =
-                  canAfford(G.resources, c.cost) &&
-                  (c.popCost ?? 0) <= idle &&
-                  (c.popReserve ?? 0) <= idle &&
-                  (!c.cultureThreshold || G.culture >= c.cultureThreshold) &&
-                  (!c.effect?.build || territory > 0) &&
-                  (!c.effect?.destroy || G.tableau.length > 0);
+                // Discard cost never blocks play — it's waived when you can't cover it.
+                const affordable = whyUnplayable(c, G) === null;
                 const isPending = pending?.handIdx === card.handIdx;
                 const isPendingDestroy = pendingDestroy?.handIdx === card.handIdx;
                 const isSacrifice = pending?.discards.includes(card.handIdx) ?? false;
