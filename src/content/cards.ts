@@ -52,7 +52,7 @@ export const CARDS: Record<string, CardDef> = {
   // --- Recurring actions (recycle to the discard). ---
   settlers: { id: 'settlers', name: 'Settlers', kind: 'recurring', cost: { food: 2 }, effect: { population: 1 } },
   forced_labor: { id: 'forced_labor', name: 'Forced Labor', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { production: 3 } } },
-  eureka: { id: 'eureka', name: 'Eureka!', kind: 'recurring', cost: { money: 1 }, effect: { gain: { science: 3 } } },
+  eureka: { id: 'eureka', name: 'Eureka!', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { science: 3 } } },
   harvest: { id: 'harvest', name: 'Harvest', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { food: 3 } } },
   inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'recurring', cost: { money: 1 }, effect: { draw: 2 } },
 
