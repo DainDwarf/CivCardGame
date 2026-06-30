@@ -122,15 +122,17 @@ function Stat({
   description,
   value,
   delta,
+  warn,
 }: {
   icon: string;
   label: string;
   description: string;
   value: string | number;
   delta?: number;
+  warn?: boolean;
 }) {
   return (
-    <span className={styles.stat} tabIndex={0}>
+    <span className={`${styles.stat}${warn ? ` ${styles.statWarn}` : ''}`} tabIndex={0}>
       <span aria-hidden="true">{icon}</span> {value}
       {delta !== undefined && (
         <span className={delta > 0 ? styles.deltaPos : delta < 0 ? styles.deltaNeg : styles.deltaZero}>
@@ -524,6 +526,7 @@ export function Board() {
   }
 
   const proj = projectedDelta(G, mission.onUpkeep);
+  const collapseRisk = (key: keyof typeof G.resources) => G.resources[key] + proj[key] < 0;
   const groups = groupTableau(G.tableau);
   const canEndRound = !pending && !pendingDestroy && !drag;
 
@@ -561,6 +564,7 @@ export function Board() {
             description="Sustenance from staffed farms. Your population eats it each round — if it goes negative, famine ends the run. The (±) is the net change if you end the round now."
             value={G.resources.food}
             delta={proj.food}
+            warn={collapseRisk('food')}
           />
           <Stat
             icon="🔨"
@@ -568,6 +572,7 @@ export function Board() {
             description="Your build budget, spent to play cards. The (±) is what your staffed buildings will add at end of round."
             value={G.resources.production}
             delta={proj.production}
+            warn={collapseRisk('production')}
           />
           <Stat
             icon="🪙"
@@ -575,6 +580,7 @@ export function Board() {
             description="Coin from your markets and trade. Spent on action cards."
             value={G.resources.money}
             delta={proj.money}
+            warn={collapseRisk('money')}
           />
           <Stat
             icon="⚔️"
@@ -582,6 +588,7 @@ export function Board() {
             description="Military power stockpiled from your operating defenses. In Barbarian Tide, threat drains it each round — let it hit zero and the city falls."
             value={G.resources.military}
             delta={proj.military}
+            warn={collapseRisk('military')}
           />
           <Stat
             icon="🔬"
@@ -589,6 +596,7 @@ export function Board() {
             description="Knowledge from staffed libraries; the goal of science missions. The (±) is end-of-round output."
             value={G.resources.science}
             delta={proj.science}
+            warn={collapseRisk('science')}
           />
         </div>
       </header>

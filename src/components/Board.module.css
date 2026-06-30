@@ -128,6 +128,13 @@
   border-radius: 4px;
 }
 
+.statWarn {
+  background: rgba(192, 57, 43, 0.1);
+  border-radius: 4px;
+  padding: 1px 5px;
+  outline: 1px solid rgba(192, 57, 43, 0.4);
+}
+
 .tooltip {
   visibility: hidden;
   opacity: 0;
