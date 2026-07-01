@@ -4,6 +4,7 @@ export * from './culture';
 export * from './state';
 export * from './deck';
 export * from './effects';
+export * from './playability';
 export * from './population';
 export * from './production';
 export * from './tableau';

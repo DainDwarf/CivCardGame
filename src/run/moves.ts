@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { addResources, applyEffect, canAfford, cultureLevel, freePopulation, freeTerritory, requiredWorkers, subtractResources } from '../rules';
+import { addResources, applyEffect, freePopulation, requiredWorkers, subtractResources, unplayableReason } from '../rules';
 import { CARDS } from '../content/cards';
 
 /**
@@ -22,15 +22,7 @@ export function playCard(
   const cardId = G.hand[playHandIdx];
 
   const card = CARDS[cardId];
-  if (!card || !canAfford(G.resources, card.cost)) return 'invalid';
-  // Population cost is paid from idle workers only (never by un-staffing buildings).
-  if ((card.popCost ?? 0) > freePopulation(G)) return 'invalid';
-  // Population reserve locks idle workers for the rest of this turn — hard gate, not waivable.
-  if ((card.popReserve ?? 0) > freePopulation(G)) return 'invalid';
-  // Culture level is a gate, not a cost — culture is never consumed on play.
-  if ((card.cultureLevelReq ?? 0) > cultureLevel(G.culture)) return 'invalid';
-  // A building needs an open slot — reject the play if the tableau is at its territory cap.
-  if (card.effect?.build && freeTerritory(G) <= 0) return 'invalid';
+  if (!card || unplayableReason(G, card)) return 'invalid';
   // A destroy card needs a valid target instance in the tableau.
   if (card.effect?.destroy) {
     if (destroyInstanceId === undefined) return 'invalid';

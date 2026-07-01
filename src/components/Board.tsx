@@ -2,14 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { BuildingInstance, Resources } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
-  canAfford,
-  cultureLevel,
   cultureProgress,
   freePopulation,
-  freeTerritory,
   isOperating,
   projectedDelta,
   requiredWorkers,
+  unplayableReason,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
 import { BUILDINGS, type BuildingDef } from '../content/buildings';
@@ -501,24 +499,30 @@ interface WorkerDrag {
 }
 
 /**
- * Returns the reason a card cannot be played right now, or null if it's playable.
- * Consolidates all shell-side playability checks into one place so the dimming logic,
- * drag gate, and rejection message all stay in sync.
+ * Formats the reason a card cannot be played right now, or null if it's playable.
+ * `unplayableReason` (src/rules/playability.ts) is the single source of truth for the
+ * gates themselves — shared with `playCard` — this just renders it for the dimming
+ * logic, drag gate, and rejection message.
  */
 function whyUnplayable(card: CardDef, G: GameState): string | null {
-  if (!canAfford(G.resources, card.cost)) {
-    const missing = (Object.entries(card.cost) as [keyof Resources, number][])
-      .filter(([k, v]) => v > 0 && G.resources[k] < v)
-      .map(([k, v]) => `${v - G.resources[k]}${COST_ICON[k]}`);
-    return `need ${missing.join(' ')}`;
+  const reason = unplayableReason(G, card);
+  if (!reason) return null;
+  switch (reason.kind) {
+    case 'cost': {
+      const missing = (Object.entries(reason.missing) as [keyof Resources, number][])
+        .map(([k, v]) => `${v}${COST_ICON[k]}`);
+      return `need ${missing.join(' ')}`;
+    }
+    case 'popCost':
+    case 'popReserve':
+      return 'not enough idle workers';
+    case 'cultureLevel':
+      return `need 🎭 level ${reason.required}`;
+    case 'territory':
+      return 'territory full';
+    case 'noBuildingsToDestroy':
+      return 'no buildings to demolish';
   }
-  if ((card.popCost ?? 0) > freePopulation(G)) return 'not enough idle workers';
-  if ((card.popReserve ?? 0) > freePopulation(G)) return 'not enough idle workers';
-  if (card.cultureLevelReq && cultureLevel(G.culture) < card.cultureLevelReq)
-    return `need 🎭 level ${card.cultureLevelReq}`;
-  if (card.effect?.build && freeTerritory(G) <= 0) return 'territory full';
-  if (card.effect?.destroy && G.tableau.length === 0) return 'no buildings to demolish';
-  return null;
 }
 
 export function Board() {
