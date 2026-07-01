@@ -880,10 +880,26 @@
 }
 
 .cardText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   font-size: 0.64rem;
   color: #555;
   line-height: 1.25;
   min-height: 2.4em;
+  margin: 0 -0.5rem -0.5rem; /* bleed to the side and bottom card edges */
+  padding: 0.25rem 0.35rem;
+  border-radius: 0 0 9px 9px;
+}
+
+/* Match the light title-band tint for the card's kind (blue = permanent building, orange = action). */
+.permanent .cardText {
+  background: #e7f0fb;
+}
+
+.action .cardText {
+  background: #fbeede;
 }
 
 /* The card whose discard cost we're paying. */

@@ -60,9 +60,14 @@ function describeCost(c: CardDef): string {
 function describeBuilding(b: BuildingDef, includeWorkers = true): string {
   const parts: string[] = [];
   if (b.produces) {
-    parts.push(Object.entries(b.produces).map(([k, v]) => `+${v} ${k}/turn`).join(', '));
+    parts.push(
+      Object.entries(b.produces)
+        .filter(([, v]) => v)
+        .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
+        .join(' '),
+    );
   }
-  if (b.cultureOutput) parts.push(`+${b.cultureOutput} 🎭/turn`);
+  if (b.cultureOutput) parts.push(`+${b.cultureOutput}🎭`);
   if (includeWorkers && b.workers) parts.push(`👷${b.workers}`);
   return parts.join(' · ');
 }
@@ -72,7 +77,14 @@ function describeCard(c: CardDef): string {
   const e = c.effect;
   const parts: string[] = [];
   if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
-  if (e?.gain) parts.push('+' + Object.entries(e.gain).map(([k, v]) => `${v} ${k}`).join(', '));
+  if (e?.gain) {
+    parts.push(
+      Object.entries(e.gain)
+        .filter(([, v]) => v)
+        .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
+        .join(' '),
+    );
+  }
   if (e?.draw) parts.push(`draw ${e.draw}`);
   if (e?.population) parts.push(`+${e.population} 👥`);
   if (e?.territory) parts.push(`+${e.territory} 🗺️ territory`);
