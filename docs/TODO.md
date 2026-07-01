@@ -17,7 +17,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > order; each step is meant to leave something runnable. See *The contract* and
 > *Government boards* in [[DESIGN]].
 
-1. **Scaffold meta content** — author 2–3 **government boards** (`src/content/boards.ts` + a `BoardId` type; each board sets starting values for all 8 resources — 5 core + 3 strategic) and 2–3 **premade decks** (`decks.ts` currently has only `DEFAULT_DECK`). Prerequisite for the mission-select menu. `[size: S]`
+1. ~~**Scaffold meta content**~~ — done, see *Done / shipped* below. `[size: S]`
 2. **Mission-select menu** — the first meta screen; replaces the current direct-to-run mount in `main.tsx`. Player picks mission (of 3), board, and deck, held as a provisional selection shape `{ missionId, boardId, deckId }`. Does not launch a run yet. `[size: M]`
 3. **Define `contract.ts`** — formalize `RunConfig`/`RunResult`, promoting the menu's selection shape into the real type. Includes the run **`seed`**: wire a seeded RNG/shuffle to replace today's deterministic draw, so the seed is meaningful from the start rather than a stub. `[size: M]`
 4. **Wire the loop closed** — introduce the `app/` shell + a meta↔run **view switch**; refactor the `missionId`-keyed pipeline (`createRun` / `createInitialState` / `GameProvider` / restart) to consume a `RunConfig`; apply board baseline-resources + disaster injection during setup assembly; end-of-run returns to the menu with a **minimal `RunResult`** (no reward application yet — that needs collection + Phase-3 currency). `[size: L]`
@@ -68,3 +68,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
+
+- **Scaffold meta content** (Phase 2 build plan step 1) — `src/content/boards.ts`
+  (`BoardId` + `BOARDS`: Tribe, Monarchy, Republic, each setting all 8 starting
+  resources) and `src/content/decks.ts` restructured from a single `DEFAULT_DECK`
+  into a `DeckId`/`DECKS` registry (Balanced, Industrious, Scholarly). Not yet wired
+  into a run — boards are inert data until step 2 (mission-select menu) and step 4
+  (setup assembly) consume them.

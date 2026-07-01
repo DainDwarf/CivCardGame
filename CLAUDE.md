@@ -58,9 +58,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `effect.build` — the building enters `tableau`, the card is then filed by `kind`
   (`permanent` → `removed` pile, `recurring` → `discard`). So the same building can come
   from different cards, and a `BuildingInstance` references a `buildingId`, never a card.
-  Also `decks.ts` (the Phase 1
-  `DEFAULT_DECK`) and `missions.ts` (`MISSIONS` — each mission supplies its `objective`
-  and `failure` as pure predicates over `GameState`, plus an optional `onUpkeep`).
+  Also `decks.ts` (`DECKS` — premade run decks, each a `CardId[]` draw order),
+  `boards.ts` (`BOARDS` — government boards; each sets all 8 starting resources: the 5
+  core plus population/territory/culture), and `missions.ts` (`MISSIONS` — each mission
+  supplies its `objective` and `failure` as pure predicates over `GameState`, plus an
+  optional `onUpkeep`).
 
 **Shell — the run loop (`src/run/`) + React:**
 
