@@ -86,9 +86,25 @@
   background: rgba(0, 0, 0, 0.03);
 }
 
-.statPopulation {
-  font-size: 1.4rem;
-  font-weight: 700;
+/* A row of worker tokens, one per population. Reuses .staffEmpty/.staffFull (the same
+   classes a building's staffing toggle uses) so idle vs. working reads identically
+   wherever a worker appears on the board. */
+.popTokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.popToken {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  line-height: 1;
 }
 
 /* Right column: core resources (food, production, science, military, money), stacked. */

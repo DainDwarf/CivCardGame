@@ -157,6 +157,33 @@ function Stat({
   );
 }
 
+/** The population tray: one 🧍 token per population, styled exactly like a building's staffing
+ *  toggle (green-tinted when idle and available, dim/grayscale when at work) so the player reads
+ *  at a glance that these are the same workers occupying the building boxes below. */
+function PopulationTokens({ population, idle }: { population: number; idle: number }) {
+  const working = population - idle;
+  return (
+    <span className={styles.stat} tabIndex={0} aria-label={`Population ${population}, ${idle} idle`}>
+      <span className={styles.popTokens}>
+        {Array.from({ length: population }, (_, i) => (
+          <span
+            key={i}
+            aria-hidden="true"
+            className={`${styles.popToken} ${i < idle ? styles.staffFull : styles.staffEmpty}`}
+          >
+            🧍
+          </span>
+        ))}
+      </span>
+      <span className={styles.tooltip} role="tooltip">
+        <strong>Population</strong> — Your people — a pool of workers. Each eats 1 food/round
+        whether working or idle. Assign them to buildings to operate them.
+        <span className={styles.ttRule}>{working} working · {idle} idle</span>
+      </span>
+    </span>
+  );
+}
+
 /**
  * Full-width culture gauge beneath the resource bar. A level bubble on the left; a translucent
  * track that fills pink→purple with progress toward the next level (a fainter ghost segment
@@ -852,13 +879,7 @@ export function Board() {
       <MissionWidget mission={mission} G={G} />
       <header className={styles.topBanner} ref={bannerRef}>
         <div className={styles.populationTray}>
-          <Stat
-            icon="👥"
-            label="Population"
-            description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them."
-            value={`${G.population} (${idle} idle)`}
-            className={styles.statPopulation}
-          />
+          <PopulationTokens population={G.population} idle={idle} />
         </div>
 
         <div className={styles.coreGroup}>
