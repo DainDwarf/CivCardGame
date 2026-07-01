@@ -1,0 +1,98 @@
+.menu {
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  line-height: 1.5;
+  color: #1a1a1a;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 0.2rem;
+  text-align: center;
+}
+
+.subtitle {
+  text-align: center;
+  color: #555;
+  margin: 0 0 2rem;
+}
+
+.section {
+  margin-bottom: 1.75rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #444;
+}
+
+.cardRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.7rem;
+}
+
+.optionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: left;
+  padding: 0.8rem 0.9rem;
+  background: #f3f3f0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.optionCard:hover {
+  background: #ebebe6;
+}
+
+.optionCard.selected {
+  border-color: #3b7dd8;
+  background: #e7f0fc;
+}
+
+.optionName {
+  font-weight: 700;
+}
+
+.optionDesc {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.optionDetail {
+  font-size: 0.8rem;
+  color: #3b7dd8;
+}
+
+.detail {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.startBtn {
+  display: block;
+  margin: 2rem auto 0;
+  padding: 0.9rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  background: #3b7dd8;
+  border: none;
+  border-radius: 8px;
+  cursor: not-allowed;
+  opacity: 0.5;
+}

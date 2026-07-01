@@ -18,7 +18,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > *Government boards* in [[DESIGN]].
 
 1. ~~**Scaffold meta content**~~ — done, see *Done / shipped* below. `[size: S]`
-2. **Mission-select menu** — the first meta screen; replaces the current direct-to-run mount in `main.tsx`. Player picks mission (of 3), board, and deck, held as a provisional selection shape `{ missionId, boardId, deckId }`. Does not launch a run yet. `[size: M]`
+2. ~~**Mission-select menu**~~ — done, see *Done / shipped* below. `[size: M]`
 3. **Define `contract.ts`** — formalize `RunConfig`/`RunResult`, promoting the menu's selection shape into the real type. Includes the run **`seed`**: wire a seeded RNG/shuffle to replace today's deterministic draw, so the seed is meaningful from the start rather than a stub. `[size: M]`
 4. **Wire the loop closed** — introduce the `app/` shell + a meta↔run **view switch**; refactor the `missionId`-keyed pipeline (`createRun` / `createInitialState` / `GameProvider` / restart) to consume a `RunConfig`; apply board baseline-resources + disaster injection during setup assembly; end-of-run returns to the menu with a **minimal `RunResult`** (no reward application yet — that needs collection + Phase-3 currency). `[size: L]`
 5. **Extend the meta menu** — add a collection view and deck-construction navigation/screens (shell + routing only, no editing logic yet). `[size: M]`
@@ -69,6 +69,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Mission-select menu** (Phase 2 build plan step 2) — `src/meta/MissionSelect.tsx`,
+  the first meta screen, replaces the old direct-to-run mount in `main.tsx`. Picks
+  mission (of 3) / board (of 3) / deck (of 3) into a provisional `RunSelection`
+  (`{ missionId, boardId, deckId }`) held in local state. "Start Run" is intentionally
+  disabled — the Board is unreachable via UI until step 4 wires the loop closed;
+  `run.test.ts` still exercises the run loop directly in the meantime.
 - **Scaffold meta content** (Phase 2 build plan step 1) — `src/content/boards.ts`
   (`BoardId` + `BOARDS`: Tribe, Monarchy, Republic, each setting all 8 starting
   resources) and `src/content/decks.ts` restructured from a single `DEFAULT_DECK`
