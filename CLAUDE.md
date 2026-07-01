@@ -104,3 +104,6 @@ yet — see the roadmap in `docs/DESIGN.md`.
   receive a `structuredClone` of `G` and mutate it directly; never mutate `G` elsewhere.
 - Tests import `{ describe, it, expect }` from `vitest` explicitly (globals are
   not enabled).
+- **The UI is mouse-only by design** — no keyboard-activation affordances (e.g.
+  `role="button"` + Enter/Space handlers on custom interactive `div`s). Don't add
+  keyboard handlers to non-native interactive elements.

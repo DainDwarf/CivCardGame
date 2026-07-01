@@ -1388,15 +1388,7 @@ export function Board() {
                       className={`${styles.card} ${styles.staticCard} ${
                         CARDS[g.cardId].kind === 'recurring' ? styles.action : styles.permanent
                       }`}
-                      role="button"
-                      tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); setZoom(g.cardId); }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.stopPropagation();
-                          setZoom(g.cardId);
-                        }
-                      }}
                     >
                       <CardFace card={CARDS[g.cardId]} />
                     </div>
