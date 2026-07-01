@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { countTag, freeTerritory, usedTerritory } from './tableau';
 import { blankState, type BuildingInstance } from './state';
 
-const b = (buildingId: string, workers = 0): BuildingInstance => ({ buildingId, workers });
+let nextId = 1;
+const b = (buildingId: string, workers = 0): BuildingInstance => ({ id: nextId++, buildingId, workers });
 
 describe('countTag', () => {
   it('counts built cards with a tag, staffed or not', () => {

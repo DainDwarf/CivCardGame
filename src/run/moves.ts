@@ -9,14 +9,14 @@ import { CARDS } from '../content/cards';
  * to the discard. Costs may include resources, population (paid from idle workers), and a
  * discard cost: `discardHandIdxs` gives the hand positions of cards to sacrifice (distinct
  * indices, not the played card's slot). Cards with `effect.destroy` require a
- * `destroyBuildingId` — the building to demolish (frees its territory slot and workers).
- * Moves are the only place `G` may change.
+ * `destroyInstanceId` — the exact building instance to demolish (frees its territory slot and
+ * workers). Moves are the only place `G` may change.
  */
 export function playCard(
   G: GameState,
   playHandIdx: number,
   discardHandIdxs: number[] = [],
-  destroyBuildingId?: string,
+  destroyInstanceId?: number,
 ): 'invalid' | void {
   if (playHandIdx < 0 || playHandIdx >= G.hand.length) return 'invalid';
   const cardId = G.hand[playHandIdx];
@@ -31,10 +31,10 @@ export function playCard(
   if ((card.cultureLevelReq ?? 0) > cultureLevel(G.culture)) return 'invalid';
   // A building needs an open slot — reject the play if the tableau is at its territory cap.
   if (card.effect?.build && freeTerritory(G) <= 0) return 'invalid';
-  // A destroy card needs a valid target in the tableau.
+  // A destroy card needs a valid target instance in the tableau.
   if (card.effect?.destroy) {
-    if (!destroyBuildingId) return 'invalid';
-    if (!G.tableau.some((b) => b.buildingId === destroyBuildingId)) return 'invalid';
+    if (destroyInstanceId === undefined) return 'invalid';
+    if (!G.tableau.some((b) => b.id === destroyInstanceId)) return 'invalid';
   }
 
   // Discard-as-cost: sacrifice `discardCost` other cards — but only if you have that many
@@ -69,9 +69,8 @@ export function playCard(
   } else {
     applyEffect(G, card.effect);
   }
-  if (card.effect?.destroy && destroyBuildingId) {
-    const emptyIdx = G.tableau.findIndex((b) => b.buildingId === destroyBuildingId && b.workers === 0);
-    const idx = emptyIdx !== -1 ? emptyIdx : G.tableau.findIndex((b) => b.buildingId === destroyBuildingId);
+  if (card.effect?.destroy && destroyInstanceId !== undefined) {
+    const idx = G.tableau.findIndex((b) => b.id === destroyInstanceId);
     if (idx !== -1) G.tableau.splice(idx, 1);
   }
   for (const id of sacrificeIds) G.discard.push(id);
@@ -79,21 +78,18 @@ export function playCard(
   else G.discard.push(cardId);
 }
 
-/**
- * Assign one idle population to the next understaffed building of a type. Buildings
- * of the same type are fungible, so allocation is by buildingId — each worker staffs one
- * more instance (e.g. one of your farms).
- */
-export function assignWorker(G: GameState, buildingId: string): 'invalid' | void {
+/** Assign one idle population to a specific building instance (identified by `id`), unless it's
+ *  already at its worker requirement. */
+export function assignWorker(G: GameState, id: number): 'invalid' | void {
   if (freePopulation(G) <= 0) return 'invalid';
-  const b = G.tableau.find((x) => x.buildingId === buildingId && x.workers < requiredWorkers(x.buildingId));
-  if (!b) return 'invalid';
+  const b = G.tableau.find((x) => x.id === id);
+  if (!b || b.workers >= requiredWorkers(b.buildingId)) return 'invalid';
   b.workers += 1;
 }
 
-/** Return one worker from a staffed building of a type to the idle pool. */
-export function unassignWorker(G: GameState, buildingId: string): 'invalid' | void {
-  const b = G.tableau.find((x) => x.buildingId === buildingId && x.workers > 0);
-  if (!b) return 'invalid';
+/** Return one worker from a specific building instance (identified by `id`) to the idle pool. */
+export function unassignWorker(G: GameState, id: number): 'invalid' | void {
+  const b = G.tableau.find((x) => x.id === id);
+  if (!b || b.workers <= 0) return 'invalid';
   b.workers -= 1;
 }

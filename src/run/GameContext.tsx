@@ -7,9 +7,9 @@ interface GameContextValue {
   G: GameState;
   gameover: Gameover | undefined;
   moves: {
-    playCard: (handIdx: number, discardHandIdxs?: number[], destroyBuildingId?: string) => void;
-    assignWorker: (buildingId: string) => void;
-    unassignWorker: (buildingId: string) => void;
+    playCard: (handIdx: number, discardHandIdxs?: number[], destroyInstanceId?: number) => void;
+    assignWorker: (id: number) => void;
+    unassignWorker: (id: number) => void;
   };
   endTurn: () => void;
   /** Step back one undoable action. No-op when `canUndo` is false. */
@@ -79,10 +79,10 @@ export function GameProvider({ missionId, children }: { missionId: string; child
   const { present, past } = session;
 
   const moves = useMemo(() => ({
-    playCard: (handIdx: number, discardHandIdxs: number[] = [], destroyBuildingId?: string) =>
-      dispatch({ type: 'move', fn: playCard, args: [handIdx, discardHandIdxs, destroyBuildingId] }),
-    assignWorker: (buildingId: string) => dispatch({ type: 'move', fn: assignWorker, args: [buildingId] }),
-    unassignWorker: (buildingId: string) => dispatch({ type: 'move', fn: unassignWorker, args: [buildingId] }),
+    playCard: (handIdx: number, discardHandIdxs: number[] = [], destroyInstanceId?: number) =>
+      dispatch({ type: 'move', fn: playCard, args: [handIdx, discardHandIdxs, destroyInstanceId] }),
+    assignWorker: (id: number) => dispatch({ type: 'move', fn: assignWorker, args: [id] }),
+    unassignWorker: (id: number) => dispatch({ type: 'move', fn: unassignWorker, args: [id] }),
   }), []);
 
   const handlers = useMemo(() => ({

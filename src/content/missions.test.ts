@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
 import { applyUpkeep, blankState, coreCollapse, type BuildingInstance } from '../rules';
 
-const b = (buildingId: string, workers = 0): BuildingInstance => ({ buildingId, workers });
+let nextId = 1;
+const b = (buildingId: string, workers = 0): BuildingInstance => ({ id: nextId++, buildingId, workers });
 
 describe('mission: enlightenment', () => {
   const m = MISSIONS.enlightenment;

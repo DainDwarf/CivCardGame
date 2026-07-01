@@ -287,23 +287,69 @@
   color: #c9772f;
 }
 
-/* Free-form canvas the building boxes are positioned on. It's a fixed backdrop spanning the
-   whole viewport between the top banner and the hand bar (their heights set top/bottom inline). */
+/* The play area: a fixed backdrop spanning the whole viewport, holding the slot grid (which
+   scrolls) above a reserved-actions strip. paddingTop (inline) clears the sticky banner. */
 .gamearea {
   position: fixed;
   left: 0;
   right: 0;
   z-index: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   /* Light-brown dirt the civilization is built on. */
   background: #c8a97e;
 }
 
-/* A draggable building box on the canvas. */
-.buildingBox {
-  position: absolute;
+/* The territory grid: one cell per slot, filling left-to-right and wrapping to new rows. Fixed
+   track width + top-left flow means adding a slot appends at the end without moving the rest. */
+.slotGrid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 200px);
+  gap: 14px;
+  justify-content: start;
+  align-content: start;
+  padding: 16px;
   box-sizing: border-box;
+}
+
+/* One territory slot — holds at most one building box, or shows as an empty drop target. */
+.slot {
   width: 200px;
+  min-height: 110px;
+  border-radius: 8px;
+  display: flex;
+}
+
+.slotEmpty {
+  border: 2px dashed rgba(90, 62, 30, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* The slot under the cursor while dragging a building — the drop target. */
+.slotDrop {
+  border: 2px dashed rgba(59, 125, 216, 0.85);
+  background: rgba(59, 125, 216, 0.18);
+}
+
+/* Reserved actions live in the play area but occupy no slot — a strip below the grid. */
+.reserveStrip {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 2px dashed rgba(90, 62, 30, 0.3);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* A building box, filling its slot. */
+.buildingBox {
+  box-sizing: border-box;
+  width: 100%;
   min-height: 92px;
   padding: 0.45rem 0.55rem;
   display: flex;
@@ -323,12 +369,23 @@
   box-shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
 }
 
-/* The box currently being dragged: lifted and on top, grabbing cursor. */
+/* The drag clone that tracks the cursor: lifted and grabbing. */
 .boxDragging,
 .boxDragging:hover {
   cursor: grabbing;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32);
-  z-index: 5;
+}
+
+/* The floating clone layer for a building dragged between slots. */
+.buildingDragClone {
+  position: fixed;
+  transform: rotate(-2deg) scale(1.04);
+  transform-origin: center;
+}
+
+/* The slot a building is being dragged out of — its box fades to show it's in transit. */
+.slotSource .buildingBox {
+  opacity: 0.35;
 }
 
 .operating {
@@ -341,6 +398,8 @@
 }
 
 .reserveBox {
+  width: 180px;
+  flex: 0 0 auto;
   border: 2px dashed #d4924a !important;
   background: #fdf5e8;
   cursor: default;

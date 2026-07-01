@@ -7,7 +7,8 @@ import { blankState } from './state';
 import { playCard } from '../run/moves';
 import type { BuildingInstance } from './state';
 
-const b = (buildingId: string, workers: number): BuildingInstance => ({ buildingId, workers });
+let nextId = 1;
+const b = (buildingId: string, workers: number): BuildingInstance => ({ id: nextId++, buildingId, workers });
 
 describe('culture: immediate gain via card effect', () => {
   it('cultural_festival effect raises G.culture', () => {

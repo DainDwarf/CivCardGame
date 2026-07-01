@@ -1,9 +1,12 @@
 import { emptyResources, type Resources } from './resources';
 
-/** A building erected in the tableau, tracking the workers assigned to it. Identified by
- *  its `buildingId` (a key into the BUILDINGS catalogue), *not* by the card that built it —
- *  several different cards can construct the same building. */
+/** A building erected in the tableau, tracking the workers assigned to it. `buildingId` (a key
+ *  into the BUILDINGS catalogue) says *what* it is — several different cards can build the same
+ *  one — while `id` is its stable per-instance identity, unique for the run, so moves and the UI
+ *  can target this exact building (staffing, demolish, its slot) even among identical siblings. */
 export interface BuildingInstance {
+  /** Stable identity, unique within the run — assigned once, at construction. */
+  id: number;
   buildingId: string;
   /** Population currently assigned to this building. */
   workers: number;

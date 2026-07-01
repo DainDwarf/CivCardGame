@@ -40,7 +40,14 @@ export function autoStaffCount(G: GameState, buildingId: string): number {
   return freePopulation(G) >= req ? req : 0;
 }
 
+/** The next stable building id: one past the highest currently in play. Deterministic (no RNG);
+ *  ids of demolished buildings may be reused, which is harmless since nothing references them. */
+export function nextBuildingId(tableau: BuildingInstance[]): number {
+  return tableau.reduce((max, b) => Math.max(max, b.id), 0) + 1;
+}
+
 /** Erect a building in the tableau, auto-staffing it from the idle pool (all-or-nothing). */
 export function addBuilding(G: GameState, buildingId: string): void {
-  G.tableau.push({ buildingId, workers: autoStaffCount(G, buildingId) });
+  const workers = autoStaffCount(G, buildingId);
+  G.tableau.push({ id: nextBuildingId(G.tableau), buildingId, workers });
 }

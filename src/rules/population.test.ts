@@ -16,9 +16,9 @@ describe('worker requirements', () => {
   });
 
   it('a building operates only when staffed to its requirement', () => {
-    expect(isOperating({ buildingId: 'farm', workers: 0 })).toBe(false);
-    expect(isOperating({ buildingId: 'farm', workers: 1 })).toBe(true);
-    expect(isOperating({ buildingId: 'walls', workers: 0 })).toBe(true); // needs none
+    expect(isOperating({ id: 1, buildingId: 'farm', workers: 0 })).toBe(false);
+    expect(isOperating({ id: 1, buildingId: 'farm', workers: 1 })).toBe(true);
+    expect(isOperating({ id: 1, buildingId: 'walls', workers: 0 })).toBe(true); // needs none
   });
 });
 
@@ -27,8 +27,8 @@ describe('population accounting', () => {
     const G = blankState('enlightenment');
     G.population = 3;
     G.tableau = [
-      { buildingId: 'farm', workers: 1 },
-      { buildingId: 'workshop', workers: 1 },
+      { id: 1, buildingId: 'farm', workers: 1 },
+      { id: 2, buildingId: 'workshop', workers: 1 },
     ];
     expect(assignedWorkers(G.tableau)).toBe(2);
     expect(freePopulation(G)).toBe(1);
@@ -58,7 +58,7 @@ describe('auto-staffing a new building (all-or-nothing)', () => {
   it('leaves it unstaffed unless its full requirement can be met', () => {
     const G = blankState('enlightenment');
     G.population = 1;
-    G.tableau = [{ buildingId: 'farm', workers: 1 }]; // 0 idle -> cannot staff
+    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }]; // 0 idle -> cannot staff
     expect(autoStaffCount(G, 'farm')).toBe(0);
   });
 

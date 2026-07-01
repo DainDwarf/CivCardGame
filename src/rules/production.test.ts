@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { tableauProduction } from './production';
 import type { BuildingInstance } from './state';
 
-const b = (buildingId: string, workers: number): BuildingInstance => ({ buildingId, workers });
+let nextId = 1;
+const b = (buildingId: string, workers: number): BuildingInstance => ({ id: nextId++, buildingId, workers });
 
 describe('tableauProduction', () => {
   it('counts only staffed buildings', () => {

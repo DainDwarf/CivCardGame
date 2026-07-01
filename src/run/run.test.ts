@@ -8,8 +8,8 @@ function start(missionId: string) {
     getState: () => ({ G: state.G, ctx: { gameover: state.gameover } }),
     moves: {
       playCard: (idx: number, discards: number[] = []) => { state = applyMove(state, playCard, idx, discards); },
-      assignWorker: (buildingId: string) => { state = applyMove(state, assignWorker, buildingId); },
-      unassignWorker: (buildingId: string) => { state = applyMove(state, unassignWorker, buildingId); },
+      assignWorker: (id: number) => { state = applyMove(state, assignWorker, id); },
+      unassignWorker: (id: number) => { state = applyMove(state, unassignWorker, id); },
     },
     events: { endTurn: () => { state = endTurn(state); } },
     stop: () => {},
@@ -43,13 +43,14 @@ describe('run loop (headless integration)', () => {
     const client = start('enlightenment'); // population 2, all idle
     playByName(client, 'farm'); // farm card builds a farm building -> auto-staffed on play
     const after = client.getState().G;
-    expect(after.tableau).toEqual([{ buildingId: 'farm', workers: 1 }]);
+    expect(after.tableau).toEqual([{ id: 1, buildingId: 'farm', workers: 1 }]);
     expect(after.removed).toEqual(['farm']); // the card itself is gone from the deck
     expect(after.discard).toEqual([]); // permanents don't recycle
     // staffing is still hand-adjustable: return the worker, then reassign it
-    client.moves.unassignWorker('farm');
+    const farmId = after.tableau[0].id;
+    client.moves.unassignWorker(farmId);
     expect(client.getState().G.tableau[0].workers).toBe(0);
-    client.moves.assignWorker('farm');
+    client.moves.assignWorker(farmId);
     expect(client.getState().G.tableau[0].workers).toBe(1);
     client.stop();
   });
@@ -96,12 +97,13 @@ describe('run loop (headless integration)', () => {
     playByName(client, 'corvee'); // reserve 1 -> free pop = 1
     playByName(client, 'farm'); // auto-staffs 1 -> free pop = 0
     playByName(client, 'workshop'); // builds unstaffed (free pop = 0)
+    const wsId = client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.id;
     expect(client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(0);
-    client.moves.assignWorker('workshop'); // blocked — no free pop
+    client.moves.assignWorker(wsId); // blocked — no free pop
     expect(client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(0);
     client.events.endTurn(); // beginTurn resets reservedPop to 0
     expect(client.getState().G.reservedPop).toBe(0);
-    client.moves.assignWorker('workshop'); // now free pop = 1 -> succeeds
+    client.moves.assignWorker(wsId); // now free pop = 1 -> succeeds
     expect(client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(1);
     client.stop();
   });

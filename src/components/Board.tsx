@@ -199,31 +199,6 @@ function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
   );
 }
 
-interface BuildingGroup {
-  buildingId: string;
-  count: number;
-  instances: BuildingInstance[];
-}
-
-/** Collapse repeated buildings into one row per type, keeping first-seen order. */
-function groupTableau(tableau: BuildingInstance[]): BuildingGroup[] {
-  const order: string[] = [];
-  const map = new Map<string, BuildingInstance[]>();
-  for (const b of tableau) {
-    const list = map.get(b.buildingId);
-    if (list) {
-      list.push(b);
-    } else {
-      map.set(b.buildingId, [b]);
-      order.push(b.buildingId);
-    }
-  }
-  return order.map((buildingId) => {
-    const instances = map.get(buildingId)!;
-    return { buildingId, count: instances.length, instances };
-  });
-}
-
 /** Collapse a flat list of card ids into one entry per type with a count, keeping first-seen order. */
 function groupCards(ids: string[]): { cardId: string; count: number }[] {
   const order: string[] = [];
@@ -310,6 +285,84 @@ function useAnimatedHand(hand: string[]): HandCard[] {
   return display;
 }
 
+/** The visual face of one building box — shared by the slot grid and the drag clone. Each box is
+ *  a single `BuildingInstance`; same-type buildings are never coalesced, so its stable `id` keys
+ *  its slot and drives per-instance staffing/demolish. */
+function BuildingBox({
+  inst,
+  gameover,
+  idle,
+  dragging,
+  pendingDestroy,
+  onPointerDown,
+  onAssign,
+  onUnassign,
+  onDestroy,
+}: {
+  inst: BuildingInstance;
+  gameover: boolean;
+  idle: number;
+  dragging?: boolean;
+  pendingDestroy?: boolean;
+  onPointerDown?: (e: React.PointerEvent) => void;
+  onAssign?: () => void;
+  onUnassign?: () => void;
+  onDestroy?: () => void;
+}) {
+  const bld = BUILDINGS[inst.buildingId];
+  const req = requiredWorkers(inst.buildingId);
+  const selfSufficient = req === 0;
+  const className = [
+    styles.buildingBox,
+    isOperating(inst) ? styles.operating : styles.idleBuilding,
+    dragging ? styles.boxDragging : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  return (
+    <div className={className} onPointerDown={onPointerDown}>
+      <span className={styles.bName}>{bld.name}</span>
+      <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
+        <span className={styles.bldIcon} aria-hidden="true">{artFor(bld.id)}</span>
+        <span className={styles.bldOutput} aria-hidden="true">
+          {[
+            ...Object.entries(bld.produces ?? {})
+              .filter(([, v]) => v)
+              .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`),
+            ...(bld.cultureOutput ? [`+${bld.cultureOutput}🎭`] : []),
+          ].join(' ')}
+        </span>
+      </div>
+      <div className={styles.boxControls}>
+        {!selfSufficient && (
+          <span className={styles.staff}>
+            <button
+              onClick={onUnassign}
+              disabled={gameover || inst.workers <= 0}
+              aria-label={`unassign worker from ${bld.name}`}
+            >
+              −
+            </button>
+            👷 {inst.workers}/{req}
+            <button
+              onClick={onAssign}
+              disabled={gameover || idle <= 0 || inst.workers >= req}
+              aria-label={`assign worker to ${bld.name}`}
+            >
+              +
+            </button>
+          </span>
+        )}
+        {pendingDestroy && (
+          <button className={styles.demolishBtn} onClick={onDestroy} aria-label={`demolish ${bld.name}`}>
+            💥 Demolish
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** A card play awaiting its discard cost: which card, and the sacrifices picked so far. */
 interface PendingPlay {
   cardId: string;
@@ -359,24 +412,27 @@ interface DragState {
 /** Pointer travel (px) before a press becomes a drag rather than a click. */
 const DRAG_THRESHOLD = 6;
 
-/** A building box being dragged around the civilization canvas. */
-interface BuildingDrag {
+/** A building box being dragged from its slot toward another slot. */
+interface SlotDrag {
+  /** Stable id of the building instance being dragged. */
+  id: number;
   buildingId: string;
+  /** Slot index the drag started from. */
+  fromSlot: number;
   pointerId: number;
-  /** Offset from the box's top-left to the grab point, so it tracks the cursor. */
+  /** Offset from the box's top-left to the grab point, so the clone tracks the cursor. */
   grabX: number;
   grabY: number;
-}
-
-/** Box width (px) — must match `.buildingBox` in the stylesheet. */
-const BOX_W = 200;
-/** Rough box height used only for canvas-height and default-layout math. */
-const BOX_H = 120;
-/** Default grid slot for a freshly built box, before the player rearranges it. */
-function slotPos(i: number): { x: number; y: number } {
-  const COLS = 3;
-  const GAP = 12;
-  return { x: (i % COLS) * (BOX_W + GAP), y: Math.floor(i / COLS) * (BOX_H + GAP) };
+  /** Box size, so the floating clone matches the slot box. */
+  w: number;
+  h: number;
+  startX: number;
+  startY: number;
+  /** Live pointer position. */
+  x: number;
+  y: number;
+  /** Becomes true once the pointer moves past the drag threshold (else it's a plain click). */
+  active: boolean;
 }
 
 /**
@@ -413,13 +469,20 @@ export function Board() {
   const [rejectMsg, setRejectMsg] = useState<string | null>(null);
   const [warnEndRound, setWarnEndRound] = useState(false);
   const [overlayMinimized, setOverlayMinimized] = useState(false);
-  // Free-form layout of the civilization canvas: each building type's box position, keyed
-  // by buildingId. Pure UI state — the core never knows where boxes sit.
-  const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
-  const [bDrag, setBDragState] = useState<BuildingDrag | null>(null);
-  // The canvas is a fixed backdrop; these insets keep it between the banner and hand bar.
+  // Slot layout: which building (by instance id) sits in each territory slot; `null` is empty.
+  // Length tracks G.territory. Pure UI state — the core never knows where boxes sit.
+  const [layout, setLayout] = useState<(number | null)[]>([]);
+  const [slotDrag, setSlotDragState] = useState<SlotDrag | null>(null);
+  // Slot the pointer is hovering during a slot-drag (the drop-target highlight).
+  const [hoverSlot, setHoverSlot] = useState<number | null>(null);
+  // The canvas is a fixed backdrop; these insets keep its content between the banner and hand bar.
   const [insets, setInsets] = useState({ top: 0, bottom: 0 });
-  const bDragRef = useRef<BuildingDrag | null>(null);
+  const slotDragRef = useRef<SlotDrag | null>(null);
+  const layoutRef = useRef<(number | null)[]>([]);
+  // Slot index → the slot's DOM element, for pointer hit-testing during drag / build placement.
+  const slotEls = useRef<Map<number, HTMLDivElement>>(new Map());
+  // Slot a just-played build card should drop into; consumed by the layout-reconcile effect.
+  const pendingBuildSlotRef = useRef<number | null>(null);
   const gameareaRef = useRef<HTMLDivElement>(null);
   const bannerRef = useRef<HTMLElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -429,6 +492,8 @@ export function Board() {
   const shakeSeq = useRef(0);
   const rejectMsgSeq = useRef(0);
   const hand = useAnimatedHand(G.hand);
+  // Each building's stable id keys both its slot in `layout` and this lookup.
+  const buildingById = new Map(G.tableau.map((b) => [b.id, b]));
 
   /** Shake a card that can't be played and briefly show why. */
   function rejectShake(key: number, reason?: string) {
@@ -450,19 +515,66 @@ export function Board() {
     setDragState(d);
   }
 
-  // Same lockstep pattern for the building-box drag.
-  function setBDrag(d: BuildingDrag | null) {
-    bDragRef.current = d;
-    setBDragState(d);
+  // Same lockstep pattern for the slot drag.
+  function setSlotDrag(d: SlotDrag | null) {
+    slotDragRef.current = d;
+    setSlotDragState(d);
   }
 
-  /** Begin dragging a building box — unless the press landed on a control (the +/-/demolish buttons). */
-  function onBoxPointerDown(e: React.PointerEvent, buildingId: string) {
+  /** The slot whose box contains the given viewport point, or null if none. */
+  function slotAt(x: number, y: number): number | null {
+    for (const [idx, el] of slotEls.current) {
+      const r = el.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return idx;
+    }
+    return null;
+  }
+
+  /**
+   * Where a build card dropped at (x, y) should place its building: the empty slot under the
+   * drop point, else the empty slot nearest to it. (A build is only allowed with free territory,
+   * so there is always at least one empty slot.)
+   */
+  function chooseBuildSlot(x: number, y: number): number | null {
+    let best: number | null = null;
+    let bestDist = Infinity;
+    for (const [idx, el] of slotEls.current) {
+      if (layoutRef.current[idx] != null) continue; // occupied
+      const r = el.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return idx;
+      const dx = x - (r.left + r.right) / 2;
+      const dy = y - (r.top + r.bottom) / 2;
+      const dist = Math.hypot(dx, dy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = idx;
+      }
+    }
+    return best;
+  }
+
+  /** Begin dragging a building box between slots — unless the press landed on a control. */
+  function onBoxPointerDown(e: React.PointerEvent, inst: BuildingInstance, fromSlot: number) {
     if (e.button !== 0) return;
     if (gameover && overlayMinimized) return; // inspect mode — board is view-only
+    if (pendingDestroy) return; // in targeting mode a click demolishes, not drags
     if ((e.target as HTMLElement).closest('button')) return; // let staffing/demolish clicks through
     const r = e.currentTarget.getBoundingClientRect();
-    setBDrag({ buildingId, pointerId: e.pointerId, grabX: e.clientX - r.left, grabY: e.clientY - r.top });
+    setSlotDrag({
+      id: inst.id,
+      buildingId: inst.buildingId,
+      fromSlot,
+      pointerId: e.pointerId,
+      grabX: e.clientX - r.left,
+      grabY: e.clientY - r.top,
+      w: r.width,
+      h: r.height,
+      startX: e.clientX,
+      startY: e.clientY,
+      x: e.clientX,
+      y: e.clientY,
+      active: false,
+    });
   }
 
   /** Spawn a transient clone that animates a card out, then clean it up. */
@@ -500,27 +612,11 @@ export function Board() {
       setPending({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key, need, discards: [] });
       return;
     }
-    // A card that erects a new building type drops its box where the card landed (its top-left
-    // matching the absorbing ghost), overriding the default grid slot. An existing type keeps
-    // its already-placed box, so a second farm doesn't yank the farm box to the cursor.
-    const built = card.effect?.build;
-    if (built && !(built in positions)) {
-      const rect = gameareaRef.current?.getBoundingClientRect();
-      if (rect) {
-        const px = Math.max(0, Math.min(x - d.grabX - rect.left, rect.width - BOX_W));
-        const py = Math.max(0, Math.min(y - d.grabY - rect.top - insets.top, rect.height - insets.top - BOX_H));
-        setPositions((p) => (built in p ? p : { ...p, [built]: { x: px, y: py } }));
-      }
-    }
-    // A pop-reserve card also drops a box at the release point.
-    if (card.popReserve) {
-      const rect = gameareaRef.current?.getBoundingClientRect();
-      if (rect) {
-        const px = Math.max(0, Math.min(x - d.grabX - rect.left, rect.width - BOX_W));
-        const py = Math.max(0, Math.min(y - d.grabY - rect.top - insets.top, rect.height - insets.top - BOX_H));
-        const reserveKey = `__reserve_${G.reservedActions.length}`;
-        setPositions((p) => ({ ...p, [reserveKey]: { x: px, y: py } }));
-      }
+    // A card that erects a building drops it into the slot under the release point (or the
+    // nearest free slot if that one's taken); the reconcile effect places the new instance there.
+    // Reserved actions occupy no slot, so a pop-reserve card needs no placement.
+    if (card.effect?.build) {
+      pendingBuildSlotRef.current = chooseBuildSlot(x, y);
     }
     spawnGhost(d.cardId, { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h }, 'drop');
     moves.playCard(d.handIdx);
@@ -585,27 +681,34 @@ export function Board() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drag?.key]);
 
-  // While a building box is being dragged, track the pointer on the window and write its
-  // new canvas-relative position (clamped inside the canvas).
+  // While a building box is being dragged between slots, track the pointer on the window and
+  // highlight the slot it's over. The drop (in onUp) swaps the two slots' contents.
   useEffect(() => {
-    if (!bDrag) return;
+    if (!slotDrag) return;
     function onMove(e: PointerEvent) {
-      const d = bDragRef.current;
-      const rect = gameareaRef.current?.getBoundingClientRect();
-      if (!d || !rect || e.pointerId !== d.pointerId) return;
-      // Box positions are stored relative to the play area *below* the banner, so subtract the
-      // banner inset here and keep boxes from sliding up under it.
-      const x = Math.max(0, Math.min(e.clientX - rect.left - d.grabX, rect.width - BOX_W));
-      const y = Math.max(
-        0,
-        Math.min(e.clientY - rect.top - insets.top - d.grabY, rect.height - insets.top - BOX_H),
-      );
-      setPositions((p) => ({ ...p, [d.buildingId]: { x, y } }));
+      const d = slotDragRef.current;
+      if (!d || e.pointerId !== d.pointerId) return;
+      const moved = Math.hypot(e.clientX - d.startX, e.clientY - d.startY);
+      const active = d.active || moved > DRAG_THRESHOLD;
+      setSlotDrag({ ...d, x: e.clientX, y: e.clientY, active });
+      setHoverSlot(active ? slotAt(e.clientX, e.clientY) : null);
     }
     function onUp(e: PointerEvent) {
-      const d = bDragRef.current;
+      const d = slotDragRef.current;
       if (!d || e.pointerId !== d.pointerId) return;
-      setBDrag(null);
+      if (d.active) {
+        const target = slotAt(e.clientX, e.clientY);
+        if (target != null && target !== d.fromSlot) {
+          // Swap the two slots' contents — moves into an empty slot, swaps with an occupied one.
+          setLayout((prev) => {
+            const next = prev.slice();
+            [next[d.fromSlot], next[target]] = [next[target], next[d.fromSlot]];
+            return next;
+          });
+        }
+      }
+      setSlotDrag(null);
+      setHoverSlot(null);
     }
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
@@ -615,25 +718,44 @@ export function Board() {
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
+    // Re-bind only when a drag begins/ends; mid-drag updates flow through slotDragRef.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bDrag?.buildingId, insets.top]);
+  }, [slotDrag?.id]);
 
-  // Seed a default grid slot for any building type that has just appeared in the tableau.
-  // Existing positions (including ones the player has dragged) are left untouched; a type
-  // that was destroyed and later rebuilt simply reuses its remembered spot.
-  const tableauKey = Array.from(new Set(G.tableau.map((b) => b.buildingId))).join(',');
+  // Keep layoutRef in lockstep so pointer handlers (chooseBuildSlot) read the current layout.
   useEffect(() => {
-    setPositions((prev) => {
-      const ids = Array.from(new Set(G.tableau.map((b) => b.buildingId)));
-      const missing = ids.filter((id) => !(id in prev));
-      if (missing.length === 0) return prev;
-      const next = { ...prev };
-      let slot = Object.keys(prev).length;
-      for (const id of missing) next[id] = slotPos(slot++);
+    layoutRef.current = layout;
+  }, [layout]);
+
+  // Reconcile the slot layout with the tableau and territory cap. Runs whenever a building
+  // is built/destroyed (the key signature changes) or territory grows. Existing placements —
+  // including ones the player dragged — are preserved; vanished buildings free their slot; a
+  // newly built one takes its drop slot (else the first free slot). Territory only ever grows,
+  // so slots are appended and pre-existing ones never shift.
+  const tableauSig = G.tableau.map((b) => b.id).join(',');
+  useEffect(() => {
+    setLayout((prev) => {
+      const next = prev.slice();
+      while (next.length < G.territory) next.push(null);
+      if (next.length > G.territory) next.length = G.territory; // defensive; territory is monotonic
+      const present = new Set(G.tableau.map((b) => b.id));
+      for (let i = 0; i < next.length; i++) {
+        if (next[i] != null && !present.has(next[i]!)) next[i] = null; // building gone → free slot
+      }
+      const placed = new Set(next.filter((k): k is number => k != null));
+      for (const b of G.tableau) {
+        if (placed.has(b.id)) continue;
+        const want = pendingBuildSlotRef.current;
+        let slot = want != null && want < next.length && next[want] == null ? want : next.indexOf(null);
+        pendingBuildSlotRef.current = null;
+        if (slot === -1) slot = next.length; // no free slot (shouldn't happen) → append defensively
+        next[slot] = b.id;
+        placed.add(b.id);
+      }
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tableauKey]);
+  }, [tableauSig, G.territory]);
 
   // The canvas fills the gap between the banner and the hand bar; track their heights so it
   // stays flush as they reflow (e.g. the hand bar grows when a discard/destroy prompt shows).
@@ -660,12 +782,11 @@ export function Board() {
     if (!gameover) setOverlayMinimized(false);
   }, [gameover]);
 
-  // Clear pending sacrifice-pick, pending destroy, end-round warning, and reserve box positions at the start of each new round.
+  // Clear pending sacrifice-pick, pending destroy, and the end-round warning at the start of each new round.
   useEffect(() => {
     setPending(null);
     setPendingDestroy(null);
     setWarnEndRound(false);
-    setPositions((p) => Object.fromEntries(Object.entries(p).filter(([k]) => !k.startsWith('__reserve_'))));
   }, [G.round]);
 
   // warnEndRound is only meaningful while shouldWarn is true; reset it if the player
@@ -691,11 +812,11 @@ export function Board() {
     }
   }
 
-  /** Fire the destroy move against a chosen building, then exit targeting mode. */
-  function handleDestroyTarget(buildingId: string) {
+  /** Fire the destroy move against a chosen building instance, then exit targeting mode. */
+  function handleDestroyTarget(instanceId: number) {
     if (!pendingDestroy) return;
     ghostFromSlot(pendingDestroy.playedKey, pendingDestroy.cardId);
-    moves.playCard(pendingDestroy.handIdx, [], buildingId);
+    moves.playCard(pendingDestroy.handIdx, [], instanceId);
     setPendingDestroy(null);
   }
 
@@ -710,7 +831,6 @@ export function Board() {
 
   const proj = projectedDelta(G, mission.onUpkeep);
   const collapseRisk = (key: keyof typeof G.resources) => G.resources[key] + proj[key] < 0;
-  const groups = groupTableau(G.tableau);
   const canEndRound = !pending && !pendingDestroy && !drag;
 
   return (
@@ -783,104 +903,67 @@ export function Board() {
       <div
         className={styles.gamearea}
         ref={gameareaRef}
-        style={{ top: 0, bottom: insets.bottom }}
+        style={{ top: 0, bottom: insets.bottom, paddingTop: insets.top }}
       >
-        {groups.map((g) => {
-              const bld = BUILDINGS[g.buildingId];
-              const req = requiredWorkers(g.buildingId);
-              const selfSufficient = req === 0;
-              const capacity = req * g.count;
-              const assigned = g.instances.reduce((sum, b) => sum + b.workers, 0);
-              const operatingCount = g.instances.filter(isOperating).length;
-              const allOperating = operatingCount === g.count;
-              const pos = positions[g.buildingId] ?? { x: 0, y: 0 };
-              const className = [
-                styles.buildingBox,
-                allOperating ? styles.operating : styles.idleBuilding,
-                bDrag?.buildingId === g.buildingId ? styles.boxDragging : '',
-              ]
-                .filter(Boolean)
-                .join(' ');
+        <div className={styles.slotGrid}>
+          {layout.map((key, slotIdx) => {
+            const inst = key != null ? buildingById.get(key) : undefined;
+            const isDropTarget = slotDrag?.active === true && hoverSlot === slotIdx;
+            const isDragSource = slotDrag?.active === true && slotDrag.fromSlot === slotIdx;
+            const slotClass = [
+              styles.slot,
+              inst ? '' : styles.slotEmpty,
+              isDropTarget ? styles.slotDrop : '',
+              isDragSource ? styles.slotSource : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
+            return (
+              <div
+                key={slotIdx}
+                ref={(el) => {
+                  if (el) slotEls.current.set(slotIdx, el);
+                  else slotEls.current.delete(slotIdx);
+                }}
+                className={slotClass}
+              >
+                {inst && (
+                  <BuildingBox
+                    inst={inst}
+                    gameover={!!gameover}
+                    idle={idle}
+                    pendingDestroy={!!pendingDestroy}
+                    onPointerDown={(e) => onBoxPointerDown(e, inst, slotIdx)}
+                    onAssign={() => moves.assignWorker(inst.id)}
+                    onUnassign={() => moves.unassignWorker(inst.id)}
+                    onDestroy={() => handleDestroyTarget(inst.id)}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {G.reservedActions.length > 0 && (
+          <div className={styles.reserveStrip}>
+            {G.reservedActions.map((cardId, i) => {
+              const card = CARDS[cardId];
               return (
-                <div
-                  key={g.buildingId}
-                  className={className}
-                  style={{ left: pos.x, top: insets.top + pos.y }}
-                  onPointerDown={(e) => onBoxPointerDown(e, g.buildingId)}
-                >
-                  <span className={styles.bName}>
-                    {bld.name}
-                    {g.count > 1 ? ` ×${g.count}` : ''}
-                  </span>
-                  <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
-                    <span className={styles.bldIcon} aria-hidden="true">{artFor(bld.id)}</span>
+                <div key={i} className={`${styles.buildingBox} ${styles.reserveBox}`}>
+                  <span className={styles.bName}>{card.name}</span>
+                  <div className={styles.bldFace}>
+                    <span className={styles.bldIcon} aria-hidden="true">{artFor(cardId)}</span>
                     <span className={styles.bldOutput} aria-hidden="true">
-                      {[
-                        ...Object.entries(bld.produces ?? {})
-                          .filter(([, v]) => v)
-                          .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`),
-                        ...(bld.cultureOutput ? [`+${bld.cultureOutput}🎭`] : []),
-                      ].join(' ')}
+                      {Object.entries(card.effect?.gain ?? {}).map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`).join(' ')}
                     </span>
                   </div>
                   <div className={styles.boxControls}>
-                    {!selfSufficient && (
-                      <span className={styles.staff}>
-                        <button
-                          onClick={() => moves.unassignWorker(g.buildingId)}
-                          disabled={!!gameover || assigned <= 0}
-                          aria-label={`unassign worker from ${bld.name}`}
-                        >
-                          −
-                        </button>
-                        👷 {assigned}/{capacity}
-                        <button
-                          onClick={() => moves.assignWorker(g.buildingId)}
-                          disabled={!!gameover || idle <= 0 || assigned >= capacity}
-                          aria-label={`assign worker to ${bld.name}`}
-                        >
-                          +
-                        </button>
-                      </span>
-                    )}
-                    {pendingDestroy && (
-                      <button
-                        className={styles.demolishBtn}
-                        onClick={() => handleDestroyTarget(g.buildingId)}
-                        aria-label={`demolish ${bld.name}`}
-                      >
-                        💥 Demolish
-                      </button>
-                    )}
+                    <span className={styles.reserveLocked}>👷</span>
                   </div>
                 </div>
               );
             })}
-        {G.reservedActions.map((cardId, i) => {
-          const card = CARDS[cardId];
-          const reserveKey = `__reserve_${i}`;
-          const pos = positions[reserveKey] ?? slotPos(Object.keys(positions).length + i);
-          const isDraggingReserve = bDrag?.buildingId === reserveKey;
-          return (
-            <div
-              key={reserveKey}
-              className={[styles.buildingBox, styles.reserveBox, isDraggingReserve ? styles.boxDragging : ''].filter(Boolean).join(' ')}
-              style={{ left: pos.x, top: insets.top + pos.y }}
-              onPointerDown={(e) => onBoxPointerDown(e, reserveKey)}
-            >
-              <span className={styles.bName}>{card.name}</span>
-              <div className={styles.bldFace}>
-                <span className={styles.bldIcon} aria-hidden="true">{artFor(cardId)}</span>
-                <span className={styles.bldOutput} aria-hidden="true">
-                  {Object.entries(card.effect?.gain ?? {}).map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`).join(' ')}
-                </span>
-              </div>
-              <div className={styles.boxControls}>
-                <span className={styles.reserveLocked}>👷</span>
-              </div>
-            </div>
-          );
-        })}
+          </div>
+        )}
       </div>
 
       <div className={styles.handBar} ref={handBarRef}>
@@ -1052,6 +1135,23 @@ export function Board() {
             </div>
           </div>
         </>
+      )}
+
+      {/* The building box following the cursor while it's dragged between slots. */}
+      {slotDrag?.active && buildingById.has(slotDrag.id) && (
+        <div className={styles.dragLayer} aria-hidden="true">
+          <div
+            className={styles.buildingDragClone}
+            style={{
+              left: slotDrag.x - slotDrag.grabX,
+              top: slotDrag.y - slotDrag.grabY,
+              width: slotDrag.w,
+              height: slotDrag.h,
+            }}
+          >
+            <BuildingBox inst={buildingById.get(slotDrag.id)!} gameover idle={idle} dragging />
+          </div>
+        </div>
       )}
 
       {/* Discard / removed pile contents, opened by clicking a pile. */}

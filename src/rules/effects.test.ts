@@ -28,7 +28,7 @@ describe('applyEffect', () => {
     const G = blankState('enlightenment');
     G.population = 1; // 1 idle worker
     applyEffect(G, { build: 'farm' });
-    expect(G.tableau).toEqual([{ buildingId: 'farm', workers: 1 }]);
+    expect(G.tableau).toEqual([{ id: 1, buildingId: 'farm', workers: 1 }]);
   });
 
   it('raises the building-slot cap (Conquest / Develop)', () => {
