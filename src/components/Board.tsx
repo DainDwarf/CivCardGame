@@ -605,17 +605,25 @@ export function Board() {
       setPendingDestroy({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key });
       return;
     }
+    // A card that erects a building drops it into the slot under the release point (or the
+    // nearest free slot if that one's taken); the reconcile effect places the new instance there.
+    // Reserved actions occupy no slot, so a pop-reserve card needs no placement. This must be
+    // captured now, at the drop point — not after the discard-cost branch below, which can defer
+    // the actual moves.playCard call until a later click, by which point the release position
+    // is long gone.
+    if (card.effect?.build) {
+      // Use the card's own center, not the raw cursor — the cursor can sit anywhere within the
+      // card depending on where it was grabbed, which otherwise skews "closest slot" toward
+      // wherever the grab point happened to land instead of where the card visually rests.
+      const cx = x - d.grabX + d.w / 2;
+      const cy = y - d.grabY + d.h / 2;
+      pendingBuildSlotRef.current = chooseBuildSlot(cx, cy);
+    }
     const need = card.discardCost ?? 0;
     // A discard cost only applies if you have spare cards; then pick the sacrifice by clicking.
     if (need > 0 && G.hand.length - 1 >= need) {
       setPending({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key, need, discards: [] });
       return;
-    }
-    // A card that erects a building drops it into the slot under the release point (or the
-    // nearest free slot if that one's taken); the reconcile effect places the new instance there.
-    // Reserved actions occupy no slot, so a pop-reserve card needs no placement.
-    if (card.effect?.build) {
-      pendingBuildSlotRef.current = chooseBuildSlot(x, y);
     }
     spawnGhost(d.cardId, { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h }, 'drop');
     moves.playCard(d.handIdx);
@@ -733,6 +741,12 @@ export function Board() {
   // so slots are appended and pre-existing ones never shift.
   const tableauSig = G.tableau.map((b) => b.id).join(',');
   useEffect(() => {
+    // Capture and clear the pending drop slot here, outside the updater below — setLayout's
+    // updater must stay pure (StrictMode invokes it twice in dev and keeps only the second
+    // result), so it cannot itself read-and-clear a ref as a side effect. Reading `wantSlot` as
+    // a plain closure variable makes both invocations see the same value.
+    const wantSlot = pendingBuildSlotRef.current;
+    pendingBuildSlotRef.current = null;
     setLayout((prev) => {
       const next = prev.slice();
       while (next.length < G.territory) next.push(null);
@@ -742,11 +756,11 @@ export function Board() {
         if (next[i] != null && !present.has(next[i]!)) next[i] = null; // building gone → free slot
       }
       const placed = new Set(next.filter((k): k is number => k != null));
+      let want = wantSlot;
       for (const b of G.tableau) {
         if (placed.has(b.id)) continue;
-        const want = pendingBuildSlotRef.current;
         let slot = want != null && want < next.length && next[want] == null ? want : next.indexOf(null);
-        pendingBuildSlotRef.current = null;
+        want = null; // only the first newly-placed building in this pass takes the drop slot
         if (slot === -1) slot = next.length; // no free slot (shouldn't happen) → append defensively
         next[slot] = b.id;
         placed.add(b.id);
@@ -798,7 +812,10 @@ export function Board() {
   function handlePendingClick(card: HandCard) {
     if (!pending) return;
     const i = card.handIdx;
-    if (i === pending.handIdx) return setPending(null); // click the pending card again to cancel
+    if (i === pending.handIdx) {
+      pendingBuildSlotRef.current = null; // discard the aborted build's chosen slot too
+      return setPending(null); // click the pending card again to cancel
+    }
     const discards = pending.discards.includes(i)
       ? pending.discards.filter((d) => d !== i)
       : [...pending.discards, i];
