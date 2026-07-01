@@ -72,6 +72,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Disable restart after a won run** — the gameover overlay's Restart button now
+  disables itself (with an explanatory tooltip) when `gameover.outcome === 'victory'`;
+  restarting a win doesn't make sense — the player should hit End Run to bank the
+  result instead. Defeats are unaffected; Restart still works there.
 - **Restart reshuffles with a fresh seed** — `GameContext.tsx`'s `restart` was reusing
   the live `RunConfig` unchanged, so it replayed the identical draw order every time.
   `RunConfig` now carries `deckId` alongside the already-shuffled `deck`, so `{ board,

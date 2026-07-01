@@ -1422,8 +1422,13 @@
   color: #fff;
 }
 
-.gameoverBtnRestart:hover {
+.gameoverBtnRestart:not(:disabled):hover {
   background: #000;
+}
+
+.gameoverBtnRestart:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .gameoverBtnInspect {

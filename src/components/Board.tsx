@@ -1491,7 +1491,12 @@ export function Board() {
             <p className={styles.gameoverResult}>{won ? 'Objective achieved.' : defeatMessage}</p>
             <p className={styles.gameoverRound}>Reached round {G.round}</p>
             <div className={styles.gameoverBtns}>
-              <button className={`${styles.gameoverBtn} ${styles.gameoverBtnRestart}`} onClick={restart}>
+              <button
+                className={`${styles.gameoverBtn} ${styles.gameoverBtnRestart}`}
+                onClick={restart}
+                disabled={won}
+                title={won ? "You've already won this run — end it to keep the result." : undefined}
+              >
                 Restart
               </button>
               <button className={`${styles.gameoverBtn} ${styles.gameoverBtnInspect}`} onClick={() => setOverlayMinimized(true)}>
