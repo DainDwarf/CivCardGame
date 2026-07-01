@@ -39,7 +39,6 @@ const CARD_ART: Record<string, string> = {
   inspiration: '✨',
   cultural_festival: '🎉',
   philosopher: '🏛️',
-  village_settlement: '🏘️',
   conquest: '🗡️',
   develop: '🏗️',
   destroy: '💥',
@@ -51,7 +50,6 @@ function describeCost(c: CardDef): string {
   const parts = (Object.entries(c.cost) as [keyof Resources, number][])
     .filter(([, v]) => v)
     .map(([k, v]) => `${v}${COST_ICON[k]}`);
-  if (c.popCost) parts.push(`${c.popCost}👥`);
   if (c.popReserve) parts.push(`reserve ${c.popReserve}👥`);
   if (c.discardCost) parts.push(`discard ${c.discardCost}`);
   return parts.join(' · ') || 'free';
@@ -82,7 +80,7 @@ function describeCard(c: CardDef): string {
   if (e?.build) {
     const bld = BUILDINGS[e.build];
     // A permanent card *is* the building, so just show its stats; a recurring builder
-    // (e.g. Village Settlement) names the building it erects, since the names differ.
+    // names the building it erects, since the names differ.
     if (c.kind === 'recurring') parts.push(`🏗️ ${bld.name}`);
     const stats = describeBuilding(bld);
     if (stats) parts.push(stats);
@@ -513,7 +511,6 @@ function whyUnplayable(card: CardDef, G: GameState): string | null {
         .map(([k, v]) => `${v}${COST_ICON[k]}`);
       return `need ${missing.join(' ')}`;
     }
-    case 'popCost':
     case 'popReserve':
       return 'not enough idle workers';
     case 'cultureLevel':

@@ -2,9 +2,9 @@ import type { Resources } from '../rules/resources';
 
 /**
  * A building is a permanent entity in the tableau — distinct from the card that built it.
- * Several different cards may construct the same building (e.g. the `farm` card and the
- * `village_settlement` card both erect a Farm), and a building stays in play regardless of
- * where its source card ends up (removed or discard). Building stats live here, not on cards.
+ * Several different cards may construct the same building, and a building stays in play
+ * regardless of where its source card ends up (removed or discard). Building stats live
+ * here, not on cards.
  */
 export interface BuildingDef {
   id: string;

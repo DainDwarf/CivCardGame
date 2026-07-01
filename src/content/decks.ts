@@ -7,7 +7,7 @@ export const DEFAULT_DECK: string[] = [
   'settlers', 'farm', 'eureka', 'granary', 'settlers',
   'workshop', 'walls', 'library', 'inspiration', 'settlers',
   'barracks', 'university', 'eureka', 'corvee',
-  'pyramids', 'great_library', 'colossus', 'village_settlement',
+  'pyramids', 'great_library', 'colossus',
   'develop', 'develop', 'conquest', 'destroy',
   'market', 'trading_post',
   'theater', 'cultural_festival', 'philosopher',

@@ -57,8 +57,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   or `recurring`) holds what lives in the deck. A card *constructs* a building via
   `effect.build` — the building enters `tableau`, the card is then filed by `kind`
   (`permanent` → `removed` pile, `recurring` → `discard`). So the same building can come
-  from different cards (the `farm` card vs. the recurring `village_settlement`), and a
-  `BuildingInstance` references a `buildingId`, never a card. Also `decks.ts` (the Phase 1
+  from different cards, and a `BuildingInstance` references a `buildingId`, never a card.
+  Also `decks.ts` (the Phase 1
   `DEFAULT_DECK`) and `missions.ts` (`MISSIONS` — each mission supplies its `objective`
   and `failure` as pure predicates over `GameState`, plus an optional `onUpkeep`).
 
@@ -77,8 +77,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/run/moves.ts` — the moves (`playCard`, `assignWorker`, `unassignWorker`,
   `toggleStaffing`) — the **only** place `G` may change: validate, mutate the
   plain-object `G` draft, delegate computation to `src/rules/`, return `'invalid'` to
-  reject. `playCard` pays costs (resources, `popCost` from idle workers, discard cost),
-  resolves the card's `effect`, then files the card by `kind` (`permanent` → `removed`,
+  reject. `playCard` pays costs (resources, discard cost), resolves the card's `effect`,
+  then files the card by `kind` (`permanent` → `removed`,
   `recurring` → `discard`). `assignWorker`/`unassignWorker` move one worker at a time;
   `toggleStaffing` (the UI's building-box control) is all-or-nothing — one move either
   fills a building to its full worker requirement or empties it completely, rejected if

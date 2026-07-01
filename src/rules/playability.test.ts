@@ -21,15 +21,7 @@ describe('unplayableReason', () => {
     });
   });
 
-  it('gates on population cost paid from idle workers', () => {
-    const G = blankState('enlightenment');
-    G.population = 1;
-    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }]; // 0 idle
-    const card: CardDef = { ...baseCard, popCost: 1 };
-    expect(unplayableReason(G, card)).toEqual({ kind: 'popCost' });
-  });
-
-  it('gates on population reserve the same way as population cost', () => {
+  it('gates on population reserve paid from idle workers', () => {
     const G = blankState('enlightenment');
     G.population = 1;
     G.reservedPop = 1; // 0 idle
@@ -61,7 +53,7 @@ describe('unplayableReason', () => {
 
   it('checks gates in priority order (cost before population)', () => {
     const G = blankState('enlightenment');
-    const card: CardDef = { ...baseCard, cost: { food: 5 }, popCost: 5 };
+    const card: CardDef = { ...baseCard, cost: { food: 5 }, popReserve: 5 };
     expect(unplayableReason(G, card)).toEqual({ kind: 'cost', missing: { food: 5 } });
   });
 });

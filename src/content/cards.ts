@@ -11,13 +11,11 @@ export interface CardDef {
    * - `permanent`: the card is consumed and goes to the **removed** pile (gone from the deck).
    * - `recurring`: the card recycles to the **discard** pile.
    * A recurring card may still construct a permanent building (the building stays in play;
-   * the card recycles) — see `village_settlement`.
+   * the card recycles).
    */
   kind: CardKind;
   /** Resources required to play. Absent keys are free (e.g. {} = no cost). */
   cost: Partial<Resources>;
-  /** Extra cost: population consumed to play, paid from idle workers. */
-  popCost?: number;
   /** Extra cost: number of idle workers to lock for the rest of this turn (released at beginTurn). */
   popReserve?: number;
   /** Extra cost: number of other cards you must discard from hand to play this. */
@@ -68,7 +66,4 @@ export const CARDS: Record<string, CardDef> = {
 
   // --- Territory management: reclaim a slot by demolishing a building. ---
   destroy: { id: 'destroy', name: 'Destroy', kind: 'recurring', cost: { production: 1 }, effect: { destroy: true } },
-
-  // --- Recurring builder: a recycling card that still erects a permanent building. ---
-  village_settlement: { id: 'village_settlement', name: 'Village Settlement', kind: 'recurring', cost: { food: 10 }, popCost: 2, effect: { build: 'farm' } },
 };

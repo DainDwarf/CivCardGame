@@ -27,19 +27,6 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.hand).toEqual([]);
   });
 
-  it('Village Settlement is a recurring card that builds a Farm — the building stays, the card recycles', () => {
-    const G = blankState('enlightenment');
-    G.hand = ['village_settlement'];
-    G.resources.food = 10;
-    G.population = 3; // 3 idle: 2 spent on the settlement, 1 left to staff the farm
-    play(G, 'village_settlement');
-    expect(G.resources.food).toBe(0); // paid 10 food
-    expect(G.population).toBe(1); // paid 2 population
-    expect(G.tableau).toEqual([{ id: 1, buildingId: 'farm', workers: 1 }]); // built + staffed from the remaining idle
-    expect(G.discard).toEqual(['village_settlement']); // recurring -> recycles, NOT removed
-    expect(G.removed).toEqual([]);
-  });
-
   it('rejects a building when the tableau is at its territory cap', () => {
     const G = blankState('enlightenment');
     G.hand = ['farm'];
@@ -141,18 +128,6 @@ describe('playCard: cards vs. buildings', () => {
     play(G, 'farm'); // now fits
     expect(G.tableau).toHaveLength(2);
     expect(G.tableau.some((b) => b.buildingId === 'farm')).toBe(true);
-  });
-
-  it('rejects a population cost the idle pool cannot cover', () => {
-    const G = blankState('enlightenment');
-    G.hand = ['village_settlement'];
-    G.resources.food = 10;
-    G.population = 1; // only 1 idle, needs 2
-    play(G, 'village_settlement');
-    expect(G.tableau).toEqual([]); // nothing happened
-    expect(G.resources.food).toBe(10);
-    expect(G.population).toBe(1);
-    expect(G.hand).toEqual(['village_settlement']);
   });
 
   it('a pop-reserve card increments reservedPop, defers its gain, and is blocked when idle pool is too small', () => {

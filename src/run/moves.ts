@@ -6,9 +6,9 @@ import { CARDS } from '../content/cards';
  * Play a card from hand. The card's `effect` resolves (which may erect a building in the
  * tableau, auto-staffed from idle pop); then the *card itself* is routed by `kind` —
  * `permanent` cards are removed from the deck (the removed pile), `recurring` cards recycle
- * to the discard. Costs may include resources, population (paid from idle workers), and a
- * discard cost: `discardHandIdxs` gives the hand positions of cards to sacrifice (distinct
- * indices, not the played card's slot). Cards with `effect.destroy` require a
+ * to the discard. Costs may include resources and a discard cost: `discardHandIdxs` gives the
+ * hand positions of cards to sacrifice (distinct indices, not the played card's slot). Cards
+ * with `effect.destroy` require a
  * `destroyInstanceId` — the exact building instance to demolish (frees its territory slot and
  * workers). Moves are the only place `G` may change.
  */
@@ -44,7 +44,6 @@ export function playCard(
 
   // All validated — pay costs and remove all played/sacrificed cards from hand first.
   subtractResources(G.resources, card.cost);
-  if (card.popCost) G.population -= card.popCost;
   if (card.popReserve) {
     G.reservedPop += card.popReserve;
     G.reservedActions.push(cardId);
