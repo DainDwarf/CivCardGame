@@ -127,6 +127,7 @@ function Stat({
   value,
   delta,
   warn,
+  className,
 }: {
   icon: string;
   label: string;
@@ -134,9 +135,13 @@ function Stat({
   value: string | number;
   delta?: number;
   warn?: boolean;
+  className?: string;
 }) {
   return (
-    <span className={`${styles.stat}${warn ? ` ${styles.statWarn}` : ''}`} tabIndex={0}>
+    <span
+      className={`${styles.stat}${warn ? ` ${styles.statWarn}` : ''}${className ? ` ${className}` : ''}`}
+      tabIndex={0}
+    >
       <span aria-hidden="true">{icon}</span> {value}
       {delta !== undefined && delta !== 0 && (
         <span className={delta > 0 ? styles.deltaPos : delta < 0 ? styles.deltaNeg : styles.deltaZero}>
@@ -855,12 +860,13 @@ export function Board() {
     <div className={styles.app}>
       <MissionWidget mission={mission} G={G} />
       <header className={styles.topBanner} ref={bannerRef}>
-        <div className={styles.strategicGroup}>
+        <div className={styles.populationTray}>
           <Stat
             icon="👥"
             label="Population"
             description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them."
             value={`${G.population} (${idle} idle)`}
+            className={styles.statPopulation}
           />
         </div>
 

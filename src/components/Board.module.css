@@ -8,22 +8,27 @@
   color: #1a1a1a;
 }
 
-/* ── Top banner: mission widget (left) · strategic resources (center) · core resources (right) ── */
+/* ── Top banner: population tray (left, large) · core resources (right column) · culture (bottom row) ── */
 
 .topBanner {
   position: sticky;
   top: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 0 0.5rem;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    'population core'
+    'culture    culture';
+  align-items: stretch;
+  gap: 0.4rem 0.8rem;
   font-size: 0.9rem;
   background: #f3f3f0;
-  padding: 0.5rem 0.8rem;
+  padding: 0.6rem 0.8rem;
   border-radius: 8px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
   margin-bottom: 0.25rem;
+  min-height: 6.5rem;
 }
 
 /* Standalone widget pinned to the top-left corner of the viewport: mission name + progress + tooltip */
@@ -67,32 +72,43 @@
   margin-top: 0.15rem;
 }
 
-/* Center column: strategic resources (population, territory, culture) */
-.strategicGroup {
+/* Left, large: the population tray — a visual "slot" where worker pips live and can be dragged
+   from once the idle-worker-pool UI (see docs/TODO.md) lands. Sized to read as a container, not
+   just another stat chip. */
+.populationTray {
+  grid-area: population;
   display: flex;
   align-items: center;
-  justify-content: space-evenly;
-  min-width: 12rem;
-  padding: 0 0.5rem;
-  border-right: 1px solid #d0cfc9;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 2px solid #c9c7bd;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.03);
 }
 
-/* Right column: core resources (food, production, science, military, money) */
+.statPopulation {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+/* Right column: core resources (food, production, science, military, money), stacked. */
 .coreGroup {
+  grid-area: core;
   display: flex;
-  align-items: center;
-  gap: 0.35rem 0.75rem;
-  justify-content: space-evenly;
-  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.3rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid #d0cfc9;
 }
 
-/* Full-width culture gauge: spans all three banner columns as its own row beneath them. */
+/* Full-width culture gauge: its own row beneath the tray and resource column. */
 .cultureBar {
-  grid-column: 1 / -1;
+  grid-area: culture;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.4rem;
 }
 
 /* Round bubble on the left showing the current culture level. Hover for what culture is for. */
