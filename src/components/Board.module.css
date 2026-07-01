@@ -310,7 +310,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, 200px);
   gap: 14px;
-  justify-content: start;
+  justify-content: center;
   align-content: start;
   padding: 16px;
   box-sizing: border-box;
@@ -340,6 +340,7 @@
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
   padding: 10px 16px;
   border-top: 2px dashed rgba(90, 62, 30, 0.3);
