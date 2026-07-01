@@ -10,7 +10,6 @@ import {
   isOperating,
   projectedDelta,
   requiredWorkers,
-  usedTerritory,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
 import { BUILDINGS, type BuildingDef } from '../content/buildings';
@@ -845,12 +844,6 @@ export function Board() {
             label="Population"
             description="Your people — a pool of workers. Each eats 1 food/round whether working or idle. Assign them to buildings to operate them."
             value={`${G.population} (${idle} idle)`}
-          />
-          <Stat
-            icon="🗺️"
-            label="Territory"
-            description="Building slots. Each building you construct fills one; building cards can't be played once it's full."
-            value={`${usedTerritory(G.tableau)}/${G.territory}`}
           />
         </div>
 
