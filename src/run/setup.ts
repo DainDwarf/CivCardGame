@@ -1,4 +1,4 @@
-import { blankState, type GameState } from '../rules';
+import { blankState, seededRng, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
 import { BOARDS } from '../content/boards';
 import type { RunConfig } from '../contract';
@@ -16,6 +16,7 @@ export function createInitialState(config: RunConfig): GameState {
   G.territory = board.territory;
   G.culture = board.culture;
   G.deck = [...config.deck];
+  G.rngState = seededRng(config.seed).getState();
   MISSIONS[config.missionId]?.setup?.(G);
   return G;
 }

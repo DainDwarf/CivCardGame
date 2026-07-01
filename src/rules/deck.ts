@@ -1,15 +1,19 @@
 import { effectiveHandSize } from './culture';
+import { shuffleFromState } from './rng';
 import type { GameState } from './state';
 
 /**
- * Draw one card. When the deck is empty, the discard pile becomes the new deck
- * (Phase 1 keeps deck order deterministic — seeded shuffling comes with the
- * meta/sim seed wiring). Mutates `G` in place (the engine clones it before each move).
+ * Draw one card. When the deck is empty, the discard pile reshuffles into the new
+ * deck, deterministically from the run's RNG stream (`G.rngState`, advanced here so
+ * the next reshuffle continues the same stream). Mutates `G` in place (the engine
+ * clones it before each move).
  */
 export function drawCard(G: GameState): void {
   if (G.deck.length === 0) {
-    G.deck = G.discard;
+    const { result, rngState } = shuffleFromState(G.discard, G.rngState);
+    G.deck = result;
     G.discard = [];
+    G.rngState = rngState;
   }
   const id = G.deck.shift();
   if (id !== undefined) G.hand.push(id);

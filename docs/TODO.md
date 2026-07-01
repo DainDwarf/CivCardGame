@@ -46,10 +46,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 
-## Tech debt & infra (build, tests, tooling)
-
-- Use the seeded RNG (`rules/rng.ts`) to reshuffle the discard pile when it becomes the new deck, instead of preserving discard order `[phase: 2]`
-
 ## Game design & balance
 
 - Card that gives a draw when expanding territory `[?]` `[phase: 4]`
@@ -72,6 +68,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Seeded discard-pile reshuffle** — `drawCard` (`rules/deck.ts`) no longer preserves
+  discard order when it recycles into the deck; it now reshuffles via
+  `rules/rng.ts`'s new `shuffleFromState`, which resumes a persisted RNG stream instead
+  of reseeding from scratch each time. `GameState` gains `rngState` (the generator's
+  serializable state, from `pure-rand`'s `getState()`/`xoroshiro128plusFromState`),
+  seeded once from `RunConfig.seed` in `setup.ts`'s `createInitialState` and advanced
+  each reshuffle — so it rides along for free with `structuredClone`/undo, and a
+  restart (which mints a fresh seed) reshuffles both the initial deck and every future
+  discard-recycle differently. `blankState` defaults `rngState` from a fixed `'blank'`
+  seed for tests that don't care.
 - **Disable restart after a won run** — the gameover overlay's Restart button now
   disables itself (with an explanatory tooltip) when `gameover.outcome === 'victory'`;
   restarting a win doesn't make sense — the player should hit End Run to bank the

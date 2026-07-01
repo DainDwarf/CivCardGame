@@ -1,4 +1,5 @@
 import { emptyResources, type Resources } from './resources';
+import { seededRng } from './rng';
 
 /** A building erected in the tableau, tracking the workers assigned to it. `buildingId` (a key
  *  into the BUILDINGS catalogue) says *what* it is — several different cards can build the same
@@ -63,6 +64,13 @@ export interface GameState {
   missionId: string;
   /** Mission-specific counters (e.g. `threat`). Keeps `GameState` generic. */
   vars: Record<string, number>;
+  /**
+   * Persisted state of the run's RNG stream (`rules/rng.ts`'s `seededRng`/
+   * `shuffleFromState`), advanced each time the discard pile reshuffles into a new
+   * deck. Setup seeds this from `RunConfig.seed`; from there it's just data, so undo
+   * and structuredClone carry it for free.
+   */
+  rngState: readonly number[];
 }
 
 /** A zeroed baseline state — used by setup, tests, and (later) the simulator. */
@@ -84,5 +92,6 @@ export function blankState(missionId: string): GameState {
     handSize: 5,
     missionId,
     vars: {},
+    rngState: seededRng('blank').getState(),
   };
 }
