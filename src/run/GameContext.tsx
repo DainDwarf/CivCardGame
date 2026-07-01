@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useReducer } from 'react';
 import { applyMove, createRun, endTurn, type Gameover, type RunState } from './engine';
-import { playCard, assignWorker, unassignWorker } from './moves';
+import { playCard, assignWorker, unassignWorker, toggleStaffing } from './moves';
 import type { GameState } from '../rules';
 
 interface GameContextValue {
@@ -10,6 +10,7 @@ interface GameContextValue {
     playCard: (handIdx: number, discardHandIdxs?: number[], destroyInstanceId?: number) => void;
     assignWorker: (id: number) => void;
     unassignWorker: (id: number) => void;
+    toggleStaffing: (id: number) => void;
   };
   endTurn: () => void;
   /** Step back one undoable action. No-op when `canUndo` is false. */
@@ -83,6 +84,7 @@ export function GameProvider({ missionId, children }: { missionId: string; child
       dispatch({ type: 'move', fn: playCard, args: [handIdx, discardHandIdxs, destroyInstanceId] }),
     assignWorker: (id: number) => dispatch({ type: 'move', fn: assignWorker, args: [id] }),
     unassignWorker: (id: number) => dispatch({ type: 'move', fn: unassignWorker, args: [id] }),
+    toggleStaffing: (id: number) => dispatch({ type: 'move', fn: toggleStaffing, args: [id] }),
   }), []);
 
   const handlers = useMemo(() => ({

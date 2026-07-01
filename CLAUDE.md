@@ -74,19 +74,23 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `applyMove(state, moveFn, ...args)` clones `G` with `structuredClone`, runs the move,
   and checks win/loss. All three return a new `RunState` — the caller (React context)
   owns the mutable reference.
-- `src/run/moves.ts` — the moves (`playCard`, `assignWorker`, `unassignWorker`) — the
-  **only** place `G` may change: validate, mutate the plain-object `G` draft, delegate
-  computation to `src/rules/`, return `'invalid'` to reject. `playCard` pays costs
-  (resources, `popCost` from idle workers, discard cost), resolves the card's `effect`,
-  then files the card by `kind` (`permanent` → `removed`, `recurring` → `discard`).
-  (Workers are allocated by `buildingId`, since same-type buildings are fungible.)
+- `src/run/moves.ts` — the moves (`playCard`, `assignWorker`, `unassignWorker`,
+  `toggleStaffing`) — the **only** place `G` may change: validate, mutate the
+  plain-object `G` draft, delegate computation to `src/rules/`, return `'invalid'` to
+  reject. `playCard` pays costs (resources, `popCost` from idle workers, discard cost),
+  resolves the card's `effect`, then files the card by `kind` (`permanent` → `removed`,
+  `recurring` → `discard`). `assignWorker`/`unassignWorker` move one worker at a time;
+  `toggleStaffing` (the UI's building-box control) is all-or-nothing — one move either
+  fills a building to its full worker requirement or empties it completely, rejected if
+  there aren't enough idle workers to fill it. (Workers are allocated by `buildingId`,
+  since same-type buildings are fungible.)
 - `src/run/GameContext.tsx` — React context that holds `RunState` and exposes
   `{ G, gameover, moves, endTurn }` via `useGame()`. `GameProvider` is mounted in
   `main.tsx` with the mission resolved from `?mission=`.
 - `src/components/Board.tsx` — the React board. Calls `useGame()` for state and
-  actions; calls `moves.playCard` / `moves.assignWorker` / `moves.unassignWorker` /
-  `endTurn()`. Display only — read derived values from `src/rules/` (e.g.
-  `projectedDelta`, `freePopulation`), never recompute game logic.
+  actions; calls `moves.playCard` / `moves.toggleStaffing` / `endTurn()`. Display only —
+  read derived values from `src/rules/` (e.g. `projectedDelta`, `freePopulation`), never
+  recompute game logic.
 - `src/main.tsx` — mounts `<GameProvider>` + `<Board>`, resolves the mission from
   `?mission=`.
 

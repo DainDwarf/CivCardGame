@@ -296,8 +296,7 @@ function BuildingBox({
   dragging,
   pendingDestroy,
   onPointerDown,
-  onAssign,
-  onUnassign,
+  onToggleStaff,
   onDestroy,
 }: {
   inst: BuildingInstance;
@@ -306,16 +305,16 @@ function BuildingBox({
   dragging?: boolean;
   pendingDestroy?: boolean;
   onPointerDown?: (e: React.PointerEvent) => void;
-  onAssign?: () => void;
-  onUnassign?: () => void;
+  onToggleStaff?: () => void;
   onDestroy?: () => void;
 }) {
   const bld = BUILDINGS[inst.buildingId];
   const req = requiredWorkers(inst.buildingId);
   const selfSufficient = req === 0;
+  const staffed = isOperating(inst);
   const className = [
     styles.buildingBox,
-    isOperating(inst) ? styles.operating : styles.idleBuilding,
+    staffed ? styles.operating : styles.idleBuilding,
     dragging ? styles.boxDragging : '',
     pendingDestroy ? styles.demolishTarget : '',
   ]
@@ -329,41 +328,33 @@ function BuildingBox({
       role={pendingDestroy ? 'button' : undefined}
       aria-label={pendingDestroy ? `demolish ${bld.name}` : undefined}
     >
-      <span className={styles.bName}>{bld.name}</span>
-      <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
-        <span className={styles.bldIcon} aria-hidden="true">{artFor(bld.id)}</span>
-        <span className={styles.bldOutput} aria-hidden="true">
-          {[
-            ...Object.entries(bld.produces ?? {})
-              .filter(([, v]) => v)
-              .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`),
-            ...(bld.cultureOutput ? [`+${bld.cultureOutput}🎭`] : []),
-          ].join(' ')}
-        </span>
-      </div>
-      {!pendingDestroy && (
-        <div className={styles.boxControls}>
-          {!selfSufficient && (
-            <span className={styles.staff}>
-              <button
-                onClick={onUnassign}
-                disabled={gameover || inst.workers <= 0}
-                aria-label={`unassign worker from ${bld.name}`}
-              >
-                −
-              </button>
-              👷 {inst.workers}/{req}
-              <button
-                onClick={onAssign}
-                disabled={gameover || idle <= 0 || inst.workers >= req}
-                aria-label={`assign worker to ${bld.name}`}
-              >
-                +
-              </button>
-            </span>
-          )}
-        </div>
+      {!pendingDestroy && !selfSufficient && (
+        <button
+          type="button"
+          className={`${styles.staffToggle} ${staffed ? styles.staffFull : styles.staffEmpty}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onToggleStaff?.(); }}
+          disabled={gameover || (!staffed && idle < req)}
+          aria-pressed={staffed}
+          aria-label={staffed ? `unstaff ${bld.name}` : `staff ${bld.name}`}
+        >
+          <span aria-hidden="true">🧍</span>
+        </button>
       )}
+      <div className={styles.bldBody}>
+        <span className={styles.bName}>{bld.name}</span>
+        <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
+          <span className={styles.bldIcon} aria-hidden="true">{artFor(bld.id)}</span>
+          <span className={styles.bldOutput} aria-hidden="true">
+            {[
+              ...Object.entries(bld.produces ?? {})
+                .filter(([, v]) => v)
+                .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`),
+              ...(bld.cultureOutput ? [`+${bld.cultureOutput}🎭`] : []),
+            ].join(' ')}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -950,8 +941,7 @@ export function Board() {
                     idle={idle}
                     pendingDestroy={!!pendingDestroy}
                     onPointerDown={(e) => onBoxPointerDown(e, inst, slotIdx)}
-                    onAssign={() => moves.assignWorker(inst.id)}
-                    onUnassign={() => moves.unassignWorker(inst.id)}
+                    onToggleStaff={() => moves.toggleStaffing(inst.id)}
                     onDestroy={() => handleDestroyTarget(inst.id)}
                   />
                 )}
@@ -965,15 +955,21 @@ export function Board() {
               const card = CARDS[cardId];
               return (
                 <div key={i} className={`${styles.buildingBox} ${styles.reserveBox}`}>
-                  <span className={styles.bName}>{card.name}</span>
-                  <div className={styles.bldFace}>
-                    <span className={styles.bldIcon} aria-hidden="true">{artFor(cardId)}</span>
-                    <span className={styles.bldOutput} aria-hidden="true">
-                      {Object.entries(card.effect?.gain ?? {}).map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`).join(' ')}
-                    </span>
-                  </div>
-                  <div className={styles.boxControls}>
-                    <span className={styles.reserveLocked}>👷</span>
+                  <span
+                    className={`${styles.staffToggle} ${styles.staffLocked}`}
+                    aria-label={`worker locked for ${card.name} until it resolves`}
+                  >
+                    <span aria-hidden="true">🧍</span>
+                    <span className={styles.lockBadge} aria-hidden="true">🔒</span>
+                  </span>
+                  <div className={styles.bldBody}>
+                    <span className={styles.bName}>{card.name}</span>
+                    <div className={styles.bldFace}>
+                      <span className={styles.bldIcon} aria-hidden="true">{artFor(cardId)}</span>
+                      <span className={styles.bldOutput} aria-hidden="true">
+                        {Object.entries(card.effect?.gain ?? {}).map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`).join(' ')}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );

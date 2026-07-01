@@ -369,8 +369,9 @@
   min-height: 92px;
   padding: 0.45rem 0.55rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.45rem;
   border: 1px solid #ddd;
   border-radius: 8px;
   background: #fff;
@@ -457,48 +458,74 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
 }
 
-.reserveLocked {
-  font-size: 0.8rem;
-  color: #a06020;
-  letter-spacing: 0.02em;
-}
-
 .bName {
   font-weight: 600;
   text-align: center;
 }
 
-/* Footer row inside a building box: staffing controls. */
-.boxControls {
+/* The right-hand side of a building box: name + face, stacked. */
+.bldBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* The left-column staffing toggle: a binary empty/full switch for the whole building —
+   click fills it to its full worker requirement, or empties it entirely. */
+.staffToggle {
+  flex: 0 0 2.3rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-top: auto;
-}
-
-.staff {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  white-space: nowrap;
-}
-
-.staff button {
-  width: 1.6rem;
-  height: 1.6rem;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  padding: 0;
+  font-size: 1.4rem;
   line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease, opacity 0.12s ease;
 }
 
-.staff button:disabled {
-  opacity: 0.4;
+.staffToggle:disabled {
   cursor: not-allowed;
+}
+
+.staffEmpty {
+  background: rgba(0, 0, 0, 0.05);
+  opacity: 0.32;
+  filter: grayscale(1);
+}
+
+.staffEmpty:not(:disabled):hover {
+  opacity: 0.55;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.staffFull {
+  background: rgba(90, 170, 90, 0.2);
+  opacity: 1;
+}
+
+.staffFull:not(:disabled):hover {
+  background: rgba(90, 170, 90, 0.32);
+}
+
+/* A reserved action's worker: staffed (like .staffFull) but non-interactive and tagged with
+   a lock badge — this population is committed until the action resolves, not toggleable. */
+.staffLocked {
+  position: relative;
+  background: rgba(212, 146, 74, 0.22);
+  cursor: not-allowed;
+}
+
+.lockBadge {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  font-size: 0.65rem;
+  line-height: 1;
 }
 
 .muted {

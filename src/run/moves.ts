@@ -93,3 +93,21 @@ export function unassignWorker(G: GameState, id: number): 'invalid' | void {
   if (!b || b.workers <= 0) return 'invalid';
   b.workers -= 1;
 }
+
+/** Toggle a building instance (identified by `id`) between empty and fully staffed in one
+ *  move: staffed buildings empty out entirely; empty ones fill to their full worker
+ *  requirement, but only all-or-nothing (mirrors `addBuilding`'s auto-staff) — if there
+ *  aren't enough idle workers to fill it completely, the toggle is rejected rather than
+ *  partially staffing it. No-op target for self-sufficient buildings (requirement 0). */
+export function toggleStaffing(G: GameState, id: number): 'invalid' | void {
+  const b = G.tableau.find((x) => x.id === id);
+  if (!b) return 'invalid';
+  const req = requiredWorkers(b.buildingId);
+  if (req === 0) return 'invalid';
+  if (b.workers > 0) {
+    b.workers = 0;
+    return;
+  }
+  if (freePopulation(G) < req) return 'invalid';
+  b.workers = req;
+}
