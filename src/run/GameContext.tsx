@@ -1,7 +1,8 @@
 import { createContext, useContext, useMemo, useReducer } from 'react';
-import { applyMove, createRun, endTurn, type Gameover, type RunState } from './engine';
+import { applyMove, createRun, endTurn, toRunResult, type Gameover, type RunState } from './engine';
 import { playCard, assignWorker, unassignWorker, toggleStaffing, transferWorker } from './moves';
 import type { GameState } from '../rules';
+import type { RunConfig, RunResult } from '../contract';
 
 interface GameContextValue {
   G: GameState;
@@ -19,6 +20,8 @@ interface GameContextValue {
   /** Whether there is an undoable action to step back to (within the current turn, since the last draw). */
   canUndo: boolean;
   restart: () => void;
+  /** Ends the run and hands the result back to `onRunEnd`. No-op while the run is still live. */
+  endRun: () => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -40,7 +43,7 @@ type Action =
   | { type: 'move'; fn: MoveFn; args: unknown[] }
   | { type: 'endTurn' }
   | { type: 'undo' }
-  | { type: 'restart' };
+  | { type: 'restart'; config: RunConfig };
 
 /** Two decks are equal when they hold the same card ids in the same order. */
 function sameDeck(a: string[], b: string[]): boolean {
@@ -72,12 +75,21 @@ function reducer(s: Session, action: Action): Session {
       return { present: s.past[s.past.length - 1], past: s.past.slice(0, -1) };
     }
     case 'restart':
-      return { present: createRun(s.present.G.missionId), past: [] };
+      return { present: createRun(action.config), past: [] };
   }
 }
 
-export function GameProvider({ missionId, children }: { missionId: string; children: React.ReactNode }) {
-  const [session, dispatch] = useReducer(reducer, missionId, (id) => ({ present: createRun(id), past: [] }));
+export function GameProvider({
+  config,
+  onRunEnd,
+  children,
+}: {
+  config: RunConfig;
+  /** Called when the player clicks "End Run" on a finished run — hands the result back to the meta loop. */
+  onRunEnd: (result: RunResult) => void;
+  children: React.ReactNode;
+}) {
+  const [session, dispatch] = useReducer(reducer, config, (c) => ({ present: createRun(c), past: [] }));
   const { present, past } = session;
 
   const moves = useMemo(() => ({
@@ -93,14 +105,18 @@ export function GameProvider({ missionId, children }: { missionId: string; child
   const handlers = useMemo(() => ({
     endTurn: () => dispatch({ type: 'endTurn' }),
     undo: () => dispatch({ type: 'undo' }),
-    restart: () => dispatch({ type: 'restart' }),
-  }), []);
+    restart: () => dispatch({ type: 'restart', config }),
+  }), [config]);
 
   // Undo is offered only within a live turn — not over a finished run.
   const canUndo = past.length > 0 && !present.gameover;
 
+  function endRun() {
+    if (present.gameover) onRunEnd(toRunResult(present.G, present.gameover));
+  }
+
   return (
-    <GameContext.Provider value={{ G: present.G, gameover: present.gameover, moves, canUndo, ...handlers }}>
+    <GameContext.Provider value={{ G: present.G, gameover: present.gameover, moves, canUndo, endRun, ...handlers }}>
       {children}
     </GameContext.Provider>
   );

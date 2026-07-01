@@ -1437,8 +1437,11 @@
 
 .gameoverBtnEnd {
   background: #e4e2de;
-  color: #aaa;
-  cursor: not-allowed;
+  color: #2c2c2c;
+}
+
+.gameoverBtnEnd:hover {
+  background: #d4d2ce;
 }
 
 /* Minimized pill shown when player clicks Inspect. Lives inside .app but re-enables pointer events. */

@@ -15,10 +15,13 @@ It is a **roguelite deckbuilder** with two loops: a **run loop** (the boardgame.
 card game — play a *locked* pre-built deck against a mission) and a **meta loop**
 (persistent deck construction, shop, mission selection — the *only* place decks are
 edited). See [`docs/DESIGN.md`](docs/DESIGN.md) for the full game design and roadmap.
-The code currently implements **Phase 1** — the run loop, under `src/run/`: hybrid
-cards (permanent vs. recurring), the turn lifecycle, a **population/worker-staffing**
-layer (buildings must be staffed to operate; the population eats food each round), and
-mission-driven win/lose conditions. The meta loop (`src/meta/`) is not built yet.
+**Phase 1** (the run loop, under `src/run/`) is done: hybrid cards (permanent vs.
+recurring), the turn lifecycle, a **population/worker-staffing** layer (buildings must
+be staffed to operate; the population eats food each round), and mission-driven
+win/lose conditions. **Phase 2** (contract + meta shell) is in progress: `src/contract.ts`
+defines `RunConfig`/`RunResult`; `src/app/App.tsx` switches between the meta menu
+(`src/meta/MissionSelect.tsx`) and a run. Collection view, deck construction, and
+localStorage persistence are not built yet.
 
 ## Commands
 
@@ -66,16 +69,19 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 
 **Shell — the run loop (`src/run/`) + React:**
 
-- `src/run/setup.ts` — `createInitialState(missionId)`: the starting state for a run
-  (seeds resources/deck, applies the mission's `setup`). **Never use `Math.random` in
-  game logic** — deck order is currently deterministic; a seeded-random library will be
-  wired in when the meta/sim shuffle arrives.
+- `src/run/setup.ts` — `createInitialState(config: RunConfig)`: the starting state for
+  a run. The board (`config.board`) sets the baseline for all 8 starting resources;
+  the mission's `setup` then layers its own modifiers on top. **Never use `Math.random`
+  in game logic** — `config.deck` is already shuffled deterministically from
+  `config.seed` (see `src/contract.ts`/`src/rules/rng.ts`); the discard-pile reshuffle
+  is still deck order, not reseeded.
 - `src/run/engine.ts` — the turn state machine. `RunState = { G, gameover }`.
-  `createRun(missionId)` builds the initial state and runs the first `beginTurn`.
-  `endTurn(state)` runs `applyUpkeep`, checks win/loss, then starts the next turn.
-  `applyMove(state, moveFn, ...args)` clones `G` with `structuredClone`, runs the move,
-  and checks win/loss. All three return a new `RunState` — the caller (React context)
-  owns the mutable reference.
+  `createRun(config: RunConfig)` builds the initial state and runs the first
+  `beginTurn`. `endTurn(state)` runs `applyUpkeep`, checks win/loss, then starts the
+  next turn. `applyMove(state, moveFn, ...args)` clones `G` with `structuredClone`,
+  runs the move, and checks win/loss. All three return a new `RunState` — the caller
+  (React context) owns the mutable reference. `toRunResult(G, gameover)` promotes a
+  finished run into the `RunResult` handed back to the meta loop.
 - `src/run/moves.ts` — the moves (`playCard`, `assignWorker`, `unassignWorker`,
   `toggleStaffing`) — the **only** place `G` may change: validate, mutate the
   plain-object `G` draft, delegate computation to `src/rules/`, return `'invalid'` to
@@ -87,17 +93,21 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   there aren't enough idle workers to fill it. (Workers are allocated by `buildingId`,
   since same-type buildings are fungible.)
 - `src/run/GameContext.tsx` — React context that holds `RunState` and exposes
-  `{ G, gameover, moves, endTurn }` via `useGame()`. `GameProvider` is mounted in
-  `main.tsx` with the mission resolved from `?mission=`.
+  `{ G, gameover, moves, endTurn, undo, canUndo, restart, endRun }` via `useGame()`.
+  `GameProvider` takes a `RunConfig` (`config` prop) and an `onRunEnd(result: RunResult)`
+  callback, called when the player clicks "End Run" on a finished run.
 - `src/components/Board.tsx` — the React board. Calls `useGame()` for state and
   actions; calls `moves.playCard` / `moves.toggleStaffing` / `endTurn()`. Display only —
   read derived values from `src/rules/` (e.g. `projectedDelta`, `freePopulation`), never
   recompute game logic.
-- `src/main.tsx` — mounts `<GameProvider>` + `<Board>`, resolves the mission from
-  `?mission=`.
+- `src/app/App.tsx` — the shell that switches between the meta menu
+  (`src/meta/MissionSelect.tsx`, which assembles a `RunConfig` via `buildRunConfig` and
+  calls `onLaunch`) and `<GameProvider>` + `<Board>`. On `onRunEnd`, it stores the
+  `RunResult` and switches back to the menu.
+- `src/main.tsx` — mounts `<App>`.
 
-The meta loop (`src/meta/`) and the loop contract (`src/contract.ts`) are not built
-yet — see the roadmap in `docs/DESIGN.md`.
+See `src/contract.ts` for the `RunConfig`/`RunResult` types and `buildRunConfig` —
+the spine between the two loops (docs/DESIGN.md, "The contract").
 
 ## Conventions
 

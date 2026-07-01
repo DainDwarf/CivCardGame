@@ -3,7 +3,7 @@ import { MISSIONS } from '../content/missions';
 import { BOARDS, type BoardId } from '../content/boards';
 import { DECKS, type DeckId } from '../content/decks';
 import type { Resources } from '../rules/resources';
-import { buildRunConfig, type RunSelection } from '../contract';
+import { buildRunConfig, type RunConfig, type RunResult, type RunSelection } from '../contract';
 import styles from './MissionSelect.module.css';
 
 const MISSION_IDS = Object.keys(MISSIONS);
@@ -58,12 +58,18 @@ function OptionCard({
 
 /**
  * The first meta screen — mission-select. Replaces the old direct-to-run mount in
- * `main.tsx`. Picks mission / board / deck into a provisional selection. "Start Run"
- * doesn't launch a run yet — that lands with Phase 2 step 4, once the loop is wired
- * closed — it only assembles the `RunConfig` and prints it, for hand-testing
- * `buildRunConfig` (step 3) ahead of that wiring.
+ * `main.tsx`. Picks mission / board / deck into a provisional selection, then
+ * assembles a `RunConfig` and hands it to `onLaunch` — the `app/` shell swaps to the
+ * run view. `lastResult`, when present, is the previous run's outcome (a minimal
+ * summary line; the meta menu doesn't yet apply rewards from it — that's Phase 3).
  */
-export function MissionSelect() {
+export function MissionSelect({
+  lastResult,
+  onLaunch,
+}: {
+  lastResult?: RunResult;
+  onLaunch: (config: RunConfig) => void;
+}) {
   const [selection, setSelection] = useState<RunSelection>({
     missionId: MISSION_IDS[0],
     boardId: BOARD_IDS[0],
@@ -75,14 +81,20 @@ export function MissionSelect() {
   const deck = DECKS[selection.deckId];
 
   function handleStartRun() {
-    const config = buildRunConfig(selection, crypto.randomUUID());
-    console.log('RunConfig (hand-testing only — no run launched yet):', config);
+    onLaunch(buildRunConfig(selection, crypto.randomUUID()));
   }
 
   return (
     <div className={styles.menu}>
       <h1 className={styles.title}>CivCardGame</h1>
       <p className={styles.subtitle}>Choose a mission, a government, and a deck.</p>
+
+      {lastResult && (
+        <p className={styles.lastResult}>
+          Last run: {lastResult.outcome === 'victory' ? '🏛️ Victory' : '💀 Defeat'} —{' '}
+          {MISSIONS[lastResult.missionId].name} (round {lastResult.stats.turnsTaken})
+        </p>
+      )}
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Mission</h2>
@@ -135,12 +147,7 @@ export function MissionSelect() {
         <p className={styles.detail}>{deck.cards.length} cards</p>
       </section>
 
-      <button
-        type="button"
-        className={styles.startBtn}
-        onClick={handleStartRun}
-        title="Assembles and logs the RunConfig — actually launching a run lands with Phase 2 step 4"
-      >
+      <button type="button" className={styles.startBtn} onClick={handleStartRun}>
         Start Run
       </button>
     </div>

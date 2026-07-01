@@ -20,7 +20,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 1. ~~**Scaffold meta content**~~ — done, see *Done / shipped* below. `[size: S]`
 2. ~~**Mission-select menu**~~ — done, see *Done / shipped* below. `[size: M]`
 3. ~~**Define `contract.ts`**~~ — done, see *Done / shipped* below. `[size: M]`
-4. **Wire the loop closed** — introduce the `app/` shell + a meta↔run **view switch**; refactor the `missionId`-keyed pipeline (`createRun` / `createInitialState` / `GameProvider` / restart) to consume a `RunConfig`; apply board baseline-resources + disaster injection during setup assembly; end-of-run returns to the menu with a **minimal `RunResult`** (no reward application yet — that needs collection + Phase-3 currency). `[size: L]`
+4. ~~**Wire the loop closed**~~ — done, see *Done / shipped* below. `[size: L]`
 5. **Extend the meta menu** — add a collection view and deck-construction navigation/screens (shell + routing only, no editing logic yet). `[size: M]`
 6. **localStorage persistence** — stand up the persisted player store (collection + saved decks + progress) with localStorage save/load. Comes **before** deck construction so the editor is built on the real store, not retrofitted onto in-memory state. `[size: M]`
 7. **Deck construction** — the deck editor: build/edit run decks from the collection, writing directly to the persisted store. Deck-construction *constraints* (size, copy/rarity limits, civ identity) stay deferred to Phase 4. `[size: L] [?]`
@@ -29,6 +29,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
+- Add strategic resources (population / territory / culture) to `RunResult.stats` — currently only `finalResources` (the 5 core) `[?]` `[phase: 2]`
 
 ## Cards & content (`src/content/`)
 
@@ -46,6 +47,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 
 ## Tech debt & infra (build, tests, tooling)
+
+- Use the seeded RNG (`rules/rng.ts`) to reshuffle the discard pile when it becomes the new deck, instead of preserving discard order `[phase: 2]`
+- Restart should reshuffle the deck — `GameContext.tsx`'s `restart` currently reuses the same `RunConfig` (same seed), so it replays the identical draw order every time `[phase: 2]`
 
 ## Game design & balance
 
@@ -69,6 +73,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Wire the loop closed** (Phase 2 build plan step 4) — `src/app/App.tsx` is the new
+  shell: a meta↔run view switch holding `{ screen: 'menu' } | { screen: 'run'; config }`
+  state. `createInitialState`/`createRun` now take a `RunConfig` instead of a bare
+  `missionId`; `createInitialState` applies the board's baseline (all 8 starting
+  resources) before the mission's `setup` layers its modifiers on top — disaster
+  injection stays unimplemented (no mission defines one yet; the seam is the assembled
+  `RunConfig.deck`, per `buildRunConfig`). `GameProvider` takes `{ config, onRunEnd }`;
+  `restart` now carries `RunConfig` through the reducer action instead of reading
+  `missionId` off the live state. The gameover overlay's "End Run" button (previously
+  disabled) now calls the new `endRun()` context method, which promotes the finished
+  `RunState` into a `RunResult` (`engine.ts`'s `toRunResult`) and hands it to
+  `onRunEnd` — `App` stores it and returns to the menu, where `MissionSelect` shows a
+  one-line "Last run: …" summary. `main.tsx` now mounts `<App>` instead of
+  `<MissionSelect>` directly. `run.test.ts`'s `start()` helper builds a `RunConfig`
+  by hand (unshuffled deck) rather than going through `buildRunConfig`, since the
+  tests assert on a fixed hand order that a seeded shuffle would disturb; added a
+  board-application test (monarchy/republic) since Tribe's values happen to match the
+  old hardcoded defaults and wouldn't have caught a broken board wire-up.
 - **Define `contract.ts`** (Phase 2 build plan step 3) — `src/contract.ts` formalizes
   `RunConfig` (`deck` / `board` / `missionId` / `seed`) and `RunResult` (`outcome` /
   `missionId` / `stats`; deliberately no `rewards` field — those are looked up from

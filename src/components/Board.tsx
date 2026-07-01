@@ -558,7 +558,7 @@ function whyUnplayable(card: CardDef, G: GameState): string | null {
 }
 
 export function Board() {
-  const { G, gameover, moves, endTurn, undo, canUndo, restart } = useGame();
+  const { G, gameover, moves, endTurn, undo, canUndo, restart, endRun } = useGame();
   const mission = MISSIONS[G.missionId];
   const [pending, setPending] = useState<PendingPlay | null>(null);
   const [pendingDestroy, setPendingDestroy] = useState<PendingDestroy | null>(null);
@@ -1497,7 +1497,7 @@ export function Board() {
               <button className={`${styles.gameoverBtn} ${styles.gameoverBtnInspect}`} onClick={() => setOverlayMinimized(true)}>
                 Inspect
               </button>
-              <button className={`${styles.gameoverBtn} ${styles.gameoverBtnEnd}`} disabled>
+              <button className={`${styles.gameoverBtn} ${styles.gameoverBtnEnd}`} onClick={endRun}>
                 End Run
               </button>
             </div>

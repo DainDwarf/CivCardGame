@@ -1,6 +1,7 @@
 import { createInitialState } from './setup';
 import { applyUpkeep, coreCollapse, drawUpTo, emptyResources, type CollapseReason, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
+import type { RunConfig, RunResult } from '../contract';
 
 export type Gameover = { outcome: 'victory' | 'defeat'; reason?: CollapseReason; missionId: string };
 
@@ -30,8 +31,17 @@ function beginTurn(state: RunState): RunState {
   return checkEndIf({ ...state, G });
 }
 
-export function createRun(missionId: string): RunState {
-  return beginTurn({ G: createInitialState(missionId), gameover: undefined });
+export function createRun(config: RunConfig): RunState {
+  return beginTurn({ G: createInitialState(config), gameover: undefined });
+}
+
+/** Promote a finished run's state into the minimal `RunResult` handed back to the meta loop. */
+export function toRunResult(G: GameState, gameover: Gameover): RunResult {
+  return {
+    outcome: gameover.outcome,
+    missionId: gameover.missionId,
+    stats: { turnsTaken: G.round, finalResources: G.resources },
+  };
 }
 
 export function endTurn(state: RunState): RunState {
