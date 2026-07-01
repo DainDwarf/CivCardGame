@@ -315,11 +315,18 @@ function BuildingBox({
     styles.buildingBox,
     isOperating(inst) ? styles.operating : styles.idleBuilding,
     dragging ? styles.boxDragging : '',
+    pendingDestroy ? styles.demolishTarget : '',
   ]
     .filter(Boolean)
     .join(' ');
   return (
-    <div className={className} onPointerDown={onPointerDown}>
+    <div
+      className={className}
+      onPointerDown={onPointerDown}
+      onClick={pendingDestroy ? onDestroy : undefined}
+      role={pendingDestroy ? 'button' : undefined}
+      aria-label={pendingDestroy ? `demolish ${bld.name}` : undefined}
+    >
       <span className={styles.bName}>{bld.name}</span>
       <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
         <span className={styles.bldIcon} aria-hidden="true">{artFor(bld.id)}</span>
@@ -332,32 +339,29 @@ function BuildingBox({
           ].join(' ')}
         </span>
       </div>
-      <div className={styles.boxControls}>
-        {!selfSufficient && (
-          <span className={styles.staff}>
-            <button
-              onClick={onUnassign}
-              disabled={gameover || inst.workers <= 0}
-              aria-label={`unassign worker from ${bld.name}`}
-            >
-              −
-            </button>
-            👷 {inst.workers}/{req}
-            <button
-              onClick={onAssign}
-              disabled={gameover || idle <= 0 || inst.workers >= req}
-              aria-label={`assign worker to ${bld.name}`}
-            >
-              +
-            </button>
-          </span>
-        )}
-        {pendingDestroy && (
-          <button className={styles.demolishBtn} onClick={onDestroy} aria-label={`demolish ${bld.name}`}>
-            💥 Demolish
-          </button>
-        )}
-      </div>
+      {!pendingDestroy && (
+        <div className={styles.boxControls}>
+          {!selfSufficient && (
+            <span className={styles.staff}>
+              <button
+                onClick={onUnassign}
+                disabled={gameover || inst.workers <= 0}
+                aria-label={`unassign worker from ${bld.name}`}
+              >
+                −
+              </button>
+              👷 {inst.workers}/{req}
+              <button
+                onClick={onAssign}
+                disabled={gameover || idle <= 0 || inst.workers >= req}
+                aria-label={`assign worker to ${bld.name}`}
+              >
+                +
+              </button>
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

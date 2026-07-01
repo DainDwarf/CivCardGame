@@ -389,6 +389,38 @@
   opacity: 0.35;
 }
 
+/* A building box selectable as a demolish target: red hazard stripes cover it entirely,
+   signalling that a click anywhere on the box destroys it (no staffing controls underneath). */
+.demolishTarget {
+  position: relative;
+  cursor: pointer;
+}
+
+.demolishTarget::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(200, 30, 30, 0.35),
+    rgba(200, 30, 30, 0.35) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+  pointer-events: none;
+}
+
+.demolishTarget:hover::after {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(230, 20, 20, 0.5),
+    rgba(230, 20, 20, 0.5) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+}
+
 .operating {
   background: #f1f7ef;
   border-color: #b7d8ab !important;
@@ -421,7 +453,7 @@
   text-align: center;
 }
 
-/* Footer row inside a building box: staffing controls + (in targeting mode) demolish. */
+/* Footer row inside a building box: staffing controls. */
 .boxControls {
   display: flex;
   align-items: center;
@@ -452,22 +484,6 @@
 .staff button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.demolishBtn {
-  margin-left: 0.6rem;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid #c44;
-  border-radius: 4px;
-  background: #fff0f0;
-  color: #a00;
-  cursor: pointer;
-  font-size: 0.8rem;
-  white-space: nowrap;
-}
-
-.demolishBtn:hover {
-  background: #fdd;
 }
 
 .muted {
