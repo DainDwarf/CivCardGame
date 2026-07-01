@@ -13,6 +13,7 @@ describe('buildRunConfig', () => {
     const config = buildRunConfig(selection, 'seed-1');
     expect(config.missionId).toBe('enlightenment');
     expect(config.board).toBe('tribe');
+    expect(config.deckId).toBe('balanced');
     expect(config.seed).toBe('seed-1');
   });
 

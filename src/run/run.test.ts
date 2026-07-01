@@ -6,7 +6,7 @@ import type { RunConfig } from '../contract';
 
 /** `board: 'tribe'` and the unshuffled balanced deck reproduce the fixed values these tests assert on. */
 function start(missionId: string, board: RunConfig['board'] = 'tribe') {
-  const config: RunConfig = { deck: [...DECKS.balanced.cards], board, missionId, seed: 'test-seed' };
+  const config: RunConfig = { deck: [...DECKS.balanced.cards], board, missionId, deckId: 'balanced', seed: 'test-seed' };
   let state: RunState = createRun(config);
   return {
     getState: () => ({ G: state.G, ctx: { gameover: state.gameover } }),

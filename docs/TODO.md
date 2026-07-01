@@ -49,7 +49,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Tech debt & infra (build, tests, tooling)
 
 - Use the seeded RNG (`rules/rng.ts`) to reshuffle the discard pile when it becomes the new deck, instead of preserving discard order `[phase: 2]`
-- Restart should reshuffle the deck — `GameContext.tsx`'s `restart` currently reuses the same `RunConfig` (same seed), so it replays the identical draw order every time `[phase: 2]`
 
 ## Game design & balance
 
@@ -73,6 +72,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Restart reshuffles with a fresh seed** — `GameContext.tsx`'s `restart` was reusing
+  the live `RunConfig` unchanged, so it replayed the identical draw order every time.
+  `RunConfig` now carries `deckId` alongside the already-shuffled `deck`, so `{ board,
+  missionId, deckId, seed }` alone fully determines a run — restarting calls
+  `buildRunConfig` again with the same `missionId`/`board`/`deckId` but a fresh
+  `crypto.randomUUID()` seed, the same path a menu launch takes. Kept `deckId` on
+  `RunConfig` (rather than reshuffling the already-shuffled `deck` array in place) so
+  any single run — including a restart — stays reproducible from its own seed alone,
+  without needing the seed chain of every restart that came before it.
 - **Wire the loop closed** (Phase 2 build plan step 4) — `src/app/App.tsx` is the new
   shell: a meta↔run view switch holding `{ screen: 'menu' } | { screen: 'run'; config }`
   state. `createInitialState`/`createRun` now take a `RunConfig` instead of a bare

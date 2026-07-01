@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useReducer } from 'react';
 import { applyMove, createRun, endTurn, toRunResult, type Gameover, type RunState } from './engine';
 import { playCard, assignWorker, unassignWorker, toggleStaffing, transferWorker } from './moves';
 import type { GameState } from '../rules';
-import type { RunConfig, RunResult } from '../contract';
+import { buildRunConfig, type RunConfig, type RunResult } from '../contract';
 
 interface GameContextValue {
   G: GameState;
@@ -105,7 +105,15 @@ export function GameProvider({
   const handlers = useMemo(() => ({
     endTurn: () => dispatch({ type: 'endTurn' }),
     undo: () => dispatch({ type: 'undo' }),
-    restart: () => dispatch({ type: 'restart', config }),
+    // A restart is a new run with the same board/mission/deck but a fresh seed — reusing the
+    // exact same seed would just replay the identical draw order every time.
+    restart: () => dispatch({
+      type: 'restart',
+      config: buildRunConfig(
+        { missionId: config.missionId, boardId: config.board, deckId: config.deckId },
+        crypto.randomUUID(),
+      ),
+    }),
   }), [config]);
 
   // Undo is offered only within a live turn — not over a finished run.

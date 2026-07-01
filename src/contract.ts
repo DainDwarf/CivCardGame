@@ -26,6 +26,8 @@ export interface RunConfig {
   deck: string[];
   board: BoardId;
   missionId: string;
+  /** The saved deck `deck` was shuffled from — kept so a fresh seed can reshuffle it (e.g. on restart) without re-deriving the rest of the config. */
+  deckId: DeckId;
   /** Drives every deterministic draw this run makes — same seed, same run. */
   seed: string;
 }
@@ -58,6 +60,7 @@ export function buildRunConfig(selection: RunSelection, seed: string): RunConfig
     deck: shuffle(deck, seed),
     board: selection.boardId,
     missionId: selection.missionId,
+    deckId: selection.deckId,
     seed,
   };
 }
