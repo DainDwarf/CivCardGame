@@ -159,21 +159,36 @@ function Stat({
 
 /** The population tray: one 🧍 token per population, styled exactly like a building's staffing
  *  toggle (green-tinted when idle and available, dim/grayscale when at work) so the player reads
- *  at a glance that these are the same workers occupying the building boxes below. */
-function PopulationTokens({ population, idle }: { population: number; idle: number }) {
+ *  at a glance that these are the same workers occupying the building boxes below. An idle token
+ *  can be picked up and dragged onto a building to staff it (see `onTokenPointerDown`). */
+function PopulationTokens({
+  population,
+  idle,
+  onTokenPointerDown,
+}: {
+  population: number;
+  idle: number;
+  onTokenPointerDown?: (e: React.PointerEvent) => void;
+}) {
   const working = population - idle;
   return (
     <span className={styles.stat} tabIndex={0} aria-label={`Population ${population}, ${idle} idle`}>
       <span className={styles.popTokens}>
-        {Array.from({ length: population }, (_, i) => (
-          <span
-            key={i}
-            aria-hidden="true"
-            className={`${styles.popToken} ${i < idle ? styles.staffFull : styles.staffEmpty}`}
-          >
-            🧍
-          </span>
-        ))}
+        {Array.from({ length: population }, (_, i) => {
+          const tokenIdle = i < idle;
+          return (
+            <span
+              key={i}
+              aria-hidden="true"
+              className={`${styles.popToken} ${tokenIdle ? styles.staffFull : styles.staffEmpty}${
+                tokenIdle ? ` ${styles.popTokenIdle}` : ''
+              }`}
+              onPointerDown={tokenIdle ? onTokenPointerDown : undefined}
+            >
+              🧍
+            </span>
+          );
+        })}
       </span>
       <span className={styles.tooltip} role="tooltip">
         <strong>Population</strong> — Your people — a pool of workers. Each eats 1 food/round
@@ -321,18 +336,21 @@ function BuildingBox({
   gameover,
   idle,
   dragging,
+  workerDragSource,
   pendingDestroy,
   onPointerDown,
-  onToggleStaff,
+  onStaffPointerDown,
   onDestroy,
 }: {
   inst: BuildingInstance;
   gameover: boolean;
   idle: number;
   dragging?: boolean;
+  /** True while this building's own worker is being dragged out of it (fades the toggle). */
+  workerDragSource?: boolean;
   pendingDestroy?: boolean;
   onPointerDown?: (e: React.PointerEvent) => void;
-  onToggleStaff?: () => void;
+  onStaffPointerDown?: (e: React.PointerEvent, inst: BuildingInstance) => void;
   onDestroy?: () => void;
 }) {
   const bld = BUILDINGS[inst.buildingId];
@@ -358,9 +376,10 @@ function BuildingBox({
       {!pendingDestroy && !selfSufficient && (
         <button
           type="button"
-          className={`${styles.staffToggle} ${staffed ? styles.staffFull : styles.staffEmpty}`}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); onToggleStaff?.(); }}
+          className={`${styles.staffToggle} ${staffed ? styles.staffFull : styles.staffEmpty}${
+            workerDragSource ? ` ${styles.staffDragSource}` : ''
+          }`}
+          onPointerDown={(e) => { e.stopPropagation(); onStaffPointerDown?.(e, inst); }}
           disabled={gameover || (!staffed && idle < req)}
           aria-pressed={staffed}
           aria-label={staffed ? `unstaff ${bld.name}` : `staff ${bld.name}`}
@@ -458,6 +477,25 @@ interface SlotDrag {
   active: boolean;
 }
 
+/** A worker token being dragged: either an idle token from the population tray toward a
+ *  building (`fromBuildingId` null), or a staffed worker being pulled out of a building and
+ *  back toward the tray (`fromBuildingId` set). */
+interface WorkerDrag {
+  pointerId: number;
+  fromBuildingId: number | null;
+  /** Whether there was actually a worker to pull out (only meaningful when dragging from a building). */
+  hadWorker: boolean;
+  grabX: number;
+  grabY: number;
+  w: number;
+  h: number;
+  startX: number;
+  startY: number;
+  x: number;
+  y: number;
+  active: boolean;
+}
+
 /**
  * Returns the reason a card cannot be played right now, or null if it's playable.
  * Consolidates all shell-side playability checks into one place so the dimming logic,
@@ -498,15 +536,22 @@ export function Board() {
   const [slotDrag, setSlotDragState] = useState<SlotDrag | null>(null);
   // Slot the pointer is hovering during a slot-drag (the drop-target highlight).
   const [hoverSlot, setHoverSlot] = useState<number | null>(null);
+  const [workerDrag, setWorkerDragState] = useState<WorkerDrag | null>(null);
+  // Slot the pointer is hovering while dragging an idle worker onto a building.
+  const [workerHoverSlot, setWorkerHoverSlot] = useState<number | null>(null);
+  // Whether the pointer is over the population tray while dragging a worker out of a building.
+  const [workerOverTray, setWorkerOverTray] = useState(false);
   // The canvas is a fixed backdrop; these insets keep its content between the banner and hand bar.
   const [insets, setInsets] = useState({ top: 0, bottom: 0 });
   const slotDragRef = useRef<SlotDrag | null>(null);
+  const workerDragRef = useRef<WorkerDrag | null>(null);
   const layoutRef = useRef<(number | null)[]>([]);
   // Slot index → the slot's DOM element, for pointer hit-testing during drag / build placement.
   const slotEls = useRef<Map<number, HTMLDivElement>>(new Map());
   // Slot a just-played build card should drop into; consumed by the layout-reconcile effect.
   const pendingBuildSlotRef = useRef<number | null>(null);
   const gameareaRef = useRef<HTMLDivElement>(null);
+  const popTrayRef = useRef<HTMLDivElement>(null);
   const bannerRef = useRef<HTMLElement>(null);
   const dragRef = useRef<DragState | null>(null);
   const cardEls = useRef<Map<number, HTMLButtonElement>>(new Map());
@@ -544,6 +589,12 @@ export function Board() {
     setSlotDragState(d);
   }
 
+  // Same lockstep pattern for a worker being dragged to/from a building.
+  function setWorkerDrag(d: WorkerDrag | null) {
+    workerDragRef.current = d;
+    setWorkerDragState(d);
+  }
+
   /** The slot whose box contains the given viewport point, or null if none. */
   function slotAt(x: number, y: number): number | null {
     for (const [idx, el] of slotEls.current) {
@@ -551,6 +602,12 @@ export function Board() {
       if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return idx;
     }
     return null;
+  }
+
+  /** Whether the given viewport point lands on the population tray. */
+  function isOverTray(x: number, y: number): boolean {
+    const r = popTrayRef.current?.getBoundingClientRect();
+    return !!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
   }
 
   /**
@@ -592,6 +649,50 @@ export function Board() {
       grabY: e.clientY - r.top,
       w: r.width,
       h: r.height,
+      startX: e.clientX,
+      startY: e.clientY,
+      x: e.clientX,
+      y: e.clientY,
+      active: false,
+    });
+  }
+
+  /** Begin dragging an idle population token out of the tray toward a building. Idle workers
+   *  are interchangeable, so no token identity is tracked — only that one is available. */
+  function onPopTokenPointerDown(e: React.PointerEvent) {
+    if (e.button !== 0) return;
+    if (gameover || pending || pendingDestroy) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    setWorkerDrag({
+      pointerId: e.pointerId,
+      fromBuildingId: null,
+      hadWorker: false,
+      grabX: e.clientX - r.left,
+      grabY: e.clientY - r.top,
+      w: r.width,
+      h: r.height,
+      startX: e.clientX,
+      startY: e.clientY,
+      x: e.clientX,
+      y: e.clientY,
+      active: false,
+    });
+  }
+
+  /** Begin dragging a building's worker: a plain click still toggles staffing (handled on
+   *  release); a real drag released onto the population tray returns one worker to it. */
+  function onStaffPointerDown(e: React.PointerEvent, inst: BuildingInstance) {
+    if (e.button !== 0) return;
+    if (gameover) return;
+    const btnRect = e.currentTarget.getBoundingClientRect();
+    setWorkerDrag({
+      pointerId: e.pointerId,
+      fromBuildingId: inst.id,
+      hadWorker: inst.workers > 0,
+      grabX: e.clientX - btnRect.left,
+      grabY: e.clientY - btnRect.top,
+      w: btnRect.width,
+      h: btnRect.height,
       startX: e.clientX,
       startY: e.clientY,
       x: e.clientX,
@@ -753,6 +854,54 @@ export function Board() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slotDrag?.id]);
 
+  // While a worker token is being dragged (either from the tray toward a building, or out of a
+  // building back toward the tray), track the pointer on the window. The drop resolves in onUp:
+  // a release with no real movement is treated as a plain click (staffing toggle), matching the
+  // click-vs-drag split used for cards and building boxes above.
+  useEffect(() => {
+    if (!workerDrag) return;
+    function onMove(e: PointerEvent) {
+      const d = workerDragRef.current;
+      if (!d || e.pointerId !== d.pointerId) return;
+      const moved = Math.hypot(e.clientX - d.startX, e.clientY - d.startY);
+      const active = d.active || moved > DRAG_THRESHOLD;
+      setWorkerDrag({ ...d, x: e.clientX, y: e.clientY, active });
+      setWorkerHoverSlot(active && d.fromBuildingId == null ? slotAt(e.clientX, e.clientY) : null);
+      setWorkerOverTray(active && d.fromBuildingId != null && isOverTray(e.clientX, e.clientY));
+    }
+    function onUp(e: PointerEvent) {
+      const d = workerDragRef.current;
+      if (!d || e.pointerId !== d.pointerId) return;
+      if (!d.active) {
+        // No real movement — a plain click on the staffing toggle (tray tokens have no click behavior).
+        if (d.fromBuildingId != null) moves.toggleStaffing(d.fromBuildingId);
+      } else if (d.fromBuildingId == null) {
+        // Dropped an idle token — staff whichever building's box is under the cursor, if it can
+        // still accept a worker.
+        const slot = slotAt(e.clientX, e.clientY);
+        const key = slot != null ? layout[slot] : null;
+        const inst = key != null ? buildingById.get(key) : undefined;
+        if (inst && inst.workers < requiredWorkers(inst.buildingId)) moves.assignWorker(inst.id);
+      } else if (d.hadWorker && isOverTray(e.clientX, e.clientY)) {
+        // Dragged a worker out of its building and dropped it on the population tray.
+        moves.unassignWorker(d.fromBuildingId);
+      }
+      setWorkerDrag(null);
+      setWorkerHoverSlot(null);
+      setWorkerOverTray(false);
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+    // Re-bind only when a drag begins/ends; mid-drag updates flow through workerDragRef.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workerDrag?.pointerId]);
+
   // Keep layoutRef in lockstep so pointer handlers (chooseBuildSlot) read the current layout.
   useEffect(() => {
     layoutRef.current = layout;
@@ -878,8 +1027,11 @@ export function Board() {
     <div className={styles.app}>
       <MissionWidget mission={mission} G={G} />
       <header className={styles.topBanner} ref={bannerRef}>
-        <div className={styles.populationTray}>
-          <PopulationTokens population={G.population} idle={idle} />
+        <div
+          ref={popTrayRef}
+          className={`${styles.populationTray}${workerOverTray ? ` ${styles.trayReturnTarget}` : ''}`}
+        >
+          <PopulationTokens population={G.population} idle={idle} onTokenPointerDown={onPopTokenPointerDown} />
         </div>
 
         <div className={styles.coreGroup}>
@@ -938,11 +1090,20 @@ export function Board() {
             const inst = key != null ? buildingById.get(key) : undefined;
             const isDropTarget = slotDrag?.active === true && hoverSlot === slotIdx;
             const isDragSource = slotDrag?.active === true && slotDrag.fromSlot === slotIdx;
+            const canAcceptWorker = !!inst && inst.workers < requiredWorkers(inst.buildingId);
+            const isWorkerDropTarget =
+              workerDrag?.active === true &&
+              workerDrag.fromBuildingId == null &&
+              workerHoverSlot === slotIdx &&
+              canAcceptWorker;
+            const isWorkerDragSource =
+              workerDrag?.active === true && !!inst && workerDrag.fromBuildingId === inst.id;
             const slotClass = [
               styles.slot,
               inst ? '' : styles.slotEmpty,
               isDropTarget ? styles.slotDrop : '',
               isDragSource ? styles.slotSource : '',
+              isWorkerDropTarget ? styles.workerDropTarget : '',
             ]
               .filter(Boolean)
               .join(' ');
@@ -960,9 +1121,10 @@ export function Board() {
                     inst={inst}
                     gameover={!!gameover}
                     idle={idle}
+                    workerDragSource={isWorkerDragSource}
                     pendingDestroy={!!pendingDestroy}
                     onPointerDown={(e) => onBoxPointerDown(e, inst, slotIdx)}
-                    onToggleStaff={() => moves.toggleStaffing(inst.id)}
+                    onStaffPointerDown={onStaffPointerDown}
                     onDestroy={() => handleDestroyTarget(inst.id)}
                   />
                 )}
@@ -1183,6 +1345,23 @@ export function Board() {
             }}
           >
             <BuildingBox inst={buildingById.get(slotDrag.id)!} gameover idle={idle} dragging />
+          </div>
+        </div>
+      )}
+
+      {/* The worker token following the cursor while it's dragged to/from a building. */}
+      {workerDrag?.active && (
+        <div className={styles.dragLayer} aria-hidden="true">
+          <div
+            className={styles.workerDragClone}
+            style={{
+              left: workerDrag.x - workerDrag.grabX,
+              top: workerDrag.y - workerDrag.grabY,
+              width: workerDrag.w,
+              height: workerDrag.h,
+            }}
+          >
+            🧍
           </div>
         </div>
       )}

@@ -107,6 +107,19 @@
   line-height: 1;
 }
 
+/* An idle token can be picked up and dragged onto a building to staff it. */
+.popTokenIdle {
+  cursor: grab;
+  touch-action: none;
+}
+
+/* The population tray lights up while a worker dragged out of a building hovers over it,
+   signalling that releasing here (or anywhere off the building) returns the worker. */
+.trayReturnTarget {
+  border-color: rgba(59, 125, 216, 0.85);
+  background: rgba(59, 125, 216, 0.12);
+}
+
 /* Right column: core resources (food, production, science, military, money), stacked. */
 .coreGroup {
   grid-area: core;
@@ -366,6 +379,12 @@
   background: rgba(59, 125, 216, 0.18);
 }
 
+/* The slot under the cursor while dragging an idle worker onto a building that can staff it. */
+.workerDropTarget {
+  border: 2px dashed rgba(90, 170, 90, 0.85);
+  background: rgba(90, 170, 90, 0.18);
+}
+
 /* Reserved actions live in the play area but occupy no slot — a strip below the grid. */
 .reserveStrip {
   flex-shrink: 0;
@@ -414,6 +433,18 @@
   position: fixed;
   transform: rotate(-2deg) scale(1.04);
   transform-origin: center;
+}
+
+/* The floating worker token that tracks the cursor while assigning or unassigning a worker. */
+.workerDragClone {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  line-height: 1;
+  transform: scale(1.15);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
 }
 
 /* The slot a building is being dragged out of — its box fades to show it's in transit. */
@@ -526,6 +557,11 @@
 
 .staffFull:not(:disabled):hover {
   background: rgba(90, 170, 90, 0.32);
+}
+
+/* The staffing toggle fades while its worker is being dragged out of the building. */
+.staffDragSource {
+  opacity: 0.35;
 }
 
 /* A reserved action's worker: staffed (like .staffFull) but non-interactive and tagged with
