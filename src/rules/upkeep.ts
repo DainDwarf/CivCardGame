@@ -19,15 +19,22 @@ export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
 }
 
 /** The net change the player would see if they ended the round right now. */
-export function projectedDelta(G: GameState, missionUpkeep?: MissionUpkeep): Resources & { culture: number } {
+export interface ProjectedDelta {
+  resources: Resources;
+  culture: number;
+}
+
+export function projectedDelta(G: GameState, missionUpkeep?: MissionUpkeep): ProjectedDelta {
   const clone = structuredClone(G);
   applyUpkeep(clone, missionUpkeep);
   return {
-    food: clone.resources.food - G.resources.food,
-    production: clone.resources.production - G.resources.production,
-    science: clone.resources.science - G.resources.science,
-    military: clone.resources.military - G.resources.military,
-    money: clone.resources.money - G.resources.money,
+    resources: {
+      food: clone.resources.food - G.resources.food,
+      production: clone.resources.production - G.resources.production,
+      science: clone.resources.science - G.resources.science,
+      military: clone.resources.military - G.resources.military,
+      money: clone.resources.money - G.resources.money,
+    },
     culture: clone.culture - G.culture,
   };
 }

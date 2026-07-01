@@ -35,7 +35,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Tech debt & infra (build, tests, tooling)
 
-- `projectedDelta` returns `Resources & { culture: number }` — folds one strategic resource (culture) into a core-resource delta shape while excluding population/territory. Slightly muddies the core/strategic split; consider modelling the strategic deltas separately `[size: S] [?]` `[phase: 2]`
 - **Move playability logic to core** — `whyUnplayable` in `Board.tsx` is a shell helper for display, but strictly the CLAUDE.md rule says game logic belongs in `src/rules/`. A purer model would expose a core-side function (or enum of reasons) with unit tests, and let the shell format the message from it `[size: S] [?]` `[phase: 2]`
 
 ## Game design & balance
@@ -59,6 +58,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes.
 
+- **`projectedDelta` return shape** — now returns `{ resources: Resources; culture: number }` instead of `Resources & { culture: number }`, so the core/strategic split is explicit in the type rather than folded together. `Board.tsx` reads `proj.resources.food` etc.; `proj.culture` unchanged.
 - **Buildings board: worker drag** — replaced the +/- staffing buttons with a click-toggle (plain click on a building's staff icon fully staffs/unstaffs it), a visible idle dock (population tray tokens, draggable), and building→building drag as the headline gesture (`transferWorker`, one atomic move so undo doesn't split it in two). Pip-per-instance rendering and a bulk-move modifier are deferred to follow-up items since every building is still `workers: 0` or `1`.
 - **Undo feature** — `↶ Undo` button above the deck pile steps back through the turn's actions. Undo history lives in the shell (`GameContext`, `useReducer` over `{ present, past }`); each undoable move pushes the prior `RunState` snapshot. A move that touches the draw pile (drew cards / reshuffled, detected by diffing `G.deck`) is a hard boundary that clears the whole stack; ending a round and restarting also clear it; undo is disabled at gameover and mid-pending/drag. Known gap: a future *peek top-N* reveals info without changing the deck, so deck-diff won't catch it — that move will need an explicit "revealed" flag.
 - **Zoomable cards in list views** — clicking a card in the discard/removed pile viewer opens the same zoom overlay as clicking a hand card; hint text updated accordingly.

@@ -1033,7 +1033,7 @@ export function Board() {
   };
 
   const proj = projectedDelta(G, mission.onUpkeep);
-  const collapseRisk = (key: keyof typeof G.resources) => G.resources[key] + proj[key] < 0;
+  const collapseRisk = (key: keyof typeof G.resources) => G.resources[key] + proj.resources[key] < 0;
   const canEndRound = !pending && !pendingDestroy && !drag;
 
   return (
@@ -1054,7 +1054,7 @@ export function Board() {
             label="Food"
             description="Sustenance from food-producing buildings. Your population eats it each round."
             value={G.resources.food}
-            delta={proj.food}
+            delta={proj.resources.food}
             warn={collapseRisk('food')}
           />
           <Stat
@@ -1062,7 +1062,7 @@ export function Board() {
             label="Production"
             description="Your build budget, spent to construct buildings."
             value={G.resources.production}
-            delta={proj.production}
+            delta={proj.resources.production}
             warn={collapseRisk('production')}
           />
           <Stat
@@ -1070,7 +1070,7 @@ export function Board() {
             label="Money"
             description="Coin from commercial buildings. Spent on action cards."
             value={G.resources.money}
-            delta={proj.money}
+            delta={proj.resources.money}
             warn={collapseRisk('money')}
           />
           <Stat
@@ -1078,7 +1078,7 @@ export function Board() {
             label="Military"
             description="Military power of your civilization."
             value={G.resources.military}
-            delta={proj.military}
+            delta={proj.resources.military}
             warn={collapseRisk('military')}
           />
           <Stat
@@ -1086,7 +1086,7 @@ export function Board() {
             label="Science"
             description="Knowledge from research buildings."
             value={G.resources.science}
-            delta={proj.science}
+            delta={proj.resources.science}
             warn={collapseRisk('science')}
           />
         </div>
