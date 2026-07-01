@@ -55,14 +55,15 @@ function describeCost(c: CardDef): string {
   return parts.join(' · ') || 'free';
 }
 
-/** Presentation-only summary of a building's output. */
-function describeBuilding(b: BuildingDef): string {
+/** Presentation-only summary of a building's output. `includeWorkers` is false for the card
+ *  face, which shows worker capacity as a column of meeples instead of text. */
+function describeBuilding(b: BuildingDef, includeWorkers = true): string {
   const parts: string[] = [];
   if (b.produces) {
     parts.push(Object.entries(b.produces).map(([k, v]) => `+${v} ${k}/turn`).join(', '));
   }
   if (b.cultureOutput) parts.push(`+${b.cultureOutput} 🎭/turn`);
-  if (b.workers) parts.push(`👷${b.workers}`);
+  if (includeWorkers && b.workers) parts.push(`👷${b.workers}`);
   return parts.join(' · ');
 }
 
@@ -82,7 +83,7 @@ function describeCard(c: CardDef): string {
     // A permanent card *is* the building, so just show its stats; a recurring builder
     // names the building it erects, since the names differ.
     if (c.kind === 'recurring') parts.push(`🏗️ ${bld.name}`);
-    const stats = describeBuilding(bld);
+    const stats = describeBuilding(bld, false);
     if (stats) parts.push(stats);
   }
   return parts.join(' · ') || 'action';
@@ -100,6 +101,8 @@ function cardBanner(c: CardDef): { label: string; variant: string } {
 function CardFace({ card }: { card: CardDef }) {
   const text = describeCard(card);
   const banner = cardBanner(card);
+  const bld = card.effect?.build ? BUILDINGS[card.effect.build] : undefined;
+  const workers = bld?.workers ?? 0;
   return (
     <>
       <div className={styles.cardTop}>
@@ -107,8 +110,17 @@ function CardFace({ card }: { card: CardDef }) {
         <span className={styles.cardCost}>{describeCost(card)}</span>
       </div>
       <div className={`${styles.cardBanner} ${banner.variant}`}>{banner.label}</div>
-      <div className={styles.cardArt} aria-hidden="true">
-        {artFor(card.id)}
+      <div className={styles.cardMid}>
+        {workers > 0 && (
+          <span className={styles.cardWorkers} aria-hidden="true">
+            {Array.from({ length: workers }, (_, i) => (
+              <span key={i} className={styles.cardWorkerIcon}>🧍</span>
+            ))}
+          </span>
+        )}
+        <div className={styles.cardArt} aria-hidden="true">
+          {artFor(card.id)}
+        </div>
       </div>
       {text && <div className={styles.cardText}>{text}</div>}
     </>

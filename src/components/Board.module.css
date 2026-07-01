@@ -847,6 +847,29 @@
   white-space: nowrap;
 }
 
+/* Row holding the worker-capacity column (if any) beside the art glyph. */
+.cardMid {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+/* One meeple per worker the building requires, stacked to the left of the art — same icon as
+   the population tray, so the player reads it as "this many of my people". */
+.cardWorkers {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cardWorkerIcon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
 .cardArt {
   flex: 1;
   display: flex;
