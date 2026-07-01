@@ -6,6 +6,9 @@
   padding: 0 1rem 250px;
   line-height: 1.5;
   color: #1a1a1a;
+  /* Mouse-only UI with lots of pointer-drag interactions (cards, workers, buildings) —
+     dragging across the board should never trigger the browser's native text selection. */
+  user-select: none;
 }
 
 /* ── Top banner: population tray (left, large) · core resources (right column) · culture (bottom row) ── */
@@ -413,7 +416,6 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
   cursor: grab;
   touch-action: none;
-  user-select: none;
   transition: box-shadow 0.12s ease;
 }
 
@@ -761,7 +763,6 @@
   transform-origin: bottom center;
   transition: transform 0.14s ease, box-shadow 0.14s ease;
   touch-action: none; /* let pointer drags work without the browser scrolling/panning */
-  user-select: none;
 }
 
 .card:hover {
