@@ -15,7 +15,7 @@
   top: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 0 0.5rem;
   font-size: 0.9rem;
@@ -26,14 +26,18 @@
   margin-bottom: 0.25rem;
 }
 
-/* Left column: mission name + progress + tooltip */
+/* Standalone widget pinned to the top-left corner of the viewport: mission name + progress + tooltip */
 .missionWidget {
-  position: relative;
+  position: fixed;
+  top: 0.8rem;
+  left: 0.8rem;
+  z-index: 6;
   cursor: help;
   outline: none;
-  padding-right: 0.8rem;
-  border-right: 1px solid #d0cfc9;
-  align-self: stretch;
+  background: #f3f3f0;
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -169,8 +173,10 @@
   transform: none;
 }
 
-/* Tooltip variant for the mission widget: left-aligned, wider, arrow near left edge */
-.tooltipLeft {
+/* Tooltip variant for the mission widget: left-aligned, wider, arrow near left edge.
+   Compound selector (not just `.tooltipLeft`) so it outranks the base `.tooltip` rule
+   regardless of source order. */
+.tooltipLeft.tooltip {
   left: 0;
   transform: none;
 }
@@ -194,13 +200,6 @@
 .ttRule {
   display: block;
   margin-top: 0.4rem;
-}
-
-.ttFamine {
-  display: block;
-  margin-top: 0.4rem;
-  opacity: 0.7;
-  font-size: 0.85em;
 }
 
 .stat {

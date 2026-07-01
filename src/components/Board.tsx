@@ -179,7 +179,7 @@ function CultureBar({ culture, projected }: { culture: number; projected: number
   );
 }
 
-/** Left-column widget in the top banner: shows mission name, round, live progress, and a tooltip. */
+/** Fixed widget in the top-left corner: shows mission name, live progress, and a tooltip. */
 function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
   return (
     <div className={styles.missionWidget} tabIndex={0}>
@@ -190,9 +190,6 @@ function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
         <span className={styles.ttBody}>{mission.description}</span>
         <span className={styles.ttRule}>🏆 {mission.victoryHint}</span>
         {mission.failureHint && <span className={styles.ttRule}>💀 {mission.failureHint}</span>}
-        <span className={styles.ttFamine}>
-          {mission.failureHint ? '☠️ Famine also ends all runs.' : '☠️ Famine (food going negative) ends all runs.'}
-        </span>
       </div>
     </div>
   );
@@ -856,9 +853,8 @@ export function Board() {
   return (
     <>
     <div className={styles.app}>
+      <MissionWidget mission={mission} G={G} />
       <header className={styles.topBanner} ref={bannerRef}>
-        <MissionWidget mission={mission} G={G} />
-
         <div className={styles.strategicGroup}>
           <Stat
             icon="👥"
