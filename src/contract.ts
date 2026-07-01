@@ -43,6 +43,8 @@ export interface RunResult {
   stats: {
     turnsTaken: number;
     finalResources: Resources;
+    /** The 3 strategic resources at run end — kept separate from `finalResources` since they live on `GameState` directly, not in `Resources`. */
+    strategicResources: { population: number; territory: number; culture: number };
   };
 }
 

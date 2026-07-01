@@ -29,7 +29,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
-- Add strategic resources (population / territory / culture) to `RunResult.stats` — currently only `finalResources` (the 5 core) `[?]` `[phase: 2]`
 
 ## Cards & content (`src/content/`)
 
@@ -68,6 +67,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Strategic resources on `RunResult`** — `RunResult.stats` gained `strategicResources:
+  { population, territory, culture }` alongside the existing `finalResources` (the 5
+  core resources). Kept as a separate field rather than folded into `finalResources`
+  since population/territory/culture live as top-level `GameState` fields, not inside
+  `Resources`. `engine.ts`'s `toRunResult` populates it from `G` at run end.
 - **Seeded discard-pile reshuffle** — `drawCard` (`rules/deck.ts`) no longer preserves
   discard order when it recycles into the deck; it now reshuffles via
   `rules/rng.ts`'s new `shuffleFromState`, which resumes a persisted RNG stream instead
