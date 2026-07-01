@@ -96,9 +96,9 @@ function describeCard(c: CardDef): string {
   }
   if (e?.draw) parts.push(`draw ${e.draw}`);
   if (e?.population) parts.push(`+${e.population} 🧍`);
-  if (e?.territory) parts.push(`+${e.territory} 🗺️ territory`);
+  if (e?.territory) parts.push(`+${e.territory} territory`);
   if (e?.culture) parts.push(`+${e.culture} 🎭`);
-  if (e?.destroy) parts.push('demolish a building → free its slot');
+  if (e?.destroy) parts.push('Demolish a building');
   if (e?.build) {
     const bld = BUILDINGS[e.build];
     // A permanent card *is* the building, so just show its stats; a recurring builder
