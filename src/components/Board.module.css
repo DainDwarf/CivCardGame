@@ -879,6 +879,27 @@
   line-height: 1;
 }
 
+/* Extra conditions for play (culture level, reserved population, discard cost) — a darker band
+   sitting directly above the description footer, so the player reads "this is a requirement,
+   not an effect" at a glance. */
+.cardConditions {
+  text-align: center;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.25;
+  margin: 0 -0.5rem;
+  padding: 0.2rem 0.35rem;
+}
+
+.permanent .cardConditions {
+  background: #7ea3d0;
+}
+
+.action .cardConditions {
+  background: #cc9f6e;
+}
+
 .cardText {
   display: flex;
   align-items: center;

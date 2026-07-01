@@ -45,14 +45,24 @@ const CARD_ART: Record<string, string> = {
 };
 const artFor = (id: string) => CARD_ART[id] ?? '🏛️';
 
-/** Presentation-only cost label, e.g. "2🌾" · "10🌾 · 2👥" · "3🔨 · discard 1" · "free". */
+/** Presentation-only cost label, e.g. "2🌾" · "3🔨" · "" (blank when free). Extra conditions
+ *  (culture level, reserved population, discard cost) are shown separately — see
+ *  `describeConditions`. */
 function describeCost(c: CardDef): string {
   const parts = (Object.entries(c.cost) as [keyof Resources, number][])
     .filter(([, v]) => v)
     .map(([k, v]) => `${v}${COST_ICON[k]}`);
-  if (c.popReserve) parts.push(`reserve ${c.popReserve}👥`);
+  return parts.join(' · ');
+}
+
+/** Presentation-only summary of a card's extra conditions for play — culture-level gate,
+ *  reserved population, and discard cost — shown in their own banded section on the card face. */
+function describeConditions(c: CardDef): string {
+  const parts: string[] = [];
+  if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
+  if (c.popReserve) parts.push(`reserve ${c.popReserve}🧍`);
   if (c.discardCost) parts.push(`discard ${c.discardCost}`);
-  return parts.join(' · ') || 'free';
+  return parts.join(' · ');
 }
 
 /** Presentation-only summary of a building's output. `includeWorkers` is false for the card
@@ -76,7 +86,6 @@ function describeBuilding(b: BuildingDef, includeWorkers = true): string {
 function describeCard(c: CardDef): string {
   const e = c.effect;
   const parts: string[] = [];
-  if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
   if (e?.gain) {
     parts.push(
       Object.entries(e.gain)
@@ -86,7 +95,7 @@ function describeCard(c: CardDef): string {
     );
   }
   if (e?.draw) parts.push(`draw ${e.draw}`);
-  if (e?.population) parts.push(`+${e.population} 👥`);
+  if (e?.population) parts.push(`+${e.population} 🧍`);
   if (e?.territory) parts.push(`+${e.territory} 🗺️ territory`);
   if (e?.culture) parts.push(`+${e.culture} 🎭`);
   if (e?.destroy) parts.push('demolish a building → free its slot');
@@ -112,6 +121,7 @@ function cardBanner(c: CardDef): { label: string; variant: string } {
 /** The visual face of a card — shared by hand cards and the play-animation ghost. */
 function CardFace({ card }: { card: CardDef }) {
   const text = describeCard(card);
+  const conditions = describeConditions(card);
   const banner = cardBanner(card);
   const bld = card.effect?.build ? BUILDINGS[card.effect.build] : undefined;
   const workers = bld?.workers ?? 0;
@@ -134,6 +144,7 @@ function CardFace({ card }: { card: CardDef }) {
           {artFor(card.id)}
         </div>
       </div>
+      {conditions && <div className={styles.cardConditions}>{conditions}</div>}
       {text && <div className={styles.cardText}>{text}</div>}
     </>
   );
