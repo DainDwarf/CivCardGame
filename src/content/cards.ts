@@ -23,7 +23,7 @@ export interface CardDef {
   /** Extra cost: number of other cards you must discard from hand to play this. */
   discardCost?: number;
   /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
-  cultureThreshold?: number;
+  cultureLevelReq?: number;
   /** Immediate effect when played: resource gain, draw, population, and/or constructing a building. */
   effect?: CardEffect;
 }
@@ -64,7 +64,7 @@ export const CARDS: Record<string, CardDef> = {
 
   // --- Culture cards: generate culture or require a culture threshold. ---
   cultural_festival: { id: 'cultural_festival', name: 'Cultural Festival', kind: 'recurring', cost: { food: 2 }, effect: { culture: 3 } },
-  philosopher: { id: 'philosopher', name: 'The Philosopher', kind: 'recurring', cost: { science: 1 }, cultureThreshold: 5, effect: { gain: { science: 3 }, draw: 1 } },
+  philosopher: { id: 'philosopher', name: 'The Philosopher', kind: 'recurring', cost: { science: 1 }, cultureLevelReq: 1, effect: { gain: { science: 3 }, draw: 1 } },
 
   // --- Territory management: reclaim a slot by demolishing a building. ---
   destroy: { id: 'destroy', name: 'Destroy', kind: 'recurring', cost: { production: 1 }, effect: { destroy: true } },

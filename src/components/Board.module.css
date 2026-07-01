@@ -82,6 +82,93 @@
   flex: 1;
 }
 
+/* Full-width culture gauge: spans all three banner columns as its own row beneath them. */
+.cultureBar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+/* Round bubble on the left showing the current culture level. Hover for what culture is for. */
+.cultureLevel {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 2.1rem;
+  height: 1.6rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #d16bd8, #8a4be0);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  box-shadow: 0 1px 4px rgba(138, 75, 224, 0.5);
+  cursor: help;
+  outline: none;
+}
+
+.cultureLevel:focus-visible,
+.cultureTrack:focus-visible {
+  outline: 2px solid #3b7dd8;
+  outline-offset: 2px;
+}
+
+/* Transparent track the fill advances across. Hover for the numeric progress. */
+.cultureTrack {
+  position: relative;
+  flex: 1;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: rgba(138, 75, 224, 0.12);
+  cursor: help;
+  outline: none;
+}
+
+.cultureFill,
+.cultureGhost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.cultureFill {
+  background: linear-gradient(90deg, #e56bd8, #8a4be0);
+}
+
+/* Fainter preview of the culture this round's upkeep will add, sitting under the solid fill. */
+.cultureGhost {
+  background: rgba(180, 100, 224, 0.35);
+}
+
+.cultureLevel:hover .tooltip,
+.cultureLevel:focus .tooltip,
+.cultureTrack:hover .tooltip,
+.cultureTrack:focus .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* The bubble sits at the far left, so anchor its tooltip's left edge to the bubble (not centered,
+   which would shoot a 240px tooltip off-screen) and point the arrow up at the bubble. Descendant
+   selector outranks the base `.tooltip` rule regardless of source order. */
+.cultureLevel .tooltip {
+  left: 0;
+  transform: none;
+}
+
+.cultureLevel .tooltip::after {
+  left: 1rem;
+  transform: none;
+}
+
 /* Tooltip variant for the mission widget: left-aligned, wider, arrow near left edge */
 .tooltipLeft {
   left: 0;

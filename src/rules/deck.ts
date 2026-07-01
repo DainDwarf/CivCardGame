@@ -1,3 +1,4 @@
+import { effectiveHandSize } from './culture';
 import type { GameState } from './state';
 
 /**
@@ -15,9 +16,10 @@ export function drawCard(G: GameState): void {
   if (id !== undefined) G.hand.push(id);
 }
 
-/** Draw up to `G.handSize`, stopping early if no cards remain anywhere. */
+/** Draw up to the culture-adjusted hand size, stopping early if no cards remain anywhere. */
 export function drawUpTo(G: GameState): void {
-  while (G.hand.length < G.handSize && G.deck.length + G.discard.length > 0) {
+  const target = effectiveHandSize(G);
+  while (G.hand.length < target && G.deck.length + G.discard.length > 0) {
     drawCard(G);
   }
 }

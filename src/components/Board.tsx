@@ -3,6 +3,8 @@ import type { BuildingInstance, Resources } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
   canAfford,
+  cultureLevel,
+  cultureProgress,
   freePopulation,
   freeTerritory,
   isOperating,
@@ -73,7 +75,7 @@ function describeBuilding(b: BuildingDef): string {
 function describeCard(c: CardDef): string {
   const e = c.effect;
   const parts: string[] = [];
-  if (c.cultureThreshold) parts.push(`requires 🎭 ${c.cultureThreshold}`);
+  if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
   if (e?.gain) parts.push('+' + Object.entries(e.gain).map(([k, v]) => `${v} ${k}`).join(', '));
   if (e?.draw) parts.push(`draw ${e.draw}`);
   if (e?.population) parts.push(`+${e.population} 👥`);
@@ -148,6 +150,33 @@ function Stat({
         <strong>{label}</strong> — {description}
       </span>
     </span>
+  );
+}
+
+/**
+ * Full-width culture gauge beneath the resource bar. A level bubble on the left; a translucent
+ * track that fills pink→purple with progress toward the next level (a fainter ghost segment
+ * previews the culture this round's upkeep will add).
+ */
+function CultureBar({ culture, projected }: { culture: number; projected: number }) {
+  const { level, current, needed, ratio } = cultureProgress(culture);
+  const ghost = needed > 0 ? Math.min(1, (current + Math.max(0, projected)) / needed) : 0;
+  return (
+    <div className={styles.cultureBar}>
+      <span className={styles.cultureLevel} tabIndex={0}>
+        <span aria-hidden="true">🎭</span> {level}
+        <span className={styles.tooltip} role="tooltip">
+          <strong>Culture level {level}</strong> — each level raises your hand size and unlocks cards.
+        </span>
+      </span>
+      <div className={styles.cultureTrack} tabIndex={0}>
+        <div className={styles.cultureGhost} style={{ width: `${ghost * 100}%` }} />
+        <div className={styles.cultureFill} style={{ width: `${ratio * 100}%` }} />
+        <span className={styles.tooltip} role="tooltip">
+          {current}/{needed} toward level {level + 1}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -364,8 +393,8 @@ function whyUnplayable(card: CardDef, G: GameState): string | null {
   }
   if ((card.popCost ?? 0) > freePopulation(G)) return 'not enough idle workers';
   if ((card.popReserve ?? 0) > freePopulation(G)) return 'not enough idle workers';
-  if (card.cultureThreshold && G.culture < card.cultureThreshold)
-    return `need ${card.cultureThreshold} 🎭 culture`;
+  if (card.cultureLevelReq && cultureLevel(G.culture) < card.cultureLevelReq)
+    return `need 🎭 level ${card.cultureLevelReq}`;
   if (card.effect?.build && freeTerritory(G) <= 0) return 'territory full';
   if (card.effect?.destroy && G.tableau.length === 0) return 'no buildings to demolish';
   return null;
@@ -703,13 +732,6 @@ export function Board() {
             description="Building slots. Each building you construct fills one; building cards can't be played once it's full."
             value={`${usedTerritory(G.tableau)}/${G.territory}`}
           />
-          <Stat
-            icon="🎭"
-            label="Culture"
-            description="Your civilization's cultural level — it grows but is never spent."
-            value={G.culture}
-            delta={proj.culture}
-          />
         </div>
 
         <div className={styles.coreGroup}>
@@ -754,6 +776,8 @@ export function Board() {
             warn={collapseRisk('science')}
           />
         </div>
+
+        <CultureBar culture={G.culture} projected={proj.culture} />
       </header>
 
       <div
