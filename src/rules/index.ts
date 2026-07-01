@@ -7,5 +7,6 @@ export * from './effects';
 export * from './playability';
 export * from './population';
 export * from './production';
+export * from './rng';
 export * from './tableau';
 export * from './upkeep';

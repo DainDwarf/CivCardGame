@@ -19,7 +19,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 1. ~~**Scaffold meta content**~~ — done, see *Done / shipped* below. `[size: S]`
 2. ~~**Mission-select menu**~~ — done, see *Done / shipped* below. `[size: M]`
-3. **Define `contract.ts`** — formalize `RunConfig`/`RunResult`, promoting the menu's selection shape into the real type. Includes the run **`seed`**: wire a seeded RNG/shuffle to replace today's deterministic draw, so the seed is meaningful from the start rather than a stub. `[size: M]`
+3. ~~**Define `contract.ts`**~~ — done, see *Done / shipped* below. `[size: M]`
 4. **Wire the loop closed** — introduce the `app/` shell + a meta↔run **view switch**; refactor the `missionId`-keyed pipeline (`createRun` / `createInitialState` / `GameProvider` / restart) to consume a `RunConfig`; apply board baseline-resources + disaster injection during setup assembly; end-of-run returns to the menu with a **minimal `RunResult`** (no reward application yet — that needs collection + Phase-3 currency). `[size: L]`
 5. **Extend the meta menu** — add a collection view and deck-construction navigation/screens (shell + routing only, no editing logic yet). `[size: M]`
 6. **localStorage persistence** — stand up the persisted player store (collection + saved decks + progress) with localStorage save/load. Comes **before** deck construction so the editor is built on the real store, not retrofitted onto in-memory state. `[size: M]`
@@ -69,6 +69,18 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Define `contract.ts`** (Phase 2 build plan step 3) — `src/contract.ts` formalizes
+  `RunConfig` (`deck` / `board` / `missionId` / `seed`) and `RunResult` (`outcome` /
+  `missionId` / `stats`; deliberately no `rewards` field — those are looked up from
+  the mission or derived from `stats` by the meta loop, not carried on the result),
+  plus `buildRunConfig(selection, seed)`, which
+  promotes a `RunSelection` into a `RunConfig` by resolving the picked `DeckId` and
+  shuffling its cards deterministically from `seed`. New `src/rules/rng.ts` wraps
+  `pure-rand` (`xoroshiro128plus` + `uniformInt`) behind `seededRng`/`shuffle` — the
+  one seam allowed to produce randomness; `seededRng` is exposed (not just `shuffle`)
+  so step 4 can extend the same stream to the discard-pile reshuffle. Not yet wired
+  into `createRun`/`setup.ts` — those still take a bare `missionId` and a fixed deck
+  until step 4 swaps the pipeline over to consume a `RunConfig`.
 - **Mission-select menu** (Phase 2 build plan step 2) — `src/meta/MissionSelect.tsx`,
   the first meta screen, replaces the old direct-to-run mount in `main.tsx`. Picks
   mission (of 3) / board (of 3) / deck (of 3) into a provisional `RunSelection`

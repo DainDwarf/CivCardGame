@@ -3,19 +3,8 @@ import { MISSIONS } from '../content/missions';
 import { BOARDS, type BoardId } from '../content/boards';
 import { DECKS, type DeckId } from '../content/decks';
 import type { Resources } from '../rules/resources';
+import { buildRunConfig, type RunSelection } from '../contract';
 import styles from './MissionSelect.module.css';
-
-/**
- * The provisional selection a player builds up on this screen. Step 3 (`contract.ts`)
- * promotes this exact shape into the real `RunConfig`; step 4 wires it to actually
- * launch a run. Until then this menu is the whole meta loop — picking here has no
- * effect beyond what's shown on screen.
- */
-export interface RunSelection {
-  missionId: string;
-  boardId: BoardId;
-  deckId: DeckId;
-}
 
 const MISSION_IDS = Object.keys(MISSIONS);
 const BOARD_IDS = Object.keys(BOARDS) as BoardId[];
@@ -69,9 +58,10 @@ function OptionCard({
 
 /**
  * The first meta screen — mission-select. Replaces the old direct-to-run mount in
- * `main.tsx`. Picks mission / board / deck into a provisional selection; does not
- * launch a run — that lands with Phase 2 step 4, once `contract.ts` (step 3) exists
- * to carry the selection into `createInitialState`.
+ * `main.tsx`. Picks mission / board / deck into a provisional selection. "Start Run"
+ * doesn't launch a run yet — that lands with Phase 2 step 4, once the loop is wired
+ * closed — it only assembles the `RunConfig` and prints it, for hand-testing
+ * `buildRunConfig` (step 3) ahead of that wiring.
  */
 export function MissionSelect() {
   const [selection, setSelection] = useState<RunSelection>({
@@ -83,6 +73,11 @@ export function MissionSelect() {
   const mission = MISSIONS[selection.missionId];
   const board = BOARDS[selection.boardId];
   const deck = DECKS[selection.deckId];
+
+  function handleStartRun() {
+    const config = buildRunConfig(selection, crypto.randomUUID());
+    console.log('RunConfig (hand-testing only — no run launched yet):', config);
+  }
 
   return (
     <div className={styles.menu}>
@@ -143,8 +138,8 @@ export function MissionSelect() {
       <button
         type="button"
         className={styles.startBtn}
-        disabled
-        title="Launching a run lands later in Phase 2, once the loop is wired closed"
+        onClick={handleStartRun}
+        title="Assembles and logs the RunConfig — actually launching a run lands with Phase 2 step 4"
       >
         Start Run
       </button>

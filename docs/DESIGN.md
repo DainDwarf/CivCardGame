@@ -53,14 +53,15 @@ RunConfig   (meta → run)
   deck: CardId[]        // the run deck: player's meta deck + mission-injected cards
                         //   (e.g. disasters); locked for the whole run
   board: BoardId        // government board — sets the run's starting resources
-  mission: MissionDef   // objective + failure + setup + modifiers + rewards
+  missionId: string     // looked up in the MISSIONS registry — the run resolves it
   seed: string          // deterministic draws → replays & simulation
 
 RunResult   (run → meta)
   outcome: 'victory' | 'defeat'
   missionId: string
-  rewards: { currency: number; unlockedCards?: CardId[] }  // applied on return
   stats:   { turnsTaken: number; finalResources: Resources; ... }
+  // No rewards field: the meta loop looks rewards up from the mission (by
+  // missionId) or derives them from stats — the run itself doesn't carry them.
 ```
 
 **The `RunConfig` is an *assembled* starting state, not a raw snapshot of the player's
@@ -226,7 +227,8 @@ instead of watching an invisible number climb. This plugs boards into the reward
 (Campaign map / unlocks), not any auto-scaling.
 
 **Contract.** The `RunConfig` carries the chosen board (its id + any applied modifiers);
-the `RunResult`'s rewards can unlock new boards, upgrades, or modifiers.
+on victory the meta loop looks up the mission's rewards (by the `RunResult`'s
+`missionId`) to unlock new boards, upgrades, or modifiers.
 
 **Open questions `[?]`:**
 
