@@ -13,7 +13,7 @@ export interface BuildingInstance {
 }
 
 /**
- * GameState is boardgame.io's `G` — the entire serializable run state. It must stay
+ * GameState is the entire serializable run state (the engine's `G`). It must stay
  * JSON-serializable (save/load, undo, and headless simulation depend on it). It lives
  * in `rules/` (the framework-free core) because both the run shell and the mission
  * evaluators reason over it.

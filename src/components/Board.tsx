@@ -380,7 +380,10 @@ function BuildingBox({
             workerDragSource ? ` ${styles.staffDragSource}` : ''
           }`}
           onPointerDown={(e) => { e.stopPropagation(); onStaffPointerDown?.(e, inst); }}
-          disabled={gameover || (!staffed && idle < req)}
+          // Only disable when there's nothing to do: no worker to reclaim AND not enough idle to
+          // staff. Gating on `inst.workers === 0` (not `!staffed`) keeps a partially-staffed
+          // building interactive so its worker can always be pulled back off.
+          disabled={gameover || (inst.workers === 0 && idle < req)}
           aria-pressed={staffed}
           aria-label={staffed ? `unstaff ${bld.name}` : `staff ${bld.name}`}
         >
