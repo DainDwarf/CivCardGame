@@ -188,7 +188,7 @@ src/
 ## Build roadmap 🔧
 
 - **Phase 0 — Skeleton** ✅ done: a runnable turn-based run with a tiny card set.
-- **Phase 1 — Real run loop** ✅ done: `src/game/` → `src/run/`; hybrid cards
+- **Phase 1 — Real run loop** ✅ done, tagged [`v0.0.1`](../CHANGELOG.md): `src/game/` → `src/run/`; hybrid cards
   (permanent vs. recurring), the 5-resource core (Food / Production / Money / Science /
   Military), the turn phases, and **mission-driven objective + failure** evaluators;
   3 missions (The Enlightenment, The Long Winter, Barbarian Tide). Rules unit-tested +
