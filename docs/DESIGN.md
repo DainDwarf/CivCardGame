@@ -42,7 +42,7 @@ Two consequences we deliberately design toward:
   advancement is unlocked on the tree (and grants themed cards), opening new branches.
   **Macro = humanity / persistent; micro = one civ / ephemeral.**
 
-## The contract — the spine between the loops ✅
+## The contract — the spine between the loops ✅ / 🔧
 
 The two loops are different kinds of software (the run is turn-based, driven by
 `src/run/engine.ts`; the meta is plain React, menu/UI-driven). They communicate only
@@ -50,7 +50,9 @@ through a narrow, serializable contract — `src/contract.ts`:
 
 ```
 RunConfig   (meta → run)
-  deck: CardId[]        // locked for the whole run
+  deck: CardId[]        // the run deck: player's meta deck + mission-injected cards
+                        //   (e.g. disasters); locked for the whole run
+  board: BoardId        // government board — sets the run's starting resources
   mission: MissionDef   // objective + failure + setup + modifiers + rewards
   seed: string          // deterministic draws → replays & simulation
 
@@ -60,6 +62,21 @@ RunResult   (run → meta)
   rewards: { currency: number; unlockedCards?: CardId[] }  // applied on return
   stats:   { turnsTaken: number; finalResources: Resources; ... }
 ```
+
+**The `RunConfig` is an *assembled* starting state, not a raw snapshot of the player's
+meta choices.** Building it is the contract's real job: take the player's persistent
+choices (their saved deck, their chosen board) and compose the mission's modifiers on top
+of them to produce the state a run actually begins from. Two examples already in scope:
+
+- **Disasters** — a mission may inject negative cards into the run `deck` at assembly
+  time. The player's saved meta deck is the *input*; the run deck is a derived copy — the
+  saved deck is never mutated.
+- **Government boards** — the `board` sets the run's baseline starting resources, which
+  the mission's `setup` then modifies (board = baseline, `setup` = deltas; see
+  *Government boards*).
+
+So the meta owns durable choices, the mission owns per-run modifiers, and the contract is
+where the two are merged into one immutable run configuration. 🔧
 
 ## Run loop (the Gauntlet)
 
@@ -142,6 +159,9 @@ the meta loop to the mission they pick.
 - **Collection** — every card you own (persistent). Starts small, grows over time.
 - **Deck construction** — build a run deck from the collection under constraints
   (deck size, copy/rarity limits, maybe a civilization identity). *The core puzzle.*
+- **Government boards** — the civilization's starting configuration, chosen alongside
+  the deck: it sets the run's opening resources and reskins the run loop, and is
+  unlocked/upgraded through mission rewards. See *Government boards* below.
 - **Currency & shop** — runs grant currency by outcome/performance; spend it to buy
   new cards (grow the collection) or upgrades.
 - **Campaign map** — a branching tech tree of human history; each node is a
@@ -169,6 +189,54 @@ procedurally generated map.
 - Procedural variation (which nodes are offered, per-node modifiers/seeds) can layer
   on later; v1 is authored. 🔧
 
+### Government boards 🔧 `[?]`
+
+Alongside the deck, a run is launched with a **government board** — the civilization's
+starting configuration. Where the deck is *what you can do*, the board is *where you
+begin*. Themed as a form of government/era (Tribe, Monarchy, Republic, …).
+
+**What a board is.** A board defines the run's **starting resource values** — both the
+five *core* resources (Food / Production / Money / Science / Military) and the three
+*strategic* gauges (Population / Territory / Culture). Choosing a board is choosing your
+opening economy: a martial board might open with Military and a lean Population; a
+mercantile one with Money and extra Territory. This is the seed `createInitialState`
+currently hard-codes — it becomes the board's job.
+
+**Board vs. mission `setup`.** The two compose cleanly and keep their existing roles:
+the **board is the baseline** starting state, and the **mission's `setup` applies
+modifiers on top** (it is already documented as "modifiers to the starting state"). In
+`setup.ts`: seed from the board, *then* run `mission.setup`. Missions stay a
+*lens/modifier*; boards own the *baseline*.
+
+**Visual identity.** A board reskins the run loop, not just its numbers — a distinct
+palette/backdrop (and, later, framing) so a run *looks* like the government you are
+playing, rather than the near-uniform look it has today. This is where progression
+becomes visible on screen.
+
+**Progression — earned, not scaled.** Boards do **not** scale continuously with player
+progress. Progress is legible and discrete: **mission rewards grant boards.** A reward
+can be
+
+- a **new board** (a different government with a different starting profile),
+- an **upgrade** to a board you already own (a stronger version of it), or
+- a **board modifier** (an attachable tweak to a board's starting profile).
+
+So the player *sees* growth — "I unlocked the Republic", "my Monarchy is upgraded" —
+instead of watching an invisible number climb. This plugs boards into the reward economy
+(Campaign map / unlocks), not any auto-scaling.
+
+**Contract.** The `RunConfig` carries the chosen board (its id + any applied modifiers);
+the `RunResult`'s rewards can unlock new boards, upgrades, or modifiers.
+
+**Open questions `[?]`:**
+
+- Does an **upgrade** replace the base board, or coexist as a selectable variant?
+- Do **modifiers stack**, and are they permanent unlocks or consumed per run?
+- **Phasing:** board *selection* + baseline starting resources + the visual reskin can
+  ship in **Phase 2** (a small fixed set of boards, as part of the contract). The
+  reward-driven unlocking of new boards / upgrades / modifiers needs the reward economy,
+  so it lands with **Phase 3**.
+
 ## Code architecture 🔧
 
 Builds on the existing core/shell split. `rules/` and `content/` stay shared and
@@ -194,10 +262,36 @@ src/
   3 missions (The Enlightenment, The Long Winter, Barbarian Tide). Rules unit-tested +
   a headless run integration test (`src/run/run.test.ts`). A run is now genuinely
   winnable *and* losable.
-- **Phase 2 — Contract + meta shell:** define `contract.ts`; build a minimal meta
-  layer (collection + deck construction + mission select) that emits a `RunConfig`,
-  launches a run, and consumes the `RunResult`. Persist to localStorage. → the loop
-  closes.
+- **Phase 2 — Contract + meta shell:** define `contract.ts` — the `RunConfig`
+  carries the chosen deck, mission, **and government board** (which sets the run's
+  starting resources; see *Government boards*). Build a minimal meta layer (collection +
+  deck
+  construction + board select + mission select) that emits a `RunConfig`, launches a
+  run, and consumes the `RunResult`. Add a **game menu** (save, config, codex) as the
+  shell's global-action surface. Persist to localStorage. → the loop closes.
+
+  Sequenced build order (each step leaves something runnable; day-to-day tracking lives
+  in [`TODO.md`](TODO.md)):
+
+  1. **Scaffold meta content** — 2–3 government boards (`content/boards.ts` + `BoardId`,
+     each setting all 8 starting resources) and 2–3 premade decks.
+  2. **Mission-select menu** — first meta screen; replaces the direct-to-run mount in
+     `main.tsx`. Picks mission / board / deck into a provisional selection shape; does not
+     launch yet.
+  3. **Define `contract.ts`** — formalize `RunConfig`/`RunResult` from that selection
+     shape, including the run **`seed`** (wire a seeded shuffle to replace today's
+     deterministic draw).
+  4. **Wire the loop closed** — `app/` shell + meta↔run view switch; refactor the
+     `missionId`-keyed pipeline (`createRun`/`createInitialState`/`GameProvider`/restart)
+     to consume a `RunConfig`; apply board baseline-resources + disaster injection during
+     setup assembly; end-of-run returns to the menu with a minimal `RunResult`.
+  5. **Extend the meta menu** — collection view + deck-construction navigation (shell
+     only).
+  6. **localStorage persistence** — stand up the persisted player store (collection +
+     saved decks + progress) *before* deck construction, so the editor is built on the
+     real store rather than retrofitted.
+  7. **Deck construction** — the deck editor, writing to the persisted store.
+     Construction *constraints* stay deferred to Phase 4.
 - **Phase 3 — Economy & progression:** currency, shop, mission map, unlocks.
 - **Phase 4 — Content & balance:** expand cards/missions/resources; use the headless
   simulator to tune.
@@ -211,5 +305,5 @@ Still open, deferred until the phase that needs them:
 
 - **Resource set** ✅ — resolved in Phase 1: Food / Production / Money / Science / Military. See *Resources* section above.
 - **Deck construction constraints** ❓ (deck size, copy/rarity limits, a
-  "civilization" identity that gates combos) — revisit during **Phase 2**, when we
-  build the deck editor.
+  "civilization" identity that gates combos) — revisit during **Phase 4**, during
+  content expansion and balance.

@@ -11,15 +11,28 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Tags (optional): `[size: S/M/L]` rough effort · `[?]` needs design discussion ·
 > `[blocked]` waiting on something else · `[phase: N]` roadmap phase (1 = run loop · 2 = contract + meta shell · 3 = economy & progression · 4 = content & balance).
 
+## Phase 2 build plan — sequenced `[phase: 2]`
+
+> The agreed task order for closing the loop (contract + meta shell). Numbered = do in
+> order; each step is meant to leave something runnable. See *The contract* and
+> *Government boards* in [[DESIGN]].
+
+1. **Scaffold meta content** — author 2–3 **government boards** (`src/content/boards.ts` + a `BoardId` type; each board sets starting values for all 8 resources — 5 core + 3 strategic) and 2–3 **premade decks** (`decks.ts` currently has only `DEFAULT_DECK`). Prerequisite for the mission-select menu. `[size: S]`
+2. **Mission-select menu** — the first meta screen; replaces the current direct-to-run mount in `main.tsx`. Player picks mission (of 3), board, and deck, held as a provisional selection shape `{ missionId, boardId, deckId }`. Does not launch a run yet. `[size: M]`
+3. **Define `contract.ts`** — formalize `RunConfig`/`RunResult`, promoting the menu's selection shape into the real type. Includes the run **`seed`**: wire a seeded RNG/shuffle to replace today's deterministic draw, so the seed is meaningful from the start rather than a stub. `[size: M]`
+4. **Wire the loop closed** — introduce the `app/` shell + a meta↔run **view switch**; refactor the `missionId`-keyed pipeline (`createRun` / `createInitialState` / `GameProvider` / restart) to consume a `RunConfig`; apply board baseline-resources + disaster injection during setup assembly; end-of-run returns to the menu with a **minimal `RunResult`** (no reward application yet — that needs collection + Phase-3 currency). `[size: L]`
+5. **Extend the meta menu** — add a collection view and deck-construction navigation/screens (shell + routing only, no editing logic yet). `[size: M]`
+6. **localStorage persistence** — stand up the persisted player store (collection + saved decks + progress) with localStorage save/load. Comes **before** deck construction so the editor is built on the real store, not retrofitted onto in-memory state. `[size: M]`
+7. **Deck construction** — the deck editor: build/edit run decks from the collection, writing directly to the persisted store. Deck-construction *constraints* (size, copy/rarity limits, civ identity) stay deferred to Phase 4. `[size: L] [?]`
+
 ## Meta loop (`src/meta/` — not built yet)
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
-- **Government boards** — alongside deckbuilding, the meta lets the player choose a "board" (themed as government type: monarchy, republic, etc.); the board sets starting resources and scales with the player's progression on the mission tech map (i.e. what the player has already unlocked determines how powerful the starting board is) `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
 
-- **Disasters** — some missions inject disaster/event cards (negative effects) into the player's deck as pressure; Military helps prevent/mitigate them (details TBD) `[?]` `[phase: 4]`
+- **Disasters** — a **mission modifier**: some missions inject disaster/event cards (negative effects) into the player's *run* deck at mission start, as pressure. Crucially, this only affects the run deck the mission is launched with — it never mutates the saved meta deck. Military helps prevent/mitigate them (details TBD). Contract-relevant: the `RunConfig`'s run deck = the player's meta deck + the mission's injected cards, so injection likely happens as the `RunConfig` is assembled. `[?]` `[phase: 2]`
 - New mission type: "Metropolis" `[?]` `[phase: 4]`
 - New mission: "Build the Wonder" `[?]` `[phase: 4]`
 - Culture-based missions (depend on the Culture resource) `[?]` `[phase: 4]`
@@ -29,7 +42,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- **Game menu** — save, config, codex, and other global actions; the codex is where in-depth mechanic explanations live (not tooltips) `[?]` `[phase: 2]`
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 
