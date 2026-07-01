@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { playCard } from './moves';
+import { playCard, transferWorker } from './moves';
 import { blankState, type GameState } from '../rules';
 
 /** Invoke the move directly with a minimal context (it only reads `G`). */
@@ -173,5 +173,58 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.reservedPop).toBe(2); // unchanged
     expect(G.reservedGains.production).toBe(3); // unchanged
     expect(G.hand).toEqual(['corvee']); // card stays
+  });
+});
+
+describe('transferWorker: moving a worker directly between two buildings', () => {
+  it('moves one worker from the source building to the target in a single call', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [
+      { id: 1, buildingId: 'farm', workers: 1 },
+      { id: 2, buildingId: 'workshop', workers: 0 },
+    ];
+    transferWorker(G, 1, 2);
+    expect(G.tableau).toEqual([
+      { id: 1, buildingId: 'farm', workers: 0 },
+      { id: 2, buildingId: 'workshop', workers: 1 },
+    ]);
+  });
+
+  it('rejects when the source building has no worker to give', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [
+      { id: 1, buildingId: 'farm', workers: 0 },
+      { id: 2, buildingId: 'workshop', workers: 0 },
+    ];
+    transferWorker(G, 1, 2);
+    expect(G.tableau[0].workers).toBe(0);
+    expect(G.tableau[1].workers).toBe(0);
+  });
+
+  it('rejects when the target building is already at its worker requirement', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [
+      { id: 1, buildingId: 'farm', workers: 1 },
+      { id: 2, buildingId: 'workshop', workers: 1 }, // workshop needs only 1 worker
+    ];
+    transferWorker(G, 1, 2);
+    expect(G.tableau[0].workers).toBe(1); // untouched
+    expect(G.tableau[1].workers).toBe(1);
+  });
+
+  it('rejects a transfer to itself', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }];
+    transferWorker(G, 1, 1);
+    expect(G.tableau[0].workers).toBe(1);
+  });
+
+  it('rejects when either instance id does not exist', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }];
+    transferWorker(G, 1, 999);
+    expect(G.tableau[0].workers).toBe(1);
+    transferWorker(G, 999, 1);
+    expect(G.tableau[0].workers).toBe(1);
   });
 });

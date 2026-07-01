@@ -94,6 +94,22 @@ export function unassignWorker(G: GameState, id: number): 'invalid' | void {
   b.workers -= 1;
 }
 
+/** Move one worker directly from one building instance to another (both identified by `id`),
+ *  as a single atomic move. This is what a building-to-building drag uses instead of an
+ *  unassign+assign pair — two separate moves would push two entries onto the undo stack,
+ *  so one "undo" click would only unwind half the transfer. Invalid if the source has no
+ *  worker to give, source and target are the same instance, or the target is already at
+ *  its worker requirement. */
+export function transferWorker(G: GameState, fromId: number, toId: number): 'invalid' | void {
+  if (fromId === toId) return 'invalid';
+  const from = G.tableau.find((x) => x.id === fromId);
+  const to = G.tableau.find((x) => x.id === toId);
+  if (!from || from.workers <= 0) return 'invalid';
+  if (!to || to.workers >= requiredWorkers(to.buildingId)) return 'invalid';
+  from.workers -= 1;
+  to.workers += 1;
+}
+
 /** Toggle a building instance (identified by `id`) between empty and fully staffed in one
  *  move: staffed buildings empty out entirely; empty ones fill to their full worker
  *  requirement, but only all-or-nothing (mirrors `addBuilding`'s auto-staff) — if there

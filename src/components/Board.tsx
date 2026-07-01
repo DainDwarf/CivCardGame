@@ -478,8 +478,9 @@ interface SlotDrag {
 }
 
 /** A worker token being dragged: either an idle token from the population tray toward a
- *  building (`fromBuildingId` null), or a staffed worker being pulled out of a building and
- *  back toward the tray (`fromBuildingId` set). */
+ *  building (`fromBuildingId` null), or a staffed worker being pulled out of a building
+ *  (`fromBuildingId` set) — which can land back on the tray (unstaff) or on another
+ *  building's box (transfer directly via `moves.transferWorker`, one atomic move). */
 interface WorkerDrag {
   pointerId: number;
   fromBuildingId: number | null;
@@ -866,7 +867,7 @@ export function Board() {
       const moved = Math.hypot(e.clientX - d.startX, e.clientY - d.startY);
       const active = d.active || moved > DRAG_THRESHOLD;
       setWorkerDrag({ ...d, x: e.clientX, y: e.clientY, active });
-      setWorkerHoverSlot(active && d.fromBuildingId == null ? slotAt(e.clientX, e.clientY) : null);
+      setWorkerHoverSlot(active ? slotAt(e.clientX, e.clientY) : null);
       setWorkerOverTray(active && d.fromBuildingId != null && isOverTray(e.clientX, e.clientY));
     }
     function onUp(e: PointerEvent) {
@@ -882,9 +883,19 @@ export function Board() {
         const key = slot != null ? layout[slot] : null;
         const inst = key != null ? buildingById.get(key) : undefined;
         if (inst && inst.workers < requiredWorkers(inst.buildingId)) moves.assignWorker(inst.id);
-      } else if (d.hadWorker && isOverTray(e.clientX, e.clientY)) {
+      } else if (isOverTray(e.clientX, e.clientY)) {
         // Dragged a worker out of its building and dropped it on the population tray.
-        moves.unassignWorker(d.fromBuildingId);
+        if (d.hadWorker) moves.unassignWorker(d.fromBuildingId);
+      } else if (d.hadWorker) {
+        // Dragged a worker out of one building and released it over another's box — transfer
+        // it directly (one atomic move) rather than unassign-then-assign, which would split
+        // undo into two steps.
+        const slot = slotAt(e.clientX, e.clientY);
+        const key = slot != null ? layout[slot] : null;
+        const inst = key != null ? buildingById.get(key) : undefined;
+        if (inst && inst.id !== d.fromBuildingId && inst.workers < requiredWorkers(inst.buildingId)) {
+          moves.transferWorker(d.fromBuildingId, inst.id);
+        }
       }
       setWorkerDrag(null);
       setWorkerHoverSlot(null);
@@ -1093,9 +1104,9 @@ export function Board() {
             const canAcceptWorker = !!inst && inst.workers < requiredWorkers(inst.buildingId);
             const isWorkerDropTarget =
               workerDrag?.active === true &&
-              workerDrag.fromBuildingId == null &&
               workerHoverSlot === slotIdx &&
-              canAcceptWorker;
+              canAcceptWorker &&
+              inst?.id !== workerDrag.fromBuildingId;
             const isWorkerDragSource =
               workerDrag?.active === true && !!inst && workerDrag.fromBuildingId === inst.id;
             const slotClass = [
