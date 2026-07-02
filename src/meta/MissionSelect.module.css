@@ -20,11 +20,17 @@
   margin: 0 0 2rem;
 }
 
-.lastResult {
+.runHistory {
+  list-style: none;
   text-align: center;
+  margin: -1.4rem 0 2rem;
+  padding: 0;
+}
+
+.lastResult {
   color: #444;
   font-size: 0.9rem;
-  margin: -1.4rem 0 2rem;
+  margin: 0;
 }
 
 .section {

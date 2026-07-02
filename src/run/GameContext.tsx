@@ -24,6 +24,12 @@ interface GameContextValue {
   endRun: () => void;
 }
 
+/** Turns a finished `RunState` into the `RunResult` handed to `onRunEnd`/`onRestart`, or
+ *  `undefined` if the run isn't over yet (nothing to report). */
+function finishedResult(state: RunState): RunResult | undefined {
+  return state.gameover ? toRunResult(state.G, state.gameover) : undefined;
+}
+
 const GameContext = createContext<GameContextValue | null>(null);
 
 /**
@@ -82,11 +88,15 @@ function reducer(s: Session, action: Action): Session {
 export function GameProvider({
   config,
   onRunEnd,
+  onRestart,
   children,
 }: {
   config: RunConfig;
   /** Called when the player clicks "End Run" on a finished run — hands the result back to the meta loop. */
   onRunEnd: (result: RunResult) => void;
+  /** Called just before a "Restart" discards a finished run — the run doesn't leave this
+   *  `GameProvider`, but the meta loop still needs the discarded run's result for history. */
+  onRestart?: (result: RunResult) => void;
   children: React.ReactNode;
 }) {
   const [session, dispatch] = useReducer(reducer, config, (c) => ({ present: createRun(c), past: [] }));
@@ -107,20 +117,25 @@ export function GameProvider({
     undo: () => dispatch({ type: 'undo' }),
     // A restart is a new run with the same board/mission/deck but a fresh seed — reusing the
     // exact same seed would just replay the identical draw order every time.
-    restart: () => dispatch({
-      type: 'restart',
-      config: buildRunConfig(
-        { missionId: config.missionId, boardId: config.board, deckId: config.deckId },
-        crypto.randomUUID(),
-      ),
-    }),
-  }), [config]);
+    restart: () => {
+      const result = finishedResult(present);
+      if (result) onRestart?.(result);
+      dispatch({
+        type: 'restart',
+        config: buildRunConfig(
+          { missionId: config.missionId, boardId: config.board, deckId: config.deckId },
+          crypto.randomUUID(),
+        ),
+      });
+    },
+  }), [config, present, onRestart]);
 
   // Undo is offered only within a live turn — not over a finished run.
   const canUndo = past.length > 0 && !present.gameover;
 
   function endRun() {
-    if (present.gameover) onRunEnd(toRunResult(present.G, present.gameover));
+    const result = finishedResult(present);
+    if (result) onRunEnd(result);
   }
 
   return (

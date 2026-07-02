@@ -60,14 +60,15 @@ function OptionCard({
  * The first meta screen — mission-select. Replaces the old direct-to-run mount in
  * `main.tsx`. Picks mission / board / deck into a provisional selection, then
  * assembles a `RunConfig` and hands it to `onLaunch` — the `app/` shell swaps to the
- * run view. `lastResult`, when present, is the previous run's outcome (a minimal
- * summary line; the meta menu doesn't yet apply rewards from it — that's Phase 3).
+ * run view. `runHistory`, when non-empty, lists the outcomes of the last runs
+ * (most recent first — a minimal summary line each; the meta menu doesn't yet apply
+ * rewards from it — that's Phase 3).
  */
 export function MissionSelect({
-  lastResult,
+  runHistory,
   onLaunch,
 }: {
-  lastResult?: RunResult;
+  runHistory: RunResult[];
   onLaunch: (config: RunConfig) => void;
 }) {
   const [selection, setSelection] = useState<RunSelection>({
@@ -89,11 +90,15 @@ export function MissionSelect({
       <h1 className={styles.title}>CivCardGame</h1>
       <p className={styles.subtitle}>Choose a mission, a government, and a deck.</p>
 
-      {lastResult && (
-        <p className={styles.lastResult}>
-          Last run: {lastResult.outcome === 'victory' ? '🏛️ Victory' : '💀 Defeat'} —{' '}
-          {MISSIONS[lastResult.missionId].name} (round {lastResult.stats.turnsTaken})
-        </p>
+      {runHistory.length > 0 && (
+        <ul className={styles.runHistory}>
+          {runHistory.map((result, i) => (
+            <li key={i} className={styles.lastResult}>
+              {result.outcome === 'victory' ? '🏛️ Victory' : '💀 Defeat'} —{' '}
+              {MISSIONS[result.missionId].name} (round {result.stats.turnsTaken})
+            </li>
+          ))}
+        </ul>
       )}
 
       <section className={styles.section}>
