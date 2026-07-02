@@ -22,13 +22,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 3. ~~**Define `contract.ts`**~~ — done, see *Done / shipped* below. `[size: M]`
 4. ~~**Wire the loop closed**~~ — done, see *Done / shipped* below. `[size: L]`
 5. ~~**localStorage persistence**~~ — done, see *Done / shipped* below. `[size: M]`
-6. **Extend the meta menu** — add a collection view and deck-construction navigation/screens (shell + routing only, no editing logic yet). `[size: M]`
+6. ~~**Extend the meta menu**~~ — done, see *Done / shipped* below. `[size: M]`
 7. **Deck construction** — the deck editor: build/edit run decks from the collection, writing directly to the persisted store. Deck-construction *constraints* (size, copy/rarity limits, civ identity) stay deferred to Phase 4. `[size: L] [?]`
 
-## Meta loop (`src/meta/` — not built yet)
+## Meta loop (`src/meta/`)
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
+- **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]`
+- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]`
 
 ## Cards & content (`src/content/`)
 
@@ -66,6 +68,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
+
+- **Extend the meta menu** (Phase 2 build plan step 6) — `src/meta/MetaMenu.tsx` is a
+  new shell: a left column of big nav buttons (Mission / Collection / Decks / Stats)
+  switches between meta screens, rendered in `src/app/App.tsx` instead of mounting
+  `MissionSelect` directly. `MissionSelect.tsx` lost its inline run-history block (now
+  its own `Stats.tsx` tab) and otherwise kept its mission/board/deck picker + Start Run
+  button unchanged. `Collection.tsx` lists the full `CARDS` catalogue (grouped
+  Buildings & Wonders / Actions) and `Decks.tsx` lists `DECKS` with their card
+  contents — both read-only, shell-only per the step's scope; deck construction
+  (writing to the persisted store) is step 7.
 
 - **localStorage persistence** — `src/meta/store.ts`'s `loadStore`/`saveStore` persist the
   player store to `localStorage` under key `civcardgame:player-store`. Only holds

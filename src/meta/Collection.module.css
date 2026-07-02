@@ -1,0 +1,59 @@
+.collection {
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 900px;
+  color: #1a1a1a;
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0 0 0.2rem;
+}
+
+.subtitle {
+  color: #555;
+  margin: 0 0 1.5rem;
+}
+
+.section {
+  margin-bottom: 1.75rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #444;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.7rem 0.8rem;
+  background: #f3f3f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tileName {
+  font-weight: 700;
+}
+
+.tileCost {
+  font-size: 0.8rem;
+  color: #3b7dd8;
+}
+
+.tileEffect {
+  font-size: 0.8rem;
+  color: #555;
+}

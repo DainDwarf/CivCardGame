@@ -20,8 +20,9 @@ recurring), the turn lifecycle, a **population/worker-staffing** layer (building
 be staffed to operate; the population eats food each round), and mission-driven
 win/lose conditions. **Phase 2** (contract + meta shell) is in progress: `src/contract.ts`
 defines `RunConfig`/`RunResult`; `src/app/App.tsx` switches between the meta menu
-(`src/meta/MissionSelect.tsx`) and a run. Collection view, deck construction, and
-localStorage persistence are not built yet.
+(`src/meta/MetaMenu.tsx` — a left-nav shell over the Mission/Collection/Decks/Stats
+screens) and a run. `src/meta/store.ts` persists run history to `localStorage`; deck
+construction is not built yet (Collection/Decks are read-only shells).
 
 ## Commands
 
@@ -101,10 +102,16 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   actions; calls `moves.playCard` / `moves.toggleStaffing` / `endTurn()`. Display only —
   read derived values from `src/rules/` (e.g. `projectedDelta`, `freePopulation`), never
   recompute game logic.
-- `src/app/App.tsx` — the shell that switches between the meta menu
-  (`src/meta/MissionSelect.tsx`, which assembles a `RunConfig` via `buildRunConfig` and
-  calls `onLaunch`) and `<GameProvider>` + `<Board>`. On `onRunEnd`, it stores the
-  `RunResult` and switches back to the menu.
+- `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left column of big nav
+  buttons switches between four screens — `MissionSelect.tsx` (mission/board/deck
+  picker; assembles a `RunConfig` via `buildRunConfig` and calls `onLaunch`),
+  `Collection.tsx` and `Decks.tsx` (read-only shells over `content/cards.ts` /
+  `content/decks.ts` — deck construction/editing isn't built yet), and `Stats.tsx`
+  (the run history list). `store.ts`'s `loadStore`/`saveStore` persist `PlayerStore`
+  (currently just `runHistory`) to `localStorage`.
+- `src/app/App.tsx` — the shell that switches between `<MetaMenu>` (which calls
+  `onLaunch` with an assembled `RunConfig`) and `<GameProvider>` + `<Board>`. On
+  `onRunEnd`, it stores the `RunResult` and switches back to the menu.
 - `src/main.tsx` — mounts `<App>`.
 
 See `src/contract.ts` for the `RunConfig`/`RunResult` types and `buildRunConfig` —

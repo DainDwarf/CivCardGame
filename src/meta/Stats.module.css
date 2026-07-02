@@ -1,0 +1,61 @@
+.stats {
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 720px;
+  color: #1a1a1a;
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0 0 0.2rem;
+}
+
+.subtitle {
+  color: #555;
+  margin: 0 0 1.5rem;
+}
+
+.empty {
+  color: #666;
+  font-style: italic;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  background: #f3f3f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+}
+
+.victory {
+  font-weight: 700;
+  color: #2f7d3b;
+}
+
+.defeat {
+  font-weight: 700;
+  color: #a13030;
+}
+
+.mission {
+  font-weight: 600;
+}
+
+.detail {
+  color: #555;
+  font-size: 0.85rem;
+  margin-left: auto;
+}

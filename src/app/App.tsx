@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MissionSelect } from '../meta/MissionSelect';
+import { MetaMenu } from '../meta/MetaMenu';
 import { Board } from '../components/Board';
 import { GameProvider } from '../run/GameContext';
 import { loadStore, saveStore } from '../meta/store';
@@ -7,7 +7,7 @@ import type { RunConfig, RunResult } from '../contract';
 
 type View = { screen: 'menu' } | { screen: 'run'; config: RunConfig };
 
-/** How many past runs the mission-select screen shows. */
+/** How many past runs the Stats screen shows. */
 const HISTORY_LIMIT = 10;
 
 /**
@@ -46,5 +46,5 @@ export function App() {
     );
   }
 
-  return <MissionSelect runHistory={runHistory} onLaunch={(config) => setView({ screen: 'run', config })} />;
+  return <MetaMenu runHistory={runHistory} onLaunch={(config) => setView({ screen: 'run', config })} />;
 }

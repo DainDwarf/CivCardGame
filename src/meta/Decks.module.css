@@ -1,0 +1,63 @@
+.decks {
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 720px;
+  color: #1a1a1a;
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0 0 0.2rem;
+}
+
+.subtitle {
+  color: #555;
+  margin: 0 0 1.5rem;
+}
+
+.deckCard {
+  padding: 0.9rem 1rem;
+  background: #f3f3f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.deckHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.deckName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.deckCount {
+  font-size: 0.8rem;
+  color: #3b7dd8;
+  white-space: nowrap;
+}
+
+.deckDesc {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0.3rem 0 0.7rem;
+}
+
+.cardList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.cardChip {
+  font-size: 0.78rem;
+  color: #333;
+  background: #e7e7e2;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+}

@@ -4,8 +4,9 @@ import type { Resources } from './rules/resources';
 import { shuffle } from './rules/rng';
 
 /**
- * The provisional selection a player builds up on the mission-select screen
- * (`src/meta/MissionSelect.tsx`). Lives here, not in the shell, so `buildRunConfig`
+ * The provisional selection a player builds up on the Mission screen
+ * (`src/meta/MissionSelect.tsx`, one tab of `src/meta/MetaMenu.tsx`). Lives here, not
+ * in the shell, so `buildRunConfig`
  * can promote it into a `RunConfig` without the core reaching into a React module.
  */
 export interface RunSelection {
