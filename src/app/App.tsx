@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MissionSelect } from '../meta/MissionSelect';
 import { Board } from '../components/Board';
 import { GameProvider } from '../run/GameContext';
+import { loadStore, saveStore } from '../meta/store';
 import type { RunConfig, RunResult } from '../contract';
 
 type View = { screen: 'menu' } | { screen: 'run'; config: RunConfig };
@@ -18,11 +19,16 @@ export function App() {
   const [view, setView] = useState<View>({ screen: 'menu' });
   // Most-recent-first, capped to HISTORY_LIMIT. A run also lands here when the player hits
   // Restart instead of End Run — that discards the run without leaving GameProvider, so it
-  // would otherwise never be recorded.
-  const [runHistory, setRunHistory] = useState<RunResult[]>([]);
+  // would otherwise never be recorded. Loaded from and persisted to localStorage (see
+  // ../meta/store.ts) so history survives a page reload.
+  const [runHistory, setRunHistory] = useState<RunResult[]>(() => loadStore().runHistory);
 
   function recordResult(result: RunResult) {
-    setRunHistory((h) => [result, ...h].slice(0, HISTORY_LIMIT));
+    setRunHistory((h) => {
+      const next = [result, ...h].slice(0, HISTORY_LIMIT);
+      saveStore({ runHistory: next });
+      return next;
+    });
   }
 
   if (view.screen === 'run') {

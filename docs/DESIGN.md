@@ -287,11 +287,11 @@ src/
      `missionId`-keyed pipeline (`createRun`/`createInitialState`/`GameProvider`/restart)
      to consume a `RunConfig`; apply board baseline-resources + disaster injection during
      setup assembly; end-of-run returns to the menu with a minimal `RunResult`.
-  5. **Extend the meta menu** — collection view + deck-construction navigation (shell
-     only).
-  6. **localStorage persistence** — stand up the persisted player store (collection +
+  5. **localStorage persistence** — stand up the persisted player store (collection +
      saved decks + progress) *before* deck construction, so the editor is built on the
      real store rather than retrofitted.
+  6. **Extend the meta menu** — collection view + deck-construction navigation (shell
+     only).
   7. **Deck construction** — the deck editor, writing to the persisted store.
      Construction *constraints* stay deferred to Phase 4.
 - **Phase 3 — Economy & progression:** currency, shop, mission map, unlocks.

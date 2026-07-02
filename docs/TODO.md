@@ -21,8 +21,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 2. ~~**Mission-select menu**~~ — done, see *Done / shipped* below. `[size: M]`
 3. ~~**Define `contract.ts`**~~ — done, see *Done / shipped* below. `[size: M]`
 4. ~~**Wire the loop closed**~~ — done, see *Done / shipped* below. `[size: L]`
-5. **Extend the meta menu** — add a collection view and deck-construction navigation/screens (shell + routing only, no editing logic yet). `[size: M]`
-6. **localStorage persistence** — stand up the persisted player store (collection + saved decks + progress) with localStorage save/load. Comes **before** deck construction so the editor is built on the real store, not retrofitted onto in-memory state. `[size: M]`
+5. ~~**localStorage persistence**~~ — done, see *Done / shipped* below. `[size: M]`
+6. **Extend the meta menu** — add a collection view and deck-construction navigation/screens (shell + routing only, no editing logic yet). `[size: M]`
 7. **Deck construction** — the deck editor: build/edit run decks from the collection, writing directly to the persisted store. Deck-construction *constraints* (size, copy/rarity limits, civ identity) stay deferred to Phase 4. `[size: L] [?]`
 
 ## Meta loop (`src/meta/` — not built yet)
@@ -67,6 +67,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **localStorage persistence** — `src/meta/store.ts`'s `loadStore`/`saveStore` persist the
+  player store to `localStorage` under key `civcardgame:player-store`. Only holds
+  `runHistory` today; collection/saved-decks/progress will extend `PlayerStore` as those
+  features land. `App.tsx` seeds `runHistory` state from `loadStore()` on mount and calls
+  `saveStore` after every recorded run (including restarts). Missing/corrupt data falls
+  back to an empty store; `localStorage` failures (quota, private browsing) are swallowed
+  so the run continues in-memory-only.
 - **Strategic resources on `RunResult`** — `RunResult.stats` gained `strategicResources:
   { population, territory, culture }` alongside the existing `finalResources` (the 5
   core resources). Kept as a separate field rather than folded into `finalResources`
