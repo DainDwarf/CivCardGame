@@ -29,10 +29,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
-- **Game menu** — `docs/DESIGN.md`'s Phase 2 description calls for a game menu (save, config, codex) as the shell's global-action surface, but it never became a numbered build-plan step and doesn't exist in `src/`; `App.tsx` only switches between `MetaMenu` and a run today `[?]` `[phase: 2]`
+- **In-run menu extras (end run / restart run)** — `GameMenu.tsx`'s popup is currently identical on the meta screen and the run screen; the run screen should eventually get extra items (end run, restart run) alongside save/config/codex `[?]` `[phase: 2]`
+- **Populate the codex submenu** — `GameMenu.tsx`'s Codex item currently opens an empty placeholder window; it should surface reference info (cards/buildings/missions glossary, rules reminders — details TBD) `[?]` `[phase: 2]`
+- **Populate the config submenu** — `GameMenu.tsx`'s Config item currently opens an empty placeholder window; it should hold player-facing settings (details TBD) `[?]` `[phase: 2]`
 - **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 2]`
-- **Save handling: import/export/clear** — `PlayerStore` (`meta/store.ts`) has no user-facing way to export/import a save file or clear it; worth a settings-style affordance once there's enough in the store to be worth backing up `[?]` `[phase: 2]`
+- **Populate the save submenu** — `GameMenu.tsx`'s Save item currently opens an empty placeholder window; `PlayerStore` (`meta/store.ts`) has no user-facing way to export/import a save file or clear it — worth a settings-style affordance once there's enough in the store to be worth backing up `[?]` `[phase: 2]`
 - **Deck editor UI rework** — `DeckEditor.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain grid card picker, chip list, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
 
 ## Cards & content (`src/content/`)
@@ -73,6 +75,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Game menu** — `src/components/GameMenu.tsx` is the shell's global-action surface
+  called for by `docs/DESIGN.md`'s Phase 2 description: a top-right burger button,
+  mounted once by `App.tsx` alongside either `MetaMenu` or the run's `Board`, so it
+  overlays both loops. Opens a central popup listing the decided items (save, config,
+  codex); each opens its own submenu window stacked on top. All submenus are empty
+  placeholders — no save/config/codex feature exists yet. The in-run screen gaining
+  extra items (end run, restart run) is tracked separately above.
 - **Deck construction** (Phase 2 build plan step 7) — `src/meta/DeckEditor.tsx` is the
   new deck editor: name/description fields, a card picker (reuses `Collection.tsx`'s
   `CardTile`), and the in-progress deck as removable chips. `Decks.tsx` is now a single

@@ -1,0 +1,163 @@
+/* Fixed top-right circular burger button — present on both the meta menu and the run
+   screen. z-index sits above the run screen's end-of-run overlay (100) so the menu is
+   always reachable. */
+.burger {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 150;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(28, 28, 28, 0.85);
+  color: #fff;
+  font-size: 1.3rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: background 0.12s ease;
+}
+
+.burger:hover {
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 20, 20, 0.6);
+  cursor: pointer;
+  animation: menuFadeIn 0.15s ease;
+}
+
+.panel {
+  width: 260px;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-radius: 14px;
+  background: #faf8f4;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  cursor: default;
+  animation: menuZoomIn 0.16s ease-out;
+}
+
+.title {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.itemBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #333;
+  background: #f0efeb;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.itemBtn:hover {
+  background: #e4e2dc;
+}
+
+.itemIcon {
+  font-size: 1.15rem;
+}
+
+.closeBtn {
+  margin-top: 1.1rem;
+  padding: 0.5rem 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background: #e4e2de;
+  color: #2c2c2c;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  background: #d4d2ce;
+}
+
+.version {
+  margin: 0.9rem 0 0;
+  color: #999;
+  font-size: 0.75rem;
+}
+
+/* Submenu window — stacked above .panel, its own dimmed layer on top of the popup. */
+.submenuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 152;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 20, 20, 0.35);
+  cursor: pointer;
+  animation: menuFadeIn 0.15s ease;
+}
+
+.submenuPanel {
+  width: 300px;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+  text-align: center;
+  cursor: default;
+  animation: menuZoomIn 0.16s ease-out;
+}
+
+.submenuTitle {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.submenuEmpty {
+  margin: 0;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes menuZoomIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

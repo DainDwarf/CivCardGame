@@ -121,9 +121,15 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   through `rules/deckBuilder.ts`. `store.ts`'s `loadStore`/`saveStore` persist
   `PlayerStore` (`runHistory` + `decks`, the latter seeded from `content/decks.ts`'s
   `DEFAULT_DECKS` on a fresh profile) to `localStorage`.
+- `src/components/GameMenu.tsx` — the global-action surface (docs/DESIGN.md's Phase 2
+  "game menu (save, config, codex)"): a top-right burger button, mounted once by
+  `App.tsx` so it overlays both the meta menu and the run screen. Opens a central popup
+  listing the decided items; each opens its own submenu window stacked on top. All
+  submenus are empty placeholders for now — no save/config/codex feature exists yet.
 - `src/app/App.tsx` — the shell that switches between `<MetaMenu>` (which calls
-  `onLaunch` with an assembled `RunConfig`) and `<GameProvider>` + `<Board>`. On
-  `onRunEnd`, it stores the `RunResult` and switches back to the menu.
+  `onLaunch` with an assembled `RunConfig`) and `<GameProvider>` + `<Board>`, with
+  `<GameMenu>` mounted alongside either. On `onRunEnd`, it stores the `RunResult` and
+  switches back to the menu.
 - `src/main.tsx` — mounts `<App>`.
 
 See `src/contract.ts` for the `RunConfig`/`RunResult` types, `buildRunConfig` (now

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MetaMenu } from '../meta/MetaMenu';
 import { Board } from '../components/Board';
+import { GameMenu } from '../components/GameMenu';
 import { GameProvider } from '../run/GameContext';
 import { loadStore, saveStore, type PlayerStore } from '../meta/store';
 import type { DeckDef } from '../content/decks';
@@ -46,28 +47,29 @@ export function App() {
     persist({ ...store, decks: store.decks.filter((d) => d.id !== id) });
   }
 
-  if (view.screen === 'run') {
-    return (
-      <GameProvider
-        config={view.config}
-        onRunEnd={(result) => {
-          recordResult(result);
-          setView({ screen: 'menu' });
-        }}
-        onRestart={recordResult}
-      >
-        <Board />
-      </GameProvider>
-    );
-  }
-
   return (
-    <MetaMenu
-      runHistory={store.runHistory}
-      decks={store.decks}
-      onLaunch={(config) => setView({ screen: 'run', config })}
-      onSaveDeck={saveDeck}
-      onDeleteDeck={deleteDeck}
-    />
+    <>
+      <GameMenu />
+      {view.screen === 'run' ? (
+        <GameProvider
+          config={view.config}
+          onRunEnd={(result) => {
+            recordResult(result);
+            setView({ screen: 'menu' });
+          }}
+          onRestart={recordResult}
+        >
+          <Board />
+        </GameProvider>
+      ) : (
+        <MetaMenu
+          runHistory={store.runHistory}
+          decks={store.decks}
+          onLaunch={(config) => setView({ screen: 'run', config })}
+          onSaveDeck={saveDeck}
+          onDeleteDeck={deleteDeck}
+        />
+      )}
+    </>
   );
 }
