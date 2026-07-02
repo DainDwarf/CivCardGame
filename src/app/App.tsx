@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MetaMenu } from '../meta/MetaMenu';
 import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
-import { GameProvider } from '../run/GameContext';
+import { GameProvider, useGame } from '../run/GameContext';
 import { loadStore, saveStore, type PlayerStore } from '../meta/store';
 import { loadSettings, saveSettings, type Settings } from '../meta/settings';
 import type { DeckDef } from '../content/decks';
@@ -12,6 +12,46 @@ type View = { screen: 'menu' } | { screen: 'run'; config: RunConfig };
 
 /** How many past runs the Stats screen shows. */
 const HISTORY_LIMIT = 10;
+
+/**
+ * Bridges `useGame()` into `GameMenu`'s `runControls` prop — must render inside
+ * `GameProvider`, which is why this is a separate component rather than inline in
+ * `App`'s render (the meta-screen `GameMenu` needs no such bridge). Restart Run / End
+ * Run stay confirm-gated while the run is live; once it's over, they act immediately
+ * (see `RunMenuControls`'s doc comment) — `onEndRun` becomes `endRun` (records the
+ * result, same as the gameover overlay's own End Run button) instead of `onAbandon`,
+ * which only applies to a live run: it mirrors `handleImportStore` below, silently
+ * discarding the in-progress run with no `RunResult` to record.
+ */
+function RunGameMenu({
+  store,
+  onImportStore,
+  settings,
+  onUpdateSettings,
+  onAbandon,
+}: {
+  store: PlayerStore;
+  onImportStore: (store: PlayerStore) => void;
+  settings: Settings;
+  onUpdateSettings: (settings: Settings) => void;
+  onAbandon: () => void;
+}) {
+  const { gameover, restart, endRun } = useGame();
+  return (
+    <GameMenu
+      store={store}
+      onImportStore={onImportStore}
+      settings={settings}
+      onUpdateSettings={onUpdateSettings}
+      runControls={{
+        onRestart: restart,
+        restartDisabled: gameover?.outcome === 'victory',
+        onEndRun: gameover ? endRun : onAbandon,
+        isOver: !!gameover,
+      }}
+    />
+  );
+}
 
 /**
  * The shell that switches between the two loops (see docs/DESIGN.md, "The contract"):
@@ -67,7 +107,6 @@ export function App() {
 
   return (
     <>
-      <GameMenu store={store} onImportStore={handleImportStore} settings={settings} onUpdateSettings={persistSettings} />
       {view.screen === 'run' ? (
         <GameProvider
           config={view.config}
@@ -77,16 +116,26 @@ export function App() {
           }}
           onRestart={recordResult}
         >
+          <RunGameMenu
+            store={store}
+            onImportStore={handleImportStore}
+            settings={settings}
+            onUpdateSettings={persistSettings}
+            onAbandon={() => setView({ screen: 'menu' })}
+          />
           <Board confirmEndTurn={settings.confirmEndTurn} />
         </GameProvider>
       ) : (
-        <MetaMenu
-          runHistory={store.runHistory}
-          decks={store.decks}
-          onLaunch={(config) => setView({ screen: 'run', config })}
-          onSaveDeck={saveDeck}
-          onDeleteDeck={deleteDeck}
-        />
+        <>
+          <GameMenu store={store} onImportStore={handleImportStore} settings={settings} onUpdateSettings={persistSettings} />
+          <MetaMenu
+            runHistory={store.runHistory}
+            decks={store.decks}
+            onLaunch={(config) => setView({ screen: 'run', config })}
+            onSaveDeck={saveDeck}
+            onDeleteDeck={deleteDeck}
+          />
+        </>
       )}
     </>
   );

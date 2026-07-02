@@ -29,7 +29,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
-- **In-run menu extras (end run / restart run)** — `GameMenu.tsx`'s popup is currently identical on the meta screen and the run screen; the run screen should eventually get extra items (end run, restart run) alongside save/config/codex `[?]` `[phase: 2]`
 - **Populate the codex submenu** — `GameMenu.tsx`'s Codex item currently opens an empty placeholder window; it should surface reference info (cards/buildings/missions glossary, rules reminders — details TBD) `[?]` `[phase: 2]`
 - **Theme picker** — a Config-submenu setting to pick between color themes (e.g. light/dark). Bigger than it looks: none of the 8 `*.module.css` files use CSS custom properties for color today, so this needs a retrofit onto CSS variables *before* a picker can just swap a palette — most of the cost is the retrofit, not the picker UI. `[size: L]` `[?]` `[phase: 2]`
 - **UI size setting** — a Config-submenu setting to scale the whole UI up/down. Tried via `document.documentElement.style.zoom` (see *Rejected* below) and reverted: it broke `Board.tsx`'s run-screen layout (building slots sliding under the resource banner, background color bleeding past the bottom hand bar) even after fixing the drag-and-drop math. CSS `zoom` on the root doesn't rescale the viewport pointer events are reported against, and `Board.tsx` leans on `position: fixed` + raw `clientX`/`clientY`/`getBoundingClientRect()` math throughout, so a page-level zoom fights that layout in more places than just the drag clones. A working version likely needs either a `transform: scale()` container with its own compensated coordinate math (not just for drag, for every fixed-position child too), or a proper rem/CSS-custom-property based scale that avoids the raw-pixel measurement problem entirely — worth scoping carefully before trying again. `[size: L]` `[?]` `[phase: 2]`
@@ -76,6 +75,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **In-run menu extras (end run / restart run)** — `GameMenu.tsx`'s popup gained an
+  optional `runControls` prop, adding Restart Run / End Run items after save/config/codex.
+  Supplied only on the run screen, via a new `RunGameMenu` wrapper in `App.tsx` rendered
+  inside `GameProvider` so it can read `useGame()`. While the run is still live both
+  items are confirm-gated via the same `PendingAction` mechanism as Save's Load/Clear —
+  Restart reuses `GameContext.tsx`'s existing `restart` unchanged (it already discards a
+  live run without recording anything, since `finishedResult` returns `undefined` when
+  the run isn't over); End Run abandons the run and returns to the meta menu with no
+  `RunResult` recorded, mirroring `handleImportStore`'s silent-discard precedent for a
+  save Load/Clear mid-run. Once the run is over, both act immediately with no confirm
+  step — the result is already fixed regardless of which is pressed (Restart records it
+  via `restart`, End Run via `endRun`), matching the gameover overlay's own Restart/End
+  Run buttons, which have no confirm step either; Restart is also disabled on a won run,
+  mirroring the overlay's existing "Disable restart after a won run" rule below.
 - **Populate the config submenu (partial)** — `GameMenu.tsx`'s Config item gained a
   "confirm before ending a round" toggle, backed by a new `src/meta/settings.ts`
   (`Settings`, `loadSettings`/`saveSettings`, its own `civcardgame:settings`
@@ -116,11 +129,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   read as "you must save manually."
 - **Game menu** — `src/components/GameMenu.tsx` is the shell's global-action surface
   called for by `docs/DESIGN.md`'s Phase 2 description: a top-right burger button,
-  mounted once by `App.tsx` alongside either `MetaMenu` or the run's `Board`, so it
+  mounted by `App.tsx` alongside either `MetaMenu` or the run's `Board`, so it
   overlays both loops. Opens a central popup listing the decided items (save, config,
   codex); each opens its own submenu window stacked on top. Config/codex are still
   empty placeholders; save is now populated (see *Save export/import/clear* above). The
-  in-run screen gaining extra items (end run, restart run) is tracked separately above.
+  in-run screen gaining extra items (end run, restart run) is now also shipped — see
+  *In-run menu extras (end run / restart run)* above.
 - **Deck construction** (Phase 2 build plan step 7) — `src/meta/DeckEditor.tsx` is the
   new deck editor: name/description fields, a card picker (reuses `Collection.tsx`'s
   `CardTile`), and the in-progress deck as removable chips. `Decks.tsx` is now a single

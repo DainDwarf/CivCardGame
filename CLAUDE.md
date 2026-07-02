@@ -122,9 +122,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `PlayerStore` (`runHistory` + `decks`, the latter seeded from `content/decks.ts`'s
   `DEFAULT_DECKS` on a fresh profile) to `localStorage`.
 - `src/components/GameMenu.tsx` — the global-action surface (docs/DESIGN.md's Phase 2
-  "game menu (save, config, codex)"): a top-right burger button, mounted once by
-  `App.tsx` so it overlays both the meta menu and the run screen. Opens a central popup
-  listing the decided items; each opens its own submenu window stacked on top. The Save
+  "game menu (save, config, codex)"): a top-right burger button. Opens a central popup
+  listing the items; each opens its own submenu window stacked on top. The Save
   submenu opens with a callout that progress autosaves and this submenu is only for
   backups, then export downloads the `PlayerStore` as a base64 `.civsave` file (`meta/store.ts`'s
   `exportSave`); Load reads one back (`importSave`) and Clear resets to `emptyStore()`.
@@ -136,11 +135,21 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   they're not game progress, so Save's Load/Clear never touches them): currently just
   a "confirm before ending a round" toggle that folds into `Board.tsx`'s existing
   end-round warning dialog. A UI-size setting was tried (`document.documentElement.style.zoom`)
-  and reverted — see docs/TODO.md. Codex is still an empty placeholder.
+  and reverted — see docs/TODO.md. Codex is still an empty placeholder. On the run
+  screen only, an optional `runControls` prop adds Restart Run / End Run items. While
+  the run is still live these are `PendingAction`-gated like Save's Load/Clear: Restart
+  discards the run and starts a fresh one (`GameContext.tsx`'s `restart`, which already
+  no-ops the recording half since the run was never finished); End Run abandons it and
+  returns to the meta menu without recording a `RunResult`, mirroring
+  `handleImportStore`'s silent-discard precedent. Once the run is over, both act
+  immediately with no confirm step (the result is already fixed either way — Restart
+  records it via `restart`, End Run via `endRun`, same as the gameover overlay's own
+  buttons), and Restart is disabled on a won run, mirroring the overlay's own rule.
 - `src/app/App.tsx` — the shell that switches between `<MetaMenu>` (which calls
-  `onLaunch` with an assembled `RunConfig`) and `<GameProvider>` + `<Board>`, with
-  `<GameMenu>` mounted alongside either. On `onRunEnd`, it stores the `RunResult` and
-  switches back to the menu.
+  `onLaunch` with an assembled `RunConfig`) and `<GameProvider>` + `<Board>`. On the
+  meta screen it mounts `<GameMenu>` directly; on the run screen a small `RunGameMenu`
+  wrapper renders inside `<GameProvider>` so it can pull `runControls` off `useGame()`.
+  On `onRunEnd`, it stores the `RunResult` and switches back to the menu.
 - `src/main.tsx` — mounts `<App>`.
 
 See `src/contract.ts` for the `RunConfig`/`RunResult` types, `buildRunConfig` (now

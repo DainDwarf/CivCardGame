@@ -80,6 +80,15 @@
   background: #e4e2dc;
 }
 
+.itemBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.itemBtn:disabled:hover {
+  background: #f0efeb;
+}
+
 .itemIcon {
   font-size: 1.15rem;
 }
