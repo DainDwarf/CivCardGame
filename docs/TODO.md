@@ -38,7 +38,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Cards & content (`src/content/`)
 
-- **Disasters** — a **mission modifier**: some missions inject disaster/event cards (negative effects) into the player's *run* deck at mission start, as pressure. Crucially, this only affects the run deck the mission is launched with — it never mutates the saved meta deck. Military helps prevent/mitigate them (details TBD). Contract-relevant: the `RunConfig`'s run deck = the player's meta deck + the mission's injected cards, so injection likely happens as the `RunConfig` is assembled. `[?]` `[phase: 2]`
+- **Disasters — expand** — the `event` card mechanic shipped (see *Done / shipped*); grow it out with more disaster types beyond the Barbarian and missions that inject them (details TBD) `[?]` `[phase: 4]`
 - New mission type: "Metropolis" `[?]` `[phase: 4]`
 - New mission: "Build the Wonder" `[?]` `[phase: 4]`
 - Culture-based missions (depend on the Culture resource) `[?]` `[phase: 4]`
@@ -75,6 +75,25 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Disasters — `event` card type** — a new `CardKind`, `event` (`content/cards.ts`),
+  for mission-injected disaster cards. Events never appear in the collection or deck
+  editor and are never player-playable (`unplayableReason` returns `{ kind: 'event' }`,
+  which `playCard` already funnels through); `deckBuilder.addCard` also rejects them. An
+  event left in hand at end of turn auto-resolves its effect and is destroyed to the
+  `removed` pile (never recycled to discard) — `resolveHandEvents` in `rules/upkeep.ts`,
+  called from `endTurn` (with a second win/loss check after) and folded into
+  `projectedDelta` so the impact shows in the resource bar's projected delta + collapse
+  warning while an event sits in hand. New `effect.loss` (`rules/effects.ts`) removes
+  resources — the mirror of `gain`, via `subtractResources`, no clamp so a resource can
+  go negative into `coreCollapse`. First event: `barbarian`, drains 4 Military. The
+  `barbarian_tide` mission was reworked (full replace of the old 3-Wonders/Threat design):
+  its `setup` seeds 4 barbarians into the run deck (shuffled deterministically from the
+  run RNG; mutates the copied `G.deck`, never the saved meta deck) and it's won by
+  beating all 4 with Military ≥ 0 — so a fatal 4th blow is a defeat, not a last-stand win.
+  UI (`Board.tsx`): a red "Event" banner/`.event` card variant, a `-4⚔️` effect line, and
+  a "resolves at end of round" note in the shared conditions band; event cards are *not*
+  dimmed (they're a threat to focus on, not tune out). Further expansion is deferred —
+  see *Disasters — expand* above `[phase: 4]`.
 - **In-run menu extras (end run / restart run)** — `GameMenu.tsx`'s popup gained an
   optional `runControls` prop, adding Restart Run / End Run items after save/config/codex.
   Supplied only on the run screen, via a new `RunGameMenu` wrapper in `App.tsx` rendered

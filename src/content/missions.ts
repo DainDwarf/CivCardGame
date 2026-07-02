@@ -1,5 +1,8 @@
 import type { GameState } from '../rules/state';
-import { countTag } from '../rules';
+import { shuffleFromState } from '../rules';
+
+/** Number of Barbarian event cards seeded into the deck by Barbarian Tide. */
+const BARBARIANS = 4;
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -61,21 +64,22 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'barbarian_tide',
     name: 'Barbarian Tide',
     description:
-      'Build 3 Wonders before the Threat drains your Military. Threat grows every round — each round it consumes that much Military from your stockpile.',
+      `Four waves of Barbarians are hidden in your deck. Each one you draw strikes at the end of the round — draining 4 Military — then is gone. Build up your Military and survive all ${BARBARIANS} to win; let it fall below zero and your civilization is overrun.`,
     setup: (G) => {
-      G.vars.threat = 0;
+      for (let i = 0; i < BARBARIANS; i++) G.deck.push('barbarian');
+      // Shuffle the barbarians into the deck deterministically from the run's RNG stream.
+      const { result, rngState } = shuffleFromState(G.deck, G.rngState);
+      G.deck = result;
+      G.rngState = rngState;
       G.resources.military += 4; // capital garrison — layer on top of the starting baseline
     },
-    onUpkeep: (G) => {
-      G.vars.threat += 2;
-      G.resources.military -= G.vars.threat;
-    },
-    objective: (G) => countTag(G.tableau, 'wonder') >= 3,
-    // No mission-specific failure: the universal core resource floor handles defeat here.
+    objective: (G) =>
+      G.removed.filter((id) => id === 'barbarian').length >= BARBARIANS && G.resources.military >= 0,
+    // No mission-specific failure: the universal core resource floor handles defeat (Military < 0).
     failure: () => false,
     progress: (G) =>
-      `Wonders ${countTag(G.tableau, 'wonder')}/3 · Military ${G.resources.military} · Threat ${G.vars.threat ?? 0}`,
-    victoryHint: 'Construct 3 Wonders before the barbarians overwhelm you.',
-    failureHint: null,
+      `Barbarians beaten ${G.removed.filter((id) => id === 'barbarian').length}/${BARBARIANS} · Military ${G.resources.military}`,
+    victoryHint: `Survive all ${BARBARIANS} Barbarian waves without your Military falling below zero.`,
+    failureHint: 'Your Military falling below zero — the barbarians overrun you.',
   },
 };

@@ -1,4 +1,4 @@
-import { addResources, type Resources } from './resources';
+import { addResources, subtractResources, type Resources } from './resources';
 import { drawCard } from './deck';
 import { addBuilding } from './population';
 import type { GameState } from './state';
@@ -7,6 +7,8 @@ import type { GameState } from './state';
 export interface CardEffect {
   /** Resources gained immediately. */
   gain?: Partial<Resources>;
+  /** Resources removed immediately (e.g. a Barbarian event draining Military). No clamp — may go negative. */
+  loss?: Partial<Resources>;
   /** Cards drawn immediately. */
   draw?: number;
   /** Population gained immediately (e.g. Settlers). */
@@ -28,6 +30,7 @@ export interface CardEffect {
 export function applyEffect(G: GameState, effect?: CardEffect): void {
   if (!effect) return;
   if (effect.gain) addResources(G.resources, effect.gain);
+  if (effect.loss) subtractResources(G.resources, effect.loss);
   if (effect.draw) {
     for (let i = 0; i < effect.draw; i++) drawCard(G);
   }

@@ -825,13 +825,26 @@
   background: #c9772f;
 }
 
-/* Colour the title band by card kind (blue = permanent building, orange = action). */
+.bannerEvent {
+  background: #b23b3b;
+}
+
+/* Event cards are a threat — a red border sets them apart from the player's own cards. */
+.event {
+  border-color: #b23b3b;
+}
+
+/* Colour the title band by card kind (blue = permanent building, orange = action, red = event). */
 .permanent .cardTop {
   background: #e7f0fb;
 }
 
 .action .cardTop {
   background: #fbeede;
+}
+
+.event .cardTop {
+  background: #fbe3e3;
 }
 
 .cardName {
@@ -900,6 +913,10 @@
   background: #cc9f6e;
 }
 
+.event .cardConditions {
+  background: #cc7a7a;
+}
+
 .cardText {
   display: flex;
   align-items: center;
@@ -921,6 +938,10 @@
 
 .action .cardText {
   background: #fbeede;
+}
+
+.event .cardText {
+  background: #fbe3e3;
 }
 
 /* The card whose discard cost we're paying. */

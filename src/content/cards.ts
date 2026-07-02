@@ -1,7 +1,7 @@
 import type { Resources } from '../rules/resources';
 import type { CardEffect } from '../rules/effects';
 
-export type CardKind = 'permanent' | 'recurring';
+export type CardKind = 'permanent' | 'recurring' | 'event';
 
 export interface CardDef {
   id: string;
@@ -10,6 +10,8 @@ export interface CardDef {
    * Disposal after play — about the *card*, not what it does:
    * - `permanent`: the card is consumed and goes to the **removed** pile (gone from the deck).
    * - `recurring`: the card recycles to the **discard** pile.
+   * - `event`: not player-playable and never in the deck editor/collection — missions inject it.
+   *   An event left in hand at end of turn auto-resolves its effect, then goes to **removed**.
    * A recurring card may still construct a permanent building (the building stays in play;
    * the card recycles).
    */
@@ -66,4 +68,7 @@ export const CARDS: Record<string, CardDef> = {
 
   // --- Territory management: reclaim a slot by demolishing a building. ---
   destroy: { id: 'destroy', name: 'Destroy', kind: 'recurring', cost: { production: 1 }, effect: { destroy: true } },
+
+  // --- Event cards: mission-injected, not player-playable. Auto-resolve at end of turn, then removed. ---
+  barbarian: { id: 'barbarian', name: 'Barbarian', kind: 'event', cost: {}, effect: { loss: { military: 4 } } },
 };

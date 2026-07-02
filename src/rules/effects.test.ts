@@ -38,6 +38,13 @@ describe('applyEffect', () => {
     expect(G.territory).toBe(before + 1);
   });
 
+  it('removes resources (loss) and lets them go negative', () => {
+    const G = blankState('barbarian_tide');
+    G.resources.military = 3;
+    applyEffect(G, { loss: { military: 4 } });
+    expect(G.resources.military).toBe(-1);
+  });
+
   it('does nothing for an undefined effect', () => {
     const G = blankState('enlightenment');
     applyEffect(G, undefined);

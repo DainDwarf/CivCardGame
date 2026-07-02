@@ -64,7 +64,8 @@ export function CardTile({ card }: { card: CardDef }) {
  * `CARDS` catalogue; deck construction (writing to a persisted collection) is step 7.
  */
 export function Collection() {
-  const cards = Object.values(CARDS);
+  // Event cards are mission-injected and never part of the player's collection.
+  const cards = Object.values(CARDS).filter((c) => c.kind !== 'event');
   const buildings = cards.filter((c) => c.kind === 'permanent');
   const actions = cards.filter((c) => c.kind === 'recurring');
 

@@ -1,5 +1,5 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, coreCollapse, drawUpTo, emptyResources, type CollapseReason, type GameState } from '../rules';
+import { applyUpkeep, coreCollapse, drawUpTo, emptyResources, resolveHandEvents, type CollapseReason, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
 import type { RunConfig, RunResult } from '../contract';
 
@@ -55,9 +55,16 @@ export function endTurn(state: RunState): RunState {
   // Check for collapse/victory before clearing the hand so that the hand is visible for inspection.
   const afterUpkeep = checkEndIf({ ...state, G });
   if (afterUpkeep.gameover) return afterUpkeep;
+  // Events left in hand auto-resolve (applying their effect) and are destroyed to the removed
+  // pile; the rest of the hand recycles to discard.
+  resolveHandEvents(G);
   G.discard.push(...G.hand);
   G.hand = [];
-  return beginTurn(afterUpkeep);
+  // An event may have tripped collapse (a resource going negative) or the objective (e.g. the
+  // last barbarian beaten), so re-check before the next turn begins.
+  const afterEvents = checkEndIf({ ...afterUpkeep, G });
+  if (afterEvents.gameover) return afterEvents;
+  return beginTurn(afterEvents);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

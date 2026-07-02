@@ -42,6 +42,7 @@ const CARD_ART: Record<string, string> = {
   conquest: '🗡️',
   develop: '🏗️',
   destroy: '💥',
+  barbarian: '🪓',
 };
 const artFor = (id: string) => CARD_ART[id] ?? '🏛️';
 
@@ -59,6 +60,7 @@ function describeCost(c: CardDef): string {
  *  reserved population, and discard cost — shown in their own banded section on the card face. */
 function describeConditions(c: CardDef): string {
   const parts: string[] = [];
+  if (c.kind === 'event') parts.push('resolves at end of round');
   if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
   if (c.popReserve) parts.push(`reserve ${c.popReserve}🧍`);
   if (c.discardCost) parts.push(`discard ${c.discardCost}`);
@@ -94,6 +96,14 @@ function describeCard(c: CardDef): string {
         .join(' '),
     );
   }
+  if (e?.loss) {
+    parts.push(
+      Object.entries(e.loss)
+        .filter(([, v]) => v)
+        .map(([k, v]) => `-${v}${COST_ICON[k as keyof Resources]}`)
+        .join(' '),
+    );
+  }
   if (e?.draw) parts.push(`draw ${e.draw}`);
   if (e?.population) parts.push(`+${e.population} 🧍`);
   if (e?.territory) parts.push(`+${e.territory} territory`);
@@ -113,9 +123,17 @@ function describeCard(c: CardDef): string {
 /** The card's type banner — label + colour variant, shown under the name. */
 function cardBanner(c: CardDef): { label: string; variant: string } {
   const built = c.effect?.build ? BUILDINGS[c.effect.build] : undefined;
+  if (c.kind === 'event') return { label: 'Event', variant: styles.bannerEvent };
   if (built?.tags?.includes('wonder')) return { label: 'Wonder', variant: styles.bannerWonder };
   if (c.kind === 'recurring') return { label: 'Action', variant: styles.bannerAction };
   return { label: 'Building', variant: styles.bannerBuilding };
+}
+
+/** The colour variant a card face uses, by kind (event = danger, recurring = action, else building). */
+function kindClass(kind: CardDef['kind']): string {
+  if (kind === 'event') return styles.event;
+  if (kind === 'recurring') return styles.action;
+  return styles.permanent;
 }
 
 /** The visual face of a card — shared by hand cards and the play-animation ghost. */
@@ -554,6 +572,8 @@ function whyUnplayable(card: CardDef, G: GameState): string | null {
       return 'territory full';
     case 'noBuildingsToDestroy':
       return 'no buildings to demolish';
+    case 'event':
+      return 'resolves at end of round';
   }
 }
 
@@ -1256,12 +1276,14 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
                 const isDragging = drag?.active === true && drag.key === card.key;
                 const className = [
                   styles.card,
-                  c.kind === 'recurring' ? styles.action : styles.permanent,
+                  kindClass(c.kind),
                   card.isNew ? styles.dealIn : '',
                   isPending || isPendingDestroy ? styles.pending : '',
                   isSacrifice ? styles.sacrifice : '',
                   isDragging ? styles.dragging : '',
-                  !affordable && !pending && !pendingDestroy ? styles.unaffordable : '',
+                  // Events are unplayable but must NOT be dimmed — they're a threat the
+                  // player should focus on, not tune out. Their red styling stands in.
+                  !affordable && c.kind !== 'event' && !pending && !pendingDestroy ? styles.unaffordable : '',
                   shake?.key === card.key ? styles.shake : '',
                 ]
                   .filter(Boolean)
@@ -1347,7 +1369,7 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
               key={g.id}
               className={[
                 styles.ghostCard,
-                CARDS[g.cardId].kind === 'recurring' ? styles.action : styles.permanent,
+                kindClass(CARDS[g.cardId].kind),
                 g.anim === 'drop' ? styles.ghostDrop : styles.ghostPlay,
               ].join(' ')}
               style={{ left: g.rect.left, top: g.rect.top, width: g.rect.width, height: g.rect.height }}
@@ -1376,9 +1398,7 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
           </div>
           <div className={styles.dragLayer} aria-hidden="true">
             <div
-              className={`${styles.dragCard} ${
-                CARDS[drag.cardId].kind === 'recurring' ? styles.action : styles.permanent
-              }`}
+              className={`${styles.dragCard} ${kindClass(CARDS[drag.cardId].kind)}`}
               style={{ left: drag.x - drag.grabX, top: drag.y - drag.grabY, width: drag.w, height: drag.h }}
             >
               <CardFace card={CARDS[drag.cardId]} />
@@ -1440,9 +1460,7 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
                 {groupCards(pileView.cards).map((g) => (
                   <div key={g.cardId} className={styles.pileGridItem}>
                     <div
-                      className={`${styles.card} ${styles.staticCard} ${
-                        CARDS[g.cardId].kind === 'recurring' ? styles.action : styles.permanent
-                      }`}
+                      className={`${styles.card} ${styles.staticCard} ${kindClass(CARDS[g.cardId].kind)}`}
                       onClick={(e) => { e.stopPropagation(); setZoom(g.cardId); }}
                     >
                       <CardFace card={CARDS[g.cardId]} />
@@ -1462,9 +1480,7 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
         <div className={styles.zoomBackdrop} onClick={() => setZoom(null)} role="dialog" aria-modal="true">
           <div className={styles.zoomWrap}>
             <div
-              className={`${styles.card} ${styles.zoomCard} ${
-                CARDS[zoom].kind === 'recurring' ? styles.action : styles.permanent
-              }`}
+              className={`${styles.card} ${styles.zoomCard} ${kindClass(CARDS[zoom].kind)}`}
             >
               <CardFace card={CARDS[zoom]} />
             </div>

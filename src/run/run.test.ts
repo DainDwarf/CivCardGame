@@ -146,14 +146,18 @@ describe('run loop (headless integration)', () => {
     client.stop();
   });
 
-  it('revolt is a universal defeat when military goes negative (barbarian_tide)', () => {
-    // military 4, threat grows by 2/round: upkeep R1 → military 2, upkeep R2 → military -2
-    // food 5, pop eats 2/round: after 2 rounds food is still 1 (positive), so revolt wins the check
+  it('barbarian_tide seeds four barbarian events into the run, and they cannot be played', () => {
     const client = start('barbarian_tide');
-    client.events.endTurn();
-    client.events.endTurn();
-    const { ctx } = client.getState();
-    expect(ctx.gameover).toMatchObject({ outcome: 'defeat', reason: 'revolt' });
+    const { G } = client.getState();
+    // All four barbarians are in play from the start — split across deck and the opening hand.
+    expect([...G.deck, ...G.hand].filter((id) => id === 'barbarian').length).toBe(4);
+    // If one was dealt into the opening hand, playing it is rejected (events only auto-resolve).
+    const idx = G.hand.indexOf('barbarian');
+    if (idx !== -1) {
+      const before = client.getState().G.hand;
+      client.moves.playCard(idx);
+      expect(client.getState().G.hand).toEqual(before); // unchanged — the move was invalid
+    }
     client.stop();
   });
 });

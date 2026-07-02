@@ -63,11 +63,16 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   component.**
 - `src/content/` — typed game data, separate from logic. **Cards and buildings are
   distinct:** `buildings.ts` (`BUILDINGS` — building entities with `produces`/`defense`/
-  `workers`/`tags`) holds what lives in the tableau; `cards.ts` (`CARDS`, each `permanent`
-  or `recurring`) holds what lives in the deck. A card *constructs* a building via
+  `workers`/`tags`) holds what lives in the tableau; `cards.ts` (`CARDS`, each `permanent`,
+  `recurring`, or `event`) holds what lives in the deck. A card *constructs* a building via
   `effect.build` — the building enters `tableau`, the card is then filed by `kind`
   (`permanent` → `removed` pile, `recurring` → `discard`). So the same building can come
   from different cards, and a `BuildingInstance` references a `buildingId`, never a card.
+  A third kind, `event`, is a **disaster** card (docs/TODO.md): mission-injected only —
+  never shown in the collection or deck editor and never player-playable (`unplayableReason`
+  rejects it, so `playCard` does too). An event left in hand at end of turn auto-resolves
+  its `effect` and is destroyed to `removed` (see `rules/upkeep.ts`'s `resolveHandEvents`);
+  `effect.loss` removes resources (the mirror of `gain`).
   Also `decks.ts` (`DeckDef` + `DEFAULT_DECKS` — seed data for a new player's deck list,
   each a `CardId[]` draw order; every deck is player-editable, there's no separate
   read-only "built-in" registry — see `meta/store.ts`), `boards.ts` (`BOARDS` —
@@ -87,8 +92,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `drawCard` via `rng.ts`'s `shuffleFromState`), not preserved deck order.
 - `src/run/engine.ts` — the turn state machine. `RunState = { G, gameover }`.
   `createRun(config: RunConfig)` builds the initial state and runs the first
-  `beginTurn`. `endTurn(state)` runs `applyUpkeep`, checks win/loss, then starts the
-  next turn. `applyMove(state, moveFn, ...args)` clones `G` with `structuredClone`,
+  `beginTurn`. `endTurn(state)` runs `applyUpkeep`, checks win/loss, resolves any `event`
+  cards still in hand (`resolveHandEvents` — apply effect, exile to `removed`), re-checks
+  win/loss, then starts the next turn. `applyMove(state, moveFn, ...args)` clones `G` with `structuredClone`,
   runs the move, and checks win/loss. All three return a new `RunState` — the caller
   (React context) owns the mutable reference. `toRunResult(G, gameover)` promotes a
   finished run into the `RunResult` handed back to the meta loop.

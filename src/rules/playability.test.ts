@@ -51,6 +51,13 @@ describe('unplayableReason', () => {
     expect(unplayableReason(G, card)).toEqual({ kind: 'noBuildingsToDestroy' });
   });
 
+  it('never lets an event card be played — it auto-resolves at end of turn instead', () => {
+    const G = blankState('barbarian_tide');
+    // Affordable and otherwise unconstrained, but the event gate takes precedence.
+    const card: CardDef = { ...baseCard, kind: 'event' };
+    expect(unplayableReason(G, card)).toEqual({ kind: 'event' });
+  });
+
   it('checks gates in priority order (cost before population)', () => {
     const G = blankState('enlightenment');
     const card: CardDef = { ...baseCard, cost: { food: 5 }, popReserve: 5 };

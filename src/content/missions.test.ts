@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
-import { applyUpkeep, blankState, coreCollapse, type BuildingInstance } from '../rules';
-
-let nextId = 1;
-const b = (buildingId: string, workers = 0): BuildingInstance => ({ id: nextId++, buildingId, workers });
+import { blankState, coreCollapse } from '../rules';
 
 describe('mission: enlightenment', () => {
   const m = MISSIONS.enlightenment;
@@ -44,28 +41,33 @@ describe('mission: long_winter', () => {
 describe('mission: barbarian_tide', () => {
   const m = MISSIONS.barbarian_tide;
 
-  it('objective is met with three wonders (staffed or not)', () => {
+  it('setup seeds four barbarian events into the deck and adds a garrison', () => {
     const G = blankState('barbarian_tide');
-    G.tableau = [b('pyramids'), b('great_library'), b('colossus')];
-    expect(m.objective(G)).toBe(true);
+    const before = G.resources.military;
+    m.setup!(G);
+    expect(G.deck.filter((id) => id === 'barbarian').length).toBe(4);
+    expect(G.resources.military).toBe(before + 4);
   });
 
-  it('threat depletes military from an undefended city (revolt is the universal floor, not the mission)', () => {
+  it('has no per-round upkeep — the barbarian cards themselves are the threat', () => {
+    expect(m.onUpkeep).toBeUndefined();
+  });
+
+  it('objective needs all four barbarians beaten with military still standing', () => {
     const G = blankState('barbarian_tide');
-    m.setup!(G); // military = 4, threat = 0
-    // Round 1: military 4 + 0 - 2 = 2; Round 2: military 2 + 0 - 4 = -2
-    applyUpkeep(G, m.onUpkeep);
-    applyUpkeep(G, m.onUpkeep);
+    G.removed = ['barbarian', 'barbarian', 'barbarian'];
+    G.resources.military = 5;
+    expect(m.objective(G)).toBe(false); // only three beaten
+    G.removed.push('barbarian');
+    expect(m.objective(G)).toBe(true); // four beaten, military >= 0
+  });
+
+  it('beating the fourth barbarian by going military-negative is a defeat, not a win', () => {
+    const G = blankState('barbarian_tide');
+    G.removed = ['barbarian', 'barbarian', 'barbarian', 'barbarian'];
+    G.resources.military = -1;
+    expect(m.objective(G)).toBe(false); // the fatal blow doesn't count as survival
     expect(m.failure(G)).toBe(false); // the mission owns no failure
     expect(coreCollapse(G.resources)).toBe('revolt'); // defeat comes from the universal core floor
-  });
-
-  it('walls and a staffed barracks keep military positive through four rounds of rising threat', () => {
-    const G = blankState('barbarian_tide');
-    m.setup!(G); // military = 4
-    G.tableau = [b('walls', 0), b('barracks', 1)]; // 3 + 2 = 5 military/round
-    // Round 1: 4+5-2=7, Round 2: 7+5-4=8, Round 3: 8+5-6=7, Round 4: 7+5-8=4
-    for (let i = 0; i < 4; i++) applyUpkeep(G, m.onUpkeep);
-    expect(coreCollapse(G.resources)).toBeNull(); // military = 4 >= 0, no collapse
   });
 });

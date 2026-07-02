@@ -14,6 +14,8 @@ import type { DeckDef } from '../content/decks';
  *  returns a new array rather than mutating a draft. Does not mutate `deck`. */
 export function addCard(deck: string[], cardId: string): string[] | 'invalid' {
   if (!(cardId in CARDS)) return 'invalid';
+  // Event cards are mission-injected only — never player-editable into a deck.
+  if (CARDS[cardId].kind === 'event') return 'invalid';
   return [...deck, cardId];
 }
 
