@@ -74,7 +74,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   the mission's `setup` then layers its own modifiers on top. **Never use `Math.random`
   in game logic** — `config.deck` is already shuffled deterministically from
   `config.seed` (see `src/contract.ts`/`src/rules/rng.ts`); the discard-pile reshuffle
-  is still deck order, not reseeded.
+  also draws from the seeded RNG (`GameState.rngState`, advanced by `src/rules/deck.ts`'s
+  `drawCard` via `rng.ts`'s `shuffleFromState`), not preserved deck order.
 - `src/run/engine.ts` — the turn state machine. `RunState = { G, gameover }`.
   `createRun(config: RunConfig)` builds the initial state and runs the first
   `beginTurn`. `endTurn(state)` runs `applyUpkeep`, checks win/loss, then starts the

@@ -52,9 +52,7 @@ export interface RunResult {
  * Assemble a `RunConfig` from the player's meta-loop selection and a run seed. The
  * saved deck (looked up by `deckId`) is shuffled deterministically from `seed` into
  * `RunConfig.deck` — the saved deck in `DECKS` is never mutated, only copied and
- * reordered. This shuffle isn't wired into `createRun` yet (that pipeline swap is
- * Phase 2 step 4); for now it's the seam that replaces today's deterministic deck
- * order once a run is actually assembled from a `RunConfig`.
+ * reordered.
  */
 export function buildRunConfig(selection: RunSelection, seed: string): RunConfig {
   const deck = DECKS[selection.deckId].cards;
