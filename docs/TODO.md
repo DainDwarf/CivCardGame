@@ -29,10 +29,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
-- **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]`
-- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]`
-- **Save handling: import/export/clear** — `PlayerStore` (`meta/store.ts`) has no user-facing way to export/import a save file or clear it; worth a settings-style affordance once there's enough in the store to be worth backing up `[?]`
-- **Deck editor UI rework** — `DeckEditor.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain grid card picker, chip list, no search/filter/sort; give it a real visual pass `[?]`
+- **Game menu** — `docs/DESIGN.md`'s Phase 2 description calls for a game menu (save, config, codex) as the shell's global-action surface, but it never became a numbered build-plan step and doesn't exist in `src/`; `App.tsx` only switches between `MetaMenu` and a run today `[?]` `[phase: 2]`
+- **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]` `[phase: 2]`
+- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 2]`
+- **Save handling: import/export/clear** — `PlayerStore` (`meta/store.ts`) has no user-facing way to export/import a save file or clear it; worth a settings-style affordance once there's enough in the store to be worth backing up `[?]` `[phase: 2]`
+- **Deck editor UI rework** — `DeckEditor.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain grid card picker, chip list, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
 
 ## Cards & content (`src/content/`)
 
