@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent } from 'react';
 import { version } from '../../package.json';
 import { emptyStore, exportSave, importSave, type PlayerStore } from '../meta/store';
 import type { Settings } from '../meta/settings';
+import { Codex } from './Codex';
 import styles from './GameMenu.module.css';
 
 /** A destructive action pending the player's confirmation (see `PendingAction` usage below). */
@@ -14,7 +15,8 @@ interface MenuItem {
 }
 
 /** The decided game-menu items (docs/DESIGN.md, Phase 2: "game menu (save, config,
- *  codex)"). Codex is still an empty placeholder submenu; Save and Config are populated. */
+ *  codex)"). All three submenus are populated: Save (backups), Config (device
+ *  preferences), Codex (the rules reference — see `Codex.tsx`). */
 const MENU_ITEMS: MenuItem[] = [
   { id: 'save', icon: '💾', label: 'Save' },
   { id: 'config', icon: '⚙️', label: 'Config' },
@@ -318,6 +320,8 @@ export function GameMenu({
                       </button>
                     </div>
                   </div>
+                ) : submenu.id === 'codex' ? (
+                  <Codex />
                 ) : (
                   <p className={styles.submenuEmpty}>Nothing here yet.</p>
                 )}

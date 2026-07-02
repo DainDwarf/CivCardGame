@@ -1,0 +1,66 @@
+import type { Resources } from '../rules/resources';
+
+/**
+ * Reference text for the Codex submenu (`components/Codex.tsx`) — the in-game "how the
+ * game works" glossary, reachable from both the meta menu and mid-run. This holds only
+ * the *list-shaped* pages (the core/strategic resource tables and the keyword glossary)
+ * as typed data; the narrative pages (card kinds, staffing, turn structure) are authored
+ * as prose directly in the component. It's UI reference text, not game logic — there's
+ * precedent for such strings living in `content/` (missions' `victoryHint`/`failureHint`).
+ *
+ * Where a rule has a *tuned number* in code (food-per-pop, culture band widths), describe
+ * the mechanic and let the component pull the live value from `rules/` rather than
+ * transcribing it here — a hardcoded copy would silently drift when balance is retuned.
+ */
+
+/** One core resource's reference row. `key` ties it to the shared `COST_ICON` map. */
+export interface CoreResourceEntry {
+  key: keyof Resources;
+  name: string;
+  /** What the resource is for. */
+  role: string;
+  /** The name of the collapse that triggers if it goes negative (run ends immediately). */
+  collapse: string;
+}
+
+/** The 5 core resources — spendable, and fatal to the run if any goes below zero. The
+ *  collapse names live only in prose in docs/DESIGN.md today, so they're authored here. */
+export const CODEX_CORE_RESOURCES: CoreResourceEntry[] = [
+  { key: 'food', name: 'Food', role: 'Feeds your population — each person eats food every round. More food sustains a larger population, and so more workers.', collapse: 'Famine' },
+  { key: 'production', name: 'Production', role: 'The build currency. Spent to play permanent building cards.', collapse: 'Ruin' },
+  { key: 'money', name: 'Money', role: 'The treasury. Spent on immediate, temporary actions.', collapse: 'Bankruptcy' },
+  { key: 'science', name: 'Science', role: 'Planning and card manipulation — drawing, retrieving, peeking.', collapse: 'Dark Age' },
+  { key: 'military', name: 'Military', role: 'Power projection. Defends against disasters and enables expansion.', collapse: 'Revolt' },
+];
+
+/** One strategic gauge's reference row. These have no shared icon map (they render with
+ *  their own glyphs in `Board.tsx`), so the icon is authored alongside the text. */
+export interface StrategicEntry {
+  icon: string;
+  name: string;
+  role: string;
+}
+
+/** The 3 strategic gauges — never spent; they define the shape of your civilization. */
+export const CODEX_STRATEGIC: StrategicEntry[] = [
+  { icon: '🧍', name: 'Population', role: 'Your workforce. Workers are drawn from the idle population pool to staff buildings. Food production caps how large a population you can sustain.' },
+  { icon: '🗺️', name: 'Territory', role: 'The land you control — a cap on how many buildings can occupy your tableau. Expand it, or demolish a building to free a slot.' },
+  { icon: '🎭', name: 'Culture', role: 'How much your civilization shines. Accumulates through discrete levels; each level raises your hand size, and some cards require a minimum culture level to play.' },
+];
+
+/** One keyword-glossary entry: the small print that appears on cards and building boxes. */
+export interface GlossaryEntry {
+  term: string;
+  definition: string;
+}
+
+/** The keyword glossary — mechanics named on cards without in-place explanation. Numbers
+ *  that are tuned in code are described, not quoted (e.g. the culture band widths). */
+export const CODEX_GLOSSARY: GlossaryEntry[] = [
+  { term: 'Discard cost', definition: 'An extra cost on some cards: you must discard that many other cards from your hand to play it.' },
+  { term: 'Pop reserve', definition: 'An extra cost that locks idle workers for the rest of the turn — they cannot staff a building until they are released next round.' },
+  { term: 'Culture requirement', definition: 'A gate, not a cost: the card can only be played once your culture has reached the required level. Culture is not consumed.' },
+  { term: 'Territory', definition: 'The cap on how many buildings your tableau can hold. Raise it with expansion cards (e.g. Conquest, Develop), or demolish a building to reclaim a slot.' },
+  { term: 'Staffing', definition: "A building's box toggles all-or-nothing: it fills to the building's full worker requirement, or empties completely. Only staffed buildings produce." },
+  { term: 'Removed vs. discard', definition: 'Permanents are removed from the deck once played (thinning it); recurring cards return to the discard and reshuffle into the deck when it runs dry.' },
+];

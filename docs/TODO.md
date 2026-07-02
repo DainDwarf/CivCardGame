@@ -29,12 +29,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
-- **Populate the codex submenu** — `GameMenu.tsx`'s Codex item currently opens an empty placeholder window; it should surface reference info (cards/buildings/missions glossary, rules reminders — details TBD) `[?]` `[phase: 2]`
 - **Theme picker** — a Config-submenu setting to pick between color themes (e.g. light/dark). Bigger than it looks: none of the 8 `*.module.css` files use CSS custom properties for color today, so this needs a retrofit onto CSS variables *before* a picker can just swap a palette — most of the cost is the retrofit, not the picker UI. `[size: L]` `[?]` `[phase: 2]`
 - **UI size setting** — a Config-submenu setting to scale the whole UI up/down. Tried via `document.documentElement.style.zoom` (see *Rejected* below) and reverted: it broke `Board.tsx`'s run-screen layout (building slots sliding under the resource banner, background color bleeding past the bottom hand bar) even after fixing the drag-and-drop math. CSS `zoom` on the root doesn't rescale the viewport pointer events are reported against, and `Board.tsx` leans on `position: fixed` + raw `clientX`/`clientY`/`getBoundingClientRect()` math throughout, so a page-level zoom fights that layout in more places than just the drag clones. A working version likely needs either a `transform: scale()` container with its own compensated coordinate math (not just for drag, for every fixed-position child too), or a proper rem/CSS-custom-property based scale that avoids the raw-pixel measurement problem entirely — worth scoping carefully before trying again. `[size: L]` `[?]` `[phase: 2]`
 - **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 2]`
 - **Deck editor UI rework** — `DeckEditor.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain grid card picker, chip list, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
+- **Codex menu UI rework** — `Codex.tsx` (shipped populating the codex submenu) is a first-pass layout: one long scrollable page of definition lists inside the fixed 300px submenu window, no topic navigation, no icons on most entries. Give it a real visual pass — likely a topic-list → page view (or tabs), a wider/roomier surface than the shared `.submenuPanel`, and richer per-topic presentation. `[?]` `[phase: 2]`
 
 ## Cards & content (`src/content/`)
 
@@ -75,6 +75,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Populate the codex submenu** — `GameMenu.tsx`'s Codex item now opens the rules
+  reference instead of a placeholder. `src/components/Codex.tsx` is a pure, static
+  component (no `useGame` — renders identically on the meta menu and mid-run) covering
+  five topics: resources (the 5 core with their collapse consequences + the universal
+  negative-resource loss rule, plus the 3 strategic gauges), card kinds
+  (permanent/recurring/event lifecycle), population & staffing, turn structure, and a
+  keyword glossary. It fills the gap `Collection.tsx` leaves — *how the game works*, not
+  *what cards exist*. Its list-shaped data (`CODEX_CORE_RESOURCES`/`CODEX_STRATEGIC`/
+  `CODEX_GLOSSARY`) lives in `src/content/codex.ts`; the narrative pages are authored in
+  the component. Tuned numbers are pulled live from `rules/` (`FOOD_PER_POP`,
+  `cultureStep`) rather than transcribed, so they can't drift on a rebalance. Reuses
+  `Board.tsx`'s `COST_ICON` (now exported) for the core-resource icons. It's the first
+  long submenu, so `Codex.module.css` gives it its own capped-height scroll container.
+  The secondary buildings-/missions-almanac and lore ideas were left out of scope.
 - **Disasters — `event` card type** — a new `CardKind`, `event` (`content/cards.ts`),
   for mission-injected disaster cards. Events never appear in the collection or deck
   editor and are never player-playable (`unplayableReason` returns `{ kind: 'event' }`,

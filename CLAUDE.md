@@ -141,8 +141,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   they're not game progress, so Save's Load/Clear never touches them): currently just
   a "confirm before ending a round" toggle that folds into `Board.tsx`'s existing
   end-round warning dialog. A UI-size setting was tried (`document.documentElement.style.zoom`)
-  and reverted — see docs/TODO.md. Codex is still an empty placeholder. On the run
-  screen only, an optional `runControls` prop adds Restart Run / End Run items. While
+  and reverted — see docs/TODO.md. The Codex submenu renders `Codex.tsx` — a pure,
+  static in-menu rules reference (resources, card kinds, population/staffing, turn
+  structure, keyword glossary; list-shaped data in `content/codex.ts`, narrative pages
+  authored in the component) that reads no run state, so it's identical on both screens.
+  On the run screen only, an optional `runControls` prop adds Restart Run / End Run items. While
   the run is still live these are `PendingAction`-gated like Save's Load/Clear: Restart
   discards the run and starts a fresh one (`GameContext.tsx`'s `restart`, which already
   no-ops the recording half since the run was never finished); End Run abandons it and

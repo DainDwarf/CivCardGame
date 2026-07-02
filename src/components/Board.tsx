@@ -15,7 +15,7 @@ import { MISSIONS, type MissionDef } from '../content/missions';
 import type { GameState } from '../rules';
 import styles from './Board.module.css';
 
-const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
+export const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
 
 /** Presentation-only "art" glyph shown on each card face and building box. */
 const CARD_ART: Record<string, string> = {

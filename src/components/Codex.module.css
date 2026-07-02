@@ -1,0 +1,106 @@
+/* The Codex is the first *long* submenu, so it owns its own scroll: the surrounding
+   .submenuPanel stays a fixed window and the reference text scrolls inside this box. */
+.codex {
+  max-height: 62vh;
+  overflow-y: auto;
+  text-align: left;
+  /* Bleed a touch into the panel padding and keep clear of the scrollbar. */
+  margin: 0 -0.4rem;
+  padding: 0 0.4rem;
+}
+
+.topic {
+  padding: 0.9rem 0;
+  border-top: 1px solid #ece9e2;
+}
+
+.topic:first-child {
+  padding-top: 0.2rem;
+  border-top: none;
+}
+
+.topicTitle {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  color: #2c2c2c;
+}
+
+.subTitle {
+  margin: 0.8rem 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9a9384;
+}
+
+.lead {
+  margin: 0 0 0.6rem;
+  color: #666;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.defList {
+  margin: 0;
+}
+
+.defRow {
+  margin: 0 0 0.55rem;
+}
+
+.defRow:last-child {
+  margin-bottom: 0;
+}
+
+.defTerm {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #333;
+}
+
+.defDesc {
+  margin: 0.1rem 0 0;
+  color: #555;
+  font-size: 0.83rem;
+  line-height: 1.4;
+}
+
+.collapse {
+  color: #b3261e;
+  font-weight: 600;
+}
+
+.callout {
+  margin: 0.7rem 0 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  background: #f4efe6;
+  color: #5a4a2f;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.bullets,
+.phases {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #555;
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+.bullets li,
+.phases li {
+  margin-bottom: 0.4rem;
+}
+
+.bullets li:last-child,
+.phases li:last-child {
+  margin-bottom: 0;
+}
+
+.phaseName {
+  font-weight: 700;
+  color: #333;
+}
