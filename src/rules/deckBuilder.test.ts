@@ -57,8 +57,8 @@ describe('groupCounts', () => {
 
 describe('resolveDeckCards', () => {
   const decks: DeckDef[] = [
-    { id: 'a', name: 'A', description: '', cards: ['farm'] },
-    { id: 'b', name: 'B', description: '', cards: ['library'] },
+    { id: 'a', name: 'A', cards: ['farm'] },
+    { id: 'b', name: 'B', cards: ['library'] },
   ];
 
   it('resolves a matching deckId', () => {
@@ -72,7 +72,7 @@ describe('resolveDeckCards', () => {
 
 describe('cloneDecks', () => {
   it('deep-copies so mutating a clone does not affect the source', () => {
-    const source: DeckDef[] = [{ id: 'a', name: 'A', description: '', cards: ['farm'] }];
+    const source: DeckDef[] = [{ id: 'a', name: 'A', cards: ['farm'] }];
     const cloned = cloneDecks(source);
     cloned[0].cards.push('library');
     cloned[0].name = 'changed';
@@ -81,7 +81,7 @@ describe('cloneDecks', () => {
   });
 
   it('preserves content', () => {
-    const source: DeckDef[] = [{ id: 'a', name: 'A', description: 'desc', cards: ['farm', 'library'] }];
+    const source: DeckDef[] = [{ id: 'a', name: 'A', cards: ['farm', 'library'] }];
     expect(cloneDecks(source)).toEqual(source);
   });
 });

@@ -4,9 +4,8 @@ import { DEFAULT_DECKS } from '../content/decks';
 import { cloneDecks } from '../rules/deckBuilder';
 import type { RunResult } from '../contract';
 
-/** Unicode-safe base64 for constructing bogus save payloads below — `DEFAULT_DECKS`
- *  descriptions contain an em dash, which plain `btoa` can't handle. Mirrors the
- *  encoding `exportSave` itself uses internally. */
+/** Unicode-safe base64 for constructing bogus save payloads below, mirroring the
+ *  encoding `exportSave` itself uses internally (plain `btoa` throws on non-Latin1 text). */
 function toBase64(json: string): string {
   const bytes = new TextEncoder().encode(json);
   let binary = '';

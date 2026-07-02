@@ -36,7 +36,7 @@ function OptionCard({
   onSelect,
 }: {
   name: string;
-  description: string;
+  description?: string;
   detail?: string;
   selected: boolean;
   onSelect: () => void;
@@ -49,7 +49,7 @@ function OptionCard({
       aria-pressed={selected}
     >
       <span className={styles.optionName}>{name}</span>
-      <span className={styles.optionDesc}>{description}</span>
+      {description && <span className={styles.optionDesc}>{description}</span>}
       {detail && <span className={styles.optionDetail}>{detail}</span>}
     </button>
   );
@@ -135,13 +135,12 @@ export function MissionSelect({
                 <OptionCard
                   key={d.id}
                   name={d.name}
-                  description={d.description}
+                  detail={`${d.cards.length} cards`}
                   selected={selection.deckId === d.id}
                   onSelect={() => setSelection((s) => ({ ...s, deckId: d.id }))}
                 />
               ))}
             </div>
-            {deck && <p className={styles.detail}>{deck.cards.length} cards</p>}
           </>
         )}
       </section>

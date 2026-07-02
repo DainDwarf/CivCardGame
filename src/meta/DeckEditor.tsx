@@ -52,14 +52,6 @@ export function DeckEditor({
         onChange={(e) => setDeck((d) => ({ ...d, name: e.target.value }))}
         placeholder="Deck name"
       />
-      <textarea
-        className={styles.descInput}
-        value={deck.description}
-        onChange={(e) => setDeck((d) => ({ ...d, description: e.target.value }))}
-        placeholder="Description"
-        rows={2}
-      />
-
       <div className={styles.layout}>
         <section className={styles.picker}>
           <h2 className={styles.sectionTitle}>Buildings &amp; Wonders</h2>

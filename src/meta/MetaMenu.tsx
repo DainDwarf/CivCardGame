@@ -78,7 +78,7 @@ export function MetaMenu({
         {screen === 'decks' && (
           <Decks
             decks={decks}
-            onNew={() => openEditor({ id: crypto.randomUUID(), name: 'New Deck', description: '', cards: [] })}
+            onNew={() => openEditor({ id: crypto.randomUUID(), name: 'New Deck', cards: [] })}
             onEdit={openEditor}
             onDelete={onDeleteDeck}
           />

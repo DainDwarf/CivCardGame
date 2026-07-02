@@ -72,7 +72,7 @@ interface SaveFile {
   store: PlayerStore;
 }
 
-/** Unicode-safe base64 encode — plain `btoa` throws on any character outside Latin1, and deck names/descriptions are free-text. */
+/** Unicode-safe base64 encode — plain `btoa` throws on any character outside Latin1, and deck names are free-text. */
 function encodeBase64(text: string): string {
   const bytes = new TextEncoder().encode(text);
   let binary = '';

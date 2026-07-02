@@ -37,7 +37,6 @@ export function Decks({
             <h2 className={styles.deckName}>{deck.name}</h2>
             <span className={styles.deckCount}>{deck.cards.length} cards</span>
           </div>
-          <p className={styles.deckDesc}>{deck.description}</p>
           <div className={styles.cardList}>
             {groupCounts(deck.cards).map((g) => (
               <span key={g.cardId} className={styles.cardChip}>

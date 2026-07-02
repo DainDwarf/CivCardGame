@@ -76,6 +76,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Drop deck descriptions** — `DeckDef.description` (a free-text blurb set in
+  `DeckEditor.tsx`'s textarea, shown on `Decks.tsx`'s tiles and as the `MissionSelect.tsx`
+  deck-row subtitle) is gone. It was flavor text with no gameplay role; the deck row in
+  `MissionSelect.tsx` now shows card count via `OptionCard`'s existing `detail` prop
+  instead (its `description` prop is now optional, so a row with no description just
+  omits that line).
 - **Populate the codex submenu** — `GameMenu.tsx`'s Codex item now opens the rules
   reference instead of a placeholder. `src/components/Codex.tsx` is a pure, static
   component (no `useGame` — renders identically on the meta menu and mid-run) covering

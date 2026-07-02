@@ -4,7 +4,6 @@ export interface DeckDef {
    *  (seed or player-made) is equally editable, so there's no separate "built-in" type. */
   id: string;
   name: string;
-  description: string;
   /** Card IDs (from `CARDS`), in draw order before shuffling. */
   cards: string[];
 }
@@ -19,7 +18,6 @@ export const DEFAULT_DECKS: DeckDef[] = [
   {
     id: 'balanced',
     name: 'Balanced Start',
-    description: 'A well-rounded build with a little of everything — the original curated deck.',
     cards: [
       'farm', 'workshop', 'corvee', 'library', 'harvest',
       'settlers', 'farm', 'eureka', 'granary', 'settlers',
@@ -35,7 +33,6 @@ export const DEFAULT_DECKS: DeckDef[] = [
   {
     id: 'industrious',
     name: 'Industrious',
-    description: 'Leans on Production and Workshops to out-build everyone else.',
     cards: [
       'farm', 'farm', 'workshop', 'workshop', 'workshop',
       'granary', 'corvee', 'corvee', 'settlers', 'settlers',
@@ -48,7 +45,6 @@ export const DEFAULT_DECKS: DeckDef[] = [
   {
     id: 'scholarly',
     name: 'Scholarly',
-    description: 'Card draw and Science engines over raw building count.',
     cards: [
       'library', 'library', 'university', 'farm', 'farm',
       'workshop', 'eureka', 'eureka', 'inspiration', 'inspiration',
