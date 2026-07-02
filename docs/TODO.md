@@ -48,14 +48,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- **[bug] Loading/clearing a save mid-run leaves the run dangling** — `GameMenu.tsx`'s
-  Load/Clear both call `App.tsx`'s `persist` (via `onImportStore`) directly, which only
-  replaces `store`; it never touches `view`, so confirming either one while
-  `view.screen === 'run'` leaves `GameProvider`/`Board` mounted on top of the
-  just-replaced store instead of returning to the menu. Should silently close the run
-  (switch `view` back to `{ screen: 'menu' }`) without going through the normal
-  `onRunEnd` → `recordResult` path — the run's `RunConfig` no longer corresponds to
-  anything in the new store, so it shouldn't be scored/recorded as a `RunResult`. `[phase: 2]`
 - **Fading transition between meta and run stages** — `App.tsx`'s meta↔run screen switch is an instant cut; a fade would smooth it out `[?]`
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
@@ -82,6 +74,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Fix: loading/clearing a save mid-run left the run dangling** — `GameMenu.tsx`'s
+  Load/Clear called `App.tsx`'s `persist` (via `onImportStore`) directly, which only
+  replaced `store`; it never touched `view`, so confirming either one while
+  `view.screen === 'run'` left `GameProvider`/`Board` mounted on top of the
+  just-replaced store instead of returning to the menu. `App.tsx` now routes
+  `onImportStore` through a new `handleImportStore`, which persists the new store and
+  then unconditionally resets `view` to `{ screen: 'menu' }` (a no-op if already there)
+  — bypassing the normal `onRunEnd` → `recordResult` path, since the run's `RunConfig`
+  no longer corresponds to anything in the new store and shouldn't be scored as a
+  `RunResult`.
 - **Save export/import/clear** — `GameMenu.tsx`'s Save submenu downloads/loads a
   `.civsave` file and can reset the store outright: `meta/store.ts` gained
   `exportSave`/`importSave`, wrapping `PlayerStore` in a versioned envelope

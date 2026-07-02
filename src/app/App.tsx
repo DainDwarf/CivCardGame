@@ -30,6 +30,15 @@ export function App() {
     saveStore(next);
   }
 
+  // Load/Clear (GameMenu's Save submenu) replace the store wholesale, which can be
+  // triggered mid-run. The run's RunConfig no longer corresponds to anything in the
+  // new store, so it's closed silently — not through onRunEnd/recordResult, since it
+  // was never actually finished and shouldn't be scored as a RunResult.
+  function handleImportStore(next: PlayerStore) {
+    persist(next);
+    setView({ screen: 'menu' });
+  }
+
   // A run also lands here when the player hits Restart instead of End Run — that
   // discards the run without leaving GameProvider, so it would otherwise never be recorded.
   function recordResult(result: RunResult) {
@@ -49,7 +58,7 @@ export function App() {
 
   return (
     <>
-      <GameMenu store={store} onImportStore={persist} />
+      <GameMenu store={store} onImportStore={handleImportStore} />
       {view.screen === 'run' ? (
         <GameProvider
           config={view.config}

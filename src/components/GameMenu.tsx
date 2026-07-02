@@ -35,7 +35,8 @@ function saveFileName(): string {
  * `store`/`onImportStore` back the Save submenu: Export downloads `store` (see
  * `meta/store.ts`'s `exportSave`) as a `.civsave` file — read-only, so it needs no
  * confirmation. Load and Clear both replace the live store wholesale (`App.tsx`'s
- * `persist`) and so both gate on a `PendingAction` confirmation step before calling
+ * `handleImportStore`, which also silently closes any in-progress run rather than
+ * scoring it) and so both gate on a `PendingAction` confirmation step before calling
  * `onImportStore`: Load reads a chosen file through `importSave` first (a parse error
  * is reported immediately, with nothing pending to confirm); Clear resets straight to
  * `emptyStore()`.
