@@ -39,7 +39,15 @@ Vite has no fixed port here (`vite.config.ts` sets no `server.port`), so it bind
    ```
 
    Read the actual bound port from the launch output (don't assume 5173 — Vite
-   bumps it if the default is taken) and report that URL to the user.
+   bumps it if the default is taken) and report that URL to the user. Use the
+   **Read tool** on the background task's output file to check this — don't
+   build a Bash `grep`/`until` loop against the Windows-style (`C:\Users\...`)
+   output path. Git Bash silently fails to match against backslash paths
+   (they get mangled by shell escaping), so a wait loop like
+   `until grep -q "Local:" "C:\Users\...\task.output"; do sleep 0.5; done`
+   spins forever even after the server is ready — it looks like a hang, not
+   an error. If you must use Bash instead of Read, convert to the POSIX form
+   first (`/c/Users/...`).
 
 4. Let the user drive the browser and test manually — don't try to screenshot
    or automate the UI yourself unless explicitly asked.
