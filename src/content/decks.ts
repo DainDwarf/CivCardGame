@@ -1,7 +1,8 @@
-export type DeckId = 'balanced' | 'industrious' | 'scholarly';
-
 export interface DeckDef {
-  id: DeckId;
+  /** Plain id — a fixed literal for the seed decks below, `crypto.randomUUID()` for
+   *  anything a player creates in the deck editor. Not a closed union: every deck
+   *  (seed or player-made) is equally editable, so there's no separate "built-in" type. */
+  id: string;
   name: string;
   description: string;
   /** Card IDs (from `CARDS`), in draw order before shuffling. */
@@ -9,12 +10,13 @@ export interface DeckDef {
 }
 
 /**
- * Premade decks — the meta loop's deck construction (Phase 2 step 7) will let players
- * build their own; until then a run picks one of these. Each is a CardId[] list, same
- * shape `RunConfig.deck` will carry.
+ * Seed data for a new player's store (see `meta/store.ts`'s `loadStore`/`cloneDecks`
+ * usage) — these become a fresh player's starting, fully-editable decks. Never read
+ * directly by the run loop or the meta screens after that point; this array itself is
+ * never mutated (see `rules/deckBuilder.ts`'s `cloneDecks`).
  */
-export const DECKS: Record<DeckId, DeckDef> = {
-  balanced: {
+export const DEFAULT_DECKS: DeckDef[] = [
+  {
     id: 'balanced',
     name: 'Balanced Start',
     description: 'A well-rounded build with a little of everything — the original curated deck.',
@@ -30,7 +32,7 @@ export const DECKS: Record<DeckId, DeckDef> = {
     ],
   },
 
-  industrious: {
+  {
     id: 'industrious',
     name: 'Industrious',
     description: 'Leans on Production and Workshops to out-build everyone else.',
@@ -43,7 +45,7 @@ export const DECKS: Record<DeckId, DeckDef> = {
     ],
   },
 
-  scholarly: {
+  {
     id: 'scholarly',
     name: 'Scholarly',
     description: 'Card draw and Science engines over raw building count.',
@@ -55,4 +57,4 @@ export const DECKS: Record<DeckId, DeckDef> = {
       'develop', 'destroy', 'market', 'granary',
     ],
   },
-};
+];

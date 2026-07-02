@@ -23,7 +23,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 4. ~~**Wire the loop closed**~~ — done, see *Done / shipped* below. `[size: L]`
 5. ~~**localStorage persistence**~~ — done, see *Done / shipped* below. `[size: M]`
 6. ~~**Extend the meta menu**~~ — done, see *Done / shipped* below. `[size: M]`
-7. **Deck construction** — the deck editor: build/edit run decks from the collection, writing directly to the persisted store. Deck-construction *constraints* (size, copy/rarity limits, civ identity) stay deferred to Phase 4. `[size: L] [?]`
+7. ~~**Deck construction**~~ — done, see *Done / shipped* below. `[size: L]`
 
 ## Meta loop (`src/meta/`)
 
@@ -31,6 +31,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
 - **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]`
+- **Save handling: import/export/clear** — `PlayerStore` (`meta/store.ts`) has no user-facing way to export/import a save file or clear it; worth a settings-style affordance once there's enough in the store to be worth backing up `[?]`
+- **Deck editor UI rework** — `DeckEditor.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain grid card picker, chip list, no search/filter/sort; give it a real visual pass `[?]`
 
 ## Cards & content (`src/content/`)
 
@@ -44,6 +46,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
+- **Fading transition between meta and run stages** — `App.tsx`'s meta↔run screen switch is an instant cut; a fade would smooth it out `[?]`
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 
@@ -69,6 +72,29 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Deck construction** (Phase 2 build plan step 7) — `src/meta/DeckEditor.tsx` is the
+  new deck editor: name/description fields, a card picker (reuses `Collection.tsx`'s
+  `CardTile`), and the in-progress deck as removable chips. `Decks.tsx` is now a single
+  editable list (New/Edit/Delete) — the old "premade vs. custom" split is gone
+  entirely. `content/decks.ts`'s `DeckId`/`DECKS` (a closed union + registry) became
+  `DeckDef`/`DEFAULT_DECKS` (a plain array of seed data): a fresh player's store is
+  seeded with these 3 decks via a new `rules/deckBuilder.ts` (`cloneDecks`, so nothing
+  shares references with the seed constant), fully editable from that point on — there
+  is no separate read-only deck concept anymore. `deckBuilder.ts` also holds
+  `addCard`/`removeCard` (returning `string[] | 'invalid'`, mirroring `run/moves.ts`'s
+  `'invalid'` signal — `addCard` rejects an unknown cardId as a data-coherence check,
+  distinct from the size/copy/rarity constraints still deferred to Phase 4),
+  `groupCounts` (promoted out of `Decks.tsx`, now shared + tested), and
+  `resolveDeckCards`. `PlayerStore` gained `decks: DeckDef[]`; `App.tsx` now holds one
+  `PlayerStore`-shaped state with a single `persist()` writer (previously `saveStore`
+  only ever wrote `runHistory` — once decks became a sibling field, that would have
+  silently wiped saved decks on every recorded run). `contract.ts`'s `buildRunConfig`
+  now takes the player's `decks` as a required third argument instead of reading a
+  static registry, and gained `reshuffleRunConfig` (reshuffles `RunConfig.deck`
+  directly, no registry lookup) — **this supersedes the restart mechanism described in
+  "Restart reshuffles with a fresh seed" below**: `GameContext.tsx`'s `restart` no
+  longer calls `buildRunConfig` with a `deckId` lookup (which has no path to the
+  player's store), it calls `reshuffleRunConfig` on the live `RunConfig` instead.
 - **Extend the meta menu** (Phase 2 build plan step 6) — `src/meta/MetaMenu.tsx` is a
   new shell: a left column of big nav buttons (Mission / Collection / Decks / Stats)
   switches between meta screens, rendered in `src/app/App.tsx` instead of mounting

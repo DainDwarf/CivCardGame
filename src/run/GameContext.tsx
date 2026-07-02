@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useReducer } from 'react';
 import { applyMove, createRun, endTurn, toRunResult, type Gameover, type RunState } from './engine';
 import { playCard, assignWorker, unassignWorker, toggleStaffing, transferWorker } from './moves';
 import type { GameState } from '../rules';
-import { buildRunConfig, type RunConfig, type RunResult } from '../contract';
+import { reshuffleRunConfig, type RunConfig, type RunResult } from '../contract';
 
 interface GameContextValue {
   G: GameState;
@@ -116,16 +116,15 @@ export function GameProvider({
     endTurn: () => dispatch({ type: 'endTurn' }),
     undo: () => dispatch({ type: 'undo' }),
     // A restart is a new run with the same board/mission/deck but a fresh seed — reusing the
-    // exact same seed would just replay the identical draw order every time.
+    // exact same seed would just replay the identical draw order every time. Reshuffles
+    // config.deck directly (rather than re-resolving deckId against the player's deck
+    // store, which GameProvider never receives) — see contract.ts's reshuffleRunConfig.
     restart: () => {
       const result = finishedResult(present);
       if (result) onRestart?.(result);
       dispatch({
         type: 'restart',
-        config: buildRunConfig(
-          { missionId: config.missionId, boardId: config.board, deckId: config.deckId },
-          crypto.randomUUID(),
-        ),
+        config: reshuffleRunConfig(config, crypto.randomUUID()),
       });
     },
   }), [config, present, onRestart]);

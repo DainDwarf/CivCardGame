@@ -158,8 +158,12 @@ the meta loop to the mission they pick.
 ## Meta loop (the Workshop) 🔧
 
 - **Collection** — every card you own (persistent). Starts small, grows over time.
-- **Deck construction** — build a run deck from the collection under constraints
-  (deck size, copy/rarity limits, maybe a civilization identity). *The core puzzle.*
+- **Deck construction** ✅ — build/edit run decks from the collection (`src/meta/DeckEditor.tsx`).
+  Every deck is player-editable — there's no separate "premade" tier; a fresh
+  profile just starts with a few seeded decks (`content/decks.ts`'s `DEFAULT_DECKS`)
+  the player can edit or delete like any other. No construction *constraints* yet
+  (deck size, copy/rarity limits, maybe a civilization identity) — deferred to
+  **Phase 4**. *The core puzzle*, still open on the constraints side.
 - **Government boards** — the civilization's starting configuration, chosen alongside
   the deck: it sets the run's opening resources and reskins the run loop, and is
   unlocked/upgraded through mission rewards. See *Government boards* below.
@@ -292,7 +296,9 @@ src/
      real store rather than retrofitted.
   6. **Extend the meta menu** — collection view + deck-construction navigation (shell
      only).
-  7. **Deck construction** — the deck editor, writing to the persisted store.
+  7. **Deck construction** ✅ — the deck editor (`src/meta/DeckEditor.tsx`), writing to
+     the persisted store. Every deck is player-editable; the premade decks became seed
+     data (`content/decks.ts`'s `DEFAULT_DECKS`) rather than a separate read-only tier.
      Construction *constraints* stay deferred to Phase 4.
 - **Phase 3 — Economy & progression:** currency, shop, mission map, unlocks.
 - **Phase 4 — Content & balance:** expand cards/missions/resources; use the headless

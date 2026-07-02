@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { MISSIONS } from '../content/missions';
 import { BOARDS, type BoardId } from '../content/boards';
-import { DECKS, type DeckId } from '../content/decks';
+import type { DeckDef } from '../content/decks';
 import type { Resources } from '../rules/resources';
 import { buildRunConfig, type RunConfig, type RunSelection } from '../contract';
 import styles from './MissionSelect.module.css';
 
 const MISSION_IDS = Object.keys(MISSIONS);
 const BOARD_IDS = Object.keys(BOARDS) as BoardId[];
-const DECK_IDS = Object.keys(DECKS) as DeckId[];
 
 const RESOURCE_ICON: Record<keyof Resources, string> = {
   food: '🌾',
@@ -60,21 +59,29 @@ function OptionCard({
  * The Mission screen, one of the tabs inside `MetaMenu` (see `MetaMenu.tsx`). Picks
  * mission / board / deck into a provisional selection, then assembles a `RunConfig`
  * and hands it to `onLaunch` — the `app/` shell swaps to the run view. Run history
- * lives on its own Stats tab (`Stats.tsx`), not here.
+ * lives on its own Stats tab (`Stats.tsx`), not here. `decks` comes from the player's
+ * store (see `App.tsx`) — there's no static deck registry to fall back on.
  */
-export function MissionSelect({ onLaunch }: { onLaunch: (config: RunConfig) => void }) {
+export function MissionSelect({
+  decks,
+  onLaunch,
+}: {
+  decks: DeckDef[];
+  onLaunch: (config: RunConfig) => void;
+}) {
   const [selection, setSelection] = useState<RunSelection>({
     missionId: MISSION_IDS[0],
     boardId: BOARD_IDS[0],
-    deckId: DECK_IDS[0],
+    deckId: decks[0]?.id ?? '',
   });
 
   const mission = MISSIONS[selection.missionId];
   const board = BOARDS[selection.boardId];
-  const deck = DECKS[selection.deckId];
+  const deck = decks.find((d) => d.id === selection.deckId);
 
   function handleStartRun() {
-    onLaunch(buildRunConfig(selection, crypto.randomUUID()));
+    if (!deck) return;
+    onLaunch(buildRunConfig(selection, crypto.randomUUID(), decks));
   }
 
   return (
@@ -119,21 +126,27 @@ export function MissionSelect({ onLaunch }: { onLaunch: (config: RunConfig) => v
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Deck</h2>
-        <div className={styles.cardRow}>
-          {DECK_IDS.map((id) => (
-            <OptionCard
-              key={id}
-              name={DECKS[id].name}
-              description={DECKS[id].description}
-              selected={selection.deckId === id}
-              onSelect={() => setSelection((s) => ({ ...s, deckId: id }))}
-            />
-          ))}
-        </div>
-        <p className={styles.detail}>{deck.cards.length} cards</p>
+        {decks.length === 0 ? (
+          <p className={styles.detail}>No decks yet — build one in the Decks tab.</p>
+        ) : (
+          <>
+            <div className={styles.cardRow}>
+              {decks.map((d) => (
+                <OptionCard
+                  key={d.id}
+                  name={d.name}
+                  description={d.description}
+                  selected={selection.deckId === d.id}
+                  onSelect={() => setSelection((s) => ({ ...s, deckId: d.id }))}
+                />
+              ))}
+            </div>
+            {deck && <p className={styles.detail}>{deck.cards.length} cards</p>}
+          </>
+        )}
       </section>
 
-      <button type="button" className={styles.startBtn} onClick={handleStartRun}>
+      <button type="button" className={styles.startBtn} onClick={handleStartRun} disabled={!deck}>
         Start Run
       </button>
     </div>

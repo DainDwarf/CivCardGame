@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { applyMove, createRun, endTurn, type RunState } from './engine';
 import { playCard, assignWorker, unassignWorker } from './moves';
-import { DECKS } from '../content/decks';
+import { DEFAULT_DECKS } from '../content/decks';
+import { cloneDecks } from '../rules/deckBuilder';
 import type { RunConfig } from '../contract';
+
+const BALANCED_DECK = cloneDecks(DEFAULT_DECKS).find((d) => d.id === 'balanced')!.cards;
 
 /** `board: 'tribe'` and the unshuffled balanced deck reproduce the fixed values these tests assert on. */
 function start(missionId: string, board: RunConfig['board'] = 'tribe') {
-  const config: RunConfig = { deck: [...DECKS.balanced.cards], board, missionId, deckId: 'balanced', seed: 'test-seed' };
+  const config: RunConfig = { deck: [...BALANCED_DECK], board, missionId, deckId: 'balanced', seed: 'test-seed' };
   let state: RunState = createRun(config);
   return {
     getState: () => ({ G: state.G, ctx: { gameover: state.gameover } }),

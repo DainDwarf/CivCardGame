@@ -1,0 +1,157 @@
+.editor {
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 1000px;
+  color: #1a1a1a;
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0 0 0.8rem;
+}
+
+.nameInput {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 0.5rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+}
+
+.descInput {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 1.25rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.sectionTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #444;
+}
+
+.picker .sectionTitle:not(:first-child) {
+  margin-top: 1.25rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
+}
+
+.tileBtn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.current {
+  background: #f3f3f0;
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cardList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.cardChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: inherit;
+  font-size: 0.78rem;
+  color: #333;
+  background: #e7e7e2;
+  border: none;
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem 0.25rem 0.7rem;
+  cursor: pointer;
+}
+
+.cardChip:hover {
+  background: #dcdcd6;
+}
+
+.remove {
+  color: #999;
+  font-weight: 700;
+}
+
+.empty {
+  color: #555;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.cancelBtn {
+  padding: 0.7rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  background: #e7e7e2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  background: #dcdcd6;
+}
+
+.saveBtn {
+  padding: 0.7rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  background: #3b7dd8;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.saveBtn:hover {
+  background: #2f68b3;
+}
+
+.saveBtn:disabled {
+  background: #a9c3e6;
+  cursor: not-allowed;
+}

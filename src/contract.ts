@@ -1,6 +1,7 @@
 import type { BoardId } from './content/boards';
-import { DECKS, type DeckId } from './content/decks';
+import type { DeckDef } from './content/decks';
 import type { Resources } from './rules/resources';
+import { resolveDeckCards } from './rules/deckBuilder';
 import { shuffle } from './rules/rng';
 
 /**
@@ -12,7 +13,9 @@ import { shuffle } from './rules/rng';
 export interface RunSelection {
   missionId: string;
   boardId: BoardId;
-  deckId: DeckId;
+  /** A `DeckDef.id` from the player's own deck list — every deck is player-editable,
+   *  there's no separate closed set of "built-in" ids. */
+  deckId: string;
 }
 
 /**
@@ -27,8 +30,11 @@ export interface RunConfig {
   deck: string[];
   board: BoardId;
   missionId: string;
-  /** The saved deck `deck` was shuffled from — kept so a fresh seed can reshuffle it (e.g. on restart) without re-deriving the rest of the config. */
-  deckId: DeckId;
+  /** The deck this run was launched with — kept for display/record-keeping. Reshuffling
+   *  (e.g. on restart) operates on `deck` directly via `reshuffleRunConfig`, not a
+   *  lookup by this id, so a run stays reproducible even if the source deck is later
+   *  edited or deleted from the player's store. */
+  deckId: string;
   /** Drives every deterministic draw this run makes — same seed, same run. */
   seed: string;
 }
@@ -50,18 +56,31 @@ export interface RunResult {
 }
 
 /**
- * Assemble a `RunConfig` from the player's meta-loop selection and a run seed. The
- * saved deck (looked up by `deckId`) is shuffled deterministically from `seed` into
- * `RunConfig.deck` — the saved deck in `DECKS` is never mutated, only copied and
- * reordered.
+ * Assemble a `RunConfig` from the player's meta-loop selection, a run seed, and the
+ * player's own deck list (there's no static registry to fall back on — every deck
+ * lives in the player's store). An unresolvable `deckId` (e.g. the source deck was
+ * deleted) produces an empty `deck: []` rather than throwing, matching the codebase's
+ * general fall-back-don't-throw style (e.g. `meta/store.ts`'s `loadStore`). The
+ * player's deck is never mutated, only copied and reordered.
  */
-export function buildRunConfig(selection: RunSelection, seed: string): RunConfig {
-  const deck = DECKS[selection.deckId].cards;
+export function buildRunConfig(selection: RunSelection, seed: string, decks: DeckDef[]): RunConfig {
+  const cards = resolveDeckCards(selection.deckId, decks) ?? [];
   return {
-    deck: shuffle(deck, seed),
+    deck: shuffle(cards, seed),
     board: selection.boardId,
     missionId: selection.missionId,
     deckId: selection.deckId,
     seed,
   };
+}
+
+/**
+ * Re-shuffle an existing `RunConfig`'s deck with a fresh seed (used on restart —
+ * `src/run/GameContext.tsx`). Operates on `config.deck` directly rather than looking
+ * `deckId` back up in the player's store: `shuffle` is a full permutation regardless
+ * of input order, so the already-resolved starting deck is all that's needed, and this
+ * stays pure core with no dependency on the player's deck list at all.
+ */
+export function reshuffleRunConfig(config: RunConfig, seed: string): RunConfig {
+  return { ...config, deck: shuffle(config.deck, seed), seed };
 }

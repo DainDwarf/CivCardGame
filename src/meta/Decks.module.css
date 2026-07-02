@@ -61,3 +61,46 @@
   border-radius: 999px;
   padding: 0.2rem 0.6rem;
 }
+
+.newBtn {
+  display: block;
+  margin: 0 0 1.25rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  background: #3b7dd8;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.newBtn:hover {
+  background: #2f68b3;
+}
+
+.empty {
+  color: #555;
+  font-style: italic;
+}
+
+.deckActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.actionBtn {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #333;
+  background: #e7e7e2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.actionBtn:hover {
+  background: #dcdcd6;
+}

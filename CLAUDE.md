@@ -21,8 +21,10 @@ be staffed to operate; the population eats food each round), and mission-driven
 win/lose conditions. **Phase 2** (contract + meta shell) is in progress: `src/contract.ts`
 defines `RunConfig`/`RunResult`; `src/app/App.tsx` switches between the meta menu
 (`src/meta/MetaMenu.tsx` — a left-nav shell over the Mission/Collection/Decks/Stats
-screens) and a run. `src/meta/store.ts` persists run history to `localStorage`; deck
-construction is not built yet (Collection/Decks are read-only shells).
+screens) and a run. `src/meta/store.ts` persists run history and the player's decks to
+`localStorage`. Deck construction is built: `src/meta/DeckEditor.tsx` lets the player
+build/edit any deck (`Decks.tsx`); `Collection.tsx` is still a read-only catalogue —
+there's no per-player card ownership/unlock tracking yet.
 
 ## Commands
 
@@ -52,7 +54,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `addBuilding` — plus `foodUpkeep`), `upkeep.ts` (`applyUpkeep`: operating buildings
   produce → mission ticks → population eats food; plus `projectedDelta` for the UI), and
   `production.ts` / `tableau.ts` (derived stats — including `usedTerritory` / `freeTerritory`,
-  the territory cap that gates how many buildings can occupy the tableau). Unit tests sit alongside. **When adding
+  the territory cap that gates how many buildings can occupy the tableau), and
+  `deckBuilder.ts` (deck *construction* — `addCard`/`removeCard` on a plain `string[]`,
+  returning `'invalid'` on an unresolvable cardId, mirroring `moves.ts`'s `'invalid'`
+  signal; `groupCounts`, `resolveDeckCards`, `cloneDecks` — distinct from `deck.ts`,
+  which owns the *in-run* draw pile, not deck editing). Unit tests sit alongside. **When adding
   a rule, put the logic here and test it directly — never bury it in a move or a
   component.**
 - `src/content/` — typed game data, separate from logic. **Cards and buildings are
@@ -62,11 +68,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `effect.build` — the building enters `tableau`, the card is then filed by `kind`
   (`permanent` → `removed` pile, `recurring` → `discard`). So the same building can come
   from different cards, and a `BuildingInstance` references a `buildingId`, never a card.
-  Also `decks.ts` (`DECKS` — premade run decks, each a `CardId[]` draw order),
-  `boards.ts` (`BOARDS` — government boards; each sets all 8 starting resources: the 5
-  core plus population/territory/culture), and `missions.ts` (`MISSIONS` — each mission
-  supplies its `objective` and `failure` as pure predicates over `GameState`, plus an
-  optional `onUpkeep`).
+  Also `decks.ts` (`DeckDef` + `DEFAULT_DECKS` — seed data for a new player's deck list,
+  each a `CardId[]` draw order; every deck is player-editable, there's no separate
+  read-only "built-in" registry — see `meta/store.ts`), `boards.ts` (`BOARDS` —
+  government boards; each sets all 8 starting resources: the 5 core plus
+  population/territory/culture), and `missions.ts` (`MISSIONS` — each mission supplies
+  its `objective` and `failure` as pure predicates over `GameState`, plus an optional
+  `onUpkeep`).
 
 **Shell — the run loop (`src/run/`) + React:**
 
@@ -104,18 +112,25 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   recompute game logic.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left column of big nav
   buttons switches between four screens — `MissionSelect.tsx` (mission/board/deck
-  picker; assembles a `RunConfig` via `buildRunConfig` and calls `onLaunch`),
-  `Collection.tsx` and `Decks.tsx` (read-only shells over `content/cards.ts` /
-  `content/decks.ts` — deck construction/editing isn't built yet), and `Stats.tsx`
-  (the run history list). `store.ts`'s `loadStore`/`saveStore` persist `PlayerStore`
-  (currently just `runHistory`) to `localStorage`.
+  picker, deck list sourced from the player's own `decks`; assembles a `RunConfig` via
+  `buildRunConfig` and calls `onLaunch`), `Collection.tsx` (read-only catalogue over
+  `content/cards.ts` — no per-player ownership tracking yet), `Decks.tsx` (every deck
+  in the player's store, New/Edit/Delete), and `Stats.tsx` (the run history list).
+  `DeckEditor.tsx` (opened from `Decks.tsx`, not a nav tab) edits a single `DeckDef` in
+  place — card picker reuses `Collection.tsx`'s exported `CardTile`; add/remove go
+  through `rules/deckBuilder.ts`. `store.ts`'s `loadStore`/`saveStore` persist
+  `PlayerStore` (`runHistory` + `decks`, the latter seeded from `content/decks.ts`'s
+  `DEFAULT_DECKS` on a fresh profile) to `localStorage`.
 - `src/app/App.tsx` — the shell that switches between `<MetaMenu>` (which calls
   `onLaunch` with an assembled `RunConfig`) and `<GameProvider>` + `<Board>`. On
   `onRunEnd`, it stores the `RunResult` and switches back to the menu.
 - `src/main.tsx` — mounts `<App>`.
 
-See `src/contract.ts` for the `RunConfig`/`RunResult` types and `buildRunConfig` —
-the spine between the two loops (docs/DESIGN.md, "The contract").
+See `src/contract.ts` for the `RunConfig`/`RunResult` types, `buildRunConfig` (now
+takes the player's `decks` as a required argument — there's no static deck registry to
+fall back on), and `reshuffleRunConfig` (re-shuffles an existing `RunConfig.deck`
+directly, used by `GameContext.tsx`'s restart) — the spine between the two loops
+(docs/DESIGN.md, "The contract").
 
 ## Conventions
 

@@ -47,7 +47,8 @@ function describeCard(c: CardDef): string {
   return parts.filter(Boolean).join(' · ') || 'action';
 }
 
-function CardTile({ card }: { card: CardDef }) {
+/** Exported for reuse as the deck editor's card-picker tile (`DeckEditor.tsx`). */
+export function CardTile({ card }: { card: CardDef }) {
   return (
     <div className={styles.tile}>
       <span className={styles.tileName}>{card.name}</span>
