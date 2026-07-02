@@ -142,6 +142,88 @@
   font-size: 0.9rem;
 }
 
+.saveBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  text-align: left;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.saveHint {
+  margin: 0.2rem 0 0;
+  color: #888;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.saveOk {
+  margin: 0;
+  color: #2a7a3d;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.saveError {
+  margin: 0;
+  color: #b3261e;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.autosaveNotice {
+  margin: 0 0 0.2rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: #eef3ea;
+  color: #3d5c3a;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.confirmBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.confirmText {
+  margin: 0;
+  color: #444;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.confirmActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.confirmCancelBtn {
+  composes: itemBtn;
+  justify-content: center;
+}
+
+.confirmDangerBtn {
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #fff;
+  background: #b3261e;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.confirmDangerBtn:hover {
+  background: #931e18;
+}
+
 @keyframes menuFadeIn {
   from {
     opacity: 0;

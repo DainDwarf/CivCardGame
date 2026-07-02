@@ -49,7 +49,7 @@ export function App() {
 
   return (
     <>
-      <GameMenu />
+      <GameMenu store={store} onImportStore={persist} />
       {view.screen === 'run' ? (
         <GameProvider
           config={view.config}

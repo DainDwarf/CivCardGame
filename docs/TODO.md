@@ -34,7 +34,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Populate the config submenu** — `GameMenu.tsx`'s Config item currently opens an empty placeholder window; it should hold player-facing settings (details TBD) `[?]` `[phase: 2]`
 - **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 2]`
-- **Populate the save submenu** — `GameMenu.tsx`'s Save item currently opens an empty placeholder window; `PlayerStore` (`meta/store.ts`) has no user-facing way to export/import a save file or clear it — worth a settings-style affordance once there's enough in the store to be worth backing up `[?]` `[phase: 2]`
 - **Deck editor UI rework** — `DeckEditor.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain grid card picker, chip list, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
 
 ## Cards & content (`src/content/`)
@@ -49,6 +48,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
+- **[bug] Loading/clearing a save mid-run leaves the run dangling** — `GameMenu.tsx`'s
+  Load/Clear both call `App.tsx`'s `persist` (via `onImportStore`) directly, which only
+  replaces `store`; it never touches `view`, so confirming either one while
+  `view.screen === 'run'` leaves `GameProvider`/`Board` mounted on top of the
+  just-replaced store instead of returning to the menu. Should silently close the run
+  (switch `view` back to `{ screen: 'menu' }`) without going through the normal
+  `onRunEnd` → `recordResult` path — the run's `RunConfig` no longer corresponds to
+  anything in the new store, so it shouldn't be scored/recorded as a `RunResult`. `[phase: 2]`
 - **Fading transition between meta and run stages** — `App.tsx`'s meta↔run screen switch is an instant cut; a fade would smooth it out `[?]`
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
@@ -75,13 +82,30 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Save export/import/clear** — `GameMenu.tsx`'s Save submenu downloads/loads a
+  `.civsave` file and can reset the store outright: `meta/store.ts` gained
+  `exportSave`/`importSave`, wrapping `PlayerStore` in a versioned envelope
+  (`{ schemaVersion, exportedAt, store }`) so a save sitting on a player's disk across a
+  future `PlayerStore` shape change can still be migrated by version rather than by
+  guessing from field presence — base64-encoded (unicode-safe, via
+  `TextEncoder`/`TextDecoder` rather than raw `btoa`/`atob`, since deck
+  names/descriptions are free text) into a single-file blob. `loadStore`'s lenient
+  shape-check was factored out into `parsePlayerStore`, shared with `importSave` so a
+  save from before the deck-editor feature still seeds default decks the same way the
+  live localStorage key does. `emptyStore` (already `loadStore`'s fallback) is now also
+  exported for Clear save to reset to directly. Load and Clear both replace the store
+  wholesale (`App.tsx`'s `persist`) and stage as a `PendingAction` behind an explicit
+  confirm/cancel step in the submenu before applying; export needs no such gate since it
+  doesn't touch the live store. The Save submenu opens with a callout that progress
+  autosaves and this submenu is only for backups, since its presence could otherwise
+  read as "you must save manually."
 - **Game menu** — `src/components/GameMenu.tsx` is the shell's global-action surface
   called for by `docs/DESIGN.md`'s Phase 2 description: a top-right burger button,
   mounted once by `App.tsx` alongside either `MetaMenu` or the run's `Board`, so it
   overlays both loops. Opens a central popup listing the decided items (save, config,
-  codex); each opens its own submenu window stacked on top. All submenus are empty
-  placeholders — no save/config/codex feature exists yet. The in-run screen gaining
-  extra items (end run, restart run) is tracked separately above.
+  codex); each opens its own submenu window stacked on top. Config/codex are still
+  empty placeholders; save is now populated (see *Save export/import/clear* above). The
+  in-run screen gaining extra items (end run, restart run) is tracked separately above.
 - **Deck construction** (Phase 2 build plan step 7) — `src/meta/DeckEditor.tsx` is the
   new deck editor: name/description fields, a card picker (reuses `Collection.tsx`'s
   `CardTile`), and the in-progress deck as removable chips. `Decks.tsx` is now a single
