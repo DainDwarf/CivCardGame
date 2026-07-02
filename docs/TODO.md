@@ -31,7 +31,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
 - **In-run menu extras (end run / restart run)** — `GameMenu.tsx`'s popup is currently identical on the meta screen and the run screen; the run screen should eventually get extra items (end run, restart run) alongside save/config/codex `[?]` `[phase: 2]`
 - **Populate the codex submenu** — `GameMenu.tsx`'s Codex item currently opens an empty placeholder window; it should surface reference info (cards/buildings/missions glossary, rules reminders — details TBD) `[?]` `[phase: 2]`
-- **Populate the config submenu** — `GameMenu.tsx`'s Config item currently opens an empty placeholder window; it should hold player-facing settings (details TBD) `[?]` `[phase: 2]`
+- **Theme picker** — a Config-submenu setting to pick between color themes (e.g. light/dark). Bigger than it looks: none of the 8 `*.module.css` files use CSS custom properties for color today, so this needs a retrofit onto CSS variables *before* a picker can just swap a palette — most of the cost is the retrofit, not the picker UI. `[size: L]` `[?]` `[phase: 2]`
+- **UI size setting** — a Config-submenu setting to scale the whole UI up/down. Tried via `document.documentElement.style.zoom` (see *Rejected* below) and reverted: it broke `Board.tsx`'s run-screen layout (building slots sliding under the resource banner, background color bleeding past the bottom hand bar) even after fixing the drag-and-drop math. CSS `zoom` on the root doesn't rescale the viewport pointer events are reported against, and `Board.tsx` leans on `position: fixed` + raw `clientX`/`clientY`/`getBoundingClientRect()` math throughout, so a page-level zoom fights that layout in more places than just the drag clones. A working version likely needs either a `transform: scale()` container with its own compensated coordinate math (not just for drag, for every fixed-position child too), or a proper rem/CSS-custom-property based scale that avoids the raw-pixel measurement problem entirely — worth scoping carefully before trying again. `[size: L]` `[?]` `[phase: 2]`
 - **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 2]`
 - **Deck editor UI rework** — `DeckEditor.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain grid card picker, chip list, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
@@ -67,6 +68,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > without new information.
 
 - **Ignore worker assignment in the undo list** — assign/unassign worker moves would skip pushing undo snapshots, so undo only steps through "meaningful" turn actions. Tried it (a `quietMove` action updating `present` without touching `past`), then reverted: having worker reassignment silently bundled into the prior card-play's undo step is confusing to the player, while the alternative — reconciling worker state done in the "present" back onto a restored past snapshot — is deeply error-prone (instance-count and population-total edge cases). For now, worker reassignments stay part of the regular undo list; revisit if a cleaner solution presents itself.
+- **UI size via `document.documentElement.style.zoom`** — tried a Config-submenu slider applying CSS `zoom` to the document root, on the theory that a root-level zoom would keep everything (including `Board.tsx`'s pointer-drag math) internally consistent, the way real browser zoom does. It doesn't: CSS `zoom` doesn't rescale the viewport that `clientX`/`clientY`/`getBoundingClientRect()` are reported against, so raw pixel values captured from those and written back into inline styles (drag/slotDrag/workerDrag clone positions, the ghost clone, the drop-zone position, the gamearea/gameover-pill insets) get re-zoomed a second time on render. Patched that specific issue with a `px()` real→local conversion helper at each of those six call sites (confirmed fixed at 130% — drag clones tracked the cursor correctly). But testing then surfaced a second, broader problem: run-screen layout broke anyway — building slots sliding under the resource banner, background color bleeding past the bottom hand bar — because `Board.tsx` also leans heavily on `position: fixed` elements, which a root-level zoom interacts with in ways the `px()` patch doesn't cover. Reverted entirely (settings.ts's `uiScale` field, the `App.tsx` zoom effect, `Board.tsx`'s `px()` helper and its six call sites, the GameMenu slider UI). See *UI size setting* above for what a real attempt would need to account for.
 
 ## Done / shipped
 
@@ -74,6 +76,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Populate the config submenu (partial)** — `GameMenu.tsx`'s Config item gained a
+  "confirm before ending a round" toggle, backed by a new `src/meta/settings.ts`
+  (`Settings`, `loadSettings`/`saveSettings`, its own `civcardgame:settings`
+  localStorage key). Settings are deliberately kept out of `PlayerStore` — they're
+  device preferences, not game progress, so a Save-submenu Load/Clear doesn't touch
+  them. The toggle folds into the existing `Board.tsx` end-round warning dialog
+  (previously only shown for idle-worker warnings) rather than adding a second
+  dialog. A UI-size slider and a theme picker were considered too; both split out as
+  their own backlog items above (*UI size setting*, *Theme picker*) — the size
+  slider was actually built and reverted (see *Rejected* below), the theme picker
+  needs a CSS custom-property retrofit first.
 - **Fix: loading/clearing a save mid-run left the run dangling** — `GameMenu.tsx`'s
   Load/Clear called `App.tsx`'s `persist` (via `onImportStore`) directly, which only
   replaced `store`; it never touched `view`, so confirming either one while

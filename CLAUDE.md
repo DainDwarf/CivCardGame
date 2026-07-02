@@ -130,8 +130,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `exportSave`); Load reads one back (`importSave`) and Clear resets to `emptyStore()`.
   Both Load and Clear replace `runHistory`/`decks` wholesale via `App.tsx`'s `persist`,
   so both stage as a `PendingAction` behind an explicit confirm/cancel step before
-  applying — export needs no such gate, since it doesn't touch the live store. Config
-  and Codex are still empty placeholders.
+  applying — export needs no such gate, since it doesn't touch the live store. The
+  Config submenu holds device-local preferences (`meta/settings.ts`'s `Settings`,
+  persisted under their own `localStorage` key — kept out of `PlayerStore` since
+  they're not game progress, so Save's Load/Clear never touches them): currently just
+  a "confirm before ending a round" toggle that folds into `Board.tsx`'s existing
+  end-round warning dialog. A UI-size setting was tried (`document.documentElement.style.zoom`)
+  and reverted — see docs/TODO.md. Codex is still an empty placeholder.
 - `src/app/App.tsx` — the shell that switches between `<MetaMenu>` (which calls
   `onLaunch` with an assembled `RunConfig`) and `<GameProvider>` + `<Board>`, with
   `<GameMenu>` mounted alongside either. On `onRunEnd`, it stores the `RunResult` and

@@ -4,6 +4,7 @@ import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
 import { GameProvider } from '../run/GameContext';
 import { loadStore, saveStore, type PlayerStore } from '../meta/store';
+import { loadSettings, saveSettings, type Settings } from '../meta/settings';
 import type { DeckDef } from '../content/decks';
 import type { RunConfig, RunResult } from '../contract';
 
@@ -24,10 +25,18 @@ export function App() {
   // per-field state) so `persist` always writes the full store — writing just one
   // field back to localStorage would silently drop the others.
   const [store, setStore] = useState<PlayerStore>(() => loadStore());
+  // Local device preferences (../meta/settings.ts) — separate from PlayerStore since
+  // they aren't game progress (see that file's doc comment).
+  const [settings, setSettings] = useState<Settings>(() => loadSettings());
 
   function persist(next: PlayerStore) {
     setStore(next);
     saveStore(next);
+  }
+
+  function persistSettings(next: Settings) {
+    setSettings(next);
+    saveSettings(next);
   }
 
   // Load/Clear (GameMenu's Save submenu) replace the store wholesale, which can be
@@ -58,7 +67,7 @@ export function App() {
 
   return (
     <>
-      <GameMenu store={store} onImportStore={handleImportStore} />
+      <GameMenu store={store} onImportStore={handleImportStore} settings={settings} onUpdateSettings={persistSettings} />
       {view.screen === 'run' ? (
         <GameProvider
           config={view.config}
@@ -68,7 +77,7 @@ export function App() {
           }}
           onRestart={recordResult}
         >
-          <Board />
+          <Board confirmEndTurn={settings.confirmEndTurn} />
         </GameProvider>
       ) : (
         <MetaMenu

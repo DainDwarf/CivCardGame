@@ -1,6 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { version } from '../../package.json';
 import { emptyStore, exportSave, importSave, type PlayerStore } from '../meta/store';
+import type { Settings } from '../meta/settings';
 import styles from './GameMenu.module.css';
 
 /** A destructive Save-submenu action pending the player's confirmation (see `PendingAction` usage below). */
@@ -13,7 +14,7 @@ interface MenuItem {
 }
 
 /** The decided game-menu items (docs/DESIGN.md, Phase 2: "game menu (save, config,
- *  codex)"). Config/Codex are still empty placeholder submenus; Save is populated. */
+ *  codex)"). Codex is still an empty placeholder submenu; Save and Config are populated. */
 const MENU_ITEMS: MenuItem[] = [
   { id: 'save', icon: '💾', label: 'Save' },
   { id: 'config', icon: '⚙️', label: 'Config' },
@@ -40,13 +41,23 @@ function saveFileName(): string {
  * `onImportStore`: Load reads a chosen file through `importSave` first (a parse error
  * is reported immediately, with nothing pending to confirm); Clear resets straight to
  * `emptyStore()`.
+ *
+ * `settings`/`onUpdateSettings` back the Config submenu — device-local preferences
+ * (`meta/settings.ts`), deliberately kept out of `PlayerStore` so they survive a
+ * Save-submenu Load/Clear untouched. Currently just the confirm-end-turn toggle,
+ * which calls `onUpdateSettings` directly on change (no pending/confirm step — it
+ * isn't destructive). A UI-size setting was tried and reverted — see docs/TODO.md.
  */
 export function GameMenu({
   store,
   onImportStore,
+  settings,
+  onUpdateSettings,
 }: {
   store: PlayerStore;
   onImportStore: (store: PlayerStore) => void;
+  settings: Settings;
+  onUpdateSettings: (settings: Settings) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [submenuId, setSubmenuId] = useState<string | null>(null);
@@ -205,6 +216,17 @@ export function GameMenu({
                         )}
                       </>
                     )}
+                  </div>
+                ) : submenu.id === 'config' ? (
+                  <div className={styles.configBody}>
+                    <label className={styles.configToggleRow}>
+                      <input
+                        type="checkbox"
+                        checked={settings.confirmEndTurn}
+                        onChange={(e) => onUpdateSettings({ ...settings, confirmEndTurn: e.target.checked })}
+                      />
+                      <span>Confirm before ending a round</span>
+                    </label>
                   </div>
                 ) : (
                   <p className={styles.submenuEmpty}>Nothing here yet.</p>

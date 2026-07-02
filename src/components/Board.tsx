@@ -557,7 +557,7 @@ function whyUnplayable(card: CardDef, G: GameState): string | null {
   }
 }
 
-export function Board() {
+export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
   const { G, gameover, moves, endTurn, undo, canUndo, restart, endRun } = useGame();
   const mission = MISSIONS[G.missionId];
   const [pending, setPending] = useState<PendingPlay | null>(null);
@@ -1025,11 +1025,12 @@ export function Board() {
     setWarnEndRound(false);
   }, [G.round]);
 
-  // warnEndRound is only meaningful while shouldWarn is true; reset it if the player
-  // staffs all buildings after triggering the dialog (so it can't ghost-trigger later).
+  // warnEndRound is only meaningful while shouldWarn or confirmEndTurn is true; reset it
+  // if the player staffs all buildings after triggering the dialog (so it can't
+  // ghost-trigger later) — confirmEndTurn doesn't depend on staffing, so it can't go stale.
   useEffect(() => {
-    if (!shouldWarn) setWarnEndRound(false);
-  }, [shouldWarn]);
+    if (!shouldWarn && !confirmEndTurn) setWarnEndRound(false);
+  }, [shouldWarn, confirmEndTurn]);
 
   /** In sacrifice-pick mode, a click toggles a card as the discard (or cancels the play). */
   function handlePendingClick(card: HandCard) {
@@ -1301,10 +1302,14 @@ export function Board() {
             onView={() => setPileView({ title: 'Removed from deck', cards: [...G.removed] })}
           />
 
-          {warnEndRound && shouldWarn ? (
+          {warnEndRound && (shouldWarn || confirmEndTurn) ? (
             <div className={styles.endRoundWarn}>
               <span className={styles.endRoundWarnMsg}>
-                {idle} idle 👷<br />unstaffed buildings
+                {shouldWarn ? (
+                  <>{idle} idle 👷<br />unstaffed buildings</>
+                ) : (
+                  'End this round?'
+                )}
               </span>
               <div className={styles.endRoundWarnBtns}>
                 <button
@@ -1312,7 +1317,7 @@ export function Board() {
                   disabled={!canEndRound}
                   onClick={() => { setWarnEndRound(false); endTurn(); }}
                 >
-                  End anyway
+                  {shouldWarn ? 'End anyway' : 'End round'}
                 </button>
                 <button
                   className={styles.endRoundCancel}
@@ -1326,7 +1331,7 @@ export function Board() {
             <button
               className={styles.endRound}
               disabled={!!gameover || !canEndRound}
-              onClick={() => { if (shouldWarn) setWarnEndRound(true); else endTurn(); }}
+              onClick={() => { if (shouldWarn || confirmEndTurn) setWarnEndRound(true); else endTurn(); }}
             >
               <span className={styles.endRoundLabel}>End Round</span>
               <span className={styles.endRoundRound}>Rd {G.round}</span>
