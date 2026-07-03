@@ -14,6 +14,12 @@ type View = { screen: 'menu' } | { screen: 'run'; config: RunConfig };
 /** How many past runs the Stats screen shows. */
 const HISTORY_LIMIT = 10;
 
+/** Fade duration (ms) for each half of a screen transition — see `App`'s `transition()`.
+ *  The full effect (cover, then reveal) takes 2×`FADE_MS`. Read by both the JS timing
+ *  and (via inline `transitionDuration`) the CSS animation, so this is the one place
+ *  to retune it. */
+const FADE_MS = 300;
+
 /**
  * Bridges `useGame()` into `GameMenu`'s `runControls` prop — must render inside
  * `GameProvider`, which is why this is a separate component rather than inline in
@@ -22,7 +28,9 @@ const HISTORY_LIMIT = 10;
  * (see `RunMenuControls`'s doc comment) — `onEndRun` becomes `endRun` (records the
  * result, same as the gameover overlay's own End Run button) instead of `onAbandon`,
  * which only applies to a live run: it mirrors `handleImportStore` below, silently
- * discarding the in-progress run with no `RunResult` to record.
+ * discarding the in-progress run with no `RunResult` to record. Both are wrapped in
+ * `onTransition` so Restart/End Run fade the same way the gameover overlay's own
+ * buttons do (see `Board.tsx`).
  */
 function RunGameMenu({
   store,
@@ -30,12 +38,14 @@ function RunGameMenu({
   settings,
   onUpdateSettings,
   onAbandon,
+  onTransition,
 }: {
   store: PlayerStore;
   onImportStore: (store: PlayerStore) => void;
   settings: Settings;
   onUpdateSettings: (settings: Settings) => void;
   onAbandon: () => void;
+  onTransition: (action: () => void) => void;
 }) {
   const { gameover, restart, endRun } = useGame();
   return (
@@ -45,9 +55,9 @@ function RunGameMenu({
       settings={settings}
       onUpdateSettings={onUpdateSettings}
       runControls={{
-        onRestart: restart,
+        onRestart: () => onTransition(restart),
         restartDisabled: gameover?.outcome === 'victory',
-        onEndRun: gameover ? endRun : onAbandon,
+        onEndRun: () => onTransition(gameover ? endRun : onAbandon),
         isOver: !!gameover,
       }}
     />
@@ -69,6 +79,25 @@ export function App() {
   // Local device preferences (../meta/settings.ts) — separate from PlayerStore since
   // they aren't game progress (see that file's doc comment).
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
+  // Drives the fade-to-black screen transition (App.module.css's `.transitionOverlay`,
+  // always mounted below). 'covering' = fading to black, 'revealing' = fading back in.
+  const [transitionPhase, setTransitionPhase] = useState<'idle' | 'covering' | 'revealing'>('idle');
+
+  /** Runs `action` behind a fade-to-black-and-back: covers the screen, swaps state
+   *  while hidden, then reveals it — used for the three jarring instant cuts (new run,
+   *  end run, restart run). The overlay blocks all input for the whole covering+revealing
+   *  duration, so the screen is unusable for the length of the animation. Ignores
+   *  re-entrant calls while a transition is already in flight (the overlay already blocks
+   *  the clicks that would trigger them, so this is just a safety net). */
+  function transition(action: () => void) {
+    if (transitionPhase !== 'idle') return;
+    setTransitionPhase('covering');
+    window.setTimeout(() => {
+      action();
+      setTransitionPhase('revealing');
+      window.setTimeout(() => setTransitionPhase('idle'), FADE_MS);
+    }, FADE_MS);
+  }
 
   function persist(next: PlayerStore) {
     setStore(next);
@@ -121,6 +150,10 @@ export function App() {
       {view.screen === 'run' ? (
         <GameProvider
           config={view.config}
+          // The screen-swap fade is applied at the trigger (RunGameMenu/Board's onTransition
+          // calls), not here — wrapping this too would nest transitions: this callback fires
+          // *during* the trigger's already-in-flight covering phase, so a second `transition()`
+          // call would see a non-idle phase and bail without ever calling setView.
           onRunEnd={(result) => {
             recordResult(result);
             setView({ screen: 'menu' });
@@ -133,8 +166,9 @@ export function App() {
             settings={settings}
             onUpdateSettings={persistSettings}
             onAbandon={() => setView({ screen: 'menu' })}
+            onTransition={transition}
           />
-          <Board confirmEndTurn={settings.confirmEndTurn} uiScale={settings.uiScale} />
+          <Board confirmEndTurn={settings.confirmEndTurn} uiScale={settings.uiScale} onTransition={transition} />
         </GameProvider>
       ) : (
         <>
@@ -143,12 +177,21 @@ export function App() {
             runHistory={store.runHistory}
             decks={store.decks}
             uiScale={settings.uiScale}
-            onLaunch={(config) => setView({ screen: 'run', config })}
+            onLaunch={(config) => transition(() => setView({ screen: 'run', config }))}
             onSaveDeck={saveDeck}
             onDeleteDeck={deleteDeck}
           />
         </>
       )}
+      <div
+        className={styles.transitionOverlay}
+        style={{
+          opacity: transitionPhase === 'covering' ? 1 : 0,
+          pointerEvents: transitionPhase === 'idle' ? 'none' : 'auto',
+          transitionDuration: `${FADE_MS}ms`,
+        }}
+        aria-hidden="true"
+      />
     </div>
   );
 }

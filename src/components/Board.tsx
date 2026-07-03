@@ -491,7 +491,17 @@ function whyUnplayable(card: CardDef, G: GameState): string | null {
   }
 }
 
-export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; uiScale: number }) {
+export function Board({
+  confirmEndTurn,
+  uiScale,
+  onTransition,
+}: {
+  confirmEndTurn: boolean;
+  uiScale: number;
+  /** Wraps a restart/end-run action in the shell's fade-to-black transition (`App.tsx`) —
+   *  used by the gameover overlay's own Restart/End Run buttons below. */
+  onTransition: (action: () => void) => void;
+}) {
   const { G, gameover, moves, endTurn, undo, canUndo, restart, endRun } = useGame();
   // The whole board renders inside a `transform: scale(uiScale)` wrapper (App.tsx). Pointer
   // coordinates and getBoundingClientRect() are in *visual* (post-scale) px; when written into
@@ -1447,7 +1457,7 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
             <div className={styles.gameoverBtns}>
               <button
                 className={`${styles.gameoverBtn} ${styles.gameoverBtnRestart}`}
-                onClick={restart}
+                onClick={() => onTransition(restart)}
                 disabled={won}
                 title={won ? "You've already won this run — end it to keep the result." : undefined}
               >
@@ -1456,7 +1466,7 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
               <button className={`${styles.gameoverBtn} ${styles.gameoverBtnInspect}`} onClick={() => setOverlayMinimized(true)}>
                 Inspect
               </button>
-              <button className={`${styles.gameoverBtn} ${styles.gameoverBtnEnd}`} onClick={endRun}>
+              <button className={`${styles.gameoverBtn} ${styles.gameoverBtnEnd}`} onClick={() => onTransition(endRun)}>
                 End Run
               </button>
             </div>

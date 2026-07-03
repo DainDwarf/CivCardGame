@@ -59,7 +59,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   name text in the deck builder and the run loop hand, and the burger-menu/submenu
   headers. Also the run loop's hand bottom banner has a black→white gradient that's
   too bright in Dark. `[phase: 2]`
-- **Fading transition between meta and run stages** — `App.tsx`'s meta↔run screen switch is an instant cut; a fade would smooth it out `[?]` `[phase: 2]`
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 
@@ -86,6 +85,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Fading transition between meta and run stages** — the three screen-swap instant
+  cuts (starting a run from the meta menu, ending a run, restarting a run) now fade to
+  black and back via a shared `transition()` helper in `App.tsx`: an always-mounted
+  full-screen overlay (`App.module.css`'s `.transitionOverlay`, z-index above the
+  burger menu's submenu panel) drives an opacity fade timed off one `FADE_MS` constant,
+  blocking all pointer input for the full covering+revealing duration. Wrapped at each
+  *trigger* point rather than the state-change callback itself — `Board.tsx`'s
+  gameover-overlay Restart/End Run buttons and `RunGameMenu`'s burger-menu Restart
+  Run/End Run items each call `onTransition(restart)`/`onTransition(endRun)`;
+  `onRunEnd`/`onAbandon` themselves stay unwrapped, since wrapping both would nest
+  transitions and the inner call would see a non-idle phase and bail without ever
+  swapping state. `MissionSelect`'s Start Run (`onLaunch`) is the only trigger for the
+  meta→run direction. Mid-run Save-submenu Load/Clear (`handleImportStore`) was left as
+  an instant cut — out of scope, and it would need extra handling to avoid a
+  menu→menu no-op flash when triggered from the meta screen itself.
 - **`work` card type** — promoted the "reserved action" mechanic (Corvée, Harvest) into a
   first-class fourth card kind, making an emerging core loop explicit. A `work` card sticks
   onto the board as a *staffable* box (`WorkInstance` in the new `GameState.workZone`) instead

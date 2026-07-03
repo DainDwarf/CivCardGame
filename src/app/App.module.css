@@ -16,3 +16,16 @@
   width: calc(100vw / var(--ui-scale, 1));
   height: calc(100vh / var(--ui-scale, 1));
 }
+
+/* Fade-to-black screen transition (App.tsx's `transition()`), always mounted so its
+   opacity can animate on the very first trigger. z-index tops the burger menu's
+   submenu panel (150-152) so it blocks input everywhere, including mid-menu. Duration
+   is set inline from App.tsx's FADE_MS, the single source of truth for the timing. */
+.transitionOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 1);
+  z-index: 200;
+  transition-property: opacity;
+  transition-timing-function: ease;
+}
