@@ -5,7 +5,7 @@ import {
   CODEX_STRATEGIC,
   CODEX_GLOSSARY,
 } from '../content/codex';
-import { COST_ICON } from './Board';
+import { COST_ICON } from './CardFace';
 import styles from './Codex.module.css';
 
 /**

@@ -34,7 +34,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 2]`
 - **Decks screen UI rework** — `Decks.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain stacked deck cards, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
-- **Deck editor UI rework** — `DeckEditor.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain grid card picker, chip list, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
 - **Codex menu UI rework** — `Codex.tsx` (shipped populating the codex submenu) is a first-pass layout: one long scrollable page of definition lists inside the fixed 300px submenu window, no topic navigation, no icons on most entries. Give it a real visual pass — likely a topic-list → page view (or tabs), a wider/roomier surface than the shared `.submenuPanel`, and richer per-topic presentation. `[?]` `[phase: 2]`
 
 ## Cards & content (`src/content/`)
@@ -76,6 +75,31 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Deck editor UI rework** — `DeckEditor.tsx` now looks like the game: a main picker
+  area (same kind-grouping as before) of real card visuals in a grid, above a bottom
+  banner representing the deck itself (name, card count, Save/Cancel, cards grouped
+  into ×N stacks like the run loop's pile viewer). Getting there required extracting
+  the run loop's card rendering — `CardFace`, previously private to `Board.tsx` — into
+  a shared `src/components/CardFace.tsx` + `CardFace.module.css`. The extraction had a
+  landmine: the original CSS colored a card by kind via descendant selectors reaching
+  from an *outer* wrapper class into *inner* spans (`.permanent .cardTop`, etc.); had
+  the inner/outer split across CSS Modules (different files hash class names
+  independently), that coloring would've broken silently. Fixed by having `CardFace`
+  own its *complete* visual — outer box, kind border/tint, and inner content — in one
+  module; `Board.tsx`'s hand-specific extras (overlap margin, hover-lift, drag/deal/
+  shake/pending/sacrifice/unaffordable states) layer on top via a `className` prop
+  instead. Cards move between the deck editor's picker and banner by click (unchanged
+  fast path) or by drag — a new hand-rolled pointer-drag implementation matching
+  `Board.tsx`'s existing convention (no drag-and-drop library in this project). The
+  banner is `position: fixed` (not `sticky` — `MetaMenu.module.css`'s `.content` never
+  actually scrolls internally, so sticky just sat at its normal flow position), spanning
+  the full width beside the nav like the run loop's own fixed hand bar. Getting it flush
+  against both screen edges surfaced two latent gaps this app never had: `.nav` used the
+  default `box-sizing: content-box`, so its `flex: 0 0 220px` rendered 32px wider than
+  220px once its own padding was added (now `border-box`, scoped to `.nav`); and there
+  was no CSS reset anywhere, so the browser's default 8px `<body>` margin inset the whole
+  page from the true viewport edges (new `src/index.css`, just `body { margin: 0 }`,
+  imported once from `main.tsx` — the only global CSS in an otherwise all-CSS-Modules app).
 - **Drop deck descriptions** — `DeckDef.description` (a free-text blurb set in
   `DeckEditor.tsx`'s textarea, shown on `Decks.tsx`'s tiles and as the `MissionSelect.tsx`
   deck-row subtitle) is gone. It was flavor text with no gameplay role; the deck row in
@@ -93,7 +117,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `CODEX_GLOSSARY`) lives in `src/content/codex.ts`; the narrative pages are authored in
   the component. Tuned numbers are pulled live from `rules/` (`FOOD_PER_POP`,
   `cultureStep`) rather than transcribed, so they can't drift on a rebalance. Reuses
-  `Board.tsx`'s `COST_ICON` (now exported) for the core-resource icons. It's the first
+  `CardFace.tsx`'s `COST_ICON` for the core-resource icons. It's the first
   long submenu, so `Codex.module.css` gives it its own capped-height scroll container.
   The secondary buildings-/missions-almanac and lore ideas were left out of scope.
 - **Disasters — `event` card type** — a new `CardKind`, `event` (`content/cards.ts`),

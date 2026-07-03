@@ -5,6 +5,10 @@
 }
 
 .nav {
+  /* border-box so its 220px flex-basis is the *true* rendered width (padding included, not
+     added on top) — DeckEditor.module.css's fixed-position `.banner` anchors off this exact
+     width to sit flush beside it. */
+  box-sizing: border-box;
   flex: 0 0 220px;
   display: flex;
   flex-direction: column;

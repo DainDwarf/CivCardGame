@@ -10,163 +10,11 @@ import {
   unplayableReason,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
-import { BUILDINGS, type BuildingDef } from '../content/buildings';
+import { BUILDINGS } from '../content/buildings';
 import { MISSIONS, type MissionDef } from '../content/missions';
 import type { GameState } from '../rules';
+import { CardFace, COST_ICON, artFor, describeBuilding } from './CardFace';
 import styles from './Board.module.css';
-
-export const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
-
-/** Presentation-only "art" glyph shown on each card face and building box. */
-const CARD_ART: Record<string, string> = {
-  farm: '🌾',
-  granary: '🌽',
-  workshop: '⚒️',
-  library: '📚',
-  university: '🎓',
-  theater: '🎭',
-  market: '🏪',
-  trading_post: '⛵',
-  walls: '🧱',
-  barracks: '⚔️',
-  pyramids: '🔺',
-  great_library: '📜',
-  colossus: '🗿',
-  settlers: '⛺',
-  corvee: '⛓️',
-  eureka: '💡',
-  harvest: '🧺',
-  inspiration: '✨',
-  cultural_festival: '🎉',
-  philosopher: '🏛️',
-  conquest: '🗡️',
-  develop: '🏗️',
-  destroy: '💥',
-  barbarian: '🪓',
-};
-const artFor = (id: string) => CARD_ART[id] ?? '🏛️';
-
-/** Presentation-only cost label, e.g. "2🌾" · "3🔨" · "" (blank when free). Extra conditions
- *  (culture level, reserved population, discard cost) are shown separately — see
- *  `describeConditions`. */
-function describeCost(c: CardDef): string {
-  const parts = (Object.entries(c.cost) as [keyof Resources, number][])
-    .filter(([, v]) => v)
-    .map(([k, v]) => `${v}${COST_ICON[k]}`);
-  return parts.join(' · ');
-}
-
-/** Presentation-only summary of a card's extra conditions for play — culture-level gate,
- *  reserved population, and discard cost — shown in their own banded section on the card face. */
-function describeConditions(c: CardDef): string {
-  const parts: string[] = [];
-  if (c.kind === 'event') parts.push('resolves at end of round');
-  if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
-  if (c.popReserve) parts.push(`reserve ${c.popReserve}🧍`);
-  if (c.discardCost) parts.push(`discard ${c.discardCost}`);
-  return parts.join(' · ');
-}
-
-/** Presentation-only summary of a building's output. `includeWorkers` is false for the card
- *  face, which shows worker capacity as a column of meeples instead of text. */
-function describeBuilding(b: BuildingDef, includeWorkers = true): string {
-  const parts: string[] = [];
-  if (b.produces) {
-    parts.push(
-      Object.entries(b.produces)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
-        .join(' '),
-    );
-  }
-  if (b.cultureOutput) parts.push(`+${b.cultureOutput}🎭`);
-  if (includeWorkers && b.workers) parts.push(`👷${b.workers}`);
-  return parts.join(' · ');
-}
-
-/** Presentation-only summary of what a card does (no game logic here). */
-function describeCard(c: CardDef): string {
-  const e = c.effect;
-  const parts: string[] = [];
-  if (e?.gain) {
-    parts.push(
-      Object.entries(e.gain)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
-        .join(' '),
-    );
-  }
-  if (e?.loss) {
-    parts.push(
-      Object.entries(e.loss)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `-${v}${COST_ICON[k as keyof Resources]}`)
-        .join(' '),
-    );
-  }
-  if (e?.draw) parts.push(`draw ${e.draw}`);
-  if (e?.population) parts.push(`+${e.population} 🧍`);
-  if (e?.territory) parts.push(`+${e.territory} territory`);
-  if (e?.culture) parts.push(`+${e.culture} 🎭`);
-  if (e?.destroy) parts.push('Demolish a building');
-  if (e?.build) {
-    const bld = BUILDINGS[e.build];
-    // A permanent card *is* the building, so just show its stats; a recurring builder
-    // names the building it erects, since the names differ.
-    if (c.kind === 'recurring') parts.push(`🏗️ ${bld.name}`);
-    const stats = describeBuilding(bld, false);
-    if (stats) parts.push(stats);
-  }
-  return parts.join(' · ') || 'action';
-}
-
-/** The card's type banner — label + colour variant, shown under the name. */
-function cardBanner(c: CardDef): { label: string; variant: string } {
-  const built = c.effect?.build ? BUILDINGS[c.effect.build] : undefined;
-  if (c.kind === 'event') return { label: 'Event', variant: styles.bannerEvent };
-  if (built?.tags?.includes('wonder')) return { label: 'Wonder', variant: styles.bannerWonder };
-  if (c.kind === 'recurring') return { label: 'Action', variant: styles.bannerAction };
-  return { label: 'Building', variant: styles.bannerBuilding };
-}
-
-/** The colour variant a card face uses, by kind (event = danger, recurring = action, else building). */
-function kindClass(kind: CardDef['kind']): string {
-  if (kind === 'event') return styles.event;
-  if (kind === 'recurring') return styles.action;
-  return styles.permanent;
-}
-
-/** The visual face of a card — shared by hand cards and the play-animation ghost. */
-function CardFace({ card }: { card: CardDef }) {
-  const text = describeCard(card);
-  const conditions = describeConditions(card);
-  const banner = cardBanner(card);
-  const bld = card.effect?.build ? BUILDINGS[card.effect.build] : undefined;
-  const workers = bld?.workers ?? 0;
-  return (
-    <>
-      <div className={styles.cardTop}>
-        <span className={styles.cardName}>{card.name}</span>
-        <span className={styles.cardCost}>{describeCost(card)}</span>
-      </div>
-      <div className={`${styles.cardBanner} ${banner.variant}`}>{banner.label}</div>
-      <div className={styles.cardMid}>
-        {workers > 0 && (
-          <span className={styles.cardWorkers} aria-hidden="true">
-            {Array.from({ length: workers }, (_, i) => (
-              <span key={i} className={styles.cardWorkerIcon}>🧍</span>
-            ))}
-          </span>
-        )}
-        <div className={styles.cardArt} aria-hidden="true">
-          {artFor(card.id)}
-        </div>
-      </div>
-      {conditions && <div className={styles.cardConditions}>{conditions}</div>}
-      {text && <div className={styles.cardText}>{text}</div>}
-    </>
-  );
-}
 
 /** A hoverable stat chip: icon + value (+ optional projected delta), with a tooltip. */
 function Stat({
@@ -1275,8 +1123,7 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
                 const isSacrifice = pending?.discards.includes(card.handIdx) ?? false;
                 const isDragging = drag?.active === true && drag.key === card.key;
                 const className = [
-                  styles.card,
-                  kindClass(c.kind),
+                  styles.handCard,
                   card.isNew ? styles.dealIn : '',
                   isPending || isPendingDestroy ? styles.pending : '',
                   isSacrifice ? styles.sacrifice : '',
@@ -1289,10 +1136,12 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
                   .filter(Boolean)
                   .join(' ');
                 return (
-                  <button
+                  <CardFace
                     key={card.key}
+                    as="button"
+                    card={c}
                     ref={(el) => {
-                      if (el) cardEls.current.set(card.key, el);
+                      if (el) cardEls.current.set(card.key, el as HTMLButtonElement);
                       else cardEls.current.delete(card.key);
                     }}
                     className={className}
@@ -1303,9 +1152,7 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
                       if (pending) handlePendingClick(card);
                       else if (pendingDestroy && card.handIdx === pendingDestroy.handIdx) setPendingDestroy(null);
                     }}
-                  >
-                    <CardFace card={c} />
-                  </button>
+                  />
                 );
               })}
             </div>
@@ -1365,17 +1212,12 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
       {ghosts.length > 0 && (
         <div className={styles.ghostLayer} aria-hidden="true">
           {ghosts.map((g) => (
-            <div
+            <CardFace
               key={g.id}
-              className={[
-                styles.ghostCard,
-                kindClass(CARDS[g.cardId].kind),
-                g.anim === 'drop' ? styles.ghostDrop : styles.ghostPlay,
-              ].join(' ')}
+              card={CARDS[g.cardId]}
+              className={`${styles.ghostCard} ${g.anim === 'drop' ? styles.ghostDrop : styles.ghostPlay}`}
               style={{ left: g.rect.left, top: g.rect.top, width: g.rect.width, height: g.rect.height }}
-            >
-              <CardFace card={CARDS[g.cardId]} />
-            </div>
+            />
           ))}
         </div>
       )}
@@ -1397,12 +1239,11 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
             </span>
           </div>
           <div className={styles.dragLayer} aria-hidden="true">
-            <div
-              className={`${styles.dragCard} ${kindClass(CARDS[drag.cardId].kind)}`}
+            <CardFace
+              card={CARDS[drag.cardId]}
+              className={styles.dragCard}
               style={{ left: drag.x - drag.grabX, top: drag.y - drag.grabY, width: drag.w, height: drag.h }}
-            >
-              <CardFace card={CARDS[drag.cardId]} />
-            </div>
+            />
           </div>
         </>
       )}
@@ -1458,15 +1299,13 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
             ) : (
               <div className={styles.pileGrid}>
                 {groupCards(pileView.cards).map((g) => (
-                  <div key={g.cardId} className={styles.pileGridItem}>
-                    <div
-                      className={`${styles.card} ${styles.staticCard} ${kindClass(CARDS[g.cardId].kind)}`}
-                      onClick={(e) => { e.stopPropagation(); setZoom(g.cardId); }}
-                    >
-                      <CardFace card={CARDS[g.cardId]} />
-                    </div>
-                    {g.count > 1 && <span className={styles.pileQty}>×{g.count}</span>}
-                  </div>
+                  <CardFace
+                    key={g.cardId}
+                    card={CARDS[g.cardId]}
+                    className={styles.staticCard}
+                    countBadge={g.count}
+                    onClick={(e) => { e.stopPropagation(); setZoom(g.cardId); }}
+                  />
                 ))}
               </div>
             )}
@@ -1479,11 +1318,7 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
       {zoom && (
         <div className={styles.zoomBackdrop} onClick={() => setZoom(null)} role="dialog" aria-modal="true">
           <div className={styles.zoomWrap}>
-            <div
-              className={`${styles.card} ${styles.zoomCard} ${kindClass(CARDS[zoom].kind)}`}
-            >
-              <CardFace card={CARDS[zoom]} />
-            </div>
+            <CardFace card={CARDS[zoom]} className={styles.zoomCard} />
           </div>
           <p className={styles.zoomHint}>Drag a card onto the board to play · click anywhere to close</p>
         </div>

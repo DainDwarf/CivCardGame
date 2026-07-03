@@ -745,35 +745,19 @@
   padding-top: 20px; /* headroom for the hover lift */
 }
 
-.card {
-  position: relative;
-  flex: 0 0 auto;
-  width: 118px;
-  height: 162px;
-  margin: 0 -7px; /* overlap, like cards held in a hand */
-  padding: 0.45rem 0.5rem 0.5rem;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #c8c2b6;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff, #f6f4ef);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
-  cursor: grab;
-  text-align: left;
-  transform-origin: bottom center;
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
-  touch-action: none; /* let pointer drags work without the browser scrolling/panning */
+/* The card's own box/border/kind-coloring/inner layout lives in CardFace.module.css — this file
+   only adds hand-specific extras layered on via className (see CardFace.tsx's top comment). */
+
+/* Hand cards overlap like cards held in a hand, and lift on hover; a pile-viewer tile or a
+   deck-editor grid tile doesn't want either. */
+.handCard {
+  margin: 0 -7px;
 }
 
-.card:hover {
+.handCard:hover {
   transform: translateY(-16px);
   box-shadow: 0 12px 22px rgba(0, 0, 0, 0.28);
   z-index: 3;
-}
-
-.card:focus-visible {
-  outline: 2px solid #3b7dd8;
-  outline-offset: 2px;
 }
 
 /* Can't currently afford it — dimmed, but still inspectable (click to zoom). */
@@ -789,159 +773,6 @@
   opacity: 0.28;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
   cursor: grabbing;
-}
-
-.cardTop {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-  margin: -0.45rem -0.5rem 0; /* bleed the title band to the card edges; banner follows directly */
-  padding: 0.3rem 0.4rem 0.25rem;
-  border-radius: 9px 9px 0 0;
-}
-
-/* Full-width type banner under the name (Wonder / Building / Action). */
-.cardBanner {
-  margin: 0 -0.5rem 0.45rem; /* bleed to the side edges */
-  padding: 2px 4px;
-  text-align: center;
-  font-size: 0.55rem;
-  font-weight: 800;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.bannerWonder {
-  background: #b8860b;
-}
-
-.bannerBuilding {
-  background: #3b7dd8;
-}
-
-.bannerAction {
-  background: #c9772f;
-}
-
-.bannerEvent {
-  background: #b23b3b;
-}
-
-/* Event cards are a threat — a red border sets them apart from the player's own cards. */
-.event {
-  border-color: #b23b3b;
-}
-
-/* Colour the title band by card kind (blue = permanent building, orange = action, red = event). */
-.permanent .cardTop {
-  background: #e7f0fb;
-}
-
-.action .cardTop {
-  background: #fbeede;
-}
-
-.event .cardTop {
-  background: #fbe3e3;
-}
-
-.cardName {
-  font-weight: 700;
-  font-size: 0.72rem;
-  line-height: 1.1;
-}
-
-.cardCost {
-  font-size: 0.66rem;
-  font-weight: 600;
-  color: #444;
-  white-space: nowrap;
-}
-
-/* Row holding the worker-capacity column (if any) beside the art glyph. */
-.cardMid {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-}
-
-/* One meeple per worker the building requires, stacked to the left of the art — same icon as
-   the population tray, so the player reads it as "this many of my people". */
-.cardWorkers {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.cardWorkerIcon {
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
-.cardArt {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.6rem;
-  line-height: 1;
-}
-
-/* Extra conditions for play (culture level, reserved population, discard cost) — a darker band
-   sitting directly above the description footer, so the player reads "this is a requirement,
-   not an effect" at a glance. */
-.cardConditions {
-  text-align: center;
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #fff;
-  line-height: 1.25;
-  margin: 0 -0.5rem;
-  padding: 0.2rem 0.35rem;
-}
-
-.permanent .cardConditions {
-  background: #7ea3d0;
-}
-
-.action .cardConditions {
-  background: #cc9f6e;
-}
-
-.event .cardConditions {
-  background: #cc7a7a;
-}
-
-.cardText {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 0.64rem;
-  color: #555;
-  line-height: 1.25;
-  min-height: 2.4em;
-  margin: 0 -0.5rem -0.5rem; /* bleed to the side and bottom card edges */
-  padding: 0.25rem 0.35rem;
-  border-radius: 0 0 9px 9px;
-}
-
-/* Match the light title-band tint for the card's kind (blue = permanent building, orange = action). */
-.permanent .cardText {
-  background: #e7f0fb;
-}
-
-.action .cardText {
-  background: #fbeede;
-}
-
-.event .cardText {
-  background: #fbe3e3;
 }
 
 /* The card whose discard cost we're paying. */
@@ -1138,14 +969,10 @@
   pointer-events: none;
 }
 
+/* Box/border/inner layout come from CardFace.module.css — just position it and lift its shadow
+   for the "flying" look. */
 .ghostCard {
   position: fixed;
-  padding: 0.45rem 0.5rem 0.5rem;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #c8c2b6;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff, #f6f4ef);
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
 }
 
@@ -1193,15 +1020,10 @@
   pointer-events: none;
 }
 
-/* The card clone that tracks the cursor during a drag. */
+/* The card clone that tracks the cursor during a drag — box/border/inner layout come from
+   CardFace.module.css; this just positions and tilts it. */
 .dragCard {
   position: fixed;
-  padding: 0.45rem 0.5rem 0.5rem;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #c8c2b6;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff, #f6f4ef);
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.4);
   transform: rotate(-3deg) scale(1.05);
   transform-origin: center;
@@ -1277,15 +1099,12 @@
   animation: zoomIn 0.16s ease-out;
 }
 
-/* Reuse the card face at ~2.2× with no hover lift. */
-.zoomCard,
-.zoomCard:hover {
-  margin: 0;
+/* Reuse the card face at ~2.2×. */
+.zoomCard {
   transform: scale(2.2);
   transform-origin: center;
   cursor: default;
   box-shadow: 0 22px 50px rgba(0, 0, 0, 0.5);
-  z-index: auto;
 }
 
 .zoomHint {
@@ -1340,34 +1159,9 @@
   justify-content: center;
 }
 
-.pileGridItem {
-  position: relative;
-}
-
-/* A pile-viewer card face — click to zoom. */
+/* A pile-viewer card face — click to zoom. Its ×N count badge is CardFace's own `countBadge`. */
 .staticCard {
-  margin: 0;
   cursor: pointer;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
-  z-index: auto;
-}
-
-.pileQty {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 5px;
-  border-radius: 11px;
-  background: #2c2c2c;
-  color: #fff;
-  font-size: 0.78rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
 
 /* --- End-of-run overlay --- */

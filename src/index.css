@@ -1,0 +1,7 @@
+/* This app has no other global stylesheet — every screen is CSS Modules. The one thing that
+   has to live outside a module is resetting the browser's default 8px `<body>` margin, which
+   otherwise insets every full-bleed / fixed-position element (the run loop's hand bar, the
+   deck editor's banner, etc.) from the true viewport edges. */
+body {
+  margin: 0;
+}

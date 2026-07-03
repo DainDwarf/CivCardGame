@@ -115,7 +115,12 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/components/Board.tsx` — the React board. Calls `useGame()` for state and
   actions; calls `moves.playCard` / `moves.toggleStaffing` / `endTurn()`. Display only —
   read derived values from `src/rules/` (e.g. `projectedDelta`, `freePopulation`), never
-  recompute game logic.
+  recompute game logic. The card visual itself — `CardFace` (name/cost/kind banner/art/
+  worker icons/effect text, plus the outer box and its kind coloring, all in one CSS
+  module so the kind-coloring rules always resolve against their own ancestor) — lives
+  in `src/components/CardFace.tsx`, shared with the deck editor's picker/banner tiles;
+  Board layers hand-specific extras (overlap, hover-lift, drag/deal/shake states) on top
+  via a `className` prop rather than owning any card styling itself.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left column of big nav
   buttons switches between four screens — `MissionSelect.tsx` (mission/board/deck
   picker, deck list sourced from the player's own `decks`; assembles a `RunConfig` via
@@ -123,8 +128,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `content/cards.ts` — no per-player ownership tracking yet), `Decks.tsx` (every deck
   in the player's store, New/Edit/Delete), and `Stats.tsx` (the run history list).
   `DeckEditor.tsx` (opened from `Decks.tsx`, not a nav tab) edits a single `DeckDef` in
-  place — card picker reuses `Collection.tsx`'s exported `CardTile`; add/remove go
-  through `rules/deckBuilder.ts`. `store.ts`'s `loadStore`/`saveStore` persist
+  place — a main picker area (grouped by kind, same groups as `Collection.tsx`) of
+  `CardFace` tiles above a bottom banner representing the deck itself (name, card count,
+  Save/Cancel, and its cards grouped into ×N stacks like the run loop's pile viewer).
+  Cards move between the two by click (the fast path) or drag, via the same hand-rolled
+  pointer-drag convention `Board.tsx` uses elsewhere (no drag-and-drop library in this
+  project); add/remove go through `rules/deckBuilder.ts`. `store.ts`'s
+  `loadStore`/`saveStore` persist
   `PlayerStore` (`runHistory` + `decks`, the latter seeded from `content/decks.ts`'s
   `DEFAULT_DECKS` on a fresh profile) to `localStorage`.
 - `src/components/GameMenu.tsx` — the global-action surface (docs/DESIGN.md's Phase 2
@@ -159,7 +169,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   meta screen it mounts `<GameMenu>` directly; on the run screen a small `RunGameMenu`
   wrapper renders inside `<GameProvider>` so it can pull `runControls` off `useGame()`.
   On `onRunEnd`, it stores the `RunResult` and switches back to the menu.
-- `src/main.tsx` — mounts `<App>`.
+- `src/main.tsx` — mounts `<App>`. Also imports `src/index.css`, the one bit of global CSS
+  in an otherwise all-CSS-Modules codebase: just a `body { margin: 0 }` reset, since the
+  browser's default 8px body margin would otherwise inset every full-bleed/fixed-position
+  element (the run loop's hand bar, the deck editor's banner) from the true viewport edges.
 
 See `src/contract.ts` for the `RunConfig`/`RunResult` types, `buildRunConfig` (now
 takes the player's `decks` as a required argument — there's no static deck registry to
