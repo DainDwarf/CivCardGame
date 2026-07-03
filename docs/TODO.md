@@ -44,9 +44,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
 - Culture thresholds change hand size by default (no building required) — culture as a passive progression axis `[?]` `[phase: 4]`
 - Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
+- **Drop the building/card distinction** — playing a building card should keep the
+  building's simplified tableau look, but should no longer file the card to the
+  `removed` pile on construction; clicking a placed building (outside its worker zone)
+  should open the card zoom popup. This runs against CLAUDE.md's current explicit
+  building/card split (`content/buildings.ts` entities vs. `content/cards.ts`'s
+  `effect.build` constructing them, filed separately by `kind`) — treat as a big
+  semantic change needing a full doc + code assessment (not a quick UI tweak) before
+  scoping the actual work. `[?]` `[size: L]` `[phase: 2]`
 
 ## UI (`src/components/`)
 
+- **Dark-mode contrast bugs** — some text renders black-on-dark in Dark theme: card
+  name text in the deck builder and the run loop hand, and the burger-menu/submenu
+  headers. Also the run loop's hand bottom banner has a black→white gradient that's
+  too bright in Dark. `[phase: 2]`
 - **Fading transition between meta and run stages** — `App.tsx`'s meta↔run screen switch is an instant cut; a fade would smooth it out `[?]` `[phase: 2]`
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
@@ -55,6 +67,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - Card that gives a draw when expanding territory `[?]` `[phase: 4]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]` `[phase: 4]`
+- **Delay played-card discard to end of turn** — recurring/action cards currently file
+  straight to `discard` on play (`moves.ts`'s `playCard`); instead hold them reserved
+  (visible, out of hand) through the rest of the turn and only move them to `discard`
+  during `endTurn`'s upkeep. `[?]` `[phase: 2]`
 
 
 
