@@ -46,7 +46,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
 - **Drop the building/card distinction** — playing a building card should keep the
   building's simplified tableau look, but should no longer file the card to the
-  `removed` pile on construction; clicking a placed building (outside its worker zone)
+  `removed` pile on construction; Demolishing a building move the card into the removed pile since it left the plateau; clicking a placed building (outside its worker zone)
   should open the card zoom popup. This runs against CLAUDE.md's current explicit
   building/card split (`content/buildings.ts` entities vs. `content/cards.ts`'s
   `effect.build` constructing them, filed separately by `kind`) — treat as a big
