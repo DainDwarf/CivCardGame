@@ -205,11 +205,14 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `document.documentElement.dataset.theme` from `resolveTheme(loadSettings().theme)` so the
   saved color theme is applied with no light-then-dark flash on load — a plain resolve, not
   `applyTheme`, since a live `'system'` listener needs an owner to tear it down and `App.tsx`
-  (not yet mounted at this point) is that owner. `index.css` holds two things: the
-  color-theme palette (see the theming convention below) and a `body { margin: 0 }` reset,
-  since the browser's default 8px body margin would otherwise inset every full-bleed/
-  fixed-position element (the run loop's hand bar, the deck editor's banner) from the true
-  viewport edges.
+  (not yet mounted at this point) is that owner. `index.css` holds the color-theme palette
+  (see the theming convention below) plus two `body` resets: `margin: 0`, since the
+  browser's default 8px body margin would otherwise inset every full-bleed/fixed-position
+  element (the run loop's hand bar, the deck editor's banner) from the true viewport edges;
+  and `background: var(--surface-sunken)`, a themed fallback for any stray gap in the UI
+  that would otherwise show through to browser-default white — see the *Dark-mode contrast
+  bugs* fix in docs/TODO.md's Done/shipped, where an unthemed `body` was exactly such a
+  gap (revealed through the run loop's hand bar's transparent top edge).
 
 See `src/contract.ts` for the `RunConfig`/`RunResult` types, `buildRunConfig` (now
 takes the player's `decks` as a required argument — there's no static deck registry to

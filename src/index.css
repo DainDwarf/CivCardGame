@@ -314,6 +314,11 @@
 
 body {
   margin: 0;
+  /* Themed, not left to the browser default (white) — the run screen's hand-bar gradient
+     fades to transparent at its top edge assuming *something* themed shows through (its
+     backdrop, .gamearea's dirt ground, is deliberately clipped short of the viewport bottom
+     to leave room for the bar), so an unthemed body would flash white behind it in Dark. */
+  background: var(--surface-sunken);
   /* Nothing scrolls the document anymore — the run screen is fixed-positioned and the meta
      screen scrolls inside its own content column (MetaMenu.module.css). The UI-scale wrapper
      (App.module.css) sizes its pre-scale layout box to `100vw / scale`, which at scale < 1 is

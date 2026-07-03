@@ -334,8 +334,19 @@
   color: var(--action);
 }
 
-/* The play area: a fixed backdrop spanning the whole viewport, holding the slot grid (which
-   scrolls) above the work strip. paddingTop (inline) clears the sticky banner. */
+/* A full-viewport dirt layer behind everything, so the ground stays visible through the hand
+   bar's transparent top edge even though .gamearea below is clipped short of the viewport
+   bottom (its bound is the slot-grid/work-strip content, not the visible backdrop). */
+.groundBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--ground);
+}
+
+/* The play area: holds the slot grid (which scrolls) above the work strip, bounded to end
+   exactly above the hand bar so neither scrolls nor sits behind it. paddingTop (inline)
+   clears the sticky banner. No background of its own — .groundBackdrop shows through. */
 .gamearea {
   position: fixed;
   left: 0;
@@ -344,8 +355,6 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  /* Light-brown dirt the civilization is built on. */
-  background: var(--ground);
 }
 
 /* The territory grid: one cell per slot, filling left-to-right and wrapping to new rows. Fixed
@@ -610,7 +619,6 @@
     rgb(var(--bar-top-rgb)) 30%,
     var(--bar-bottom) 100%
   );
-  border-top: 1px solid var(--border-bar);
   padding: 0.35rem 1rem 0.7rem;
 }
 

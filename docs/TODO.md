@@ -54,10 +54,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- **Dark-mode contrast bugs** — some text renders black-on-dark in Dark theme: card
-  name text in the deck builder and the run loop hand, and the burger-menu/submenu
-  headers. Also the run loop's hand bottom banner has a black→white gradient that's
-  too bright in Dark. `[phase: 2]`
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 
@@ -84,6 +80,31 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Dark-mode contrast bugs** — three spots the Theme picker's CSS-variable retrofit
+  missed, because each was an *absent* color declaration (nothing for a hex-search
+  sweep to find) rather than a hardcoded hex to convert. `CardFace.module.css`'s
+  `.cardName` and `GameMenu.module.css`'s `.title`/`.submenuTitle` never set a
+  `color` at all, so they fell through to the browser's default black text — fine
+  against Light's pale card bands and popup surface, unreadable against Dark's dark
+  ones. Both now set `color: var(--text-strong)`. The hand bar's bottom gradient
+  (`Board.module.css`'s `.handBar`) was a subtler case: its *tokens* were already
+  correctly dark-tuned, but the gradient fades to transparent at its top edge on the
+  assumption that the dirt ground continues underneath — except `.gamearea`, the div
+  that used to paint that dirt, has its bottom deliberately clipped to `insets.bottom`
+  (Board.tsx) so its *content* (the scrolling slot grid, the work strip) ends exactly
+  above the hand bar rather than scrolling/sitting behind it. That clip was also
+  cutting off the background paint, so the gradient's transparent stretch revealed
+  the raw `<body>` background — never themed (`index.css` only set `margin`/
+  `overflow` there) — browser-default white in every theme. Invisible in Light
+  (white body behind a near-white gradient top); a stark bright band in Dark. Fixed
+  in two layers: `body` now has an explicit `background: var(--surface-sunken)` as a
+  themed fallback for any such gap anywhere in the app, and — since the dirt
+  continuing under the fade is a genuinely nicer look, not just a fallback — a new
+  `.groundBackdrop` (`position: fixed; inset: 0; z-index: -1`) now paints the ground
+  across the *entire* viewport as its own layer, decoupled from `.gamearea`'s
+  content-bounded box; `.gamearea` dropped its own `background` since the backdrop
+  shows through it identically. Found by visual inspection in the browser (Chrome
+  DevTools MCP) after the first two fixes turned out not to explain the third.
 - **"Follow system" theme option** — the Theme picker (`meta/settings.ts`'s `THEMES`)
   gained a third choice, **System**, now the default for a fresh profile
   (`DEFAULT_SETTINGS.theme`). Unlike Light/Dark, `'system'` isn't itself a valid

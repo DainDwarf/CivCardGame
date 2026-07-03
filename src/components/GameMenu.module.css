@@ -52,6 +52,7 @@
 .title {
   margin: 0 0 1rem;
   font-size: 1.2rem;
+  color: var(--text-strong);
 }
 
 .items {
@@ -143,6 +144,7 @@
 .submenuTitle {
   margin: 0 0 0.75rem;
   font-size: 1.1rem;
+  color: var(--text-strong);
 }
 
 .submenuEmpty {

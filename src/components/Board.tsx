@@ -1052,6 +1052,7 @@ export function Board({
   return (
     <>
     <div className={styles.app}>
+      <div className={styles.groundBackdrop} />
       <MissionWidget mission={mission} G={G} />
       <header className={styles.topBanner} ref={bannerRef}>
         <div
