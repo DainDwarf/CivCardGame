@@ -152,10 +152,17 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   applying — export needs no such gate, since it doesn't touch the live store. The
   Config submenu holds device-local preferences (`meta/settings.ts`'s `Settings`,
   persisted under their own `localStorage` key — kept out of `PlayerStore` since
-  they're not game progress, so Save's Load/Clear never touches them): currently just
-  a "confirm before ending a round" toggle that folds into `Board.tsx`'s existing
-  end-round warning dialog. A UI-size setting was tried (`document.documentElement.style.zoom`)
-  and reverted — see docs/TODO.md. The Codex submenu renders `Codex.tsx` — a pure,
+  they're not game progress, so Save's Load/Clear never touches them): a "confirm before
+  ending a round" toggle that folds into `Board.tsx`'s existing end-round warning dialog,
+  and a UI-size slider (`settings.uiScale`) that `App.tsx` applies by wrapping the whole
+  app in a `transform: scale()` container (`App.module.css`) — chosen over CSS `zoom`,
+  which was tried and reverted, because a transformed ancestor becomes the containing block
+  for its `position: fixed` descendants, so the run loop's fixed layout and drag clones
+  scale together and stay anchored (see docs/TODO.md). Because that wrapper makes `fixed`
+  children scroll with content on a body-scrolling screen, the meta shell scrolls inside
+  `.content` instead of the body (`MetaMenu.module.css`), and `Board.tsx`/`DeckEditor.tsx`
+  divide their drag-clone pointer coordinates by the scale (visual→local). The Codex
+  submenu renders `Codex.tsx` — a pure,
   static in-menu rules reference (resources, card kinds, population/staffing, turn
   structure, keyword glossary; list-shaped data in `content/codex.ts`, narrative pages
   authored in the component) that reads no run state, so it's identical on both screens.

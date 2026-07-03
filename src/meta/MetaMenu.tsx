@@ -30,12 +30,15 @@ const NAV: { screen: Screen; icon: string; label: string }[] = [
 export function MetaMenu({
   runHistory,
   decks,
+  uiScale,
   onLaunch,
   onSaveDeck,
   onDeleteDeck,
 }: {
   runHistory: RunResult[];
   decks: DeckDef[];
+  /** Whole-UI scale (settings) — forwarded to `DeckEditor` for its drag-clone coordinate math. */
+  uiScale: number;
   onLaunch: (config: RunConfig) => void;
   onSaveDeck: (deck: DeckDef) => void;
   onDeleteDeck: (id: string) => void;
@@ -87,6 +90,7 @@ export function MetaMenu({
         {screen === 'deckEditor' && editingDeck && (
           <DeckEditor
             initialDeck={editingDeck}
+            uiScale={uiScale}
             onSave={(deck) => {
               onSaveDeck(deck);
               closeEditor();

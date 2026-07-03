@@ -30,7 +30,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
 - **Theme picker** — a Config-submenu setting to pick between color themes (e.g. light/dark). Bigger than it looks: none of the 8 `*.module.css` files use CSS custom properties for color today, so this needs a retrofit onto CSS variables *before* a picker can just swap a palette — most of the cost is the retrofit, not the picker UI. `[size: L]` `[?]` `[phase: 2]`
-- **UI size setting** — a Config-submenu setting to scale the whole UI up/down. Tried via `document.documentElement.style.zoom` (see *Rejected* below) and reverted: it broke `Board.tsx`'s run-screen layout (building slots sliding under the resource banner, background color bleeding past the bottom hand bar) even after fixing the drag-and-drop math. CSS `zoom` on the root doesn't rescale the viewport pointer events are reported against, and `Board.tsx` leans on `position: fixed` + raw `clientX`/`clientY`/`getBoundingClientRect()` math throughout, so a page-level zoom fights that layout in more places than just the drag clones. A working version likely needs either a `transform: scale()` container with its own compensated coordinate math (not just for drag, for every fixed-position child too), or a proper rem/CSS-custom-property based scale that avoids the raw-pixel measurement problem entirely — worth scoping carefully before trying again. `[size: L]` `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 3]`
 - **Decks screen UI rework** — `Decks.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain stacked deck cards, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
 - **Codex menu UI rework** — `Codex.tsx` (shipped populating the codex submenu) is a first-pass layout: one long scrollable page of definition lists inside the fixed 300px submenu window, no topic navigation, no icons on most entries. Give it a real visual pass — likely a topic-list → page view (or tabs), a wider/roomier surface than the shared `.submenuPanel`, and richer per-topic presentation. `[?]` `[phase: 2]`
@@ -74,6 +73,31 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **UI size setting** — a Config-submenu slider (`meta/settings.ts`'s `Settings.uiScale`,
+  0.8–1.5, clamped) that scales the whole UI. Second attempt after the `zoom` one was
+  reverted (see *Rejected* below); this one uses **`transform: scale()`** on a single
+  wrapper around App's entire render (`App.tsx` + new `App.module.css`, `--ui-scale` set
+  inline and inherited down). The key reason it works where `zoom` didn't: a transformed
+  ancestor becomes the **containing block for its `position: fixed` descendants**, so the
+  run loop's hand bar/gamearea, the game-menu burger, the deck-editor banner, and every
+  drag clone reparent to the wrapper and scale as one — instead of `zoom`'s inconsistent
+  interaction with viewport-relative fixed elements. Three follow-on pieces: (1) the wrapper
+  is sized `width/height: calc(100v* / scale)` so its pre-scale box, once scaled, is exactly
+  the viewport (fixed children get a full-viewport containing block); `index.css` clips the
+  body since nothing scrolls it anymore. (2) The meta shell can't rely on **body scroll** any
+  longer — a transform ancestor makes "fixed" children scroll away with body content — so
+  `MetaMenu.module.css` moves scrolling into the already-present `.content { overflow-y: auto }`
+  by bounding `.shell`'s height (`min-height: 100vh` → `height: 100%`) and adding
+  `.content { min-height: 0 }`; the burger and deck-editor banner (containing block = the
+  outer wrapper) then stay pinned. (3) `getBoundingClientRect()`/`clientX` report *visual*
+  (post-scale) px, so `Board.tsx` and `DeckEditor.tsx` divide their drag/ghost-clone inline
+  `left/top/width/height` by the scale (`px(v) = v / uiScale`, threaded as a prop) to convert
+  visual→local; `offsetHeight`-derived insets stay in layout space and need no conversion,
+  and hit-testing compares visual-to-visual so it's untouched. A rem/font-size scale was
+  reconsidered and rejected again on cost — it would need a mechanical px→rem sweep across
+  209 `px` occurrences in 11 CSS modules, vs. the transform's ~5 localized coordinate sites.
+  Popup viewport-unit caps (`Board.module.css` pile panel, `Codex.module.css`) now divide
+  their `vh`/`vw` by `--ui-scale` so they can't exceed the screen at large scale.
 - **Collection screen UI rework** — `Collection.tsx` now looks like the deck editor's
   picker area: real `CardFace` tiles (same kind-grouping — Buildings & Wonders /
   Actions — as before) in a grid, no bottom banner since there's nothing to build here.

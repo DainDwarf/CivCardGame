@@ -1,7 +1,9 @@
 /* The Codex is the first *long* submenu, so it owns its own scroll: the surrounding
    .submenuPanel stays a fixed window and the reference text scrolls inside this box. */
 .codex {
-  max-height: 62vh;
+  /* Divided by the UI scale (App.tsx's transform wrapper sets --ui-scale) so this viewport-unit
+     cap stays at 62% of the real viewport instead of being re-scaled past it at scale > 1. */
+  max-height: calc(62vh / var(--ui-scale, 1));
   overflow-y: auto;
   text-align: left;
   /* Bleed a touch into the panel padding and keep clear of the scrollbar. */

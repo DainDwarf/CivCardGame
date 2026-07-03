@@ -426,8 +426,15 @@ function whyUnplayable(card: CardDef, G: GameState): string | null {
   }
 }
 
-export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
+export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; uiScale: number }) {
   const { G, gameover, moves, endTurn, undo, canUndo, restart, endRun } = useGame();
+  // The whole board renders inside a `transform: scale(uiScale)` wrapper (App.tsx). Pointer
+  // coordinates and getBoundingClientRect() are in *visual* (post-scale) px; when written into
+  // an inline left/top/width/height on a drag/ghost clone — which lives inside that scaled
+  // wrapper — the value would be scaled a second time. Divide by the scale to convert
+  // visual → local so the clone lands under the cursor at its true size. (offsetHeight-derived
+  // insets stay in layout space and need no conversion; hit-testing compares visual-to-visual.)
+  const px = (v: number) => v / uiScale;
   const mission = MISSIONS[G.missionId];
   const [pending, setPending] = useState<PendingPlay | null>(null);
   const [pendingDestroy, setPendingDestroy] = useState<PendingDestroy | null>(null);
@@ -1217,7 +1224,7 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
               key={g.id}
               card={CARDS[g.cardId]}
               className={`${styles.ghostCard} ${g.anim === 'drop' ? styles.ghostDrop : styles.ghostPlay}`}
-              style={{ left: g.rect.left, top: g.rect.top, width: g.rect.width, height: g.rect.height }}
+              style={{ left: px(g.rect.left), top: px(g.rect.top), width: px(g.rect.width), height: px(g.rect.height) }}
             />
           ))}
         </div>
@@ -1243,7 +1250,7 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
             <CardFace
               card={CARDS[drag.cardId]}
               className={styles.dragCard}
-              style={{ left: drag.x - drag.grabX, top: drag.y - drag.grabY, width: drag.w, height: drag.h }}
+              style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
             />
           </div>
         </>
@@ -1255,10 +1262,10 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
           <div
             className={styles.buildingDragClone}
             style={{
-              left: slotDrag.x - slotDrag.grabX,
-              top: slotDrag.y - slotDrag.grabY,
-              width: slotDrag.w,
-              height: slotDrag.h,
+              left: px(slotDrag.x - slotDrag.grabX),
+              top: px(slotDrag.y - slotDrag.grabY),
+              width: px(slotDrag.w),
+              height: px(slotDrag.h),
             }}
           >
             <BuildingBox inst={buildingById.get(slotDrag.id)!} gameover idle={idle} dragging />
@@ -1272,10 +1279,10 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
           <div
             className={styles.workerDragClone}
             style={{
-              left: workerDrag.x - workerDrag.grabX,
-              top: workerDrag.y - workerDrag.grabY,
-              width: workerDrag.w,
-              height: workerDrag.h,
+              left: px(workerDrag.x - workerDrag.grabX),
+              top: px(workerDrag.y - workerDrag.grabY),
+              width: px(workerDrag.w),
+              height: px(workerDrag.h),
             }}
           >
             🧍

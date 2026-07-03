@@ -1,0 +1,18 @@
+/* Whole-UI scale wrapper (Config's UI-size setting). Using `transform: scale()` — not CSS
+   `zoom` (see docs/TODO.md's rejected attempt) — because a transformed ancestor becomes the
+   containing block for its `position: fixed` descendants, so the run loop's hand bar/gamearea,
+   the game-menu burger, the deck-editor banner, and every drag clone all scale together and
+   stay anchored to it instead of the raw viewport.
+
+   The width/height are divided by the scale so the *pre-scale* layout box, once multiplied by
+   the transform, comes back out to exactly the viewport — giving fixed children a full-viewport
+   containing block at every scale. `--ui-scale` is set inline from settings (App.tsx) and
+   inherits to all descendants, both to drive this transform and for the few `calc(… / var(--ui-scale))`
+   viewport-unit caps elsewhere (popups). Board.tsx / DeckEditor.tsx read the same number as a
+   prop to convert pointer coordinates (visual → local) for their drag clones. */
+.uiScale {
+  transform: scale(var(--ui-scale, 1));
+  transform-origin: top left;
+  width: calc(100vw / var(--ui-scale, 1));
+  height: calc(100vh / var(--ui-scale, 1));
+}

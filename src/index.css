@@ -4,4 +4,9 @@
    deck editor's banner, etc.) from the true viewport edges. */
 body {
   margin: 0;
+  /* Nothing scrolls the document anymore — the run screen is fixed-positioned and the meta
+     screen scrolls inside its own content column (MetaMenu.module.css). The UI-scale wrapper
+     (App.module.css) sizes its pre-scale layout box to `100vw / scale`, which at scale < 1 is
+     wider/taller than the viewport; clip that overflow so it can't add document scrollbars. */
+  overflow: hidden;
 }

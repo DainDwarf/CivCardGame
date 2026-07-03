@@ -1111,8 +1111,11 @@
 /* --- Pile viewer (discard / removed contents) --- */
 
 .pilePanel {
-  max-width: min(680px, 92vw);
-  max-height: 80vh;
+  /* Divide the viewport-unit caps by the UI scale (App.tsx sets --ui-scale on the transform
+     wrapper): a `vh`/`vw` measures the true viewport and would then be re-scaled, letting the
+     panel exceed the screen at scale > 1. Dividing keeps the on-screen cap at the intended %. */
+  max-width: min(680px, calc(92vw / var(--ui-scale, 1)));
+  max-height: calc(80vh / var(--ui-scale, 1));
   overflow-y: auto;
   padding: 1rem 1.25rem 1.25rem;
   border-radius: 12px;

@@ -249,6 +249,53 @@
   cursor: pointer;
 }
 
+.configScaleRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.configScaleHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+}
+
+.configScaleValue {
+  font-variant-numeric: tabular-nums;
+  color: #555;
+  font-weight: 700;
+}
+
+.configScaleReset {
+  margin-left: auto;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #333;
+  background: #e7e7e2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.configScaleReset:hover {
+  background: #dcdcd6;
+}
+
+.configScaleReset:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.configScaleRow input[type='range'] {
+  width: 100%;
+  cursor: pointer;
+}
+
 @keyframes menuFadeIn {
   from {
     opacity: 0;

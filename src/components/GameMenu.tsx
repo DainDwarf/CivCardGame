@@ -1,7 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { version } from '../../package.json';
 import { emptyStore, exportSave, importSave, type PlayerStore } from '../meta/store';
-import type { Settings } from '../meta/settings';
+import { UI_SCALE_MIN, UI_SCALE_MAX, type Settings } from '../meta/settings';
 import { Codex } from './Codex';
 import styles from './GameMenu.module.css';
 
@@ -82,9 +82,10 @@ function saveFileName(): string {
  *
  * `settings`/`onUpdateSettings` back the Config submenu — device-local preferences
  * (`meta/settings.ts`), deliberately kept out of `PlayerStore` so they survive a
- * Save-submenu Load/Clear untouched. Currently just the confirm-end-turn toggle,
- * which calls `onUpdateSettings` directly on change (no pending/confirm step — it
- * isn't destructive). A UI-size setting was tried and reverted — see docs/TODO.md.
+ * Save-submenu Load/Clear untouched. Two controls (confirm-end-turn toggle, UI-size
+ * slider), each calling `onUpdateSettings` directly on change (no pending/confirm step —
+ * neither is destructive). The UI-size slider drives `settings.uiScale`, applied by
+ * `App.tsx`'s `transform: scale()` wrapper.
  *
  * `runControls` (see its own doc comment) backs the run-screen-only Restart Run / End
  * Run items — confirm-gated like Save's Load/Clear while the run is live, but act
@@ -303,6 +304,29 @@ export function GameMenu({
                       />
                       <span>Confirm before ending a round</span>
                     </label>
+                    <div className={styles.configScaleRow}>
+                      <div className={styles.configScaleHead}>
+                        <span>UI size</span>
+                        <span className={styles.configScaleValue}>{Math.round(settings.uiScale * 100)}%</span>
+                        <button
+                          type="button"
+                          className={styles.configScaleReset}
+                          onClick={() => onUpdateSettings({ ...settings, uiScale: 1 })}
+                          disabled={settings.uiScale === 1}
+                        >
+                          Reset
+                        </button>
+                      </div>
+                      <input
+                        type="range"
+                        min={UI_SCALE_MIN}
+                        max={UI_SCALE_MAX}
+                        step={0.05}
+                        value={settings.uiScale}
+                        onChange={(e) => onUpdateSettings({ ...settings, uiScale: Number(e.target.value) })}
+                        aria-label="UI size"
+                      />
+                    </div>
                   </div>
                 ) : submenu.id === 'restartRun' || submenu.id === 'endRun' ? (
                   <div className={styles.confirmBody}>

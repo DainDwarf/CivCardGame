@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { MetaMenu } from '../meta/MetaMenu';
 import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
@@ -7,6 +7,7 @@ import { loadStore, saveStore, type PlayerStore } from '../meta/store';
 import { loadSettings, saveSettings, type Settings } from '../meta/settings';
 import type { DeckDef } from '../content/decks';
 import type { RunConfig, RunResult } from '../contract';
+import styles from './App.module.css';
 
 type View = { screen: 'menu' } | { screen: 'run'; config: RunConfig };
 
@@ -106,7 +107,10 @@ export function App() {
   }
 
   return (
-    <>
+    // Whole-UI scale wrapper — a transform:scale() container so `position: fixed` children
+    // (hand bar, burger, deck-editor banner, drag clones) reparent to it and scale as one.
+    // See App.module.css. `--ui-scale` inherits down; Board/DeckEditor also read the number.
+    <div className={styles.uiScale} style={{ '--ui-scale': settings.uiScale } as CSSProperties}>
       {view.screen === 'run' ? (
         <GameProvider
           config={view.config}
@@ -123,7 +127,7 @@ export function App() {
             onUpdateSettings={persistSettings}
             onAbandon={() => setView({ screen: 'menu' })}
           />
-          <Board confirmEndTurn={settings.confirmEndTurn} />
+          <Board confirmEndTurn={settings.confirmEndTurn} uiScale={settings.uiScale} />
         </GameProvider>
       ) : (
         <>
@@ -131,12 +135,13 @@ export function App() {
           <MetaMenu
             runHistory={store.runHistory}
             decks={store.decks}
+            uiScale={settings.uiScale}
             onLaunch={(config) => setView({ screen: 'run', config })}
             onSaveDeck={saveDeck}
             onDeleteDeck={deleteDeck}
           />
         </>
       )}
-    </>
+    </div>
   );
 }

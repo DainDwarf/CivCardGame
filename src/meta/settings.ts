@@ -7,17 +7,30 @@
 export interface Settings {
   /** Require a confirm click before ending a round. */
   confirmEndTurn: boolean;
+  /** Whole-UI scale factor applied via a `transform: scale()` wrapper (App.tsx). 1 = 100%. */
+  uiScale: number;
 }
 
-export const DEFAULT_SETTINGS: Settings = { confirmEndTurn: false };
+/** Bounds for `uiScale`, shared by the parser's clamp and the Config slider (GameMenu.tsx). */
+export const UI_SCALE_MIN = 0.8;
+export const UI_SCALE_MAX = 1.5;
+
+export const DEFAULT_SETTINGS: Settings = { confirmEndTurn: false, uiScale: 1 };
 
 const STORAGE_KEY = 'civcardgame:settings';
+
+/** Clamp a stored/hand-edited scale into range, falling back to 1 on anything non-finite. */
+function clampScale(v: unknown): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return DEFAULT_SETTINGS.uiScale;
+  return Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, v));
+}
 
 function parseSettings(raw: unknown): Settings | null {
   if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
   return {
     confirmEndTurn: typeof obj.confirmEndTurn === 'boolean' ? obj.confirmEndTurn : DEFAULT_SETTINGS.confirmEndTurn,
+    uiScale: clampScale(obj.uiScale),
   };
 }
 

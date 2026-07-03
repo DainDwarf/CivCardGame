@@ -39,14 +39,21 @@ interface DragState {
  */
 export function DeckEditor({
   initialDeck,
+  uiScale,
   onSave,
   onCancel,
 }: {
   initialDeck: DeckDef;
+  /** Whole-UI scale from settings — the editor renders inside App.tsx's transform:scale()
+   *  wrapper, so the drag clone's inline coordinates must be divided by it (visual → local),
+   *  same as `Board.tsx`. */
+  uiScale: number;
   onSave: (deck: DeckDef) => void;
   onCancel: () => void;
 }) {
   const [deck, setDeck] = useState<DeckDef>(initialDeck);
+  // See Board.tsx's `px` — convert visual (post-scale) pointer/rect px to local px for the clone.
+  const px = (v: number) => v / uiScale;
   const [drag, setDragState] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
@@ -225,7 +232,7 @@ export function DeckEditor({
         <CardFace
           card={CARDS[drag.cardId]}
           className={styles.dragClone}
-          style={{ left: drag.x - drag.grabX, top: drag.y - drag.grabY, width: drag.w, height: drag.h }}
+          style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
         />
       </div>
     )}

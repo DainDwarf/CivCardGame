@@ -1,6 +1,13 @@
 .shell {
   display: flex;
-  min-height: 100vh;
+  /* Bounded height (not min-height) + overflow:hidden so tall content scrolls inside `.content`
+     rather than growing the document body. Body scroll would move the UI-scale wrapper's fixed
+     children (the game-menu burger, the deck-editor banner) out of view, since a transform
+     ancestor makes them scroll with content instead of pinning (see App.module.css). Height is
+     100% of that wrapper (already sized to the viewport), not 100vh, so it doesn't overshoot
+     the scaled box. */
+  height: 100%;
+  overflow: hidden;
   background: #e9e9e4;
   /* Mouse-only UI with pointer-drag interactions (deck editor card drag) — dragging
      across a meta screen should never trigger the browser's native text selection. */
@@ -64,6 +71,9 @@
 
 .content {
   flex: 1;
+  /* min-height:0 lets this flex child shrink below its content height so overflow-y actually
+     scrolls it (instead of the whole column growing). Pairs with `.shell`'s bounded height. */
+  min-height: 0;
   padding: 2rem 2rem 4rem;
   overflow-y: auto;
 }
