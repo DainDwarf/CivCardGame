@@ -45,13 +45,13 @@ export function describeCost(c: CardDef): string {
   return parts.join(' · ');
 }
 
-/** Presentation-only summary of a card's extra conditions for play — culture-level gate,
- *  reserved population, and discard cost — shown in their own banded section on the card face. */
+/** Presentation-only summary of a card's extra conditions for play — culture-level gate and
+ *  discard cost — shown in their own banded section on the card face. (Work cards show their
+ *  worker spaces as a meeple column instead, via the shared worker-icon rendering.) */
 export function describeConditions(c: CardDef): string {
   const parts: string[] = [];
   if (c.kind === 'event') parts.push('resolves at end of round');
   if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
-  if (c.popReserve) parts.push(`reserve ${c.popReserve}🧍`);
   if (c.discardCost) parts.push(`discard ${c.discardCost}`);
   return parts.join(' · ');
 }
@@ -113,15 +113,18 @@ export function describeCard(c: CardDef): string {
 function cardBanner(c: CardDef): { label: string; variant: string } {
   const built = c.effect?.build ? BUILDINGS[c.effect.build] : undefined;
   if (c.kind === 'event') return { label: 'Event', variant: styles.bannerEvent };
+  if (c.kind === 'work') return { label: 'Work', variant: styles.bannerWork };
   if (built?.tags?.includes('wonder')) return { label: 'Wonder', variant: styles.bannerWonder };
   if (c.kind === 'recurring') return { label: 'Action', variant: styles.bannerAction };
   return { label: 'Building', variant: styles.bannerBuilding };
 }
 
-/** The colour variant a card face uses, by kind (event = danger, recurring = action, else building). */
+/** The colour variant a card face uses, by kind (event = danger, recurring = action, work = work,
+ *  else building). */
 export function kindClass(kind: CardDef['kind']): string {
   if (kind === 'event') return styles.event;
   if (kind === 'recurring') return styles.action;
+  if (kind === 'work') return styles.work;
   return styles.permanent;
 }
 
@@ -158,7 +161,9 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
   const bld = card.effect?.build ? BUILDINGS[card.effect.build] : undefined;
-  const workers = bld?.workers ?? 0;
+  // Worker-space meeples: buildings read the built building's capacity; Work cards read their own
+  // `workers` field (default 1, `0` = always operating so no meeple shown).
+  const workers = card.kind === 'work' ? card.workers ?? 1 : bld?.workers ?? 0;
   const rootClassName = `${styles.card} ${kindClass(card.kind)}${className ? ` ${className}` : ''}`;
 
   const inner = (

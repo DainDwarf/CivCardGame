@@ -1,7 +1,7 @@
 import type { Resources } from '../rules/resources';
 import type { CardEffect } from '../rules/effects';
 
-export type CardKind = 'permanent' | 'recurring' | 'event';
+export type CardKind = 'permanent' | 'recurring' | 'work' | 'event';
 
 export interface CardDef {
   id: string;
@@ -10,6 +10,9 @@ export interface CardDef {
    * Disposal after play — about the *card*, not what it does:
    * - `permanent`: the card is consumed and goes to the **removed** pile (gone from the deck).
    * - `recurring`: the card recycles to the **discard** pile.
+   * - `work`: the card sticks onto the board as a staffable work box (see `workers`); it
+   *   produces its `effect.gain` only while staffed, then recycles to the **discard** pile at
+   *   *end of turn* (not on play). No population is locked and no idle pop is required to play it.
    * - `event`: not player-playable and never in the deck editor/collection — missions inject it.
    *   An event left in hand at end of turn auto-resolves its effect, then goes to **removed**.
    * A recurring card may still construct a permanent building (the building stays in play;
@@ -18,8 +21,8 @@ export interface CardDef {
   kind: CardKind;
   /** Resources required to play. Absent keys are free (e.g. {} = no cost). */
   cost: Partial<Resources>;
-  /** Extra cost: number of idle workers to lock for the rest of this turn (released at beginTurn). */
-  popReserve?: number;
+  /** `work` cards only: worker spaces on the board box. Defaults to 1; `0` = always operating. */
+  workers?: number;
   /** Extra cost: number of other cards you must discard from hand to play this. */
   discardCost?: number;
   /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
@@ -53,10 +56,13 @@ export const CARDS: Record<string, CardDef> = {
 
   // --- Recurring actions (recycle to the discard). ---
   settlers: { id: 'settlers', name: 'Settlers', kind: 'recurring', cost: { food: 2 }, effect: { population: 1 } },
-  corvee: { id: 'corvee', name: 'Corvée', kind: 'recurring', cost: {}, popReserve: 1, effect: { gain: { production: 3 } } },
   eureka: { id: 'eureka', name: 'Eureka!', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { science: 3 } } },
-  harvest: { id: 'harvest', name: 'Harvest', kind: 'recurring', cost: {}, popReserve: 1, effect: { gain: { food: 3 } } },
   inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'recurring', cost: { money: 1 }, effect: { draw: 2 } },
+
+  // --- Work cards: stick onto the board as a staffable box; produce only while staffed,
+  //     then recycle to the discard at end of turn. ---
+  corvee: { id: 'corvee', name: 'Corvée', kind: 'work', cost: {}, workers: 1, effect: { gain: { production: 3 } } },
+  harvest: { id: 'harvest', name: 'Harvest', kind: 'work', cost: {}, workers: 1, effect: { gain: { food: 3 } } },
 
   // --- Territory expansion: recurring cards that raise the building-slot cap. ---
   conquest: { id: 'conquest', name: 'Conquest', kind: 'recurring', cost: { military: 3 }, effect: { territory: 1 } },

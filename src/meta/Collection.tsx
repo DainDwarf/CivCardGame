@@ -18,6 +18,7 @@ export function Collection() {
   const cards = Object.values(CARDS).filter((c) => c.kind !== 'event');
   const buildings = cards.filter((c) => c.kind === 'permanent');
   const actions = cards.filter((c) => c.kind === 'recurring');
+  const works = cards.filter((c) => c.kind === 'work');
 
   return (
     <div className={styles.collection}>
@@ -34,6 +35,13 @@ export function Collection() {
       <h2 className={styles.sectionTitle}>Actions</h2>
       <div className={styles.grid}>
         {actions.map((c) => (
+          <CardFace key={c.id} card={c} className={styles.tile} onClick={() => setZoom(c.id)} />
+        ))}
+      </div>
+
+      <h2 className={styles.sectionTitle}>Work</h2>
+      <div className={styles.grid}>
+        {works.map((c) => (
           <CardFace key={c.id} card={c} className={styles.tile} onClick={() => setZoom(c.id)} />
         ))}
       </div>

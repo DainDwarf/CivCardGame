@@ -1,5 +1,5 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, coreCollapse, drawUpTo, emptyResources, resolveHandEvents, type CollapseReason, type GameState } from '../rules';
+import { applyUpkeep, coreCollapse, discardWorkZone, drawUpTo, resolveHandEvents, type CollapseReason, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
 import type { RunConfig, RunResult } from '../contract';
 
@@ -24,9 +24,6 @@ function checkEndIf(state: RunState): RunState {
 function beginTurn(state: RunState): RunState {
   const G = structuredClone(state.G);
   G.round += 1;
-  G.reservedPop = 0;
-  G.reservedActions = [];
-  G.reservedGains = emptyResources();
   drawUpTo(G);
   return checkEndIf({ ...state, G });
 }
@@ -60,6 +57,9 @@ export function endTurn(state: RunState): RunState {
   resolveHandEvents(G);
   G.discard.push(...G.hand);
   G.hand = [];
+  // Work cards played this turn have now had their staffed production collected by upkeep; file
+  // them to the discard and clear the board's work zone for the next turn.
+  discardWorkZone(G);
   // An event may have tripped collapse (a resource going negative) or the objective (e.g. the
   // last barbarian beaten), so re-check before the next turn begins.
   const afterEvents = checkEndIf({ ...afterUpkeep, G });

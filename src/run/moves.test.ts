@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { playCard, transferWorker } from './moves';
+import { assignWorker, playCard, toggleStaffing, transferWorker } from './moves';
 import { blankState, type GameState } from '../rules';
 
 /** Invoke the move directly with a minimal context (it only reads `G`). */
@@ -130,24 +130,40 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.tableau.some((b) => b.buildingId === 'farm')).toBe(true);
   });
 
-  it('a pop-reserve card increments reservedPop, defers its gain, and is blocked when idle pool is too small', () => {
+  it('a work card sticks onto the board auto-staffed, applies nothing now, and is not yet discarded', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['corvee'];
+    G.population = 1; // one idle -> the work box auto-staffs
+    play(G, 'corvee');
+    expect(G.workZone).toEqual([{ id: 1, cardId: 'corvee', workers: 1 }]);
+    expect(G.resources.production).toBe(0); // production is deferred to upkeep, not applied now
+    expect(G.hand).toEqual([]); // card left hand
+    expect(G.discard).toEqual([]); // work cards file to discard only at end of turn
+  });
+
+  it('a work card is playable with no idle workers — it just sits unstaffed (no pop gate)', () => {
     const G = blankState('enlightenment');
     G.hand = ['corvee', 'harvest'];
-    G.population = 2;
-    play(G, 'corvee'); // reserve 1 -> reservedPop = 1, free pop = 1; gain deferred
-    expect(G.reservedPop).toBe(1);
-    expect(G.resources.production).toBe(0); // not yet applied
-    expect(G.reservedGains.production).toBe(3); // queued for upkeep
-    play(G, 'harvest'); // reserve another 1 -> reservedPop = 2, free pop = 0; gain deferred
-    expect(G.reservedPop).toBe(2);
-    expect(G.resources.food).toBe(0); // not yet applied
-    expect(G.reservedGains.food).toBe(3); // queued for upkeep
-    // Both reserved, free pop = 0 — playing a third pop-reserve card is blocked
-    G.hand = ['corvee'];
-    play(G, 'corvee'); // rejected: no idle pop
-    expect(G.reservedPop).toBe(2); // unchanged
-    expect(G.reservedGains.production).toBe(3); // unchanged
-    expect(G.hand).toEqual(['corvee']); // card stays
+    G.population = 1;
+    play(G, 'corvee'); // takes the one idle worker
+    play(G, 'harvest'); // still allowed, but nothing left to staff it
+    expect(G.workZone).toEqual([
+      { id: 1, cardId: 'corvee', workers: 1 },
+      { id: 2, cardId: 'harvest', workers: 0 },
+    ]);
+    expect(G.hand).toEqual([]);
+  });
+
+  it('a work box can be staffed after the fact via the shared worker moves', () => {
+    const G = blankState('enlightenment');
+    G.hand = ['harvest'];
+    G.population = 1;
+    play(G, 'harvest'); // no idle at play time? population 1 is idle, so it auto-staffs
+    expect(G.workZone[0].workers).toBe(1);
+    toggleStaffing(G, 1); // empty it
+    expect(G.workZone[0].workers).toBe(0);
+    assignWorker(G, 1); // and re-staff one worker
+    expect(G.workZone[0].workers).toBe(1);
   });
 });
 

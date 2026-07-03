@@ -67,10 +67,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - Card that gives a draw when expanding territory `[?]` `[phase: 4]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]` `[phase: 4]`
-- **Delay played-card discard to end of turn** — recurring/action cards currently file
-  straight to `discard` on play (`moves.ts`'s `playCard`); instead hold them reserved
-  (visible, out of hand) through the rest of the turn and only move them to `discard`
-  during `endTurn`'s upkeep. `[?]` `[phase: 2]`
 
 
 
@@ -90,6 +86,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **`work` card type** — promoted the "reserved action" mechanic (Corvée, Harvest) into a
+  first-class fourth card kind, making an emerging core loop explicit. A `work` card sticks
+  onto the board as a *staffable* box (`WorkInstance` in the new `GameState.workZone`) instead
+  of the old static locked strip: playing it costs **no** idle population and imposes no
+  play-time pop gate, it auto-staffs from the idle pool like a building, produces its
+  `effect.gain` **only while staffed** (at upkeep, so `projectedDelta` shows it), and files to
+  `discard` at **end of turn** (`rules/upkeep.ts`'s `discardWorkZone`), not on play. Buildings
+  and work share **one** staffing layer — a `Staffable` union with `requiredWorkersOf` /
+  `isOperating` / `findStaffable`, the four worker moves resolving an instance in either zone,
+  and a unified `nextInstanceId` allocator so a building and a work box never collide on an id
+  — while keeping two production reducers (`tableauProduction` vs. `workZoneProduction`) since
+  the source data differs. Worker count is `CardDef.workers` (default 1, `0` = always
+  operating). This **removed** the old `popReserve`/`reservedPop`/`reservedActions`/
+  `reservedGains` mechanic wholesale and superseded the *"Delay played-card discard to end of
+  turn"* backlog item (which had mis-scoped it as applying to all cards). UI: a teal Work card
+  kind, an interactive work-box strip with drag/click staffing and its own out-of-slot-grid
+  drop hit-testing (`workBoxAt`/`staffableUnder`), plus Work sections in the Collection and
+  deck editor and a Codex entry. `[size: L]` `[phase: 2]`
 - **Theme picker** — a Config-submenu segmented control (`meta/settings.ts`'s
   `Settings.theme`, sourced from a `THEMES` list) offering **Light** and **Dark**. As the
   backlog item predicted, the bulk of the work was the CSS retrofit, not the picker: every

@@ -81,6 +81,9 @@
   --card-event-band: #fbe3e3;
   --card-event-condition: #cc7a7a;
   --card-event-border: #b23b3b;
+  --card-work-banner: #2f9c8f;   /* Work-card banner / box border (teal) */
+  --card-work-band: #e2f4f1;
+  --card-work-condition: #6fb8ae;
   --card-wonder-banner: #b8860b;
 
   /* ── Action / CTA (orange) ────────────────────────── */
@@ -88,9 +91,7 @@
   --cta: #e65c00;                /* confirm CTA */
   --cta-hover: #c94f00;
   --warn-panel: #7a2e0a;         /* end-round warning panel */
-  --reserve-border: #d4924a;     /* reserved-action dashed border */
-  --reserve-rgb: 212 146 74;     /* locked-worker staffing bg */
-  --reserve-bg: #fdf5e8;         /* reserved-action box bg */
+  --work-border: #2f9c8f;        /* Work box dashed border (shares the Work banner teal) */
   --discard-border: #e0a96d;     /* discard-cost prompt border */
   --discard-prompt-bg: #fff4e5;
 
@@ -225,6 +226,9 @@
   --card-event-band: #381e1e;
   --card-event-condition: #8a5252;
   --card-event-border: #b23b3b;
+  --card-work-banner: #2f9c8f;
+  --card-work-band: #17302c;
+  --card-work-condition: #4a7f78;
   --card-wonder-banner: #b8860b;
 
   /* ── Action / CTA (orange) ── */
@@ -232,9 +236,7 @@
   --cta: #e65c00;
   --cta-hover: #ff6e14;
   --warn-panel: #7a2e0a;
-  --reserve-border: #d4924a;
-  --reserve-rgb: 212 146 74;
-  --reserve-bg: #2c2620;
+  --work-border: #2f9c8f;
   --discard-border: #e0a96d;
   --discard-prompt-bg: #352a1a;
 

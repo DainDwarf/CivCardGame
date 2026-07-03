@@ -1,7 +1,6 @@
 import type { CardDef } from '../content/cards';
 import { canAfford, type Resources } from './resources';
 import { cultureLevel } from './culture';
-import { freePopulation } from './population';
 import { freeTerritory } from './tableau';
 import type { GameState } from './state';
 
@@ -13,7 +12,6 @@ import type { GameState } from './state';
  */
 export type UnplayableReason =
   | { kind: 'cost'; missing: Partial<Resources> }
-  | { kind: 'popReserve' }
   | { kind: 'cultureLevel'; required: number }
   | { kind: 'territory' }
   | { kind: 'noBuildingsToDestroy' }
@@ -30,7 +28,6 @@ export function unplayableReason(G: GameState, card: CardDef): UnplayableReason 
     }
     return { kind: 'cost', missing };
   }
-  if ((card.popReserve ?? 0) > freePopulation(G)) return { kind: 'popReserve' };
   if (card.cultureLevelReq && cultureLevel(G.culture) < card.cultureLevelReq)
     return { kind: 'cultureLevel', required: card.cultureLevelReq };
   if (card.effect?.build && freeTerritory(G) <= 0) return { kind: 'territory' };

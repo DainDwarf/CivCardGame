@@ -46,13 +46,17 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 
 - `src/rules/` — all real game logic *and* the core state type. `state.ts` defines
   `GameState` (boardgame.io's `G` — the serializable run state, including `population`,
-  each tableau building's assigned `workers`, the `territory` cap on tableau size, and the
+  each tableau building's assigned `workers`, the `territory` cap on tableau size, the
+  transient `workZone` of played `work` cards awaiting staffing, and the
   card zones `deck`/`hand`/`discard`/`removed` — plus `blankState()`); it lives here, not in the shell, because the mission
   evaluators reason over it. Also `resources.ts` (`Resources` + arithmetic), `deck.ts`
   (draw/reshuffle), `effects.ts` (card effects — gain/draw/population/`territory`/`build`),
-  `population.ts` (worker staffing — `requiredWorkers` / `isOperating` / `freePopulation`,
-  `addBuilding` — plus `foodUpkeep`), `upkeep.ts` (`applyUpkeep`: operating buildings
-  produce → mission ticks → population eats food; plus `projectedDelta` for the UI), and
+  `population.ts` (worker staffing over both buildings and work cards via the `Staffable`
+  layer — `requiredWorkers`/`requiredWorkersOf` / `isOperating` / `freePopulation` /
+  `findStaffable`, `addBuilding`/`addWork` with a shared `nextInstanceId` allocator — plus
+  `foodUpkeep`), `upkeep.ts` (`applyUpkeep`: operating buildings *and* staffed work
+  produce → mission ticks → population eats food; plus `discardWorkZone` (end-of-turn work
+  filing) and `projectedDelta` for the UI), and
   `production.ts` / `tableau.ts` (derived stats — including `usedTerritory` / `freeTerritory`,
   the territory cap that gates how many buildings can occupy the tableau), and
   `deckBuilder.ts` (deck *construction* — `addCard`/`removeCard` on a plain `string[]`,
@@ -64,11 +68,17 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/content/` — typed game data, separate from logic. **Cards and buildings are
   distinct:** `buildings.ts` (`BUILDINGS` — building entities with `produces`/`defense`/
   `workers`/`tags`) holds what lives in the tableau; `cards.ts` (`CARDS`, each `permanent`,
-  `recurring`, or `event`) holds what lives in the deck. A card *constructs* a building via
+  `recurring`, `work`, or `event`) holds what lives in the deck. A card *constructs* a building via
   `effect.build` — the building enters `tableau`, the card is then filed by `kind`
   (`permanent` → `removed` pile, `recurring` → `discard`). So the same building can come
   from different cards, and a `BuildingInstance` references a `buildingId`, never a card.
-  A third kind, `event`, is a **disaster** card (docs/TODO.md): mission-injected only —
+  A `work` card is **labour**: playing it costs no idle population and sticks it onto the board
+  as a *staffable* `WorkInstance` in `GameState.workZone` (`rules/population.ts`'s `addWork`,
+  auto-staffed like a building) — it produces its `effect.gain` only while staffed, at upkeep,
+  and files to `discard` only at *end of turn* (`rules/upkeep.ts`'s `discardWorkZone`), not on
+  play. Its worker spaces (`CardDef.workers`, default 1, `0` = always operating) share the
+  staffing machinery with buildings (see the shared `Staffable` layer in `population.ts`).
+  Corvée and Harvest are the current work cards. A fourth kind, `event`, is a **disaster** card (docs/TODO.md): mission-injected only —
   never shown in the collection or deck editor and never player-playable (`unplayableReason`
   rejects it, so `playCard` does too). An event left in hand at end of turn auto-resolves
   its `effect` and is destroyed to `removed` (see `rules/upkeep.ts`'s `resolveHandEvents`);
@@ -93,7 +103,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/run/engine.ts` — the turn state machine. `RunState = { G, gameover }`.
   `createRun(config: RunConfig)` builds the initial state and runs the first
   `beginTurn`. `endTurn(state)` runs `applyUpkeep`, checks win/loss, resolves any `event`
-  cards still in hand (`resolveHandEvents` — apply effect, exile to `removed`), re-checks
+  cards still in hand (`resolveHandEvents` — apply effect, exile to `removed`), recycles the
+  hand and files the turn's played `work` cards to `discard` (`discardWorkZone`), re-checks
   win/loss, then starts the next turn. `applyMove(state, moveFn, ...args)` clones `G` with `structuredClone`,
   runs the move, and checks win/loss. All three return a new `RunState` — the caller
   (React context) owns the mutable reference. `toRunResult(G, gameover)` promotes a
@@ -103,11 +114,14 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   plain-object `G` draft, delegate computation to `src/rules/`, return `'invalid'` to
   reject. `playCard` pays costs (resources, discard cost), resolves the card's `effect`,
   then files the card by `kind` (`permanent` → `removed`,
-  `recurring` → `discard`). `assignWorker`/`unassignWorker` move one worker at a time;
-  `toggleStaffing` (the UI's building-box control) is all-or-nothing — one move either
-  fills a building to its full worker requirement or empties it completely, rejected if
-  there aren't enough idle workers to fill it. (Workers are allocated by `buildingId`,
-  since same-type buildings are fungible.)
+  `recurring` → `discard`) — except a `work` card, which resolves *no* effect on play,
+  sticks onto the board via `addWork`, and files to `discard` only at end of turn.
+  `assignWorker`/`unassignWorker`/`transferWorker`/`toggleStaffing` all target a `Staffable`
+  by its instance `id` via `findStaffable`, so they operate on a building *or* a work box
+  interchangeably. `toggleStaffing` (the UI's box control) is all-or-nothing — one move either
+  fills a box to its full worker requirement or empties it completely, rejected if
+  there aren't enough idle workers to fill it. (Building workers are allocated by instance id,
+  drawn from the same `nextInstanceId` space as work boxes so the two never collide.)
 - `src/run/GameContext.tsx` — React context that holds `RunState` and exposes
   `{ G, gameover, moves, endTurn, undo, canUndo, restart, endRun }` via `useGame()`.
   `GameProvider` takes a `RunConfig` (`config` prop) and an `onRunEnd(result: RunResult)`

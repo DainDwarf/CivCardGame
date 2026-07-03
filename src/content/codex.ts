@@ -58,9 +58,9 @@ export interface GlossaryEntry {
  *  that are tuned in code are described, not quoted (e.g. the culture band widths). */
 export const CODEX_GLOSSARY: GlossaryEntry[] = [
   { term: 'Discard cost', definition: 'An extra cost on some cards: you must discard that many other cards from your hand to play it.' },
-  { term: 'Pop reserve', definition: 'An extra cost that locks idle workers for the rest of the turn — they cannot staff a building until they are released next round.' },
+  { term: 'Work card', definition: 'A card that sticks onto the board as a staffable box when played (no idle-worker cost to play it). Staff it like a building to collect its output at end of round; it returns to the discard pile at end of turn.' },
   { term: 'Culture requirement', definition: 'A gate, not a cost: the card can only be played once your culture has reached the required level. Culture is not consumed.' },
   { term: 'Territory', definition: 'The cap on how many buildings your tableau can hold. Raise it with expansion cards (e.g. Conquest, Develop), or demolish a building to reclaim a slot.' },
-  { term: 'Staffing', definition: "A building's box toggles all-or-nothing: it fills to the building's full worker requirement, or empties completely. Only staffed buildings produce." },
+  { term: 'Staffing', definition: "A building or Work card's box toggles all-or-nothing: it fills to its full worker requirement, or empties completely. Only staffed boxes produce." },
   { term: 'Removed vs. discard', definition: 'Permanents are removed from the deck once played (thinning it); recurring cards return to the discard and reshuffle into the deck when it runs dry.' },
 ];

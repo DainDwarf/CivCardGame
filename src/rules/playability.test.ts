@@ -21,14 +21,6 @@ describe('unplayableReason', () => {
     });
   });
 
-  it('gates on population reserve paid from idle workers', () => {
-    const G = blankState('enlightenment');
-    G.population = 1;
-    G.reservedPop = 1; // 0 idle
-    const card: CardDef = { ...baseCard, popReserve: 1 };
-    expect(unplayableReason(G, card)).toEqual({ kind: 'popReserve' });
-  });
-
   it('gates on culture level requirement', () => {
     const G = blankState('enlightenment');
     G.culture = 0; // level 0
@@ -58,9 +50,9 @@ describe('unplayableReason', () => {
     expect(unplayableReason(G, card)).toEqual({ kind: 'event' });
   });
 
-  it('checks gates in priority order (cost before population)', () => {
+  it('checks gates in priority order (cost before culture level)', () => {
     const G = blankState('enlightenment');
-    const card: CardDef = { ...baseCard, cost: { food: 5 }, popReserve: 5 };
+    const card: CardDef = { ...baseCard, cost: { food: 5 }, cultureLevelReq: 1 };
     expect(unplayableReason(G, card)).toEqual({ kind: 'cost', missing: { food: 5 } });
   });
 });

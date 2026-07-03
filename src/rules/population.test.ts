@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
+  addWork,
   assignedWorkers,
   autoStaffCount,
   foodUpkeep,
   freePopulation,
   isOperating,
+  nextInstanceId,
   requiredWorkers,
+  requiredWorkersOf,
 } from './population';
 import { blankState } from './state';
 
@@ -34,11 +37,12 @@ describe('population accounting', () => {
     expect(freePopulation(G)).toBe(1);
   });
 
-  it('reserved population is not available for building assignment', () => {
+  it('workers assigned to Work cards count against free population too', () => {
     const G = blankState('enlightenment');
     G.population = 3;
-    G.reservedPop = 2;
-    expect(freePopulation(G)).toBe(1);
+    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }];
+    G.workZone = [{ id: 2, cardId: 'corvee', workers: 1 }];
+    expect(freePopulation(G)).toBe(1); // 3 - 1 building - 1 work
   });
 
   it('food upkeep equals population', () => {
@@ -66,5 +70,35 @@ describe('auto-staffing a new building (all-or-nothing)', () => {
     const G = blankState('enlightenment');
     G.population = 3;
     expect(autoStaffCount(G, 'walls')).toBe(0);
+  });
+});
+
+describe('Work cards as staffables', () => {
+  it('a Work card requires its card.workers (default 1) and operates only when staffed', () => {
+    expect(requiredWorkersOf({ id: 1, cardId: 'corvee', workers: 0 })).toBe(1); // corvee has workers: 1
+    expect(isOperating({ id: 1, cardId: 'corvee', workers: 0 })).toBe(false);
+    expect(isOperating({ id: 1, cardId: 'corvee', workers: 1 })).toBe(true);
+  });
+
+  it('addWork sticks the card in the workZone, auto-staffed all-or-nothing from idle pop', () => {
+    const G = blankState('enlightenment');
+    G.population = 1;
+    addWork(G, 'corvee'); // 1 idle -> staffs its 1 worker
+    expect(G.workZone).toEqual([{ id: 1, cardId: 'corvee', workers: 1 }]);
+    expect(freePopulation(G)).toBe(0);
+  });
+
+  it('addWork leaves the box unstaffed when no idle workers are free', () => {
+    const G = blankState('enlightenment');
+    G.population = 0;
+    addWork(G, 'harvest');
+    expect(G.workZone).toEqual([{ id: 1, cardId: 'harvest', workers: 0 }]);
+  });
+
+  it('instance ids are unique across the tableau and the workZone', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }];
+    G.workZone = [{ id: 2, cardId: 'corvee', workers: 0 }];
+    expect(nextInstanceId(G)).toBe(3);
   });
 });

@@ -13,6 +13,19 @@ export interface BuildingInstance {
   workers: number;
 }
 
+/** A Work card played onto the board this turn, tracking the workers assigned to it. `cardId` (a
+ *  key into the CARDS catalogue) is *what* it is; `id` is its stable per-instance identity, drawn
+ *  from the same allocator as buildings so the shared worker moves can target either. A Work
+ *  instance lives for one turn: it produces its card's `effect.gain` only while staffed, then the
+ *  card files to `discard` at end of turn (see `endTurn`) and the instance is cleared. */
+export interface WorkInstance {
+  /** Stable identity, unique within the run across both tableau and workZone. */
+  id: number;
+  cardId: string;
+  /** Population currently assigned to this work. */
+  workers: number;
+}
+
 /**
  * GameState is the entire serializable run state (the engine's `G`). It must stay
  * JSON-serializable (save/load, undo, and headless simulation depend on it). It lives
@@ -24,12 +37,6 @@ export interface GameState {
   resources: Resources;
   /** Total population — a pool of workers. Everyone eats food each round. */
   population: number;
-  /** Population reserved by action cards played this turn — cannot be assigned to buildings. Resets at beginTurn. */
-  reservedPop: number;
-  /** Card IDs whose pop-reserve cost was paid this turn — drives the reserved-action boxes on the canvas. Resets at beginTurn. */
-  reservedActions: string[];
-  /** Resource gains queued by pop-reserve cards this turn — applied during upkeep so they show in projectedDelta. Resets at beginTurn. */
-  reservedGains: Resources;
   /** Cards in hand. */
   hand: string[];
   /** Draw pile. */
@@ -46,6 +53,12 @@ export interface GameState {
   removed: string[];
   /** Committed permanents, each tracking its assigned workers. */
   tableau: BuildingInstance[];
+  /**
+   * Work cards played this turn, each tracking its assigned workers. Transient: not
+   * territory-capped, produces only while staffed, and cleared at end of turn (each card
+   * files to `discard`). Populated by `playCard`, reset in `endTurn`'s `discardWorkZone`.
+   */
+  workZone: WorkInstance[];
   /**
    * Territory available — the tableau may hold at most this many buildings. Each building
    * fills one slot; building cards become unplayable when it is full. Expanded by territory
@@ -79,14 +92,12 @@ export function blankState(missionId: string): GameState {
     round: 0,
     resources: emptyResources(),
     population: 0,
-    reservedPop: 0,
-    reservedActions: [],
-    reservedGains: emptyResources(),
     hand: [],
     deck: [],
     discard: [],
     removed: [],
     tableau: [],
+    workZone: [],
     territory: 6,
     culture: 0,
     handSize: 5,

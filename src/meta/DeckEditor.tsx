@@ -62,6 +62,7 @@ export function DeckEditor({
   const cards = Object.values(CARDS).filter((c) => c.kind !== 'event');
   const buildings = cards.filter((c) => c.kind === 'permanent');
   const actions = cards.filter((c) => c.kind === 'recurring');
+  const works = cards.filter((c) => c.kind === 'work');
 
   function handleAdd(cardId: string) {
     setDeck((d) => {
@@ -169,6 +170,19 @@ export function DeckEditor({
         <h2 className={styles.sectionTitle}>Actions</h2>
         <div className={styles.grid}>
           {actions.map((c) => (
+            <CardFace
+              key={c.id}
+              as="button"
+              card={c}
+              className={styles.pickerTile}
+              title="Click or drag into the deck to add a copy"
+              onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
+            />
+          ))}
+        </div>
+        <h2 className={styles.sectionTitle}>Work</h2>
+        <div className={styles.grid}>
+          {works.map((c) => (
             <CardFace
               key={c.id}
               as="button"

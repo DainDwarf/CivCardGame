@@ -335,7 +335,7 @@
 }
 
 /* The play area: a fixed backdrop spanning the whole viewport, holding the slot grid (which
-   scrolls) above a reserved-actions strip. paddingTop (inline) clears the sticky banner. */
+   scrolls) above the work strip. paddingTop (inline) clears the sticky banner. */
 .gamearea {
   position: fixed;
   left: 0;
@@ -388,8 +388,9 @@
   background: rgb(var(--staff-rgb) / 0.18);
 }
 
-/* Reserved actions live in the play area but occupy no slot — a strip below the grid. */
-.reserveStrip {
+/* Work cards played this turn live in the play area but occupy no territory slot — a strip below
+   the grid. Each box is staffable exactly like a building. */
+.workStrip {
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
@@ -495,16 +496,14 @@
   background: var(--idle-bg);
 }
 
-.reserveBox {
+/* A Work box: a building box that lives in the work strip instead of a slot. A teal dashed border
+   marks it as work; its interior still reads staffed (green) / idle (tan) like any building. Not
+   draggable between slots (there are none), so no grab cursor on the box itself. */
+.workBox {
   width: 180px;
   flex: 0 0 auto;
-  border: 2px dashed var(--reserve-border) !important;
-  background: var(--reserve-bg);
+  border: 2px dashed var(--work-border) !important;
   cursor: default;
-}
-
-.reserveBox:hover {
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
 }
 
 .bName {
@@ -564,22 +563,6 @@
 /* The staffing toggle fades while its worker is being dragged out of the building. */
 .staffDragSource {
   opacity: 0.35;
-}
-
-/* A reserved action's worker: staffed (like .staffFull) but non-interactive and tagged with
-   a lock badge — this population is committed until the action resolves, not toggleable. */
-.staffLocked {
-  position: relative;
-  background: rgb(var(--reserve-rgb) / 0.22);
-  cursor: not-allowed;
-}
-
-.lockBadge {
-  position: absolute;
-  bottom: -1px;
-  right: -1px;
-  font-size: 0.65rem;
-  line-height: 1;
 }
 
 .muted {

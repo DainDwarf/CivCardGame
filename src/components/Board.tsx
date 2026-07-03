@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BuildingInstance, Resources } from '../rules';
+import type { BuildingInstance, Resources, WorkInstance } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
   cultureProgress,
@@ -7,6 +7,7 @@ import {
   isOperating,
   projectedDelta,
   requiredWorkers,
+  requiredWorkersOf,
   unplayableReason,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
@@ -306,6 +307,72 @@ function BuildingBox({
   );
 }
 
+/** The visual face of one Work box in the work strip — a Work card played this turn. Staffable
+ *  exactly like a building (it shares the worker moves and the same staffing controls), but it's
+ *  transient (files to the discard at end of turn) and lives outside the territory slot grid, so
+ *  its own `boxRef` feeds a separate hit-test map for worker drops. */
+function WorkBox({
+  inst,
+  gameover,
+  idle,
+  workerDragSource,
+  dropTarget,
+  boxRef,
+  onStaffPointerDown,
+}: {
+  inst: WorkInstance;
+  gameover: boolean;
+  idle: number;
+  /** True while this box's own worker is being dragged out of it (fades the toggle). */
+  workerDragSource?: boolean;
+  /** True while a dragged worker hovers this box and it can accept one (highlights the box). */
+  dropTarget?: boolean;
+  boxRef?: (el: HTMLDivElement | null) => void;
+  onStaffPointerDown?: (e: React.PointerEvent, inst: WorkInstance) => void;
+}) {
+  const card = CARDS[inst.cardId];
+  const req = requiredWorkersOf(inst);
+  const selfSufficient = req === 0;
+  const staffed = isOperating(inst);
+  const className = [
+    styles.buildingBox,
+    styles.workBox,
+    staffed ? styles.operating : styles.idleBuilding,
+    dropTarget ? styles.workerDropTarget : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const gain = Object.entries(card.effect?.gain ?? {})
+    .filter(([, v]) => v)
+    .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
+    .join(' ');
+  return (
+    <div className={className} ref={boxRef}>
+      {!selfSufficient && (
+        <button
+          type="button"
+          className={`${styles.staffToggle} ${staffed ? styles.staffFull : styles.staffEmpty}${
+            workerDragSource ? ` ${styles.staffDragSource}` : ''
+          }`}
+          onPointerDown={(e) => { e.stopPropagation(); onStaffPointerDown?.(e, inst); }}
+          disabled={gameover || (inst.workers === 0 && idle < req)}
+          aria-pressed={staffed}
+          aria-label={staffed ? `unstaff ${card.name}` : `staff ${card.name}`}
+        >
+          <span aria-hidden="true">🧍</span>
+        </button>
+      )}
+      <div className={styles.bldBody}>
+        <span className={styles.bName}>{card.name}</span>
+        <div className={styles.bldFace}>
+          <span className={styles.bldIcon} aria-hidden="true">{artFor(inst.cardId)}</span>
+          <span className={styles.bldOutput} aria-hidden="true">{gain}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** A card play awaiting its discard cost: which card, and the sacrifices picked so far. */
 interface PendingPlay {
   cardId: string;
@@ -413,8 +480,6 @@ function whyUnplayable(card: CardDef, G: GameState): string | null {
         .map(([k, v]) => `${v}${COST_ICON[k]}`);
       return `need ${missing.join(' ')}`;
     }
-    case 'popReserve':
-      return 'not enough idle workers';
     case 'cultureLevel':
       return `need 🎭 level ${reason.required}`;
     case 'territory':
@@ -455,6 +520,8 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
   const [workerDrag, setWorkerDragState] = useState<WorkerDrag | null>(null);
   // Slot the pointer is hovering while dragging an idle worker onto a building.
   const [workerHoverSlot, setWorkerHoverSlot] = useState<number | null>(null);
+  // Same, for the work strip (which lives outside the territory slot grid).
+  const [workerHoverWorkId, setWorkerHoverWorkId] = useState<number | null>(null);
   // Whether the pointer is over the population tray while dragging a worker out of a building.
   const [workerOverTray, setWorkerOverTray] = useState(false);
   // The canvas is a fixed backdrop; these insets keep its content between the banner and hand bar.
@@ -464,6 +531,9 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
   const layoutRef = useRef<(number | null)[]>([]);
   // Slot index → the slot's DOM element, for pointer hit-testing during drag / build placement.
   const slotEls = useRef<Map<number, HTMLDivElement>>(new Map());
+  // Work-box instance id → its DOM element. Work boxes aren't in the slot grid, so worker drops
+  // hit-test them separately (see workBoxAt / staffableUnder).
+  const workBoxEls = useRef<Map<number, HTMLDivElement>>(new Map());
   // Slot a just-played build card should drop into; consumed by the layout-reconcile effect.
   const pendingBuildSlotRef = useRef<number | null>(null);
   const gameareaRef = useRef<HTMLDivElement>(null);
@@ -478,6 +548,8 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
   const hand = useAnimatedHand(G.hand);
   // Each building's stable id keys both its slot in `layout` and this lookup.
   const buildingById = new Map(G.tableau.map((b) => [b.id, b]));
+  // Work boxes share the instance-id space with buildings, keyed here for worker-drop resolution.
+  const workById = new Map(G.workZone.map((w) => [w.id, w]));
 
   /** Shake a card that can't be played and briefly show why. */
   function rejectShake(key: number, reason?: string) {
@@ -524,6 +596,25 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
   function isOverTray(x: number, y: number): boolean {
     const r = popTrayRef.current?.getBoundingClientRect();
     return !!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }
+
+  /** The Work box instance id whose box contains the given viewport point, or null. */
+  function workBoxAt(x: number, y: number): number | null {
+    for (const [id, el] of workBoxEls.current) {
+      const r = el.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return id;
+    }
+    return null;
+  }
+
+  /** The staffable (building or Work box) whose box contains the given point, or undefined —
+   *  unifies the slot-grid and work-strip hit-tests so a worker drop can target either zone. */
+  function staffableUnder(x: number, y: number) {
+    const slot = slotAt(x, y);
+    const key = slot != null ? layout[slot] : null;
+    if (key != null) return buildingById.get(key);
+    const workId = workBoxAt(x, y);
+    return workId != null ? workById.get(workId) : undefined;
   }
 
   /**
@@ -595,9 +686,10 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
     });
   }
 
-  /** Begin dragging a building's worker: a plain click still toggles staffing (handled on
-   *  release); a real drag released onto the population tray returns one worker to it. */
-  function onStaffPointerDown(e: React.PointerEvent, inst: BuildingInstance) {
+  /** Begin dragging a staffable's worker (a building or a Work box): a plain click still toggles
+   *  staffing (handled on release); a real drag released onto the population tray returns one
+   *  worker to it. Only `id` and `workers` are read, so it accepts either instance kind. */
+  function onStaffPointerDown(e: React.PointerEvent, inst: BuildingInstance | WorkInstance) {
     if (e.button !== 0) return;
     if (gameover) return;
     const btnRect = e.currentTarget.getBoundingClientRect();
@@ -783,6 +875,7 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
       const active = d.active || moved > DRAG_THRESHOLD;
       setWorkerDrag({ ...d, x: e.clientX, y: e.clientY, active });
       setWorkerHoverSlot(active ? slotAt(e.clientX, e.clientY) : null);
+      setWorkerHoverWorkId(active ? workBoxAt(e.clientX, e.clientY) : null);
       setWorkerOverTray(active && d.fromBuildingId != null && isOverTray(e.clientX, e.clientY));
     }
     function onUp(e: PointerEvent) {
@@ -792,28 +885,25 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
         // No real movement — a plain click on the staffing toggle (tray tokens have no click behavior).
         if (d.fromBuildingId != null) moves.toggleStaffing(d.fromBuildingId);
       } else if (d.fromBuildingId == null) {
-        // Dropped an idle token — staff whichever building's box is under the cursor, if it can
-        // still accept a worker.
-        const slot = slotAt(e.clientX, e.clientY);
-        const key = slot != null ? layout[slot] : null;
-        const inst = key != null ? buildingById.get(key) : undefined;
-        if (inst && inst.workers < requiredWorkers(inst.buildingId)) moves.assignWorker(inst.id);
+        // Dropped an idle token — staff whichever building or Work box is under the cursor, if it
+        // can still accept a worker.
+        const inst = staffableUnder(e.clientX, e.clientY);
+        if (inst && inst.workers < requiredWorkersOf(inst)) moves.assignWorker(inst.id);
       } else if (isOverTray(e.clientX, e.clientY)) {
-        // Dragged a worker out of its building and dropped it on the population tray.
+        // Dragged a worker out of its box and dropped it on the population tray.
         if (d.hadWorker) moves.unassignWorker(d.fromBuildingId);
       } else if (d.hadWorker) {
-        // Dragged a worker out of one building and released it over another's box — transfer
-        // it directly (one atomic move) rather than unassign-then-assign, which would split
-        // undo into two steps.
-        const slot = slotAt(e.clientX, e.clientY);
-        const key = slot != null ? layout[slot] : null;
-        const inst = key != null ? buildingById.get(key) : undefined;
-        if (inst && inst.id !== d.fromBuildingId && inst.workers < requiredWorkers(inst.buildingId)) {
+        // Dragged a worker out of one box and released it over another (building or Work box) —
+        // transfer it directly (one atomic move) rather than unassign-then-assign, which would
+        // split undo into two steps.
+        const inst = staffableUnder(e.clientX, e.clientY);
+        if (inst && inst.id !== d.fromBuildingId && inst.workers < requiredWorkersOf(inst)) {
           moves.transferWorker(d.fromBuildingId, inst.id);
         }
       }
       setWorkerDrag(null);
       setWorkerHoverSlot(null);
+      setWorkerHoverWorkId(null);
       setWorkerOverTray(false);
     }
     window.addEventListener('pointermove', onMove);
@@ -1059,29 +1149,31 @@ export function Board({ confirmEndTurn, uiScale }: { confirmEndTurn: boolean; ui
             );
           })}
         </div>
-        {G.reservedActions.length > 0 && (
-          <div className={styles.reserveStrip}>
-            {G.reservedActions.map((cardId, i) => {
-              const card = CARDS[cardId];
+        {G.workZone.length > 0 && (
+          <div className={styles.workStrip}>
+            {G.workZone.map((inst) => {
+              const canAcceptWorker = inst.workers < requiredWorkersOf(inst);
+              const isWorkerDropTarget =
+                workerDrag?.active === true &&
+                workerHoverWorkId === inst.id &&
+                canAcceptWorker &&
+                inst.id !== workerDrag.fromBuildingId;
+              const isWorkerDragSource =
+                workerDrag?.active === true && workerDrag.fromBuildingId === inst.id;
               return (
-                <div key={i} className={`${styles.buildingBox} ${styles.reserveBox}`}>
-                  <span
-                    className={`${styles.staffToggle} ${styles.staffLocked}`}
-                    aria-label={`worker locked for ${card.name} until it resolves`}
-                  >
-                    <span aria-hidden="true">🧍</span>
-                    <span className={styles.lockBadge} aria-hidden="true">🔒</span>
-                  </span>
-                  <div className={styles.bldBody}>
-                    <span className={styles.bName}>{card.name}</span>
-                    <div className={styles.bldFace}>
-                      <span className={styles.bldIcon} aria-hidden="true">{artFor(cardId)}</span>
-                      <span className={styles.bldOutput} aria-hidden="true">
-                        {Object.entries(card.effect?.gain ?? {}).map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`).join(' ')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <WorkBox
+                  key={inst.id}
+                  inst={inst}
+                  gameover={!!gameover}
+                  idle={idle}
+                  workerDragSource={isWorkerDragSource}
+                  dropTarget={isWorkerDropTarget}
+                  boxRef={(el) => {
+                    if (el) workBoxEls.current.set(inst.id, el);
+                    else workBoxEls.current.delete(inst.id);
+                  }}
+                  onStaffPointerDown={onStaffPointerDown}
+                />
               );
             })}
           </div>

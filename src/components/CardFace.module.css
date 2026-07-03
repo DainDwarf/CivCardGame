@@ -65,6 +65,10 @@
   background: var(--card-event-banner);
 }
 
+.bannerWork {
+  background: var(--card-work-banner);
+}
+
 /* Event cards are a threat — a red border sets them apart from the player's own cards. */
 .event {
   border-color: var(--card-event-border);
@@ -81,6 +85,10 @@
 
 .event .cardTop {
   background: var(--card-event-band);
+}
+
+.work .cardTop {
+  background: var(--card-work-band);
 }
 
 .cardName {
@@ -153,6 +161,10 @@
   background: var(--card-event-condition);
 }
 
+.work .cardConditions {
+  background: var(--card-work-condition);
+}
+
 .cardText {
   display: flex;
   align-items: center;
@@ -178,6 +190,10 @@
 
 .event .cardText {
   background: var(--card-event-band);
+}
+
+.work .cardText {
+  background: var(--card-work-band);
 }
 
 /* Optional "×N" badge (deck editor's grouped banner tiles, the run loop's pile viewer). */

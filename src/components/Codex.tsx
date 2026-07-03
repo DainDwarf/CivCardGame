@@ -70,6 +70,10 @@ export function Codex() {
             <dd className={styles.defDesc}>Actions. Resolve their effect, then return to the discard pile — reshuffled back into the deck when it runs dry. Repeatable tactics.</dd>
           </div>
           <div className={styles.defRow}>
+            <dt className={styles.defTerm}>Work</dt>
+            <dd className={styles.defDesc}>Labour cards. Playing one sticks it onto the board as a staffable box — no cost in idle workers to play. Assign workers to it just like a building; only a staffed Work card produces its output at end of round. It then returns to the discard pile at the end of the turn.</dd>
+          </div>
+          <div className={styles.defRow}>
             <dt className={styles.defTerm}>Event</dt>
             <dd className={styles.defDesc}>Disasters injected into your deck by a mission. You cannot play them. An event left in your hand at the end of the round resolves its effect on you, then is destroyed for good.</dd>
           </div>
@@ -84,7 +88,7 @@ export function Codex() {
           <li>Your population is a pool of workers. Assign them to buildings to make those buildings operate; an unstaffed building produces nothing.</li>
           <li>Each building needs a set number of workers to run. A building requiring zero workers is self-sufficient and always operates.</li>
           <li>Every unit of population eats {FOOD_PER_POP} food each round, whether working or idle — so a bigger workforce needs a bigger food supply.</li>
-          <li>Some action cards reserve idle workers as a cost: they&rsquo;re locked for the rest of the turn and freed at the start of the next round.</li>
+          <li>Work cards stick onto the board as staffable boxes, just like buildings. Staff one to collect its output at end of round; an unstaffed Work card simply does nothing.</li>
         </ul>
       </section>
 

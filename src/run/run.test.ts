@@ -75,7 +75,7 @@ describe('run loop (headless integration)', () => {
 
   it('auto-staffing stops once the idle pool is exhausted', () => {
     const client = start('enlightenment'); // population 2 idle, production 5
-    playByName(client, 'corvee'); // reserve 1 pop -> free pop = 1; gain deferred to upkeep
+    playByName(client, 'corvee'); // work card: auto-staffs 1 worker -> free pop = 1
     playByName(client, 'workshop'); // costs 2 prod -> 3; auto-staffs 1 -> free pop = 0
     playByName(client, 'farm'); // costs 1 prod -> 2; no idle left -> unstaffed
     const G = client.getState().G;
@@ -84,45 +84,45 @@ describe('run loop (headless integration)', () => {
     client.stop();
   });
 
-  it('a pop-reserve action reserves idle population and defers its gain to upkeep', () => {
+  it('a work card sticks onto the board, defers its output to upkeep, and discards at end of turn', () => {
     const client = start('enlightenment'); // hand: farm, workshop, corvee, library, harvest; pop 2
-    playByName(client, 'corvee'); // reserve 1 pop; +3 production deferred
+    playByName(client, 'corvee'); // work box auto-staffs 1 worker; +3 production deferred
     const { G } = client.getState();
-    expect(G.resources.production).toBe(5); // gain not yet applied
-    expect(G.reservedGains.production).toBe(3); // queued for upkeep
-    expect(G.reservedPop).toBe(1);
+    expect(G.workZone).toEqual([{ id: 1, cardId: 'corvee', workers: 1 }]);
+    expect(G.resources.production).toBe(5); // output not yet applied
     expect(G.hand).toEqual(['farm', 'workshop', 'library', 'harvest']);
-    expect(G.discard).toEqual(['corvee']);
+    expect(G.discard).toEqual([]); // work card stays on the board, not discarded on play
     client.events.endTurn();
-    expect(client.getState().G.reservedGains.production).toBe(0); // cleared after upkeep
+    const after = client.getState().G;
+    expect(after.resources.production).toBe(8); // staffed work produced +3 during upkeep
+    expect(after.workZone).toEqual([]); // work zone cleared
+    expect(after.discard).toContain('corvee'); // and the card filed to discard at end of turn
     client.stop();
   });
 
-  it('a pop-reserve action is rejected when no idle population is available', () => {
+  it('a work card is playable with no idle population — it just sits unstaffed', () => {
     const client = start('enlightenment'); // pop 2
     playByName(client, 'farm'); // costs 1 prod -> auto-staffs 1 pop
     playByName(client, 'workshop'); // costs 2 prod -> auto-staffs 1 pop; 0 idle
-    const { G: before } = client.getState();
-    playByName(client, 'corvee'); // no idle pop -> rejected
+    playByName(client, 'corvee'); // no idle pop, but a work card is never gated on it
     const { G } = client.getState();
-    expect(G.resources.production).toBe(before.resources.production);
-    expect(G.hand).toContain('corvee');
+    expect(G.workZone).toEqual([{ id: expect.any(Number), cardId: 'corvee', workers: 0 }]);
+    expect(G.hand).not.toContain('corvee'); // it left the hand onto the board
     client.stop();
   });
 
-  it('reserved population is released at the start of the next turn', () => {
+  it("a work card's worker is freed once the card discards at end of turn", () => {
     const client = start('enlightenment'); // pop 2
-    playByName(client, 'corvee'); // reserve 1 -> free pop = 1
+    playByName(client, 'corvee'); // work box auto-staffs 1 -> free pop = 1
     playByName(client, 'farm'); // auto-staffs 1 -> free pop = 0
     playByName(client, 'workshop'); // builds unstaffed (free pop = 0)
     const wsId = client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.id;
-    expect(client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(0);
-    client.moves.assignWorker(wsId); // blocked — no free pop
-    expect(client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(0);
-    client.events.endTurn(); // beginTurn resets reservedPop to 0
-    expect(client.getState().G.reservedPop).toBe(0);
-    client.moves.assignWorker(wsId); // now free pop = 1 -> succeeds
-    expect(client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(1);
+    client.moves.assignWorker(wsId); // blocked — no free pop (one is on the work box)
+    expect(client.getState().G.tableau.find((b) => b.id === wsId)!.workers).toBe(0);
+    client.events.endTurn(); // corvee discards, releasing its worker
+    expect(client.getState().G.workZone).toEqual([]);
+    client.moves.assignWorker(wsId); // now free pop = 1 (only the farm is staffed) -> succeeds
+    expect(client.getState().G.tableau.find((b) => b.id === wsId)!.workers).toBe(1);
     client.stop();
   });
 

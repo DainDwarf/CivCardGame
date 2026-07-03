@@ -1,11 +1,22 @@
 import { addResources, type Resources } from './resources';
-import { tableauProduction, tableauCultureOutput } from './production';
+import { tableauProduction, tableauCultureOutput, workZoneProduction } from './production';
 import { foodUpkeep } from './population';
 import { applyEffect } from './effects';
 import { CARDS } from '../content/cards';
 import type { GameState } from './state';
 
 export type MissionUpkeep = (G: GameState) => void;
+
+/**
+ * File every Work card played this turn to the discard pile and clear the workZone. Called by
+ * `endTurn` *after* `applyUpkeep` has collected staffed-Work production — the whole point of the
+ * `work` kind is that the card sticks around (staffable) through the turn and only recycles at
+ * end of turn. Not part of `applyUpkeep` itself, since the projection clone runs upkeep too.
+ */
+export function discardWorkZone(G: GameState): void {
+  for (const w of G.workZone) G.discard.push(w.cardId);
+  G.workZone = [];
+}
 
 /**
  * Resolve any `event` cards still in hand at end of turn: each applies its effect and is
@@ -28,13 +39,13 @@ export function resolveHandEvents(G: GameState): void {
 }
 
 /**
- * Resolve the resource side of end-of-round upkeep: operating (staffed) buildings
- * produce, the mission ticks, then the population eats food. Single source of truth
+ * Resolve the resource side of end-of-round upkeep: operating (staffed) buildings and Work
+ * cards produce, the mission ticks, then the population eats food. Single source of truth
  * shared by the run loop's `onEnd` and the UI projection below, so they never drift.
  */
 export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
   addResources(G.resources, tableauProduction(G.tableau));
-  addResources(G.resources, G.reservedGains);
+  addResources(G.resources, workZoneProduction(G.workZone));
   G.culture += tableauCultureOutput(G.tableau);
   missionUpkeep?.(G);
   G.resources.food -= foodUpkeep(G);
