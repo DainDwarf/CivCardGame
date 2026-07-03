@@ -168,8 +168,12 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   persisted under their own `localStorage` key — kept out of `PlayerStore` since
   they're not game progress, so Save's Load/Clear never touches them): a segmented
   **theme picker** (`settings.theme`, built from `meta/settings.ts`'s `THEMES` list —
-  Light/Dark, applied as `data-theme` on documentElement, see the color-palette convention
-  below), a "confirm before ending a round" toggle that folds into `Board.tsx`'s existing
+  System/Light/Dark, System being the default for a fresh profile — resolved to the
+  concrete palette actually applied as `data-theme` on documentElement via
+  `resolveTheme`/`applyTheme`, since `'system'` isn't itself a valid `data-theme` value;
+  `applyTheme` also attaches a live `matchMedia` `change` listener when the choice is
+  `'system'`, so an OS light/dark flip is reflected without a reload — see the
+  color-palette convention below), a "confirm before ending a round" toggle that folds into `Board.tsx`'s existing
   end-round warning dialog, and a UI-size slider (`settings.uiScale`) that `App.tsx` applies by wrapping the whole
   app in a `transform: scale()` container (`App.module.css`) — chosen over CSS `zoom`,
   which was tried and reverted, because a transformed ancestor becomes the containing block
@@ -198,8 +202,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   On `onRunEnd`, it stores the `RunResult` and switches back to the menu.
 - `src/main.tsx` — mounts `<App>`. Also imports `src/index.css`, the one bit of global CSS
   in an otherwise all-CSS-Modules codebase; and, before the first render, sets
-  `document.documentElement.dataset.theme` from `loadSettings().theme` so the saved color
-  theme is applied with no light-then-dark flash on load. `index.css` holds two things: the
+  `document.documentElement.dataset.theme` from `resolveTheme(loadSettings().theme)` so the
+  saved color theme is applied with no light-then-dark flash on load — a plain resolve, not
+  `applyTheme`, since a live `'system'` listener needs an owner to tear it down and `App.tsx`
+  (not yet mounted at this point) is that owner. `index.css` holds two things: the
   color-theme palette (see the theming convention below) and a `body { margin: 0 }` reset,
   since the browser's default 8px body margin would otherwise inset every full-bleed/
   fixed-position element (the run loop's hand bar, the deck editor's banner) from the true

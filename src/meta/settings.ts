@@ -12,11 +12,46 @@
  * one entry here plus one `[data-theme]` block in `index.css` — nothing else.
  */
 export const THEMES = [
+  { id: 'system', label: 'System' },
   { id: 'light', label: 'Light' },
   { id: 'dark', label: 'Dark' },
 ] as const;
 
 export type Theme = (typeof THEMES)[number]['id'];
+
+/** The two concrete palettes `index.css` actually defines `[data-theme]` blocks for. */
+export type ResolvedTheme = Exclude<Theme, 'system'>;
+
+/** The `matchMedia` query that reports the OS/browser light-vs-dark preference. */
+const DARK_SCHEME_QUERY = '(prefers-color-scheme: dark)';
+
+/**
+ * Resolves a `Settings.theme` choice into the concrete palette `document.documentElement`'s
+ * `data-theme` must carry — `index.css` only defines `:root` (light) and
+ * `:root[data-theme='dark']`, so `'system'` itself is never a valid attribute value.
+ */
+export function resolveTheme(theme: Theme): ResolvedTheme {
+  if (theme !== 'system') return theme;
+  return window.matchMedia(DARK_SCHEME_QUERY).matches ? 'dark' : 'light';
+}
+
+/**
+ * Applies the resolved theme to `documentElement` now, and — when `theme` is `'system'` —
+ * keeps it in sync with live OS-preference changes via a `change` listener. Returns an
+ * unsubscribe function (a no-op when `theme` isn't `'system'`), meant to be called from a
+ * `useEffect` cleanup so the listener doesn't leak across re-renders/theme switches.
+ */
+export function applyTheme(theme: Theme): () => void {
+  document.documentElement.dataset.theme = resolveTheme(theme);
+  if (theme !== 'system') return () => {};
+
+  const query = window.matchMedia(DARK_SCHEME_QUERY);
+  const onChange = () => {
+    document.documentElement.dataset.theme = resolveTheme(theme);
+  };
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
 
 export interface Settings {
   /** Require a confirm click before ending a round. */
@@ -31,7 +66,7 @@ export interface Settings {
 export const UI_SCALE_MIN = 0.8;
 export const UI_SCALE_MAX = 1.5;
 
-export const DEFAULT_SETTINGS: Settings = { confirmEndTurn: false, uiScale: 1, theme: 'light' };
+export const DEFAULT_SETTINGS: Settings = { confirmEndTurn: false, uiScale: 1, theme: 'system' };
 
 const STORAGE_KEY = 'civcardgame:settings';
 

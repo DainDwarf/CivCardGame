@@ -4,7 +4,7 @@ import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
 import { GameProvider, useGame } from '../run/GameContext';
 import { loadStore, saveStore, type PlayerStore } from '../meta/store';
-import { loadSettings, saveSettings, type Settings } from '../meta/settings';
+import { applyTheme, loadSettings, saveSettings, type Settings } from '../meta/settings';
 import type { DeckDef } from '../content/decks';
 import type { RunConfig, RunResult } from '../contract';
 import styles from './App.module.css';
@@ -111,9 +111,10 @@ export function App() {
 
   // Reflect the chosen color theme onto documentElement, where index.css's `[data-theme]`
   // palette blocks apply. main.tsx sets this pre-mount from the same source; this keeps it in
-  // sync when the player switches themes in the Config submenu.
+  // sync when the player switches themes in the Config submenu, and — under 'system' —
+  // when the OS preference itself changes live (applyTheme's `change` listener).
   useEffect(() => {
-    document.documentElement.dataset.theme = settings.theme;
+    return applyTheme(settings.theme);
   }, [settings.theme]);
 
   // Load/Clear (GameMenu's Save submenu) replace the store wholesale, which can be
