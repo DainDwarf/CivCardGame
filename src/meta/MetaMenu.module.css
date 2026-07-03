@@ -2,6 +2,9 @@
   display: flex;
   min-height: 100vh;
   background: #e9e9e4;
+  /* Mouse-only UI with pointer-drag interactions (deck editor card drag) — dragging
+     across a meta screen should never trigger the browser's native text selection. */
+  user-select: none;
 }
 
 .nav {

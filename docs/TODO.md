@@ -75,6 +75,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Meta screens: disable text selection** — `MetaMenu.module.css`'s `.shell` (the
+  shared root for Mission/Collection/Decks/Stats/DeckEditor) now sets
+  `user-select: none`, matching `Board.module.css`'s `.app` on the run screen, so
+  pointer-drag in the deck editor never triggers native text selection.
 - **Deck editor UI rework** — `DeckEditor.tsx` now looks like the game: a main picker
   area (same kind-grouping as before) of real card visuals in a grid, above a bottom
   banner representing the deck itself (name, card count, Save/Cancel, cards grouped
