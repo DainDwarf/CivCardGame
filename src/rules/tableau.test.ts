@@ -3,7 +3,7 @@ import { countTag, freeTerritory, usedTerritory } from './tableau';
 import { blankState, type BuildingInstance } from './state';
 
 let nextId = 1;
-const b = (buildingId: string, workers = 0): BuildingInstance => ({ id: nextId++, buildingId, workers });
+const b = (cardId: string, workers = 0): BuildingInstance => ({ id: nextId++, cardId, workers });
 
 describe('countTag', () => {
   it('counts built cards with a tag, staffed or not', () => {

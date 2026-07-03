@@ -62,5 +62,5 @@ export const CODEX_GLOSSARY: GlossaryEntry[] = [
   { term: 'Culture requirement', definition: 'A gate, not a cost: the card can only be played once your culture has reached the required level. Culture is not consumed.' },
   { term: 'Territory', definition: 'The cap on how many buildings your tableau can hold. Raise it with expansion cards (e.g. Conquest, Develop), or demolish a building to reclaim a slot.' },
   { term: 'Staffing', definition: "A building or Work card's box toggles all-or-nothing: it fills to its full worker requirement, or empties completely. Only staffed boxes produce." },
-  { term: 'Removed vs. discard', definition: 'Permanents are removed from the deck once played (thinning it); recurring cards return to the discard and reshuffle into the deck when it runs dry.' },
+  { term: 'Removed vs. discard', definition: 'A card in the removed pile is gone from the deck for the rest of the run: a building card lands here only when demolished, and resolved event cards are exiled here too. Recurring cards instead return to the discard and reshuffle into the deck when it runs dry.' },
 ];

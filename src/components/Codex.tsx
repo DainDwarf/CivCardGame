@@ -59,11 +59,11 @@ export function Codex() {
       {/* --- Card kinds --- */}
       <section className={styles.topic}>
         <h4 className={styles.topicTitle}>Card kinds</h4>
-        <p className={styles.lead}>A card&rsquo;s kind is about how it leaves your hand, not what it does.</p>
+        <p className={styles.lead}>A card&rsquo;s kind is about what it becomes when played and where it goes afterward.</p>
         <dl className={styles.defList}>
           <div className={styles.defRow}>
-            <dt className={styles.defTerm}>Permanent</dt>
-            <dd className={styles.defDesc}>Buildings and Wonders. Pay their cost to raise a building in your tableau; the card is then removed from the deck, thinning it. The building produces every round for the rest of the run.</dd>
+            <dt className={styles.defTerm}>Building</dt>
+            <dd className={styles.defDesc}>Buildings and Wonders. Pay their cost to place them in your tableau (one territory slot), where they produce every round while staffed. They stay in play for the rest of the run &mdash; until you demolish one, which sends its card to the removed pile.</dd>
           </div>
           <div className={styles.defRow}>
             <dt className={styles.defTerm}>Recurring</dt>

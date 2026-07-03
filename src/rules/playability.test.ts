@@ -28,12 +28,12 @@ describe('unplayableReason', () => {
     expect(unplayableReason(G, card)).toEqual({ kind: 'cultureLevel', required: 1 });
   });
 
-  it('gates a build card on free territory', () => {
+  it('gates a building card on free territory', () => {
     const G = blankState('enlightenment');
     G.territory = 1;
     G.population = 1;
-    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }]; // territory full
-    const card: CardDef = { ...baseCard, effect: { build: 'granary' } };
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }]; // territory full
+    const card: CardDef = { ...baseCard, kind: 'building', id: 'granary' };
     expect(unplayableReason(G, card)).toEqual({ kind: 'territory' });
   });
 

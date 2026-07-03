@@ -11,7 +11,7 @@
       it in sync), so `<html>`/`<body>` theme too and there's no light flash on load.
 
       Conventions: same hex + same role → one token; same hex + different roles → separate tokens
-      sharing the light value (e.g. --accent vs --card-permanent-banner), so a theme can move one
+      sharing the light value (e.g. --accent vs --card-building-banner), so a theme can move one
       without the other. Colors used at several alphas are stored as space-separated channel tokens
       (`--accent-rgb: 59 125 216`) and composed with `rgb(var(--accent-rgb) / 12%)`. Pure-black
       drop-shadows (`rgba(0,0,0,…)`) and white scrims (`rgba(255,255,255,…)`) are intentionally
@@ -71,9 +71,9 @@
   --focus-ring: #3b7dd8;         /* focus outlines (shares the accent value) */
 
   /* ── Card kinds ───────────────────────────────────── */
-  --card-permanent-banner: #3b7dd8;
-  --card-permanent-band: #e7f0fb;
-  --card-permanent-condition: #7ea3d0;
+  --card-building-banner: #3b7dd8;
+  --card-building-band: #e7f0fb;
+  --card-building-condition: #7ea3d0;
   --card-action-banner: #c9772f;
   --card-action-band: #fbeede;
   --card-action-condition: #cc9f6e;
@@ -216,9 +216,9 @@
   /* ── Card kinds ──
      Banners keep their saturated hue (white text sits on them); the light title/text bands
      and condition mid-tones go to dark tints so the card interior reads as dark. */
-  --card-permanent-banner: #3b7dd8;
-  --card-permanent-band: #1f2c3d;
-  --card-permanent-condition: #4f7099;
+  --card-building-banner: #3b7dd8;
+  --card-building-band: #1f2c3d;
+  --card-building-condition: #4f7099;
   --card-action-banner: #c9772f;
   --card-action-band: #38291a;
   --card-action-condition: #8a6440;

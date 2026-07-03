@@ -1,58 +1,68 @@
 import type { Resources } from '../rules/resources';
 import type { CardEffect } from '../rules/effects';
 
-export type CardKind = 'permanent' | 'recurring' | 'work' | 'event';
+export type CardKind = 'building' | 'recurring' | 'work' | 'event';
 
 export interface CardDef {
   id: string;
   name: string;
   /**
-   * Disposal after play — about the *card*, not what it does:
-   * - `permanent`: the card is consumed and goes to the **removed** pile (gone from the deck).
-   * - `recurring`: the card recycles to the **discard** pile.
+   * What the card *is* and where it goes after play:
+   * - `building`: the card *is* a building — playing it places it in the **tableau** (one
+   *   territory slot), auto-staffed from idle population, where it produces `produces`/
+   *   `cultureOutput` each round while staffed. It stays in play (not filed to a pile) until
+   *   **demolished**, at which point its card goes to the **removed** pile.
+   * - `recurring`: resolves its `effect`, then recycles to the **discard** pile.
    * - `work`: the card sticks onto the board as a staffable work box (see `workers`); it
    *   produces its `effect.gain` only while staffed, then recycles to the **discard** pile at
    *   *end of turn* (not on play). No population is locked and no idle pop is required to play it.
    * - `event`: not player-playable and never in the deck editor/collection — missions inject it.
    *   An event left in hand at end of turn auto-resolves its effect, then goes to **removed**.
-   * A recurring card may still construct a permanent building (the building stays in play;
-   * the card recycles).
    */
   kind: CardKind;
   /** Resources required to play. Absent keys are free (e.g. {} = no cost). */
   cost: Partial<Resources>;
-  /** `work` cards only: worker spaces on the board box. Defaults to 1; `0` = always operating. */
+  /** `building` and `work` cards: worker spaces to operate. Defaults to 1; `0` = self-sufficient
+   *  (always operating, e.g. City Walls). */
   workers?: number;
   /** Extra cost: number of other cards you must discard from hand to play this. */
   discardCost?: number;
   /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
   cultureLevelReq?: number;
-  /** Immediate effect when played: resource gain, draw, population, and/or constructing a building. */
+  /** Immediate one-shot effect when played (resource gain/loss, draw, population, territory,
+   *  culture, or demolish). `building` cards have none — their output is the passive `produces`
+   *  below; `work` cards defer their `effect.gain` until staffed at upkeep. */
   effect?: CardEffect;
+  /** `building` cards: per-round output once staffed. */
+  produces?: Partial<Resources>;
+  /** `building` cards: per-round culture gained while staffed — accumulates on G.culture. */
+  cultureOutput?: number;
+  /** `building` cards: classification tags, e.g. 'building' | 'wonder'. */
+  tags?: string[];
 }
 
 /**
- * The card catalogue. Building cards (`permanent`) construct a building via `effect.build`
- * and are then removed from the deck; recurring cards resolve their effect and recycle
- * through the discard. Building stats live in `content/buildings.ts`, not here.
+ * The card catalogue. A `building` card *is* the building it becomes in the tableau (its stats
+ * live right here); recurring cards resolve their effect and recycle through the discard; work
+ * cards stick onto the board for one turn.
  */
 export const CARDS: Record<string, CardDef> = {
-  // --- Building cards: erect a building, then the card is removed from the deck. ---
-  farm: { id: 'farm', name: 'Farm', kind: 'permanent', cost: { production: 1 }, effect: { build: 'farm' } },
-  granary: { id: 'granary', name: 'Granary', kind: 'permanent', cost: { production: 2 }, effect: { build: 'granary' } },
-  workshop: { id: 'workshop', name: 'Workshop', kind: 'permanent', cost: { production: 2 }, effect: { build: 'workshop' } },
-  library: { id: 'library', name: 'Library', kind: 'permanent', cost: { production: 3 }, effect: { build: 'library' } },
-  university: { id: 'university', name: 'University', kind: 'permanent', cost: { production: 4 }, effect: { build: 'university' } },
-  walls: { id: 'walls', name: 'City Walls', kind: 'permanent', cost: { production: 2 }, effect: { build: 'walls' } },
-  barracks: { id: 'barracks', name: 'Barracks', kind: 'permanent', cost: { production: 2 }, effect: { build: 'barracks' } },
-  theater: { id: 'theater', name: 'Theater', kind: 'permanent', cost: { production: 3 }, effect: { build: 'theater' } },
-  market: { id: 'market', name: 'Market', kind: 'permanent', cost: { production: 2 }, effect: { build: 'market' } },
-  trading_post: { id: 'trading_post', name: 'Trading Post', kind: 'permanent', cost: { production: 3 }, effect: { build: 'trading_post' } },
+  // --- Building cards: played onto the tableau as a building; stay until demolished. ---
+  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 1 }, produces: { food: 2 }, workers: 1, tags: ['building'] },
+  granary: { id: 'granary', name: 'Granary', kind: 'building', cost: { production: 2 }, produces: { food: 3 }, workers: 1, tags: ['building'] },
+  workshop: { id: 'workshop', name: 'Workshop', kind: 'building', cost: { production: 2 }, produces: { production: 2 }, workers: 1, tags: ['building'] },
+  library: { id: 'library', name: 'Library', kind: 'building', cost: { production: 3 }, produces: { science: 2 }, workers: 1, tags: ['building'] },
+  university: { id: 'university', name: 'University', kind: 'building', cost: { production: 4 }, produces: { science: 3 }, workers: 1, tags: ['building'] },
+  walls: { id: 'walls', name: 'City Walls', kind: 'building', cost: { production: 2 }, produces: { military: 3 }, workers: 0, tags: ['building'] },
+  barracks: { id: 'barracks', name: 'Barracks', kind: 'building', cost: { production: 2 }, produces: { production: 1, military: 2 }, workers: 1, tags: ['building'] },
+  theater: { id: 'theater', name: 'Theater', kind: 'building', cost: { production: 3 }, cultureOutput: 2, workers: 1, tags: ['building'] },
+  market: { id: 'market', name: 'Market', kind: 'building', cost: { production: 2 }, produces: { money: 2 }, workers: 1, tags: ['building'] },
+  trading_post: { id: 'trading_post', name: 'Trading Post', kind: 'building', cost: { production: 3 }, produces: { money: 3 }, workers: 1, tags: ['building'] },
 
-  // --- Wonder cards. ---
-  pyramids: { id: 'pyramids', name: 'The Pyramids', kind: 'permanent', cost: { production: 4 }, effect: { build: 'pyramids' } },
-  great_library: { id: 'great_library', name: 'The Great Library', kind: 'permanent', cost: { production: 4 }, effect: { build: 'great_library' } },
-  colossus: { id: 'colossus', name: 'The Colossus', kind: 'permanent', cost: { production: 4 }, effect: { build: 'colossus' } },
+  // --- Wonder cards (building cards tagged 'wonder'). ---
+  pyramids: { id: 'pyramids', name: 'The Pyramids', kind: 'building', cost: { production: 4 }, produces: { production: 1, military: 1 }, workers: 1, tags: ['wonder'] },
+  great_library: { id: 'great_library', name: 'The Great Library', kind: 'building', cost: { production: 4 }, produces: { science: 2 }, workers: 1, tags: ['wonder'] },
+  colossus: { id: 'colossus', name: 'The Colossus', kind: 'building', cost: { production: 4 }, produces: { food: 1, science: 1, military: 1 }, workers: 1, tags: ['wonder'] },
 
   // --- Recurring actions (recycle to the discard). ---
   settlers: { id: 'settlers', name: 'Settlers', kind: 'recurring', cost: { food: 2 }, effect: { population: 1 } },

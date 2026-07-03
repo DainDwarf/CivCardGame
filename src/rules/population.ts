@@ -1,27 +1,20 @@
-import { BUILDINGS } from '../content/buildings';
 import { CARDS } from '../content/cards';
-import type { BuildingInstance, GameState, WorkInstance } from './state';
+import type { GameState, PlacedCard } from './state';
 
 /** Food eaten per unit of population each round. */
 export const FOOD_PER_POP = 1;
 
 /**
- * A staffable board entity — a building in the tableau or a Work card in the workZone. Both
- * carry an `id` and `workers` and share the worker-assignment machinery (the four moves,
- * `freePopulation`, `isOperating`); they differ only in which catalogue defines their worker
- * requirement. Discriminated by the presence of `buildingId`.
+ * A staffable board entity — a building in the tableau or a Work card in the workZone. Both are
+ * placed cards carrying an `id`, a `cardId`, and `workers`, and share the worker-assignment
+ * machinery (the four moves, `freePopulation`, `isOperating`) and one worker-requirement lookup.
  */
-export type Staffable = BuildingInstance | WorkInstance;
+export type Staffable = PlacedCard;
 
-/** Workers needed for a building to operate. 0 = self-sufficient (e.g. City Walls). */
-export function requiredWorkers(buildingId: string): number {
-  return BUILDINGS[buildingId].workers ?? 1;
-}
-
-/** Worker requirement of any staffable, read from whichever catalogue defines it. Work cards
- *  default to 1 worker space (`workers: 0` = always operating). */
+/** Worker requirement of any staffable, read from its card. `workers: 0` = self-sufficient
+ *  (always operating, e.g. City Walls); absent defaults to 1. */
 export function requiredWorkersOf(s: Staffable): number {
-  return 'buildingId' in s ? requiredWorkers(s.buildingId) : CARDS[s.cardId].workers ?? 1;
+  return CARDS[s.cardId].workers ?? 1;
 }
 
 /** Is this staffable staffed enough to operate (produce / defend)? */
@@ -53,9 +46,9 @@ function autoStaffTo(G: GameState, req: number): number {
   return freePopulation(G) >= req ? req : 0;
 }
 
-/** Auto-staff count for a building about to be erected. */
-export function autoStaffCount(G: GameState, buildingId: string): number {
-  return autoStaffTo(G, requiredWorkers(buildingId));
+/** Auto-staff count for a card about to be placed on the board. */
+export function autoStaffCount(G: GameState, cardId: string): number {
+  return autoStaffTo(G, CARDS[cardId].workers ?? 1);
 }
 
 /** The next stable instance id: one past the highest currently in play across *both* the tableau
@@ -69,15 +62,15 @@ export function nextInstanceId(G: GameState): number {
   return max + 1;
 }
 
-/** Erect a building in the tableau, auto-staffing it from the idle pool (all-or-nothing). */
-export function addBuilding(G: GameState, buildingId: string): void {
-  const workers = autoStaffCount(G, buildingId);
-  G.tableau.push({ id: nextInstanceId(G), buildingId, workers });
+/** Erect a building card in the tableau, auto-staffing it from the idle pool (all-or-nothing). */
+export function addBuilding(G: GameState, cardId: string): void {
+  const workers = autoStaffCount(G, cardId);
+  G.tableau.push({ id: nextInstanceId(G), cardId, workers });
 }
 
 /** Play a Work card onto the board, auto-staffing it from the idle pool (all-or-nothing). */
 export function addWork(G: GameState, cardId: string): void {
-  const workers = autoStaffTo(G, CARDS[cardId].workers ?? 1);
+  const workers = autoStaffCount(G, cardId);
   G.workZone.push({ id: nextInstanceId(G), cardId, workers });
 }
 

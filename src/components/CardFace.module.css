@@ -54,7 +54,7 @@
 }
 
 .bannerBuilding {
-  background: var(--card-permanent-banner);
+  background: var(--card-building-banner);
 }
 
 .bannerAction {
@@ -74,9 +74,9 @@
   border-color: var(--card-event-border);
 }
 
-/* Colour the title band by card kind (blue = permanent building, orange = action, red = event). */
-.permanent .cardTop {
-  background: var(--card-permanent-band);
+/* Colour the title band by card kind (blue = building, orange = action, red = event). */
+.building .cardTop {
+  background: var(--card-building-band);
 }
 
 .action .cardTop {
@@ -150,8 +150,8 @@
   padding: 0.2rem 0.35rem;
 }
 
-.permanent .cardConditions {
-  background: var(--card-permanent-condition);
+.building .cardConditions {
+  background: var(--card-building-condition);
 }
 
 .action .cardConditions {
@@ -180,9 +180,9 @@
   border-radius: 0 0 9px 9px;
 }
 
-/* Match the light title-band tint for the card's kind (blue = permanent building, orange = action). */
-.permanent .cardText {
-  background: var(--card-permanent-band);
+/* Match the light title-band tint for the card's kind (blue = building, orange = action). */
+.building .cardText {
+  background: var(--card-building-band);
 }
 
 .action .cardText {

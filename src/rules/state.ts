@@ -1,30 +1,29 @@
 import { emptyResources, type Resources } from './resources';
 import { seededRng } from './rng';
 
-/** A building erected in the tableau, tracking the workers assigned to it. `buildingId` (a key
- *  into the BUILDINGS catalogue) says *what* it is — several different cards can build the same
- *  one — while `id` is its stable per-instance identity, unique for the run, so moves and the UI
- *  can target this exact building (staffing, demolish, its slot) even among identical siblings. */
-export interface BuildingInstance {
-  /** Stable identity, unique within the run — assigned once, at construction. */
+/** A card placed on the board as a staffable instance — a building in the `tableau` or a Work card
+ *  in the `workZone`. `cardId` (a key into the CARDS catalogue) is *what* it is — the card *is* the
+ *  building, there's no separate building entity — while `id` is its stable per-instance identity,
+ *  unique within the run across both zones, so moves and the UI can target this exact instance
+ *  (staffing, demolish, its slot) even among identical siblings. */
+export interface PlacedCard {
+  /** Stable identity, unique within the run — assigned once, at placement. */
   id: number;
-  buildingId: string;
-  /** Population currently assigned to this building. */
+  /** Key into the CARDS catalogue. */
+  cardId: string;
+  /** Population currently assigned to this instance. */
   workers: number;
 }
 
-/** A Work card played onto the board this turn, tracking the workers assigned to it. `cardId` (a
- *  key into the CARDS catalogue) is *what* it is; `id` is its stable per-instance identity, drawn
- *  from the same allocator as buildings so the shared worker moves can target either. A Work
- *  instance lives for one turn: it produces its card's `effect.gain` only while staffed, then the
- *  card files to `discard` at end of turn (see `endTurn`) and the instance is cleared. */
-export interface WorkInstance {
-  /** Stable identity, unique within the run across both tableau and workZone. */
-  id: number;
-  cardId: string;
-  /** Population currently assigned to this work. */
-  workers: number;
-}
+/** A building erected in the tableau. A `building` card played from hand becomes one of these and
+ *  stays in play until demolished (then its card files to the `removed` pile); it produces its
+ *  card's `produces`/`cultureOutput` each round while staffed. */
+export type BuildingInstance = PlacedCard;
+
+/** A Work card played onto the board this turn. Transient: it produces its card's `effect.gain`
+ *  only while staffed, then the card files to `discard` at end of turn (see `endTurn`) and the
+ *  instance is cleared. */
+export type WorkInstance = PlacedCard;
 
 /**
  * GameState is the entire serializable run state (the engine's `G`). It must stay
@@ -46,12 +45,12 @@ export interface GameState {
   /**
    * Exile pile — cards permanently removed from the deck for the rest of the run (never
    * drawn again, never reshuffled). This is *not* the tableau: a building in play is an
-   * active entity, whereas a removed card is gone from the deck. They diverge especially
-   * for future cards that stay in the deck cycle yet spawn a permanent building as an
-   * effect (the building enters `tableau`; the card goes to `discard` or here).
+   * active entity on the board, whereas a removed card is gone from play. A `building` card
+   * moves here only when its building is demolished (it left the tableau); auto-resolved
+   * event cards are exiled here too.
    */
   removed: string[];
-  /** Committed permanents, each tracking its assigned workers. */
+  /** Buildings in play (each a placed `building` card), tracking their assigned workers. */
   tableau: BuildingInstance[];
   /**
    * Work cards played this turn, each tracking its assigned workers. Transient: not

@@ -16,7 +16,7 @@ export function Collection() {
 
   // Event cards are mission-injected and never part of the player's collection.
   const cards = Object.values(CARDS).filter((c) => c.kind !== 'event');
-  const buildings = cards.filter((c) => c.kind === 'permanent');
+  const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'recurring');
   const works = cards.filter((c) => c.kind === 'work');
 

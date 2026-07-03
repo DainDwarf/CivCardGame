@@ -57,13 +57,13 @@ describe('run loop (headless integration)', () => {
     expect(republic.resources.money).toBe(5);
   });
 
-  it('building a permanent erects a building, auto-staffs it, and removes the card from the deck', () => {
+  it('playing a building card places it in the tableau, auto-staffs it, and keeps it in play', () => {
     const client = start('enlightenment'); // population 2, all idle
-    playByName(client, 'farm'); // farm card builds a farm building -> auto-staffed on play
+    playByName(client, 'farm'); // farm card is placed as a farm building -> auto-staffed on play
     const after = client.getState().G;
-    expect(after.tableau).toEqual([{ id: 1, buildingId: 'farm', workers: 1 }]);
-    expect(after.removed).toEqual(['farm']); // the card itself is gone from the deck
-    expect(after.discard).toEqual([]); // permanents don't recycle
+    expect(after.tableau).toEqual([{ id: 1, cardId: 'farm', workers: 1 }]);
+    expect(after.removed).toEqual([]); // the card *is* the building — not removed on play
+    expect(after.discard).toEqual([]); // building cards don't recycle
     // staffing is still hand-adjustable: return the worker, then reassign it
     const farmId = after.tableau[0].id;
     client.moves.unassignWorker(farmId);
@@ -79,8 +79,8 @@ describe('run loop (headless integration)', () => {
     playByName(client, 'workshop'); // costs 2 prod -> 3; auto-staffs 1 -> free pop = 0
     playByName(client, 'farm'); // costs 1 prod -> 2; no idle left -> unstaffed
     const G = client.getState().G;
-    expect(G.tableau.find((b) => b.buildingId === 'workshop')!.workers).toBe(1);
-    expect(G.tableau.find((b) => b.buildingId === 'farm')!.workers).toBe(0);
+    expect(G.tableau.find((b) => b.cardId === 'workshop')!.workers).toBe(1);
+    expect(G.tableau.find((b) => b.cardId === 'farm')!.workers).toBe(0);
     client.stop();
   });
 
@@ -116,7 +116,7 @@ describe('run loop (headless integration)', () => {
     playByName(client, 'corvee'); // work box auto-staffs 1 -> free pop = 1
     playByName(client, 'farm'); // auto-staffs 1 -> free pop = 0
     playByName(client, 'workshop'); // builds unstaffed (free pop = 0)
-    const wsId = client.getState().G.tableau.find((b) => b.buildingId === 'workshop')!.id;
+    const wsId = client.getState().G.tableau.find((b) => b.cardId === 'workshop')!.id;
     client.moves.assignWorker(wsId); // blocked — no free pop (one is on the work box)
     expect(client.getState().G.tableau.find((b) => b.id === wsId)!.workers).toBe(0);
     client.events.endTurn(); // corvee discards, releasing its worker

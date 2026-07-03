@@ -1,19 +1,21 @@
 import type { GameState } from '../rules';
-import { addWork, applyEffect, findStaffable, freePopulation, requiredWorkersOf, subtractResources, unplayableReason } from '../rules';
+import { addBuilding, addWork, applyEffect, findStaffable, freePopulation, requiredWorkersOf, subtractResources, unplayableReason } from '../rules';
 import { CARDS } from '../content/cards';
 
 /**
- * Play a card from hand. A `work` card sticks onto the board (into the workZone, auto-staffed
- * from idle pop) and resolves *nothing* now — it produces its `effect.gain` only while staffed,
- * at end-of-turn upkeep. Every other card resolves its `effect` immediately (which may erect a
- * building in the tableau, auto-staffed from idle pop). Then the *card itself* is routed by
- * `kind` — `permanent` cards are removed from the deck (the removed pile), `recurring` cards
- * recycle to the discard, and `work` cards stay on the board (their cardId held in the workZone)
- * until they file to the discard at end of turn. Costs may include resources and a discard cost:
- * `discardHandIdxs` gives the hand positions of cards to sacrifice (distinct indices, not the
- * played card's slot). Cards with `effect.destroy` require a `destroyInstanceId` — the exact
- * building instance to demolish (frees its territory slot and workers). Moves are the only place
- * `G` may change.
+ * Play a card from hand, routed by `kind`:
+ * - `building`: placed into the tableau (one territory slot, auto-staffed from idle pop) where it
+ *   produces each round while staffed. The card is *not* filed to a pile — it lives on as the
+ *   tableau instance until demolished, at which point it goes to the removed pile.
+ * - `work`: sticks onto the board (into the workZone, auto-staffed) and resolves *nothing* now —
+ *   it produces its `effect.gain` only while staffed, at end-of-turn upkeep; its cardId is held
+ *   in the workZone until it files to the discard at end of turn.
+ * - `recurring`: resolves its `effect` immediately, then recycles to the discard.
+ * Costs may include resources and a discard cost: `discardHandIdxs` gives the hand positions of
+ * cards to sacrifice (distinct indices, not the played card's slot). Cards with `effect.destroy`
+ * require a `destroyInstanceId` — the exact building instance to demolish (frees its territory
+ * slot and workers; that demolished card goes to the removed pile). Moves are the only place `G`
+ * may change.
  */
 export function playCard(
   G: GameState,
@@ -52,22 +54,24 @@ export function playCard(
 
   // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
   // return the not-yet-filed sacrifices back into the deck.
-  // A work card sticks onto the board and produces only while staffed (at upkeep), so nothing
-  // resolves now; everything else applies its effect immediately.
-  if (card.kind === 'work') {
+  // A building card is placed in the tableau; a work card sticks onto the board and produces only
+  // while staffed (at upkeep); everything else applies its effect immediately.
+  if (card.kind === 'building') {
+    addBuilding(G, cardId);
+  } else if (card.kind === 'work') {
     addWork(G, cardId);
   } else {
     applyEffect(G, card.effect);
   }
   if (card.effect?.destroy && destroyInstanceId !== undefined) {
     const idx = G.tableau.findIndex((b) => b.id === destroyInstanceId);
-    if (idx !== -1) G.tableau.splice(idx, 1);
+    // The demolished building left the tableau — its card goes to the removed pile.
+    if (idx !== -1) G.removed.push(G.tableau.splice(idx, 1)[0].cardId);
   }
   for (const id of sacrificeIds) G.discard.push(id);
-  // File the played card by kind. Work cards are the exception: they stay on the board (their
-  // cardId held in the workZone) and file to the discard at end of turn, not here.
-  if (card.kind === 'permanent') G.removed.push(cardId);
-  else if (card.kind !== 'work') G.discard.push(cardId);
+  // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,
+  // filed at end of turn) stay put; only recurring cards recycle to the discard here.
+  if (card.kind === 'recurring') G.discard.push(cardId);
 }
 
 /** Assign one idle population to a specific staffable (building or Work card, identified by `id`),

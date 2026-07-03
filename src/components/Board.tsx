@@ -6,12 +6,10 @@ import {
   freePopulation,
   isOperating,
   projectedDelta,
-  requiredWorkers,
   requiredWorkersOf,
   unplayableReason,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
-import { BUILDINGS } from '../content/buildings';
 import { MISSIONS, type MissionDef } from '../content/missions';
 import type { GameState } from '../rules';
 import { CardFace, COST_ICON, artFor, describeBuilding } from './CardFace';
@@ -252,8 +250,8 @@ function BuildingBox({
   onStaffPointerDown?: (e: React.PointerEvent, inst: BuildingInstance) => void;
   onDestroy?: () => void;
 }) {
-  const bld = BUILDINGS[inst.buildingId];
-  const req = requiredWorkers(inst.buildingId);
+  const bld = CARDS[inst.cardId];
+  const req = requiredWorkersOf(inst);
   const selfSufficient = req === 0;
   const staffed = isOperating(inst);
   const className = [
@@ -426,7 +424,6 @@ const DRAG_THRESHOLD = 6;
 interface SlotDrag {
   /** Stable id of the building instance being dragged. */
   id: number;
-  buildingId: string;
   /** Slot index the drag started from. */
   fromSlot: number;
   pointerId: number;
@@ -659,7 +656,6 @@ export function Board({
     const r = e.currentTarget.getBoundingClientRect();
     setSlotDrag({
       id: inst.id,
-      buildingId: inst.buildingId,
       fromSlot,
       pointerId: e.pointerId,
       grabX: e.clientX - r.left,
@@ -754,7 +750,7 @@ export function Board({
     // captured now, at the drop point — not after the discard-cost branch below, which can defer
     // the actual moves.playCard call until a later click, by which point the release position
     // is long gone.
-    if (card.effect?.build) {
+    if (card.kind === 'building') {
       // Use the card's own center, not the raw cursor — the cursor can sit anywhere within the
       // card depending on where it was grabbed, which otherwise skews "closest slot" toward
       // wherever the grab point happened to land instead of where the card visually rests.
@@ -1118,7 +1114,7 @@ export function Board({
             const inst = key != null ? buildingById.get(key) : undefined;
             const isDropTarget = slotDrag?.active === true && hoverSlot === slotIdx;
             const isDragSource = slotDrag?.active === true && slotDrag.fromSlot === slotIdx;
-            const canAcceptWorker = !!inst && inst.workers < requiredWorkers(inst.buildingId);
+            const canAcceptWorker = !!inst && inst.workers < requiredWorkersOf(inst);
             const isWorkerDropTarget =
               workerDrag?.active === true &&
               workerHoverSlot === slotIdx &&

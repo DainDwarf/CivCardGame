@@ -3,7 +3,7 @@ import { tableauProduction } from './production';
 import type { BuildingInstance } from './state';
 
 let nextId = 1;
-const b = (buildingId: string, workers: number): BuildingInstance => ({ id: nextId++, buildingId, workers });
+const b = (cardId: string, workers: number): BuildingInstance => ({ id: nextId++, cardId, workers });
 
 describe('tableauProduction', () => {
   it('counts only staffed buildings', () => {

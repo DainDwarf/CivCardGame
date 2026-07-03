@@ -15,14 +15,14 @@ function play(G: GameState, cardId: string, discardCardIds: string[] = [], destr
 }
 
 describe('playCard: cards vs. buildings', () => {
-  it('a permanent card erects a building and is removed from the deck (not discarded)', () => {
+  it('a building card is placed in the tableau and stays in play (not filed to any pile)', () => {
     const G = blankState('enlightenment');
     G.hand = ['farm'];
     G.resources.production = 5;
     G.population = 2; // idle -> the farm auto-staffs
     play(G, 'farm');
-    expect(G.tableau).toEqual([{ id: 1, buildingId: 'farm', workers: 1 }]);
-    expect(G.removed).toEqual(['farm']); // the card itself leaves the deck for good
+    expect(G.tableau).toEqual([{ id: 1, cardId: 'farm', workers: 1 }]);
+    expect(G.removed).toEqual([]); // the card *is* the building — not removed on play
     expect(G.discard).toEqual([]);
     expect(G.hand).toEqual([]);
   });
@@ -33,7 +33,7 @@ describe('playCard: cards vs. buildings', () => {
     G.resources.production = 5;
     G.population = 2;
     G.territory = 1;
-    G.tableau = [{ id: 1, buildingId: 'workshop', workers: 1 }]; // sole slot already taken
+    G.tableau = [{ id: 1, cardId: 'workshop', workers: 1 }]; // sole slot already taken
     play(G, 'farm');
     expect(G.tableau).toHaveLength(1); // farm not built
     expect(G.hand).toEqual(['farm']); // card stays in hand, nothing paid
@@ -45,12 +45,13 @@ describe('playCard: cards vs. buildings', () => {
     G.hand = ['destroy'];
     G.resources.production = 5;
     G.tableau = [
-      { id: 1, buildingId: 'farm', workers: 1 },
-      { id: 2, buildingId: 'workshop', workers: 1 },
+      { id: 1, cardId: 'farm', workers: 1 },
+      { id: 2, cardId: 'workshop', workers: 1 },
     ];
     G.population = 2;
     play(G, 'destroy', [], 1); // demolish the farm instance
-    expect(G.tableau).toEqual([{ id: 2, buildingId: 'workshop', workers: 1 }]);
+    expect(G.tableau).toEqual([{ id: 2, cardId: 'workshop', workers: 1 }]);
+    expect(G.removed).toEqual(['farm']); // the demolished building's card leaves play
     expect(G.resources.production).toBe(4); // paid 1 production
     expect(G.discard).toEqual(['destroy']); // recurring → recycles
   });
@@ -60,7 +61,7 @@ describe('playCard: cards vs. buildings', () => {
     G.hand = ['destroy'];
     G.resources.production = 5;
     G.population = 2;
-    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }];
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }];
     play(G, 'destroy', [], 1);
     expect(G.tableau).toEqual([]);
     // The removed worker is now idle (freePopulation = population - assignedWorkers)
@@ -72,7 +73,7 @@ describe('playCard: cards vs. buildings', () => {
     const G = blankState('enlightenment');
     G.hand = ['destroy'];
     G.resources.production = 5;
-    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }];
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }];
     play(G, 'destroy'); // no destroyInstanceId
     expect(G.tableau).toHaveLength(1); // nothing removed
     expect(G.resources.production).toBe(5); // nothing paid
@@ -82,7 +83,7 @@ describe('playCard: cards vs. buildings', () => {
     const G = blankState('enlightenment');
     G.hand = ['destroy'];
     G.resources.production = 5;
-    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }];
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }];
     play(G, 'destroy', [], 999); // no instance with id 999
     expect(G.tableau).toHaveLength(1);
     expect(G.resources.production).toBe(5);
@@ -94,11 +95,11 @@ describe('playCard: cards vs. buildings', () => {
     G.resources.production = 5;
     G.population = 1;
     G.tableau = [
-      { id: 1, buildingId: 'farm', workers: 1 }, // staffed
-      { id: 2, buildingId: 'farm', workers: 0 }, // empty
+      { id: 1, cardId: 'farm', workers: 1 }, // staffed
+      { id: 2, cardId: 'farm', workers: 0 }, // empty
     ];
     play(G, 'destroy', [], 2); // demolish the empty farm, by id
-    expect(G.tableau).toEqual([{ id: 1, buildingId: 'farm', workers: 1 }]); // targeted instance removed
+    expect(G.tableau).toEqual([{ id: 1, cardId: 'farm', workers: 1 }]); // targeted instance removed
   });
 
   it('destroy enables a building card to be played after demolishing a full tableau', () => {
@@ -107,12 +108,12 @@ describe('playCard: cards vs. buildings', () => {
     G.resources.production = 5;
     G.population = 2;
     G.territory = 1;
-    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }]; // tableau at cap
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }]; // tableau at cap
     play(G, 'destroy', [], 1);
     expect(G.tableau).toHaveLength(0);
     expect(G.territory).toBe(1); // territory cap unchanged — just freed a slot
     play(G, 'granary'); // now a slot is free
-    expect(G.tableau.some((b) => b.buildingId === 'granary')).toBe(true);
+    expect(G.tableau.some((b) => b.cardId === 'granary')).toBe(true);
   });
 
   it('a territory card opens a slot so the next building can be played', () => {
@@ -121,13 +122,13 @@ describe('playCard: cards vs. buildings', () => {
     G.resources.production = 5;
     G.population = 2;
     G.territory = 1;
-    G.tableau = [{ id: 1, buildingId: 'workshop', workers: 1 }]; // full at territory 1
+    G.tableau = [{ id: 1, cardId: 'workshop', workers: 1 }]; // full at territory 1
     play(G, 'develop'); // +1 territory (cost 3 production) -> room for one more
     expect(G.territory).toBe(2);
     expect(G.discard).toEqual(['develop']); // recurring -> recycles
     play(G, 'farm'); // now fits
     expect(G.tableau).toHaveLength(2);
-    expect(G.tableau.some((b) => b.buildingId === 'farm')).toBe(true);
+    expect(G.tableau.some((b) => b.cardId === 'farm')).toBe(true);
   });
 
   it('a work card sticks onto the board auto-staffed, applies nothing now, and is not yet discarded', () => {
@@ -171,21 +172,21 @@ describe('transferWorker: moving a worker directly between two buildings', () =>
   it('moves one worker from the source building to the target in a single call', () => {
     const G = blankState('enlightenment');
     G.tableau = [
-      { id: 1, buildingId: 'farm', workers: 1 },
-      { id: 2, buildingId: 'workshop', workers: 0 },
+      { id: 1, cardId: 'farm', workers: 1 },
+      { id: 2, cardId: 'workshop', workers: 0 },
     ];
     transferWorker(G, 1, 2);
     expect(G.tableau).toEqual([
-      { id: 1, buildingId: 'farm', workers: 0 },
-      { id: 2, buildingId: 'workshop', workers: 1 },
+      { id: 1, cardId: 'farm', workers: 0 },
+      { id: 2, cardId: 'workshop', workers: 1 },
     ]);
   });
 
   it('rejects when the source building has no worker to give', () => {
     const G = blankState('enlightenment');
     G.tableau = [
-      { id: 1, buildingId: 'farm', workers: 0 },
-      { id: 2, buildingId: 'workshop', workers: 0 },
+      { id: 1, cardId: 'farm', workers: 0 },
+      { id: 2, cardId: 'workshop', workers: 0 },
     ];
     transferWorker(G, 1, 2);
     expect(G.tableau[0].workers).toBe(0);
@@ -195,8 +196,8 @@ describe('transferWorker: moving a worker directly between two buildings', () =>
   it('rejects when the target building is already at its worker requirement', () => {
     const G = blankState('enlightenment');
     G.tableau = [
-      { id: 1, buildingId: 'farm', workers: 1 },
-      { id: 2, buildingId: 'workshop', workers: 1 }, // workshop needs only 1 worker
+      { id: 1, cardId: 'farm', workers: 1 },
+      { id: 2, cardId: 'workshop', workers: 1 }, // workshop needs only 1 worker
     ];
     transferWorker(G, 1, 2);
     expect(G.tableau[0].workers).toBe(1); // untouched
@@ -205,14 +206,14 @@ describe('transferWorker: moving a worker directly between two buildings', () =>
 
   it('rejects a transfer to itself', () => {
     const G = blankState('enlightenment');
-    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }];
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }];
     transferWorker(G, 1, 1);
     expect(G.tableau[0].workers).toBe(1);
   });
 
   it('rejects when either instance id does not exist', () => {
     const G = blankState('enlightenment');
-    G.tableau = [{ id: 1, buildingId: 'farm', workers: 1 }];
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }];
     transferWorker(G, 1, 999);
     expect(G.tableau[0].workers).toBe(1);
     transferWorker(G, 999, 1);

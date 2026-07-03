@@ -15,7 +15,7 @@ It is a **roguelite deckbuilder** with two loops: a **run loop** (the boardgame.
 card game — play a *locked* pre-built deck against a mission) and a **meta loop**
 (persistent deck construction, shop, mission selection — the *only* place decks are
 edited). See [`docs/DESIGN.md`](docs/DESIGN.md) for the full game design and roadmap.
-**Phase 1** (the run loop, under `src/run/`) is done: hybrid cards (permanent vs.
+**Phase 1** (the run loop, under `src/run/`) is done: hybrid cards (building vs.
 recurring), the turn lifecycle, a **population/worker-staffing** layer (buildings must
 be staffed to operate; the population eats food each round), and mission-driven
 win/lose conditions. **Phase 2** (contract + meta shell) is in progress: `src/contract.ts`
@@ -50,9 +50,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   transient `workZone` of played `work` cards awaiting staffing, and the
   card zones `deck`/`hand`/`discard`/`removed` — plus `blankState()`); it lives here, not in the shell, because the mission
   evaluators reason over it. Also `resources.ts` (`Resources` + arithmetic), `deck.ts`
-  (draw/reshuffle), `effects.ts` (card effects — gain/draw/population/`territory`/`build`),
+  (draw/reshuffle), `effects.ts` (card effects — gain/loss/draw/population/`territory`/`culture`),
   `population.ts` (worker staffing over both buildings and work cards via the `Staffable`
-  layer — `requiredWorkers`/`requiredWorkersOf` / `isOperating` / `freePopulation` /
+  layer — `requiredWorkersOf` / `isOperating` / `freePopulation` /
   `findStaffable`, `addBuilding`/`addWork` with a shared `nextInstanceId` allocator — plus
   `foodUpkeep`), `upkeep.ts` (`applyUpkeep`: operating buildings *and* staffed work
   produce → mission ticks → population eats food; plus `discardWorkZone` (end-of-turn work
@@ -65,13 +65,15 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   which owns the *in-run* draw pile, not deck editing). Unit tests sit alongside. **When adding
   a rule, put the logic here and test it directly — never bury it in a move or a
   component.**
-- `src/content/` — typed game data, separate from logic. **Cards and buildings are
-  distinct:** `buildings.ts` (`BUILDINGS` — building entities with `produces`/`defense`/
-  `workers`/`tags`) holds what lives in the tableau; `cards.ts` (`CARDS`, each `permanent`,
-  `recurring`, `work`, or `event`) holds what lives in the deck. A card *constructs* a building via
-  `effect.build` — the building enters `tableau`, the card is then filed by `kind`
-  (`permanent` → `removed` pile, `recurring` → `discard`). So the same building can come
-  from different cards, and a `BuildingInstance` references a `buildingId`, never a card.
+- `src/content/` — typed game data, separate from logic. **A building card *is* the building**
+  (there's no separate building catalogue): `cards.ts` (`CARDS`, each `building`, `recurring`,
+  `work`, or `event`) is the single card catalogue, and a `building` card carries its own
+  building stats (`produces`/`cultureOutput`/`workers`/`tags`) right on the `CardDef`. Playing a
+  `building` card places it in the `tableau` (one territory slot, auto-staffed) as a
+  `BuildingInstance` that references the card by `cardId`; the card is **not** filed to a pile —
+  it lives on as that tableau instance until **demolished**, at which point its card goes to the
+  `removed` pile (`moves.ts`'s `playCard` destroy branch). A `recurring` card resolves its
+  `effect` and files to `discard`.
   A `work` card is **labour**: playing it costs no idle population and sticks it onto the board
   as a *staffable* `WorkInstance` in `GameState.workZone` (`rules/population.ts`'s `addWork`,
   auto-staffed like a building) — it produces its `effect.gain` only while staffed, at upkeep,
@@ -112,10 +114,12 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/run/moves.ts` — the moves (`playCard`, `assignWorker`, `unassignWorker`,
   `toggleStaffing`) — the **only** place `G` may change: validate, mutate the
   plain-object `G` draft, delegate computation to `src/rules/`, return `'invalid'` to
-  reject. `playCard` pays costs (resources, discard cost), resolves the card's `effect`,
-  then files the card by `kind` (`permanent` → `removed`,
-  `recurring` → `discard`) — except a `work` card, which resolves *no* effect on play,
-  sticks onto the board via `addWork`, and files to `discard` only at end of turn.
+  reject. `playCard` pays costs (resources, discard cost), then routes by `kind`: a `building`
+  card is placed in the `tableau` via `addBuilding` (staying in play, *not* filed to a pile) and a
+  `work` card sticks onto the board via `addWork` (resolving *no* effect on play, filing to
+  `discard` only at end of turn); every other card resolves its `effect` and, if `recurring`,
+  files to `discard`. A card with `effect.destroy` demolishes a chosen tableau building and sends
+  *that* building's card to `removed`.
   `assignWorker`/`unassignWorker`/`transferWorker`/`toggleStaffing` all target a `Staffable`
   by its instance `id` via `findStaffable`, so they operate on a building *or* a work box
   interchangeably. `toggleStaffing` (the UI's box control) is all-or-nothing — one move either
@@ -259,7 +263,7 @@ directly, used by `GameContext.tsx`'s restart) — the spine between the two loo
   `document.documentElement` (set pre-mount in `main.tsx`, kept in sync by an `App.tsx`
   effect from `settings.theme`). CSS Modules only ever reference `var(--token)`. Rules:
   same hex + same role → one token; same hex + different roles → separate tokens sharing the
-  Light value (`--accent` vs `--card-permanent-banner`, `--badge-bg` vs `--text-strong`), so
+  Light value (`--accent` vs `--card-building-banner`, `--badge-bg` vs `--text-strong`), so
   a theme can move one without the other. Colors used at several alphas are stored as
   space-separated channel tokens (`--accent-rgb: 59 125 216`) composed with
   `rgb(var(--accent-rgb) / 12%)`. The only literals left in modules are pure-black

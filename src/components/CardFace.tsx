@@ -1,6 +1,5 @@
 import { forwardRef } from 'react';
 import type { CardDef } from '../content/cards';
-import { BUILDINGS, type BuildingDef } from '../content/buildings';
 import type { Resources } from '../rules';
 import styles from './CardFace.module.css';
 
@@ -56,9 +55,9 @@ export function describeConditions(c: CardDef): string {
   return parts.join(' · ');
 }
 
-/** Presentation-only summary of a building's output. `includeWorkers` is false for the card
- *  face, which shows worker capacity as a column of meeples instead of text. */
-export function describeBuilding(b: BuildingDef, includeWorkers = true): string {
+/** Presentation-only summary of a building card's per-round output. `includeWorkers` is false for
+ *  the card face, which shows worker capacity as a column of meeples instead of text. */
+export function describeBuilding(b: CardDef, includeWorkers = true): string {
   const parts: string[] = [];
   if (b.produces) {
     parts.push(
@@ -98,12 +97,9 @@ export function describeCard(c: CardDef): string {
   if (e?.territory) parts.push(`+${e.territory} territory`);
   if (e?.culture) parts.push(`+${e.culture} 🎭`);
   if (e?.destroy) parts.push('Demolish a building');
-  if (e?.build) {
-    const bld = BUILDINGS[e.build];
-    // A permanent card *is* the building, so just show its stats; a recurring builder
-    // names the building it erects, since the names differ.
-    if (c.kind === 'recurring') parts.push(`🏗️ ${bld.name}`);
-    const stats = describeBuilding(bld, false);
+  // A building card *is* the building — show its per-round output (workers shown as meeples).
+  if (c.kind === 'building') {
+    const stats = describeBuilding(c, false);
     if (stats) parts.push(stats);
   }
   return parts.join(' · ') || 'action';
@@ -111,10 +107,9 @@ export function describeCard(c: CardDef): string {
 
 /** The card's type banner — label + colour variant, shown under the name. */
 function cardBanner(c: CardDef): { label: string; variant: string } {
-  const built = c.effect?.build ? BUILDINGS[c.effect.build] : undefined;
   if (c.kind === 'event') return { label: 'Event', variant: styles.bannerEvent };
   if (c.kind === 'work') return { label: 'Work', variant: styles.bannerWork };
-  if (built?.tags?.includes('wonder')) return { label: 'Wonder', variant: styles.bannerWonder };
+  if (c.tags?.includes('wonder')) return { label: 'Wonder', variant: styles.bannerWonder };
   if (c.kind === 'recurring') return { label: 'Action', variant: styles.bannerAction };
   return { label: 'Building', variant: styles.bannerBuilding };
 }
@@ -125,7 +120,7 @@ export function kindClass(kind: CardDef['kind']): string {
   if (kind === 'event') return styles.event;
   if (kind === 'recurring') return styles.action;
   if (kind === 'work') return styles.work;
-  return styles.permanent;
+  return styles.building;
 }
 
 export interface CardFaceProps {
@@ -160,10 +155,9 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
   const text = describeCard(card);
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
-  const bld = card.effect?.build ? BUILDINGS[card.effect.build] : undefined;
-  // Worker-space meeples: buildings read the built building's capacity; Work cards read their own
-  // `workers` field (default 1, `0` = always operating so no meeple shown).
-  const workers = card.kind === 'work' ? card.workers ?? 1 : bld?.workers ?? 0;
+  // Worker-space meeples: building and work cards show their `workers` capacity (default 1,
+  // `0` = self-sufficient/always operating so no meeple shown); other kinds show none.
+  const workers = card.kind === 'building' || card.kind === 'work' ? card.workers ?? 1 : 0;
   const rootClassName = `${styles.card} ${kindClass(card.kind)}${className ? ` ${className}` : ''}`;
 
   const inner = (

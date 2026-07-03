@@ -43,19 +43,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
 - Culture thresholds change hand size by default (no building required) — culture as a passive progression axis `[?]` `[phase: 4]`
 - Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
-- **Drop the building/card distinction** — playing a building card should keep the
-  building's simplified tableau look, but should no longer file the card to the
-  `removed` pile on construction; Demolishing a building move the card into the removed pile since it left the plateau; clicking a placed building (outside its worker zone)
-  should open the card zoom popup. This runs against CLAUDE.md's current explicit
-  building/card split (`content/buildings.ts` entities vs. `content/cards.ts`'s
-  `effect.build` constructing them, filed separately by `kind`) — treat as a big
-  semantic change needing a full doc + code assessment (not a quick UI tweak) before
-  scoping the actual work. `[?]` `[size: L]` `[phase: 2]`
 
 ## UI (`src/components/`)
 
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
+- **Click a placed building to zoom its card** — deferred sub-goal of the shipped building/card merge: clicking a tableau building outside its worker-zone controls should open the `CardZoomOverlay` for its card (`CARDS[inst.cardId]`), the way hand/pile-viewer cards already do. The instance now references a card, so the data's there; just needs a Board.tsx click handler on `BuildingBox` that doesn't swallow the staffing/demolish controls. `[size: S]` `[phase: 2]`
 
 ## Game design & balance
 
@@ -80,6 +73,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Drop the building/card distinction** — merged the two catalogues: a `building` card
+  *is* the building. Deleted `content/buildings.ts` (`BUILDINGS`/`BuildingDef`) and folded
+  its stats (`produces`/`cultureOutput`/`tags`) onto `CardDef`; removed `effect.build`;
+  renamed the card kind `permanent` → `building` (it's no longer consumed to `removed` on
+  play). A placed instance references its card by `cardId` (`state.ts`'s unified `PlacedCard`,
+  shared by tableau buildings and workZone work), so the whole staffing/production layer reads
+  one catalogue. **Lifecycle:** playing a building card now places it in the tableau (not the
+  removed pile); demolishing it sends its card to `removed`. The third sub-goal — clicking a
+  placed building to open the card-zoom popup — was **deferred** to a follow-up. `[size: L]` `[phase: 2]`
 - **Dark-mode contrast bugs** — three spots the Theme picker's CSS-variable retrofit
   missed, because each was an *absent* color declaration (nothing for a hex-search
   sweep to find) rather than a hardcoded hex to convert. `CardFace.module.css`'s

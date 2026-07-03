@@ -24,13 +24,6 @@ describe('applyEffect', () => {
     expect(G.population).toBe(3);
   });
 
-  it('constructs a building, auto-staffed from idle population', () => {
-    const G = blankState('enlightenment');
-    G.population = 1; // 1 idle worker
-    applyEffect(G, { build: 'farm' });
-    expect(G.tableau).toEqual([{ id: 1, buildingId: 'farm', workers: 1 }]);
-  });
-
   it('raises the building-slot cap (Conquest / Develop)', () => {
     const G = blankState('enlightenment');
     const before = G.territory;

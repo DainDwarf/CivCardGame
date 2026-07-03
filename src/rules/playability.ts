@@ -30,7 +30,7 @@ export function unplayableReason(G: GameState, card: CardDef): UnplayableReason 
   }
   if (card.cultureLevelReq && cultureLevel(G.culture) < card.cultureLevelReq)
     return { kind: 'cultureLevel', required: card.cultureLevelReq };
-  if (card.effect?.build && freeTerritory(G) <= 0) return { kind: 'territory' };
+  if (card.kind === 'building' && freeTerritory(G) <= 0) return { kind: 'territory' };
   if (card.effect?.destroy && G.tableau.length === 0) return { kind: 'noBuildingsToDestroy' };
   return null;
 }
