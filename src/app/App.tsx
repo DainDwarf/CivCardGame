@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { MetaMenu } from '../meta/MetaMenu';
 import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
@@ -79,6 +79,13 @@ export function App() {
     setSettings(next);
     saveSettings(next);
   }
+
+  // Reflect the chosen color theme onto documentElement, where index.css's `[data-theme]`
+  // palette blocks apply. main.tsx sets this pre-mount from the same source; this keeps it in
+  // sync when the player switches themes in the Config submenu.
+  useEffect(() => {
+    document.documentElement.dataset.theme = settings.theme;
+  }, [settings.theme]);
 
   // Load/Clear (GameMenu's Save submenu) replace the store wholesale, which can be
   // triggered mid-run. The run's RunConfig no longer corresponds to anything in the

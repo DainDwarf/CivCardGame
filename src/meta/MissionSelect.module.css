@@ -2,7 +2,7 @@
   font-family: system-ui, -apple-system, sans-serif;
   max-width: 860px;
   line-height: 1.5;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .title {
@@ -12,7 +12,7 @@
 }
 
 .subtitle {
-  color: #555;
+  color: var(--text-secondary);
   margin: 0 0 1.5rem;
 }
 
@@ -26,7 +26,7 @@
   margin: 0 0 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #444;
+  color: var(--text-muted);
 }
 
 .cardRow {
@@ -41,7 +41,7 @@
   gap: 0.3rem;
   text-align: left;
   padding: 0.8rem 0.9rem;
-  background: #f3f3f0;
+  background: var(--surface);
   border: 2px solid transparent;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -51,12 +51,12 @@
 }
 
 .optionCard:hover {
-  background: #ebebe6;
+  background: var(--nav-item-hover);
 }
 
 .optionCard.selected {
-  border-color: #3b7dd8;
-  background: #e7f0fc;
+  border-color: var(--accent);
+  background: var(--accent-bg);
 }
 
 .optionName {
@@ -65,18 +65,18 @@
 
 .optionDesc {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .optionDetail {
   font-size: 0.8rem;
-  color: #3b7dd8;
+  color: var(--accent);
 }
 
 .detail {
   margin: 0.6rem 0 0;
   font-size: 0.85rem;
-  color: #444;
+  color: var(--text-muted);
 }
 
 .startBtn {
@@ -85,18 +85,18 @@
   padding: 0.9rem 2.5rem;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #fff;
-  background: #3b7dd8;
+  color: var(--text-on-accent);
+  background: var(--accent);
   border: none;
   border-radius: 8px;
   cursor: pointer;
 }
 
 .startBtn:hover {
-  background: #2f68b3;
+  background: var(--accent-hover);
 }
 
 .startBtn:disabled {
-  background: #a9c3e6;
+  background: var(--accent-soft);
   cursor: not-allowed;
 }

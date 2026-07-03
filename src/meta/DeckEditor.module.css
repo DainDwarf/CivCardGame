@@ -1,7 +1,7 @@
 .editor {
   font-family: system-ui, -apple-system, sans-serif;
   max-width: 1000px;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .title {
@@ -16,7 +16,7 @@
   margin: 0 0 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #444;
+  color: var(--text-muted);
 }
 
 .picker .sectionTitle:not(:first-child) {
@@ -53,8 +53,8 @@
   right: 0;
   bottom: 0;
   z-index: 20;
-  background: #ece9e3;
-  border-top: 1px solid #d6d1c7;
+  background: rgb(var(--bar-top-rgb));
+  border-top: 1px solid var(--border-bar);
   box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.18);
   padding: 0.8rem 2rem 0.6rem;
 }
@@ -74,14 +74,14 @@
   font: inherit;
   font-weight: 700;
   padding: 0.45rem 0.6rem;
-  border: 2px solid #ddd;
+  border: 2px solid var(--border);
   border-radius: 8px;
 }
 
 .count {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #444;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -95,34 +95,34 @@
   padding: 0.55rem 1.2rem;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #333;
-  background: #e7e7e2;
+  color: var(--text-body);
+  background: var(--chip-bg);
   border: none;
   border-radius: 8px;
   cursor: pointer;
 }
 
 .cancelBtn:hover {
-  background: #dcdcd6;
+  background: var(--chip-bg-hover);
 }
 
 .saveBtn {
   padding: 0.55rem 1.2rem;
   font-size: 0.9rem;
   font-weight: 700;
-  color: #fff;
-  background: #3b7dd8;
+  color: var(--text-on-accent);
+  background: var(--accent);
   border: none;
   border-radius: 8px;
   cursor: pointer;
 }
 
 .saveBtn:hover {
-  background: #2f68b3;
+  background: var(--accent-hover);
 }
 
 .saveBtn:disabled {
-  background: #a9c3e6;
+  background: var(--accent-soft);
   cursor: not-allowed;
 }
 
@@ -138,7 +138,7 @@
 }
 
 .empty {
-  color: #555;
+  color: var(--text-secondary);
   font-style: italic;
   font-size: 0.85rem;
   align-self: center;

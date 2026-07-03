@@ -152,9 +152,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   applying — export needs no such gate, since it doesn't touch the live store. The
   Config submenu holds device-local preferences (`meta/settings.ts`'s `Settings`,
   persisted under their own `localStorage` key — kept out of `PlayerStore` since
-  they're not game progress, so Save's Load/Clear never touches them): a "confirm before
-  ending a round" toggle that folds into `Board.tsx`'s existing end-round warning dialog,
-  and a UI-size slider (`settings.uiScale`) that `App.tsx` applies by wrapping the whole
+  they're not game progress, so Save's Load/Clear never touches them): a segmented
+  **theme picker** (`settings.theme`, built from `meta/settings.ts`'s `THEMES` list —
+  Light/Dark, applied as `data-theme` on documentElement, see the color-palette convention
+  below), a "confirm before ending a round" toggle that folds into `Board.tsx`'s existing
+  end-round warning dialog, and a UI-size slider (`settings.uiScale`) that `App.tsx` applies by wrapping the whole
   app in a `transform: scale()` container (`App.module.css`) — chosen over CSS `zoom`,
   which was tried and reverted, because a transformed ancestor becomes the containing block
   for its `position: fixed` descendants, so the run loop's fixed layout and drag clones
@@ -181,9 +183,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   wrapper renders inside `<GameProvider>` so it can pull `runControls` off `useGame()`.
   On `onRunEnd`, it stores the `RunResult` and switches back to the menu.
 - `src/main.tsx` — mounts `<App>`. Also imports `src/index.css`, the one bit of global CSS
-  in an otherwise all-CSS-Modules codebase: just a `body { margin: 0 }` reset, since the
-  browser's default 8px body margin would otherwise inset every full-bleed/fixed-position
-  element (the run loop's hand bar, the deck editor's banner) from the true viewport edges.
+  in an otherwise all-CSS-Modules codebase; and, before the first render, sets
+  `document.documentElement.dataset.theme` from `loadSettings().theme` so the saved color
+  theme is applied with no light-then-dark flash on load. `index.css` holds two things: the
+  color-theme palette (see the theming convention below) and a `body { margin: 0 }` reset,
+  since the browser's default 8px body margin would otherwise inset every full-bleed/
+  fixed-position element (the run loop's hand bar, the deck editor's banner) from the true
+  viewport edges.
 
 See `src/contract.ts` for the `RunConfig`/`RunResult` types, `buildRunConfig` (now
 takes the player's `decks` as a required argument — there's no static deck registry to
@@ -222,3 +228,19 @@ directly, used by `GameContext.tsx`'s restart) — the spine between the two loo
      A raw `vh`/`vw` measures the true viewport and then gets re-scaled; new full-bleed
      sizes or popup caps should use `calc(… / var(--ui-scale, 1))` (the var inherits from
      the wrapper to every descendant) — see the pile panel / Codex caps.
+- **All color goes through the theme palette — never write a raw color in a module.**
+  Every color is a semantic CSS custom property defined in `src/index.css`: `:root` holds
+  the default **Light** palette (each token's value is the exact hex the module used before
+  the theme retrofit, so Light is pixel-identical to the pre-theme look), and
+  `:root[data-theme='dark']` overrides the same tokens for **Dark**. `data-theme` lives on
+  `document.documentElement` (set pre-mount in `main.tsx`, kept in sync by an `App.tsx`
+  effect from `settings.theme`). CSS Modules only ever reference `var(--token)`. Rules:
+  same hex + same role → one token; same hex + different roles → separate tokens sharing the
+  Light value (`--accent` vs `--card-permanent-banner`, `--badge-bg` vs `--text-strong`), so
+  a theme can move one without the other. Colors used at several alphas are stored as
+  space-separated channel tokens (`--accent-rgb: 59 125 216`) composed with
+  `rgb(var(--accent-rgb) / 12%)`. The only literals left in modules are pure-black
+  drop-shadows (`rgba(0,0,0,…)`) and white scrims (`rgba(255,255,255,…)`) — not
+  color-identity, they read fine in either theme. **Adding a theme (e.g. a color-blind
+  palette) is one `THEMES` entry in `meta/settings.ts` plus one `:root[data-theme='…']`
+  block in `index.css` — zero module edits.**

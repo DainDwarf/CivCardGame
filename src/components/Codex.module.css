@@ -13,7 +13,7 @@
 
 .topic {
   padding: 0.9rem 0;
-  border-top: 1px solid #ece9e2;
+  border-top: 1px solid var(--topic-border);
 }
 
 .topic:first-child {
@@ -24,7 +24,7 @@
 .topicTitle {
   margin: 0 0 0.35rem;
   font-size: 1rem;
-  color: #2c2c2c;
+  color: var(--text-strong);
 }
 
 .subTitle {
@@ -33,12 +33,12 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #9a9384;
+  color: var(--text-label);
 }
 
 .lead {
   margin: 0 0 0.6rem;
-  color: #666;
+  color: var(--text-subtle);
   font-size: 0.85rem;
   line-height: 1.4;
 }
@@ -58,18 +58,18 @@
 .defTerm {
   font-weight: 700;
   font-size: 0.88rem;
-  color: #333;
+  color: var(--text-body);
 }
 
 .defDesc {
   margin: 0.1rem 0 0;
-  color: #555;
+  color: var(--text-secondary);
   font-size: 0.83rem;
   line-height: 1.4;
 }
 
 .collapse {
-  color: #b3261e;
+  color: var(--danger-strong);
   font-weight: 600;
 }
 
@@ -77,8 +77,8 @@
   margin: 0.7rem 0 0;
   padding: 0.5rem 0.65rem;
   border-radius: 8px;
-  background: #f4efe6;
-  color: #5a4a2f;
+  background: var(--callout-bg);
+  color: var(--callout-text);
   font-size: 0.82rem;
   line-height: 1.4;
 }
@@ -87,7 +87,7 @@
 .phases {
   margin: 0;
   padding-left: 1.1rem;
-  color: #555;
+  color: var(--text-secondary);
   font-size: 0.83rem;
   line-height: 1.45;
 }
@@ -104,5 +104,5 @@
 
 .phaseName {
   font-weight: 700;
-  color: #333;
+  color: var(--text-body);
 }

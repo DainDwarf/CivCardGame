@@ -1,7 +1,315 @@
-/* This app has no other global stylesheet — every screen is CSS Modules. The one thing that
-   has to live outside a module is resetting the browser's default 8px `<body>` margin, which
-   otherwise insets every full-bleed / fixed-position element (the run loop's hand bar, the
-   deck editor's banner, etc.) from the true viewport edges. */
+/* This app has no other global stylesheet — every screen is CSS Modules. Two things live here
+   because they can't live in a module:
+
+   1. The color-theme palette. Every color in the app is a semantic CSS custom property defined
+      below; the CSS Modules reference `var(--token)` and never a raw hex. `:root` holds the
+      default (Light) palette — each token's value is the exact hex the module used before the
+      theme retrofit, so Light is pixel-identical to the pre-theme look. `:root[data-theme='dark']`
+      overrides the same tokens for Dark. A new theme (e.g. a color-blind palette) is one more
+      `:root[data-theme='…']` block here plus one entry in `settings.ts`'s `THEMES` — no module
+      edits. `data-theme` is set on `document.documentElement` (main.tsx pre-mount, App.tsx keeps
+      it in sync), so `<html>`/`<body>` theme too and there's no light flash on load.
+
+      Conventions: same hex + same role → one token; same hex + different roles → separate tokens
+      sharing the light value (e.g. --accent vs --card-permanent-banner), so a theme can move one
+      without the other. Colors used at several alphas are stored as space-separated channel tokens
+      (`--accent-rgb: 59 125 216`) and composed with `rgb(var(--accent-rgb) / 12%)`. Pure-black
+      drop-shadows (`rgba(0,0,0,…)`) and white scrims (`rgba(255,255,255,…)`) are intentionally
+      left literal in the modules — they're not color-identity and read fine in either theme.
+
+   2. Resetting the browser's default 8px `<body>` margin, which otherwise insets every full-bleed
+      / fixed-position element (the run loop's hand bar, the deck editor's banner) from the true
+      viewport edges. */
+
+:root {
+  /* ── Text ─────────────────────────────────────────── */
+  --text: #1a1a1a;               /* primary body text (app / meta screen roots) */
+  --text-strong: #2c2c2c;        /* headings / button labels (shares the badge-bg hex, own token) */
+  --text-body: #333;             /* buttons, chips, nav labels */
+  --text-muted: #444;            /* secondary labels, section titles, costs */
+  --text-secondary: #555;        /* descriptions, card text, subtitles */
+  --text-subtle: #666;           /* lead paragraphs, empty-state italics */
+  --text-faint: #888;            /* hints, faint captions */
+  --text-disabled: #999;         /* disabled/version text */
+  --text-ghost: #aaa;            /* zero-delta stat */
+  --text-label: #9a9384;         /* Codex uppercase sub-labels (warm gray) */
+  --text-on-accent: #fff;        /* text on colored buttons / banners */
+  --text-on-scrim: #f0f0f0;      /* hint text over a dark modal backdrop */
+
+  /* ── Neutral surfaces ─────────────────────────────── */
+  --surface: #f3f3f0;            /* primary panels / list rows / tiles */
+  --surface-raised: #faf8f4;     /* popups, pile & gameover panels */
+  --surface-sunken: #e9e9e4;     /* meta shell background */
+  --surface-card: #fff;          /* white cards / submenu panel */
+  --nav-bg: #dcdcd5;             /* meta left-nav column */
+  --card-face-top: #ffffff;      /* hand-card face gradient top */
+  --card-face-bottom: #f6f4ef;   /* hand-card face gradient bottom */
+
+  /* ── Neutral buttons / hovers ─────────────────────── */
+  --chip-bg: #e7e7e2;            /* pills, secondary buttons */
+  --chip-bg-hover: #dcdcd6;
+  --item-bg: #f0efeb;            /* menu item buttons */
+  --item-hover: #e4e2dc;
+  --nav-item-hover: #ebebe6;     /* nav / option-card hover */
+  --btn-soft: #e4e2de;           /* soft neutral buttons (close, gameover) */
+  --btn-soft-hover: #d4d2ce;
+  --neutral-hover: #e8e8e8;      /* end-round cancel hover */
+
+  /* ── Borders ──────────────────────────────────────── */
+  --border: #ddd;                /* building box / text input */
+  --border-card: #c8c2b6;        /* hand-card outer border */
+  --border-tray: #c9c7bd;        /* population tray */
+  --border-divider: #d0cfc9;     /* core-resource column divider */
+  --border-bar: #d6d1c7;         /* hand bar / deck-editor banner top edge */
+
+  /* ── Accent (blue) ────────────────────────────────── */
+  --accent: #3b7dd8;             /* primary buttons, links, selection */
+  --accent-rgb: 59 125 216;      /* channel for accent alpha overlays */
+  --accent-hover: #2f68b3;
+  --accent-soft: #a9c3e6;        /* disabled primary-button bg */
+  --accent-bg: #e7f0fc;          /* selected nav / option background */
+  --focus-ring: #3b7dd8;         /* focus outlines (shares the accent value) */
+
+  /* ── Card kinds ───────────────────────────────────── */
+  --card-permanent-banner: #3b7dd8;
+  --card-permanent-band: #e7f0fb;
+  --card-permanent-condition: #7ea3d0;
+  --card-action-banner: #c9772f;
+  --card-action-band: #fbeede;
+  --card-action-condition: #cc9f6e;
+  --card-event-banner: #b23b3b;
+  --card-event-band: #fbe3e3;
+  --card-event-condition: #cc7a7a;
+  --card-event-border: #b23b3b;
+  --card-wonder-banner: #b8860b;
+
+  /* ── Action / CTA (orange) ────────────────────────── */
+  --action: #c9772f;             /* idle hint, discard-cost outline */
+  --cta: #e65c00;                /* confirm CTA */
+  --cta-hover: #c94f00;
+  --warn-panel: #7a2e0a;         /* end-round warning panel */
+  --reserve-border: #d4924a;     /* reserved-action dashed border */
+  --reserve-rgb: 212 146 74;     /* locked-worker staffing bg */
+  --reserve-bg: #fdf5e8;         /* reserved-action box bg */
+  --discard-border: #e0a96d;     /* discard-cost prompt border */
+  --discard-prompt-bg: #fff4e5;
+
+  /* ── Semantic state ───────────────────────────────── */
+  --danger: #c0392b;             /* destructive borders, negative delta */
+  --danger-rgb: 192 57 43;       /* channel for danger alpha overlays */
+  --danger-strong: #b3261e;      /* save error, danger button, collapse note */
+  --danger-strong-hover: #931e18;
+  --danger-text: #a00;           /* reject-toast text */
+  --reject-bg: #fff0f0;
+  --success: #2f7d3b;            /* victory / stat win */
+  --success-alt: #2e7d32;        /* positive delta */
+  --success-text: #2a7a3d;       /* save-ok text */
+  --loss: #a13030;               /* defeat / stat loss */
+  --notice-bg: #eef3ea;          /* autosave notice panel */
+  --notice-text: #3d5c3a;
+
+  /* ── Culture (purple) ─────────────────────────────── */
+  --culture-a: #d16bd8;          /* level bubble gradient start */
+  --culture-b: #8a4be0;          /* level/fill gradient end */
+  --culture-fill-a: #e56bd8;     /* bar fill gradient start */
+  --culture-rgb: 138 75 224;     /* channel for track bg / glow */
+  --culture-ghost: rgba(180, 100, 224, 0.35); /* upkeep-preview fill */
+
+  /* ── Run-loop dark surfaces (dark even in Light theme) ─ */
+  --ground: #c8a97e;             /* tableau backdrop (dirt) */
+  --tableau-panel: #2a3346;      /* undo button */
+  --tableau-panel-hover: #36425a;
+  --tableau-panel-border: #3a465f;
+  --tableau-panel-text: #cdd6e6;
+  --pile-border: #25324a;
+  --deck-stripe-a: #3a4a63;      /* face-down deck hatching */
+  --deck-stripe-b: #32415a;
+  --removed-top: #4a4a52;        /* removed-pile gradient */
+  --removed-bottom: #36363d;
+  --removed-border: #8a8a96;
+  --removed-text: #e6e6ea;
+  --discard-top: #e8ddc8;        /* discard-pile gradient */
+  --discard-bottom: #d8c8a8;
+  --discard-pile-border: #b79f72;
+  --discard-text: #5a4a2a;
+
+  /* ── Building states (green) ──────────────────────── */
+  --operating-bg: #f1f7ef;
+  --operating-border: #b7d8ab;
+  --idle-bg: #faf6ef;
+  --staff-rgb: 90 170 90;        /* channel for staffed / worker-drop bg */
+
+  /* ── Board misc ───────────────────────────────────── */
+  --slot-border-rgb: 90 62 30;   /* empty-slot / reserve-strip dashed border */
+  --demolish-rgb: 200 30 30;     /* demolish hazard stripes */
+  --demolish-hover-rgb: 230 20 20;
+  --tooltip-bg: #222;            /* board tooltip */
+  --badge-bg: #2c2c2c;           /* count badge, end-round button, dark chips */
+  --badge-hover: #000;           /* end-round / restart button hover */
+
+  /* ── Warm menu neutrals (Codex / hand bar) ────────── */
+  --topic-border: #ece9e2;
+  --callout-bg: #f4efe6;
+  --callout-text: #5a4a2f;
+  --bar-top-rgb: 236 233 227;    /* hand bar gradient top / deck-editor banner bg */
+  --bar-bottom: #e3ded5;         /* hand bar gradient bottom */
+
+  /* ── Dark scrims / overlays ───────────────────────── */
+  --scrim-rgb: 20 20 20;         /* modal / pile / zoom backdrops */
+  --scrim-solid-rgb: 28 28 28;   /* burger button, gameover pill */
+
+  /* ── Drop-zone "drop here" pill (paired surface + text, flips together) ─ */
+  --drop-pill-bg: rgba(255, 255, 255, 0.9);
+  --drop-pill-text: #2c2c2c;
+}
+
+:root[data-theme='dark'] {
+  /* ── Text ── */
+  --text: #e8e6e0;
+  --text-strong: #f0eee8;
+  --text-body: #d2cfc7;
+  --text-muted: #bab6ad;
+  --text-secondary: #a8a49b;
+  --text-subtle: #948f86;
+  --text-faint: #837e75;
+  --text-disabled: #6f6b63;
+  --text-ghost: #5f5c55;
+  --text-label: #8f897b;
+  --text-on-accent: #fff;
+  --text-on-scrim: #f0f0f0;
+
+  /* ── Neutral surfaces ── */
+  --surface: #26262c;
+  --surface-raised: #2e2e35;
+  --surface-sunken: #1a1a1f;
+  --surface-card: #30303a;
+  --nav-bg: #202026;
+  --card-face-top: #363642;
+  --card-face-bottom: #2c2c36;
+
+  /* ── Neutral buttons / hovers ── */
+  --chip-bg: #3a3a42;
+  --chip-bg-hover: #45454e;
+  --item-bg: #303038;
+  --item-hover: #3b3b44;
+  --nav-item-hover: #313139;
+  --btn-soft: #34343d;
+  --btn-soft-hover: #41414b;
+  --neutral-hover: #3d3d45;
+
+  /* ── Borders ── */
+  --border: #45454d;
+  --border-card: #4c4c48;
+  --border-tray: #4a4a52;
+  --border-divider: #3a3a40;
+  --border-bar: #3a3a40;
+
+  /* ── Accent (blue) ── */
+  --accent: #5b9bea;
+  --accent-rgb: 91 155 234;
+  --accent-hover: #7db0f0;
+  --accent-soft: #35506f;
+  --accent-bg: #1e3350;
+  --focus-ring: #5b9bea;
+
+  /* ── Card kinds ──
+     Banners keep their saturated hue (white text sits on them); the light title/text bands
+     and condition mid-tones go to dark tints so the card interior reads as dark. */
+  --card-permanent-banner: #3b7dd8;
+  --card-permanent-band: #1f2c3d;
+  --card-permanent-condition: #4f7099;
+  --card-action-banner: #c9772f;
+  --card-action-band: #38291a;
+  --card-action-condition: #8a6440;
+  --card-event-banner: #b23b3b;
+  --card-event-band: #381e1e;
+  --card-event-condition: #8a5252;
+  --card-event-border: #b23b3b;
+  --card-wonder-banner: #b8860b;
+
+  /* ── Action / CTA (orange) ── */
+  --action: #dd914f;
+  --cta: #e65c00;
+  --cta-hover: #ff6e14;
+  --warn-panel: #7a2e0a;
+  --reserve-border: #d4924a;
+  --reserve-rgb: 212 146 74;
+  --reserve-bg: #2c2620;
+  --discard-border: #e0a96d;
+  --discard-prompt-bg: #352a1a;
+
+  /* ── Semantic state ── */
+  --danger: #d9534f;
+  --danger-rgb: 217 83 79;
+  --danger-strong: #e0564e;
+  --danger-strong-hover: #f0665e;
+  --danger-text: #ff8a8a;
+  --reject-bg: #3a1f1f;
+  --success: #57b46e;
+  --success-alt: #57b45b;
+  --success-text: #6fcf87;
+  --loss: #e07575;
+  --notice-bg: #232e21;
+  --notice-text: #a8d0a0;
+
+  /* ── Culture (purple) — reads fine on dark, kept ── */
+  --culture-a: #d16bd8;
+  --culture-b: #8a4be0;
+  --culture-fill-a: #e56bd8;
+  --culture-rgb: 138 75 224;
+  --culture-ghost: rgba(180, 100, 224, 0.35);
+
+  /* ── Run-loop dark surfaces ──
+     The tableau navy panel, deck/removed piles and tooltip are already dark by intent, so most
+     carry through unchanged; only the dirt backdrop and the tan discard pile are lightened
+     surfaces that need darkening. */
+  --ground: #4f4130;
+  --tableau-panel: #2a3346;
+  --tableau-panel-hover: #36425a;
+  --tableau-panel-border: #3a465f;
+  --tableau-panel-text: #cdd6e6;
+  --pile-border: #25324a;
+  --deck-stripe-a: #3a4a63;
+  --deck-stripe-b: #32415a;
+  --removed-top: #4a4a52;
+  --removed-bottom: #36363d;
+  --removed-border: #8a8a96;
+  --removed-text: #e6e6ea;
+  --discard-top: #5a4f3a;
+  --discard-bottom: #443a28;
+  --discard-pile-border: #8a7550;
+  --discard-text: #e8ddc8;
+
+  /* ── Building states (green) ── */
+  --operating-bg: #1f2a1e;
+  --operating-border: #5f9a54;
+  --idle-bg: #2a2822;
+  --staff-rgb: 110 190 110;
+
+  /* ── Board misc ── */
+  --slot-border-rgb: 150 120 80;
+  --demolish-rgb: 200 30 30;
+  --demolish-hover-rgb: 230 20 20;
+  --tooltip-bg: #3a3a42;
+  --badge-bg: #3a3a42;
+  --badge-hover: #52525c;
+
+  /* ── Warm menu neutrals ── */
+  --topic-border: #3a3a40;
+  --callout-bg: #2f2a22;
+  --callout-text: #c9b790;
+  --bar-top-rgb: 30 30 34;
+  --bar-bottom: #24242a;
+
+  /* ── Dark scrims — unchanged (already dark) ── */
+  --scrim-rgb: 20 20 20;
+  --scrim-solid-rgb: 28 28 28;
+
+  /* ── Drop-zone pill — dark surface, light text ── */
+  --drop-pill-bg: rgba(42, 42, 50, 0.92);
+  --drop-pill-text: #e8e6e0;
+}
+
 body {
   margin: 0;
   /* Nothing scrolls the document anymore — the run screen is fixed-positioned and the meta

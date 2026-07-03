@@ -1,7 +1,7 @@
 .stats {
   font-family: system-ui, -apple-system, sans-serif;
   max-width: 720px;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .title {
@@ -11,12 +11,12 @@
 }
 
 .subtitle {
-  color: #555;
+  color: var(--text-secondary);
   margin: 0 0 1.5rem;
 }
 
 .empty {
-  color: #666;
+  color: var(--text-subtle);
   font-style: italic;
 }
 
@@ -34,7 +34,7 @@
   align-items: center;
   gap: 1rem;
   padding: 0.7rem 0.9rem;
-  background: #f3f3f0;
+  background: var(--surface);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   flex-wrap: wrap;
@@ -42,12 +42,12 @@
 
 .victory {
   font-weight: 700;
-  color: #2f7d3b;
+  color: var(--success);
 }
 
 .defeat {
   font-weight: 700;
-  color: #a13030;
+  color: var(--loss);
 }
 
 .mission {
@@ -55,7 +55,7 @@
 }
 
 .detail {
-  color: #555;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   margin-left: auto;
 }

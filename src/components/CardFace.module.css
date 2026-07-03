@@ -10,9 +10,9 @@
   padding: 0.45rem 0.5rem 0.5rem;
   display: flex;
   flex-direction: column;
-  border: 1px solid #c8c2b6;
+  border: 1px solid var(--border-card);
   border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff, #f6f4ef);
+  background: linear-gradient(180deg, var(--card-face-top), var(--card-face-bottom));
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
   cursor: grab;
   text-align: left;
@@ -23,7 +23,7 @@
 }
 
 .card:focus-visible {
-  outline: 2px solid #3b7dd8;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -46,41 +46,41 @@
   font-weight: 800;
   letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .bannerWonder {
-  background: #b8860b;
+  background: var(--card-wonder-banner);
 }
 
 .bannerBuilding {
-  background: #3b7dd8;
+  background: var(--card-permanent-banner);
 }
 
 .bannerAction {
-  background: #c9772f;
+  background: var(--card-action-banner);
 }
 
 .bannerEvent {
-  background: #b23b3b;
+  background: var(--card-event-banner);
 }
 
 /* Event cards are a threat — a red border sets them apart from the player's own cards. */
 .event {
-  border-color: #b23b3b;
+  border-color: var(--card-event-border);
 }
 
 /* Colour the title band by card kind (blue = permanent building, orange = action, red = event). */
 .permanent .cardTop {
-  background: #e7f0fb;
+  background: var(--card-permanent-band);
 }
 
 .action .cardTop {
-  background: #fbeede;
+  background: var(--card-action-band);
 }
 
 .event .cardTop {
-  background: #fbe3e3;
+  background: var(--card-event-band);
 }
 
 .cardName {
@@ -92,7 +92,7 @@
 .cardCost {
   font-size: 0.66rem;
   font-weight: 600;
-  color: #444;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -135,22 +135,22 @@
   text-align: center;
   font-size: 0.6rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-on-accent);
   line-height: 1.25;
   margin: 0 -0.5rem;
   padding: 0.2rem 0.35rem;
 }
 
 .permanent .cardConditions {
-  background: #7ea3d0;
+  background: var(--card-permanent-condition);
 }
 
 .action .cardConditions {
-  background: #cc9f6e;
+  background: var(--card-action-condition);
 }
 
 .event .cardConditions {
-  background: #cc7a7a;
+  background: var(--card-event-condition);
 }
 
 .cardText {
@@ -159,7 +159,7 @@
   justify-content: center;
   text-align: center;
   font-size: 0.64rem;
-  color: #555;
+  color: var(--text-secondary);
   line-height: 1.25;
   min-height: 2.4em;
   margin: 0 -0.5rem -0.5rem; /* bleed to the side and bottom card edges */
@@ -169,15 +169,15 @@
 
 /* Match the light title-band tint for the card's kind (blue = permanent building, orange = action). */
 .permanent .cardText {
-  background: #e7f0fb;
+  background: var(--card-permanent-band);
 }
 
 .action .cardText {
-  background: #fbeede;
+  background: var(--card-action-band);
 }
 
 .event .cardText {
-  background: #fbe3e3;
+  background: var(--card-event-band);
 }
 
 /* Optional "×N" badge (deck editor's grouped banner tiles, the run loop's pile viewer). */
@@ -189,8 +189,8 @@
   height: 22px;
   padding: 0 5px;
   border-radius: 11px;
-  background: #2c2c2c;
-  color: #fff;
+  background: var(--badge-bg);
+  color: var(--text-on-accent);
   font-size: 0.78rem;
   font-weight: 800;
   display: flex;

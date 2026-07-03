@@ -1,7 +1,7 @@
 .decks {
   font-family: system-ui, -apple-system, sans-serif;
   max-width: 720px;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .title {
@@ -11,13 +11,13 @@
 }
 
 .subtitle {
-  color: #555;
+  color: var(--text-secondary);
   margin: 0 0 1.5rem;
 }
 
 .deckCard {
   padding: 0.9rem 1rem;
-  background: #f3f3f0;
+  background: var(--surface);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 1rem;
@@ -39,7 +39,7 @@
 
 .deckCount {
   font-size: 0.8rem;
-  color: #3b7dd8;
+  color: var(--accent);
   white-space: nowrap;
 }
 
@@ -51,8 +51,8 @@
 
 .cardChip {
   font-size: 0.78rem;
-  color: #333;
-  background: #e7e7e2;
+  color: var(--text-body);
+  background: var(--chip-bg);
   border-radius: 999px;
   padding: 0.2rem 0.6rem;
 }
@@ -63,19 +63,19 @@
   padding: 0.6rem 1.2rem;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #fff;
-  background: #3b7dd8;
+  color: var(--text-on-accent);
+  background: var(--accent);
   border: none;
   border-radius: 8px;
   cursor: pointer;
 }
 
 .newBtn:hover {
-  background: #2f68b3;
+  background: var(--accent-hover);
 }
 
 .empty {
-  color: #555;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -89,13 +89,13 @@
   padding: 0.35rem 0.8rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #333;
-  background: #e7e7e2;
+  color: var(--text-body);
+  background: var(--chip-bg);
   border: none;
   border-radius: 6px;
   cursor: pointer;
 }
 
 .actionBtn:hover {
-  background: #dcdcd6;
+  background: var(--chip-bg-hover);
 }

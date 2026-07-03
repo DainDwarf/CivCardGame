@@ -29,7 +29,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
-- **Theme picker** — a Config-submenu setting to pick between color themes (e.g. light/dark). Bigger than it looks: none of the 8 `*.module.css` files use CSS custom properties for color today, so this needs a retrofit onto CSS variables *before* a picker can just swap a palette — most of the cost is the retrofit, not the picker UI. `[size: L]` `[?]` `[phase: 2]`
+- **Color-blind themes** — the Theme picker (see *Done / shipped*) landed the CSS-variable palette; adding accessibility palettes is now cheap. Author deuteranopia / protanopia / tritanopia themes, each a pure additive `:root[data-theme='…']` block in `index.css` plus one `THEMES` entry in `meta/settings.ts` — no module edits. Non-color cues already exist (card banners carry WONDER/BUILDING/ACTION/EVENT text + event's red border; Stats win/loss carries 🏛️/💀 + text), so a palette-only first cut is reasonable; revisit non-color cues if testing shows gaps. `[size: M]` `[?]` `[phase: 2]`
+- **"Follow system" theme option** — add a `System` choice to the Theme picker that resolves the OS light/dark preference via `matchMedia` + a live `change` listener into a concrete `data-theme`, instead of a fixed Light/Dark pick. `[size: S]` `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 3]`
 - **Decks screen UI rework** — `Decks.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain stacked deck cards, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
 - **Codex menu UI rework** — `Codex.tsx` (shipped populating the codex submenu) is a first-pass layout: one long scrollable page of definition lists inside the fixed 300px submenu window, no topic navigation, no icons on most entries. Give it a real visual pass — likely a topic-list → page view (or tabs), a wider/roomier surface than the shared `.submenuPanel`, and richer per-topic presentation. `[?]` `[phase: 2]`
@@ -73,6 +74,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Theme picker** — a Config-submenu segmented control (`meta/settings.ts`'s
+  `Settings.theme`, sourced from a `THEMES` list) offering **Light** and **Dark**. As the
+  backlog item predicted, the bulk of the work was the CSS retrofit, not the picker: every
+  color across the 11 `*.module.css` files (278 occurrences, ~91 distinct hex, all previously
+  hardcoded — no color variables existed) was moved onto ~100 semantic CSS custom properties
+  defined in `index.css`. `:root` holds the Light palette, where each token's value is the
+  *exact* pre-retrofit hex, so Light is pixel-identical to the old look; `:root[data-theme='dark']`
+  overrides the same tokens for Dark. `data-theme` sits on `document.documentElement`,
+  applied pre-mount in `main.tsx` (no load flash) and kept in sync by an `App.tsx` effect on
+  `settings.theme`. Token conventions: same hex + different role → separate aliased tokens
+  (so a theme can move one without the other); multi-alpha colors use space-separated channel
+  tokens (`--accent-rgb: 59 125 216` → `rgb(var(--accent-rgb) / 12%)`); pure-black shadows and
+  white scrims stay literal. The payoff: a new theme is now one `THEMES` entry + one
+  `[data-theme]` block, zero module edits — see the *Color-blind themes* and *"Follow system"
+  theme option* backlog items that this unblocks. `[size: L]` `[phase: 2]`
 - **UI size setting** — a Config-submenu slider (`meta/settings.ts`'s `Settings.uiScale`,
   0.8–1.5, clamped) that scales the whole UI. Second attempt after the `zoom` one was
   reverted (see *Rejected* below); this one uses **`transform: scale()`** on a single
@@ -199,8 +215,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   (previously only shown for idle-worker warnings) rather than adding a second
   dialog. A UI-size slider and a theme picker were considered too; both split out as
   their own backlog items above (*UI size setting*, *Theme picker*) — the size
-  slider was actually built and reverted (see *Rejected* below), the theme picker
-  needs a CSS custom-property retrofit first.
+  slider was actually built and reverted (see *Rejected* below), and the theme picker
+  later shipped after its CSS custom-property retrofit (see *Theme picker* above).
 - **Fix: loading/clearing a save mid-run left the run dangling** — `GameMenu.tsx`'s
   Load/Clear called `App.tsx`'s `persist` (via `onImportStore`) directly, which only
   replaced `store`; it never touched `view`, so confirming either one while

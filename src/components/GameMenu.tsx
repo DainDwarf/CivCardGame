@@ -1,7 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { version } from '../../package.json';
 import { emptyStore, exportSave, importSave, type PlayerStore } from '../meta/store';
-import { UI_SCALE_MIN, UI_SCALE_MAX, type Settings } from '../meta/settings';
+import { UI_SCALE_MIN, UI_SCALE_MAX, THEMES, type Settings } from '../meta/settings';
 import { Codex } from './Codex';
 import styles from './GameMenu.module.css';
 
@@ -296,6 +296,22 @@ export function GameMenu({
                   </div>
                 ) : submenu.id === 'config' ? (
                   <div className={styles.configBody}>
+                    <div className={styles.configThemeRow}>
+                      <span className={styles.configThemeLabel}>Theme</span>
+                      <div className={styles.configThemeBtns}>
+                        {THEMES.map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            className={`${styles.configThemeBtn} ${settings.theme === t.id ? styles.configThemeBtnActive : ''}`}
+                            aria-pressed={settings.theme === t.id}
+                            onClick={() => onUpdateSettings({ ...settings, theme: t.id })}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     <label className={styles.configToggleRow}>
                       <input
                         type="checkbox"
