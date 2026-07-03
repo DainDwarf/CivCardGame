@@ -14,6 +14,7 @@ import { BUILDINGS } from '../content/buildings';
 import { MISSIONS, type MissionDef } from '../content/missions';
 import type { GameState } from '../rules';
 import { CardFace, COST_ICON, artFor, describeBuilding } from './CardFace';
+import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
 
 /** A hoverable stat chip: icon + value (+ optional projected delta), with a tooltip. */
@@ -1309,20 +1310,18 @@ export function Board({ confirmEndTurn }: { confirmEndTurn: boolean }) {
                 ))}
               </div>
             )}
-            <p className={styles.zoomHint}>Click a card to zoom · click outside to close</p>
+            <p className={styles.pileHint}>Click a card to zoom · click outside to close</p>
           </div>
         </div>
       )}
 
-      {/* Zoomed card preview, opened by clicking a card. zoomBackdrop (z-index 80) sits above pileBackdrop (75). */}
-      {zoom && (
-        <div className={styles.zoomBackdrop} onClick={() => setZoom(null)} role="dialog" aria-modal="true">
-          <div className={styles.zoomWrap}>
-            <CardFace card={CARDS[zoom]} className={styles.zoomCard} />
-          </div>
-          <p className={styles.zoomHint}>Drag a card onto the board to play · click anywhere to close</p>
-        </div>
-      )}
+      {/* Zoomed card preview, opened by clicking a card. Sits above the pile viewer
+          (CardZoomOverlay's backdrop is z-index 80 vs. .pileBackdrop's 75). */}
+      <CardZoomOverlay
+        cardId={zoom}
+        onClose={() => setZoom(null)}
+        hint="Drag a card onto the board to play · click anywhere to close"
+      />
 
       {/* Minimized inspect pill — lives inside .app but pointer-events: auto overrides boardInert. */}
       {gameover && overlayMinimized && (

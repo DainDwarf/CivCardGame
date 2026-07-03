@@ -1,6 +1,6 @@
 .collection {
   font-family: system-ui, -apple-system, sans-serif;
-  max-width: 900px;
+  max-width: 1000px;
   color: #1a1a1a;
 }
 
@@ -15,10 +15,6 @@
   margin: 0 0 1.5rem;
 }
 
-.section {
-  margin-bottom: 1.75rem;
-}
-
 .sectionTitle {
   font-size: 1rem;
   font-weight: 700;
@@ -28,32 +24,19 @@
   color: #444;
 }
 
+.sectionTitle:not(:first-child) {
+  margin-top: 1.25rem;
+}
+
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, 118px);
   gap: 0.6rem;
 }
 
-.tile {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.7rem 0.8rem;
-  background: #f3f3f0;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.tileName {
-  font-weight: 700;
-}
-
-.tileCost {
-  font-size: 0.8rem;
-  color: #3b7dd8;
-}
-
-.tileEffect {
-  font-size: 0.8rem;
-  color: #555;
+.tile:hover {
+  cursor: pointer;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22);
+  z-index: 2;
 }

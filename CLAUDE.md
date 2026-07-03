@@ -118,9 +118,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   recompute game logic. The card visual itself — `CardFace` (name/cost/kind banner/art/
   worker icons/effect text, plus the outer box and its kind coloring, all in one CSS
   module so the kind-coloring rules always resolve against their own ancestor) — lives
-  in `src/components/CardFace.tsx`, shared with the deck editor's picker/banner tiles;
-  Board layers hand-specific extras (overlap, hover-lift, drag/deal/shake states) on top
-  via a `className` prop rather than owning any card styling itself.
+  in `src/components/CardFace.tsx`, shared with the deck editor's picker/banner tiles
+  and the Collection screen's picker grid; Board layers hand-specific extras (overlap,
+  hover-lift, drag/deal/shake states) on top via a `className` prop rather than owning
+  any card styling itself. Clicking a hand or pile-viewer card opens
+  `src/components/CardZoomOverlay.tsx` — a full-screen dismissable enlargement of a
+  single `CardFace` (click anywhere to close) — which the Collection screen also
+  reuses for its own click-to-zoom.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left column of big nav
   buttons switches between four screens — `MissionSelect.tsx` (mission/board/deck
   picker, deck list sourced from the player's own `decks`; assembles a `RunConfig` via

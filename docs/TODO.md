@@ -31,7 +31,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
 - **Theme picker** — a Config-submenu setting to pick between color themes (e.g. light/dark). Bigger than it looks: none of the 8 `*.module.css` files use CSS custom properties for color today, so this needs a retrofit onto CSS variables *before* a picker can just swap a palette — most of the cost is the retrofit, not the picker UI. `[size: L]` `[?]` `[phase: 2]`
 - **UI size setting** — a Config-submenu setting to scale the whole UI up/down. Tried via `document.documentElement.style.zoom` (see *Rejected* below) and reverted: it broke `Board.tsx`'s run-screen layout (building slots sliding under the resource banner, background color bleeding past the bottom hand bar) even after fixing the drag-and-drop math. CSS `zoom` on the root doesn't rescale the viewport pointer events are reported against, and `Board.tsx` leans on `position: fixed` + raw `clientX`/`clientY`/`getBoundingClientRect()` math throughout, so a page-level zoom fights that layout in more places than just the drag clones. A working version likely needs either a `transform: scale()` container with its own compensated coordinate math (not just for drag, for every fixed-position child too), or a proper rem/CSS-custom-property based scale that avoids the raw-pixel measurement problem entirely — worth scoping carefully before trying again. `[size: L]` `[?]` `[phase: 2]`
-- **Collection screen UI rework** — `Collection.tsx` is currently a plain grid of text tiles (shell-only, shipped with Phase 2 step 6); give it a real visual pass once deck construction (step 7) is in the picture `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 2]`
 - **Decks screen UI rework** — `Decks.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain stacked deck cards, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
 - **Codex menu UI rework** — `Codex.tsx` (shipped populating the codex submenu) is a first-pass layout: one long scrollable page of definition lists inside the fixed 300px submenu window, no topic navigation, no icons on most entries. Give it a real visual pass — likely a topic-list → page view (or tabs), a wider/roomier surface than the shared `.submenuPanel`, and richer per-topic presentation. `[?]` `[phase: 2]`
@@ -75,6 +74,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Collection screen UI rework** — `Collection.tsx` now looks like the deck editor's
+  picker area: real `CardFace` tiles (same kind-grouping — Buildings & Wonders /
+  Actions — as before) in a grid, no bottom banner since there's nothing to build here.
+  Clicking a tile opens an enlarged zoom preview, reusing the run loop's own card-zoom
+  rather than a second implementation: the zoom overlay (previously ~15 lines of inline
+  JSX + CSS living only in `Board.tsx`) was extracted into a shared
+  `src/components/CardZoomOverlay.tsx` + `.module.css`, taking a `cardId` and a
+  caller-supplied hint string; `Board.tsx`'s hand/pile-viewer zoom now renders it too,
+  unchanged in behavior. Dropped the old bespoke `CardTile`/`describeCost`/`describeCard`
+  helpers `Collection.tsx` had grown before `CardFace` existed.
 - **Meta screens: disable text selection** — `MetaMenu.module.css`'s `.shell` (the
   shared root for Mission/Collection/Decks/Stats/DeckEditor) now sets
   `user-select: none`, matching `Board.module.css`'s `.app` on the run screen, so
@@ -204,8 +213,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   in-run screen gaining extra items (end run, restart run) is now also shipped — see
   *In-run menu extras (end run / restart run)* above.
 - **Deck construction** (Phase 2 build plan step 7) — `src/meta/DeckEditor.tsx` is the
-  new deck editor: name/description fields, a card picker (reuses `Collection.tsx`'s
-  `CardTile`), and the in-progress deck as removable chips. `Decks.tsx` is now a single
+  new deck editor: name/description fields, a card picker (originally reused
+  `Collection.tsx`'s bespoke text-tile component, later superseded by the shared
+  `CardFace` — see *Deck editor UI rework* and *Collection screen UI rework* below), and
+  the in-progress deck as removable chips. `Decks.tsx` is now a single
   editable list (New/Edit/Delete) — the old "premade vs. custom" split is gone
   entirely. `content/decks.ts`'s `DeckId`/`DECKS` (a closed union + registry) became
   `DeckDef`/`DEFAULT_DECKS` (a plain array of seed data): a fresh player's store is

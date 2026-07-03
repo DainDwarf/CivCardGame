@@ -1065,9 +1065,8 @@
   opacity: 1;
 }
 
-/* --- Zoomed card preview --- */
+/* --- Pile viewer (the zoom preview itself now lives in CardZoomOverlay.tsx) --- */
 
-.zoomBackdrop,
 .pileBackdrop {
   position: fixed;
   inset: 0;
@@ -1079,35 +1078,11 @@
   background: rgba(20, 20, 20, 0.6);
   cursor: zoom-out;
   animation: fadeIn 0.15s ease;
-}
-
-/* Pile viewer sits below the zoom overlay so zoom always wins. */
-.pileBackdrop {
+  /* Sits below CardZoomOverlay's backdrop (z-index 80) so zoom always wins. */
   z-index: 75;
 }
 
-.zoomBackdrop {
-  z-index: 80;
-}
-
-.zoomWrap {
-  width: 260px;
-  height: 356px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: zoomIn 0.16s ease-out;
-}
-
-/* Reuse the card face at ~2.2×. */
-.zoomCard {
-  transform: scale(2.2);
-  transform-origin: center;
-  cursor: default;
-  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.5);
-}
-
-.zoomHint {
+.pileHint {
   margin: 0;
   color: #f0f0f0;
   font-size: 0.9rem;
