@@ -201,3 +201,24 @@ directly, used by `GameContext.tsx`'s restart) — the spine between the two loo
 - **The UI is mouse-only by design** — no keyboard-activation affordances (e.g.
   `role="button"` + Enter/Space handlers on custom interactive `div`s). Don't add
   keyboard handlers to non-native interactive elements.
+- **The whole app renders inside a `transform: scale()` wrapper** (`App.tsx` /
+  `App.module.css`, the UI-size setting) — this constrains all UI work, so three rules
+  hold everywhere:
+  1. **Never rely on document/body scroll.** A transformed ancestor makes its
+     `position: fixed` descendants scroll with body content instead of pinning, so a
+     new full-screen surface must scroll *inside its own bounded container*
+     (`height` + `overflow`), the way the meta shell scrolls in `.content`
+     (`MetaMenu.module.css`) — never `min-height: 100vh` growing the body. `index.css`
+     keeps the body itself un-scrollable.
+  2. **Convert visual→local px for any new pointer-drag/ghost clone.** `clientX/Y` and
+     `getBoundingClientRect()` report *visual* (post-scale) px; writing them into an
+     inline `left/top/width/height` on a clone inside the wrapper double-scales them, so
+     divide by the scale (`px(v) = v / uiScale`, threaded as a prop — see `Board.tsx` /
+     `DeckEditor.tsx`). But **do not** convert `offsetHeight`/`offsetWidth`-derived
+     values (they're already in layout space — e.g. `Board.tsx`'s gamearea/pill insets),
+     and leave hit-testing alone (it compares `clientX` to `getBoundingClientRect()`,
+     visual-to-visual, already consistent).
+  3. **Divide viewport units that must track the real screen by `var(--ui-scale)`.**
+     A raw `vh`/`vw` measures the true viewport and then gets re-scaled; new full-bleed
+     sizes or popup caps should use `calc(… / var(--ui-scale, 1))` (the var inherits from
+     the wrapper to every descendant) — see the pile panel / Codex caps.
