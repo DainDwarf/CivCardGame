@@ -29,11 +29,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `contract.ts`), and there's no per-run record of whether *that* run was a first clear
   (`mapProgress` is current state, not a history snapshot); revisit if/when that's worth
   breaking the invariant. `[phase: 3]`
-- **Step 5 — Meta UI: map + shop + tutorials** — Campaign Map screen (DAG replacing
-  `MissionSelect`'s flat list; node → launch panel); Shop tab (`meta/Shop.tsx`, buy copy
-  tiers, spend Influence). Influence display in the nav ✅ done (see *Done / shipped*
-  below) — the rest (map, shop, tutorial entry-node missions) still open.
-  `[size: L]` `[phase: 3]`
+- **Step 5 — Meta UI: map + shop + tutorials** — Influence display in the nav ✅ done (see
+  *Done / shipped* below); the rest is split into three substeps. `[phase: 3]`
+  - **Step 5.1 — Campaign Map screen** — DAG replacing `MissionSelect`'s flat list;
+    node → launch panel. `[size: M]` `[phase: 3]`
+  - **Step 5.2 — Shop** — `meta/Shop.tsx`; buy copy tiers, spend Influence. `[size: M]`
+    `[phase: 3]`
+  - **Step 5.3 — Tutorial missions** — the first few meta missions double as tutorials,
+    introducing mechanics progressively; tutorial entry-node missions on the map. Covers
+    designing several missions, onboarding indicators/popups, and careful pacing so new
+    mechanics aren't dumped on the player all at once. `[size: L]` `[?]` `[phase: 3]`
 - **Step 6 — Infinite missions (run loop)** — endless play in `run/engine.ts` (escalating
   threat, `score` = round, ends only on failure); author one infinite mission; infinite
   framing in gameover / `Stats`. `[size: M]` `[phase: 3]`
@@ -46,7 +51,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Meta loop (`src/meta/`)
 
-- **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively → folded into **Step 5** above. `[?]` `[phase: 3]`
 - **Card modifiers** — attach persistent modifiers to individual cards → **decided as stickers**; see **Step 7** above. `[phase: 3]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 8** above. `[?]` `[phase: 3]`
 
