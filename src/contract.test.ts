@@ -6,7 +6,7 @@ import { cloneDecks } from './rules/deckBuilder';
 const selection: RunSelection = {
   missionId: 'enlightenment',
   boardId: 'tribe',
-  deckId: 'balanced',
+  deckId: 'starter',
 };
 
 describe('buildRunConfig', () => {
@@ -15,7 +15,7 @@ describe('buildRunConfig', () => {
     const config = buildRunConfig(selection, 'seed-1', decks);
     expect(config.missionId).toBe('enlightenment');
     expect(config.board).toBe('tribe');
-    expect(config.deckId).toBe('balanced');
+    expect(config.deckId).toBe('starter');
     expect(config.seed).toBe('seed-1');
   });
 
@@ -25,7 +25,7 @@ describe('buildRunConfig', () => {
     const b = buildRunConfig(selection, 'seed-1', decks);
     expect(a.deck).toEqual(b.deck);
     expect([...a.deck].sort()).toEqual(
-      [...decks.find((d) => d.id === 'balanced')!.cards].sort(),
+      [...decks.find((d) => d.id === 'starter')!.cards].sort(),
     );
   });
 
@@ -38,9 +38,9 @@ describe('buildRunConfig', () => {
 
   it('never mutates the passed-in decks', () => {
     const decks = cloneDecks(DEFAULT_DECKS);
-    const before = [...decks.find((d) => d.id === 'balanced')!.cards];
+    const before = [...decks.find((d) => d.id === 'starter')!.cards];
     buildRunConfig(selection, 'seed-1', decks);
-    expect(decks.find((d) => d.id === 'balanced')!.cards).toEqual(before);
+    expect(decks.find((d) => d.id === 'starter')!.cards).toEqual(before);
   });
 
   it('produces an empty deck when deckId is not found', () => {

@@ -1,24 +1,36 @@
 import type { RunResult } from '../contract';
 import { DEFAULT_DECKS, type DeckDef } from '../content/decks';
+import { STARTING_COLLECTION } from '../content/collection';
 import { cloneDecks } from '../rules/deckBuilder';
+import type { OwnedCards } from '../rules/collection';
 
 /**
- * The persisted player store (`localStorage`). `runHistory` and `decks` exist today;
- * collection/progress will join this shape as those features are built, so the store
- * is deliberately typed as a single growing object rather than one key per feature.
+ * The persisted player store (`localStorage`). `mapProgress` tracks completed mission
+ * ids ahead of Phase 3 Step 3's full campaign-map DAG (which formalizes its shape);
+ * for now it's just a completed-ids set.
  */
 export interface PlayerStore {
   runHistory: RunResult[];
   decks: DeckDef[];
+  influence: number;
+  collection: OwnedCards;
+  mapProgress: Record<string, true>;
 }
 
 const STORAGE_KEY = 'civcardgame:player-store';
 
-/** A fresh player's starting store — no run history, the seed decks. Exported so the
- *  Save submenu's "Clear save" action (`GameMenu.tsx`) can reset to it directly,
- *  besides its use here as `loadStore`'s fallback. */
+/** A fresh player's starting store — no run history, the seed deck, the narrow
+ *  starting collection, no Influence, no campaign progress. Exported so the Save
+ *  submenu's "Clear save" action (`GameMenu.tsx`) can reset to it directly, besides its
+ *  use here as `loadStore`'s fallback. */
 export function emptyStore(): PlayerStore {
-  return { runHistory: [], decks: cloneDecks(DEFAULT_DECKS) };
+  return {
+    runHistory: [],
+    decks: cloneDecks(DEFAULT_DECKS),
+    influence: 0,
+    collection: { ...STARTING_COLLECTION },
+    mapProgress: {},
+  };
 }
 
 /**
@@ -26,14 +38,26 @@ export function emptyStore(): PlayerStore {
  * may predate a field) and `importSave` (reading a pasted/uploaded save file). Returns
  * `null` if `raw` isn't recognizable as a store at all; a missing/invalid `decks` key
  * is *not* fatal — it just means this store predates the deck-editor feature, so it's
- * seeded with the starting decks a fresh install would have had, without losing runHistory.
+ * seeded with the starting decks a fresh install would have had, without losing
+ * runHistory. `influence`/`collection`/`mapProgress` are new fields with no such
+ * precedent (pre-alpha: no save migration, see docs/TODO.md), so a store missing any of
+ * them is simply unrecognized.
  */
 function parsePlayerStore(raw: unknown): PlayerStore | null {
   if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
   if (!Array.isArray(obj.runHistory)) return null;
+  if (typeof obj.influence !== 'number') return null;
+  if (!obj.collection || typeof obj.collection !== 'object') return null;
+  if (!obj.mapProgress || typeof obj.mapProgress !== 'object') return null;
   const decks = Array.isArray(obj.decks) ? (obj.decks as DeckDef[]) : cloneDecks(DEFAULT_DECKS);
-  return { runHistory: obj.runHistory as RunResult[], decks };
+  return {
+    runHistory: obj.runHistory as RunResult[],
+    decks,
+    influence: obj.influence,
+    collection: obj.collection as OwnedCards,
+    mapProgress: obj.mapProgress as Record<string, true>,
+  };
 }
 
 /** Reads the store from `localStorage`. Missing, corrupt, or inaccessible data falls back to an empty store. */
@@ -58,11 +82,11 @@ export function saveStore(store: PlayerStore): void {
 
 /**
  * The exported-save wire format: a base64-encoded envelope around a `PlayerStore`
- * snapshot. `schemaVersion` exists because `PlayerStore` is documented (above) as a
- * growing shape — collection/progress fields will join it later — and an exported file
- * can sit on a player's disk across several of those changes, unlike the live
- * localStorage key which is migrated in place by `parsePlayerStore`. A future bump adds
- * a migration path keyed off this number rather than re-guessing from field presence.
+ * snapshot. `schemaVersion` exists because `PlayerStore` is a growing shape (`decks`,
+ * then `influence`/`collection`/`mapProgress`, more to come) and an exported file can
+ * sit on a player's disk across several of those changes, unlike the live localStorage
+ * key which is migrated in place by `parsePlayerStore`. A future bump adds a migration
+ * path keyed off this number rather than re-guessing from field presence.
  */
 const SCHEMA_VERSION = 1;
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { exportSave, importSave, type PlayerStore } from './store';
 import { DEFAULT_DECKS } from '../content/decks';
+import { STARTING_COLLECTION } from '../content/collection';
 import { cloneDecks } from '../rules/deckBuilder';
 import type { RunResult } from '../contract';
 
@@ -29,6 +30,9 @@ function sampleStore(): PlayerStore {
   return {
     runHistory: [sampleRunResult()],
     decks: cloneDecks(DEFAULT_DECKS),
+    influence: 3,
+    collection: { ...STARTING_COLLECTION },
+    mapProgress: { enlightenment: true },
   };
 }
 
@@ -76,8 +80,16 @@ describe('exportSave / importSave', () => {
 
   it('seeds missing decks with the defaults, like loadStore does', () => {
     const store = sampleStore();
-    const bogus = toBase64(JSON.stringify({ schemaVersion: 1, store: { runHistory: store.runHistory } }));
+    const { decks: _decks, ...withoutDecks } = store;
+    const bogus = toBase64(JSON.stringify({ schemaVersion: 1, store: withoutDecks }));
     const result = importSave(bogus);
-    expect(result).toEqual({ ok: true, store: { runHistory: store.runHistory, decks: cloneDecks(DEFAULT_DECKS) } });
+    expect(result).toEqual({ ok: true, store: { ...withoutDecks, decks: cloneDecks(DEFAULT_DECKS) } });
+  });
+
+  it('rejects a save missing influence/collection/mapProgress — no migration path for these newer fields', () => {
+    const store = sampleStore();
+    const bogus = toBase64(JSON.stringify({ schemaVersion: 1, store: { runHistory: store.runHistory, decks: store.decks } }));
+    const result = importSave(bogus);
+    expect(result.ok).toBe(false);
   });
 });

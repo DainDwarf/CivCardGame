@@ -18,13 +18,18 @@ edited). See [`docs/DESIGN.md`](docs/DESIGN.md) for the full game design and roa
 **Phase 1** (the run loop, under `src/run/`) is done: hybrid cards (building vs.
 action), the turn lifecycle, a **population/worker-staffing** layer (buildings must
 be staffed to operate; the population eats food each round), and mission-driven
-win/lose conditions. **Phase 2** (contract + meta shell) is in progress: `src/contract.ts`
+win/lose conditions. **Phase 2** (contract + meta shell) is done: `src/contract.ts`
 defines `RunConfig`/`RunResult`; `src/app/App.tsx` switches between the meta menu
 (`src/meta/MetaMenu.tsx` — a left-nav shell over the Mission/Collection/Decks/Stats
 screens) and a run. `src/meta/store.ts` persists run history and the player's decks to
 `localStorage`. Deck construction is built: `src/meta/DeckEditor.tsx` lets the player
-build/edit any deck (`Decks.tsx`); `Collection.tsx` is still a read-only catalogue —
-there's no per-player card ownership/unlock tracking yet.
+build/edit any deck (`Decks.tsx`). **Phase 3** (economy & progression) is in progress:
+`rules/collection.ts` (`OwnedCards`) tracks per-card ownership and `PlayerStore` now
+carries `collection`/`influence`/`mapProgress` alongside `runHistory`/`decks`, seeded
+from a deliberately narrow `content/collection.ts`'s `STARTING_COLLECTION` and a single
+starting deck (`content/decks.ts`); `Collection.tsx` is still a read-only catalogue over
+`content/cards.ts`, not yet reading `collection` to show owned counts or lock
+un-unlocked cards — that lands with Phase 3 Step 2.
 
 ## Commands
 
@@ -65,7 +70,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   cap on how many decks a player may own (the number is balance-tunable, the limit itself is
   a core rule), enforced at the deck writer in `App.tsx`'s `saveDeck` with `Decks.tsx`'s
   disabled "+ New Deck" button as its UI reflection — distinct from `deck.ts`,
-  which owns the *in-run* draw pile, not deck editing). Unit tests sit alongside. **When adding
+  which owns the *in-run* draw pile, not deck editing), and `collection.ts` (`OwnedCards`
+  — `Record<cardId, number | 'unlimited'>`, an absent entry meaning not yet unlocked —
+  plus `copiesOwned`/`isOwned` read helpers; a mission unlock or shop purchase writing to
+  it is still to come, since nothing calls those yet). Unit tests sit alongside. **When adding
   a rule, put the logic here and test it directly — never bury it in a move or a
   component.**
 - `src/content/` — typed game data, separate from logic. **A building card *is* the building**
@@ -98,13 +106,16 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `remove: true`, in which case it's destroyed to `removed` instead (see `rules/upkeep.ts`'s
   `resolveHandEvents`). Barbarian, the one event so far, sets `remove: true` (`effect.loss`
   removes resources — the mirror of `gain`).
-  Also `decks.ts` (`DeckDef` + `DEFAULT_DECKS` — seed data for a new player's deck list,
-  each a `CardId[]` draw order; every deck is player-editable, there's no separate
-  read-only "built-in" registry — see `meta/store.ts`), `boards.ts` (`BOARDS` —
-  government boards; each sets all 8 starting resources: the 5 core plus
-  population/territory/culture), and `missions.ts` (`MISSIONS` — each mission supplies
-  its `objective` and `failure` as pure predicates over `GameState`, plus an optional
-  `onUpkeep`).
+  Also `decks.ts` (`DeckDef` + `DEFAULT_DECKS` — seed data for a new player's deck list;
+  a fresh player starts with exactly one deck, `'starter'`, deliberately narrow enough to
+  be built from `collection.ts`'s `STARTING_COLLECTION` alone; every deck (seed or
+  player-made) is equally player-editable, there's no separate read-only "built-in"
+  registry — see `meta/store.ts`), `collection.ts` (`STARTING_COLLECTION`, an
+  `OwnedCards` — see `rules/collection.ts` below — seeding a fresh player's card
+  ownership), `boards.ts` (`BOARDS` — government boards; each sets all 8 starting
+  resources: the 5 core plus population/territory/culture), and `missions.ts`
+  (`MISSIONS` — each mission supplies its `objective` and `failure` as pure predicates
+  over `GameState`, plus an optional `onUpkeep`).
 
 **Shell — the run loop (`src/run/`) + React:**
 
@@ -191,7 +202,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   project); add/remove go through `rules/deckBuilder.ts`. `store.ts`'s
   `loadStore`/`saveStore` persist
   `PlayerStore` (`runHistory` + `decks`, the latter seeded from `content/decks.ts`'s
-  `DEFAULT_DECKS` on a fresh profile) to `localStorage`.
+  `DEFAULT_DECKS`; plus `influence`/`collection`/`mapProgress`, seeded from
+  `content/collection.ts`'s `STARTING_COLLECTION` on a fresh profile) to `localStorage`.
+  `parsePlayerStore`'s lenient decks-fallback (a store predating the deck editor gets
+  reseeded rather than rejected) doesn't extend to these three newer fields — pre-alpha,
+  there's no save worth migrating, so a store missing any of them is just unrecognized.
 - `src/components/GameMenu.tsx` — the global-action surface (docs/DESIGN.md's Phase 2
   "game menu (save, config, codex)"): a top-right burger button. Opens a central popup
   listing the items; each opens its own submenu window stacked on top. The Save

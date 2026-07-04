@@ -1,15 +1,26 @@
 import { describe, it, expect } from 'vitest';
 import { applyMove, createRun, endTurn, type RunState } from './engine';
 import { playCard, assignWorker, unassignWorker } from './moves';
-import { DEFAULT_DECKS } from '../content/decks';
-import { cloneDecks } from '../rules/deckBuilder';
 import type { RunConfig } from '../contract';
 
-const BALANCED_DECK = cloneDecks(DEFAULT_DECKS).find((d) => d.id === 'balanced')!.cards;
+/** A fixture deck for these run-loop mechanics tests, independent of
+ *  `content/decks.ts`'s player-facing starting deck — so balance/content changes there
+ *  don't break these mechanics assertions. Its first 5 cards are what every test below
+ *  actually exercises; `board: 'tribe'` and this unshuffled order reproduce the fixed
+ *  values these tests assert on. */
+const FIXTURE_DECK = [
+  'farm', 'workshop', 'corvee', 'library', 'harvest',
+  'settlers', 'farm', 'eureka', 'granary', 'settlers',
+  'workshop', 'walls', 'library', 'inspiration', 'settlers',
+  'barracks', 'university', 'eureka', 'corvee',
+  'pyramids', 'great_library', 'colossus',
+  'develop', 'develop', 'conquest', 'destroy',
+  'market', 'trading_post',
+  'theater', 'cultural_festival', 'philosopher',
+];
 
-/** `board: 'tribe'` and the unshuffled balanced deck reproduce the fixed values these tests assert on. */
 function start(missionId: string, board: RunConfig['board'] = 'tribe') {
-  const config: RunConfig = { deck: [...BALANCED_DECK], board, missionId, deckId: 'balanced', seed: 'test-seed' };
+  const config: RunConfig = { deck: [...FIXTURE_DECK], board, missionId, deckId: 'fixture', seed: 'test-seed' };
   let state: RunState = createRun(config);
   return {
     getState: () => ({ G: state.G, ctx: { gameover: state.gameover } }),

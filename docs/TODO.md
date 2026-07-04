@@ -15,14 +15,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 > The Phase 3 design is locked in [`DESIGN.md`](DESIGN.md) (*Economy & progression*); this is
 > the actionable cut, held here for later sessions. Suggested order: 1 → 2 & 3 → 4 → 5 → 6 → 7
-> (Step 0 doc-sync is **done**). **Steps 1+2+3+4 form a playable spine** — unlock cards from
+> (Steps 0 and 1 are **done**). **Steps 1+2+3+4 form a playable spine** — unlock cards from
 > missions, own copies, build capped decks — before the map/shop UI (Step 5) lands.
 > Pre-alpha: **no save migration**, replace the store shape freely.
 
-- **Step 1 — Ownership & currency core** — `rules/collection.ts`
-  (`OwnedCards = Record<CardId, number | 'unlimited'>` + helpers); extend `PlayerStore`
-  (`meta/store.ts`) with `influence` / `collection` / `mapProgress`; a **narrow**
-  `STARTING_COLLECTION` + starting deck (trim `content/decks.ts`). `[size: M]` `[phase: 3]`
+- **Step 1 — Ownership & currency core** ✅ done — see *Done / shipped* below. `[phase: 3]`
 - **Step 2 — Deck-editor copy caps** — `deckBuilder.addCard` rejects exceeding owned copies
   (`'unlimited'` = no cap), like the `MAX_DECKS` path; `DeckEditor` greys the add control at
   cap; `Collection` shows owned counts / locks un-unlocked cards. `[size: M]` `[phase: 3]`
@@ -90,3 +87,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 1 — Ownership & currency core** — `rules/collection.ts` (`OwnedCards`,
+  `copiesOwned`, `isOwned`); `content/collection.ts`'s narrow `STARTING_COLLECTION`;
+  `content/decks.ts` trimmed to a single starting deck (`starter`/"Founding Deck"), built
+  entirely from what `STARTING_COLLECTION` owns; `PlayerStore` gains `influence` /
+  `collection` / `mapProgress` (all required — no migration path for a pre-alpha save
+  missing them).
