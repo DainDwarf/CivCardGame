@@ -292,38 +292,14 @@ src/
   3 missions (The Enlightenment, The Long Winter, Barbarian Tide). Rules unit-tested +
   a headless run integration test (`src/run/run.test.ts`). A run is now genuinely
   winnable *and* losable.
-- **Phase 2 — Contract + meta shell:** define `contract.ts` — the `RunConfig`
-  carries the chosen deck, mission, **and government board** (which sets the run's
-  starting resources; see *Government boards*). Build a minimal meta layer (collection +
-  deck
-  construction + board select + mission select) that emits a `RunConfig`, launches a
-  run, and consumes the `RunResult`. Add a **game menu** (save, config, codex) as the
-  shell's global-action surface. Persist to localStorage. → the loop closes.
-
-  Sequenced build order (each step leaves something runnable; day-to-day tracking lives
-  in [`TODO.md`](TODO.md)):
-
-  1. **Scaffold meta content** — 2–3 government boards (`content/boards.ts` + `BoardId`,
-     each setting all 8 starting resources) and 2–3 premade decks.
-  2. **Mission-select menu** — first meta screen; replaces the direct-to-run mount in
-     `main.tsx`. Picks mission / board / deck into a provisional selection shape; does not
-     launch yet.
-  3. **Define `contract.ts`** — formalize `RunConfig`/`RunResult` from that selection
-     shape, including the run **`seed`** (wire a seeded shuffle to replace today's
-     deterministic draw).
-  4. **Wire the loop closed** — `app/` shell + meta↔run view switch; refactor the
-     `missionId`-keyed pipeline (`createRun`/`createInitialState`/`GameProvider`/restart)
-     to consume a `RunConfig`; apply board baseline-resources + disaster injection during
-     setup assembly; end-of-run returns to the menu with a minimal `RunResult`.
-  5. **localStorage persistence** — stand up the persisted player store (collection +
-     saved decks + progress) *before* deck construction, so the editor is built on the
-     real store rather than retrofitted.
-  6. **Extend the meta menu** — collection view + deck-construction navigation (shell
-     only).
-  7. **Deck construction** ✅ — the deck editor (`src/meta/DeckEditor.tsx`), writing to
-     the persisted store. Every deck is player-editable; the premade decks became seed
-     data (`content/decks.ts`'s `DEFAULT_DECKS`) rather than a separate read-only tier.
-     Construction *constraints* stay deferred to Phase 4.
+- **Phase 2 — Contract + meta shell** ✅ done, tagged [`v0.0.2`](../CHANGELOG.md):
+  `contract.ts` formalizes `RunConfig` (deck, mission, and **government board**, which
+  sets the run's starting resources — see *Government boards*) and `RunResult`. A full
+  meta layer (mission/board/deck select, a read-only collection, deck construction, a
+  run-history stats screen) emits a `RunConfig`, launches a run, and consumes the
+  `RunResult`; a **game menu** (save export/import, device-local config, a Codex rules
+  reference) is the shell's global-action surface. Everything persists to `localStorage`.
+  Deck construction *constraints* (size, copy/rarity limits) stay deferred to Phase 4.
 - **Phase 3 — Economy & progression:** currency, shop, mission map, unlocks.
 - **Phase 4 — Content & balance:** expand cards/missions/resources; use the headless
   simulator to tune.
