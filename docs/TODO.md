@@ -11,11 +11,46 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Tags (optional): `[size: S/M/L]` rough effort · `[?]` needs design discussion ·
 > `[blocked]` waiting on something else · `[phase: N]` roadmap phase (1 = run loop · 2 = contract + meta shell · 3 = economy & progression · 4 = content & balance).
 
+## Phase 3 — planned steps (economy & progression)
+
+> The Phase 3 design is locked in [`DESIGN.md`](DESIGN.md) (*Economy & progression*); this is
+> the actionable cut, held here for later sessions. Suggested order: 1 → 2 & 3 → 4 → 5 → 6 → 7
+> (Step 0 doc-sync is **done**). **Steps 1+2+3+4 form a playable spine** — unlock cards from
+> missions, own copies, build capped decks — before the map/shop UI (Step 5) lands.
+> Pre-alpha: **no save migration**, replace the store shape freely.
+
+- **Step 1 — Ownership & currency core** — `rules/collection.ts`
+  (`OwnedCards = Record<CardId, number | 'unlimited'>` + helpers); extend `PlayerStore`
+  (`meta/store.ts`) with `influence` / `collection` / `mapProgress`; a **narrow**
+  `STARTING_COLLECTION` + starting deck (trim `content/decks.ts`). `[size: M]` `[phase: 3]`
+- **Step 2 — Deck-editor copy caps** — `deckBuilder.addCard` rejects exceeding owned copies
+  (`'unlimited'` = no cap), like the `MAX_DECKS` path; `DeckEditor` greys the add control at
+  cap; `Collection` shows owned counts / locks un-unlocked cards. `[size: M]` `[phase: 3]`
+- **Step 3 — Mission model + campaign-map data** — extend `MissionDef` (`reward`, `prereqs`,
+  map position, `kind: 'standard' | 'infinite'`); author the starter DAG; `rules/campaign.ts`
+  prereq gating (`availableMissions` / `isCompleted`) + tests. `[size: M]` `[phase: 3]`
+- **Step 4 — Reward computation + run-end wiring** — `rules/rewards.ts` (`computeRewards`;
+  first-clear vs replay; infinite score) + tests; `RunResult.score`; `App.onRunEnd` applies
+  rewards to the store; gameover / `Stats` surface them. `[size: M]` `[phase: 3]`
+- **Step 5 — Meta UI: map + shop + tutorials** — Campaign Map screen (DAG replacing
+  `MissionSelect`'s flat list; node → launch panel); Shop tab (`meta/Shop.tsx`, buy copy
+  tiers, spend Influence); Influence in the shell header; tutorial entry-node missions.
+  `[size: L]` `[phase: 3]`
+- **Step 6 — Infinite missions (run loop)** — endless play in `run/engine.ts` (escalating
+  threat, `score` = round, ends only on failure); author one infinite mission; infinite
+  framing in gameover / `Stats`. `[size: M]` `[phase: 3]`
+- **Step 7 — Stickers** *(last, deepest)* — resolve per-copy identity first (deck entries
+  → `{ cardId, instanceId? }`). Board stickers (`setup.ts` modifiers); card stickers
+  (per-copy, read by `effects.ts` / `production.ts`); shop sells + attach UI.
+  `[size: L]` `[?]` `[phase: 3]`
+- **Step 8 — Peripheral** — culture → hand size; `Stats` rework once rewards/trends exist.
+  Independent. `[phase: 3]`
+
 ## Meta loop (`src/meta/`)
 
-- **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
-- **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
-- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 3]`
+- **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively → folded into **Step 5** above. `[?]` `[phase: 3]`
+- **Card modifiers** — attach persistent modifiers to individual cards → **decided as stickers**; see **Step 7** above. `[phase: 3]`
+- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 8** above. `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
 
@@ -36,6 +71,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - Card that gives a draw when expanding territory `[?]` `[phase: 4]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]` `[phase: 4]`
+- Actually let Culture upgrade the hand size → **Step 8** above. `[?]` `[phase: 3]`
 
 
 

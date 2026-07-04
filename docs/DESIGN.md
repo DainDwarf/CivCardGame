@@ -191,15 +191,40 @@ the meta loop to the mission they pick.
 - **Government boards** — the civilization's starting configuration, chosen alongside
   the deck: it sets the run's opening resources and reskins the run loop, and is
   unlocked/upgraded through mission rewards. See *Government boards* below.
-- **Currency & shop** — runs grant currency by outcome/performance; spend it to buy
-  new cards (grow the collection) or upgrades.
+- **Currency & shop** — completing a mission grants **Influence** (⭐), the meta-currency;
+  spend it in the shop on *depth* — extra copies of cards you already own, and permanent
+  **stickers** (card/board modifiers). New cards, boards, and wonders come from missions,
+  not the shop. See *Economy & progression* below. ✅
 - **Campaign map** — a branching tech tree of human history; each node is a
   mission/advancement. You pick your next node along the tree; each shows its
   objective, failure, difficulty, and reward so you can tailor your deck. See
   *Campaign map* below.
-- **Progression / unlocks** — finishing missions unlocks cards, missions,
-  civilizations, and difficulty tiers.
+- **Progression / unlocks** — missions are **binary** (complete / not); completing one
+  grants a fixed Influence reward and **one unlock** (a card, a board, or a wonder). See
+  *Economy & progression* below. ✅
 - **Persistence** — all of the above saved to localStorage/IndexedDB (one profile).
+
+### Economy & progression 🔧 (Phase 3)
+
+**Influence (⭐)** is the single meta-currency. Completing a mission for the first time pays
+a fixed, authored amount (*not* scaled by how you played); infinite missions pay by score,
+per attempt — that's the only performance-scaled source. Influence is spent only in the shop.
+
+**Ownership & copies.** The collection tracks, per card, how many copies you own
+(`number | 'unlimited'`; an absent entry = not yet unlocked). A mission unlock grants the
+first copy; the **shop** raises that to ×2 / ×4 / unlimited. The deck editor caps each card
+at the number you own (unlimited = no cap) — the first deck-construction constraint to bite
+(general size/rarity constraints stay Phase 4).
+
+**Two non-overlapping channels.** *Missions = breadth* (a new card type, board, or wonder).
+*Shop = depth* (more copies of owned cards; permanent **stickers**). There are **no rating
+tiers** on missions — the copper/silver/gold/platinum idea was considered and cut in favour
+of buying copies outright in the shop.
+
+**Stickers** are permanent modifiers bought with Influence: a **card sticker** buffs a
+*single owned copy* of a card forever; a **board sticker** modifies a board's starting
+profile (board stickers *are* the "board modifiers" — one concept, not two). Card stickers
+need per-copy identity (decks are bare `CardId[]` today), so they are the last, deepest piece.
 
 ### Campaign map — humanity's tech tree ✅ / 🔧
 
@@ -215,6 +240,13 @@ procedurally generated map.
   next nodes, and grants **card unlocks themed to that advancement** (e.g. clearing
   *Writing* adds Library/scribe cards to your collection). 🔧 This ties unlock content
   directly to map position — clean, thematic content growth.
+- **Completion is binary — no rating tiers.** A node is either cleared or not; clearing it
+  (once) pays a fixed Influence reward and grants its single unlock. Owning *more copies* of
+  a card is a separate, shop-side axis (see *Economy & progression*), not a function of how
+  well you cleared. ✅
+- **Infinite nodes** are a distinct kind: an endlessly escalating threat with no win state —
+  you survive for a score, which pays Influence *per attempt* (the only performance-scaled
+  currency source) and tracks a best. 🔧
 - Procedural variation (which nodes are offered, per-node modifiers/seeds) can layer
   on later; v1 is authored. 🔧
 
@@ -243,16 +275,14 @@ playing, rather than the near-uniform look it has today. This is where progressi
 becomes visible on screen.
 
 **Progression — earned, not scaled.** Boards do **not** scale continuously with player
-progress. Progress is legible and discrete: **mission rewards grant boards.** A reward
-can be
+progress. Progress is legible and discrete: **missions grant whole new boards** (breadth),
+while the **shop sells board stickers** — permanent modifiers that tweak a board's starting
+profile (depth; see *Economy & progression*). (An *upgrade* to an owned board — a stronger
+variant — remains a possible mission reward too; open question below.)
 
-- a **new board** (a different government with a different starting profile),
-- an **upgrade** to a board you already own (a stronger version of it), or
-- a **board modifier** (an attachable tweak to a board's starting profile).
-
-So the player *sees* growth — "I unlocked the Republic", "my Monarchy is upgraded" —
-instead of watching an invisible number climb. This plugs boards into the reward economy
-(Campaign map / unlocks), not any auto-scaling.
+So the player *sees* growth — "I unlocked the Republic", "I stuck a +Military modifier on my
+Monarchy" — instead of watching an invisible number climb. This plugs boards into the reward
+economy (missions for new boards, shop for stickers), not any auto-scaling.
 
 **Contract.** The `RunConfig` carries the chosen board (its id + any applied modifiers);
 on victory the meta loop looks up the mission's rewards (by the `RunResult`'s
@@ -261,7 +291,9 @@ on victory the meta loop looks up the mission's rewards (by the `RunResult`'s
 **Open questions `[?]`:**
 
 - Does an **upgrade** replace the base board, or coexist as a selectable variant?
-- Do **modifiers stack**, and are they permanent unlocks or consumed per run?
+- **Board modifiers are permanent shop-bought stickers** (see *Economy & progression*) —
+  attached to a board, not consumed per run. Whether several **stack** on one board is a
+  balance detail, deferred.
 - **Phasing:** board *selection* + baseline starting resources + the visual reskin can
   ship in **Phase 2** (a small fixed set of boards, as part of the contract). The
   reward-driven unlocking of new boards / upgrades / modifiers needs the reward economy,
@@ -300,7 +332,10 @@ src/
   `RunResult`; a **game menu** (save export/import, device-local config, a Codex rules
   reference) is the shell's global-action surface. Everything persists to `localStorage`.
   Deck construction *constraints* (size, copy/rarity limits) stay deferred to Phase 4.
-- **Phase 3 — Economy & progression:** currency, shop, mission map, unlocks.
+- **Phase 3 — Economy & progression:** the **Influence** currency, the shop (copy tiers +
+  stickers), the campaign-map DAG (binary missions, prereq gating), reward/unlock wiring, and
+  infinite missions. See *Economy & progression*. The per-card deck-copy cap arrives here;
+  broader deck constraints stay Phase 4.
 - **Phase 4 — Content & balance:** expand cards/missions/resources; use the headless
   simulator to tune.
 
@@ -312,6 +347,7 @@ branching tech tree of human history) — see *Theme & framing* and *Campaign ma
 Still open, deferred until the phase that needs them:
 
 - **Resource set** ✅ — resolved in Phase 1: Food / Production / Money / Science / Military. See *Resources* section above.
-- **Deck construction constraints** ❓ (deck size, copy/rarity limits, a
-  "civilization" identity that gates combos) — revisit during **Phase 4**, during
-  content expansion and balance.
+- **Deck construction constraints** ❓ (deck size, rarity limits, a "civilization"
+  identity that gates combos) — revisit during **Phase 4**, during content expansion and
+  balance. *Exception:* the **per-card copy cap = copies owned** lands in **Phase 3** (see
+  *Economy & progression*), since ownership makes it meaningful; the rest stays Phase 4.
