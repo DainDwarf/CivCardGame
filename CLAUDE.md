@@ -130,9 +130,12 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   there aren't enough idle workers to fill it. (Building workers are allocated by instance id,
   drawn from the same `nextInstanceId` space as work boxes so the two never collide.)
 - `src/run/GameContext.tsx` — React context that holds `RunState` and exposes
-  `{ G, gameover, moves, endTurn, undo, canUndo, restart, endRun }` via `useGame()`.
-  `GameProvider` takes a `RunConfig` (`config` prop) and an `onRunEnd(result: RunResult)`
-  callback, called when the player clicks "End Run" on a finished run.
+  `{ G, gameover, board, moves, endTurn, undo, canUndo, restart, endRun }` via `useGame()`
+  (`board` is the `RunConfig.board` this run was launched with, along for presentation —
+  e.g. `Board.tsx`'s board-tinted ground backdrop — not gameplay logic, which never
+  branches on the board id past `setup.ts`). `GameProvider` takes a `RunConfig`
+  (`config` prop) and an `onRunEnd(result: RunResult)` callback, called when the player
+  clicks "End Run" on a finished run.
 - `src/components/Board.tsx` — the React board. Calls `useGame()` for state and
   actions; calls `moves.playCard` / `moves.toggleStaffing` / `endTurn()`. Display only —
   read derived values from `src/rules/` (e.g. `projectedDelta`, `freePopulation`), never
@@ -145,7 +148,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   any card styling itself. Clicking a hand or pile-viewer card opens
   `src/components/CardZoomOverlay.tsx` — a full-screen dismissable enlargement of a
   single `CardFace` (click anywhere to close) — which the Collection screen also
-  reuses for its own click-to-zoom.
+  reuses for its own click-to-zoom. The full-viewport `.groundBackdrop` behind the
+  board is tinted per the run's government board — Board.tsx stamps a `data-board`
+  attribute that `Board.module.css` matches against one `--board-<id>-ground` token per
+  board (see the theming convention below), so adding a board's own tint is a
+  CSS-only edit, no component change.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left column of big nav
   buttons switches between four screens — `MissionSelect.tsx` (mission/board/deck
   picker, deck list sourced from the player's own `decks`; assembles a `RunConfig` via

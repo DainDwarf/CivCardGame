@@ -503,7 +503,7 @@ export function Board({
    *  used by the gameover overlay's own Restart/End Run buttons below. */
   onTransition: (action: () => void) => void;
 }) {
-  const { G, gameover, moves, endTurn, undo, canUndo, restart, endRun } = useGame();
+  const { G, gameover, board, moves, endTurn, undo, canUndo, restart, endRun } = useGame();
   // The whole board renders inside a `transform: scale(uiScale)` wrapper (App.tsx). Pointer
   // coordinates and getBoundingClientRect() are in *visual* (post-scale) px; when written into
   // an inline left/top/width/height on a drag/ghost clone — which lives inside that scaled
@@ -1056,7 +1056,7 @@ export function Board({
   return (
     <>
     <div className={styles.app}>
-      <div className={styles.groundBackdrop} />
+      <div className={styles.groundBackdrop} data-board={board} />
       <MissionWidget mission={mission} G={G} />
       <header className={styles.topBanner} ref={bannerRef}>
         <div

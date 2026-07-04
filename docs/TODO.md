@@ -71,6 +71,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Board-tinted run background** — the run loop's full-viewport ground backdrop now
+  tints per the run's government board: `GameContext.tsx` exposes `board` (the
+  `RunConfig.board`) via `useGame()`, `Board.tsx` stamps it as a `data-board` attribute
+  on `.groundBackdrop`, and `Board.module.css` matches that against one
+  `--board-<id>-ground` token per board (`index.css`, Light + Dark). Placeholder colors
+  for now — Tribe unchanged (existing brown dirt), Monarchy a cool steel slate-blue,
+  Republic a warm gold — chosen only to dodge the red (danger/loss) and purple (culture)
+  channels; revisit the actual hues later. Adding a board's tint after that is a
+  CSS-only edit (one token + one attribute rule), no component change. `[size: S]
+  [phase: 2]`
 - **Deck copy** — `Decks.tsx` now has a Copy button (same accent color as Edit) on both
   the tile and the list-view overlay. It duplicates the deck's cards into a fresh,
   unsaved `DeckDef` (new id, "`<name>` (Copy)") and opens the editor on it — exactly

@@ -117,7 +117,7 @@
   --culture-ghost: rgba(180, 100, 224, 0.35); /* upkeep-preview fill */
 
   /* ── Run-loop dark surfaces (dark even in Light theme) ─ */
-  --ground: #c8a97e;             /* tableau backdrop (dirt) */
+  --ground: #c8a97e;             /* tableau backdrop (dirt) — fallback for an unrecognized board */
   --tableau-panel: #2a3346;      /* undo button */
   --tableau-panel-hover: #36425a;
   --tableau-panel-border: #3a465f;
@@ -133,6 +133,11 @@
   --discard-bottom: #d8c8a8;
   --discard-pile-border: #b79f72;
   --discard-text: #5a4a2a;
+
+  /* ── Board ground tints (per government board — placeholder hues, tune later) ── */
+  --board-tribe-ground: #c8a97e;     /* same as --ground: humble/rustic, no change from default */
+  --board-monarchy-ground: #a9b7c4;  /* cool steel slate-blue — martial, avoids the danger/loss red */
+  --board-republic-ground: #d9c17a;  /* warm gold — mercantile/money, avoids the culture purple */
 
   /* ── Building states (green) ──────────────────────── */
   --operating-bg: #f1f7ef;
@@ -281,6 +286,11 @@
   --discard-bottom: #443a28;
   --discard-pile-border: #8a7550;
   --discard-text: #e8ddc8;
+
+  /* ── Board ground tints ── */
+  --board-tribe-ground: #4f4130;     /* same as --ground */
+  --board-monarchy-ground: #3a4550;
+  --board-republic-ground: #4a3f1f;
 
   /* ── Building states (green) ── */
   --operating-bg: #1f2a1e;

@@ -336,12 +336,26 @@
 
 /* A full-viewport dirt layer behind everything, so the ground stays visible through the hand
    bar's transparent top edge even though .gamearea below is clipped short of the viewport
-   bottom (its bound is the slot-grid/work-strip content, not the visible backdrop). */
+   bottom (its bound is the slot-grid/work-strip content, not the visible backdrop). Tinted per
+   the run's government board (Board.tsx stamps `data-board`) — `--ground` remains the fallback/
+   default so an unrecognized board id still renders something. */
 .groundBackdrop {
   position: fixed;
   inset: 0;
   z-index: -1;
   background: var(--ground);
+}
+
+.groundBackdrop[data-board='tribe'] {
+  background: var(--board-tribe-ground);
+}
+
+.groundBackdrop[data-board='monarchy'] {
+  background: var(--board-monarchy-ground);
+}
+
+.groundBackdrop[data-board='republic'] {
+  background: var(--board-republic-ground);
 }
 
 /* The play area: holds the slot grid (which scrolls) above the work strip, bounded to end

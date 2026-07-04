@@ -2,11 +2,14 @@ import { createContext, useContext, useMemo, useReducer } from 'react';
 import { applyMove, createRun, endTurn, toRunResult, type Gameover, type RunState } from './engine';
 import { playCard, assignWorker, unassignWorker, toggleStaffing, transferWorker } from './moves';
 import type { GameState } from '../rules';
+import type { BoardId } from '../content/boards';
 import { reshuffleRunConfig, type RunConfig, type RunResult } from '../contract';
 
 interface GameContextValue {
   G: GameState;
   gameover: Gameover | undefined;
+  /** The board this run was launched with — drives board-tinted run-loop presentation (e.g. the ground backdrop). */
+  board: BoardId;
   moves: {
     playCard: (handIdx: number, discardHandIdxs?: number[], destroyInstanceId?: number) => void;
     assignWorker: (id: number) => void;
@@ -138,7 +141,7 @@ export function GameProvider({
   }
 
   return (
-    <GameContext.Provider value={{ G: present.G, gameover: present.gameover, moves, canUndo, endRun, ...handlers }}>
+    <GameContext.Provider value={{ G: present.G, gameover: present.gameover, board: config.board, moves, canUndo, endRun, ...handlers }}>
       {children}
     </GameContext.Provider>
   );
