@@ -161,9 +161,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   overlay in the accent color; Delete (tile-only) is a two-click confirm in
   `--danger-strong`, flipping to "Confirm?" and reverting on mouse-out/navigating away.
   "New Deck" is the grid's own next slot — a hollow dashed tile after the last deck,
-  rather than a button above the grid — and simply stops rendering once `MAX_DECKS` is
-  hit (a core rule, see `deckBuilder.ts` below); a plain text note takes its place at the
-  cap. And `Stats.tsx` (the run history list).
+  rather than a button above the grid — and stays put (rather than disappearing) once
+  `MAX_DECKS` is hit (a core rule, see `deckBuilder.ts` below): it disables itself and its
+  label swaps to the limit-reached message, so the cap is explained right where the
+  next deck would have gone. And `Stats.tsx` (the run history list).
   `DeckEditor.tsx` (opened from `Decks.tsx`, not a nav tab) edits a single `DeckDef` in
   place — a main picker area (grouped by kind, same groups as `Collection.tsx`) of
   `CardFace` tiles above a bottom banner representing the deck itself (name, card count,

@@ -9,12 +9,6 @@
   margin: 0 0 1.25rem;
 }
 
-.capNote {
-  margin: 0 0 1.25rem;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
 .empty {
   color: var(--text-secondary);
   font-style: italic;
@@ -74,10 +68,17 @@
   transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
 }
 
-.newTile:hover {
+.newTile:hover:not(:disabled) {
   color: var(--accent);
   border-color: var(--accent);
   background: rgb(var(--accent-rgb) / 6%);
+}
+
+.newTile:disabled {
+  color: var(--text-secondary);
+  border-color: var(--border);
+  cursor: not-allowed;
+  text-align: center;
 }
 
 .stack {

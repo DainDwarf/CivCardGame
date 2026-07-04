@@ -54,8 +54,6 @@ export function Decks({
     <div className={styles.decks}>
       <h1 className={styles.title}>Decks</h1>
 
-      {atCap && <p className={styles.capNote}>Deck limit reached ({MAX_DECKS}) — delete one to make room.</p>}
-
       <div className={styles.grid}>
         {decks.map((deck) => {
           const groups = groupCounts(deck.cards);
@@ -139,11 +137,15 @@ export function Decks({
             </div>
           );
         })}
-        {!atCap && (
-          <button type="button" className={styles.newTile} onClick={onNew} title="Create a new deck">
-            New Deck
-          </button>
-        )}
+        <button
+          type="button"
+          className={styles.newTile}
+          disabled={atCap}
+          onClick={onNew}
+          title={atCap ? `Deck limit reached (${MAX_DECKS}) — delete one to make room.` : 'Create a new deck'}
+        >
+          {atCap ? `Deck limit reached (${MAX_DECKS})` : 'New Deck'}
+        </button>
       </div>
 
       {/* List-view of the selected deck's cards — mirrors Board.tsx's pile viewer:
