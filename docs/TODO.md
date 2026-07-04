@@ -31,8 +31,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   breaking the invariant. `[phase: 3]`
 - **Step 5 — Meta UI: map + shop + tutorials** — Influence display in the nav ✅ done (see
   *Done / shipped* below); the rest is split into three substeps. `[phase: 3]`
-  - **Step 5.1 — Campaign Map screen** — DAG replacing `MissionSelect`'s flat list;
-    node → launch panel. `[size: M]` `[phase: 3]`
+  - **Step 5.1 — Campaign Map screen** — ✅ done (see *Done / shipped* below): `CampaignMap.tsx`
+    replaces `MissionSelect`'s flat list with a horizontally-scrollable DAG; node → launch popup.
+    `[size: M]` `[phase: 3]`
   - **Step 5.2 — Shop** — `meta/Shop.tsx`; buy copy tiers, spend Influence. `[size: M]`
     `[phase: 3]`
   - **Step 5.3 — Tutorial missions** — the first few meta missions double as tutorials,
@@ -131,3 +132,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   surfacing stay deferred — see the planned-steps note above for why.
 - **Influence nav display** (pulled forward from Step 5) — `MetaMenu`'s left nav shows a
   `⭐ <count>` pill between the game title and the screen buttons, reading `store.influence`.
+- **Phase 3 Step 5.1 — Campaign Map screen** — `CampaignMap.tsx` replaces the flat
+  `MissionSelect` with humanity's history as a horizontally-scrollable branching tech tree
+  (drag-to-pan reusing the Board/DeckEditor pointer convention). `MissionDef` gains an authored
+  `map: { col, row }` grid position; nodes are placed from it, edges drawn from `prereqs`, and
+  per-node state comes from `rules/campaign.ts` (cleared ✓ / available ▶ / locked). Locked
+  nodes are **silhouettes** — position + lock glyph shown to orient the player in history, but
+  name/objective/reward hidden and the node inert (a deliberate divergence from the earlier
+  hide-everything precedent). A single "Testing" age band (`content/ages.ts`, a right-arrow
+  shape) spans the top; the age→column-range mapping for multiple ages is deferred (only one
+  age to place). Clicking a cleared/available node opens a launch popup (board picker left,
+  deck picker right, nothing pre-selected, "Start Mission" disabled until both chosen); the
+  reward preview shows the Influence amount and that a card unlocks but not which. The deck
+  picker's tile-fan + list-view display is extracted into shared `components/DeckDisplay.tsx`
+  (`DeckTile`/`DeckListOverlay`, also now used by `Decks.tsx`) minus the edit/copy/delete
+  buttons — clicking an unselected deck selects it, clicking the selected one opens its
+  list-view. New map/age/node theme tokens in `index.css` (Light + Dark; CVD themes fall
+  through to Light since node state carries glyph + text-label backups, not color alone).

@@ -41,6 +41,11 @@ export interface MissionDef {
    *  mission grants exactly one unlock by design (docs/DESIGN.md, "Economy & progression");
    *  it must name a real `content/cards.ts` id (pinned by a coherence test). */
   reward: { influence: number; unlockCardId: string };
+  /** Authored position on the campaign map's DAG grid (`meta/CampaignMap.tsx`): `col` is
+   *  the horizontal chronology slot (later = further along history), `row` the vertical
+   *  branch offset among siblings. Authored rather than auto-computed — matches the
+   *  "authored DAG" in docs/DESIGN.md and keeps control over the narrow tree's shape. */
+  map: { col: number; row: number };
 }
 
 export const MISSIONS: Record<string, MissionDef> = {
@@ -57,6 +62,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     failureHint: 'Failing to reach 30 Science by round 12.',
     kind: 'standard',
     reward: { influence: 2, unlockCardId: 'university' },
+    map: { col: 1, row: 0 },
   },
 
   long_winter: {
@@ -77,6 +83,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     failureHint: null,
     kind: 'standard',
     reward: { influence: 1, unlockCardId: 'granary' },
+    map: { col: 0, row: 1 },
   },
 
   barbarian_tide: {
@@ -103,5 +110,6 @@ export const MISSIONS: Record<string, MissionDef> = {
     failureHint: 'Your Military falling below zero — the barbarians overrun you.',
     kind: 'standard',
     reward: { influence: 2, unlockCardId: 'conquest' },
+    map: { col: 1, row: 2 },
   },
 };

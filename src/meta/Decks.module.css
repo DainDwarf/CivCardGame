@@ -9,43 +9,12 @@
   margin: 0 0 1.25rem;
 }
 
-.empty {
-  color: var(--text-secondary);
-  font-style: italic;
-}
-
-/* --- Grid of deck tiles --- */
+/* --- Grid of deck tiles (the tiles themselves live in components/DeckDisplay) --- */
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
   gap: 1.25rem;
-}
-
-/* A single deck: a card-like surface whose "art" is a shingled fan of its cards. The whole
-   tile is clickable to open the list-view; the Edit/Delete buttons stopPropagation. */
-.tile {
-  /* Tunables for the shingle look — safe to tweak live. */
-  --card-scale: 0.65;
-  --overlap: 62px; /* how far each shingled card overlaps its left neighbour */
-  --spread: 0px; /* extra per-card fan applied on hover (0 = tight stack at rest) */
-
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 0.9rem 0.9rem 0.4rem;
-  background: var(--surface);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: box-shadow 0.16s ease, transform 0.16s ease;
-}
-
-.tile:hover {
-  --spread: 9px;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
-  transform: translateY(-2px);
-  z-index: 2; /* let a hovered tile's fanned cards spill over its neighbours */
 }
 
 /* The grid's own "add" affordance — the next empty slot after the last deck, rather than
@@ -81,95 +50,9 @@
   text-align: center;
 }
 
-.stack {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: calc(162px * var(--card-scale) + 26px);
-  padding: 20px 0 6px; /* headroom for the per-card hover lift + the ×N badge */
-  overflow: visible;
-}
-
-.stackEmpty {
-  align-self: center;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  font-style: italic;
-}
-
-/* One shingled card slot, sized to the *scaled* card so the flex row lays out compactly
-   (a scaled element otherwise reserves its full unscaled box). Fan/lift live here as
-   transforms so they never reflow the tile or shove grid neighbours. */
-.mini {
-  position: relative;
-  flex: 0 0 auto;
-  width: calc(118px * var(--card-scale));
-  height: calc(162px * var(--card-scale));
-  z-index: calc(var(--i) + 1); /* later cards sit on top → left sliver of each stays visible */
-  transform: translateX(calc((var(--i) - var(--mid)) * var(--spread)));
-  transition: transform 0.2s ease;
-}
-
-.mini:not(:first-child) {
-  margin-left: calc(-1 * var(--overlap));
-}
-
-/* Reveal one card fully by lifting it above the fan on hover. */
-.mini:hover {
-  z-index: 40;
-  transform: translateX(calc((var(--i) - var(--mid)) * var(--spread))) translateY(-18px);
-}
-
-/* The CardFace itself, rendered small: scale from the top-left so it fills the .mini box. */
-.miniCard {
-  transform: scale(var(--card-scale));
-  transform-origin: top left;
-  cursor: pointer;
-}
-
-/* The ×N badge reads as clutter across a whole shingled fan at rest — only show it once a
-   card is lifted clear of the stack on hover. */
-.miniBadge {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.mini:hover .miniBadge {
-  opacity: 1;
-}
-
-.tileHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.6rem;
-  margin-bottom: 0.4rem;
-}
-
-.tileInfo {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.tileName {
-  font-size: 1.05rem;
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tileCount {
-  font-size: 0.78rem;
-  color: var(--accent);
-}
-
-.tileActions {
-  display: flex;
-  gap: 0.4rem;
-  flex-shrink: 0;
-}
+/* --- Store-mutation buttons passed into DeckTile / DeckListOverlay via their `actions`
+   slots. Presentation-only styling here; the shared tile/overlay layout lives in
+   components/DeckDisplay.module.css. --- */
 
 .deleteActionBtn {
   padding: 0.35rem 0.7rem;
@@ -206,81 +89,6 @@
   cursor: not-allowed;
 }
 
-/* --- List-view overlay (mirrors Board.tsx's pile viewer) --- */
-
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 75;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  background: rgb(var(--scrim-rgb) / 0.6);
-  cursor: zoom-out;
-  animation: fadeIn 0.15s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.panel {
-  /* Divide the viewport-unit caps by the UI scale (App.tsx sets --ui-scale on the transform
-     wrapper): a raw vh/vw would be re-scaled and could exceed the screen at scale > 1. */
-  max-width: min(760px, calc(92vw / var(--ui-scale, 1)));
-  max-height: calc(82vh / var(--ui-scale, 1));
-  overflow-y: auto;
-  padding: 0 1.25rem 1.25rem;
-  border-radius: 12px;
-  background: var(--surface-raised);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
-  cursor: default;
-}
-
-/* A 3-column grid (title | hint | actions) rather than flex + absolute-inset centering:
-   the hint's middle track only ever centers in the space actually left over, so it can
-   never visually overlap the title or the action buttons — it shrinks/wraps instead. */
-.panelHeader {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 1rem;
-  margin: 0 0 0.75rem;
-  padding: 1rem 0 0.5rem;
-  background: var(--surface-raised);
-  border-bottom: 1px solid var(--border-divider);
-}
-
-.panelTitle {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-.panelCount {
-  font-weight: 400;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.panelActions {
-  display: flex;
-  gap: 0.4rem;
-  flex-shrink: 0;
-}
-
 .panelEditBtn {
   padding: 0.4rem 0.9rem;
   font-size: 0.85rem;
@@ -300,25 +108,4 @@
 .panelEditBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.listGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 0.6rem;
-  justify-content: center;
-}
-
-.listCard {
-  cursor: pointer;
-}
-
-/* The header's own middle grid column — centers in whatever space is actually left
-   between the title and the action buttons, so it can't overlap either. */
-.panelHint {
-  margin: 0;
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  pointer-events: none;
 }

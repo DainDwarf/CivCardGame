@@ -167,6 +167,20 @@
   /* ── Drop-zone "drop here" pill (paired surface + text, flips together) ─ */
   --drop-pill-bg: rgba(255, 255, 255, 0.9);
   --drop-pill-text: #2c2c2c;
+
+  /* ── Campaign map (Phase 3 Step 5.1) ──
+     Age band + DAG edges + the three node states. Node state is signalled by glyph (✓/▶/🔒)
+     and a text label as well as color, so these fall through to Light under the CVD themes
+     rather than needing per-deficiency overrides (there's a non-color backup). */
+  --map-age-bg: #cbb994;             /* warm parchment arrow band */
+  --map-age-text: #453a24;
+  --map-edge: #b0a894;               /* prereq connector lines */
+  --map-node-cleared: #e4f1e6;       /* done — green */
+  --map-node-cleared-border: #7cb98a;
+  --map-node-available: #e7f0fc;     /* playable now — blue (matches --accent-bg) */
+  --map-node-available-border: #3b7dd8;
+  --map-node-locked: #e4e2dc;        /* silhouette — muted neutral */
+  --map-node-locked-border: #c6c3ba;
 }
 
 :root[data-theme='dark'] {
@@ -320,6 +334,17 @@
   /* ── Drop-zone pill — dark surface, light text ── */
   --drop-pill-bg: rgba(42, 42, 50, 0.92);
   --drop-pill-text: #e8e6e0;
+
+  /* ── Campaign map ── */
+  --map-age-bg: #4a4130;
+  --map-age-text: #e8ddc8;
+  --map-edge: #55524a;
+  --map-node-cleared: #1f2a1e;
+  --map-node-cleared-border: #4f7d54;
+  --map-node-available: #1e3350;
+  --map-node-available-border: #5b9bea;
+  --map-node-locked: #2a2a30;
+  --map-node-locked-border: #45454d;
 }
 
 :root[data-theme='deuteranopia'] {

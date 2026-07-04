@@ -17,6 +17,7 @@ function mission(reward: MissionDef['reward']): MissionDef {
     failureHint: null,
     kind: 'standard',
     reward,
+    map: { col: 0, row: 0 },
   };
 }
 

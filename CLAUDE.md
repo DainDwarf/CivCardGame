@@ -47,10 +47,8 @@ available once every one of its `prereqs` is in `mapProgress`, and — a deliber
 pinned by a test — stays available once completed (replayable, not hidden again). The test
 DAG reuses the existing three missions: The Long Winter is the root (`prereqs: []`); The
 Enlightenment and Barbarian Tide both gate on it (`prereqs: ['long_winter']`).
-`MissionSelect.tsx` reads `availableMissions(MISSIONS, mapProgress)` and omits anything not
-yet unlocked entirely, the same "unlock is a surprise" precedent as `Collection`/
-`DeckEditor` hiding locked cards — though this is a flat-list stopgap, not the final look;
-Step 5's map screen will likely show locked nodes rather than hide them. `App.tsx`'s
+The campaign map (`CampaignMap.tsx`, **Step 5.1** below) is the UI consumer of this gating.
+`App.tsx`'s
 `recordResult` marks `mapProgress[missionId] = true` on a victory outcome (both the normal
 end-run path and restarting an already-finished run) — just the completion flag, so the
 unlock chain is real and playable now. **Phase 3 Step 4** (reward computation) is also done:
@@ -65,8 +63,27 @@ a first clear) and a no-op unlock if the card is somehow already owned. `App.tsx
 function and the pre-run `mapProgress`/`collection` App hands down (a preview, not a second
 source of truth), showing "+N ⭐ Influence · Unlocked X" on a first clear or "Already cleared —
 no reward for a replay." otherwise. `MetaMenu`'s nav also now shows a `⭐ <count>` pill (pulled
-forward from Step 5) reading `store.influence`. Still to come: a shop purchase actually writing
-to `collection`, `RunResult.score`/reward for `'infinite'` missions (Step 6 — no infinite
+forward from Step 5) reading `store.influence`. **Phase 3 Step 5.1** (campaign map screen) is
+also done: `CampaignMap.tsx` replaces the old flat `MissionSelect` list with humanity's history
+as a horizontally-scrollable branching tech tree (docs/DESIGN.md). Each `MissionDef` now carries
+an authored `map: { col, row }` grid position (`content/missions.ts`); nodes are placed from it,
+edges drawn from `prereqs`, and per-node state comes from `rules/campaign.ts` — `isCompleted` →
+cleared (✓, replayable), `isAvailable` → available (▶), else locked. Locked nodes render as
+**silhouettes** — position + lock glyph shown so the player can orient in history, but
+name/objective/reward hidden and the node inert — a deliberate divergence from the "unlock is a
+surprise" *hide-everything* precedent (the node's existence is shown, its identity isn't).
+Ages (`content/ages.ts`) label the timeline as right-arrow bands across the top; only a single
+"Testing" placeholder ships now (no age→column-range mapping yet). Clicking a cleared/available
+node opens a launch popup (board picker left, deck picker right, nothing pre-selected, "Start
+Mission" disabled until both chosen) that assembles the `RunConfig` and calls `onLaunch`; the
+reward preview shows the Influence amount and that *a* card unlocks but not which (the specific
+unlock is still revealed only on the gameover overlay). The deck picker reuses the Decks screen's
+tile-fan + list-view display via `components/DeckDisplay.tsx` (`DeckTile`/`DeckListOverlay`,
+extracted from `Decks.tsx` so both render identically) minus the edit/copy/delete buttons — in
+the popup, clicking an unselected deck selects it, clicking the selected one opens its list-view.
+Still to come: a shop purchase actually writing
+to `collection` (Step 5.2), tutorial missions (Step 5.3), `RunResult.score`/reward for
+`'infinite'` missions (Step 6 — no infinite
 mission exists yet to produce one), and `Stats` surfacing a per-run reward (deferred since
 `RunResult` deliberately excludes rewards, and there's no per-run record of whether that run
 was a first clear).
@@ -215,13 +232,17 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   board (see the theming convention below), so adding a board's own tint is a
   CSS-only edit, no component change.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left column of big nav
-  buttons switches between four screens — `MissionSelect.tsx` (mission/board/deck
-  picker, deck list sourced from the player's own `decks`; assembles a `RunConfig` via
-  `buildRunConfig` and calls `onLaunch`), `Collection.tsx` (read-only catalogue over
+  buttons switches between four screens — `CampaignMap.tsx` (the Mission tab — the DAG
+  of missions as a horizontally-scrollable tech tree, each node opening a board/deck
+  launch popup that assembles a `RunConfig` via `buildRunConfig` and calls `onLaunch`;
+  see Phase 3 Step 5.1 above), `Collection.tsx` (read-only catalogue over
   `content/cards.ts` — no per-player ownership tracking yet), `Decks.tsx` (every deck
   in the player's store as a grid of tiles, each a hover-revealed shingled fan of the
   deck's cards grouped ×N via `groupCounts` — the ×N badge itself only shows on hovering
-  that card, via `CardFace`'s `badgeClassName`. Clicking a tile opens a list-view overlay
+  that card, via `CardFace`'s `badgeClassName`. The tile and its list-view overlay are the
+  shared `DeckTile`/`DeckListOverlay` from `components/DeckDisplay.tsx` (also used by
+  `CampaignMap.tsx`'s launch popup); Decks passes its Edit/Copy/Delete buttons through their
+  `actions` slots. Clicking a tile opens a list-view overlay
   of the deck mirroring the run loop's pile viewer, click-to-zoom via the shared
   `CardZoomOverlay`; its header (name/count/Edit) is `position: sticky` so it stays
   pinned and opaque over the cards while scrolling, and centers a click-to-zoom/

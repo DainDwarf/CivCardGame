@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MissionSelect } from './MissionSelect';
+import { CampaignMap } from './CampaignMap';
 import { Collection } from './Collection';
 import { Decks } from './Decks';
 import { DeckEditor } from './DeckEditor';
@@ -20,10 +20,10 @@ const NAV: { screen: Screen; icon: string; label: string }[] = [
 
 /**
  * The meta menu's shell (Phase 2 build plan step 6, "extend the meta menu"): a left
- * column of big nav buttons switches between the meta screens. Mission is the
- * mission/board/deck picker that launches a run (`MissionSelect.tsx`); Collection is a
- * read-only shell; Decks is fully editable (step 7); Stats is the run history, split
- * out of Mission Select so that screen stays focused on launching. `deckEditor` isn't
+ * column of big nav buttons switches between the meta screens. Mission is the campaign
+ * map — the DAG of missions, each node opening a board/deck launch popup (`CampaignMap.tsx`,
+ * Phase 3 Step 5.1); Collection is a read-only shell; Decks is fully editable (step 7);
+ * Stats is the run history, split out so the map stays focused on launching. `deckEditor` isn't
  * in `NAV` — it's only reachable via an action on the Decks screen (New/Edit), never a
  * bare tab with no deck loaded. `App.tsx` mounts this in place of the run view
  * whenever `screen === 'menu'`.
@@ -47,10 +47,11 @@ export function MetaMenu({
   /** The meta-currency (docs/DESIGN.md, "Economy & progression") — display-only here,
    *  shown at the top of the nav column between the game title and the screen buttons. */
   influence: number;
-  /** Completed mission ids — forwarded to `MissionSelect` so it can gate the campaign
-   *  map's DAG (Phase 3 Step 3, `rules/campaign.ts`). */
+  /** Completed mission ids — forwarded to `CampaignMap` so it can gate the DAG's node
+   *  states (Phase 3 Step 3, `rules/campaign.ts`). */
   mapProgress: Record<string, true>;
-  /** Whole-UI scale (settings) — forwarded to `DeckEditor` for its drag-clone coordinate math. */
+  /** Whole-UI scale (settings) — forwarded to `DeckEditor` (drag-clone coordinate math) and
+   *  `CampaignMap` (pointer-drag pan). */
   uiScale: number;
   onLaunch: (config: RunConfig) => void;
   onSaveDeck: (deck: DeckDef) => void;
@@ -93,7 +94,9 @@ export function MetaMenu({
         ))}
       </nav>
       <div className={styles.content}>
-        {screen === 'mission' && <MissionSelect decks={decks} mapProgress={mapProgress} onLaunch={onLaunch} />}
+        {screen === 'mission' && (
+          <CampaignMap decks={decks} mapProgress={mapProgress} uiScale={uiScale} onLaunch={onLaunch} />
+        )}
         {screen === 'collection' && <Collection collection={collection} />}
         {screen === 'decks' && (
           <Decks
