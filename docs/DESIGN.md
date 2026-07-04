@@ -81,23 +81,27 @@ where the two are merged into one immutable run configuration. 🔧
 
 ## Run loop (the Gauntlet)
 
-### Card kinds — Hybrid ✅ / 🔧 details
+### Card kinds ✅ / 🔧 details
 
-Cards differ by how they leave your hand. By default a card returns to the
-**discard** pile once it's done being useful (reshuffled into the deck when it runs
-dry) — the **removed** pile is the exception, only used where a specific effect
-says so:
+There are **four** card kinds — the `CardKind` values in `content/cards.ts`:
+`building`, `action`, `work`, `event`. They differ by how they leave your hand.
+By default a card returns to the **discard** pile once it's done being useful
+(reshuffled into the deck when it runs dry) — the **removed** pile is the
+exception, used only where a specific *effect* says so. Discard-vs-removed is
+never a property of the *kind*; it's decided by the effect that files the card:
 
-- **Permanent (commit):** Buildings, Wonders. Pay a cost to play; they leave the
-  deck and enter your **tableau**, producing/affecting **every turn** for the rest
-  of the run, thinning your deck. While pinned in the tableau a building's card is
-  filed nowhere — not discard, not removed. Where its card goes *once it leaves*
-  the tableau isn't a property of being a Permanent; it's decided by whatever
-  effect took it out. Today the only such card is Destroy, whose effect specifies
-  **removed**; a future card could instead reclaim territory by discarding a
-  building, sending it to **discard** like anything else. → the *engine*.
-- **Action (recycle):** Actions, Units. Resolve an effect, then go to the
-  **discard**. → repeatable *tactics*.
+- **Building (commit):** the card *is* the building. Pay a cost to play; it leaves
+  the deck and enters your **tableau** (one territory slot), producing **every
+  turn** while staffed for the rest of the run, thinning your deck. While pinned in
+  the tableau its card is filed nowhere — not discard, not removed. Where the card
+  goes *once it leaves* the tableau isn't a property of being a building; it's
+  decided by whatever effect took it out. Today the only such card is Destroy,
+  whose effect specifies **removed**; a future card could instead reclaim territory
+  by discarding a building, sending it to **discard** like anything else.
+  **Wonders are the same kind** — building cards tagged `wonder` (a distinct banner
+  and flavour, not a distinct kind). → the *engine*.
+- **Action (recycle):** resolve an effect, then go to the **discard**. →
+  repeatable *tactics*.
 - **Work (labour):** sticks onto the board as a staffable box instead of resolving
   on play — no idle population required to play it. Produces its effect only while
   staffed, then goes to **discard** at *end of turn* (not immediately, like Action).
@@ -116,9 +120,10 @@ A "round" = one turn:
 
 1. **Upkeep / Produce** — tableau generates resources; mission pressure ticks.
 2. **Draw** — draw up to hand size.
-3. **Action** — commit permanents (pay cost) and play action/work cards.
-4. **End** — evaluate the mission's objective (win?) and failure (lose?); discard;
-   advance the round.
+3. **Action** — commit buildings (pay cost) and play action/work cards.
+4. **End** — evaluate the mission's objective (win?) and failure (lose?); any Event
+   still in hand auto-resolves; the turn's Work cards and the rest of the hand file
+   to **discard**; advance the round.
 
 ### Resources ✅
 
@@ -282,7 +287,7 @@ src/
 
 - **Phase 0 — Skeleton** ✅ done: a runnable turn-based run with a tiny card set.
 - **Phase 1 — Real run loop** ✅ done, tagged [`v0.0.1`](../CHANGELOG.md): `src/game/` → `src/run/`; hybrid cards
-  (permanent vs. action), the 5-resource core (Food / Production / Money / Science /
+  (building vs. action), the 5-resource core (Food / Production / Money / Science /
   Military), the turn phases, and **mission-driven objective + failure** evaluators;
   3 missions (The Enlightenment, The Long Winter, Barbarian Tide). Rules unit-tested +
   a headless run integration test (`src/run/run.test.ts`). A run is now genuinely
