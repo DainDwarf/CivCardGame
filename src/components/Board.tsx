@@ -12,6 +12,9 @@ import {
 import { CARDS, type CardDef } from '../content/cards';
 import { MISSIONS, type MissionDef } from '../content/missions';
 import type { GameState } from '../rules';
+import { isCompleted } from '../rules/campaign';
+import { computeRewards } from '../rules/rewards';
+import { isOwned, type OwnedCards } from '../rules/collection';
 import { CardFace, COST_ICON, artFor, describeBuilding } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
@@ -496,12 +499,20 @@ export function Board({
   confirmEndTurn,
   uiScale,
   onTransition,
+  mapProgress,
+  collection,
 }: {
   confirmEndTurn: boolean;
   uiScale: number;
   /** Wraps a restart/end-run action in the shell's fade-to-black transition (`App.tsx`) —
    *  used by the gameover overlay's own Restart/End Run buttons below. */
   onTransition: (action: () => void) => void;
+  /** The player's progress/collection as they stood *entering* this run — read-only here,
+   *  used only to preview the gameover overlay's reward line (rules/rewards.ts). The actual
+   *  grant happens once, in `App.tsx`'s `recordResult`, off the same pure `computeRewards` —
+   *  this is a preview, not a second source of truth. */
+  mapProgress: Record<string, true>;
+  collection: OwnedCards;
 }) {
   const { G, gameover, board, moves, endTurn, undo, canUndo, restart, endRun } = useGame();
   // The whole board renders inside a `transform: scale(uiScale)` wrapper (App.tsx). Pointer
@@ -1455,6 +1466,12 @@ export function Board({
     {gameover && !overlayMinimized && (() => {
       const won = gameover.outcome === 'victory';
       const defeatMessage = (gameover.reason && COLLAPSE_MESSAGES[gameover.reason]) ?? 'your civilization has fallen.';
+      // Preview-only: mirrors the same computeRewards call App.tsx's recordResult makes for
+      // real on End Run, off the same pre-run mapProgress/collection, so the two can't diverge.
+      const alreadyCompleted = won && isCompleted(mapProgress, mission.id);
+      const reward = won ? computeRewards(mission, alreadyCompleted, collection) : null;
+      const unlockedCard =
+        reward && !isOwned(collection, mission.reward.unlockCardId) ? CARDS[mission.reward.unlockCardId] : null;
       return (
         <div className={styles.gameoverOverlay}>
           <div className={styles.gameoverPanel}>
@@ -1462,6 +1479,13 @@ export function Board({
             <p className={styles.gameoverMission}>{mission.name}</p>
             <p className={styles.gameoverResult}>{won ? 'Objective achieved.' : defeatMessage}</p>
             <p className={styles.gameoverRound}>Reached round {G.round}</p>
+            {reward && (
+              <p className={styles.gameoverReward}>
+                {alreadyCompleted
+                  ? 'Already cleared — no reward for a replay.'
+                  : `+${reward.influence} ⭐ Influence${unlockedCard ? ` · Unlocked ${unlockedCard.name}` : ''}`}
+              </p>
+            )}
             <div className={styles.gameoverBtns}>
               <button
                 className={`${styles.gameoverBtn} ${styles.gameoverBtnRestart}`}

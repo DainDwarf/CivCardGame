@@ -53,9 +53,23 @@ yet unlocked entirely, the same "unlock is a surprise" precedent as `Collection`
 Step 5's map screen will likely show locked nodes rather than hide them. `App.tsx`'s
 `recordResult` marks `mapProgress[missionId] = true` on a victory outcome (both the normal
 end-run path and restarting an already-finished run) — just the completion flag, so the
-unlock chain is real and playable now; the Influence/card-unlock **reward** for clearing a
-mission is still Step 4's job, nothing computes or grants it yet. Still to come: a shop
-purchase actually writing to `collection`, and Step 4's reward computation.
+unlock chain is real and playable now. **Phase 3 Step 4** (reward computation) is also done:
+each `MissionDef` carries a required `reward: { influence, unlockCardId }` (a mission always
+grants exactly one unlock, per the design doc); `rules/rewards.ts`'s `computeRewards` is the
+one pure function that turns a mission + "was it already completed" + the current collection
+into an Influence/collection delta — a no-op on a replay (checked against `mapProgress` as it
+stood *before* this run's result, never the post-update value, or every clear would look like
+a first clear) and a no-op unlock if the card is somehow already owned. `App.tsx`'s
+`recordResult` applies that delta to `store.influence`/`store.collection` right alongside the
+`mapProgress` write; `Board.tsx`'s gameover overlay previews the identical payout off the same
+function and the pre-run `mapProgress`/`collection` App hands down (a preview, not a second
+source of truth), showing "+N ⭐ Influence · Unlocked X" on a first clear or "Already cleared —
+no reward for a replay." otherwise. `MetaMenu`'s nav also now shows a `⭐ <count>` pill (pulled
+forward from Step 5) reading `store.influence`. Still to come: a shop purchase actually writing
+to `collection`, `RunResult.score`/reward for `'infinite'` missions (Step 6 — no infinite
+mission exists yet to produce one), and `Stats` surfacing a per-run reward (deferred since
+`RunResult` deliberately excludes rewards, and there's no per-run record of whether that run
+was a first clear).
 
 ## Commands
 

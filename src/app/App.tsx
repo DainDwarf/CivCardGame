@@ -6,6 +6,9 @@ import { AccessibilityWelcome } from '../components/AccessibilityWelcome';
 import { GameProvider, useGame } from '../run/GameContext';
 import { loadStore, saveStore, type PlayerStore } from '../meta/store';
 import { MAX_DECKS } from '../rules/deckBuilder';
+import { computeRewards } from '../rules/rewards';
+import { isCompleted } from '../rules/campaign';
+import { MISSIONS } from '../content/missions';
 import { applyTheme, loadSettings, saveSettings, type Settings } from '../meta/settings';
 import type { DeckDef } from '../content/decks';
 import type { RunConfig, RunResult } from '../contract';
@@ -131,12 +134,25 @@ export function App() {
   // A run also lands here when the player hits Restart instead of End Run — that
   // discards the run without leaving GameProvider, so it would otherwise never be recorded.
   // A victory also marks the mission complete in mapProgress, unlocking anything gated on
-  // it (rules/campaign.ts) — just the completion flag, not the Influence/unlock reward
-  // itself (Phase 3 Step 4's job).
+  // it (rules/campaign.ts), and pays out the mission's reward (rules/rewards.ts) — but only
+  // on a *first* clear, so `alreadyCompleted` must be read from the store as it stood before
+  // this result, never the post-update mapProgress below (that would make every clear look
+  // like a first clear).
   function recordResult(result: RunResult) {
+    const alreadyCompleted = isCompleted(store.mapProgress, result.missionId);
     const mapProgress =
       result.outcome === 'victory' ? { ...store.mapProgress, [result.missionId]: true as const } : store.mapProgress;
-    persist({ ...store, runHistory: [result, ...store.runHistory].slice(0, HISTORY_LIMIT), mapProgress });
+    const { influence, collection } =
+      result.outcome === 'victory'
+        ? computeRewards(MISSIONS[result.missionId], alreadyCompleted, store.collection)
+        : { influence: 0, collection: store.collection };
+    persist({
+      ...store,
+      runHistory: [result, ...store.runHistory].slice(0, HISTORY_LIMIT),
+      mapProgress,
+      influence: store.influence + influence,
+      collection,
+    });
   }
 
   function saveDeck(deck: DeckDef) {
@@ -180,7 +196,13 @@ export function App() {
             onAbandon={() => setView({ screen: 'menu' })}
             onTransition={transition}
           />
-          <Board confirmEndTurn={settings.confirmEndTurn} uiScale={settings.uiScale} onTransition={transition} />
+          <Board
+            confirmEndTurn={settings.confirmEndTurn}
+            uiScale={settings.uiScale}
+            onTransition={transition}
+            mapProgress={store.mapProgress}
+            collection={store.collection}
+          />
         </GameProvider>
       ) : (
         <>
@@ -189,6 +211,7 @@ export function App() {
             runHistory={store.runHistory}
             decks={store.decks}
             collection={store.collection}
+            influence={store.influence}
             mapProgress={store.mapProgress}
             uiScale={settings.uiScale}
             onLaunch={(config) => transition(() => setView({ screen: 'run', config }))}

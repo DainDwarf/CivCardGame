@@ -32,6 +32,7 @@ export function MetaMenu({
   runHistory,
   decks,
   collection,
+  influence,
   mapProgress,
   uiScale,
   onLaunch,
@@ -43,6 +44,9 @@ export function MetaMenu({
   /** The player's card ownership — forwarded to `Collection` and `DeckEditor` so both
    *  omit not-yet-unlocked cards entirely (Phase 3 Step 2). */
   collection: OwnedCards;
+  /** The meta-currency (docs/DESIGN.md, "Economy & progression") — display-only here,
+   *  shown at the top of the nav column between the game title and the screen buttons. */
+  influence: number;
   /** Completed mission ids — forwarded to `MissionSelect` so it can gate the campaign
    *  map's DAG (Phase 3 Step 3, `rules/campaign.ts`). */
   mapProgress: Record<string, true>;
@@ -69,6 +73,10 @@ export function MetaMenu({
     <div className={styles.shell}>
       <nav className={styles.nav}>
         <h1 className={styles.gameTitle}>CivCardGame</h1>
+        <div className={styles.influence}>
+          <span aria-hidden="true">⭐</span>
+          {influence}
+        </div>
         {NAV.map((n) => (
           <button
             key={n.screen}

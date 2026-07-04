@@ -22,12 +22,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 1 — Ownership & currency core** ✅ done — see *Done / shipped* below. `[phase: 3]`
 - **Step 2 — Deck-editor copy caps** ✅ done — see *Done / shipped* below. `[phase: 3]`
 - **Step 3 — Mission model + campaign-map data** ✅ done — see *Done / shipped* below. `[phase: 3]`
-- **Step 4 — Reward computation + run-end wiring** — `rules/rewards.ts` (`computeRewards`;
-  first-clear vs replay; infinite score) + tests; `RunResult.score`; `App.onRunEnd` applies
-  rewards to the store; gameover / `Stats` surface them. `[size: M]` `[phase: 3]`
+- **Step 4 — Reward computation + run-end wiring** ✅ done (standard-mission half) — see
+  *Done / shipped* below. `RunResult.score` / infinite-mission payout stays deferred to
+  **Step 6**, since there's no infinite mission yet to produce a score. `Stats` surfacing
+  a per-run reward is also deferred — `RunResult` deliberately excludes rewards (see
+  `contract.ts`), and there's no per-run record of whether *that* run was a first clear
+  (`mapProgress` is current state, not a history snapshot); revisit if/when that's worth
+  breaking the invariant. `[phase: 3]`
 - **Step 5 — Meta UI: map + shop + tutorials** — Campaign Map screen (DAG replacing
   `MissionSelect`'s flat list; node → launch panel); Shop tab (`meta/Shop.tsx`, buy copy
-  tiers, spend Influence); Influence in the shell header; tutorial entry-node missions.
+  tiers, spend Influence). Influence display in the nav ✅ done (see *Done / shipped*
+  below) — the rest (map, shop, tutorial entry-node missions) still open.
   `[size: L]` `[phase: 3]`
 - **Step 6 — Infinite missions (run loop)** — endless play in `run/engine.ts` (escalating
   threat, `score` = round, ends only on failure); author one infinite mission; infinite
@@ -107,3 +112,18 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `mapProgress` on victory, so the unlock chain is live end-to-end (Influence/unlock reward
   computation itself stays Step 4). `reward`/map-position fields deferred — no consumer yet,
   shape isn't settled by the design doc.
+- **Phase 3 Step 4 — Reward computation + run-end wiring** — `MissionDef` gains a required
+  `reward: { influence, unlockCardId }` (Long Winter 1⭐/Granary, Enlightenment 2⭐/University,
+  Barbarian Tide 2⭐/Conquest); `rules/rewards.ts`'s `computeRewards` is the one pure function
+  that decides the payout — a no-op replay if the mission was *already* completed (checked
+  against `mapProgress` from *before* this result, so back-to-back wins of the same mission
+  can't double-grant), and a no-op unlock if the card is somehow already owned. `App.recordResult`
+  applies it to `store.influence`/`store.collection` alongside the existing `mapProgress` write.
+  The gameover overlay (`Board.tsx`) previews the same payout off the same pure function and
+  the pre-run `mapProgress`/`collection` App passes down — a preview, not a second source of
+  truth — showing "+N ⭐ Influence · Unlocked X" on a first clear or "Already cleared — no
+  reward for a replay." otherwise. A coherence test pins every mission's `unlockCardId`
+  resolving to a real `content/cards.ts` id. `RunResult.score`/infinite payout and `Stats`
+  surfacing stay deferred — see the planned-steps note above for why.
+- **Influence nav display** (pulled forward from Step 5) — `MetaMenu`'s left nav shows a
+  `⭐ <count>` pill between the game title and the screen buttons, reading `store.influence`.

@@ -36,6 +36,11 @@ export interface MissionDef {
   /** `'standard'` missions are binary complete/not; `'infinite'` (Step 6) has no win state and
    *  scores an attempt instead. All current missions are `'standard'`. */
   kind: 'standard' | 'infinite';
+  /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
+   *  `computeRewards`) — replays pay nothing. `unlockCardId` is required because every
+   *  mission grants exactly one unlock by design (docs/DESIGN.md, "Economy & progression");
+   *  it must name a real `content/cards.ts` id (pinned by a coherence test). */
+  reward: { influence: number; unlockCardId: string };
 }
 
 export const MISSIONS: Record<string, MissionDef> = {
@@ -51,6 +56,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Accumulate 30 Science before round 12 ends.',
     failureHint: 'Failing to reach 30 Science by round 12.',
     kind: 'standard',
+    reward: { influence: 2, unlockCardId: 'university' },
   },
 
   long_winter: {
@@ -70,6 +76,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Endure 15 rounds of brutal winter without starving.',
     failureHint: null,
     kind: 'standard',
+    reward: { influence: 1, unlockCardId: 'granary' },
   },
 
   barbarian_tide: {
@@ -95,5 +102,6 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: `Survive all ${BARBARIANS} Barbarian waves without your Military falling below zero.`,
     failureHint: 'Your Military falling below zero — the barbarians overrun you.',
     kind: 'standard',
+    reward: { influence: 2, unlockCardId: 'conquest' },
   },
 };

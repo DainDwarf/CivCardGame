@@ -14,6 +14,7 @@ function mission(id: string, prereqs: string[]): MissionDef {
     victoryHint: '',
     failureHint: null,
     kind: 'standard',
+    reward: { influence: 0, unlockCardId: 'farm' },
   };
 }
 

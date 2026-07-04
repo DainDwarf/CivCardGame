@@ -1205,7 +1205,20 @@
 .gameoverRound {
   color: var(--text-faint);
   font-size: 0.85rem;
-  margin: 0 0 1.75rem;
+  margin: 0;
+}
+
+.gameoverReward {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0.35rem 0 0;
+}
+
+/* Whichever of the two summary lines above renders last (gameoverReward only shows on a
+   win) gets the gap before the button row, so the spacing holds either way. */
+.gameoverPanel p:last-of-type {
+  margin-bottom: 1.75rem;
 }
 
 .gameoverBtns {

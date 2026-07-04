@@ -37,6 +37,20 @@
   text-align: center;
 }
 
+.influence {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.85rem;
+  margin: 0 0 0.4rem;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--text-on-accent);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
 .navBtn {
   display: flex;
   align-items: center;
