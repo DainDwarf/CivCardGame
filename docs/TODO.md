@@ -48,7 +48,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
-- **Click a placed building to zoom its card** — deferred sub-goal of the shipped building/card merge: clicking a tableau building outside its worker-zone controls should open the `CardZoomOverlay` for its card (`CARDS[inst.cardId]`), the way hand/pile-viewer cards already do. The instance now references a card, so the data's there; just needs a Board.tsx click handler on `BuildingBox` that doesn't swallow the staffing/demolish controls. `[size: S]` `[phase: 2]`
 
 ## Game design & balance
 
@@ -73,6 +72,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Click a placed building to zoom its card** — the deferred sub-goal of the building/card
+  merge below. `BuildingBox` already routed a plain (non-drag) press through the same
+  click-vs-drag split the hand and slot-drag code use elsewhere; the slot-drag pointerup
+  handler (`Board.tsx`) now zooms the released building's card (`CARDS[inst.cardId]`) when
+  `!d.active` — a click, not a drag between slots — mirroring `finishDrag` for hand cards.
+  Staffing/demolish presses are unaffected: `onBoxPointerDown` already bails out of starting
+  a slot-drag when the press lands on the staff-toggle button or `pendingDestroy` targeting
+  is active, so those controls never reach the new zoom path. The one path that skips
+  `onBoxPointerDown` entirely — the gameover overlay's minimized "inspect" mode, which makes
+  the board view-only — gets a matching plain `onClick={onZoomClick}` on the box itself,
+  the same fallback the hand-card `onClick` already used for that mode. `[size: S]` `[phase: 2]`
 - **Drop the building/card distinction** — merged the two catalogues: a `building` card
   *is* the building. Deleted `content/buildings.ts` (`BUILDINGS`/`BuildingDef`) and folded
   its stats (`produces`/`cultureOutput`/`tags`) onto `CardDef`; removed `effect.build`;

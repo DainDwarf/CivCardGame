@@ -238,6 +238,7 @@ function BuildingBox({
   onPointerDown,
   onStaffPointerDown,
   onDestroy,
+  onZoomClick,
 }: {
   inst: BuildingInstance;
   gameover: boolean;
@@ -249,6 +250,9 @@ function BuildingBox({
   onPointerDown?: (e: React.PointerEvent) => void;
   onStaffPointerDown?: (e: React.PointerEvent, inst: BuildingInstance) => void;
   onDestroy?: () => void;
+  /** Gameover inspect mode only — normal-mode zoom is handled by the slot-drag click/drag split
+   *  instead, since `onPointerDown` never fires there (view-only board). */
+  onZoomClick?: () => void;
 }) {
   const bld = CARDS[inst.cardId];
   const req = requiredWorkersOf(inst);
@@ -266,7 +270,7 @@ function BuildingBox({
     <div
       className={className}
       onPointerDown={onPointerDown}
-      onClick={pendingDestroy ? onDestroy : undefined}
+      onClick={pendingDestroy ? onDestroy : onZoomClick}
       role={pendingDestroy ? 'button' : undefined}
       aria-label={pendingDestroy ? `demolish ${bld.name}` : undefined}
     >
@@ -852,6 +856,10 @@ export function Board({
             return next;
           });
         }
+      } else {
+        // It was a click, not a drag — zoom the building's card (mirrors finishDrag for hand cards).
+        const inst = buildingById.get(d.id);
+        if (inst) setZoom(inst.cardId);
       }
       setSlotDrag(null);
       setHoverSlot(null);
@@ -1150,6 +1158,9 @@ export function Board({
                     onPointerDown={(e) => onBoxPointerDown(e, inst, slotIdx)}
                     onStaffPointerDown={onStaffPointerDown}
                     onDestroy={() => handleDestroyTarget(inst.id)}
+                    onZoomClick={
+                      gameover && overlayMinimized ? () => setZoom(inst.cardId) : undefined
+                    }
                   />
                 )}
               </div>
