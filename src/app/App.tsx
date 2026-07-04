@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { MetaMenu } from '../meta/MetaMenu';
 import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
+import { AccessibilityWelcome } from '../components/AccessibilityWelcome';
 import { GameProvider, useGame } from '../run/GameContext';
 import { loadStore, saveStore, type PlayerStore } from '../meta/store';
 import { MAX_DECKS } from '../rules/deckBuilder';
@@ -198,6 +199,13 @@ export function App() {
         }}
         aria-hidden="true"
       />
+      {!settings.seenAccessibilityIntro && (
+        <AccessibilityWelcome
+          settings={settings}
+          onUpdateSettings={persistSettings}
+          onDismiss={() => persistSettings({ ...settings, seenAccessibilityIntro: true })}
+        />
+      )}
     </div>
   );
 }

@@ -65,13 +65,28 @@ export interface Settings {
   uiScale: number;
   /** Color theme id — applied as `data-theme` on documentElement (App.tsx / main.tsx). */
   theme: Theme;
+  /**
+   * Whether the player has already dismissed the first-launch accessibility prompt
+   * (`AccessibilityWelcome.tsx`, App.tsx) that surfaces the theme picker and UI-size
+   * slider up front on a brand-new profile. `DEFAULT_SETTINGS` sets this `false` — the
+   * only path that value is actually seen is `loadSettings`'s no-`raw`-at-all branch,
+   * i.e. a genuinely fresh profile. `parseSettings` below defaults a *missing* field to
+   * `true` instead, so a profile saved before this field existed (which already has
+   * *some* stored settings, therefore isn't fresh) doesn't get the prompt retroactively.
+   */
+  seenAccessibilityIntro: boolean;
 }
 
 /** Bounds for `uiScale`, shared by the parser's clamp and the Config slider (GameMenu.tsx). */
 export const UI_SCALE_MIN = 0.8;
 export const UI_SCALE_MAX = 1.5;
 
-export const DEFAULT_SETTINGS: Settings = { confirmEndTurn: false, uiScale: 1, theme: 'system' };
+export const DEFAULT_SETTINGS: Settings = {
+  confirmEndTurn: false,
+  uiScale: 1,
+  theme: 'system',
+  seenAccessibilityIntro: false,
+};
 
 const STORAGE_KEY = 'civcardgame:settings';
 
@@ -93,6 +108,9 @@ function parseSettings(raw: unknown): Settings | null {
     confirmEndTurn: typeof obj.confirmEndTurn === 'boolean' ? obj.confirmEndTurn : DEFAULT_SETTINGS.confirmEndTurn,
     uiScale: clampScale(obj.uiScale),
     theme: isTheme(obj.theme) ? obj.theme : DEFAULT_SETTINGS.theme,
+    // See the field's doc comment: a missing value here means "settings already existed
+    // before this field did", not "fresh profile" — default to true, not DEFAULT_SETTINGS.
+    seenAccessibilityIntro: typeof obj.seenAccessibilityIntro === 'boolean' ? obj.seenAccessibilityIntro : true,
   };
 }
 

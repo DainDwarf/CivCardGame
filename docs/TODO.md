@@ -29,7 +29,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
-- **First-launch accessibility selector** — a brand-new profile currently defaults straight to the System theme; consider a first-run prompt that surfaces the color-blind themes (see *Done / shipped*) up front instead of leaving them buried in the Config dropdown, so a color-blind player doesn't have to already know to go looking. `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
@@ -70,6 +69,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **First-launch accessibility selector** — a brand-new profile no longer defaults
+  straight to the System theme with no signpost toward the color-blind palettes; a new
+  one-time `AccessibilityWelcome.tsx` modal (mounted by `App.tsx` whenever
+  `!settings.seenAccessibilityIntro`) surfaces the theme picker and UI-size slider up
+  front, both writing live through the same `onUpdateSettings` path Config uses so
+  changes preview immediately. `meta/settings.ts`'s `Settings` gained
+  `seenAccessibilityIntro: boolean`: `DEFAULT_SETTINGS` sets it `false`, but that value
+  is only ever seen via `loadSettings`'s no-`raw`-at-all branch (a genuinely fresh
+  profile) — `parseSettings` defaults a *missing* field on an *already-stored* settings
+  blob to `true` instead, so a profile saved before this field existed isn't shown the
+  prompt retroactively. `[size: S]` `[phase: 2]`
 - **Codex menu UI rework** — `Codex.tsx` was a single long scrolling page of definition
   lists inside the fixed 300px submenu window; it's now a topic-nav + content-pane
   window (`GameMenu.module.css`'s `.submenuPanelCodex` widens just this submenu to
