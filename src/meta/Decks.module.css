@@ -39,7 +39,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 0.4rem 0.9rem 0.9rem;
+  padding: 0.9rem 0.9rem 0.4rem;
   background: var(--surface);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -137,12 +137,12 @@
   opacity: 1;
 }
 
-.tileFooter {
+.tileHeader {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.6rem;
-  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
 }
 
 .tileInfo {

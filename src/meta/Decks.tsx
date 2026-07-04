@@ -70,23 +70,7 @@ export function Decks({
               }}
               title="Click to view this deck's cards"
             >
-              <div className={styles.stack} style={{ '--mid': mid } as React.CSSProperties}>
-                {groups.length === 0 ? (
-                  <span className={styles.stackEmpty}>Empty deck</span>
-                ) : (
-                  groups.map((g, i) => (
-                    <span key={g.cardId} className={styles.mini} style={{ '--i': i } as React.CSSProperties}>
-                      <CardFace
-                        card={CARDS[g.cardId]}
-                        className={styles.miniCard}
-                        countBadge={g.count}
-                        badgeClassName={styles.miniBadge}
-                      />
-                    </span>
-                  ))
-                )}
-              </div>
-              <div className={styles.tileFooter}>
+              <div className={styles.tileHeader}>
                 <div className={styles.tileInfo}>
                   <span className={styles.tileName}>{deck.name}</span>
                   <span className={styles.tileCount}>{deck.cards.length} cards</span>
@@ -135,6 +119,22 @@ export function Decks({
                     {confirmingDeleteId === deck.id ? 'Confirm?' : 'Delete'}
                   </button>
                 </div>
+              </div>
+              <div className={styles.stack} style={{ '--mid': mid } as React.CSSProperties}>
+                {groups.length === 0 ? (
+                  <span className={styles.stackEmpty}>Empty deck</span>
+                ) : (
+                  groups.map((g, i) => (
+                    <span key={g.cardId} className={styles.mini} style={{ '--i': i } as React.CSSProperties}>
+                      <CardFace
+                        card={CARDS[g.cardId]}
+                        className={styles.miniCard}
+                        countBadge={g.count}
+                        badgeClassName={styles.miniBadge}
+                      />
+                    </span>
+                  ))
+                )}
               </div>
             </div>
           );
