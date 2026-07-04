@@ -128,8 +128,9 @@ export interface CardFaceProps {
    *  drag states, grid-tile treatment, etc.) live with the caller, not here. */
   className?: string;
   style?: React.CSSProperties;
-  /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile viewer). */
-  countBadge?: number;
+  /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile viewer), or
+   *  "∞" for `'unlimited'` (Collection / deck editor picker, showing copies owned). */
+  countBadge?: number | 'unlimited';
   /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
    *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
   badgeClassName?: string;
@@ -183,8 +184,10 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
       </div>
       {conditions && <div className={styles.cardConditions}>{conditions}</div>}
       {text && <div className={styles.cardText}>{text}</div>}
-      {countBadge !== undefined && countBadge > 1 && (
-        <span className={`${styles.countBadge}${badgeClassName ? ` ${badgeClassName}` : ''}`}>×{countBadge}</span>
+      {countBadge !== undefined && (countBadge === 'unlimited' || countBadge > 1) && (
+        <span className={`${styles.countBadge}${badgeClassName ? ` ${badgeClassName}` : ''}`}>
+          {countBadge === 'unlimited' ? '∞' : `×${countBadge}`}
+        </span>
       )}
     </>
   );

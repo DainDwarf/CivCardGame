@@ -6,6 +6,7 @@ import { DeckEditor } from './DeckEditor';
 import { Stats } from './Stats';
 import type { DeckDef } from '../content/decks';
 import type { RunConfig, RunResult } from '../contract';
+import type { OwnedCards } from '../rules/collection';
 import styles from './MetaMenu.module.css';
 
 type Screen = 'mission' | 'collection' | 'decks' | 'stats' | 'deckEditor';
@@ -30,6 +31,7 @@ const NAV: { screen: Screen; icon: string; label: string }[] = [
 export function MetaMenu({
   runHistory,
   decks,
+  collection,
   uiScale,
   onLaunch,
   onSaveDeck,
@@ -37,6 +39,9 @@ export function MetaMenu({
 }: {
   runHistory: RunResult[];
   decks: DeckDef[];
+  /** The player's card ownership — forwarded to `Collection` and `DeckEditor` so both
+   *  omit not-yet-unlocked cards entirely (Phase 3 Step 2). */
+  collection: OwnedCards;
   /** Whole-UI scale (settings) — forwarded to `DeckEditor` for its drag-clone coordinate math. */
   uiScale: number;
   onLaunch: (config: RunConfig) => void;
@@ -77,7 +82,7 @@ export function MetaMenu({
       </nav>
       <div className={styles.content}>
         {screen === 'mission' && <MissionSelect decks={decks} onLaunch={onLaunch} />}
-        {screen === 'collection' && <Collection />}
+        {screen === 'collection' && <Collection collection={collection} />}
         {screen === 'decks' && (
           <Decks
             decks={decks}
@@ -92,6 +97,7 @@ export function MetaMenu({
           <DeckEditor
             initialDeck={editingDeck}
             uiScale={uiScale}
+            collection={collection}
             onSave={(deck) => {
               onSaveDeck(deck);
               closeEditor();

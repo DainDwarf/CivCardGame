@@ -22,7 +22,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 1 — Ownership & currency core** ✅ done — see *Done / shipped* below. `[phase: 3]`
 - **Step 2 — Deck-editor copy caps** — `deckBuilder.addCard` rejects exceeding owned copies
   (`'unlimited'` = no cap), like the `MAX_DECKS` path; `DeckEditor` greys the add control at
-  cap; `Collection` shows owned counts / locks un-unlocked cards. `[size: M]` `[phase: 3]`
+  cap. **Visibility half done:** `Collection` and `DeckEditor`'s picker now omit
+  not-yet-unlocked cards entirely (not shown locked) — an unlock is meant to be a surprise,
+  so nothing should hint at what's still out there. `[size: M]` `[phase: 3]`
 - **Step 3 — Mission model + campaign-map data** — extend `MissionDef` (`reward`, `prereqs`,
   map position, `kind: 'standard' | 'infinite'`); author the starter DAG; `rules/campaign.ts`
   prereq gating (`availableMissions` / `isCompleted`) + tests. `[size: M]` `[phase: 3]`

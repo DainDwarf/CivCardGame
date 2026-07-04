@@ -27,9 +27,11 @@ build/edit any deck (`Decks.tsx`). **Phase 3** (economy & progression) is in pro
 `rules/collection.ts` (`OwnedCards`) tracks per-card ownership and `PlayerStore` now
 carries `collection`/`influence`/`mapProgress` alongside `runHistory`/`decks`, seeded
 from a deliberately narrow `content/collection.ts`'s `STARTING_COLLECTION` and a single
-starting deck (`content/decks.ts`); `Collection.tsx` is still a read-only catalogue over
-`content/cards.ts`, not yet reading `collection` to show owned counts or lock
-un-unlocked cards — that lands with Phase 3 Step 2.
+starting deck (`content/decks.ts`); `Collection.tsx` and `DeckEditor.tsx`'s picker now read
+`collection` and omit any not-yet-unlocked card entirely (Phase 3 Step 2's visibility half —
+an unlock is meant to be a surprise, so nothing hints at what's still out there, including a
+total count); the deck-editor copy cap (rejecting an `addCard` past copies owned) is Step 2's
+remaining piece.
 
 ## Commands
 

@@ -183,6 +183,7 @@ export function App() {
           <MetaMenu
             runHistory={store.runHistory}
             decks={store.decks}
+            collection={store.collection}
             uiScale={settings.uiScale}
             onLaunch={(config) => transition(() => setView({ screen: 'run', config }))}
             onSaveDeck={saveDeck}

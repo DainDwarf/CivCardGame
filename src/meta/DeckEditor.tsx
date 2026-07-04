@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { addCard, removeCard, groupCounts } from '../rules/deckBuilder';
+import { copiesOwned, isOwned, type OwnedCards } from '../rules/collection';
 import { CardFace } from '../components/CardFace';
 import styles from './DeckEditor.module.css';
 
@@ -40,6 +41,7 @@ interface DragState {
 export function DeckEditor({
   initialDeck,
   uiScale,
+  collection,
   onSave,
   onCancel,
 }: {
@@ -48,6 +50,9 @@ export function DeckEditor({
    *  wrapper, so the drag clone's inline coordinates must be divided by it (visual → local),
    *  same as `Board.tsx`. */
   uiScale: number;
+  /** The player's ownership — the picker only ever offers owned cards (Phase 3 Step 2):
+   *  a not-yet-unlocked card is omitted entirely, not shown locked. */
+  collection: OwnedCards;
   onSave: (deck: DeckDef) => void;
   onCancel: () => void;
 }) {
@@ -58,8 +63,9 @@ export function DeckEditor({
   const dragRef = useRef<DragState | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
 
-  // Event cards are mission-injected and can never be added to a deck.
-  const cards = Object.values(CARDS).filter((c) => c.kind !== 'event');
+  // Event cards are mission-injected and can never be added to a deck; the picker
+  // only offers cards the player has actually unlocked.
+  const cards = Object.values(CARDS).filter((c) => c.kind !== 'event' && isOwned(collection, c.id));
   const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');
@@ -154,45 +160,60 @@ export function DeckEditor({
       <h1 className={styles.title}>Edit Deck</h1>
 
       <div className={styles.picker}>
-        <h2 className={styles.sectionTitle}>Buildings &amp; Wonders</h2>
-        <div className={styles.grid}>
-          {buildings.map((c) => (
-            <CardFace
-              key={c.id}
-              as="button"
-              card={c}
-              className={styles.pickerTile}
-              title="Click or drag into the deck to add a copy"
-              onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
-            />
-          ))}
-        </div>
-        <h2 className={styles.sectionTitle}>Actions</h2>
-        <div className={styles.grid}>
-          {actions.map((c) => (
-            <CardFace
-              key={c.id}
-              as="button"
-              card={c}
-              className={styles.pickerTile}
-              title="Click or drag into the deck to add a copy"
-              onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
-            />
-          ))}
-        </div>
-        <h2 className={styles.sectionTitle}>Work</h2>
-        <div className={styles.grid}>
-          {works.map((c) => (
-            <CardFace
-              key={c.id}
-              as="button"
-              card={c}
-              className={styles.pickerTile}
-              title="Click or drag into the deck to add a copy"
-              onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
-            />
-          ))}
-        </div>
+        {buildings.length > 0 && (
+          <>
+            <h2 className={styles.sectionTitle}>Buildings &amp; Wonders</h2>
+            <div className={styles.grid}>
+              {buildings.map((c) => (
+                <CardFace
+                  key={c.id}
+                  as="button"
+                  card={c}
+                  className={styles.pickerTile}
+                  countBadge={copiesOwned(collection, c.id)}
+                  title="Click or drag into the deck to add a copy"
+                  onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        {actions.length > 0 && (
+          <>
+            <h2 className={styles.sectionTitle}>Actions</h2>
+            <div className={styles.grid}>
+              {actions.map((c) => (
+                <CardFace
+                  key={c.id}
+                  as="button"
+                  card={c}
+                  className={styles.pickerTile}
+                  countBadge={copiesOwned(collection, c.id)}
+                  title="Click or drag into the deck to add a copy"
+                  onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        {works.length > 0 && (
+          <>
+            <h2 className={styles.sectionTitle}>Work</h2>
+            <div className={styles.grid}>
+              {works.map((c) => (
+                <CardFace
+                  key={c.id}
+                  as="button"
+                  card={c}
+                  className={styles.pickerTile}
+                  countBadge={copiesOwned(collection, c.id)}
+                  title="Click or drag into the deck to add a copy"
+                  onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
 
