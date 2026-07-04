@@ -131,6 +131,9 @@ export interface CardFaceProps {
   style?: React.CSSProperties;
   /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile viewer). */
   countBadge?: number;
+  /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
+   *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
+  badgeClassName?: string;
   /** Render as a native `<button>` (hand cards — keeps native focus/keyboard semantics) or a
    *  plain `<div>` (every other context, which are non-interactive or have their own click
    *  handling via a parent). Defaults to `'div'`. */
@@ -149,7 +152,7 @@ export interface CardFaceProps {
  * never depends on some other component supplying the right ancestor class.
  */
 export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceProps>(function CardFace(
-  { card, className, style, countBadge, as = 'div', title, onPointerDown, onClick },
+  { card, className, style, countBadge, badgeClassName, as = 'div', title, onPointerDown, onClick },
   ref,
 ) {
   const text = describeCard(card);
@@ -182,7 +185,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
       {conditions && <div className={styles.cardConditions}>{conditions}</div>}
       {text && <div className={styles.cardText}>{text}</div>}
       {countBadge !== undefined && countBadge > 1 && (
-        <span className={styles.countBadge}>×{countBadge}</span>
+        <span className={`${styles.countBadge}${badgeClassName ? ` ${badgeClassName}` : ''}`}>×{countBadge}</span>
       )}
     </>
   );

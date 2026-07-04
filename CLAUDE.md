@@ -61,7 +61,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   the territory cap that gates how many buildings can occupy the tableau), and
   `deckBuilder.ts` (deck *construction* — `addCard`/`removeCard` on a plain `string[]`,
   returning `'invalid'` on an unresolvable cardId, mirroring `moves.ts`'s `'invalid'`
-  signal; `groupCounts`, `resolveDeckCards`, `cloneDecks` — distinct from `deck.ts`,
+  signal; `groupCounts`, `resolveDeckCards`, `cloneDecks`, and `MAX_DECKS` — the committed
+  cap on how many decks a player may own (the number is balance-tunable, the limit itself is
+  a core rule), enforced at the deck writer in `App.tsx`'s `saveDeck` with `Decks.tsx`'s
+  disabled "+ New Deck" button as its UI reflection — distinct from `deck.ts`,
   which owns the *in-run* draw pile, not deck editing). Unit tests sit alongside. **When adding
   a rule, put the logic here and test it directly — never bury it in a move or a
   component.**
@@ -148,7 +151,19 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   picker, deck list sourced from the player's own `decks`; assembles a `RunConfig` via
   `buildRunConfig` and calls `onLaunch`), `Collection.tsx` (read-only catalogue over
   `content/cards.ts` — no per-player ownership tracking yet), `Decks.tsx` (every deck
-  in the player's store, New/Edit/Delete), and `Stats.tsx` (the run history list).
+  in the player's store as a grid of tiles, each a hover-revealed shingled fan of the
+  deck's cards grouped ×N via `groupCounts` — the ×N badge itself only shows on hovering
+  that card, via `CardFace`'s `badgeClassName`. Clicking a tile opens a list-view overlay
+  of the deck mirroring the run loop's pile viewer, click-to-zoom via the shared
+  `CardZoomOverlay`; its header (name/count/Edit) is `position: sticky` so it stays
+  pinned and opaque over the cards while scrolling, and centers a click-to-zoom/
+  click-outside-to-close hint over that same row. Edit lives on both the tile and the
+  overlay in the accent color; Delete (tile-only) is a two-click confirm in
+  `--danger-strong`, flipping to "Confirm?" and reverting on mouse-out/navigating away.
+  "New Deck" is the grid's own next slot — a hollow dashed tile after the last deck,
+  rather than a button above the grid — and simply stops rendering once `MAX_DECKS` is
+  hit (a core rule, see `deckBuilder.ts` below); a plain text note takes its place at the
+  cap. And `Stats.tsx` (the run history list).
   `DeckEditor.tsx` (opened from `Decks.tsx`, not a nav tab) edits a single `DeckDef` in
   place — a main picker area (grouped by kind, same groups as `Collection.tsx`) of
   `CardFace` tiles above a bottom banner representing the deck itself (name, card count,

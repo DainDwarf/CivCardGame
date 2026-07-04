@@ -27,11 +27,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Meta loop (`src/meta/`)
 
+- **Deck copy** — duplicate an existing deck as a starting point for a new one `[?]` `[phase: 2]`
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
 - **Color-blind themes** — the Theme picker (see *Done / shipped*) landed the CSS-variable palette; adding accessibility palettes is now cheap. Author deuteranopia / protanopia / tritanopia themes, each a pure additive `:root[data-theme='…']` block in `index.css` plus one `THEMES` entry in `meta/settings.ts` — no module edits. Non-color cues already exist (card banners carry WONDER/BUILDING/ACTION/EVENT text + event's red border; Stats win/loss carries 🏛️/💀 + text), so a palette-only first cut is reasonable; revisit non-color cues if testing shows gaps. `[size: M]` `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 3]`
-- **Decks screen UI rework** — `Decks.tsx` (shipped with Phase 2 step 7) is a first-pass layout: plain stacked deck cards, no search/filter/sort; give it a real visual pass `[?]` `[phase: 2]`
 - **Codex menu UI rework** — `Codex.tsx` (shipped populating the codex submenu) is a first-pass layout: one long scrollable page of definition lists inside the fixed 300px submenu window, no topic navigation, no icons on most entries. Give it a real visual pass — likely a topic-list → page view (or tabs), a wider/roomier surface than the shared `.submenuPanel`, and richer per-topic presentation. `[?]` `[phase: 2]`
 
 ## Cards & content (`src/content/`)
@@ -72,6 +72,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Decks screen UI rework** — `Decks.tsx` was a first-pass list of surface cards with
+  text-chip card lists. It's now a *shelf of decks*: a responsive grid of deck tiles, each
+  tile's "art" a hover-revealed shingled fan of its cards (grouped into ×N stacks via
+  `groupCounts`, scaled-down `CardFace`s in fixed-size `.mini` wrappers — a scaled element
+  otherwise reserves its full unscaled box — with the fan/lift done as `transform`s so they
+  never reflow the tile or shove grid neighbours). Clicking a tile opens a list-view overlay
+  of the deck's cards, mirroring the run loop's discard-pile viewer (`Board.tsx`): full-size
+  `CardFace`s with ×N badges, click-to-zoom via the shared `CardZoomOverlay`, click-outside
+  to close. Edit lives on both the tile and the overlay; Delete stays on the tile. The shingle
+  tunables (`--card-scale`/`--overlap`/hover `--spread`) are grouped atop `.tile` for live
+  tweaking. Also made the **deck cap a core rule**: `rules/deckBuilder.ts` exports
+  `MAX_DECKS` (6, provisional number but the limit itself is committed), enforced at the deck
+  writer (`App.tsx`'s `saveDeck` refuses to append a new deck past the cap); the disabled
+  "+ New Deck" button + "Deck limit reached" note are its UI reflection. No search/filter/sort
+  by design — the player only ever owns a handful of decks. `[size: M]` `[phase: 2]`
 - **Click a placed building to zoom its card** — the deferred sub-goal of the building/card
   merge below. `BuildingBox` already routed a plain (non-drag) press through the same
   click-vs-drag split the hand and slot-drag code use elsewhere; the slot-drag pointerup

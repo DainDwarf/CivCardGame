@@ -7,6 +7,12 @@ import type { DeckDef } from '../content/decks';
  * (`GameState.deck`/`drawCard`).
  */
 
+/** The committed cap on how many decks a player may own. The number is provisional
+ *  (balance-tunable), but the *existence* of the limit is a core rule — enforced at the
+ *  deck writer (`App.tsx`'s `saveDeck`), with the meta UI's disabled "+ New Deck" button
+ *  as its reflection. */
+export const MAX_DECKS = 6;
+
 /** Appends one copy of `cardId`. `'invalid'` if `cardId` isn't in the `CARDS`
  *  catalogue — a data-coherence check (not a Phase 4 balance rule; see
  *  docs/DESIGN.md's deferred "deck construction constraints"). Mirrors the `'invalid'`

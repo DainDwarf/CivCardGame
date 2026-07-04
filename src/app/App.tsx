@@ -4,6 +4,7 @@ import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
 import { GameProvider, useGame } from '../run/GameContext';
 import { loadStore, saveStore, type PlayerStore } from '../meta/store';
+import { MAX_DECKS } from '../rules/deckBuilder';
 import { applyTheme, loadSettings, saveSettings, type Settings } from '../meta/settings';
 import type { DeckDef } from '../content/decks';
 import type { RunConfig, RunResult } from '../contract';
@@ -134,6 +135,10 @@ export function App() {
 
   function saveDeck(deck: DeckDef) {
     const exists = store.decks.some((d) => d.id === deck.id);
+    // The deck cap is a core rule: refuse to append a *new* deck past MAX_DECKS. Editing an
+    // existing deck (same id) is always allowed. The Decks screen disables "+ New Deck" at the
+    // cap so this branch is a backstop, not the primary gate.
+    if (!exists && store.decks.length >= MAX_DECKS) return;
     // map-if-exists-else-append keeps an edited deck's position stable instead of bumping it to the end.
     const decks = exists ? store.decks.map((d) => (d.id === deck.id ? deck : d)) : [...store.decks, deck];
     persist({ ...store, decks });
