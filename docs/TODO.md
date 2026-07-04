@@ -27,7 +27,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Meta loop (`src/meta/`)
 
-- **Deck copy** — duplicate an existing deck as a starting point for a new one `[?]` `[phase: 2]`
 - **Tutorial missions** — the first few meta missions double as tutorials, introducing mechanics progressively `[?]` `[phase: 3]`
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
 - **Color-blind themes** — the Theme picker (see *Done / shipped*) landed the CSS-variable palette; adding accessibility palettes is now cheap. Author deuteranopia / protanopia / tritanopia themes, each a pure additive `:root[data-theme='…']` block in `index.css` plus one `THEMES` entry in `meta/settings.ts` — no module edits. Non-color cues already exist (card banners carry WONDER/BUILDING/ACTION/EVENT text + event's red border; Stats win/loss carries 🏛️/💀 + text), so a palette-only first cut is reasonable; revisit non-color cues if testing shows gaps. `[size: M]` `[?]` `[phase: 2]`
@@ -72,6 +71,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Deck copy** — `Decks.tsx` now has a Copy button (same accent color as Edit) on both
+  the tile and the list-view overlay. It duplicates the deck's cards into a fresh,
+  unsaved `DeckDef` (new id, "`<name>` (Copy)") and opens the editor on it — exactly
+  like "New Deck" but pre-filled, so nothing is persisted until Save there. Gated at
+  `MAX_DECKS` the same way "New Deck" is (disabled + tooltip), since it also adds a
+  deck rather than editing one in place. `[size: S]` `[phase: 2]`
 - **Decks screen UI rework** — `Decks.tsx` was a first-pass list of surface cards with
   text-chip card lists. It's now a *shelf of decks*: a responsive grid of deck tiles, each
   tile's "art" a hover-revealed shingled fan of its cards (grouped into ×N stacks via

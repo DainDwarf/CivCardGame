@@ -18,17 +18,23 @@ import styles from './Decks.module.css';
  * (`Board.tsx`), reusing `CardFace` + the shared `CardZoomOverlay` for click-to-zoom.
  * "New Deck" is the grid's own next slot — a hollow tile after the last deck — rather
  * than a button above the grid. The `MAX_DECKS` cap is a core rule (see
- * `rules/deckBuilder.ts`); that slot simply doesn't render once the cap is hit.
+ * `rules/deckBuilder.ts`); that slot simply doesn't render once the cap is hit. Copy
+ * (tile and list-view, same accent color as Edit) duplicates a deck's cards into a
+ * fresh, unsaved `DeckDef` and opens the editor on it — exactly like "New Deck" but
+ * pre-filled, so nothing is persisted until Save there — and is gated at `MAX_DECKS`
+ * the same way, since it also adds a deck rather than editing one in place.
  */
 export function Decks({
   decks,
   onNew,
   onEdit,
+  onCopy,
   onDelete,
 }: {
   decks: DeckDef[];
   onNew: () => void;
   onEdit: (deck: DeckDef) => void;
+  onCopy: (deck: DeckDef) => void;
   onDelete: (id: string) => void;
 }) {
   // The deck whose card list is open in the list-view overlay, and the card zoomed within it.
@@ -39,6 +45,10 @@ export function Decks({
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   const atCap = decks.length >= MAX_DECKS;
+  // Copying adds a new deck, same as "New Deck" — gate it at the cap too, with the
+  // same backstop-plus-UI-disable pattern (App.tsx's saveDeck refuses past MAX_DECKS
+  // regardless, this just avoids the wasted trip through the editor).
+  const copyTitle = atCap ? `Deck limit reached (${MAX_DECKS}) — delete one to make room.` : 'Duplicate this deck';
 
   return (
     <div className={styles.decks}>
@@ -95,6 +105,19 @@ export function Decks({
                   </button>
                   <button
                     type="button"
+                    className={styles.editActionBtn}
+                    disabled={atCap}
+                    title={copyTitle}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmingDeleteId(null);
+                      onCopy(deck);
+                    }}
+                  >
+                    Copy
+                  </button>
+                  <button
+                    type="button"
                     className={styles.deleteActionBtn}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -133,13 +156,24 @@ export function Decks({
                 {selected.name} <span className={styles.panelCount}>({selected.cards.length} cards)</span>
               </h3>
               <span className={styles.panelHint}>Click a card to zoom · click outside to close</span>
-              <button
-                type="button"
-                className={styles.panelEditBtn}
-                onClick={() => onEdit(selected)}
-              >
-                Edit
-              </button>
+              <div className={styles.panelActions}>
+                <button
+                  type="button"
+                  className={styles.panelEditBtn}
+                  onClick={() => onEdit(selected)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className={styles.panelEditBtn}
+                  disabled={atCap}
+                  title={copyTitle}
+                  onClick={() => onCopy(selected)}
+                >
+                  Copy
+                </button>
+              </div>
             </div>
             {selected.cards.length === 0 ? (
               <p className={styles.empty}>This deck is empty.</p>

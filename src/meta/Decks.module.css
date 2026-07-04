@@ -196,8 +196,13 @@
   cursor: pointer;
 }
 
-.editActionBtn:hover {
+.editActionBtn:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+.editActionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* --- List-view overlay (mirrors Board.tsx's pile viewer) --- */
@@ -238,13 +243,16 @@
   cursor: default;
 }
 
+/* A 3-column grid (title | hint | actions) rather than flex + absolute-inset centering:
+   the hint's middle track only ever centers in the space actually left over, so it can
+   never visually overlap the title or the action buttons — it shrinks/wraps instead. */
 .panelHeader {
   position: sticky;
   top: 0;
   z-index: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   margin: 0 0 0.75rem;
   padding: 1rem 0 0.5rem;
@@ -266,6 +274,12 @@
   font-size: 0.9rem;
 }
 
+.panelActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
 .panelEditBtn {
   padding: 0.4rem 0.9rem;
   font-size: 0.85rem;
@@ -278,8 +292,13 @@
   flex-shrink: 0;
 }
 
-.panelEditBtn:hover {
+.panelEditBtn:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+.panelEditBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .listGrid {
@@ -293,14 +312,9 @@
   cursor: pointer;
 }
 
-/* Centered over the header's own flex row (title/edit button stay in normal flow; the
-   sticky header is itself a positioned ancestor, so this just needs inset: 0). */
+/* The header's own middle grid column — centers in whatever space is actually left
+   between the title and the action buttons, so it can't overlap either. */
 .panelHint {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   margin: 0;
   text-align: center;
   color: var(--text-secondary);

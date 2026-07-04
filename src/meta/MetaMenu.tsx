@@ -83,6 +83,7 @@ export function MetaMenu({
             decks={decks}
             onNew={() => openEditor({ id: crypto.randomUUID(), name: 'New Deck', cards: [] })}
             onEdit={openEditor}
+            onCopy={(deck) => openEditor({ id: crypto.randomUUID(), name: `${deck.name} (Copy)`, cards: [...deck.cards] })}
             onDelete={onDeleteDeck}
           />
         )}
