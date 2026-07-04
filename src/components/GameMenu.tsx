@@ -298,19 +298,17 @@ export function GameMenu({
                   <div className={styles.configBody}>
                     <div className={styles.configThemeRow}>
                       <span className={styles.configThemeLabel}>Theme</span>
-                      <div className={styles.configThemeBtns}>
+                      <select
+                        className={styles.configThemeSelect}
+                        value={settings.theme}
+                        onChange={(e) => onUpdateSettings({ ...settings, theme: e.target.value as Settings['theme'] })}
+                      >
                         {THEMES.map((t) => (
-                          <button
-                            key={t.id}
-                            type="button"
-                            className={`${styles.configThemeBtn} ${settings.theme === t.id ? styles.configThemeBtnActive : ''}`}
-                            aria-pressed={settings.theme === t.id}
-                            onClick={() => onUpdateSettings({ ...settings, theme: t.id })}
-                          >
+                          <option key={t.id} value={t.id}>
                             {t.label}
-                          </button>
+                          </option>
                         ))}
-                      </div>
+                      </select>
                     </div>
                     <div className={styles.configScaleRow}>
                       <div className={styles.configScaleHead}>

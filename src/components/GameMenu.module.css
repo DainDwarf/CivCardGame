@@ -254,38 +254,23 @@
   font-weight: 600;
 }
 
-/* Segmented picker: the theme buttons sit flush in a bordered pill, active one filled. */
-.configThemeBtns {
+/* Six themes no longer fit a segmented row without crowding the Config submenu, so the
+   picker is a plain dropdown instead. */
+.configThemeSelect {
   margin-left: auto;
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.configThemeBtn {
-  padding: 0.35rem 0.9rem;
+  padding: 0.35rem 0.7rem;
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-body);
   background: var(--chip-bg);
-  border: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   cursor: pointer;
 }
 
-.configThemeBtn + .configThemeBtn {
-  border-left: 1px solid var(--border);
-}
-
-.configThemeBtn:hover {
+.configThemeSelect:hover {
   background: var(--chip-bg-hover);
-}
-
-.configThemeBtnActive,
-.configThemeBtnActive:hover {
-  color: var(--text-on-accent);
-  background: var(--accent);
 }
 
 .configToggleRow {

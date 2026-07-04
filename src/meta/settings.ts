@@ -8,13 +8,18 @@
  * The color themes offered by the Config picker — the single source of truth for both
  * the `Theme` type and the picker UI (GameMenu.tsx). Each `id` is the value written to
  * `document.documentElement`'s `data-theme` attribute; the light palette lives in
- * `index.css`'s `:root`, dark in its `:root[data-theme='dark']` block. Adding a theme is
- * one entry here plus one `[data-theme]` block in `index.css` — nothing else.
+ * `index.css`'s `:root`, every other theme in its own `:root[data-theme='…']` block —
+ * the three color-blind themes only override the hued/semantic tokens, falling through
+ * to Light's neutrals/text/surfaces. Adding a theme is one entry here plus one
+ * `[data-theme]` block in `index.css` — nothing else.
  */
 export const THEMES = [
   { id: 'system', label: 'System' },
   { id: 'light', label: 'Light' },
   { id: 'dark', label: 'Dark' },
+  { id: 'deuteranopia', label: 'Deuteranopia' },
+  { id: 'protanopia', label: 'Protanopia' },
+  { id: 'tritanopia', label: 'Tritanopia' },
 ] as const;
 
 export type Theme = (typeof THEMES)[number]['id'];

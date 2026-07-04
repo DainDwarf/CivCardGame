@@ -322,6 +322,209 @@
   --drop-pill-text: #e8e6e0;
 }
 
+:root[data-theme='deuteranopia'] {
+  /* Deuteranopia (green-weak/blind, ~5% of men): red and green collapse onto the same
+     confusion line, so any pair that differed only by "redness vs. greenness" is re-anchored
+     to Okabe & Ito's color-universal-design hues (blue / orange / bluish-green / vermillion /
+     reddish-purple), which stay mutually distinguishable under this deficiency. Only hued/
+     semantic tokens are overridden here — neutrals, text, and surfaces fall through to Light's
+     `:root`. Operating/idle building state gets extra lightness separation on top of the hue
+     change, since that pair is a color-only signal (no text/icon backup) — see docs/TODO.md. */
+
+  /* ── Accent (blue) ── */
+  --accent: #0072b2;
+  --accent-rgb: 0 114 178;
+  --accent-hover: #005b8f;
+  --accent-soft: #8fbdd9;
+  --accent-bg: #e3f0f8;
+  --focus-ring: #0072b2;
+
+  /* ── Card kinds ── */
+  --card-building-banner: #0072b2;
+  --card-building-band: #e3f0f8;
+  --card-building-condition: #6ba2c4;
+  --card-action-banner: #e69f00;
+  --card-action-band: #fbedd2;
+  --card-action-condition: #d9ad5c;
+  --card-event-banner: #d55e00;
+  --card-event-band: #fbe4d2;
+  --card-event-condition: #d99a6e;
+  --card-event-border: #d55e00;
+  --card-work-banner: #009e73;
+  --card-work-band: #d9f2ea;
+  --card-work-condition: #5cb89e;
+  --card-wonder-banner: #b8860b;
+
+  /* ── Action / CTA (orange) ── */
+  --action: #e69f00;
+  --cta: #d55e00;
+  --cta-hover: #b34e00;
+  --warn-panel: #7a3300;
+  --work-border: #009e73;
+  --discard-border: #d9ad5c;
+  --discard-prompt-bg: #fbf1de;
+
+  /* ── Semantic state ── */
+  --danger: #d55e00;
+  --danger-rgb: 213 94 0;
+  --danger-strong: #b34e00;
+  --danger-strong-hover: #8f3f00;
+  --danger-text: #a04400;
+  --reject-bg: #fbe9dc;
+  --success: #009e73;
+  --success-alt: #00875f;
+  --success-text: #00754f;
+  --loss: #b34e00;
+  --notice-bg: #dcf2ea;
+  --notice-text: #00543c;
+
+  /* ── Culture (reddish-purple) ── */
+  --culture-a: #cc79a7;
+  --culture-b: #a84e82;
+  --culture-fill-a: #d98cb8;
+  --culture-rgb: 204 121 167;
+  --culture-ghost: rgba(204, 121, 167, 0.35);
+
+  /* ── Board ground tints ── */
+  --board-monarchy-ground: #8fa9bd;
+  --board-republic-ground: #d9c17a;
+
+  /* ── Building states (green) ── */
+  --operating-bg: #d9f2ea;
+  --operating-border: #009e73;
+  --idle-bg: #f5f2ea;
+  --staff-rgb: 0 158 115;
+
+  /* ── Board misc ── */
+  --demolish-rgb: 213 94 0;
+  --demolish-hover-rgb: 179 78 0;
+}
+
+:root[data-theme='protanopia'] {
+  /* Protanopia (red-weak/blind, ~1% of men): the same red-green confusion line as
+     deuteranopia, but long-wavelength (red/vermillion) light also reads dimmer — so those
+     tokens are brightened relative to the deuteranopia theme to hold their contrast against
+     text and neutrals; the blue/orange/bluish-green anchors are unchanged. */
+
+  /* ── Accent (blue) ── */
+  --accent: #0072b2;
+  --accent-rgb: 0 114 178;
+  --accent-hover: #005b8f;
+  --accent-soft: #8fbdd9;
+  --accent-bg: #e3f0f8;
+  --focus-ring: #0072b2;
+
+  /* ── Card kinds ── */
+  --card-building-banner: #0072b2;
+  --card-building-band: #e3f0f8;
+  --card-building-condition: #6ba2c4;
+  --card-action-banner: #f0a800;
+  --card-action-band: #fdf0d6;
+  --card-action-condition: #e0b968;
+  --card-event-banner: #e8720f;
+  --card-event-band: #fce6d4;
+  --card-event-condition: #e2a179;
+  --card-event-border: #e8720f;
+  --card-work-banner: #00ab80;
+  --card-work-band: #d9f2ea;
+  --card-work-condition: #5cc0a6;
+  --card-wonder-banner: #c99312;
+
+  /* ── Action / CTA (orange) ── */
+  --action: #f0a800;
+  --cta: #e8720f;
+  --cta-hover: #c25e0a;
+  --warn-panel: #7a3300;
+  --work-border: #00ab80;
+  --discard-border: #e0b968;
+  --discard-prompt-bg: #fdf3e0;
+
+  /* ── Semantic state ── */
+  --danger: #e8720f;
+  --danger-rgb: 232 114 15;
+  --danger-strong: #c25e0a;
+  --danger-strong-hover: #9c4b08;
+  --danger-text: #a85408;
+  --reject-bg: #fce9dc;
+  --success: #00ab80;
+  --success-alt: #00966d;
+  --success-text: #007e5c;
+  --loss: #c25e0a;
+  --notice-bg: #dcf2ea;
+  --notice-text: #00543c;
+
+  /* ── Culture (reddish-purple) ── */
+  --culture-a: #d485b0;
+  --culture-b: #b0578c;
+  --culture-fill-a: #de9cc0;
+  --culture-rgb: 212 133 176;
+  --culture-ghost: rgba(212, 133, 176, 0.35);
+
+  /* ── Board ground tints ── */
+  --board-monarchy-ground: #8fa9bd;
+  --board-republic-ground: #dcc788;
+
+  /* ── Building states (green) ── */
+  --operating-bg: #d9f2ea;
+  --operating-border: #00ab80;
+  --idle-bg: #f5f2ea;
+  --staff-rgb: 0 171 128;
+
+  /* ── Board misc ── */
+  --demolish-rgb: 232 114 15;
+  --demolish-hover-rgb: 194 94 10;
+}
+
+:root[data-theme='tritanopia'] {
+  /* Tritanopia (blue-yellow deficient, <0.1%): a different confusion axis than the two
+     themes above — red and green stay distinguishable here, so danger/success/event/loss are
+     left at their Light values. The one real collision is Building's blue vs. Work's teal
+     (teal already leans blue-green): Building is pushed toward indigo (away from green) and
+     Work toward a truer grass-green (away from blue) so the two diverge instead of drifting
+     together. Culture is pushed from violet toward magenta so it doesn't collapse into the
+     now-indigo Building hue either. */
+
+  /* ── Accent (blue → indigo) ── */
+  --accent: #4a4fd6;
+  --accent-rgb: 74 79 214;
+  --accent-hover: #3a3fb0;
+  --accent-soft: #b0b2ea;
+  --accent-bg: #e8e8fb;
+  --focus-ring: #4a4fd6;
+
+  /* ── Card kinds ── */
+  --card-building-banner: #4a4fd6;
+  --card-building-band: #e8e8fb;
+  --card-building-condition: #8688dd;
+  --card-work-banner: #3f9142;
+  --card-work-band: #e0f0df;
+  --card-work-condition: #7cb87e;
+  /* Left at Light's near-neighbor of Action's orange in the first pass; a CVD simulation
+     pass showed the two collapsing into the same coral under tritanopia (which doesn't
+     rescue orange-vs-gold the way it rescues red-vs-green), so Wonder is pulled brighter
+     and more yellow to hold a real lightness/saturation gap from Action. */
+  --card-wonder-banner: #e0b400;
+
+  /* ── Action / CTA ── */
+  --work-border: #3f9142;
+
+  /* ── Culture (violet → magenta) ── */
+  --culture-a: #d9469c;
+  --culture-b: #a02e74;
+  --culture-fill-a: #e56bb0;
+  --culture-rgb: 160 46 116;
+  --culture-ghost: rgba(160, 46, 116, 0.35);
+
+  /* ── Board ground tints ── */
+  --board-monarchy-ground: #a2a6d0;
+
+  /* ── Building states (green) ── */
+  --operating-bg: #e0f0df;
+  --operating-border: #3f9142;
+  --idle-bg: #f5f2ea;
+  --staff-rgb: 63 145 66;
+}
+
 body {
   margin: 0;
   /* Themed, not left to the browser default (white) — the run screen's hand-bar gradient
