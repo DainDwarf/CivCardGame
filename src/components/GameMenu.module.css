@@ -141,6 +141,13 @@
   animation: menuZoomIn 0.16s ease-out;
 }
 
+/* The Codex is a topic-nav + content-pane layout (see Codex.module.css), so it gets a
+   wider window than the other submenus' fixed 300px — capped by the real viewport (not
+   the transform-scaled one) so it can't overflow the screen at large UI-scale settings. */
+.submenuPanelCodex {
+  width: min(44rem, calc(92vw / var(--ui-scale, 1)));
+}
+
 .submenuTitle {
   margin: 0 0 0.75rem;
   font-size: 1.1rem;

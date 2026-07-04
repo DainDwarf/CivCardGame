@@ -1,7 +1,7 @@
 import type { Resources } from '../rules/resources';
 import type { CardEffect } from '../rules/effects';
 
-export type CardKind = 'building' | 'recurring' | 'work' | 'event';
+export type CardKind = 'building' | 'action' | 'work' | 'event';
 
 export interface CardDef {
   id: string;
@@ -10,14 +10,20 @@ export interface CardDef {
    * What the card *is* and where it goes after play:
    * - `building`: the card *is* a building — playing it places it in the **tableau** (one
    *   territory slot), auto-staffed from idle population, where it produces `produces`/
-   *   `cultureOutput` each round while staffed. It stays in play (not filed to a pile) until
-   *   **demolished**, at which point its card goes to the **removed** pile.
-   * - `recurring`: resolves its `effect`, then recycles to the **discard** pile.
+   *   `cultureOutput` each round while staffed. It stays in play, filed nowhere, until
+   *   something removes it from the tableau — where its card goes *then* isn't an inherent
+   *   trait of `building`, it's whatever the removing effect specifies. Today that's only
+   *   the Destroy action card, whose `effect.destroy` sends it to **removed**; a future card
+   *   could just as well discard a building instead (e.g. to reclaim territory) and file it
+   *   to **discard** like anything else.
+   * - `action`: resolves its `effect`, then recycles to the **discard** pile.
    * - `work`: the card sticks onto the board as a staffable work box (see `workers`); it
    *   produces its `effect.gain` only while staffed, then recycles to the **discard** pile at
    *   *end of turn* (not on play). No population is locked and no idle pop is required to play it.
    * - `event`: not player-playable and never in the deck editor/collection — missions inject it.
-   *   An event left in hand at end of turn auto-resolves its effect, then goes to **removed**.
+   *   An event left in hand at end of turn auto-resolves its effect, then files by the same
+   *   default as any other card: **discard**, unless its effect specifies `remove: true` (e.g.
+   *   Barbarian), which sends it to **removed** instead. Not an inherent trait of `event` itself.
    */
   kind: CardKind;
   /** Resources required to play. Absent keys are free (e.g. {} = no cost). */
@@ -43,7 +49,7 @@ export interface CardDef {
 
 /**
  * The card catalogue. A `building` card *is* the building it becomes in the tableau (its stats
- * live right here); recurring cards resolve their effect and recycle through the discard; work
+ * live right here); action cards resolve their effect and recycle through the discard; work
  * cards stick onto the board for one turn.
  */
 export const CARDS: Record<string, CardDef> = {
@@ -64,27 +70,28 @@ export const CARDS: Record<string, CardDef> = {
   great_library: { id: 'great_library', name: 'The Great Library', kind: 'building', cost: { production: 4 }, produces: { science: 2 }, workers: 1, tags: ['wonder'] },
   colossus: { id: 'colossus', name: 'The Colossus', kind: 'building', cost: { production: 4 }, produces: { food: 1, science: 1, military: 1 }, workers: 1, tags: ['wonder'] },
 
-  // --- Recurring actions (recycle to the discard). ---
-  settlers: { id: 'settlers', name: 'Settlers', kind: 'recurring', cost: { food: 2 }, effect: { population: 1 } },
-  eureka: { id: 'eureka', name: 'Eureka!', kind: 'recurring', cost: {}, discardCost: 1, effect: { gain: { science: 3 } } },
-  inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'recurring', cost: { money: 1 }, effect: { draw: 2 } },
+  // --- Action cards (recycle to the discard). ---
+  settlers: { id: 'settlers', name: 'Settlers', kind: 'action', cost: { food: 2 }, effect: { population: 1 } },
+  eureka: { id: 'eureka', name: 'Eureka!', kind: 'action', cost: {}, discardCost: 1, effect: { gain: { science: 3 } } },
+  inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'action', cost: { money: 1 }, effect: { draw: 2 } },
 
   // --- Work cards: stick onto the board as a staffable box; produce only while staffed,
   //     then recycle to the discard at end of turn. ---
   corvee: { id: 'corvee', name: 'Corvée', kind: 'work', cost: {}, workers: 1, effect: { gain: { production: 3 } } },
   harvest: { id: 'harvest', name: 'Harvest', kind: 'work', cost: {}, workers: 1, effect: { gain: { food: 3 } } },
 
-  // --- Territory expansion: recurring cards that raise the building-slot cap. ---
-  conquest: { id: 'conquest', name: 'Conquest', kind: 'recurring', cost: { military: 3 }, effect: { territory: 1 } },
-  develop: { id: 'develop', name: 'Develop', kind: 'recurring', cost: { production: 3 }, effect: { territory: 1 } },
+  // --- Territory expansion: action cards that raise the building-slot cap. ---
+  conquest: { id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 3 }, effect: { territory: 1 } },
+  develop: { id: 'develop', name: 'Develop', kind: 'action', cost: { production: 3 }, effect: { territory: 1 } },
 
   // --- Culture cards: generate culture or require a culture threshold. ---
-  cultural_festival: { id: 'cultural_festival', name: 'Cultural Festival', kind: 'recurring', cost: { food: 2 }, effect: { culture: 3 } },
-  philosopher: { id: 'philosopher', name: 'The Philosopher', kind: 'recurring', cost: { science: 1 }, cultureLevelReq: 1, effect: { gain: { science: 3 }, draw: 1 } },
+  cultural_festival: { id: 'cultural_festival', name: 'Cultural Festival', kind: 'action', cost: { food: 2 }, effect: { culture: 3 } },
+  philosopher: { id: 'philosopher', name: 'The Philosopher', kind: 'action', cost: { science: 1 }, cultureLevelReq: 1, effect: { gain: { science: 3 }, draw: 1 } },
 
   // --- Territory management: reclaim a slot by demolishing a building. ---
-  destroy: { id: 'destroy', name: 'Destroy', kind: 'recurring', cost: { production: 1 }, effect: { destroy: true } },
+  destroy: { id: 'destroy', name: 'Destroy', kind: 'action', cost: { production: 1 }, effect: { destroy: true } },
 
-  // --- Event cards: mission-injected, not player-playable. Auto-resolve at end of turn, then removed. ---
-  barbarian: { id: 'barbarian', name: 'Barbarian', kind: 'event', cost: {}, effect: { loss: { military: 4 } } },
+  // --- Event cards: mission-injected, not player-playable. Auto-resolve at end of turn;
+  //     `remove: true` sends this one to removed instead of the default discard. ---
+  barbarian: { id: 'barbarian', name: 'Barbarian', kind: 'event', cost: {}, effect: { loss: { military: 4 }, remove: true } },
 };

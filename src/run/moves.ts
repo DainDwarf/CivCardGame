@@ -5,12 +5,14 @@ import { CARDS } from '../content/cards';
 /**
  * Play a card from hand, routed by `kind`:
  * - `building`: placed into the tableau (one territory slot, auto-staffed from idle pop) where it
- *   produces each round while staffed. The card is *not* filed to a pile — it lives on as the
- *   tableau instance until demolished, at which point it goes to the removed pile.
+ *   produces each round while staffed. The card is *not* filed to a pile while it stays in play.
+ *   Whether it later goes to `discard` or `removed` isn't decided by being a `building` — it's
+ *   whatever effect takes it out of the tableau; see `effect.destroy` below, the only such effect
+ *   today, which sends it to `removed`.
  * - `work`: sticks onto the board (into the workZone, auto-staffed) and resolves *nothing* now —
  *   it produces its `effect.gain` only while staffed, at end-of-turn upkeep; its cardId is held
  *   in the workZone until it files to the discard at end of turn.
- * - `recurring`: resolves its `effect` immediately, then recycles to the discard.
+ * - `action`: resolves its `effect` immediately, then recycles to the discard.
  * Costs may include resources and a discard cost: `discardHandIdxs` gives the hand positions of
  * cards to sacrifice (distinct indices, not the played card's slot). Cards with `effect.destroy`
  * require a `destroyInstanceId` — the exact building instance to demolish (frees its territory
@@ -70,8 +72,8 @@ export function playCard(
   }
   for (const id of sacrificeIds) G.discard.push(id);
   // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,
-  // filed at end of turn) stay put; only recurring cards recycle to the discard here.
-  if (card.kind === 'recurring') G.discard.push(cardId);
+  // filed at end of turn) stay put; only action cards recycle to the discard here.
+  if (card.kind === 'action') G.discard.push(cardId);
 }
 
 /** Assign one idle population to a specific staffable (building or Work card, identified by `id`),

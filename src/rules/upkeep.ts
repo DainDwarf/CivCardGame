@@ -19,10 +19,11 @@ export function discardWorkZone(G: GameState): void {
 }
 
 /**
- * Resolve any `event` cards still in hand at end of turn: each applies its effect and is
- * destroyed to the `removed` pile (never recycled to discard). Non-event cards are left in
- * hand for the caller's normal discard sweep. Partition first, then resolve, so an event's
- * own effect (e.g. a draw) can't reorder the sweep. Shared by `endTurn` and `projectedDelta`.
+ * Resolve any `event` cards still in hand at end of turn: each applies its effect, then files
+ * to `removed` if its effect says `remove: true`, or `discard` otherwise (the same default any
+ * other card gets) — see `CardEffect.remove`'s doc comment. Non-event cards are left in hand for
+ * the caller's normal discard sweep. Partition first, then resolve, so an event's own effect
+ * (e.g. a draw) can't reorder the sweep. Shared by `endTurn` and `projectedDelta`.
  */
 export function resolveHandEvents(G: GameState): void {
   const events: string[] = [];
@@ -33,8 +34,9 @@ export function resolveHandEvents(G: GameState): void {
   }
   G.hand = kept;
   for (const id of events) {
-    applyEffect(G, CARDS[id].effect);
-    G.removed.push(id);
+    const card = CARDS[id];
+    applyEffect(G, card.effect);
+    (card.effect?.remove ? G.removed : G.discard).push(id);
   }
 }
 

@@ -53,7 +53,7 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.tableau).toEqual([{ id: 2, cardId: 'workshop', workers: 1 }]);
     expect(G.removed).toEqual(['farm']); // the demolished building's card leaves play
     expect(G.resources.production).toBe(4); // paid 1 production
-    expect(G.discard).toEqual(['destroy']); // recurring → recycles
+    expect(G.discard).toEqual(['destroy']); // action → recycles
   });
 
   it('destroy frees assigned workers back to the idle pool', () => {
@@ -125,7 +125,7 @@ describe('playCard: cards vs. buildings', () => {
     G.tableau = [{ id: 1, cardId: 'workshop', workers: 1 }]; // full at territory 1
     play(G, 'develop'); // +1 territory (cost 3 production) -> room for one more
     expect(G.territory).toBe(2);
-    expect(G.discard).toEqual(['develop']); // recurring -> recycles
+    expect(G.discard).toEqual(['develop']); // action -> recycles
     play(G, 'farm'); // now fits
     expect(G.tableau).toHaveLength(2);
     expect(G.tableau.some((b) => b.cardId === 'farm')).toBe(true);

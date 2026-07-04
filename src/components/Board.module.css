@@ -720,7 +720,7 @@
   color: var(--text-on-accent);
 }
 
-/* Discard — played recurring cards waiting to reshuffle. */
+/* Discard — played action cards waiting to reshuffle. */
 .pileDiscard {
   background: linear-gradient(180deg, var(--discard-top), var(--discard-bottom));
   border-color: var(--discard-pile-border);

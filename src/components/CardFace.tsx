@@ -49,7 +49,7 @@ export function describeCost(c: CardDef): string {
  *  worker spaces as a meeple column instead, via the shared worker-icon rendering.) */
 export function describeConditions(c: CardDef): string {
   const parts: string[] = [];
-  if (c.kind === 'event') parts.push('resolves at end of round');
+  if (c.kind === 'event') parts.push(c.effect?.remove ? 'resolves at end of round, then removed' : 'resolves at end of round');
   if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
   if (c.discardCost) parts.push(`discard ${c.discardCost}`);
   return parts.join(' · ');
@@ -96,7 +96,7 @@ export function describeCard(c: CardDef): string {
   if (e?.population) parts.push(`+${e.population} 🧍`);
   if (e?.territory) parts.push(`+${e.territory} territory`);
   if (e?.culture) parts.push(`+${e.culture} 🎭`);
-  if (e?.destroy) parts.push('Demolish a building');
+  if (e?.destroy) parts.push('removes a building from the run');
   // A building card *is* the building — show its per-round output (workers shown as meeples).
   if (c.kind === 'building') {
     const stats = describeBuilding(c, false);
@@ -110,15 +110,14 @@ function cardBanner(c: CardDef): { label: string; variant: string } {
   if (c.kind === 'event') return { label: 'Event', variant: styles.bannerEvent };
   if (c.kind === 'work') return { label: 'Work', variant: styles.bannerWork };
   if (c.tags?.includes('wonder')) return { label: 'Wonder', variant: styles.bannerWonder };
-  if (c.kind === 'recurring') return { label: 'Action', variant: styles.bannerAction };
+  if (c.kind === 'action') return { label: 'Action', variant: styles.bannerAction };
   return { label: 'Building', variant: styles.bannerBuilding };
 }
 
-/** The colour variant a card face uses, by kind (event = danger, recurring = action, work = work,
- *  else building). */
+/** The colour variant a card face uses, by kind (event = danger, work = work, else building). */
 export function kindClass(kind: CardDef['kind']): string {
   if (kind === 'event') return styles.event;
-  if (kind === 'recurring') return styles.action;
+  if (kind === 'action') return styles.action;
   if (kind === 'work') return styles.work;
   return styles.building;
 }

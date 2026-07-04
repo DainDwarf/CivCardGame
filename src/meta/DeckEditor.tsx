@@ -61,7 +61,7 @@ export function DeckEditor({
   // Event cards are mission-injected and can never be added to a deck.
   const cards = Object.values(CARDS).filter((c) => c.kind !== 'event');
   const buildings = cards.filter((c) => c.kind === 'building');
-  const actions = cards.filter((c) => c.kind === 'recurring');
+  const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');
 
   function handleAdd(cardId: string) {

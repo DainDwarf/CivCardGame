@@ -31,7 +31,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Card modifiers** — meta may offer ways to attach persistent modifiers to individual cards (long-term idea, details TBD) `[?]` `[phase: 3]`
 - **First-launch accessibility selector** — a brand-new profile currently defaults straight to the System theme; consider a first-run prompt that surfaces the color-blind themes (see *Done / shipped*) up front instead of leaving them buried in the Config dropdown, so a color-blind player doesn't have to already know to go looking. `[?]` `[phase: 2]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) `[?]` `[phase: 3]`
-- **Codex menu UI rework** — `Codex.tsx` (shipped populating the codex submenu) is a first-pass layout: one long scrollable page of definition lists inside the fixed 300px submenu window, no topic navigation, no icons on most entries. Give it a real visual pass — likely a topic-list → page view (or tabs), a wider/roomier surface than the shared `.submenuPanel`, and richer per-topic presentation. `[?]` `[phase: 2]`
 
 ## Cards & content (`src/content/`)
 
@@ -71,6 +70,50 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.1 (end of Phase 1)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 2 onward.
 
+- **Codex menu UI rework** — `Codex.tsx` was a single long scrolling page of definition
+  lists inside the fixed 300px submenu window; it's now a topic-nav + content-pane
+  window (`GameMenu.module.css`'s `.submenuPanelCodex` widens just this submenu to
+  `min(44rem, 92vw / --ui-scale)`, capped by the real viewport per the UI-scale
+  convention). A left navbar lists four subjects — Resources, Card types, Play a turn,
+  Glossary — each swapping the content pane; `Play a turn` merges the old separate
+  Population & staffing and Turn structure topics, since they're one topic from the
+  player's seat. The culture-progression callout (level thresholds via `cultureStep`)
+  moved from the Glossary page onto Resources, next to the Culture gauge it explains.
+  The glossary itself was also trimmed of entries that duplicated other pages: `Work
+  card` (redundant with the Card types page) and `Staffing` (redundant with Play a turn,
+  and mostly implementation detail) were dropped, and `Culture requirement` lost its
+  "a gate, not a cost" framing as unnecessary jargon.
+  Same pass renamed the `recurring` `CardKind` to `action` end to end — `content/cards.ts`'s
+  type union and all its card literals, `run/moves.ts`'s filing check, `Collection.tsx`/
+  `DeckEditor.tsx`'s picker filters, `CardFace.tsx`'s banner/`kindClass` branches, plus
+  every doc/comment/test reference — so the type name matches the player-facing "Action"
+  label everywhere (the CSS layer already used `action`-named tokens/classes, so no CSS
+  changed).
+  Also corrected a discard/removed misconception the rename surfaced, in two passes.
+  First pass: the discard pile isn't specific to action cards (Work cards file there
+  too, just at end of turn instead of on play) — the actual rule is that **discard is
+  the default** for any card that's done being useful, and `removed` is the exception.
+  Second pass corrected *why* a card lands in `removed`: it was written up as if
+  `building` and `event` were kinds that inherently skip discard, but that's not true
+  either — going to `removed` is always a property of a specific *effect*, never of a
+  `kind`. A demolished building goes there only because some other card's
+  `effect.destroy` targeted it (a hypothetical future card could instead reclaim
+  territory by *discarding* a building, same as anything else); an event goes there
+  only if its own effect says so. That second part required an actual code change, not
+  just doc wording — `resolveHandEvents` (`rules/upkeep.ts`) used to send *every*
+  `event`-kind card to `removed` unconditionally, with no per-card opt-out, which didn't
+  match the by-effect model. Added `CardEffect.remove` (`rules/effects.ts`), mirroring
+  `effect.destroy`'s shape: an event now defaults to `discard` like anything else unless
+  its own effect sets `remove: true`. Barbarian, the only event so far, now carries that
+  flag explicitly. `rules/state.ts`'s `discard`/`removed` field comments,
+  `content/codex.ts`'s "Removed vs. discard" glossary entry, and `Codex.tsx`'s Event
+  description were all reworded to stop implying a kind-level guarantee.
+  Two card-face texts also got clearer wording: Destroy's effect line now reads "removes
+  a building from the run" instead of "Demolish a building" (`CardFace.tsx`'s
+  `describeCard`), and an event's condition line now reads "resolves at end of round,
+  then removed" only when its effect actually sets `remove` (otherwise just "resolves at
+  end of round") — so the card itself says what actually happens to it, not a blanket
+  claim for every event. `[size: M]` `[phase: 2]`
 - **Color-blind themes** — three new `THEMES` entries (Deuteranopia, Protanopia, Tritanopia), each a `:root[data-theme='…']` block in `index.css` that overrides only the hued/semantic tokens (accent, card-kind banners, danger/success/loss, culture, operating/idle building state, board tints) and falls through to Light's neutrals/text/surfaces — exactly the cheap addition the CSS-variable retrofit was meant to unblock. Deuteranopia and protanopia re-anchor the red-green-confused tokens to Okabe & Ito's color-universal-design hues (blue/orange/bluish-green/vermillion/reddish-purple), with protanopia's reds brightened slightly since that deficiency also dims long-wavelength light. Tritanopia is a much smaller override: red/green survive that deficiency fine, so danger/success/event/loss are untouched — the one real fix is Building's blue vs. Work's teal (both lean blue-green), pushed apart into indigo vs. true green, with Culture nudged from violet to magenta so it doesn't collide with the now-indigo Building hue. The Config theme picker also became a `<select>` dropdown (was a segmented button row) since six options no longer fit comfortably. Verified in Collection and the run loop, plus a simulated grayscale (achromatopsia) pass — see the design chat for the full writeup of what carries meaning by lightness/text vs. hue alone. `[size: M]` `[phase: 2]`
 - **Board-tinted run background** — the run loop's full-viewport ground backdrop now
   tints per the run's government board: `GameContext.tsx` exposes `board` (the
@@ -286,7 +329,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   component (no `useGame` — renders identically on the meta menu and mid-run) covering
   five topics: resources (the 5 core with their collapse consequences + the universal
   negative-resource loss rule, plus the 3 strategic gauges), card kinds
-  (permanent/recurring/event lifecycle), population & staffing, turn structure, and a
+  (permanent/action/event lifecycle), population & staffing, turn structure, and a
   keyword glossary. It fills the gap `Collection.tsx` leaves — *how the game works*, not
   *what cards exist*. Its list-shaped data (`CODEX_CORE_RESOURCES`/`CODEX_STRATEGIC`/
   `CODEX_GLOSSARY`) lives in `src/content/codex.ts`; the narrative pages are authored in

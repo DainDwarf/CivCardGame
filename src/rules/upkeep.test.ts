@@ -11,7 +11,7 @@ describe('resolveHandEvents', () => {
     expect(G.resources.military).toBe(6); // barbarian drained 4
     expect(G.removed).toEqual(['barbarian']);
     expect(G.hand).toEqual(['farm', 'workshop']); // non-events stay in hand for the discard sweep
-    expect(G.discard).toEqual([]); // events never recycle to discard
+    expect(G.discard).toEqual([]); // barbarian's effect.remove sends it to removed, not discard
   });
 
   it('resolves every event in the hand in one sweep', () => {

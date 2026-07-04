@@ -16,7 +16,7 @@ card game — play a *locked* pre-built deck against a mission) and a **meta loo
 (persistent deck construction, shop, mission selection — the *only* place decks are
 edited). See [`docs/DESIGN.md`](docs/DESIGN.md) for the full game design and roadmap.
 **Phase 1** (the run loop, under `src/run/`) is done: hybrid cards (building vs.
-recurring), the turn lifecycle, a **population/worker-staffing** layer (buildings must
+action), the turn lifecycle, a **population/worker-staffing** layer (buildings must
 be staffed to operate; the population eats food each round), and mission-driven
 win/lose conditions. **Phase 2** (contract + meta shell) is in progress: `src/contract.ts`
 defines `RunConfig`/`RunResult`; `src/app/App.tsx` switches between the meta menu
@@ -69,14 +69,22 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   a rule, put the logic here and test it directly — never bury it in a move or a
   component.**
 - `src/content/` — typed game data, separate from logic. **A building card *is* the building**
-  (there's no separate building catalogue): `cards.ts` (`CARDS`, each `building`, `recurring`,
+  (there's no separate building catalogue): `cards.ts` (`CARDS`, each `building`, `action`,
   `work`, or `event`) is the single card catalogue, and a `building` card carries its own
   building stats (`produces`/`cultureOutput`/`workers`/`tags`) right on the `CardDef`. Playing a
   `building` card places it in the `tableau` (one territory slot, auto-staffed) as a
   `BuildingInstance` that references the card by `cardId`; the card is **not** filed to a pile —
-  it lives on as that tableau instance until **demolished**, at which point its card goes to the
-  `removed` pile (`moves.ts`'s `playCard` destroy branch). A `recurring` card resolves its
-  `effect` and files to `discard`.
+  it lives on as that tableau instance, filed nowhere, for as long as it stays in play.
+  `discard` is where a card lands by default once it's done being useful; a demolished
+  building's card going to `removed` instead (`moves.ts`'s `playCard` destroy branch) isn't
+  an inherent trait of the `building` kind — it's a property of whatever effect took it out
+  of the tableau, and today the only such effect is the Destroy action card's
+  `effect.destroy`. A future card could just as well reclaim territory by *discarding* a
+  building instead of destroying it, filing that card to `discard` like anything else.
+  An `event` resolving to `removed` (rather than `discard`) is the same story as building
+  demolition — a property of its own `effect.remove` flag (see `rules/effects.ts`'s
+  `CardEffect`), not an inherent trait of the `event` kind either. An `action` card resolves
+  its `effect` and files to `discard`.
   A `work` card is **labour**: playing it costs no idle population and sticks it onto the board
   as a *staffable* `WorkInstance` in `GameState.workZone` (`rules/population.ts`'s `addWork`,
   auto-staffed like a building) — it produces its `effect.gain` only while staffed, at upkeep,
@@ -86,8 +94,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   Corvée and Harvest are the current work cards. A fourth kind, `event`, is a **disaster** card (docs/TODO.md): mission-injected only —
   never shown in the collection or deck editor and never player-playable (`unplayableReason`
   rejects it, so `playCard` does too). An event left in hand at end of turn auto-resolves
-  its `effect` and is destroyed to `removed` (see `rules/upkeep.ts`'s `resolveHandEvents`);
-  `effect.loss` removes resources (the mirror of `gain`).
+  its `effect`, then files to `discard` like any other resolved card *unless* that effect sets
+  `remove: true`, in which case it's destroyed to `removed` instead (see `rules/upkeep.ts`'s
+  `resolveHandEvents`). Barbarian, the one event so far, sets `remove: true` (`effect.loss`
+  removes resources — the mirror of `gain`).
   Also `decks.ts` (`DeckDef` + `DEFAULT_DECKS` — seed data for a new player's deck list,
   each a `CardId[]` draw order; every deck is player-editable, there's no separate
   read-only "built-in" registry — see `meta/store.ts`), `boards.ts` (`BOARDS` —
@@ -120,7 +130,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   reject. `playCard` pays costs (resources, discard cost), then routes by `kind`: a `building`
   card is placed in the `tableau` via `addBuilding` (staying in play, *not* filed to a pile) and a
   `work` card sticks onto the board via `addWork` (resolving *no* effect on play, filing to
-  `discard` only at end of turn); every other card resolves its `effect` and, if `recurring`,
+  `discard` only at end of turn); every other card resolves its `effect` and, if `action`,
   files to `discard`. A card with `effect.destroy` demolishes a chosen tableau building and sends
   *that* building's card to `removed`.
   `assignWorker`/`unassignWorker`/`transferWorker`/`toggleStaffing` all target a `Staffable`

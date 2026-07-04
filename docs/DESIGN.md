@@ -83,13 +83,32 @@ where the two are merged into one immutable run configuration. 🔧
 
 ### Card kinds — Hybrid ✅ / 🔧 details
 
-Cards differ by how they leave your hand:
+Cards differ by how they leave your hand. By default a card returns to the
+**discard** pile once it's done being useful (reshuffled into the deck when it runs
+dry) — the **removed** pile is the exception, only used where a specific effect
+says so:
 
 - **Permanent (commit):** Buildings, Wonders. Pay a cost to play; they leave the
   deck and enter your **tableau**, producing/affecting **every turn** for the rest
-  of the run. They thin your deck. → the *engine*.
-- **Recurring (recycle):** Actions, Units. Resolve an effect, then go to the
-  **discard**; reshuffled when the deck empties. → repeatable *tactics*.
+  of the run, thinning your deck. While pinned in the tableau a building's card is
+  filed nowhere — not discard, not removed. Where its card goes *once it leaves*
+  the tableau isn't a property of being a Permanent; it's decided by whatever
+  effect took it out. Today the only such card is Destroy, whose effect specifies
+  **removed**; a future card could instead reclaim territory by discarding a
+  building, sending it to **discard** like anything else. → the *engine*.
+- **Action (recycle):** Actions, Units. Resolve an effect, then go to the
+  **discard**. → repeatable *tactics*.
+- **Work (labour):** sticks onto the board as a staffable box instead of resolving
+  on play — no idle population required to play it. Produces its effect only while
+  staffed, then goes to **discard** at *end of turn* (not immediately, like Action).
+  → staffed *labour*.
+- **Event (disaster):** never player-playable — missions inject it into the deck.
+  Left in hand at end of turn, it auto-resolves its effect, then files to
+  **discard** by the same default as anything else — unless that effect says
+  otherwise. Barbarian, the only event so far, specifies it's exiled to
+  **removed** instead — gone for the rest of the run — but that's Barbarian's
+  own effect talking, not an inherent property of being an Event. → mission
+  *pressure*.
 
 ### Turn structure 🔧
 
@@ -97,7 +116,7 @@ A "round" = one turn:
 
 1. **Upkeep / Produce** — tableau generates resources; mission pressure ticks.
 2. **Draw** — draw up to hand size.
-3. **Action** — commit permanents (pay cost) and play recurring cards.
+3. **Action** — commit permanents (pay cost) and play action/work cards.
 4. **End** — evaluate the mission's objective (win?) and failure (lose?); discard;
    advance the round.
 
@@ -263,7 +282,7 @@ src/
 
 - **Phase 0 — Skeleton** ✅ done: a runnable turn-based run with a tiny card set.
 - **Phase 1 — Real run loop** ✅ done, tagged [`v0.0.1`](../CHANGELOG.md): `src/game/` → `src/run/`; hybrid cards
-  (permanent vs. recurring), the 5-resource core (Food / Production / Money / Science /
+  (permanent vs. action), the 5-resource core (Food / Production / Money / Science /
   Military), the turn phases, and **mission-driven objective + failure** evaluators;
   3 missions (The Enlightenment, The Long Winter, Barbarian Tide). Rules unit-tested +
   a headless run integration test (`src/run/run.test.ts`). A run is now genuinely

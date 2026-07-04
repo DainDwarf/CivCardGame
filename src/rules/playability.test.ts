@@ -3,7 +3,7 @@ import { unplayableReason } from './playability';
 import { blankState } from './state';
 import type { CardDef } from '../content/cards';
 
-const baseCard: CardDef = { id: 'test', name: 'Test', kind: 'recurring', cost: {} };
+const baseCard: CardDef = { id: 'test', name: 'Test', kind: 'action', cost: {} };
 
 describe('unplayableReason', () => {
   it('is playable when every gate passes', () => {

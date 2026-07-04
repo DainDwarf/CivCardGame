@@ -236,7 +236,10 @@ export function GameMenu({
                 setSubmenuId(null);
               }}
             >
-              <div className={styles.submenuPanel} onClick={(e) => e.stopPropagation()}>
+              <div
+                className={submenu.id === 'codex' ? `${styles.submenuPanel} ${styles.submenuPanelCodex}` : styles.submenuPanel}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <h3 className={styles.submenuTitle}>
                   <span aria-hidden="true">{submenu.icon}</span> {submenu.label}
                 </h3>

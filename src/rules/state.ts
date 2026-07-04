@@ -40,14 +40,21 @@ export interface GameState {
   hand: string[];
   /** Draw pile. */
   deck: string[];
-  /** Discard pile — recurring cards return here and reshuffle when the deck empties. */
+  /** Discard pile — where a card lands by default once it's played and resolved (or, for a
+   *  Work card, once its turn on the board ends, or an `event` card once it auto-resolves —
+   *  see `rules/upkeep.ts`'s `resolveHandEvents`). Going to `removed` instead is always the
+   *  exception, driven by a specific effect rather than a card's `kind`: a `building` card
+   *  goes there only if some other card's `effect.destroy` targets it (demolishing it out of
+   *  the tableau), and an `event` card goes there only if its own `effect.remove` is set
+   *  (currently just Barbarian). Reshuffled into the deck when it runs dry. */
   discard: string[];
   /**
    * Exile pile — cards permanently removed from the deck for the rest of the run (never
    * drawn again, never reshuffled). This is *not* the tableau: a building in play is an
    * active entity on the board, whereas a removed card is gone from play. A `building` card
-   * moves here only when its building is demolished (it left the tableau); auto-resolved
-   * event cards are exiled here too.
+   * moves here when demolished (via another card's `effect.destroy`), and an auto-resolved
+   * `event` card moves here if its own effect sets `remove: true` (currently just Barbarian)
+   * — see `discard`'s doc comment above for why neither is an inherent rule of its `kind`.
    */
   removed: string[];
   /** Buildings in play (each a placed `building` card), tracking their assigned workers. */

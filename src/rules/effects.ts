@@ -22,6 +22,13 @@ export interface CardEffect {
    * Requires a `destroyInstanceId` argument to `playCard` — handled there, not in `applyEffect`.
    */
   destroy?: true;
+  /**
+   * Exile *this* card to the removed pile once it resolves, instead of the default discard
+   * (e.g. a disaster event you don't want recurring). Currently only set on `event` cards,
+   * checked by `rules/upkeep.ts`'s `resolveHandEvents` — without it, a resolved card discards
+   * like anything else. Not a trait of any `kind`; it's the effect that decides.
+   */
+  remove?: true;
 }
 
 export function applyEffect(G: GameState, effect?: CardEffect): void {
