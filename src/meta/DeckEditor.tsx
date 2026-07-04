@@ -70,9 +70,37 @@ export function DeckEditor({
   const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');
 
+  // Copies of `cardId` still available to add — owned minus what's already in the deck,
+  // 'unlimited' passed through untouched. Shared by `atCap` and the picker's badge so both
+  // read the same number.
+  function remainingCopies(cardId: string): number | 'unlimited' {
+    const owned = copiesOwned(collection, cardId);
+    if (owned === 'unlimited') return 'unlimited';
+    const inDeck = deck.cards.filter((id) => id === cardId).length;
+    return Math.max(0, owned - inDeck);
+  }
+
+  // Whether every owned copy of `cardId` is already in the deck — mirrors `addCard`'s cap
+  // (rules/deckBuilder.ts) so the picker tile can visually reflect the same limit rather
+  // than just silently no-opping on click/drag.
+  function atCap(cardId: string): boolean {
+    const remaining = remainingCopies(cardId);
+    return remaining !== 'unlimited' && remaining <= 0;
+  }
+
+  // The picker's count badge shows *remaining* copies, not total owned — how many more of
+  // this card can still be added. A card owned only once never shows a badge at all (the
+  // ×N badge is only meaningful when there's a stack to distinguish from).
+  function pickerBadge(cardId: string): number | 'unlimited' | undefined {
+    const owned = copiesOwned(collection, cardId);
+    if (owned === 'unlimited') return 'unlimited';
+    if (owned <= 1) return undefined;
+    return remainingCopies(cardId) as number;
+  }
+
   function handleAdd(cardId: string) {
     setDeck((d) => {
-      const next = addCard(d.cards, cardId);
+      const next = addCard(d.cards, cardId, collection);
       return next === 'invalid' ? d : { ...d, cards: next };
     });
   }
@@ -93,6 +121,8 @@ export function DeckEditor({
 
   function onTilePointerDown(e: React.PointerEvent<HTMLElement>, cardId: string, source: 'picker' | 'banner') {
     if (e.button !== 0) return;
+    // A capped picker tile is inert — same as a disabled button, no drag/click starts.
+    if (source === 'picker' && atCap(cardId)) return;
     const r = e.currentTarget.getBoundingClientRect();
     setDrag({
       cardId,
@@ -169,9 +199,10 @@ export function DeckEditor({
                   key={c.id}
                   as="button"
                   card={c}
-                  className={styles.pickerTile}
-                  countBadge={copiesOwned(collection, c.id)}
-                  title="Click or drag into the deck to add a copy"
+                  className={`${styles.pickerTile}${atCap(c.id) ? ` ${styles.pickerTileAtCap}` : ''}`}
+                  countBadge={pickerBadge(c.id)}
+                  alwaysShowBadge
+                  title={atCap(c.id) ? 'All owned copies are already in this deck' : 'Click or drag into the deck to add a copy'}
                   onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
                 />
               ))}
@@ -187,9 +218,10 @@ export function DeckEditor({
                   key={c.id}
                   as="button"
                   card={c}
-                  className={styles.pickerTile}
-                  countBadge={copiesOwned(collection, c.id)}
-                  title="Click or drag into the deck to add a copy"
+                  className={`${styles.pickerTile}${atCap(c.id) ? ` ${styles.pickerTileAtCap}` : ''}`}
+                  countBadge={pickerBadge(c.id)}
+                  alwaysShowBadge
+                  title={atCap(c.id) ? 'All owned copies are already in this deck' : 'Click or drag into the deck to add a copy'}
                   onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
                 />
               ))}
@@ -205,9 +237,10 @@ export function DeckEditor({
                   key={c.id}
                   as="button"
                   card={c}
-                  className={styles.pickerTile}
-                  countBadge={copiesOwned(collection, c.id)}
-                  title="Click or drag into the deck to add a copy"
+                  className={`${styles.pickerTile}${atCap(c.id) ? ` ${styles.pickerTileAtCap}` : ''}`}
+                  countBadge={pickerBadge(c.id)}
+                  alwaysShowBadge
+                  title={atCap(c.id) ? 'All owned copies are already in this deck' : 'Click or drag into the deck to add a copy'}
                   onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
                 />
               ))}

@@ -20,11 +20,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Pre-alpha: **no save migration**, replace the store shape freely.
 
 - **Step 1 — Ownership & currency core** ✅ done — see *Done / shipped* below. `[phase: 3]`
-- **Step 2 — Deck-editor copy caps** — `deckBuilder.addCard` rejects exceeding owned copies
-  (`'unlimited'` = no cap), like the `MAX_DECKS` path; `DeckEditor` greys the add control at
-  cap. **Visibility half done:** `Collection` and `DeckEditor`'s picker now omit
-  not-yet-unlocked cards entirely (not shown locked) — an unlock is meant to be a surprise,
-  so nothing should hint at what's still out there. `[size: M]` `[phase: 3]`
+- **Step 2 — Deck-editor copy caps** ✅ done — see *Done / shipped* below. `[phase: 3]`
 - **Step 3 — Mission model + campaign-map data** — extend `MissionDef` (`reward`, `prereqs`,
   map position, `kind: 'standard' | 'infinite'`); author the starter DAG; `rules/campaign.ts`
   prereq gating (`availableMissions` / `isCompleted`) + tests. `[size: M]` `[phase: 3]`
@@ -96,3 +92,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   entirely from what `STARTING_COLLECTION` owns; `PlayerStore` gains `influence` /
   `collection` / `mapProgress` (all required — no migration path for a pre-alpha save
   missing them).
+- **Phase 3 Step 2 — Deck-editor copy caps** — visibility half: `Collection` and
+  `DeckEditor`'s picker omit not-yet-unlocked cards entirely (not shown locked), no total
+  count hint. Cap half: `deckBuilder.addCard` rejects an add past the copies owned
+  (`'unlimited'` never caps); `DeckEditor`'s picker tile dims/disables once every owned
+  copy is already in the deck (click and drag both no-op) instead of silently rejecting;
+  its count badge shows *remaining* copies left to add, not total owned (`CardFace` gained
+  an `alwaysShowBadge` prop so this badge can surface even at ×1/×0, unlike every other
+  `countBadge` use, which stays hidden at 1 since those show a stack count instead).

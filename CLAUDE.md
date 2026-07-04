@@ -30,8 +30,16 @@ from a deliberately narrow `content/collection.ts`'s `STARTING_COLLECTION` and a
 starting deck (`content/decks.ts`); `Collection.tsx` and `DeckEditor.tsx`'s picker now read
 `collection` and omit any not-yet-unlocked card entirely (Phase 3 Step 2's visibility half —
 an unlock is meant to be a surprise, so nothing hints at what's still out there, including a
-total count); the deck-editor copy cap (rejecting an `addCard` past copies owned) is Step 2's
-remaining piece.
+total count). Step 2's other half, the deck-editor copy cap, is also done: `rules/deckBuilder.ts`'s
+`addCard` rejects an add past the copies owned (`'unlimited'` never caps), and `DeckEditor.tsx`'s
+picker dims/disables a tile once every owned copy is already in the deck rather than letting
+the click/drag silently no-op. Its count badge shows *remaining* copies (owned minus however
+many are already in this deck), not total owned — `CardFace`'s `alwaysShowBadge` prop lets
+that badge surface even at ×1/×0, unlike every other `countBadge` use (deck banner, pile
+viewer, `Collection.tsx`), which stay hidden at 1 since those show a stack count, not a
+remaining-to-add count. A card owned only once never gets a picker badge at all. Still to
+come: a mission unlock or shop purchase actually writing to `collection` — nothing calls
+those yet.
 
 ## Commands
 

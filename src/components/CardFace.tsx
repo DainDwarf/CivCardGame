@@ -129,8 +129,15 @@ export interface CardFaceProps {
   className?: string;
   style?: React.CSSProperties;
   /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile viewer), or
-   *  "∞" for `'unlimited'` (Collection / deck editor picker, showing copies owned). */
+   *  "∞" for `'unlimited'` (Collection / deck editor picker, showing copies owned). Suppressed
+   *  at exactly 1 unless `alwaysShowBadge` opts in — a lone card in a stack doesn't need a
+   *  "×1", but the deck editor picker's *remaining-copies* badge does (1 left to add is still
+   *  worth stating), so it sets that flag explicitly. */
   countBadge?: number | 'unlimited';
+  /** Shows `countBadge` even when it's exactly `1` (or `0`) instead of only `> 1`. See
+   *  `countBadge`'s doc for why the deck editor picker needs this and stack-count badges
+   *  elsewhere don't. */
+  alwaysShowBadge?: boolean;
   /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
    *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
   badgeClassName?: string;
@@ -152,7 +159,7 @@ export interface CardFaceProps {
  * never depends on some other component supplying the right ancestor class.
  */
 export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceProps>(function CardFace(
-  { card, className, style, countBadge, badgeClassName, as = 'div', title, onPointerDown, onClick },
+  { card, className, style, countBadge, alwaysShowBadge, badgeClassName, as = 'div', title, onPointerDown, onClick },
   ref,
 ) {
   const text = describeCard(card);
@@ -184,7 +191,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
       </div>
       {conditions && <div className={styles.cardConditions}>{conditions}</div>}
       {text && <div className={styles.cardText}>{text}</div>}
-      {countBadge !== undefined && (countBadge === 'unlimited' || countBadge > 1) && (
+      {countBadge !== undefined && (countBadge === 'unlimited' || countBadge > 1 || alwaysShowBadge) && (
         <span className={`${styles.countBadge}${badgeClassName ? ` ${badgeClassName}` : ''}`}>
           {countBadge === 'unlimited' ? '∞' : `×${countBadge}`}
         </span>

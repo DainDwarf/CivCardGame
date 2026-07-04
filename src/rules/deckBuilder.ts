@@ -1,5 +1,6 @@
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
+import { copiesOwned, type OwnedCards } from './collection';
 
 /**
  * Deck *construction* — building/editing the card lists a player saves in the meta
@@ -17,11 +18,21 @@ export const MAX_DECKS = 6;
  *  catalogue — a data-coherence check (not a Phase 4 balance rule; see
  *  docs/DESIGN.md's deferred "deck construction constraints"). Mirrors the `'invalid'`
  *  signal `src/run/moves.ts` uses for rejected input, adapted to a function that
- *  returns a new array rather than mutating a draft. Does not mutate `deck`. */
-export function addCard(deck: string[], cardId: string): string[] | 'invalid' {
+ *  returns a new array rather than mutating a draft. Does not mutate `deck`.
+ *
+ *  Also enforces the copy cap (Phase 3 Step 2): `deck` may not hold more copies of
+ *  `cardId` than `collection` owns (an absent/zero entry, i.e. not yet unlocked, so
+ *  rejects the same as any other invalid add — a locked card was never offered to add
+ *  in the first place, see `DeckEditor.tsx`'s picker filter). `'unlimited'` never caps. */
+export function addCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
   if (!(cardId in CARDS)) return 'invalid';
   // Event cards are mission-injected only — never player-editable into a deck.
   if (CARDS[cardId].kind === 'event') return 'invalid';
+  const owned = copiesOwned(collection, cardId);
+  if (owned !== 'unlimited') {
+    const current = deck.filter((id) => id === cardId).length;
+    if (current >= owned) return 'invalid';
+  }
   return [...deck, cardId];
 }
 

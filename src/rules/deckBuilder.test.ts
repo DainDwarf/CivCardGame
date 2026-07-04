@@ -1,24 +1,43 @@
 import { describe, it, expect } from 'vitest';
 import { addCard, removeCard, groupCounts, resolveDeckCards, cloneDecks } from './deckBuilder';
 import type { DeckDef } from '../content/decks';
+import type { OwnedCards } from './collection';
+
+// Generous ownership so tests unrelated to the copy cap aren't gated by it.
+const UNLIMITED: OwnedCards = { farm: 'unlimited', library: 'unlimited' };
 
 describe('addCard', () => {
   it('appends a valid card', () => {
-    expect(addCard(['farm'], 'library')).toEqual(['farm', 'library']);
+    expect(addCard(['farm'], 'library', UNLIMITED)).toEqual(['farm', 'library']);
   });
 
   it('rejects an unknown cardId', () => {
-    expect(addCard(['farm'], 'not-a-card')).toBe('invalid');
+    expect(addCard(['farm'], 'not-a-card', UNLIMITED)).toBe('invalid');
   });
 
   it('does not mutate the input', () => {
     const deck = ['farm'];
-    addCard(deck, 'library');
+    addCard(deck, 'library', UNLIMITED);
     expect(deck).toEqual(['farm']);
   });
 
   it('works starting from an empty deck', () => {
-    expect(addCard([], 'farm')).toEqual(['farm']);
+    expect(addCard([], 'farm', UNLIMITED)).toEqual(['farm']);
+  });
+
+  it('rejects a not-yet-unlocked card', () => {
+    expect(addCard([], 'farm', {})).toBe('invalid');
+  });
+
+  it('rejects adding past the owned copy count', () => {
+    const owns2: OwnedCards = { farm: 2 };
+    expect(addCard(['farm'], 'farm', owns2)).toEqual(['farm', 'farm']);
+    expect(addCard(['farm', 'farm'], 'farm', owns2)).toBe('invalid');
+  });
+
+  it('never caps an unlimited card', () => {
+    const owns: OwnedCards = { farm: 'unlimited' };
+    expect(addCard(['farm', 'farm', 'farm'], 'farm', owns)).toEqual(['farm', 'farm', 'farm', 'farm']);
   });
 });
 

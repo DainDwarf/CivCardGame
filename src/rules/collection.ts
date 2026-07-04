@@ -3,8 +3,8 @@
  * means the card is not yet unlocked; a mission unlock grants the first copy, the shop
  * later raises it to ×2 / ×4 / `'unlimited'`. `Collection`/`DeckEditor` (Phase 3 Step 2)
  * read this to omit not-yet-unlocked cards entirely, rather than showing them locked —
- * unlocking one is meant to be a surprise. The deck editor will also use it to cap how
- * many copies of an owned card a deck may include (the other half of Step 2).
+ * unlocking one is meant to be a surprise. `rules/deckBuilder.ts`'s `addCard` also uses
+ * it to cap how many copies of an owned card a deck may include (the other half of Step 2).
  */
 export type OwnedCards = Record<string, number | 'unlimited'>;
 

@@ -42,6 +42,18 @@
   z-index: 2;
 }
 
+/* Every owned copy of this card is already in the deck — dimmed and inert, same
+   "explain the limit in place" treatment as Decks.tsx's capped "+ New Deck" tile. */
+.pickerTileAtCap {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pickerTileAtCap:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* The deck banner: a fixed bar spanning the full width of the meta screen's content area
    (viewport minus the nav column — MetaMenu.module.css's `.nav` is a fixed 220px), always
    visible regardless of scroll — same treatment as the run loop's own fixed hand bar
