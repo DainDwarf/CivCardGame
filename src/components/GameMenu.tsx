@@ -15,10 +15,10 @@ interface MenuItem {
 }
 
 /** The decided game-menu items (docs/DESIGN.md, Phase 2: "game menu (save, config,
- *  codex)"). All three submenus are populated: Save (backups), Config (device
+ *  codex)"). All three submenus are populated: Manage Save (backups), Config (device
  *  preferences), Codex (the rules reference — see `Codex.tsx`). */
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'save', icon: '💾', label: 'Save' },
+  { id: 'save', icon: '💾', label: 'Manage Save' },
   { id: 'config', icon: '⚙️', label: 'Config' },
   { id: 'codex', icon: '📖', label: 'Codex' },
 ];
@@ -312,14 +312,6 @@ export function GameMenu({
                         ))}
                       </div>
                     </div>
-                    <label className={styles.configToggleRow}>
-                      <input
-                        type="checkbox"
-                        checked={settings.confirmEndTurn}
-                        onChange={(e) => onUpdateSettings({ ...settings, confirmEndTurn: e.target.checked })}
-                      />
-                      <span>Confirm before ending a round</span>
-                    </label>
                     <div className={styles.configScaleRow}>
                       <div className={styles.configScaleHead}>
                         <span>UI size</span>
@@ -343,6 +335,14 @@ export function GameMenu({
                         aria-label="UI size"
                       />
                     </div>
+                    <label className={styles.configToggleRow}>
+                      <input
+                        type="checkbox"
+                        checked={settings.confirmEndTurn}
+                        onChange={(e) => onUpdateSettings({ ...settings, confirmEndTurn: e.target.checked })}
+                      />
+                      <span>Confirm before ending a round</span>
+                    </label>
                   </div>
                 ) : submenu.id === 'restartRun' || submenu.id === 'endRun' ? (
                   <div className={styles.confirmBody}>
