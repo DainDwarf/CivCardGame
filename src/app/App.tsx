@@ -130,8 +130,13 @@ export function App() {
 
   // A run also lands here when the player hits Restart instead of End Run — that
   // discards the run without leaving GameProvider, so it would otherwise never be recorded.
+  // A victory also marks the mission complete in mapProgress, unlocking anything gated on
+  // it (rules/campaign.ts) — just the completion flag, not the Influence/unlock reward
+  // itself (Phase 3 Step 4's job).
   function recordResult(result: RunResult) {
-    persist({ ...store, runHistory: [result, ...store.runHistory].slice(0, HISTORY_LIMIT) });
+    const mapProgress =
+      result.outcome === 'victory' ? { ...store.mapProgress, [result.missionId]: true as const } : store.mapProgress;
+    persist({ ...store, runHistory: [result, ...store.runHistory].slice(0, HISTORY_LIMIT), mapProgress });
   }
 
   function saveDeck(deck: DeckDef) {
@@ -184,6 +189,7 @@ export function App() {
             runHistory={store.runHistory}
             decks={store.decks}
             collection={store.collection}
+            mapProgress={store.mapProgress}
             uiScale={settings.uiScale}
             onLaunch={(config) => transition(() => setView({ screen: 'run', config }))}
             onSaveDeck={saveDeck}

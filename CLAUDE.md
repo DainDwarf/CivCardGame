@@ -37,9 +37,25 @@ the click/drag silently no-op. Its count badge shows *remaining* copies (owned m
 many are already in this deck), not total owned — `CardFace`'s `alwaysShowBadge` prop lets
 that badge surface even at ×1/×0, unlike every other `countBadge` use (deck banner, pile
 viewer, `Collection.tsx`), which stay hidden at 1 since those show a stack count, not a
-remaining-to-add count. A card owned only once never gets a picker badge at all. Still to
-come: a mission unlock or shop purchase actually writing to `collection` — nothing calls
-those yet.
+remaining-to-add count. A card owned only once never gets a picker badge at all. **Phase 3
+Step 3** (mission model + campaign-map data) is also done: `content/missions.ts`'s
+`MissionDef` gained `prereqs` (mission ids that must be completed first — empty = a DAG
+root) and `kind: 'standard' | 'infinite'` (all three current missions are `'standard'`;
+`'infinite'` is Step 6's). `rules/campaign.ts` (`isCompleted`/`isAvailable`/
+`availableMissions`) is the prereq-gating logic, pure and unit-tested: a mission is
+available once every one of its `prereqs` is in `mapProgress`, and — a deliberate choice,
+pinned by a test — stays available once completed (replayable, not hidden again). The test
+DAG reuses the existing three missions: The Long Winter is the root (`prereqs: []`); The
+Enlightenment and Barbarian Tide both gate on it (`prereqs: ['long_winter']`).
+`MissionSelect.tsx` reads `availableMissions(MISSIONS, mapProgress)` and omits anything not
+yet unlocked entirely, the same "unlock is a surprise" precedent as `Collection`/
+`DeckEditor` hiding locked cards — though this is a flat-list stopgap, not the final look;
+Step 5's map screen will likely show locked nodes rather than hide them. `App.tsx`'s
+`recordResult` marks `mapProgress[missionId] = true` on a victory outcome (both the normal
+end-run path and restarting an already-finished run) — just the completion flag, so the
+unlock chain is real and playable now; the Influence/card-unlock **reward** for clearing a
+mission is still Step 4's job, nothing computes or grants it yet. Still to come: a shop
+purchase actually writing to `collection`, and Step 4's reward computation.
 
 ## Commands
 

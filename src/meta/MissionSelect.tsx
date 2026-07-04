@@ -4,9 +4,9 @@ import { BOARDS, type BoardId } from '../content/boards';
 import type { DeckDef } from '../content/decks';
 import type { Resources } from '../rules/resources';
 import { buildRunConfig, type RunConfig, type RunSelection } from '../contract';
+import { availableMissions } from '../rules/campaign';
 import styles from './MissionSelect.module.css';
 
-const MISSION_IDS = Object.keys(MISSIONS);
 const BOARD_IDS = Object.keys(BOARDS) as BoardId[];
 
 const RESOURCE_ICON: Record<keyof Resources, string> = {
@@ -60,17 +60,25 @@ function OptionCard({
  * mission / board / deck into a provisional selection, then assembles a `RunConfig`
  * and hands it to `onLaunch` — the `app/` shell swaps to the run view. Run history
  * lives on its own Stats tab (`Stats.tsx`), not here. `decks` comes from the player's
- * store (see `App.tsx`) — there's no static deck registry to fall back on.
+ * store (see `App.tsx`) — there's no static deck registry to fall back on. `mapProgress`
+ * gates the mission list through `rules/campaign.ts`'s `availableMissions` — a
+ * not-yet-unlocked mission is omitted entirely (same "unlock is a surprise" precedent as
+ * `Collection`/`DeckEditor` hiding locked cards), not shown locked.
  */
 export function MissionSelect({
   decks,
+  mapProgress,
   onLaunch,
 }: {
   decks: DeckDef[];
+  mapProgress: Record<string, true>;
   onLaunch: (config: RunConfig) => void;
 }) {
+  const unlocked = availableMissions(MISSIONS, mapProgress);
+  const missionIds = unlocked.map((m) => m.id);
+
   const [selection, setSelection] = useState<RunSelection>({
-    missionId: MISSION_IDS[0],
+    missionId: missionIds[0] ?? '',
     boardId: BOARD_IDS[0],
     deckId: decks[0]?.id ?? '',
   });
@@ -92,7 +100,7 @@ export function MissionSelect({
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Mission</h2>
         <div className={styles.cardRow}>
-          {MISSION_IDS.map((id) => (
+          {missionIds.map((id) => (
             <OptionCard
               key={id}
               name={MISSIONS[id].name}

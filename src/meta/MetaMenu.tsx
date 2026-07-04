@@ -32,6 +32,7 @@ export function MetaMenu({
   runHistory,
   decks,
   collection,
+  mapProgress,
   uiScale,
   onLaunch,
   onSaveDeck,
@@ -42,6 +43,9 @@ export function MetaMenu({
   /** The player's card ownership — forwarded to `Collection` and `DeckEditor` so both
    *  omit not-yet-unlocked cards entirely (Phase 3 Step 2). */
   collection: OwnedCards;
+  /** Completed mission ids — forwarded to `MissionSelect` so it can gate the campaign
+   *  map's DAG (Phase 3 Step 3, `rules/campaign.ts`). */
+  mapProgress: Record<string, true>;
   /** Whole-UI scale (settings) — forwarded to `DeckEditor` for its drag-clone coordinate math. */
   uiScale: number;
   onLaunch: (config: RunConfig) => void;
@@ -81,7 +85,7 @@ export function MetaMenu({
         ))}
       </nav>
       <div className={styles.content}>
-        {screen === 'mission' && <MissionSelect decks={decks} onLaunch={onLaunch} />}
+        {screen === 'mission' && <MissionSelect decks={decks} mapProgress={mapProgress} onLaunch={onLaunch} />}
         {screen === 'collection' && <Collection collection={collection} />}
         {screen === 'decks' && (
           <Decks

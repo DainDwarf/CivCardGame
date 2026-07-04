@@ -16,6 +16,9 @@ export interface MissionDef {
   id: string;
   name: string;
   description: string;
+  /** Mission ids that must be completed (see `rules/campaign.ts`) before this one is
+   *  available. Empty = a DAG root, always available. */
+  prereqs: string[];
   /** One-time setup tweaks to the initial state (mission vars, modifiers). */
   setup?: (G: GameState) => void;
   /** Applied every round during upkeep (threat tick, food drain, ...). */
@@ -30,6 +33,9 @@ export interface MissionDef {
   victoryHint: string;
   /** One-liner describing the mission-specific defeat condition; null if famine is the only loss. */
   failureHint: string | null;
+  /** `'standard'` missions are binary complete/not; `'infinite'` (Step 6) has no win state and
+   *  scores an attempt instead. All current missions are `'standard'`. */
+  kind: 'standard' | 'infinite';
 }
 
 export const MISSIONS: Record<string, MissionDef> = {
@@ -37,11 +43,14 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'enlightenment',
     name: 'The Enlightenment',
     description: 'Reach 30 Science by the end of round 12.',
+    // Test DAG (docs/TODO.md Phase 3 Step 3): gated behind The Long Winter.
+    prereqs: ['long_winter'],
     objective: (G) => G.resources.science >= 30,
     failure: (G) => G.round > 12 && G.resources.science < 30,
     progress: (G) => `Science ${G.resources.science}/30`,
     victoryHint: 'Accumulate 30 Science before round 12 ends.',
     failureHint: 'Failing to reach 30 Science by round 12.',
+    kind: 'standard',
   },
 
   long_winter: {
@@ -49,6 +58,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     name: 'The Long Winter',
     description:
       'Endure 15 rounds of brutal winters. Each round drains 2 extra Food on top of your population — keep famine at bay.',
+    // DAG root: always available, unlocks enlightenment/barbarian_tide.
+    prereqs: [],
     onUpkeep: (G) => {
       G.resources.food -= 2;
     },
@@ -58,6 +69,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     progress: (G) => `Endured ${Math.min(G.round, 15)}/15 · Food ${G.resources.food}`,
     victoryHint: 'Endure 15 rounds of brutal winter without starving.',
     failureHint: null,
+    kind: 'standard',
   },
 
   barbarian_tide: {
@@ -65,6 +77,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     name: 'Barbarian Tide',
     description:
       `Four waves of Barbarians are hidden in your deck. Each one you draw strikes at the end of the round — draining 4 Military — then is gone. Build up your Military and survive all ${BARBARIANS} to win; let it fall below zero and your civilization is overrun.`,
+    prereqs: ['long_winter'],
     setup: (G) => {
       for (let i = 0; i < BARBARIANS; i++) G.deck.push('barbarian');
       // Shuffle the barbarians into the deck deterministically from the run's RNG stream.
@@ -81,5 +94,6 @@ export const MISSIONS: Record<string, MissionDef> = {
       `Barbarians beaten ${G.removed.filter((id) => id === 'barbarian').length}/${BARBARIANS} · Military ${G.resources.military}`,
     victoryHint: `Survive all ${BARBARIANS} Barbarian waves without your Military falling below zero.`,
     failureHint: 'Your Military falling below zero — the barbarians overrun you.',
+    kind: 'standard',
   },
 };

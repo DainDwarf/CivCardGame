@@ -5,9 +5,11 @@ import { cloneDecks } from '../rules/deckBuilder';
 import type { OwnedCards } from '../rules/collection';
 
 /**
- * The persisted player store (`localStorage`). `mapProgress` tracks completed mission
- * ids ahead of Phase 3 Step 3's full campaign-map DAG (which formalizes its shape);
- * for now it's just a completed-ids set.
+ * The persisted player store (`localStorage`). `mapProgress` is a completed-mission-ids
+ * set — `App.tsx`'s `recordResult` marks a mission complete on victory, and
+ * `rules/campaign.ts`'s `availableMissions` reads it to gate the campaign map's DAG
+ * (Phase 3 Step 3) via each `MissionDef`'s `prereqs`. Just the completion flag: the
+ * Influence/unlock reward for clearing a mission is still Step 4's job.
  */
 export interface PlayerStore {
   runHistory: RunResult[];

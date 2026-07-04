@@ -15,15 +15,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 > The Phase 3 design is locked in [`DESIGN.md`](DESIGN.md) (*Economy & progression*); this is
 > the actionable cut, held here for later sessions. Suggested order: 1 → 2 & 3 → 4 → 5 → 6 → 7
-> (Steps 0 and 1 are **done**). **Steps 1+2+3+4 form a playable spine** — unlock cards from
+> (Steps 0, 1, 2, and 3 are **done**). **Steps 1+2+3+4 form a playable spine** — unlock cards from
 > missions, own copies, build capped decks — before the map/shop UI (Step 5) lands.
 > Pre-alpha: **no save migration**, replace the store shape freely.
 
 - **Step 1 — Ownership & currency core** ✅ done — see *Done / shipped* below. `[phase: 3]`
 - **Step 2 — Deck-editor copy caps** ✅ done — see *Done / shipped* below. `[phase: 3]`
-- **Step 3 — Mission model + campaign-map data** — extend `MissionDef` (`reward`, `prereqs`,
-  map position, `kind: 'standard' | 'infinite'`); author the starter DAG; `rules/campaign.ts`
-  prereq gating (`availableMissions` / `isCompleted`) + tests. `[size: M]` `[phase: 3]`
+- **Step 3 — Mission model + campaign-map data** ✅ done — see *Done / shipped* below. `[phase: 3]`
 - **Step 4 — Reward computation + run-end wiring** — `rules/rewards.ts` (`computeRewards`;
   first-clear vs replay; infinite score) + tests; `RunResult.score`; `App.onRunEnd` applies
   rewards to the store; gameover / `Stats` surface them. `[size: M]` `[phase: 3]`
@@ -100,3 +98,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   its count badge shows *remaining* copies left to add, not total owned (`CardFace` gained
   an `alwaysShowBadge` prop so this badge can surface even at ×1/×0, unlike every other
   `countBadge` use, which stays hidden at 1 since those show a stack count instead).
+- **Phase 3 Step 3 — Mission model + campaign-map data** — `MissionDef` gains `prereqs`
+  (mission ids required first, empty = DAG root) and `kind: 'standard' | 'infinite'`;
+  `rules/campaign.ts` (`isCompleted`/`isAvailable`/`availableMissions`) + tests, including a
+  pinned "completed stays available" replay case. Test DAG reuses the 3 existing missions:
+  The Long Winter is the root, The Enlightenment and Barbarian Tide both gate on it.
+  `MissionSelect` hides not-yet-unlocked missions entirely; `App.recordResult` marks
+  `mapProgress` on victory, so the unlock chain is live end-to-end (Influence/unlock reward
+  computation itself stays Step 4). `reward`/map-position fields deferred — no consumer yet,
+  shape isn't settled by the design doc.
