@@ -28,8 +28,7 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
   foraging into a reliable but labor-hungry supply.
 - **Granary** — storage of surplus through winter. Buffers food against upkeep / Protects against food affecting events
   - *Storage as a deck-limit lever:* storage techs (and their missions) could raise the
-    **deck limit** — surplus you can carry forward maps naturally onto how many cards a
-    deck may hold.
+    **deck limit**.
   - *Holdover buildings:* buildings that let you **keep cards from being discarded turn
     to turn** (a card held over instead of recycled at end of turn) — the hand-level
     mirror of storing surplus.

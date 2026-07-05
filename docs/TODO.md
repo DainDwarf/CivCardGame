@@ -42,7 +42,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   mechanics aren't dumped on the player all at once. Rough pacing: the starting deck holds
   only `work`/`action` cards, no buildings — mission 1 unlocks the first buildings (House,
   Farm, Workshop); mission 2 introduces territory limitation (and maybe conquest?) alongside
-  them. `[size: L]` `[?]` `[phase: 3]`
+  them. Goal is to reach a certain population. Unlocks culture stuff. Mission 3 explains culture, goal to reach culture lvl2. `[size: L]` `[?]` `[phase: 3]`
 - **Step 9 — Peripheral** — `Stats` rework once rewards/trends exist.
   Independent. `[phase: 3]`
 
