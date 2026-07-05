@@ -1,7 +1,7 @@
 import { addResources, type Resources } from './resources';
 import { tableauProduction, tableauCultureOutput, workZoneProduction } from './production';
 import { foodUpkeep } from './population';
-import { applyEffect } from './effects';
+import { resolveCard } from './effects';
 import { CARDS } from '../content/cards';
 import type { GameState } from './state';
 
@@ -35,7 +35,8 @@ export function resolveHandEvents(G: GameState): void {
   G.hand = kept;
   for (const id of events) {
     const card = CARDS[id];
-    applyEffect(G, card.effect);
+    resolveCard({ G, self: { cardId: id } });
+    // `remove` is a filing decision (exile vs. discard), owned here, not by the resolver.
     (card.effect?.remove ? G.removed : G.discard).push(id);
   }
 }

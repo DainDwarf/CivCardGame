@@ -1,5 +1,5 @@
 import type { Resources } from '../rules/resources';
-import type { CardEffect } from '../rules/effects';
+import type { CardEffect, Resolver } from '../rules/effects';
 
 export type CardKind = 'building' | 'action' | 'work' | 'event';
 
@@ -37,8 +37,16 @@ export interface CardDef {
   cultureLevelReq?: number;
   /** Immediate one-shot effect when played (resource gain/loss, draw, population, territory,
    *  culture, or demolish). `building` cards have none — their output is the passive `produces`
-   *  below; `work` cards defer their `effect.gain` until staffed at upkeep. */
+   *  below; `work` cards defer their `effect.gain` until staffed at upkeep. This declarative bag
+   *  drives both the default resolver (`specToResolver`) and the card's auto-generated text
+   *  (`describeCard`) / play gates (`unplayableReason`), so most cards need only this. */
   effect?: CardEffect;
+  /** Bespoke play-time behavior for a card whose logic the declarative `effect` can't express
+   *  (self-reference, per-card state, targeting, interaction). When present it *replaces* the
+   *  default resolver derived from `effect`; the card then authors its own `description` for the
+   *  face, since there's no data bag to auto-render. Lives on the static catalogue, never in
+   *  `GameState` — see `rules/effects.ts`'s `EffectContext`. */
+  resolve?: Resolver;
   /** `building` cards: per-round output once staffed. */
   produces?: Partial<Resources>;
   /** `building` cards: per-round culture gained while staffed — accumulates on G.culture. */

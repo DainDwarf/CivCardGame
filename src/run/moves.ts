@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { addBuilding, addWork, applyEffect, findStaffable, freePopulation, requiredWorkersOf, subtractResources, unplayableReason } from '../rules';
+import { addBuilding, addWork, findStaffable, freePopulation, requiredWorkersOf, resolveCard, subtractResources, unplayableReason } from '../rules';
 import { CARDS } from '../content/cards';
 
 /**
@@ -57,18 +57,14 @@ export function playCard(
   // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
   // return the not-yet-filed sacrifices back into the deck.
   // A building card is placed in the tableau; a work card sticks onto the board and produces only
-  // while staffed (at upkeep); everything else applies its effect immediately.
+  // while staffed (at upkeep); everything else resolves its effect immediately through the single
+  // resolver path (which also performs a Destroy card's demolition, via `target`).
   if (card.kind === 'building') {
     addBuilding(G, cardId);
   } else if (card.kind === 'work') {
     addWork(G, cardId);
   } else {
-    applyEffect(G, card.effect);
-  }
-  if (card.effect?.destroy && destroyInstanceId !== undefined) {
-    const idx = G.tableau.findIndex((b) => b.id === destroyInstanceId);
-    // The demolished building left the tableau — its card goes to the removed pile.
-    if (idx !== -1) G.removed.push(G.tableau.splice(idx, 1)[0].cardId);
+    resolveCard({ G, self: { cardId }, target: destroyInstanceId });
   }
   for (const id of sacrificeIds) G.discard.push(id);
   // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,

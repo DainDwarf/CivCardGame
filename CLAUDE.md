@@ -135,7 +135,14 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   transient `workZone` of played `work` cards awaiting staffing, and the
   card zones `deck`/`hand`/`discard`/`removed` — plus `blankState()`); it lives here, not in the shell, because the mission
   evaluators reason over it. Also `resources.ts` (`Resources` + arithmetic), `deck.ts`
-  (draw/reshuffle), `effects.ts` (card effects — gain/loss/draw/population/`territory`/`culture`),
+  (draw/reshuffle), `effects.ts` (card effects — the declarative `CardEffect` bag
+  gain/loss/draw/population/`territory`/`culture`/`destroy`, applied by `applyEffect`; plus the
+  **resolver spine** `resolveCard(ctx)` — the single path "the card's effect" runs through, shared
+  by `moves.ts`'s `playCard` and `upkeep.ts`'s `resolveHandEvents` — which picks a card's own
+  `CardDef.resolve` if it has one, else the declarative default from `specToResolver(effect)`. The
+  resolver receives an `EffectContext` (`{ G, self: { cardId, instanceId? }, target? }`) so an
+  effect can know *which* card is resolving and *what* it targets; a Destroy card's demolition is
+  now a resolver behavior via `ctx.target`, not a special branch in `playCard`),
   `population.ts` (worker staffing over both buildings and work cards via the `Staffable`
   layer — `requiredWorkersOf` / `isOperating` / `freePopulation` /
   `findStaffable`, `addBuilding`/`addWork` with a shared `nextInstanceId` allocator — plus
