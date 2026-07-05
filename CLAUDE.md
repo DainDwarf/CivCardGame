@@ -94,7 +94,7 @@ on the `Shop` nav button (`MetaMenu.tsx`) rather than as a separate standalone p
 is the only place Influence is spent. `App.tsx`'s `buyCardTier` is the write
 path: it runs `buyTier` and `persist`s the reduced Influence + bumped collection, so that badge
 and the shop list update live (a card bought to unlimited drops out). Still to come:
-tutorial missions (Step 5.3), `RunResult.score`/reward for
+tutorial missions (Step 8), `RunResult.score`/reward for
 `'infinite'` missions (Step 6 — no infinite
 mission exists yet to produce one), and `Stats` surfacing a per-run reward (deferred since
 `RunResult` deliberately excludes rewards, and there's no per-run record of whether that run

@@ -14,7 +14,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Phase 3 — planned steps (economy & progression)
 
 > The Phase 3 design is locked in [`DESIGN.md`](DESIGN.md) (*Economy & progression*); this is
-> the actionable cut, held here for later sessions. Suggested order: 1 → 2 & 3 → 4 → 5 → 6 → 7
+> the actionable cut, held here for later sessions. Suggested order: 1 → 2 & 3 → 4 → 5 → 6 → 7 → 8
 > (Steps 0, 1, 2, and 3 are **done**). **Steps 1+2+3+4 form a playable spine** — unlock cards from
 > missions, own copies, build capped decks — before the map/shop UI (Step 5) lands.
 > Pre-alpha: **no save migration**, replace the store shape freely.
@@ -29,21 +29,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `contract.ts`), and there's no per-run record of whether *that* run was a first clear
   (`mapProgress` is current state, not a history snapshot); revisit if/when that's worth
   breaking the invariant. `[phase: 3]`
-- **Step 5 — Meta UI: map + shop + tutorials** — Influence display in the nav ✅ done (see
-  *Done / shipped* below); the rest is split into three substeps. `[phase: 3]`
+- **Step 5 — Meta UI: map + shop** — Influence display in the nav ✅ done (see
+  *Done / shipped* below); the rest is split into substeps. `[phase: 3]`
   - **Step 5.1 — Campaign Map screen** — ✅ done (see *Done / shipped* below): `CampaignMap.tsx`
     replaces `MissionSelect`'s flat list with a horizontally-scrollable DAG; node → launch popup.
     `[size: M]` `[phase: 3]`
   - **Step 5.2 — Shop** — ✅ done (see *Done / shipped* below): `meta/Shop.tsx` + `rules/shop.ts`;
     buy copy tiers, spend Influence. `[size: M]` `[phase: 3]`
-  - **Step 5.3 — Tutorial missions** — the first few meta missions double as tutorials,
-    introducing mechanics progressively; tutorial entry-node missions on the map. Covers
-    designing several missions, onboarding indicators/popups, and careful pacing so new
-    mechanics aren't dumped on the player all at once. Rough pacing: the starting deck holds
-    only `work`/`action` cards, no buildings — mission 1 unlocks the first buildings (House,
-    Farm, Workshop); mission 2 introduces territory limitation (and maybe conquest?) alongside
-    them. `[size: L]` `[?]` `[phase: 3]`
-  - **Step 5.4 — Mission detail panel** — insert a new panel between the map and the
+  - **Step 5.3 — Mission detail panel** — insert a new panel between the map and the
     board/deck popup: clicking a cleared/available node opens mission lore, explanation, and
     reward preview first; board/deck selection becomes a second step from there, rather than
     the single launch popup `CampaignMap.tsx` opens today. New flow: mission DAG → mission
@@ -55,13 +48,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   → `{ cardId, instanceId? }`). Board stickers (`setup.ts` modifiers); card stickers
   (per-copy, read by `effects.ts` / `production.ts`); shop sells + attach UI.
   `[size: L]` `[?]` `[phase: 3]`
-- **Step 8 — Peripheral** — culture → hand size; `Stats` rework once rewards/trends exist.
+- **Step 8 — Tutorial missions** — the first few meta missions double as tutorials,
+  introducing mechanics progressively; tutorial entry-node missions on the map. Covers
+  designing several missions, onboarding indicators/popups, and careful pacing so new
+  mechanics aren't dumped on the player all at once. Rough pacing: the starting deck holds
+  only `work`/`action` cards, no buildings — mission 1 unlocks the first buildings (House,
+  Farm, Workshop); mission 2 introduces territory limitation (and maybe conquest?) alongside
+  them. `[size: L]` `[?]` `[phase: 3]`
+- **Step 9 — Peripheral** — `Stats` rework once rewards/trends exist.
   Independent. `[phase: 3]`
 
 ## Meta loop (`src/meta/`)
 
 - **Card modifiers** — attach persistent modifiers to individual cards → **decided as stickers**; see **Step 7** above. `[phase: 3]`
-- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 8** above. `[?]` `[phase: 3]`
+- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 9** above. `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
 
@@ -71,7 +71,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - New mission: "Build the Wonder" `[?]` `[phase: 4]`
 - Culture-based missions (depend on the Culture resource) `[?]` `[phase: 4]`
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
-- Culture thresholds change hand size by default (no building required) — culture as a passive progression axis `[?]` `[phase: 4]`
 - Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
 
 ## UI (`src/components/`)
@@ -85,7 +84,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - Card that gives a draw when expanding territory `[?]` `[phase: 4]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]` `[phase: 4]`
-- Actually let Culture upgrade the hand size → **Step 8** above. `[?]` `[phase: 3]`
 - **Minimum deck size — 20 cards** — enforce a floor on deck size (mirrors the existing
   `MAX_DECKS` cap precedent — a core rule enforced at the deck writer, not just a UI gate);
   also means adjusting `content/decks.ts`'s starter deck up to 20 cards to satisfy it.
