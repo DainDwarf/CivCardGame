@@ -29,9 +29,61 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Step 5.1 — Campaign Map screen** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
   - **Step 5.2 — Shop** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
   - **Step 5.3 — Mission detail panel** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
-- **Step 6 — Infinite missions (run loop)** — endless play in `run/engine.ts` (escalating
-  threat, `score` = round, ends only on failure); author one infinite mission; infinite
-  framing in gameover / `Stats`. `[size: M]` `[phase: 3]`
+- **Step 6 — Infinite missions** — endless, replayable missions that never win and pay
+  Influence = rounds survived. Cut into substeps; suggested order **6.1 → 6.2 → 6.3a → 6.3b**.
+  `[phase: 3]`
+  - **Step 6.1 — Non-fixed (dynamic) card effects** — introduce effects whose magnitude scales
+    with a run-scoped counter, and ship the first one. Today every effect is a static
+    `CardEffect` applied by `rules/effects.ts`'s `applyEffect`; add the ability for an effect to
+    read/bump a counter in `G.vars` (already exists — `Record<string, number>`, `rules/state.ts`)
+    at play time, wired through `run/moves.ts`'s `playCard`. First card: **Cornucopia**
+    (`content/cards.ts`, `action`) — gains `+1 food` **and** raises every future Cornucopia's
+    gain by 1 for the rest of the run (e.g. `vars.cornucopia_gain`). UI note: `CardFace` renders
+    *static* effect text, so a growing "+N food" needs a live-number surface (badge / derived
+    text) — pick a minimal display. **Ship the scale-an-effect-by-a-`vars`-counter step as a
+    reusable helper, not baked into Cornucopia's path — Step 6.3 is its second caller (see
+    Link below).** `[size: M]` `[phase: 3]`
+  - **Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — make the infinite kind
+    real and reachable, tested with a throwaway mission before any threat exists.
+    `MissionDef.kind: 'standard' | 'infinite'` already exists (`content/missions.ts`); make
+    `reward?` and `map?` **optional** (infinite missions have neither). Scoring:
+    `rules/rewards.ts`'s `computeRewards` gains an infinite branch (Influence = rounds survived
+    = `RunResult.stats.turnsTaken` = `G.round`), paid **every attempt**; `app/App.tsx`'s
+    `recordResult` pays it regardless of `outcome` and **never** marks `mapProgress`. Guard the
+    direct `mission.reward.unlockCardId` reads in the gameover overlay (`components/Board.tsx`)
+    and the `MissionDetailPanel` reward preview (`meta/CampaignMap.tsx`) — both break on a
+    rewardless mission. UI: a **fixed bottom banner** in `CampaignMap.tsx` listing infinite
+    missions — a `flex: 0 0 auto` sibling of `.canvas` inside `.screen` (mirror `.header`),
+    **never `position: fixed`** (the app's `transform: scale()` wrapper breaks viewport-fixed;
+    that's why the map already scrolls inside `.canvas`). Filter infinite missions *out* of the
+    timeline nodes and *into* the banner, always available, click → existing `setDetail` →
+    `MissionDetailPanel` → `LaunchPopup` flow. Test harness: mock mission **`toto`**
+    (`kind: 'infinite'`, no threat) that force-ends at round 10 via an explicit objective/failure,
+    to verify banner + launch + that ~10 Influence is paid whether the stop reads as victory or
+    defeat. `[size: M]` `[phase: 3]`
+  - **Step 6.3a — Threat zone (pure core)** — a persistent board hazard as real run state. Add
+    `threats: ThreatInstance[]` to `GameState` (`rules/state.ts` — `{ id, cardId, level }`, init
+    `[]` in `blankState`) and a new `rules/threats.ts`: `addThreat(G, cardId)` (level 0) and
+    `tickThreats(G)` (subtract the threat's current drain from `G.resources`, then `level += 1`
+    — apply-then-increment, so round 1 drains 0). Drain magnitude = the threat card's base
+    `effect.loss` × `level`, computed via Step 6.1's scale-by-counter helper. Extend
+    `rules/population.ts`'s `nextInstanceId` to also scan `G.threats`. Call `tickThreats(G)`
+    inside `applyUpkeep` (`rules/upkeep.ts`) as a universal step (no-op when empty) so it also
+    flows into `projectedDelta`'s UI preview. Unit-test in `rules/threats.test.ts`. No UI.
+    `[size: S]` `[phase: 3]`
+  - **Step 6.3b — Threat on the board + Creeping Decay mission** — render + author the real
+    infinite mission. `Board.tsx` renders `G.threats` (near the mission HUD) as `CardFace`s with
+    a live "−N 🔨/round (growing)" badge and click → existing `CardZoomOverlay`; reads only
+    `GameState`, never the mission. Reframe the gameover overlay for a threat-driven collapse
+    (Influence = rounds survived). Add the **Creeping Decay** `event` card (`content/cards.ts`,
+    `effect: { loss: { production: 1 } }` = per-turn base) and an infinite mission whose `setup`
+    seeds it via `addThreat`; the growing production drain forces `coreCollapse` → `'ruin'`
+    (`run/engine.ts`), which realizes the score. `[size: M]` `[phase: 3]`
+  - **Link 6.1 ↔ 6.3:** both express a value that *changes over the run* by scaling a card's
+    effect by a counter in `G.vars`. They differ only in **trigger** — 6.1 escalates *per copy
+    played* (Cornucopia), 6.3 escalates *per turn* (the threat tick). So 6.1 must ship the "scale
+    an effect's magnitude by a `vars` counter" primitive **generically**, and 6.3a consumes that
+    same primitive for its drain. Build 6.1's helper with 6.3 as its second caller in mind.
 - **Step 7 — Stickers** *(last, deepest)* — resolve per-copy identity first (deck entries
   → `{ cardId, instanceId? }`). Board stickers (`setup.ts` modifiers); card stickers
   (per-copy, read by `effects.ts` / `production.ts`); shop sells + attach UI.
