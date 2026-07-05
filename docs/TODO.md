@@ -67,7 +67,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **Stable card ordering across views** — cards currently "move around" when adding/removing in the deck editor (and potentially other card grids); pick a sensible, stable sort order (by kind? cost? catalogue order?) and apply it consistently everywhere cards are listed — collection, deck editor picker/banner, pile viewers. `[size: S] [?] `
-- **Mystery card should reuse `CardFace`** — `CampaignMap.tsx`'s `MysteryCard` (Step 5.3) is a hand-rolled grey box that only borrows `CardFace.module.css`'s outer `.card` class; give `CardFace` a proper face-down mode instead of a parallel one-off component. `[size: S]` `[phase: 3]`
 - **Bug: white flash between mission lore panel and board/deck popup** — Step 5.3's `MissionDetailPanel` → `LaunchPopup` handoff on "Continue" shows a brief white flash, likely the backdrop unmounting/remounting between the two modals rather than one panel morphing into the next. `[size: S]` `[phase: 3]`
 - **Barbarian Tide's lore should show the Barbarian card** — `MissionDetailPanel` (Step 5.3) only shows the mission's *reward* card face; Barbarian Tide's lore column should also preview the Barbarian event card itself, since that's the card the mission is actually about. `[size: S]` `[?]` `[phase: 3]`
 - **Mission Lore cards should be click-to-zoom** — any `CardFace` shown in `MissionDetailPanel` (the reward unlock, and the Barbarian preview above) should open the shared `CardZoomOverlay` on click, same as hand/pile-viewer/Collection cards. `[size: S]` `[phase: 3]`
@@ -101,6 +100,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Mystery card reuses `CardFace`** — `CampaignMap.tsx`'s hand-rolled `MysteryCard` (a
+  one-off grey box borrowing only `CardFace.module.css`'s outer `.card` class) is gone;
+  `CardFace` now takes a `faceDown` prop (a discriminated union with `card`, so `card` is
+  only required when not face-down) rendering the same 118×162 box and header/banner/
+  description band layout as a real face — all blank grey, no text — plus a "?" glyph in the
+  art slot, instead of real card content. `MissionDetailPanel` calls `<CardFace faceDown />`
+  for the pre-clear reward slot.
 - **Bug fix: corner count-badge clipped in card grids** — root cause was a `box-sizing`
   mismatch, not the badge position: `CardFace.module.css`'s `.card` never set `box-sizing`,
   so a `<div>` instance (Collection/Shop) inherited the default `content-box` and rendered

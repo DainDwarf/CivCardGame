@@ -9,7 +9,6 @@ import { buildRunConfig, type RunConfig } from '../contract';
 import { isCompleted, isAvailable } from '../rules/campaign';
 import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
 import { CardFace } from '../components/CardFace';
-import cardStyles from '../components/CardFace.module.css';
 import styles from './CampaignMap.module.css';
 
 const BOARD_IDS = Object.keys(BOARDS) as BoardId[];
@@ -220,7 +219,7 @@ export function CampaignMap({
  * steps feel like one flow. Left column is narrative lore plus the mechanical explanation
  * (objective/failure hints); right column is the reward: Influence (struck through once
  * already claimed) and the unlock — the real card face once cleared (under a "Cards already
- * unlocked" subtitle), or a face-down `MysteryCard` beforehand, since which card a mission
+ * unlocked" subtitle), or `CardFace`'s `faceDown` mode beforehand, since which card a mission
  * grants stays a surprise until it's actually cleared (see `rules/rewards.ts`).
  */
 function MissionDetailPanel({
@@ -261,7 +260,7 @@ function MissionDetailPanel({
               {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
             </span>
             <div className={styles.rewardCards}>
-              {alreadyCleared ? <CardFace card={unlockCard} /> : <MysteryCard />}
+              {alreadyCleared ? <CardFace card={unlockCard} /> : <CardFace faceDown />}
             </div>
           </div>
         </div>
@@ -275,17 +274,6 @@ function MissionDetailPanel({
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-/** A face-down card: same box/dimensions as `CardFace` (shares its CSS module for the outer
- *  `.card` box) but grey with a bare "?" — the pre-clear stand-in for a mission's still-secret
- *  unlock. Not a real `CardFace` render since there's no `CardDef` to show yet. */
-function MysteryCard() {
-  return (
-    <div className={`${cardStyles.card} ${styles.mysteryCard}`}>
-      <span className={styles.mysteryGlyph} aria-hidden="true">?</span>
     </div>
   );
 }

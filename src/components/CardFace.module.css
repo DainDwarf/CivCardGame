@@ -198,6 +198,32 @@
   background: var(--card-work-band);
 }
 
+/* Face-down back (`faceDown` prop) — grey stand-in for a still-secret card, same box and band
+   layout (header/banner/description) as a real face, just blank — so it reads as "a card" with
+   its content hidden rather than a plain rectangle. Bands are pure black scrims (not
+   color-identity, see the theming convention) so they darken consistently over the grey
+   `--map-node-locked` base in both Light and Dark without needing their own tokens. */
+.faceDown {
+  background: var(--map-node-locked);
+  border-color: var(--map-node-locked-border);
+  cursor: default;
+}
+
+.faceDown .cardTop,
+.faceDown .cardText {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.faceDown .cardBanner {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.faceDownGlyph {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
 /* Optional "×N" badge (deck editor's grouped banner tiles, the run loop's pile viewer). */
 .countBadge {
   position: absolute;

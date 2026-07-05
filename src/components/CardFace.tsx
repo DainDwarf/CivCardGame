@@ -122,25 +122,11 @@ export function kindClass(kind: CardDef['kind']): string {
   return styles.building;
 }
 
-export interface CardFaceProps {
-  card: CardDef;
+interface CardFaceCommonProps {
   /** Extra class(es) layered onto the root — context-specific extras (hand overlap/hover-lift,
    *  drag states, grid-tile treatment, etc.) live with the caller, not here. */
   className?: string;
   style?: React.CSSProperties;
-  /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile viewer), or
-   *  "∞" for `'unlimited'` (Collection / deck editor picker, showing copies owned). Suppressed
-   *  at exactly 1 unless `alwaysShowBadge` opts in — a lone card in a stack doesn't need a
-   *  "×1", but the deck editor picker's *remaining-copies* badge does (1 left to add is still
-   *  worth stating), so it sets that flag explicitly. */
-  countBadge?: number | 'unlimited';
-  /** Shows `countBadge` even when it's exactly `1` (or `0`) instead of only `> 1`. See
-   *  `countBadge`'s doc for why the deck editor picker needs this and stack-count badges
-   *  elsewhere don't. */
-  alwaysShowBadge?: boolean;
-  /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
-   *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
-  badgeClassName?: string;
   /** Render as a native `<button>` (hand cards — keeps native focus/keyboard semantics) or a
    *  plain `<div>` (every other context, which are non-interactive or have their own click
    *  handling via a parent). Defaults to `'div'`. */
@@ -150,18 +136,96 @@ export interface CardFaceProps {
   onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
+export type CardFaceProps =
+  | (CardFaceCommonProps & {
+      card: CardDef;
+      faceDown?: false;
+      /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile
+       *  viewer), or "∞" for `'unlimited'` (Collection / deck editor picker, showing copies
+       *  owned). Suppressed at exactly 1 unless `alwaysShowBadge` opts in — a lone card in a
+       *  stack doesn't need a "×1", but the deck editor picker's *remaining-copies* badge does
+       *  (1 left to add is still worth stating), so it sets that flag explicitly. */
+      countBadge?: number | 'unlimited';
+      /** Shows `countBadge` even when it's exactly `1` (or `0`) instead of only `> 1`. See
+       *  `countBadge`'s doc for why the deck editor picker needs this and stack-count badges
+       *  elsewhere don't. */
+      alwaysShowBadge?: boolean;
+      /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
+       *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
+      badgeClassName?: string;
+    })
+  | (CardFaceCommonProps & {
+      /** Renders a grey face-down back instead of a real card — the same header/banner/
+       *  description band layout as a real face, all blank, plus a "?" glyph — the pre-clear
+       *  stand-in for a mission's still-secret unlock (`CampaignMap.tsx`'s `MissionDetailPanel`),
+       *  since there's no `CardDef` to show yet. No `card`/badge props apply in this mode. */
+      faceDown: true;
+    });
+
 /**
  * The visual face of a card — the single shared component behind every card rendering in the
  * game: hand cards, the play-animation ghost, the drag clone, pile-viewer tiles, the zoom
  * preview (all in `Board.tsx`), and the deck editor's picker/banner tiles. Owns its *complete*
  * visual — outer box, kind-coloured border/bands, and inner content — in one CSS module, so
  * kind-coloring (which relies on descendant selectors reaching from the root into inner spans)
- * never depends on some other component supplying the right ancestor class.
+ * never depends on some other component supplying the right ancestor class. `faceDown` renders
+ * the same outer box grey with a bare "?" instead, for when there's no `CardDef` to show yet
+ * (a mission's still-secret unlock).
  */
 export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceProps>(function CardFace(
-  { card, className, style, countBadge, alwaysShowBadge, badgeClassName, as = 'div', title, onPointerDown, onClick },
+  props,
   ref,
 ) {
+  const { className, style, as = 'div', title, onPointerDown, onClick } = props;
+
+  if (props.faceDown) {
+    const rootClassName = `${styles.card} ${styles.faceDown}${className ? ` ${className}` : ''}`;
+    // Same band layout as a real face (name/cost header, type banner, description footer) so
+    // the silhouette reads as "a card" — just blank grey, since there's no CardDef yet to
+    // supply real text for any of them.
+    const inner = (
+      <>
+        <div className={styles.cardTop}>
+          <span className={styles.cardName}>&nbsp;</span>
+          <span className={styles.cardCost}>&nbsp;</span>
+        </div>
+        <div className={styles.cardBanner}>&nbsp;</div>
+        <div className={styles.cardMid}>
+          <span className={styles.faceDownGlyph} aria-hidden="true">?</span>
+        </div>
+        <div className={styles.cardText}>&nbsp;</div>
+      </>
+    );
+    if (as === 'button') {
+      return (
+        <button
+          type="button"
+          ref={ref as React.Ref<HTMLButtonElement>}
+          className={rootClassName}
+          style={style}
+          title={title}
+          onPointerDown={onPointerDown}
+          onClick={onClick}
+        >
+          {inner}
+        </button>
+      );
+    }
+    return (
+      <div
+        ref={ref as React.Ref<HTMLDivElement>}
+        className={rootClassName}
+        style={style}
+        title={title}
+        onPointerDown={onPointerDown}
+        onClick={onClick}
+      >
+        {inner}
+      </div>
+    );
+  }
+
+  const { card, countBadge, alwaysShowBadge, badgeClassName } = props;
   const text = describeCard(card);
   const conditions = describeConditions(card);
   const banner = cardBanner(card);

@@ -100,9 +100,9 @@ authored for all three missions. Clicking a cleared/available map node now opens
 `MissionDetailPanel` first, a same-size modal inserted before the existing board/deck picker:
 a left column of lore + description + victory/failure hints, and a right column with the
 reward — an Influence line (struck through once already cleared) under a subtitle reading
-"1 new card" or, post-clear, "Cards already unlocked" — showing either a grey face-down
-`MysteryCard` (pre-clear, since which card a mission unlocks stays a surprise until it's
-actually cleared) or the real unlocked card via `CardFace` (post-clear) beneath it. Its
+"1 new card" or, post-clear, "Cards already unlocked" — showing either `CardFace`'s grey
+face-down `faceDown` mode (pre-clear, since which card a mission unlocks stays a surprise
+until it's actually cleared) or the real unlocked card via `CardFace` (post-clear) beneath it. Its
 "Continue" hands off to `LaunchPopup` (the board/deck picker, unchanged apart from dropping
 the lore/reward text its header used to carry, now that Step 5.3 owns that). Still to come:
 tutorial missions (Step 8), `RunResult.score`/reward for
