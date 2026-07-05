@@ -23,23 +23,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 2 — Deck-editor copy caps** ✅ done — see *Done / shipped* below. `[phase: 3]`
 - **Step 3 — Mission model + campaign-map data** ✅ done — see *Done / shipped* below. `[phase: 3]`
 - **Step 4 — Reward computation + run-end wiring** ✅ done (standard-mission half) — see
-  *Done / shipped* below. `RunResult.score` / infinite-mission payout stays deferred to
-  **Step 6**, since there's no infinite mission yet to produce a score. `Stats` surfacing
-  a per-run reward is also deferred — `RunResult` deliberately excludes rewards (see
-  `contract.ts`), and there's no per-run record of whether *that* run was a first clear
-  (`mapProgress` is current state, not a history snapshot); revisit if/when that's worth
-  breaking the invariant. `[phase: 3]`
+  *Done / shipped* below. `[phase: 3]`
 - **Step 5 — Meta UI: map + shop** — Influence display in the nav ✅ done (see
   *Done / shipped* below); the rest is split into substeps. `[phase: 3]`
-  - **Step 5.1 — Campaign Map screen** — ✅ done (see *Done / shipped* below): `CampaignMap.tsx`
-    replaces `MissionSelect`'s flat list with a horizontally-scrollable DAG; node → launch popup.
-    `[size: M]` `[phase: 3]`
-  - **Step 5.2 — Shop** — ✅ done (see *Done / shipped* below): `meta/Shop.tsx` + `rules/shop.ts`;
-    buy copy tiers, spend Influence. `[size: M]` `[phase: 3]`
-  - **Step 5.3 — Mission detail panel** — ✅ done (see *Done / shipped* below):
-    `MissionDetailPanel` now sits between the map and the board/deck popup — mission
-    lore/explanation/reward preview first, board/deck selection a second step from there.
-    `[size: M]` `[phase: 3]`
+  - **Step 5.1 — Campaign Map screen** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
+  - **Step 5.2 — Shop** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
+  - **Step 5.3 — Mission detail panel** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
 - **Step 6 — Infinite missions (run loop)** — endless play in `run/engine.ts` (escalating
   threat, `score` = round, ends only on failure); author one infinite mission; infinite
   framing in gameover / `Stats`. `[size: M]` `[phase: 3]`
@@ -147,8 +136,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   the pre-run `mapProgress`/`collection` App passes down — a preview, not a second source of
   truth — showing "+N ⭐ Influence · Unlocked X" on a first clear or "Already cleared — no
   reward for a replay." otherwise. A coherence test pins every mission's `unlockCardId`
-  resolving to a real `content/cards.ts` id. `RunResult.score`/infinite payout and `Stats`
-  surfacing stay deferred — see the planned-steps note above for why.
+  resolving to a real `content/cards.ts` id. `RunResult.score`/infinite-mission payout stays
+  deferred to **Step 6**, since there's no infinite mission yet to produce a score; `Stats`
+  surfacing a per-run reward is also deferred — `RunResult` deliberately excludes rewards
+  (see `contract.ts`), and there's no per-run record of whether *that* run was a first clear
+  (`mapProgress` is current state, not a history snapshot).
 - **Influence nav display** (pulled forward from Step 5) — `MetaMenu`'s left nav shows a
   `⭐ <count>` pill between the game title and the screen buttons, reading `store.influence`.
 - **Phase 3 Step 5.1 — Campaign Map screen** — `CampaignMap.tsx` replaces the flat
