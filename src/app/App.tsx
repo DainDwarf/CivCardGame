@@ -6,6 +6,7 @@ import { AccessibilityWelcome } from '../components/AccessibilityWelcome';
 import { GameProvider, useGame } from '../run/GameContext';
 import { loadStore, saveStore, type PlayerStore } from '../meta/store';
 import { MAX_DECKS } from '../rules/deckBuilder';
+import { buyTier } from '../rules/shop';
 import { computeRewards } from '../rules/rewards';
 import { isCompleted } from '../rules/campaign';
 import { MISSIONS } from '../content/missions';
@@ -170,6 +171,16 @@ export function App() {
     persist({ ...store, decks: store.decks.filter((d) => d.id !== id) });
   }
 
+  // The shop's write path (Phase 3 Step 5.2): spend Influence to raise a card's copy tier.
+  // `buyTier` is the pure rule (rules/shop.ts) and returns null for an unaffordable / maxed /
+  // not-owned card, so a rejected buy is a silent no-op here — the Shop's button is already
+  // disabled when unaffordable, making this a backstop like saveDeck's MAX_DECKS check.
+  function buyCardTier(cardId: string) {
+    const result = buyTier(store.collection, store.influence, cardId);
+    if (!result) return;
+    persist({ ...store, influence: result.influence, collection: result.collection });
+  }
+
   return (
     // Whole-UI scale wrapper — a transform:scale() container so `position: fixed` children
     // (hand bar, burger, deck-editor banner, drag clones) reparent to it and scale as one.
@@ -217,6 +228,7 @@ export function App() {
             onLaunch={(config) => transition(() => setView({ screen: 'run', config }))}
             onSaveDeck={saveDeck}
             onDeleteDeck={deleteDeck}
+            onBuyTier={buyCardTier}
           />
         </>
       )}

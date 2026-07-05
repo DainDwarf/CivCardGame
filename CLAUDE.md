@@ -81,8 +81,19 @@ unlock is still revealed only on the gameover overlay). The deck picker reuses t
 tile-fan + list-view display via `components/DeckDisplay.tsx` (`DeckTile`/`DeckListOverlay`,
 extracted from `Decks.tsx` so both render identically) minus the edit/copy/delete buttons — in
 the popup, clicking an unselected deck selects it, clicking the selected one opens its list-view.
-Still to come: a shop purchase actually writing
-to `collection` (Step 5.2), tutorial missions (Step 5.3), `RunResult.score`/reward for
+**Phase 3 Step 5.2** (shop) is also done: `rules/shop.ts` is the one pure place the copy-tier
+economy lives — a `TIER_LADDER` (×1→×2→×4→unlimited at 1/2/5 Influence; the numbers are
+balance-tunable, the ladder a core rule like `MAX_DECKS`), `nextTier` (the next rung + cost, or
+null for a maxed/not-owned/off-ladder count — one predicate that means "owned *and* still
+upgradeable"), and `buyTier` (the immutable `{ influence, collection }` purchase, returning null
+for an unaffordable/maxed/not-owned card, mirroring `computeRewards`). `Shop.tsx` (the new
+`🛒 Shop` nav tab) lists only upgradeable owned cards (the `nextTier !== null` filter hides both
+the ∞ basics and anything not unlocked), grouped like `Collection.tsx`, each tile a `CardFace`
+(current tier badge) over a one-click buy button (`⭐cost → ×N`, disabled when unaffordable — no
+confirm step, since a purchase only ever *adds* copies). `App.tsx`'s `buyCardTier` is the write
+path: it runs `buyTier` and `persist`s the reduced Influence + bumped collection, so the nav ⭐
+pill and the shop list update live (a card bought to unlimited drops out). Still to come:
+tutorial missions (Step 5.3), `RunResult.score`/reward for
 `'infinite'` missions (Step 6 — no infinite
 mission exists yet to produce one), and `Stats` surfacing a per-run reward (deferred since
 `RunResult` deliberately excludes rewards, and there's no per-run record of whether that run
@@ -127,10 +138,12 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   cap on how many decks a player may own (the number is balance-tunable, the limit itself is
   a core rule), enforced at the deck writer in `App.tsx`'s `saveDeck` with `Decks.tsx`'s
   disabled "+ New Deck" button as its UI reflection — distinct from `deck.ts`,
-  which owns the *in-run* draw pile, not deck editing), and `collection.ts` (`OwnedCards`
+  which owns the *in-run* draw pile, not deck editing), `collection.ts` (`OwnedCards`
   — `Record<cardId, number | 'unlimited'>`, an absent entry meaning not yet unlocked —
-  plus `copiesOwned`/`isOwned` read helpers; a mission unlock or shop purchase writing to
-  it is still to come, since nothing calls those yet). Unit tests sit alongside. **When adding
+  plus `copiesOwned`/`isOwned` read helpers; `rules/rewards.ts` (mission unlock) and
+  `rules/shop.ts` (shop purchase) are its writers), and `shop.ts` (the copy-tier economy —
+  `TIER_LADDER`, `nextTier`, and the immutable `buyTier` purchase; see Phase 3 Step 5.2 above).
+  Unit tests sit alongside. **When adding
   a rule, put the logic here and test it directly — never bury it in a move or a
   component.**
 - `src/content/` — typed game data, separate from logic. **A building card *is* the building**
@@ -232,11 +245,14 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   board (see the theming convention below), so adding a board's own tint is a
   CSS-only edit, no component change.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left column of big nav
-  buttons switches between four screens — `CampaignMap.tsx` (the Mission tab — the DAG
+  buttons switches between five screens — `CampaignMap.tsx` (the Mission tab — the DAG
   of missions as a horizontally-scrollable tech tree, each node opening a board/deck
   launch popup that assembles a `RunConfig` via `buildRunConfig` and calls `onLaunch`;
-  see Phase 3 Step 5.1 above), `Collection.tsx` (read-only catalogue over
-  `content/cards.ts` — no per-player ownership tracking yet), `Decks.tsx` (every deck
+  see Phase 3 Step 5.1 above), `Collection.tsx` (read-only catalogue of the cards the
+  player owns, reading `collection` to omit not-yet-unlocked cards), `Shop.tsx` (the
+  copy-tier shop — spend Influence to deepen owned cards, Phase 3 Step 5.2 above; lists
+  only upgradeable cards, each tile a `CardFace` over a one-click buy button calling
+  `onBuyTier` → `App.tsx`'s `buyCardTier`), `Decks.tsx` (every deck
   in the player's store as a grid of tiles, each a hover-revealed shingled fan of the
   deck's cards grouped ×N via `groupCounts` — the ×N badge itself only shows on hovering
   that card, via `CardFace`'s `badgeClassName`. The tile and its list-view overlay are the

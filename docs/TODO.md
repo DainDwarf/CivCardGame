@@ -34,8 +34,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Step 5.1 — Campaign Map screen** — ✅ done (see *Done / shipped* below): `CampaignMap.tsx`
     replaces `MissionSelect`'s flat list with a horizontally-scrollable DAG; node → launch popup.
     `[size: M]` `[phase: 3]`
-  - **Step 5.2 — Shop** — `meta/Shop.tsx`; buy copy tiers, spend Influence. `[size: M]`
-    `[phase: 3]`
+  - **Step 5.2 — Shop** — ✅ done (see *Done / shipped* below): `meta/Shop.tsx` + `rules/shop.ts`;
+    buy copy tiers, spend Influence. `[size: M]` `[phase: 3]`
   - **Step 5.3 — Tutorial missions** — the first few meta missions double as tutorials,
     introducing mechanics progressively; tutorial entry-node missions on the map. Covers
     designing several missions, onboarding indicators/popups, and careful pacing so new
@@ -79,6 +79,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **Stable card ordering across views** — cards currently "move around" when adding/removing in the deck editor (and potentially other card grids); pick a sensible, stable sort order (by kind? cost? catalogue order?) and apply it consistently everywhere cards are listed — collection, deck editor picker/banner, pile viewers. `[size: S] [?] `
+- **Bug: corner count-badge clipped in card grids** — `CardFace`'s `countBadge` (the ×N/∞ pill) sits at `top:-8px; right:-8px`, protruding past the tile; in a multi-column grid the tile to its right paints over it, so every card except the last-in-row shows only a partial badge. Affects the **Collection** and **Shop** grids (the deck editor's horizontal banner strip is unaffected — single row + top padding). Fix by insetting/raising the badge or nudging it inside the tile bounds, applied consistently across the card grids. `[size: S]`
 
 ## Game design & balance
 
@@ -165,3 +166,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   buttons — clicking an unselected deck selects it, clicking the selected one opens its
   list-view. New map/age/node theme tokens in `index.css` (Light + Dark; CVD themes fall
   through to Light since node state carries glyph + text-label backups, not color alone).
+- **Phase 3 Step 5.2 — Shop** — `rules/shop.ts` is the one pure place the copy-tier economy
+  lives: `TIER_LADDER` (×1→×2→×4→unlimited at 1/2/5 Influence — numbers balance-tunable, the
+  ladder a core rule like `MAX_DECKS`), `nextTier` (next rung + cost, or null for a
+  maxed/not-owned/off-ladder count — one predicate meaning "owned *and* still upgradeable"), and
+  `buyTier` (the immutable `{ influence, collection }` purchase, returning null for an
+  unaffordable/maxed/not-owned card, mirroring `computeRewards`). `meta/Shop.tsx` (the new `🛒
+  Shop` nav tab) lists only upgradeable owned cards (the `nextTier !== null` filter hides both
+  the ∞ basics and anything not unlocked), grouped like `Collection.tsx`, each tile a `CardFace`
+  (current tier badge) over a one-click buy button (`⭐cost → ×N`, disabled when unaffordable —
+  no confirm, since a purchase only ever adds copies). `App.tsx`'s `buyCardTier` runs `buyTier`
+  and `persist`s the reduced Influence + bumped collection, so the nav ⭐ pill and the list
+  update live (a card bought to unlimited drops out). Stickers stay Step 7 (need per-copy
+  identity first). `rules/shop.test.ts` covers the ladder + purchase edge cases.
