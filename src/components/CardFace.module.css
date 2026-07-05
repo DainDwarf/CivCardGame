@@ -5,6 +5,7 @@
 .card {
   position: relative;
   flex: 0 0 auto;
+  box-sizing: border-box; /* so `as="button"` (UA border-box) and `as="div"` (default content-box) render the same 118×162 box */
   width: 118px;
   height: 162px;
   padding: 0.45rem 0.5rem 0.5rem;
