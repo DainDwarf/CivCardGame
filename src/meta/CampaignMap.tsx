@@ -2,11 +2,14 @@ import { useRef, useState } from 'react';
 import { MISSIONS, type MissionDef } from '../content/missions';
 import { AGES } from '../content/ages';
 import { BOARDS, type BoardId } from '../content/boards';
+import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import type { Resources } from '../rules/resources';
 import { buildRunConfig, type RunConfig } from '../contract';
 import { isCompleted, isAvailable } from '../rules/campaign';
 import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
+import { CardFace } from '../components/CardFace';
+import cardStyles from '../components/CardFace.module.css';
 import styles from './CampaignMap.module.css';
 
 const BOARD_IDS = Object.keys(BOARDS) as BoardId[];
@@ -56,8 +59,10 @@ function describeBoard(board: (typeof BOARDS)[BoardId]): string {
  *
  * Ages (`content/ages.ts`) label ranges of the timeline as right-arrow bands across the
  * top; only a single "Testing" placeholder ships for now. Clicking a cleared/available
- * node opens `LaunchPopup` (board picker left, deck picker right) which assembles the
- * `RunConfig` and calls `onLaunch`. Same props contract as the old `MissionSelect`.
+ * node opens `MissionDetailPanel` (Step 5.3) first — lore, explanation, and a reward
+ * preview; its "Continue" hands off to `LaunchPopup` (board picker left, deck picker
+ * right), which assembles the `RunConfig` and calls `onLaunch`. Same props contract as
+ * the old `MissionSelect`.
  */
 export function CampaignMap({
   decks,
@@ -77,7 +82,10 @@ export function CampaignMap({
   const timelineWidth = PAD_X * 2 + maxCol * COL_W + NODE_W;
   const nodeAreaHeight = PAD_Y * 2 + maxRow * ROW_H + NODE_H;
 
-  // The mission whose launch popup is open (null = none). Only cleared/available nodes set it.
+  // Two-step launch flow (Step 5.3): a node click opens the detail panel (lore, explanation,
+  // reward); its "Continue" hands off to the board/deck launch popup. Only cleared/available
+  // nodes set either.
+  const [detail, setDetail] = useState<MissionDef | null>(null);
   const [launching, setLaunching] = useState<MissionDef | null>(null);
 
   // Drag-to-pan: grabbing empty canvas scrolls it horizontally. Nodes stopPropagation on
@@ -166,7 +174,7 @@ export function CampaignMap({
                   disabled={locked}
                   title={locked ? 'Complete its prerequisite to reveal this.' : undefined}
                   onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => !locked && setLaunching(m)}
+                  onClick={() => !locked && setDetail(m)}
                 >
                   <span className={styles.nodeGlyph} aria-hidden="true">
                     {cleared ? '✓' : locked ? '🔒' : '▶'}
@@ -182,10 +190,21 @@ export function CampaignMap({
         </div>
       </div>
 
+      {detail && (
+        <MissionDetailPanel
+          mission={detail}
+          alreadyCleared={isCompleted(mapProgress, detail.id)}
+          onCancel={() => setDetail(null)}
+          onContinue={() => {
+            setLaunching(detail);
+            setDetail(null);
+          }}
+        />
+      )}
+
       {launching && (
         <LaunchPopup
           mission={launching}
-          alreadyCleared={isCompleted(mapProgress, launching.id)}
           decks={decks}
           onClose={() => setLaunching(null)}
           onLaunch={onLaunch}
@@ -196,23 +215,96 @@ export function CampaignMap({
 }
 
 /**
- * The node launch panel: a modal over the map with the mission's objective / failure /
- * reward, a board picker on the left, and a deck picker on the right. Nothing is
- * pre-selected; "Start Mission" stays disabled until the player has chosen both a board
- * and a deck. Clicking an unselected deck selects it; clicking the already-selected deck
- * opens its list-view (`DeckListOverlay`, no edit/copy/delete). The reward preview shows
- * the Influence amount and that a card unlocks, but not *which* — the specific unlock is
- * still revealed only on the gameover overlay after clearing.
+ * Step 5.3's mission detail panel — the first step of the launch flow, inserted between the
+ * map and `LaunchPopup`. Same modal shell/size as `LaunchPopup` (`styles.popup`) so the two
+ * steps feel like one flow. Left column is narrative lore plus the mechanical explanation
+ * (objective/failure hints); right column is the reward: Influence (struck through once
+ * already claimed) and the unlock — the real card face once cleared (under a "Cards already
+ * unlocked" subtitle), or a face-down `MysteryCard` beforehand, since which card a mission
+ * grants stays a surprise until it's actually cleared (see `rules/rewards.ts`).
+ */
+function MissionDetailPanel({
+  mission,
+  alreadyCleared,
+  onCancel,
+  onContinue,
+}: {
+  mission: MissionDef;
+  alreadyCleared: boolean;
+  onCancel: () => void;
+  onContinue: () => void;
+}) {
+  const unlockCard = CARDS[mission.reward.unlockCardId];
+  return (
+    <div className={styles.popupBackdrop} onClick={onCancel} role="dialog" aria-modal="true">
+      <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.popupHeader}>
+          <h2 className={styles.popupTitle}>{mission.name}</h2>
+        </div>
+
+        <div className={styles.detailBody}>
+          <div className={styles.loreColumn}>
+            <p className={styles.loreText}>{mission.lore}</p>
+            <p className={styles.popupDesc}>{mission.description}</p>
+            <p className={styles.popupHints}>
+              🏆 {mission.victoryHint}
+              {mission.failureHint && <> · 💀 {mission.failureHint}</>}
+            </p>
+          </div>
+
+          <div className={styles.rewardColumn}>
+            <h3 className={styles.pickerTitle}>Reward</h3>
+            <p className={`${styles.rewardInfluence}${alreadyCleared ? ` ${styles.struckOut}` : ''}`}>
+              +{mission.reward.influence} ⭐ Influence
+            </p>
+            <span className={styles.rewardSubtitle}>
+              {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
+            </span>
+            <div className={styles.rewardCards}>
+              {alreadyCleared ? <CardFace card={unlockCard} /> : <MysteryCard />}
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.popupFooter}>
+          <button type="button" className={styles.cancelBtn} onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className={styles.startBtn} onClick={onContinue}>
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** A face-down card: same box/dimensions as `CardFace` (shares its CSS module for the outer
+ *  `.card` box) but grey with a bare "?" — the pre-clear stand-in for a mission's still-secret
+ *  unlock. Not a real `CardFace` render since there's no `CardDef` to show yet. */
+function MysteryCard() {
+  return (
+    <div className={`${cardStyles.card} ${styles.mysteryCard}`}>
+      <span className={styles.mysteryGlyph} aria-hidden="true">?</span>
+    </div>
+  );
+}
+
+/**
+ * The node launch panel — Step 5.3's second step, reached via `MissionDetailPanel`'s
+ * "Continue": a board picker on the left, a deck picker on the right. Lore, explanation, and
+ * the reward preview already live in the detail panel, so this step is purely board+deck
+ * selection. Nothing is pre-selected; "Start Mission" stays disabled until the player has
+ * chosen both. Clicking an unselected deck selects it; clicking the already-selected deck
+ * opens its list-view (`DeckListOverlay`, no edit/copy/delete).
  */
 function LaunchPopup({
   mission,
-  alreadyCleared,
   decks,
   onClose,
   onLaunch,
 }: {
   mission: MissionDef;
-  alreadyCleared: boolean;
   decks: DeckDef[];
   onClose: () => void;
   onLaunch: (config: RunConfig) => void;
@@ -236,16 +328,6 @@ function LaunchPopup({
         <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
           <div className={styles.popupHeader}>
             <h2 className={styles.popupTitle}>{mission.name}</h2>
-            <p className={styles.popupDesc}>{mission.description}</p>
-            <p className={styles.popupHints}>
-              🏆 {mission.victoryHint}
-              {mission.failureHint && <> · 💀 {mission.failureHint}</>}
-            </p>
-            <p className={styles.popupReward}>
-              {alreadyCleared
-                ? 'Already cleared — no reward for a replay.'
-                : `Reward: +${mission.reward.influence} ⭐ Influence · Unlocks a new card`}
-            </p>
           </div>
 
           <div className={styles.pickers}>

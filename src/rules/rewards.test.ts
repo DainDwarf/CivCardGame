@@ -8,6 +8,7 @@ function mission(reward: MissionDef['reward']): MissionDef {
   return {
     id: 'm',
     name: 'm',
+    lore: '',
     description: '',
     prereqs: [],
     objective: () => false,

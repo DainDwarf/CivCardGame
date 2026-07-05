@@ -36,11 +36,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     `[size: M]` `[phase: 3]`
   - **Step 5.2 — Shop** — ✅ done (see *Done / shipped* below): `meta/Shop.tsx` + `rules/shop.ts`;
     buy copy tiers, spend Influence. `[size: M]` `[phase: 3]`
-  - **Step 5.3 — Mission detail panel** — insert a new panel between the map and the
-    board/deck popup: clicking a cleared/available node opens mission lore, explanation, and
-    reward preview first; board/deck selection becomes a second step from there, rather than
-    the single launch popup `CampaignMap.tsx` opens today. New flow: mission DAG → mission
-    lore/explanation/rewards → board + deck selection. `[size: M]` `[?]` `[phase: 3]`
+  - **Step 5.3 — Mission detail panel** — ✅ done (see *Done / shipped* below):
+    `MissionDetailPanel` now sits between the map and the board/deck popup — mission
+    lore/explanation/reward preview first, board/deck selection a second step from there.
+    `[size: M]` `[phase: 3]`
 - **Step 6 — Infinite missions (run loop)** — endless play in `run/engine.ts` (escalating
   threat, `score` = round, ends only on failure); author one infinite mission; infinite
   framing in gameover / `Stats`. `[size: M]` `[phase: 3]`
@@ -72,6 +71,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - Culture-based missions (depend on the Culture resource) `[?]` `[phase: 4]`
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
 - Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
+- **Long Winter's food drain as a real event card** — currently `onUpkeep` hand-drains 2 extra Food each round (a mission special-case); instead make it a genuine `event` card that's auto-played at the start of the run, can't be removed, and sticks on the board for the mission's duration. `[?]` `[phase: 3]`
 
 ## UI (`src/components/`)
 
@@ -79,6 +79,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **Stable card ordering across views** — cards currently "move around" when adding/removing in the deck editor (and potentially other card grids); pick a sensible, stable sort order (by kind? cost? catalogue order?) and apply it consistently everywhere cards are listed — collection, deck editor picker/banner, pile viewers. `[size: S] [?] `
 - **Bug: corner count-badge clipped in card grids** — `CardFace`'s `countBadge` (the ×N/∞ pill) sits at `top:-8px; right:-8px`, protruding past the tile; in a multi-column grid the tile to its right paints over it, so every card except the last-in-row shows only a partial badge. Affects the **Collection** and **Shop** grids (the deck editor's horizontal banner strip is unaffected — single row + top padding). Fix by insetting/raising the badge or nudging it inside the tile bounds, applied consistently across the card grids. `[size: S]`
+- **Mystery card should reuse `CardFace`** — `CampaignMap.tsx`'s `MysteryCard` (Step 5.3) is a hand-rolled grey box that only borrows `CardFace.module.css`'s outer `.card` class; give `CardFace` a proper face-down mode instead of a parallel one-off component. `[size: S]` `[phase: 3]`
+- **Bug: white flash between mission lore panel and board/deck popup** — Step 5.3's `MissionDetailPanel` → `LaunchPopup` handoff on "Continue" shows a brief white flash, likely the backdrop unmounting/remounting between the two modals rather than one panel morphing into the next. `[size: S]` `[phase: 3]`
+- **Barbarian Tide's lore should show the Barbarian card** — `MissionDetailPanel` (Step 5.3) only shows the mission's *reward* card face; Barbarian Tide's lore column should also preview the Barbarian event card itself, since that's the card the mission is actually about. `[size: S]` `[?]` `[phase: 3]`
+- **Mission Lore cards should be click-to-zoom** — any `CardFace` shown in `MissionDetailPanel` (the reward unlock, and the Barbarian preview above) should open the shared `CardZoomOverlay` on click, same as hand/pile-viewer/Collection cards. `[size: S]` `[phase: 3]`
 
 ## Game design & balance
 
@@ -177,3 +181,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   and `persist`s the reduced Influence + bumped collection, so the nav ⭐ pill and the list
   update live (a card bought to unlimited drops out). Stickers stay Step 7 (need per-copy
   identity first). `rules/shop.test.ts` covers the ladder + purchase edge cases.
+- **Phase 3 Step 5.3 — Mission detail panel** — `MissionDef` gains a `lore` field (narrative
+  flavour text, distinct from the existing mechanical `description`). Clicking a cleared/
+  available map node now opens `MissionDetailPanel` first: left column is lore + description +
+  victory/failure hints, right column is the reward — an Influence line (struck through once
+  already cleared) with a subtitle ("1 new card" / "Cards already unlocked"), and either a
+  grey face-down `MysteryCard` (pre-clear) or the real unlocked `CardFace` (post-clear) below
+  it. Its "Continue" hands off to the existing `LaunchPopup` (board/deck picker), which no
+  longer repeats lore/reward text in its own header now that Step 5.3 owns that.

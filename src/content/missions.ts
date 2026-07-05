@@ -15,6 +15,10 @@ const BARBARIANS = 4;
 export interface MissionDef {
   id: string;
   name: string;
+  /** Narrative flavour text — the bulk of the Step 5.3 mission detail panel
+   *  (`meta/CampaignMap.tsx`'s `MissionDetailPanel`). Distinct from `description`, which
+   *  states the mechanical objective. */
+  lore: string;
   description: string;
   /** Mission ids that must be completed (see `rules/campaign.ts`) before this one is
    *  available. Empty = a DAG root, always available. */
@@ -52,6 +56,10 @@ export const MISSIONS: Record<string, MissionDef> = {
   enlightenment: {
     id: 'enlightenment',
     name: 'The Enlightenment',
+    lore:
+      'Salons and printing presses spread new ideas faster than any army could march. ' +
+      'Scholars who once worked in isolation now trade letters across borders, and a citizenry ' +
+      'that can read starts asking its rulers harder questions.',
     description: 'Reach 30 Science by the end of round 12.',
     // Test DAG (docs/TODO.md Phase 3 Step 3): gated behind The Long Winter.
     prereqs: ['long_winter'],
@@ -68,6 +76,10 @@ export const MISSIONS: Record<string, MissionDef> = {
   long_winter: {
     id: 'long_winter',
     name: 'The Long Winter',
+    lore:
+      'The sky has not cleared in months. Rivers freeze over, game vanishes from the woods, ' +
+      'and every granary in the settlement is being watched a little too closely. Your people ' +
+      'do not need conquest or invention right now — they need to survive until spring.',
     description:
       'Endure 15 rounds of brutal winters. Each round drains 2 extra Food on top of your population — keep famine at bay.',
     // DAG root: always available, unlocks enlightenment/barbarian_tide.
@@ -89,6 +101,10 @@ export const MISSIONS: Record<string, MissionDef> = {
   barbarian_tide: {
     id: 'barbarian_tide',
     name: 'Barbarian Tide',
+    lore:
+      'Riders have been seen on the horizon — first scouts, then whole warbands, drawn by ' +
+      'rumors of your granaries and gold. They do not come all at once; they come in waves, ' +
+      'testing your walls each time before falling back to gather strength for the next.',
     description:
       `Four waves of Barbarians are hidden in your deck. Each one you draw strikes at the end of the round — draining 4 Military — then is gone. Build up your Military and survive all ${BARBARIANS} to win; let it fall below zero and your civilization is overrun.`,
     prereqs: ['long_winter'],

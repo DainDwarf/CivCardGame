@@ -93,7 +93,18 @@ confirm step, since a purchase only ever *adds* copies). The `⭐ <count>` balan
 on the `Shop` nav button (`MetaMenu.tsx`) rather than as a separate standalone pill, since Shop
 is the only place Influence is spent. `App.tsx`'s `buyCardTier` is the write
 path: it runs `buyTier` and `persist`s the reduced Influence + bumped collection, so that badge
-and the shop list update live (a card bought to unlimited drops out). Still to come:
+and the shop list update live (a card bought to unlimited drops out). **Phase 3 Step 5.3**
+(mission detail panel) is also done: `MissionDef` gained a `lore` field — narrative flavour
+text, kept distinct from the existing `description` (which states the mechanical objective) —
+authored for all three missions. Clicking a cleared/available map node now opens
+`MissionDetailPanel` first, a same-size modal inserted before the existing board/deck picker:
+a left column of lore + description + victory/failure hints, and a right column with the
+reward — an Influence line (struck through once already cleared) under a subtitle reading
+"1 new card" or, post-clear, "Cards already unlocked" — showing either a grey face-down
+`MysteryCard` (pre-clear, since which card a mission unlocks stays a surprise until it's
+actually cleared) or the real unlocked card via `CardFace` (post-clear) beneath it. Its
+"Continue" hands off to `LaunchPopup` (the board/deck picker, unchanged apart from dropping
+the lore/reward text its header used to carry, now that Step 5.3 owns that). Still to come:
 tutorial missions (Step 8), `RunResult.score`/reward for
 `'infinite'` missions (Step 6 — no infinite
 mission exists yet to produce one), and `Stats` surfacing a per-run reward (deferred since
@@ -247,9 +258,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   CSS-only edit, no component change.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left column of big nav
   buttons switches between five screens — `CampaignMap.tsx` (the Mission tab — the DAG
-  of missions as a horizontally-scrollable tech tree, each node opening a board/deck
-  launch popup that assembles a `RunConfig` via `buildRunConfig` and calls `onLaunch`;
-  see Phase 3 Step 5.1 above), `Collection.tsx` (read-only catalogue of the cards the
+  of missions as a horizontally-scrollable tech tree, each node opening `MissionDetailPanel`
+  (lore/explanation/reward preview, Phase 3 Step 5.3 above) whose "Continue" hands off to a
+  board/deck launch popup that assembles a `RunConfig` via `buildRunConfig` and calls
+  `onLaunch`; see Phase 3 Step 5.1 above), `Collection.tsx` (read-only catalogue of the cards the
   player owns, reading `collection` to omit not-yet-unlocked cards), `Shop.tsx` (the
   copy-tier shop — spend Influence to deepen owned cards, Phase 3 Step 5.2 above; lists
   only upgradeable cards, each tile a `CardFace` over a one-click buy button calling

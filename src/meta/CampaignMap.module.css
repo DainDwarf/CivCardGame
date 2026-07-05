@@ -207,18 +207,80 @@
   color: var(--text-muted);
 }
 
-.popupReward {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--accent);
-}
-
 .pickers {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) minmax(360px, 1.5fr);
   gap: 1.5rem;
   align-items: start;
+}
+
+/* --- Mission detail panel (Step 5.3) --- */
+
+.detailBody {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(160px, 0.6fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.loreColumn {
+  min-width: 0;
+}
+
+.loreText {
+  margin: 0 0 0.9rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.rewardColumn {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.rewardInfluence {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.struckOut {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.rewardSubtitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.rewardCards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+/* Face-down stand-in for a still-secret unlock — grey, same box as a real CardFace. */
+.mysteryCard {
+  align-items: center;
+  justify-content: center;
+  background: var(--map-node-locked);
+  border-color: var(--map-node-locked-border);
+  cursor: default;
+}
+
+.mysteryGlyph {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--text-secondary);
 }
 
 .picker {

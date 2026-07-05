@@ -6,6 +6,7 @@ function mission(id: string, prereqs: string[]): MissionDef {
   return {
     id,
     name: id,
+    lore: '',
     description: '',
     prereqs,
     objective: () => false,
