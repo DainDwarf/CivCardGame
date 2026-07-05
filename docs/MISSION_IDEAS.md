@@ -15,6 +15,8 @@
  - **Clothing**: bone-needle hide sewing; unknown use TBD.
  - **Jewelry**: shell beads/ornaments, ~100,000+ years — the earliest valuables. Starting
    **treasury** giver.
+ - **Storytelling**: spends Science to draw an extra card.
+ - **Bartering**: spends money to gain food.
 
 ## Neolithic
 
@@ -25,6 +27,12 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
 - **Cereal domestication** — unlocks the Farm. The foundational food source; turns
   foraging into a reliable but labor-hungry supply.
 - **Granary** — storage of surplus through winter. Buffers food against upkeep / Protects against food affecting events
+  - *Storage as a deck-limit lever:* storage techs (and their missions) could raise the
+    **deck limit** — surplus you can carry forward maps naturally onto how many cards a
+    deck may hold.
+  - *Holdover buildings:* buildings that let you **keep cards from being discarded turn
+    to turn** (a card held over instead of recycled at end of turn) — the hand-level
+    mirror of storing surplus.
 - **Domestication** (animals) — herds as a less labor-intensive food/materials source
   that costs territory. Livestock only here (goats/sheep/cattle — they came *with*
   farming). 

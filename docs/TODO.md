@@ -39,7 +39,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Step 5.3 — Tutorial missions** — the first few meta missions double as tutorials,
     introducing mechanics progressively; tutorial entry-node missions on the map. Covers
     designing several missions, onboarding indicators/popups, and careful pacing so new
-    mechanics aren't dumped on the player all at once. `[size: L]` `[?]` `[phase: 3]`
+    mechanics aren't dumped on the player all at once. Rough pacing: the starting deck holds
+    only `work`/`action` cards, no buildings — mission 1 unlocks the first buildings (House,
+    Farm, Workshop); mission 2 introduces territory limitation (and maybe conquest?) alongside
+    them. `[size: L]` `[?]` `[phase: 3]`
+  - **Step 5.4 — Mission detail panel** — insert a new panel between the map and the
+    board/deck popup: clicking a cleared/available node opens mission lore, explanation, and
+    reward preview first; board/deck selection becomes a second step from there, rather than
+    the single launch popup `CampaignMap.tsx` opens today. New flow: mission DAG → mission
+    lore/explanation/rewards → board + deck selection. `[size: M]` `[?]` `[phase: 3]`
 - **Step 6 — Infinite missions (run loop)** — endless play in `run/engine.ts` (escalating
   threat, `score` = round, ends only on failure); author one infinite mission; infinite
   framing in gameover / `Stats`. `[size: M]` `[phase: 3]`
@@ -57,6 +65,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Cards & content (`src/content/`)
 
+- **Remove Settlers, replace with a Hut building** `[?]` `[phase: 3]`
 - **Disasters — expand** — the `event` card mechanic shipped (see `CHANGELOG.md`); grow it out with more disaster types beyond the Barbarian and missions that inject them (details TBD) `[?]` `[phase: 4]`
 - New mission type: "Metropolis" `[?]` `[phase: 4]`
 - New mission: "Build the Wonder" `[?]` `[phase: 4]`
@@ -76,6 +85,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - Card that gives a draw when expanding territory `[?]` `[phase: 4]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]` `[phase: 4]`
 - Actually let Culture upgrade the hand size → **Step 8** above. `[?]` `[phase: 3]`
+- **Minimum deck size — 20 cards** — enforce a floor on deck size (mirrors the existing
+  `MAX_DECKS` cap precedent — a core rule enforced at the deck writer, not just a UI gate);
+  also means adjusting `content/decks.ts`'s starter deck up to 20 cards to satisfy it.
+  `[phase: 3]`
+- **Default hand limit — 4 instead of 5** — lower the base starting hand size from 5 to 4.
+  `[phase: 3]`
 
 
 
