@@ -35,6 +35,9 @@ export function resolveHandEvents(G: GameState): void {
   G.hand = kept;
   for (const id of events) {
     const card = CARDS[id];
+    // Events auto-resolve at end of turn with no player present, so their resolvers must be
+    // non-interactive (must not set `G.pendingInteraction` — there'd be no UI to answer it). Only
+    // `action` cards may currently open an interaction; keep any future `event` resolver deterministic.
     resolveCard({ G, self: { cardId: id } });
     // `remove` is a filing decision (exile vs. discard), owned here, not by the resolver.
     (card.effect?.remove ? G.removed : G.discard).push(id);

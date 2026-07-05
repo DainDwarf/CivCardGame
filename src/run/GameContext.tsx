@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useReducer } from 'react';
 import { applyMove, createRun, endTurn, toRunResult, type Gameover, type RunState } from './engine';
-import { playCard, assignWorker, unassignWorker, toggleStaffing, transferWorker } from './moves';
+import { playCard, assignWorker, unassignWorker, toggleStaffing, transferWorker, resolveInteraction } from './moves';
 import type { GameState } from '../rules';
 import type { BoardId } from '../content/boards';
 import { reshuffleRunConfig, type RunConfig, type RunResult } from '../contract';
@@ -16,6 +16,8 @@ interface GameContextValue {
     unassignWorker: (id: number) => void;
     toggleStaffing: (id: number) => void;
     transferWorker: (fromId: number, toId: number) => void;
+    /** Answer the pending interaction (`G.pendingInteraction`) with the chosen option index. */
+    resolveInteraction: (answer: number) => void;
   };
   endTurn: () => void;
   /** Step back one undoable action. No-op when `canUndo` is false. */
@@ -113,6 +115,8 @@ export function GameProvider({
     toggleStaffing: (id: number) => dispatch({ type: 'move', fn: toggleStaffing, args: [id] }),
     transferWorker: (fromId: number, toId: number) =>
       dispatch({ type: 'move', fn: transferWorker, args: [fromId, toId] }),
+    resolveInteraction: (answer: number) =>
+      dispatch({ type: 'move', fn: resolveInteraction, args: [answer] }),
   }), []);
 
   const handlers = useMemo(() => ({
@@ -132,8 +136,9 @@ export function GameProvider({
     },
   }), [config, present, onRestart]);
 
-  // Undo is offered only within a live turn — not over a finished run.
-  const canUndo = past.length > 0 && !present.gameover;
+  // Undo is offered only within a live turn — not over a finished run, and not mid-interaction
+  // (a pending choice must be answered, not undone — the reveal already cleared the stack anyway).
+  const canUndo = past.length > 0 && !present.gameover && !present.G.pendingInteraction;
 
   function endRun() {
     const result = finishedResult(present);

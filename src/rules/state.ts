@@ -89,6 +89,12 @@ export interface GameState {
    */
   rngState: readonly number[];
   /**
+   * A card effect suspended awaiting a player choice, or `null` when none is pending. While set,
+   * the run is "paused" on that choice: `endTurn` no-ops and undo is blocked until it resolves (see
+   * `PendingInteraction`). Plain data, carried by undo/structuredClone for free.
+   */
+  pendingInteraction: PendingInteraction | null;
+  /**
    * Generic, effect-layer-owned store for per-card run state — a card whose behavior depends on a
    * run-scoped counter (e.g. Cornucopia's play count) keeps its number here, keyed however its
    * resolver chooses (by `cardId` for a per-card-id counter). Deliberately *one* generic field, not
@@ -97,6 +103,28 @@ export interface GameState {
    * `getCardState`/`bumpCardState`.
    */
   cardState: Record<string, number>;
+}
+
+/**
+ * A card effect suspended mid-resolution, waiting on a player choice (`rules/effects.ts`'s
+ * resolver `EffectContext.answer`). Plain data on `GameState` so it survives structuredClone/undo
+ * and stays in the framework-free core: the resolver reveals options, parks them here, and returns;
+ * the UI renders a prompt from this; `run/moves.ts`'s `resolveInteraction` re-enters the same card's
+ * resolver with the chosen index, which completes the effect and clears this back to `null`.
+ * A pending interaction is **non-cancelable** — the reveal has already committed (e.g. Foresight
+ * lifts cards off the deck, clearing the undo stack), so the only exit is answering it.
+ */
+export interface PendingInteraction {
+  /** The card whose resolver is suspended — `resolveInteraction` re-enters *this* card's resolver. */
+  cardId: string;
+  /** Which choice shape this is (drives the UI prompt). Only `'chooseCard'` exists so far. */
+  kind: 'chooseCard';
+  /** Prompt text for the modal header — authored by the card, so the shell needs no per-card copy. */
+  prompt: string;
+  /** The revealed card ids the player picks from. */
+  options: string[];
+  /** How many to pick (1 today). */
+  pick: number;
 }
 
 /** A zeroed baseline state — used by setup, tests, and (later) the simulator. */
@@ -116,6 +144,7 @@ export function blankState(missionId: string): GameState {
     handSize: 5,
     missionId,
     rngState: seededRng('blank').getState(),
+    pendingInteraction: null,
     cardState: {},
   };
 }

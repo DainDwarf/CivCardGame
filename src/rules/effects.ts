@@ -59,6 +59,13 @@ export interface EffectContext {
   /** A pre-selected target instance id chosen by the UI before the move fired (e.g. the building a
    *  Destroy card demolishes), threaded here instead of as a bespoke move parameter. */
   target?: number;
+  /**
+   * The player's answer to a suspended interaction, `undefined` on the *first* pass (when the
+   * resolver reveals options and parks a `PendingInteraction`) and the chosen option index on
+   * *resume* (via `resolveInteraction`). Branch on `answer === undefined`, never `!answer` — index
+   * `0` is a valid answer.
+   */
+  answer?: number;
 }
 
 /** A card's play-time behavior: mutate `ctx.G` given the resolving card and its target. Lives on the

@@ -13,7 +13,9 @@ export const STARTING_COLLECTION: OwnedCards = {
   workshop: 2,
   library: 1,
   theater: 1,
-  // Seeded here (pre-alpha) so the growing-gain Cornucopia is immediately reachable for testing;
-  // a later pass may instead make it a mission unlock, per the "unlocks are surprises" design.
+  // Seeded here (pre-alpha) so the growing-gain Cornucopia and the interactive Foresight are
+  // immediately reachable for testing; a later pass may instead make them mission unlocks, per the
+  // "unlocks are surprises" design.
   cornucopia: 2,
+  foresight: 2,
 };

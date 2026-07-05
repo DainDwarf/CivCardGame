@@ -1,5 +1,6 @@
 import { addResources, scaleResources, type Resources } from '../rules/resources';
 import { bumpCardState, getCardState, type GameState } from '../rules/state';
+import { shuffleFromState } from '../rules/rng';
 import type { CardEffect, Resolver } from '../rules/effects';
 
 export type CardKind = 'building' | 'action' | 'work' | 'event';
@@ -103,6 +104,45 @@ export const CARDS: Record<string, CardDef> = {
     resolve: ({ G, self }) => {
       addResources(G.resources, scaleResources({ food: 1 }, getCardState(G, self.cardId) + 1));
       bumpCardState(G, self.cardId);
+    },
+  },
+
+  // Foresight: the first *interactive* card — its effect suspends mid-resolution for a player choice.
+  // Reveals the top 3 of the draw pile, you draw 1, the rest shuffle back. The two-branch resolver
+  // (keyed on `answer === undefined`) parks the revealed cards in G.pendingInteraction on the first
+  // pass and completes on resume; see rules/state.ts's PendingInteraction.
+  foresight: {
+    id: 'foresight', name: 'Foresight', kind: 'action', cost: { science: 1 },
+    description: 'Peek the top 3 cards; draw 1, shuffle the rest back',
+    resolve: (ctx) => {
+      const { G } = ctx;
+      if (ctx.answer === undefined) {
+        // Reveal: lift up to 3 off the top of the draw pile into a choice tray. Removing them (not
+        // merely reading) makes GameContext's !sameDeck reveal-boundary fire, clearing the undo
+        // stack so the peek can't be un-seen. An empty draw pile fizzles (no discard reshuffle here).
+        const options = G.deck.slice(0, 3);
+        if (options.length === 0) return;
+        G.deck = G.deck.slice(options.length);
+        G.pendingInteraction = {
+          cardId: ctx.self.cardId,
+          kind: 'chooseCard',
+          prompt: 'Draw one — the rest shuffle back',
+          options,
+          pick: 1,
+        };
+        return;
+      }
+      // Resume: `answer` is the chosen index (0 is valid — hence `=== undefined` above). Draw it; the
+      // rest return to the deck, which then reshuffles deterministically from the run's RNG stream.
+      const pending = G.pendingInteraction;
+      if (!pending) return;
+      const chosen = pending.options[ctx.answer];
+      if (chosen !== undefined) G.hand.push(chosen);
+      const rest = pending.options.filter((_, i) => i !== ctx.answer);
+      const { result, rngState } = shuffleFromState([...rest, ...G.deck], G.rngState);
+      G.deck = result;
+      G.rngState = rngState;
+      G.pendingInteraction = null;
     },
   },
 

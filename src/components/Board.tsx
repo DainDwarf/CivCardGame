@@ -1446,6 +1446,26 @@ export function Board({
         </div>
       )}
 
+      {/* A card effect suspended awaiting a choice (e.g. Foresight's peek). Resolve-only: no
+          dismiss path — clicking an option is the only way out (see .interactionBackdrop). */}
+      {G.pendingInteraction && (
+        <div className={styles.interactionBackdrop} role="dialog" aria-modal="true">
+          <div className={styles.interactionPanel}>
+            <h3 className={styles.interactionPrompt}>{G.pendingInteraction.prompt}</h3>
+            <div className={styles.interactionGrid}>
+              {G.pendingInteraction.options.map((cardId, i) => (
+                <CardFace
+                  key={i}
+                  card={CARDS[cardId]}
+                  className={styles.interactionCard}
+                  onClick={() => moves.resolveInteraction(i)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Zoomed card preview, opened by clicking a card. Sits above the pile viewer
           (CardZoomOverlay's backdrop is z-index 80 vs. .pileBackdrop's 75). */}
       <CardZoomOverlay

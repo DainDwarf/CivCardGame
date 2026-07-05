@@ -47,6 +47,9 @@ export function toRunResult(G: GameState, gameover: Gameover): RunResult {
 
 export function endTurn(state: RunState): RunState {
   if (state.gameover) return state;
+  // A pending interaction pauses the run — the turn can't end until the player answers it, or the
+  // parked (revealed) cards would be stranded and the choice would leak across the turn boundary.
+  if (state.G.pendingInteraction) return state;
   const G = structuredClone(state.G);
   applyUpkeep(G, MISSIONS[G.missionId]?.onUpkeep);
   // Check for collapse/victory before clearing the hand so that the hand is visible for inspection.

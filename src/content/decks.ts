@@ -25,8 +25,9 @@ export const DEFAULT_DECKS: DeckDef[] = [
     cards: [
       'settlers', 'settlers', 'corvee', 'corvee', 'harvest', 'harvest',
       'farm', 'workshop', 'farm', 'workshop', 'library', 'theater',
-      // Two Cornucopias so the run-scoped growing gain is visible in a single playthrough.
-      'cornucopia', 'cornucopia',
+      // Two Cornucopias so the run-scoped growing gain is visible in a single playthrough, plus a
+      // Foresight to exercise the interactive peek/choose.
+      'cornucopia', 'cornucopia', 'foresight',
     ],
   },
 ];
