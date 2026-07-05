@@ -62,8 +62,7 @@ a first clear) and a no-op unlock if the card is somehow already owned. `App.tsx
 `mapProgress` write; `Board.tsx`'s gameover overlay previews the identical payout off the same
 function and the pre-run `mapProgress`/`collection` App hands down (a preview, not a second
 source of truth), showing "+N ⭐ Influence · Unlocked X" on a first clear or "Already cleared —
-no reward for a replay." otherwise. `MetaMenu`'s nav also now shows a `⭐ <count>` pill (pulled
-forward from Step 5) reading `store.influence`. **Phase 3 Step 5.1** (campaign map screen) is
+no reward for a replay." otherwise. **Phase 3 Step 5.1** (campaign map screen) is
 also done: `CampaignMap.tsx` replaces the old flat `MissionSelect` list with humanity's history
 as a horizontally-scrollable branching tech tree (docs/DESIGN.md). Each `MissionDef` now carries
 an authored `map: { col, row }` grid position (`content/missions.ts`); nodes are placed from it,
@@ -90,9 +89,11 @@ for an unaffordable/maxed/not-owned card, mirroring `computeRewards`). `Shop.tsx
 `🛒 Shop` nav tab) lists only upgradeable owned cards (the `nextTier !== null` filter hides both
 the ∞ basics and anything not unlocked), grouped like `Collection.tsx`, each tile a `CardFace`
 (current tier badge) over a one-click buy button (`⭐cost → ×N`, disabled when unaffordable — no
-confirm step, since a purchase only ever *adds* copies). `App.tsx`'s `buyCardTier` is the write
-path: it runs `buyTier` and `persist`s the reduced Influence + bumped collection, so the nav ⭐
-pill and the shop list update live (a card bought to unlimited drops out). Still to come:
+confirm step, since a purchase only ever *adds* copies). The `⭐ <count>` balance itself lives
+on the `Shop` nav button (`MetaMenu.tsx`) rather than as a separate standalone pill, since Shop
+is the only place Influence is spent. `App.tsx`'s `buyCardTier` is the write
+path: it runs `buyTier` and `persist`s the reduced Influence + bumped collection, so that badge
+and the shop list update live (a card bought to unlimited drops out). Still to come:
 tutorial missions (Step 5.3), `RunResult.score`/reward for
 `'infinite'` missions (Step 6 — no infinite
 mission exists yet to produce one), and `Stats` surfacing a per-run reward (deferred since

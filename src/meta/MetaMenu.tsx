@@ -81,10 +81,6 @@ export function MetaMenu({
     <div className={styles.shell}>
       <nav className={styles.nav}>
         <h1 className={styles.gameTitle}>CivCardGame</h1>
-        <div className={styles.influence}>
-          <span aria-hidden="true">⭐</span>
-          {influence}
-        </div>
         {NAV.map((n) => (
           <button
             key={n.screen}
@@ -97,6 +93,12 @@ export function MetaMenu({
               {n.icon}
             </span>
             <span className={styles.navLabel}>{n.label}</span>
+            {n.screen === 'shop' && (
+              <span className={styles.navInfluenceBadge}>
+                <span aria-hidden="true">⭐</span>
+                {influence}
+              </span>
+            )}
           </button>
         ))}
       </nav>
