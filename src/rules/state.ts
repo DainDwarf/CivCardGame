@@ -81,8 +81,6 @@ export interface GameState {
   handSize: number;
   /** Which mission this run is playing (looked up in the MISSIONS registry). */
   missionId: string;
-  /** Mission-specific counters (e.g. `threat`). Keeps `GameState` generic. */
-  vars: Record<string, number>;
   /**
    * Persisted state of the run's RNG stream (`rules/rng.ts`'s `seededRng`/
    * `shuffleFromState`), advanced each time the discard pile reshuffles into a new
@@ -108,7 +106,6 @@ export function blankState(missionId: string): GameState {
     culture: 0,
     handSize: 5,
     missionId,
-    vars: {},
     rngState: seededRng('blank').getState(),
   };
 }

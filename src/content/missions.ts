@@ -23,9 +23,9 @@ export interface MissionDef {
   /** Mission ids that must be completed (see `rules/campaign.ts`) before this one is
    *  available. Empty = a DAG root, always available. */
   prereqs: string[];
-  /** One-time setup tweaks to the initial state (mission vars, modifiers). */
+  /** One-time setup tweaks to the initial state (resource modifiers, extra cards). */
   setup?: (G: GameState) => void;
-  /** Applied every round during upkeep (threat tick, food drain, ...). */
+  /** Applied every round during upkeep (extra food drain, resource decay, ...). */
   onUpkeep?: (G: GameState) => void;
   /** Win condition. */
   objective: (G: GameState) => boolean;

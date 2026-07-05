@@ -34,14 +34,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `[phase: 3]`
   - **Step 6.1 — Non-fixed (dynamic) card effects** — introduce effects whose magnitude scales
     with a run-scoped counter, and ship the first one. Today every effect is a static
-    `CardEffect` applied by `rules/effects.ts`'s `applyEffect`; add the ability for an effect to
-    read/bump a counter in `G.vars` (already exists — `Record<string, number>`, `rules/state.ts`)
-    at play time, wired through `run/moves.ts`'s `playCard`. First card: **Cornucopia**
-    (`content/cards.ts`, `action`) — gains `+1 food` **and** raises every future Cornucopia's
-    gain by 1 for the rest of the run (e.g. `vars.cornucopia_gain`). UI note: `CardFace` renders
-    *static* effect text, so a growing "+N food" needs a live-number surface (badge / derived
-    text) — pick a minimal display. **Ship the scale-an-effect-by-a-`vars`-counter step as a
-    reusable helper, not baked into Cornucopia's path — Step 6.3 is its second caller (see
+    `CardEffect` applied by `rules/effects.ts`'s `applyEffect`; add the ability for an effect's
+    magnitude to be scaled by a counter at play time, wired through `run/moves.ts`'s `playCard`.
+    That counter needs a home on `GameState` — add a **typed field** for it when building this
+    step (there is deliberately no generic `Record<string, number>` bag; keep the typed-state
+    discipline). First card: **Cornucopia** (`content/cards.ts`, `action`) — gains `+1 food`
+    **and** raises every future Cornucopia's gain by 1 for the rest of the run. UI note: `CardFace`
+    renders *static* effect text, so a growing "+N food" needs a live-number surface (badge /
+    derived text) — pick a minimal display. **Ship the scale-an-effect-by-a-counter step as a
+    reusable pure helper, not baked into Cornucopia's path — Step 6.3 is its second caller (see
     Link below).** `[size: M]` `[phase: 3]`
   - **Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — make the infinite kind
     real and reachable, tested with a throwaway mission before any threat exists.
@@ -80,10 +81,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     seeds it via `addThreat`; the growing production drain forces `coreCollapse` → `'ruin'`
     (`run/engine.ts`), which realizes the score. `[size: M]` `[phase: 3]`
   - **Link 6.1 ↔ 6.3:** both express a value that *changes over the run* by scaling a card's
-    effect by a counter in `G.vars`. They differ only in **trigger** — 6.1 escalates *per copy
-    played* (Cornucopia), 6.3 escalates *per turn* (the threat tick). So 6.1 must ship the "scale
-    an effect's magnitude by a `vars` counter" primitive **generically**, and 6.3a consumes that
-    same primitive for its drain. Build 6.1's helper with 6.3 as its second caller in mind.
+    effect by an integer counter. They differ in **trigger and storage** — 6.1 escalates *per copy
+    played* (Cornucopia, counter on a typed `GameState` field) while 6.3 escalates *per turn* (the
+    threat tick, counter is `ThreatInstance.level`). So 6.1 must ship the "scale an effect's
+    magnitude by a counter" primitive as a **pure helper** (base effect + multiplier → scaled
+    effect), and 6.3a consumes that same helper for its drain. Build 6.1's helper with 6.3 as its
+    second caller in mind.
 - **Step 7 — Stickers** *(last, deepest)* — resolve per-copy identity first (deck entries
   → `{ cardId, instanceId? }`). Board stickers (`setup.ts` modifiers); card stickers
   (per-copy, read by `effects.ts` / `production.ts`); shop sells + attach UI.
