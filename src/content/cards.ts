@@ -1,4 +1,5 @@
-import type { Resources } from '../rules/resources';
+import { addResources, scaleResources, type Resources } from '../rules/resources';
+import { bumpCardState, getCardState, type GameState } from '../rules/state';
 import type { CardEffect, Resolver } from '../rules/effects';
 
 export type CardKind = 'building' | 'action' | 'work' | 'event';
@@ -47,6 +48,15 @@ export interface CardDef {
    *  face, since there's no data bag to auto-render. Lives on the static catalogue, never in
    *  `GameState` — see `rules/effects.ts`'s `EffectContext`. */
   resolve?: Resolver;
+  /** Hand-authored effect text for the card face, used when the declarative `effect` bag can't
+   *  describe the card (a `resolve`-driven card). Takes precedence over the auto-generated
+   *  `describeCard` text. */
+  description?: string;
+  /** Run-aware effect text: given the live `GameState`, returns the card's *current* effect summary
+   *  (e.g. Cornucopia's growing "+N🌾"). Rendered only where run state exists (the hand); static
+   *  contexts (Collection, deck editor) fall back to `description`/`describeCard`. The card owns its
+   *  own display logic — the shell renders it blindly, with no per-card branch. */
+  dynamicText?: (G: GameState) => string;
   /** `building` cards: per-round output once staffed. */
   produces?: Partial<Resources>;
   /** `building` cards: per-round culture gained while staffed — accumulates on G.culture. */
@@ -82,6 +92,19 @@ export const CARDS: Record<string, CardDef> = {
   settlers: { id: 'settlers', name: 'Settlers', kind: 'action', cost: { food: 2 }, effect: { population: 1 } },
   eureka: { id: 'eureka', name: 'Eureka!', kind: 'action', cost: {}, discardCost: 1, effect: { gain: { science: 3 } } },
   inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'action', cost: { money: 1 }, effect: { draw: 2 } },
+
+  // Cornucopia: a bespoke-resolver card whose gain *grows* with a run-scoped play counter (the
+  // first per-card-state card). Gains +1🌾 the first time, +1 more for every prior play this run —
+  // the counter lives in G.cardState keyed by cardId, not a bespoke GameState field.
+  cornucopia: {
+    id: 'cornucopia', name: 'Cornucopia', kind: 'action', cost: {},
+    description: '+1🌾, +1 more each time played this run',
+    dynamicText: (G) => `+${getCardState(G, 'cornucopia') + 1}🌾`,
+    resolve: ({ G, self }) => {
+      addResources(G.resources, scaleResources({ food: 1 }, getCardState(G, self.cardId) + 1));
+      bumpCardState(G, self.cardId);
+    },
+  },
 
   // --- Work cards: stick onto the board as a staffable box; produce only while staffed,
   //     then recycle to the discard at end of turn. ---

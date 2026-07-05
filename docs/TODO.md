@@ -32,18 +32,19 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 6 — Infinite missions** — endless, replayable missions that never win and pay
   Influence = rounds survived. Cut into substeps; suggested order **6.1 → 6.2 → 6.3a → 6.3b**.
   `[phase: 3]`
-  - **Step 6.1 — Non-fixed (dynamic) card effects** — introduce effects whose magnitude scales
-    with a run-scoped counter, and ship the first one. Today every effect is a static
-    `CardEffect` applied by `rules/effects.ts`'s `applyEffect`; add the ability for an effect's
-    magnitude to be scaled by a counter at play time, wired through `run/moves.ts`'s `playCard`.
-    That counter needs a home on `GameState` — add a **typed field** for it when building this
-    step (there is deliberately no generic `Record<string, number>` bag; keep the typed-state
-    discipline). First card: **Cornucopia** (`content/cards.ts`, `action`) — gains `+1 food`
-    **and** raises every future Cornucopia's gain by 1 for the rest of the run. UI note: `CardFace`
-    renders *static* effect text, so a growing "+N food" needs a live-number surface (badge /
-    derived text) — pick a minimal display. **Ship the scale-an-effect-by-a-counter step as a
-    reusable pure helper, not baked into Cornucopia's path — Step 6.3 is its second caller (see
-    Link below).** `[size: M]` `[phase: 3]`
+  - **Step 6.1 — Non-fixed (dynamic) card effects** — ✅ **done**, delivered as Stage 2 of the
+    card-effect resolver rewrite (see the plan referenced in *Done / shipped* below). A card whose
+    magnitude scales with a run-scoped counter is now expressible: `rules/resources.ts`'s
+    `scaleResources` is the reusable "scale an effect by a counter" primitive (Step 6.3's drain is
+    its second caller), and the counter's home is `GameState.cardState` — **a single generic
+    `Record<string, number>` store owned by the effect layer, keyed by cardId** (read/written via
+    `getCardState`/`bumpCardState`), *not* a typed per-card field. **This reverses the earlier
+    "add a typed field, no generic bag" guidance:** the resolver rewrite established that
+    card-specific numbers belong in a card-owned store, not accreted onto `GameState` as named
+    fields. First card shipped: **Cornucopia** (`content/cards.ts`) — a `resolve`-driven `action`
+    gaining `+1🌾` plus `+1` per prior play this run; its growing value surfaces via a card-owned
+    `dynamicText(G)` hook rendered on the hand card face (`CardFace`'s `overrideText`).
+    `[size: M]` `[phase: 3]`
   - **Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — make the infinite kind
     real and reachable, tested with a throwaway mission before any threat exists.
     `MissionDef.kind: 'standard' | 'infinite'` already exists (`content/missions.ts`); make
@@ -82,11 +83,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     (`run/engine.ts`), which realizes the score. `[size: M]` `[phase: 3]`
   - **Link 6.1 ↔ 6.3:** both express a value that *changes over the run* by scaling a card's
     effect by an integer counter. They differ in **trigger and storage** — 6.1 escalates *per copy
-    played* (Cornucopia, counter on a typed `GameState` field) while 6.3 escalates *per turn* (the
-    threat tick, counter is `ThreatInstance.level`). So 6.1 must ship the "scale an effect's
-    magnitude by a counter" primitive as a **pure helper** (base effect + multiplier → scaled
-    effect), and 6.3a consumes that same helper for its drain. Build 6.1's helper with 6.3 as its
-    second caller in mind.
+    played* (Cornucopia, counter in `GameState.cardState` keyed by cardId) while 6.3 escalates
+    *per turn* (the threat tick, counter is `ThreatInstance.level`). 6.1 shipped the "scale an
+    effect's magnitude by a counter" primitive as the **pure helper** `scaleResources` (bundle ×
+    factor); 6.3a consumes that same helper for its drain.
 - **Step 7 — Stickers** *(last, deepest)* — resolve per-copy identity first (deck entries
   → `{ cardId, instanceId? }`). Board stickers (`setup.ts` modifiers); card stickers
   (per-copy, read by `effects.ts` / `production.ts`); shop sells + attach UI.

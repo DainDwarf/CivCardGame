@@ -88,6 +88,15 @@ export interface GameState {
    * and structuredClone carry it for free.
    */
   rngState: readonly number[];
+  /**
+   * Generic, effect-layer-owned store for per-card run state — a card whose behavior depends on a
+   * run-scoped counter (e.g. Cornucopia's play count) keeps its number here, keyed however its
+   * resolver chooses (by `cardId` for a per-card-id counter). Deliberately *one* generic field, not
+   * a bespoke named field per card: `GameState` should not accrete card-specific variables — cards
+   * own their own numbers. Plain data, so undo/structuredClone carry it for free. Read/written via
+   * `getCardState`/`bumpCardState`.
+   */
+  cardState: Record<string, number>;
 }
 
 /** A zeroed baseline state — used by setup, tests, and (later) the simulator. */
@@ -107,5 +116,16 @@ export function blankState(missionId: string): GameState {
     handSize: 5,
     missionId,
     rngState: seededRng('blank').getState(),
+    cardState: {},
   };
+}
+
+/** Read a per-card run-state counter, defaulting a never-touched key to 0. */
+export function getCardState(G: GameState, key: string): number {
+  return G.cardState[key] ?? 0;
+}
+
+/** Add `by` (default 1) to a per-card counter and return the new value. */
+export function bumpCardState(G: GameState, key: string, by = 1): number {
+  return (G.cardState[key] = getCardState(G, key) + by);
 }

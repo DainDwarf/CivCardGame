@@ -132,8 +132,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/rules/` — all real game logic *and* the core state type. `state.ts` defines
   `GameState` (boardgame.io's `G` — the serializable run state, including `population`,
   each tableau building's assigned `workers`, the `territory` cap on tableau size, the
-  transient `workZone` of played `work` cards awaiting staffing, and the
-  card zones `deck`/`hand`/`discard`/`removed` — plus `blankState()`); it lives here, not in the shell, because the mission
+  transient `workZone` of played `work` cards awaiting staffing, the
+  card zones `deck`/`hand`/`discard`/`removed`, and `cardState` — a single generic
+  `Record<string, number>` store for per-card run counters (e.g. Cornucopia's play count), keyed by
+  cardId and owned by the effect layer (`getCardState`/`bumpCardState`), *not* a bespoke field per
+  card — plus `blankState()`); it lives here, not in the shell, because the mission
   evaluators reason over it. Also `resources.ts` (`Resources` + arithmetic), `deck.ts`
   (draw/reshuffle), `effects.ts` (card effects — the declarative `CardEffect` bag
   gain/loss/draw/population/`territory`/`culture`/`destroy`, applied by `applyEffect`; plus the

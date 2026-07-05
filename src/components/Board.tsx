@@ -1269,6 +1269,9 @@ export function Board({
                     key={card.key}
                     as="button"
                     card={c}
+                    // A card owning run-aware text (e.g. Cornucopia's growing gain) renders its
+                    // current value here; the shell just asks, with no per-card branch.
+                    overrideText={c.dynamicText?.(G)}
                     ref={(el) => {
                       if (el) cardEls.current.set(card.key, el as HTMLButtonElement);
                       else cardEls.current.delete(card.key);
