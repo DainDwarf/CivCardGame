@@ -133,21 +133,27 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `GameState` (boardgame.io's `G` — the serializable run state, including `population`,
   each tableau building's assigned `workers`, the `territory` cap on tableau size, the
   transient `workZone` of played `work` cards awaiting staffing, the
-  card zones `deck`/`hand`/`discard`/`removed`, `cardState` — a single generic
-  `Record<string, number>` store for per-card run counters (e.g. Cornucopia's play count), keyed by
-  cardId and owned by the effect layer (`getCardState`/`bumpCardState`), *not* a bespoke field per
-  card — and `pendingInteraction` (a `PendingInteraction | null`: a card effect suspended awaiting a
-  player choice, e.g. Foresight's peek; while set, `endTurn` no-ops and undo is blocked until it's
-  answered) — plus `blankState()`); it lives here, not in the shell, because the mission
-  evaluators reason over it. Also `resources.ts` (`Resources` + arithmetic), `deck.ts`
+  card zones `deck`/`hand`/`discard`/`removed` — each a `CardInstance[]` (`{ id, cardId, counters? }`),
+  so every card in a pile has a stable per-run **instance id** and can carry its own per-copy state as
+  it cycles hand→discard→deck→hand (`PlacedCard` extends `CardInstance` with `workers`; `id`s are
+  unique across *all* zones via `population.ts`'s `nextInstanceId`, which now scans every zone). A
+  card's per-instance run counters live in that instance's own `counters` map (e.g. Cornucopia's play
+  count), effect-layer-owned via `getCounter`/`bumpCounter` — *not* a bespoke field and *not* a central
+  `GameState` bag; cards own their own numbers, so playing one copy never touches another's. Bulk
+  minting a `string[]` into instances (setup, a mission's injected cards, tests) goes through
+  `instancesFromCardIds`. Plus `pendingInteraction` (a `PendingInteraction | null`: a card effect
+  suspended awaiting a player choice, e.g. Foresight's peek; while set, `endTurn` no-ops and undo is
+  blocked until it's answered) — plus `blankState()`; it lives here, not in the shell, because the
+  mission evaluators reason over it. Also `resources.ts` (`Resources` + arithmetic), `deck.ts`
   (draw/reshuffle), `effects.ts` (card effects — the declarative `CardEffect` bag
   gain/loss/draw/population/`territory`/`culture`/`destroy`, applied by `applyEffect`; plus the
   **resolver spine** `resolveCard(ctx)` — the single path "the card's effect" runs through, shared
   by `moves.ts`'s `playCard` and `upkeep.ts`'s `resolveHandEvents` — which picks a card's own
   `CardDef.resolve` if it has one, else the declarative default from `specToResolver(effect)`. The
-  resolver receives an `EffectContext` (`{ G, self: { cardId, instanceId? }, target?, answer? }`) so
-  an effect can know *which* card is resolving and *what* it targets; a Destroy card's demolition is
-  now a resolver behavior via `ctx.target`, not a special branch in `playCard`. An **interactive**
+  resolver receives an `EffectContext` (`{ G, self: CardInstance, target?, answer? }`) so an effect
+  can know *which exact copy* is resolving (reading/writing `self.counters`) and *what* it targets; a
+  Destroy card's demolition is now a resolver behavior via `ctx.target`, not a special branch in
+  `playCard`. An **interactive**
   effect (Foresight) suspends mid-resolution: its resolver reveals options, parks them in
   `G.pendingInteraction`, and returns (`ctx.answer === undefined`); `moves.ts`'s `resolveInteraction`
   re-enters the same resolver with the chosen index (`ctx.answer`) to finish it — a two-branch

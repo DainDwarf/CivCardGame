@@ -28,7 +28,8 @@ export function playCard(
   // No card may be played while an interaction is pending — the player must answer it first.
   if (G.pendingInteraction) return 'invalid';
   if (playHandIdx < 0 || playHandIdx >= G.hand.length) return 'invalid';
-  const cardId = G.hand[playHandIdx];
+  const played = G.hand[playHandIdx];
+  const cardId = played.cardId;
 
   const card = CARDS[cardId];
   if (!card || unplayableReason(G, card)) return 'invalid';
@@ -53,7 +54,7 @@ export function playCard(
 
   // All validated — pay costs and remove all played/sacrificed cards from hand first.
   subtractResources(G.resources, card.cost);
-  const sacrificeIds = discardHandIdxs.map((i) => G.hand[i]);
+  const sacrifices = discardHandIdxs.map((i) => G.hand[i]);
   for (const i of [playHandIdx, ...discardHandIdxs].sort((a, b) => b - a)) G.hand.splice(i, 1);
 
   // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
@@ -66,12 +67,15 @@ export function playCard(
   } else if (card.kind === 'work') {
     addWork(G, cardId);
   } else {
-    resolveCard({ G, self: { cardId }, target: destroyInstanceId });
+    // Resolve on the played *instance* — so a self-scaling card (Cornucopia) reads/writes its own
+    // copy's counters, which then ride along as that same instance files to discard below.
+    resolveCard({ G, self: played, target: destroyInstanceId });
   }
-  for (const id of sacrificeIds) G.discard.push(id);
+  for (const c of sacrifices) G.discard.push(c);
   // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,
-  // filed at end of turn) stay put; only action cards recycle to the discard here.
-  if (card.kind === 'action') G.discard.push(cardId);
+  // filed at end of turn) stay put; only action cards recycle to the discard here — the same
+  // instance object, carrying whatever counters its resolver just bumped.
+  if (card.kind === 'action') G.discard.push(played);
 }
 
 /**
@@ -84,7 +88,9 @@ export function resolveInteraction(G: GameState, answer: number): 'invalid' | vo
   const pending = G.pendingInteraction;
   if (!pending) return 'invalid';
   if (answer < 0 || answer >= pending.options.length) return 'invalid';
-  resolveCard({ G, self: { cardId: pending.cardId }, answer });
+  // Reconstruct the suspended card's `self` from the parked interaction (its instance already filed
+  // to discard on the suspending pass; the resume path reads `options`, not its own counters).
+  resolveCard({ G, self: { id: pending.instanceId, cardId: pending.cardId }, answer });
 }
 
 /** Assign one idle population to a specific staffable (building or Work card, identified by `id`),

@@ -1,34 +1,34 @@
 import { describe, it, expect } from 'vitest';
 import { resolveHandEvents, projectedDelta } from './upkeep';
-import { blankState } from './state';
+import { blankState, instancesFromCardIds } from './state';
 
 describe('resolveHandEvents', () => {
   it('applies an event left in hand and destroys it to the removed pile', () => {
     const G = blankState('barbarian_tide');
     G.resources.military = 10;
-    G.hand = ['farm', 'barbarian', 'workshop'];
+    G.hand = instancesFromCardIds(['farm', 'barbarian', 'workshop']);
     resolveHandEvents(G);
     expect(G.resources.military).toBe(6); // barbarian drained 4
-    expect(G.removed).toEqual(['barbarian']);
-    expect(G.hand).toEqual(['farm', 'workshop']); // non-events stay in hand for the discard sweep
+    expect(G.removed.map((c) => c.cardId)).toEqual(['barbarian']);
+    expect(G.hand.map((c) => c.cardId)).toEqual(['farm', 'workshop']); // non-events stay for the discard sweep
     expect(G.discard).toEqual([]); // barbarian's effect.remove sends it to removed, not discard
   });
 
   it('resolves every event in the hand in one sweep', () => {
     const G = blankState('barbarian_tide');
     G.resources.military = 10;
-    G.hand = ['barbarian', 'barbarian'];
+    G.hand = instancesFromCardIds(['barbarian', 'barbarian']);
     resolveHandEvents(G);
     expect(G.resources.military).toBe(2);
-    expect(G.removed).toEqual(['barbarian', 'barbarian']);
+    expect(G.removed.map((c) => c.cardId)).toEqual(['barbarian', 'barbarian']);
     expect(G.hand).toEqual([]);
   });
 
   it('is a no-op when the hand holds no events', () => {
     const G = blankState('enlightenment');
-    G.hand = ['farm', 'workshop'];
+    G.hand = instancesFromCardIds(['farm', 'workshop']);
     resolveHandEvents(G);
-    expect(G.hand).toEqual(['farm', 'workshop']);
+    expect(G.hand.map((c) => c.cardId)).toEqual(['farm', 'workshop']);
     expect(G.removed).toEqual([]);
   });
 });
@@ -37,7 +37,7 @@ describe('projectedDelta with events', () => {
   it("folds a barbarian sitting in hand into the projected military delta", () => {
     const G = blankState('enlightenment');
     G.resources.military = 10;
-    G.hand = ['barbarian'];
+    G.hand = instancesFromCardIds(['barbarian']);
     expect(projectedDelta(G).resources.military).toBe(-4);
   });
 });

@@ -32,18 +32,19 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 6 — Infinite missions** — endless, replayable missions that never win and pay
   Influence = rounds survived. Cut into substeps; suggested order **6.1 → 6.2 → 6.3a → 6.3b**.
   `[phase: 3]`
-  - **Step 6.1 — Non-fixed (dynamic) card effects** — ✅ **done**, delivered as Stage 2 of the
-    card-effect resolver rewrite (see the plan referenced in *Done / shipped* below). A card whose
-    magnitude scales with a run-scoped counter is now expressible: `rules/resources.ts`'s
+  - **Step 6.1 — Non-fixed (dynamic) card effects** — ✅ **done**, delivered across Stages 2 and 4
+    of the card-effect resolver rewrite (see the plan referenced in *Done / shipped* below). A card
+    whose magnitude scales with a run-scoped counter is now expressible: `rules/resources.ts`'s
     `scaleResources` is the reusable "scale an effect by a counter" primitive (Step 6.3's drain is
-    its second caller), and the counter's home is `GameState.cardState` — **a single generic
-    `Record<string, number>` store owned by the effect layer, keyed by cardId** (read/written via
-    `getCardState`/`bumpCardState`), *not* a typed per-card field. **This reverses the earlier
-    "add a typed field, no generic bag" guidance:** the resolver rewrite established that
-    card-specific numbers belong in a card-owned store, not accreted onto `GameState` as named
-    fields. First card shipped: **Cornucopia** (`content/cards.ts`) — a `resolve`-driven `action`
-    gaining `+1🌾` plus `+1` per prior play this run; its growing value surfaces via a card-owned
-    `dynamicText(G)` hook rendered on the hand card face (`CardFace`'s `overrideText`).
+    its second caller). Stage 4 then made the counter **per-instance**: every card in a pile is a
+    `CardInstance` (`{ id, cardId, counters? }`) with a stable run-wide id, and the counter lives in
+    *that copy's own* `counters` map — read/written via `getCounter`/`bumpCounter` (`rules/state.ts`),
+    card-owned, *not* a typed per-card field and *not* a central `GameState` bag. **This reverses the
+    earlier "add a typed field, no generic bag" guidance:** card-specific numbers belong on the card
+    instance, not accreted onto `GameState` as named fields. First card shipped: **Cornucopia**
+    (`content/cards.ts`) — a `resolve`-driven `action` gaining `+1🌾` plus `+1` per prior play *of
+    that same copy* this run (playing one copy never buffs another); its growing value surfaces via a
+    card-owned `dynamicText(G, self)` hook rendered on the hand card face (`CardFace`'s `overrideText`).
     `[size: M]` `[phase: 3]`
   - **Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — make the infinite kind
     real and reachable, tested with a throwaway mission before any threat exists.
@@ -83,14 +84,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     (`run/engine.ts`), which realizes the score. `[size: M]` `[phase: 3]`
   - **Link 6.1 ↔ 6.3:** both express a value that *changes over the run* by scaling a card's
     effect by an integer counter. They differ in **trigger and storage** — 6.1 escalates *per copy
-    played* (Cornucopia, counter in `GameState.cardState` keyed by cardId) while 6.3 escalates
+    played* (Cornucopia, counter in that copy's own `CardInstance.counters`) while 6.3 escalates
     *per turn* (the threat tick, counter is `ThreatInstance.level`). 6.1 shipped the "scale an
     effect's magnitude by a counter" primitive as the **pure helper** `scaleResources` (bundle ×
     factor); 6.3a consumes that same helper for its drain.
-- **Step 7 — Stickers** *(last, deepest)* — resolve per-copy identity first (deck entries
-  → `{ cardId, instanceId? }`). Board stickers (`setup.ts` modifiers); card stickers
-  (per-copy, read by `effects.ts` / `production.ts`); shop sells + attach UI.
-  `[size: L]` `[?]` `[phase: 3]`
+- **Step 7 — Stickers** *(last, deepest)* — the per-copy-identity precursor is now **done** (Stage 4
+  of the resolver rewrite): pile cards are already `CardInstance`s (`{ id, cardId, counters? }`) with
+  stable run-wide ids, and per-copy run state has a home (`counters`). What remains: board stickers
+  (`setup.ts` modifiers); card stickers (per-copy, read by `effects.ts` / `production.ts` — note these
+  would need to persist *across runs* on the collection, unlike `counters` which are run-scoped);
+  shop sells + attach UI. `[size: L]` `[?]` `[phase: 3]`
 - **Step 8 — Tutorial missions** — the first few meta missions double as tutorials,
   introducing mechanics progressively; tutorial entry-node missions on the map. Covers
   designing several missions, onboarding indicators/popups, and careful pacing so new
@@ -155,6 +158,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Card-effect resolver + interaction rewrite** (plan: `.claude/plans/we-are-doing-code-wondrous-hoare.md`)
+  — replaced the flat `CardEffect` data-bag + growing `applyEffect` switch with a **resolver spine**:
+  every card resolves through one path, `resolveCard(ctx)`, picking its own `CardDef.resolve` closure
+  or the declarative default `specToResolver(effect)`; the `EffectContext` (`{ G, self, target?,
+  answer? }`) is the seam that lets an effect know which card is resolving and what it targets. Shipped
+  in four green stages (one commit each):
+  - **Stage 1** — resolver spine, behavior-preserving; `destroy`/`remove` folded in from `playCard`.
+  - **Stage 2** — Cornucopia (first dynamic-effect card) + `scaleResources` primitive.
+  - **Stage 3** — interaction layer: plain-data `pendingInteraction` on `G`, a two-branch re-entrant
+    resolver + `resolveInteraction` move, resolve-only modal; Foresight (first interactive card).
+  - **Stage 4** — **per-copy identity**: card zones (`hand`/`deck`/`discard`/`removed`) went from
+    `string[]` to `CardInstance[]` (`{ id, cardId, counters? }`), `PlacedCard` extends `CardInstance`,
+    and `nextInstanceId` now scans every zone so ids are unique run-wide. Per-instance run state lives
+    in each copy's own `counters` (via `getCounter`/`bumpCounter`), replacing the interim central
+    `GameState.cardState` bag; Cornucopia's growth is now genuinely per-copy (playing one never buffs
+    another). `instancesFromCardIds` is the shared mint path (setup, mission-injected cards, tests).
 - **Mystery card reuses `CardFace`** — `CampaignMap.tsx`'s hand-rolled `MysteryCard` (a
   one-off grey box borrowing only `CardFace.module.css`'s outer `.card` class) is gone;
   `CardFace` now takes a `faceDown` prop (a discriminated union with `card`, so `card` is

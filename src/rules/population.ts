@@ -51,14 +51,19 @@ export function autoStaffCount(G: GameState, cardId: string): number {
   return autoStaffTo(G, CARDS[cardId].workers ?? 1);
 }
 
-/** The next stable instance id: one past the highest currently in play across *both* the tableau
- *  and the workZone. Deterministic (no RNG). A shared allocator across both zones is what lets the
- *  worker moves look up an instance by `id` without a building and a Work card ever colliding.
- *  Ids of removed instances may be reused, which is harmless since nothing references them. */
+/** The next stable instance id: one past the highest currently in *any* zone — the board (tableau,
+ *  workZone) *and* the card piles (hand, deck, discard, removed), all of which now carry instance
+ *  ids. Deterministic (no RNG). Scanning every zone is what keeps ids unique run-wide, so a building
+ *  or Work box minted at play never collides with a card already sitting in the deck. Ids of a card
+ *  that has left every zone may be reused, which is harmless since nothing references them. */
 export function nextInstanceId(G: GameState): number {
   let max = 0;
   for (const b of G.tableau) max = Math.max(max, b.id);
   for (const w of G.workZone) max = Math.max(max, w.id);
+  for (const c of G.hand) max = Math.max(max, c.id);
+  for (const c of G.deck) max = Math.max(max, c.id);
+  for (const c of G.discard) max = Math.max(max, c.id);
+  for (const c of G.removed) max = Math.max(max, c.id);
   return max + 1;
 }
 

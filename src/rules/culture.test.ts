@@ -3,7 +3,7 @@ import { applyEffect } from './effects';
 import { tableauCultureOutput } from './production';
 import { applyUpkeep } from './upkeep';
 import { cultureLevel, cultureProgress, effectiveHandSize } from './culture';
-import { blankState } from './state';
+import { blankState, instancesFromCardIds } from './state';
 import { playCard } from '../run/moves';
 import type { BuildingInstance } from './state';
 
@@ -82,17 +82,17 @@ describe('culture: hand-size bonus', () => {
 describe('culture: level gate on playCard', () => {
   it('blocks play below the required culture level', () => {
     const G = blankState('enlightenment');
-    G.hand = ['philosopher'];
+    G.hand = instancesFromCardIds(['philosopher']);
     G.resources.science = 10;
     G.culture = 9; // still level 0; philosopher needs level 1
     const result = playCard(G, 0);
     expect(result).toBe('invalid');
-    expect(G.hand).toEqual(['philosopher']); // card stays in hand
+    expect(G.hand.map((c) => c.cardId)).toEqual(['philosopher']); // card stays in hand
   });
 
   it('allows play once the culture level is reached', () => {
     const G = blankState('enlightenment');
-    G.hand = ['philosopher'];
+    G.hand = instancesFromCardIds(['philosopher']);
     G.resources.science = 10;
     G.culture = 10; // exactly level 1
     const result = playCard(G, 0);
@@ -102,7 +102,7 @@ describe('culture: level gate on playCard', () => {
 
   it('does not consume culture when a gated card is played', () => {
     const G = blankState('enlightenment');
-    G.hand = ['philosopher'];
+    G.hand = instancesFromCardIds(['philosopher']);
     G.resources.science = 10;
     G.culture = 15;
     playCard(G, 0);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyEffect, resolveCard, specToResolver } from './effects';
-import { blankState } from './state';
+import { blankState, instancesFromCardIds } from './state';
 
 describe('applyEffect', () => {
   it('adds resource gains', () => {
@@ -12,9 +12,9 @@ describe('applyEffect', () => {
 
   it('draws cards', () => {
     const G = blankState('enlightenment');
-    G.deck = ['a', 'b', 'c'];
+    G.deck = instancesFromCardIds(['a', 'b', 'c']);
     applyEffect(G, { draw: 2 });
-    expect(G.hand).toEqual(['a', 'b']);
+    expect(G.hand.map((c) => c.cardId)).toEqual(['a', 'b']);
   });
 
   it('grows population (Settlers)', () => {
@@ -55,10 +55,10 @@ describe('applyEffect', () => {
 describe('specToResolver', () => {
   it('reproduces applyEffect for a declarative effect', () => {
     const G = blankState('enlightenment');
-    G.deck = ['a', 'b'];
-    specToResolver({ gain: { science: 2 }, draw: 1, culture: 1 })({ G, self: { cardId: 'x' } });
+    G.deck = instancesFromCardIds(['a', 'b']);
+    specToResolver({ gain: { science: 2 }, draw: 1, culture: 1 })({ G, self: { id: 1, cardId: 'x' } });
     expect(G.resources.science).toBe(2);
-    expect(G.hand).toEqual(['a']);
+    expect(G.hand.map((c) => c.cardId)).toEqual(['a']);
     expect(G.culture).toBe(1);
   });
 
@@ -68,15 +68,15 @@ describe('specToResolver', () => {
       { id: 1, cardId: 'farm', workers: 1 },
       { id: 2, cardId: 'workshop', workers: 1 },
     ];
-    specToResolver({ destroy: true })({ G, self: { cardId: 'destroy' }, target: 1 });
+    specToResolver({ destroy: true })({ G, self: { id: 3, cardId: 'destroy' }, target: 1 });
     expect(G.tableau).toEqual([{ id: 2, cardId: 'workshop', workers: 1 }]);
-    expect(G.removed).toEqual(['farm']);
+    expect(G.removed).toEqual([{ id: 1, cardId: 'farm' }]);
   });
 
   it('a destroy effect with no valid target is a no-op', () => {
     const G = blankState('enlightenment');
     G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }];
-    specToResolver({ destroy: true })({ G, self: { cardId: 'destroy' } });
+    specToResolver({ destroy: true })({ G, self: { id: 2, cardId: 'destroy' } });
     expect(G.tableau).toHaveLength(1);
     expect(G.removed).toEqual([]);
   });
@@ -85,7 +85,7 @@ describe('specToResolver', () => {
 describe('resolveCard', () => {
   it('runs the declarative default for a catalogue card (Cultural Festival → +3 culture)', () => {
     const G = blankState('enlightenment');
-    resolveCard({ G, self: { cardId: 'cultural_festival' } });
+    resolveCard({ G, self: { id: 1, cardId: 'cultural_festival' } });
     expect(G.culture).toBe(3);
   });
 });

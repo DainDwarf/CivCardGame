@@ -15,8 +15,8 @@ export function drawCard(G: GameState): void {
     G.discard = [];
     G.rngState = rngState;
   }
-  const id = G.deck.shift();
-  if (id !== undefined) G.hand.push(id);
+  const card = G.deck.shift();
+  if (card !== undefined) G.hand.push(card);
 }
 
 /** Draw up to the culture-adjusted hand size, stopping early if no cards remain anywhere. */

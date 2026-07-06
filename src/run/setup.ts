@@ -1,4 +1,4 @@
-import { blankState, seededRng, type GameState } from '../rules';
+import { blankState, instancesFromCardIds, seededRng, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
 import { BOARDS } from '../content/boards';
 import type { RunConfig } from '../contract';
@@ -15,7 +15,10 @@ export function createInitialState(config: RunConfig): GameState {
   G.population = board.population;
   G.territory = board.territory;
   G.culture = board.culture;
-  G.deck = [...config.deck];
+  // The shuffled `RunConfig.deck` is a plain cardId list; mint each into an identity-bearing
+  // instance (ids 1..N) so per-copy state can ride with it. Any later mint (a mission's injected
+  // cards, a card played) continues past these ids via `nextInstanceId`.
+  G.deck = instancesFromCardIds(config.deck);
   G.rngState = seededRng(config.seed).getState();
   MISSIONS[config.missionId]?.setup?.(G);
   return G;

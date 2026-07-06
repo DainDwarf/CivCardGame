@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BuildingInstance, Resources, WorkInstance } from '../rules';
+import type { BuildingInstance, CardInstance, Resources, WorkInstance } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
   cultureProgress,
@@ -188,6 +188,9 @@ interface HandCard {
   /** Stable React key across renders, assigned by `useAnimatedHand`. */
   key: number;
   cardId: string;
+  /** The underlying run instance — carried so a card's run-aware text (`dynamicText`) can read its
+   *  own per-copy state (e.g. Cornucopia's play count). */
+  inst: CardInstance;
   /** Index into `G.hand` this render (what the moves API expects). */
   handIdx: number;
   /** True only on the render where the card first appears — drives the deal-in animation. */
@@ -197,27 +200,28 @@ interface HandCard {
 }
 
 /**
- * `G.hand` is a bare `string[]` with no per-card identity. To animate draws without
- * re-animating cards that were already in hand, we give each physical card a stable key:
- * greedily match the new hand against the previously-seen one by cardId; anything left
- * over is freshly drawn (`isNew`). Keys are derived purely from the committed mapping
- * (no mutation during render), so it's safe under StrictMode's double-render.
+ * Give each physical hand card a stable React key so drawing one doesn't re-animate the rest.
+ * `G.hand` instances *do* carry stable ids now, but we deliberately match the deal animation by
+ * cardId (not id): greedily pair the new hand against the previously-seen one by cardId; anything
+ * left over is freshly drawn (`isNew`), so a card of a type already in hand doesn't re-deal. Keys
+ * are derived purely from the committed mapping (no mutation during render), so it's safe under
+ * StrictMode's double-render. The full instance is threaded through for `dynamicText`.
  */
-function useAnimatedHand(hand: string[]): HandCard[] {
+function useAnimatedHand(hand: CardInstance[]): HandCard[] {
   const committedRef = useRef<{ key: number; cardId: string }[]>([]);
   const committed = committedRef.current;
   let nextKey = committed.reduce((m, c) => Math.max(m, c.key), 0) + 1;
   let newOrder = 0;
   const used = new Array(committed.length).fill(false);
 
-  const display: HandCard[] = hand.map((cardId, handIdx) => {
+  const display: HandCard[] = hand.map((inst, handIdx) => {
     for (let j = 0; j < committed.length; j++) {
-      if (!used[j] && committed[j].cardId === cardId) {
+      if (!used[j] && committed[j].cardId === inst.cardId) {
         used[j] = true;
-        return { key: committed[j].key, cardId, handIdx, isNew: false, newOrder: 0 };
+        return { key: committed[j].key, cardId: inst.cardId, inst, handIdx, isNew: false, newOrder: 0 };
       }
     }
-    return { key: nextKey++, cardId, handIdx, isNew: true, newOrder: newOrder++ };
+    return { key: nextKey++, cardId: inst.cardId, inst, handIdx, isNew: true, newOrder: newOrder++ };
   });
 
   // Commit after render so the next render sees these keys and stops flagging them as new.
@@ -1271,7 +1275,7 @@ export function Board({
                     card={c}
                     // A card owning run-aware text (e.g. Cornucopia's growing gain) renders its
                     // current value here; the shell just asks, with no per-card branch.
-                    overrideText={c.dynamicText?.(G)}
+                    overrideText={c.dynamicText?.(G, card.inst)}
                     ref={(el) => {
                       if (el) cardEls.current.set(card.key, el as HTMLButtonElement);
                       else cardEls.current.delete(card.key);
@@ -1294,13 +1298,13 @@ export function Board({
             variant={styles.pileDiscard}
             label="discard"
             count={G.discard.length}
-            onView={() => setPileView({ title: 'Discard pile', cards: [...G.discard] })}
+            onView={() => setPileView({ title: 'Discard pile', cards: G.discard.map((c) => c.cardId) })}
           />
           <Pile
             variant={styles.pileRemoved}
             label="removed"
             count={G.removed.length}
-            onView={() => setPileView({ title: 'Removed from deck', cards: [...G.removed] })}
+            onView={() => setPileView({ title: 'Removed from deck', cards: G.removed.map((c) => c.cardId) })}
           />
 
           {warnEndRound && (shouldWarn || confirmEndTurn) ? (
@@ -1453,10 +1457,10 @@ export function Board({
           <div className={styles.interactionPanel}>
             <h3 className={styles.interactionPrompt}>{G.pendingInteraction.prompt}</h3>
             <div className={styles.interactionGrid}>
-              {G.pendingInteraction.options.map((cardId, i) => (
+              {G.pendingInteraction.options.map((opt, i) => (
                 <CardFace
-                  key={i}
-                  card={CARDS[cardId]}
+                  key={opt.id}
+                  card={CARDS[opt.cardId]}
                   className={styles.interactionCard}
                   onClick={() => moves.resolveInteraction(i)}
                 />

@@ -1,7 +1,7 @@
 import { addResources, subtractResources, type Resources } from './resources';
 import { drawCard } from './deck';
 import { CARDS } from '../content/cards';
-import type { GameState } from './state';
+import type { CardInstance, GameState } from './state';
 
 /** The immediate, one-shot effect a card applies when played. */
 export interface CardEffect {
@@ -54,8 +54,11 @@ export function applyEffect(G: GameState, effect?: CardEffect): void {
  */
 export interface EffectContext {
   G: GameState;
-  /** The card doing the resolving — its catalogue id, plus its board instance id when it has one. */
-  self: { cardId: string; instanceId?: number };
+  /** The exact card instance doing the resolving (`{ id, cardId, counters? }`). A resolver reads
+   *  `self.cardId` for its identity and reads/writes `self.counters` (via `getCounter`/`bumpCounter`)
+   *  for per-copy state that rides with this physical card — e.g. Cornucopia's growing gain. On a
+   *  resume pass (`resolveInteraction`) this is reconstructed from the parked `PendingInteraction`. */
+  self: CardInstance;
   /** A pre-selected target instance id chosen by the UI before the move fired (e.g. the building a
    *  Destroy card demolishes), threaded here instead of as a bespoke move parameter. */
   target?: number;
@@ -77,7 +80,11 @@ export type Resolver = (ctx: EffectContext) => void;
 function demolish(G: GameState, instanceId?: number): void {
   if (instanceId === undefined) return;
   const idx = G.tableau.findIndex((b) => b.id === instanceId);
-  if (idx !== -1) G.removed.push(G.tableau.splice(idx, 1)[0].cardId);
+  if (idx === -1) return;
+  const [building] = G.tableau.splice(idx, 1);
+  // File the demolished card to removed as a plain card instance (its staffing-only `workers` is
+  // dropped); keep its id so the removed pile stays identity-consistent with every other zone.
+  G.removed.push({ id: building.id, cardId: building.cardId });
 }
 
 /**

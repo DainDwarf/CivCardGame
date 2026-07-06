@@ -1,5 +1,5 @@
 import { addResources, scaleResources, type Resources } from '../rules/resources';
-import { bumpCardState, getCardState, type GameState } from '../rules/state';
+import { bumpCounter, getCounter, type CardInstance, type GameState } from '../rules/state';
 import { shuffleFromState } from '../rules/rng';
 import type { CardEffect, Resolver } from '../rules/effects';
 
@@ -53,11 +53,12 @@ export interface CardDef {
    *  describe the card (a `resolve`-driven card). Takes precedence over the auto-generated
    *  `describeCard` text. */
   description?: string;
-  /** Run-aware effect text: given the live `GameState`, returns the card's *current* effect summary
-   *  (e.g. Cornucopia's growing "+N🌾"). Rendered only where run state exists (the hand); static
-   *  contexts (Collection, deck editor) fall back to `description`/`describeCard`. The card owns its
-   *  own display logic — the shell renders it blindly, with no per-card branch. */
-  dynamicText?: (G: GameState) => string;
+  /** Run-aware effect text: given the live `GameState` and the specific card instance being
+   *  rendered, returns that copy's *current* effect summary (e.g. Cornucopia's growing "+N🌾", which
+   *  depends on how often *this* copy has been played). Rendered only where a real instance exists
+   *  (the hand); static contexts (Collection, deck editor) fall back to `description`/`describeCard`.
+   *  The card owns its own display logic — the shell renders it blindly, with no per-card branch. */
+  dynamicText?: (G: GameState, self: CardInstance) => string;
   /** `building` cards: per-round output once staffed. */
   produces?: Partial<Resources>;
   /** `building` cards: per-round culture gained while staffed — accumulates on G.culture. */
@@ -94,16 +95,18 @@ export const CARDS: Record<string, CardDef> = {
   eureka: { id: 'eureka', name: 'Eureka!', kind: 'action', cost: {}, discardCost: 1, effect: { gain: { science: 3 } } },
   inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'action', cost: { money: 1 }, effect: { draw: 2 } },
 
-  // Cornucopia: a bespoke-resolver card whose gain *grows* with a run-scoped play counter (the
-  // first per-card-state card). Gains +1🌾 the first time, +1 more for every prior play this run —
-  // the counter lives in G.cardState keyed by cardId, not a bespoke GameState field.
+  // Cornucopia: a bespoke-resolver card whose gain *grows* with a *per-instance* play counter (the
+  // first per-instance-state card). Each physical copy gains +1🌾 its first play and +1 more for
+  // every prior play *of that same copy* this run — the count lives in the instance's own `counters`
+  // (via getCounter/bumpCounter) and rides with the card through discard/reshuffle, so playing one
+  // Cornucopia never buffs the others.
   cornucopia: {
     id: 'cornucopia', name: 'Cornucopia', kind: 'action', cost: {},
-    description: '+1🌾, +1 more each time played this run',
-    dynamicText: (G) => `+${getCardState(G, 'cornucopia') + 1}🌾`,
+    description: '+1🌾, +1 more each time this copy is played this run',
+    dynamicText: (_G, self) => `+${getCounter(self, 'plays') + 1}🌾`,
     resolve: ({ G, self }) => {
-      addResources(G.resources, scaleResources({ food: 1 }, getCardState(G, self.cardId) + 1));
-      bumpCardState(G, self.cardId);
+      addResources(G.resources, scaleResources({ food: 1 }, getCounter(self, 'plays') + 1));
+      bumpCounter(self, 'plays');
     },
   },
 
@@ -125,6 +128,7 @@ export const CARDS: Record<string, CardDef> = {
         G.deck = G.deck.slice(options.length);
         G.pendingInteraction = {
           cardId: ctx.self.cardId,
+          instanceId: ctx.self.id,
           kind: 'chooseCard',
           prompt: 'Draw one — the rest shuffle back',
           options,
