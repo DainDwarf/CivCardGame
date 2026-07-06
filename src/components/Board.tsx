@@ -142,6 +142,33 @@ function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
   );
 }
 
+/** The board's threat zone: persistent hazards (`G.threats`) rendered as real `CardFace`s down a
+ *  dedicated in-flow left column of `.gamearea` (`.threatColumn`) — click to zoom, same as any
+ *  other card. A real layout column, not a floating overlay: the slot grid reflows beside it via
+ *  the sibling `.gameContent`, so a tall threat stack never creeps in front of the tableau. Reads
+ *  only `GameState`, never the mission, so it renders identically no matter which mission seeded
+ *  these (docs/TODO.md Phase 3 Step 6.3b). Renders nothing when no threats are seeded. */
+function ThreatZone({ G, onZoom }: { G: GameState; onZoom: (cardId: string, overrideText?: string) => void }) {
+  if (G.threats.length === 0) return null;
+  return (
+    <div className={styles.threatColumn}>
+      {G.threats.map((t) => {
+        const card = CARDS[t.cardId];
+        const overrideText = card.dynamicText?.(G, t);
+        return (
+          <CardFace
+            key={t.id}
+            card={card}
+            overrideText={overrideText}
+            className={styles.staticCard}
+            onClick={() => onZoom(t.cardId, overrideText)}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 /** Collapse a list of card instances into one tile per type with a count, keeping first-seen
  *  order — *except* a card with `dynamicText`, which never groups: each copy can carry its own
  *  live value (e.g. two Cornucopia with different play counts), so a shared count would either
@@ -1159,85 +1186,88 @@ export function Board({
         ref={gameareaRef}
         style={{ top: 0, bottom: insets.bottom, paddingTop: insets.top }}
       >
-        <div className={styles.slotGrid}>
-          {layout.map((key, slotIdx) => {
-            const inst = key != null ? buildingById.get(key) : undefined;
-            const isDropTarget = slotDrag?.active === true && hoverSlot === slotIdx;
-            const isDragSource = slotDrag?.active === true && slotDrag.fromSlot === slotIdx;
-            const canAcceptWorker = !!inst && inst.workers < requiredWorkersOf(inst);
-            const isWorkerDropTarget =
-              workerDrag?.active === true &&
-              workerHoverSlot === slotIdx &&
-              canAcceptWorker &&
-              inst?.id !== workerDrag.fromBuildingId;
-            const isWorkerDragSource =
-              workerDrag?.active === true && !!inst && workerDrag.fromBuildingId === inst.id;
-            const slotClass = [
-              styles.slot,
-              inst ? '' : styles.slotEmpty,
-              isDropTarget ? styles.slotDrop : '',
-              isDragSource ? styles.slotSource : '',
-              isWorkerDropTarget ? styles.workerDropTarget : '',
-            ]
-              .filter(Boolean)
-              .join(' ');
-            return (
-              <div
-                key={slotIdx}
-                ref={(el) => {
-                  if (el) slotEls.current.set(slotIdx, el);
-                  else slotEls.current.delete(slotIdx);
-                }}
-                className={slotClass}
-              >
-                {inst && (
-                  <BuildingBox
+        <ThreatZone G={G} onZoom={(cardId, overrideText) => setZoom({ cardId, overrideText })} />
+        <div className={styles.gameContent}>
+          <div className={styles.slotGrid}>
+            {layout.map((key, slotIdx) => {
+              const inst = key != null ? buildingById.get(key) : undefined;
+              const isDropTarget = slotDrag?.active === true && hoverSlot === slotIdx;
+              const isDragSource = slotDrag?.active === true && slotDrag.fromSlot === slotIdx;
+              const canAcceptWorker = !!inst && inst.workers < requiredWorkersOf(inst);
+              const isWorkerDropTarget =
+                workerDrag?.active === true &&
+                workerHoverSlot === slotIdx &&
+                canAcceptWorker &&
+                inst?.id !== workerDrag.fromBuildingId;
+              const isWorkerDragSource =
+                workerDrag?.active === true && !!inst && workerDrag.fromBuildingId === inst.id;
+              const slotClass = [
+                styles.slot,
+                inst ? '' : styles.slotEmpty,
+                isDropTarget ? styles.slotDrop : '',
+                isDragSource ? styles.slotSource : '',
+                isWorkerDropTarget ? styles.workerDropTarget : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+              return (
+                <div
+                  key={slotIdx}
+                  ref={(el) => {
+                    if (el) slotEls.current.set(slotIdx, el);
+                    else slotEls.current.delete(slotIdx);
+                  }}
+                  className={slotClass}
+                >
+                  {inst && (
+                    <BuildingBox
+                      inst={inst}
+                      gameover={!!gameover}
+                      idle={idle}
+                      workerDragSource={isWorkerDragSource}
+                      pendingDestroy={!!pendingDestroy}
+                      onPointerDown={(e) => onBoxPointerDown(e, inst, slotIdx)}
+                      onStaffPointerDown={onStaffPointerDown}
+                      onDestroy={() => handleDestroyTarget(inst.id)}
+                      onZoomClick={
+                        gameover && overlayMinimized ? () => setZoom({ cardId: inst.cardId }) : undefined
+                      }
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {G.workZone.length > 0 && (
+            <div className={styles.workStrip}>
+              {G.workZone.map((inst) => {
+                const canAcceptWorker = inst.workers < requiredWorkersOf(inst);
+                const isWorkerDropTarget =
+                  workerDrag?.active === true &&
+                  workerHoverWorkId === inst.id &&
+                  canAcceptWorker &&
+                  inst.id !== workerDrag.fromBuildingId;
+                const isWorkerDragSource =
+                  workerDrag?.active === true && workerDrag.fromBuildingId === inst.id;
+                return (
+                  <WorkBox
+                    key={inst.id}
                     inst={inst}
                     gameover={!!gameover}
                     idle={idle}
                     workerDragSource={isWorkerDragSource}
-                    pendingDestroy={!!pendingDestroy}
-                    onPointerDown={(e) => onBoxPointerDown(e, inst, slotIdx)}
+                    dropTarget={isWorkerDropTarget}
+                    boxRef={(el) => {
+                      if (el) workBoxEls.current.set(inst.id, el);
+                      else workBoxEls.current.delete(inst.id);
+                    }}
                     onStaffPointerDown={onStaffPointerDown}
-                    onDestroy={() => handleDestroyTarget(inst.id)}
-                    onZoomClick={
-                      gameover && overlayMinimized ? () => setZoom({ cardId: inst.cardId }) : undefined
-                    }
                   />
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
-        {G.workZone.length > 0 && (
-          <div className={styles.workStrip}>
-            {G.workZone.map((inst) => {
-              const canAcceptWorker = inst.workers < requiredWorkersOf(inst);
-              const isWorkerDropTarget =
-                workerDrag?.active === true &&
-                workerHoverWorkId === inst.id &&
-                canAcceptWorker &&
-                inst.id !== workerDrag.fromBuildingId;
-              const isWorkerDragSource =
-                workerDrag?.active === true && workerDrag.fromBuildingId === inst.id;
-              return (
-                <WorkBox
-                  key={inst.id}
-                  inst={inst}
-                  gameover={!!gameover}
-                  idle={idle}
-                  workerDragSource={isWorkerDragSource}
-                  dropTarget={isWorkerDropTarget}
-                  boxRef={(el) => {
-                    if (el) workBoxEls.current.set(inst.id, el);
-                    else workBoxEls.current.delete(inst.id);
-                  }}
-                  onStaffPointerDown={onStaffPointerDown}
-                />
-              );
-            })}
-          </div>
-        )}
       </div>
 
       <div className={styles.handBar} ref={handBarRef}>

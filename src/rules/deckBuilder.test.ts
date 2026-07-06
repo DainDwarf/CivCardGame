@@ -39,6 +39,16 @@ describe('addCard', () => {
     const owns: OwnedCards = { farm: 'unlimited' };
     expect(addCard(['farm', 'farm', 'farm'], 'farm', owns)).toEqual(['farm', 'farm', 'farm', 'farm']);
   });
+
+  it('rejects an event card even if somehow "owned"', () => {
+    const owns: OwnedCards = { barbarian: 'unlimited' };
+    expect(addCard([], 'barbarian', owns)).toBe('invalid');
+  });
+
+  it('rejects a threat card even if somehow "owned"', () => {
+    const owns: OwnedCards = { harsh_winter: 'unlimited' };
+    expect(addCard([], 'harsh_winter', owns)).toBe('invalid');
+  });
 });
 
 describe('removeCard', () => {

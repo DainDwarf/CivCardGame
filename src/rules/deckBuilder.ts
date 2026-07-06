@@ -26,8 +26,8 @@ export const MAX_DECKS = 6;
  *  in the first place, see `DeckEditor.tsx`'s picker filter). `'unlimited'` never caps. */
 export function addCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
   if (!(cardId in CARDS)) return 'invalid';
-  // Event cards are mission-injected only — never player-editable into a deck.
-  if (CARDS[cardId].kind === 'event') return 'invalid';
+  // Event and threat cards are mission-injected only — never player-editable into a deck.
+  if (CARDS[cardId].kind === 'event' || CARDS[cardId].kind === 'threat') return 'invalid';
   const owned = copiesOwned(collection, cardId);
   if (owned !== 'unlimited') {
     const current = deck.filter((id) => id === cardId).length;

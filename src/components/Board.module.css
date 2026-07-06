@@ -358,9 +358,10 @@
   background: var(--board-republic-ground);
 }
 
-/* The play area: holds the slot grid (which scrolls) above the work strip, bounded to end
-   exactly above the hand bar so neither scrolls nor sits behind it. paddingTop (inline)
-   clears the sticky banner. No background of its own — .groundBackdrop shows through. */
+/* The play area: a row holding the threat column (left, when any threats are seeded) beside the
+   main play column (slot grid above the work strip), bounded to end exactly above the hand bar
+   so neither scrolls nor sits behind it. paddingTop (inline) clears the sticky banner. No
+   background of its own — .groundBackdrop shows through. */
 .gamearea {
   position: fixed;
   left: 0;
@@ -368,7 +369,33 @@
   z-index: 0;
   overflow: hidden;
   display: flex;
+  flex-direction: row;
+}
+
+/* Persistent board hazards (G.threats) — a real, in-flow left column (not a floating overlay,
+   which used to creep in front of the slot grid once more than one threat was seeded) so the
+   slot grid reflows beside it instead of underneath it. Reads only GameState, never the
+   mission (see Board.tsx's ThreatZone); empty (width 0) when no threats are seeded. */
+.threatColumn {
+  flex: 0 0 auto;
+  width: 150px;
+  overflow-y: auto;
+  display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 16px 8px;
+  box-sizing: border-box;
+}
+
+/* The main play column (slot grid + work strip), filling whatever width the threat column
+   (if any) doesn't take. */
+.gameContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* The territory grid: one cell per slot, filling left-to-right and wrapping to new rows. Fixed

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
-import { blankState, coreCollapse, instancesFromCardIds } from '../rules';
+import { blankState, coreCollapse, instancesFromCardIds, tickThreats } from '../rules';
 
 describe('mission: enlightenment', () => {
   const m = MISSIONS.enlightenment;
@@ -23,10 +23,21 @@ describe('mission: enlightenment', () => {
 describe('mission: long_winter', () => {
   const m = MISSIONS.long_winter;
 
-  it('drains 2 food each upkeep (famine itself is enforced globally, not by the mission)', () => {
+  it('setup seeds the Harsh Winter threat', () => {
     const G = blankState('long_winter');
+    m.setup!(G);
+    expect(G.threats).toEqual([{ id: 1, cardId: 'harsh_winter' }]);
+  });
+
+  it('has no per-round mission upkeep — the threat card itself drains', () => {
+    expect(m.onUpkeep).toBeUndefined();
+  });
+
+  it('drains 2 food each upkeep tick via the seeded threat (famine itself is enforced globally, not by the mission)', () => {
+    const G = blankState('long_winter');
+    m.setup!(G);
     G.resources.food = 5;
-    m.onUpkeep!(G);
+    tickThreats(G);
     expect(G.resources.food).toBe(3);
     expect(m.failure(G)).toBe(false);
   });

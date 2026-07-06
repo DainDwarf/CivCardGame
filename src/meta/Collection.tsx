@@ -18,8 +18,10 @@ import styles from './Collection.module.css';
 export function Collection({ collection }: { collection: OwnedCards }) {
   const [zoom, setZoom] = useState<string | null>(null);
 
-  // Event cards are mission-injected and never part of the player's collection.
-  const cards = Object.values(CARDS).filter((c) => c.kind !== 'event' && isOwned(collection, c.id));
+  // Event and threat cards are mission-injected and never part of the player's collection.
+  const cards = Object.values(CARDS).filter(
+    (c) => c.kind !== 'event' && c.kind !== 'threat' && isOwned(collection, c.id),
+  );
   const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');

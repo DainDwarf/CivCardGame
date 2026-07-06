@@ -10,4 +10,5 @@ export * from './population';
 export * from './production';
 export * from './rng';
 export * from './tableau';
+export * from './threats';
 export * from './upkeep';

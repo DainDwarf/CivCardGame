@@ -129,10 +129,34 @@ closure, mirroring Cornucopia's per-play growth (Step 6.1), just tick-triggered 
 play-triggered — so a future Creeping Decay never touches the declarative `effect` bag at all,
 same as Cornucopia doesn't. `tickThreats` is called unconditionally from `upkeep.ts`'s
 `applyUpkeep` (a no-op when `threats` is empty), so it flows into `projectedDelta`'s UI preview
-for free — no UI of its own, and no real threat-seeding mission exists yet. That's **Step 6.3b**'s
-Creeping Decay, once the board rendering + the mission itself are authored. Still to come:
-tutorial missions (Step 8), Step 6.3b, and `Stats` surfacing a per-run reward (deferred since
-`RunResult` deliberately excludes
+for free — no UI of its own, and no real threat-seeding mission exists yet. **Phase 3 Step 6.3b**
+(threat UI + Long Winter's food drain as a real threat card) is also done: `G.threats` now renders
+on the board as real `CardFace`s down `Board.tsx`'s `ThreatZone` — a real, in-flow **left column**
+of `.gamearea` (`.threatColumn`), not a floating overlay: an earlier pass tried stacking it under
+the fixed-position `MissionWidget` in the top-left corner, but a floating widget doesn't reserve
+layout space, so once it grew past one card tall it crept in front of (rather than beside) the
+slot grid's first row. `.gamearea` is now a row — `.threatColumn` (fixed-width, its own
+`overflow-y: auto`) beside a new `.gameContent` wrapping the slot grid + work strip (a plain
+`flex: 1`) — so the tableau reflows beside the threat column instead of ever sitting under it;
+`MissionWidget` reverts to its own standalone `position: fixed` corner widget, untouched by any of
+this. `ThreatZone` reads only `GameState` (`G.threats`, `CARDS`) and never the mission — so it
+renders identically no matter which mission seeded them, same discipline as `MissionWidget` reading
+`G`. Each threat reuses the run's existing
+dynamic-card machinery rather than any bespoke "threat badge": `card.dynamicText?.(G, self)` — the
+same hook Cornucopia's growing gain already threads through every render site — supplies a growing
+threat's live current drain, falling back to the card's static `description` for a flat one; clicking
+opens the same shared `CardZoomOverlay`. A threat card is a new `CardKind`, `'threat'` — not a reuse
+of `'event'` — because `CardFace`'s `describeConditions` hard-codes event-only text ("resolves at end
+of round") that would be wrong for a persistent, tick-every-upkeep hazard; `'threat'` reuses `'event'`'s
+already-CVD-vetted red identity for its border/bands (`kindClass`), distinguished only by its own
+banner label ("Threat" vs "Event"), and is excluded everywhere `'event'` already is (`Collection.tsx`/
+`DeckEditor.tsx`/`Shop.tsx`'s picker filters, `deckBuilder.addCard`'s reject-on-add) since it's equally
+never player-owned or player-editable. The Long Winter mission's `onUpkeep` hand-drain of 2 Food is
+now gone entirely, replaced by a real card, **Harsh Winter** (`content/cards.ts`) — a flat,
+non-escalating `effect.loss: { food: 2 }` needing no bespoke `resolve` — seeded once via `addThreat`
+in the mission's (now-added) `setup`. Still to come:
+tutorial missions (Step 8), Step 6.3c's Creeping Decay, and `Stats` surfacing a per-run reward
+(deferred since `RunResult` deliberately excludes
 rewards, and there's no per-run record of whether that run was a first clear).
 
 ## Commands

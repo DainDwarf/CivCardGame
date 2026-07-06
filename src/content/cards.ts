@@ -3,7 +3,7 @@ import { bumpCounter, getCounter, type CardInstance, type GameState } from '../r
 import { shuffleFromState } from '../rules/rng';
 import type { CardEffect, Resolver } from '../rules/effects';
 
-export type CardKind = 'building' | 'action' | 'work' | 'event';
+export type CardKind = 'building' | 'action' | 'work' | 'event' | 'threat';
 
 export interface CardDef {
   id: string;
@@ -26,6 +26,12 @@ export interface CardDef {
    *   An event left in hand at end of turn auto-resolves its effect, then files by the same
    *   default as any other card: **discard**, unless its effect specifies `remove: true` (e.g.
    *   Barbarian), which sends it to **removed** instead. Not an inherent trait of `event` itself.
+   * - `threat`: a persistent board hazard, never in hand/deck/collection/deck editor — a mission's
+   *   `setup` seeds it directly into `GameState.threats` (`rules/threats.ts`'s `addThreat`), not a
+   *   pile. Unlike `event` (resolves once from hand, then files away), a threat ticks *every*
+   *   upkeep via `tickThreats`→`resolveCard` and stays on the board indefinitely — the card's own
+   *   `effect`/`resolve` computes and applies its drain (and, for one that escalates, bumps its own
+   *   counter), the same resolver spine every other card resolves through.
    */
   kind: CardKind;
   /** Resources required to play. Absent keys are free (e.g. {} = no cost). */
@@ -188,4 +194,14 @@ export const CARDS: Record<string, CardDef> = {
   // --- Event cards: mission-injected, not player-playable. Auto-resolve at end of turn;
   //     `remove: true` sends this one to removed instead of the default discard. ---
   barbarian: { id: 'barbarian', name: 'Barbarian', kind: 'event', cost: {}, effect: { loss: { military: 4 }, remove: true } },
+
+  // --- Threat cards: mission-seeded persistent board hazards (`rules/threats.ts`'s `addThreat`),
+  //     never in hand/deck/collection/deck editor. Ticks every upkeep, forever — see the `kind`
+  //     doc above. Harsh Winter is a flat, non-escalating drain (The Long Winter's old onUpkeep
+  //     special-case, now a real card); its declarative `effect.loss` needs no bespoke `resolve`.
+  harsh_winter: {
+    id: 'harsh_winter', name: 'Harsh Winter', kind: 'threat', cost: {},
+    effect: { loss: { food: 2 } },
+    description: '−2🌾 every round',
+  },
 };

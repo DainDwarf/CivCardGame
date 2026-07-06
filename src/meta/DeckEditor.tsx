@@ -63,9 +63,11 @@ export function DeckEditor({
   const dragRef = useRef<DragState | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
 
-  // Event cards are mission-injected and can never be added to a deck; the picker
+  // Event and threat cards are mission-injected and can never be added to a deck; the picker
   // only offers cards the player has actually unlocked.
-  const cards = Object.values(CARDS).filter((c) => c.kind !== 'event' && isOwned(collection, c.id));
+  const cards = Object.values(CARDS).filter(
+    (c) => c.kind !== 'event' && c.kind !== 'threat' && isOwned(collection, c.id),
+  );
   const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');

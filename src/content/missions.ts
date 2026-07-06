@@ -1,5 +1,5 @@
 import type { GameState } from '../rules/state';
-import { instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
+import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 
 /** Number of Barbarian event cards seeded into the deck by Barbarian Tide. */
 const BARBARIANS = 4;
@@ -87,8 +87,11 @@ export const MISSIONS: Record<string, MissionDef> = {
       'Endure 15 rounds of brutal winters. Each round drains 2 extra Food on top of your population — keep famine at bay.',
     // DAG root: always available, unlocks enlightenment/barbarian_tide.
     prereqs: [],
-    onUpkeep: (G) => {
-      G.resources.food -= 2;
+    // The 2-extra-Food-per-round drain is now a real threat card (Harsh Winter), seeded once here
+    // rather than a mission-onUpkeep special case — it ticks via the same tickThreats→resolveCard
+    // spine every other threat uses (docs/TODO.md Phase 3 Step 6.3b).
+    setup: (G) => {
+      addThreat(G, 'harsh_winter');
     },
     objective: (G) => G.round > 15,
     // No mission-specific failure: the universal core resource floor handles defeat here.

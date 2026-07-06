@@ -34,7 +34,7 @@ describe('tickThreats', () => {
 
   it("a card that scales itself off its own counter (Cornucopia's growth resolver) escalates across ticks", () => {
     // Reuses Cornucopia purely to exercise the generic tick-through-resolveCard wiring against a
-    // counter-scaling resolver — not real threat content (that's Step 6.3b's Creeping Decay).
+    // counter-scaling resolver — not real threat content (that's Step 6.3c's Creeping Decay).
     const G = blankState('enlightenment');
     G.threats = [{ id: 1, cardId: 'cornucopia' }];
     tickThreats(G);
@@ -50,5 +50,15 @@ describe('tickThreats', () => {
     tickThreats(G);
     expect(G.resources.military).toBe(5);
     expect(G.threats).toEqual([]);
+  });
+
+  it('resolves Harsh Winter — the first real threat card (Step 6.3b) — as a flat, non-escalating Food drain', () => {
+    const G = blankState('long_winter');
+    G.resources.food = 5;
+    G.threats = [{ id: 1, cardId: 'harsh_winter' }];
+    tickThreats(G);
+    expect(G.resources.food).toBe(3);
+    tickThreats(G);
+    expect(G.resources.food).toBe(1); // unscaled — no counter, unlike Cornucopia's growth above
   });
 });

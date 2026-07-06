@@ -23,10 +23,10 @@ export function Shop({
   influence: number;
   onBuyTier: (cardId: string) => void;
 }) {
-  // Event cards are mission-injected and never part of the player's collection; a card is shown
-  // only if it's owned *and* has a tier left to buy (nextTier !== null covers both).
+  // Event and threat cards are mission-injected and never part of the player's collection; a
+  // card is shown only if it's owned *and* has a tier left to buy (nextTier !== null covers both).
   const cards = Object.values(CARDS).filter(
-    (c) => c.kind !== 'event' && nextTier(copiesOwned(collection, c.id)) !== null,
+    (c) => c.kind !== 'event' && c.kind !== 'threat' && nextTier(copiesOwned(collection, c.id)) !== null,
   );
   const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'action');

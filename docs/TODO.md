@@ -38,16 +38,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     *Done / shipped* below. `[size: M]` `[phase: 3]`
   - **Step 6.3a — Threat zone (pure core)** — ✅ done — see *Done / shipped* below.
     `[size: S]` `[phase: 3]`
-  - **Step 6.3b — Threat UI + Long Winter's food drain as a real threat card** — render
-    `G.threats` on the board (`Board.tsx`, near the mission HUD) as `CardFace`s with a live
-    "−N 🔨/round (growing)" badge and click → existing `CardZoomOverlay`; reads only
-    `GameState`, never the mission. Then refactor Long Winter's `onUpkeep` hand-drain of 2 extra
-    Food (currently a mission special-case) into a real threat card seeded via `addThreat` in
-    Long Winter's `setup` — the first real exercise of the threat-zone UI, on a mission that
-    already exists. `[size: M]` `[phase: 3]`
+  - **Step 6.3b — Threat UI + Long Winter's food drain as a real threat card** — ✅ done — see
+    *Done / shipped* below. `[size: M]` `[phase: 3]`
   - **Step 6.3c — Creeping Decay infinite mission** — wire threat UI + dynamic card + infinite
-    mission together. Add the **Creeping Decay** `event` card (`content/cards.ts`) — per Step
-    6.3a's corrected design, it owns its drain via a bespoke `resolve` (reading its own
+    mission together. Add the **Creeping Decay** `threat` card (`content/cards.ts`, the new
+    `CardKind` from Step 6.3b) — per Step 6.3a's corrected design, it owns its drain via a bespoke
+    `resolve` (reading its own
     `getCounter(self, 'level')`, scaling a base 1 production loss by it, then bumping its own
     counter — mirroring Cornucopia's `resolve`, not a declarative `effect.loss`) — and an infinite
     mission whose `setup` seeds it via `addThreat`; the growing production drain forces
@@ -100,6 +96,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Barbarian Tide's lore should show the Barbarian card** — `MissionDetailPanel` (Step 5.3) only shows the mission's *reward* card face; Barbarian Tide's lore column should also preview the Barbarian event card itself, since that's the card the mission is actually about. `[size: S]` `[?]` `[phase: 3]`
 - **Mission Lore cards should be click-to-zoom** — any `CardFace` shown in `MissionDetailPanel` (the reward unlock, and the Barbarian preview above) should open the shared `CardZoomOverlay` on click, same as hand/pile-viewer/Collection cards. `[size: S]` `[phase: 3]`
 - **Bug: worker-drag start looks disabled when no idle population is free** — dragging a worker off a building/Work box onto another building's staffing area, when there's no idle population available to complete the move, shows the OS "unavailable" cursor because the staff-toggle `<button>` is `disabled`. That reads as "you can't drag this" rather than "there's nowhere for it to go yet," which will confuse the player. `[size: S]` `[?]`
+- **`CardZoomOverlay`'s hint text is misleading for non-playable cards** — the one hint string ("Drag a card onto the board to play · click anywhere to close", `Board.tsx`) is shared by every zoom (hand, tableau, discard/removed piles, and now threats), so it wrongly implies a tableau building, a discarded card, or a threat card can be dragged onto the board to play. Noticed while verifying Step 6.3b's threat-zone click-to-zoom. `[size: S]` `[?]`
 
 ## Game design & balance
 
@@ -185,6 +182,25 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 6.3b — Threat UI + Long Winter's food drain as a real threat card** — `G.threats`
+  now renders on the board: `Board.tsx`'s new `ThreatZone` is a real, in-flow **left column** of
+  `.gamearea` (`.threatColumn`, its own `overflow-y: auto`), not a floating overlay — a first pass
+  stacked it under the fixed-position `MissionWidget`, but that doesn't reserve layout space, so
+  it crept in front of the slot grid's first row once taller than one card; `.gamearea` is now a
+  row (`.threatColumn` beside a new `.gameContent` wrapping the slot grid + work strip) so the
+  tableau reflows beside the threat column instead of sitting under it. Each threat is a real
+  `CardFace` reading only `GameState`, never the mission — reuses `card.dynamicText?.(G, self)` (the
+  same hook Cornucopia's growing gain already threads through every render site) for a growing
+  threat's live drain, falling back to the static `description` for a flat one; click opens the
+  shared `CardZoomOverlay`. Threats get their own `CardKind`, `'threat'`, rather than reusing
+  `'event'`: `CardFace`'s `describeConditions` hard-codes event-only text ("resolves at end of
+  round") that would misdescribe a persistent, tick-every-upkeep hazard. `'threat'` reuses `'event'`'s
+  already-CVD-vetted red identity (`kindClass`) — just a different banner label — and is excluded
+  everywhere `'event'` already is (`Collection.tsx`/`DeckEditor.tsx`/`Shop.tsx`'s picker filters,
+  `deckBuilder.addCard`'s reject-on-add). The Long Winter mission's `onUpkeep` hand-drain of 2 Food
+  is gone, replaced by a real card — **Harsh Winter** (`content/cards.ts`, a flat non-escalating
+  `effect.loss: { food: 2 }`, no bespoke `resolve` needed) — seeded once via `addThreat` in the
+  mission's (now-added) `setup`.
 - **Phase 3 Step 6.3a — Threat zone (pure core)** — `GameState` gained `threats: ThreatInstance[]`
   (`rules/state.ts` — `ThreatInstance` is just a `CardInstance`, empty in `blankState`;
   mission-seeded only, so a no-op field on every run that doesn't use one) and a new
