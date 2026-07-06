@@ -52,10 +52,13 @@ export function autoStaffCount(G: GameState, cardId: string): number {
 }
 
 /** The next stable instance id: one past the highest currently in *any* zone — the board (tableau,
- *  workZone) *and* the card piles (hand, deck, discard, removed), all of which now carry instance
- *  ids. Deterministic (no RNG). Scanning every zone is what keeps ids unique run-wide, so a building
- *  or Work box minted at play never collides with a card already sitting in the deck. Ids of a card
- *  that has left every zone may be reused, which is harmless since nothing references them. */
+ *  workZone), the card piles (hand, deck, discard, removed), *and* any options parked off-zone in a
+ *  pending interaction — all of which carry instance ids. Deterministic (no RNG). Scanning every
+ *  zone is what keeps ids unique run-wide, so a building or Work box minted at play never collides
+ *  with a card already sitting in the deck. `pendingInteraction.options` are cards lifted out of the
+ *  deck awaiting a choice (e.g. Foresight's peek); no move mints while an interaction is pending
+ *  today, but scanning them keeps the invariant robust if a future interactive card ever does. Ids
+ *  of a card that has left every zone may be reused, which is harmless since nothing references them. */
 export function nextInstanceId(G: GameState): number {
   let max = 0;
   for (const b of G.tableau) max = Math.max(max, b.id);
@@ -64,6 +67,7 @@ export function nextInstanceId(G: GameState): number {
   for (const c of G.deck) max = Math.max(max, c.id);
   for (const c of G.discard) max = Math.max(max, c.id);
   for (const c of G.removed) max = Math.max(max, c.id);
+  for (const c of G.pendingInteraction?.options ?? []) max = Math.max(max, c.id);
   return max + 1;
 }
 
