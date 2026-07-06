@@ -42,12 +42,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     *Done / shipped* below. `[size: M]` `[phase: 3]`
   - **Step 6.3c — Creeping Decay infinite mission** — ✅ done — see *Done / shipped* below.
     `[size: M]` `[phase: 3]`
-  - **Link 6.1 ↔ 6.3:** both express a value that *changes over the run* by scaling a card's
-    effect by an integer counter. They differ in **trigger and storage** — 6.1 escalates *per copy
-    played* (Cornucopia, counter in that copy's own `CardInstance.counters`) while 6.3 escalates
-    *per turn* (the threat tick, counter is `ThreatInstance.level`). 6.1 shipped the "scale an
-    effect's magnitude by a counter" primitive as the **pure helper** `scaleResources` (bundle ×
-    factor); 6.3a consumes that same helper for its drain.
 - **Step 7 — Stickers** *(last, deepest)* — the per-copy-identity precursor is now **done** (Stage 4
   of the resolver rewrite): pile cards are already `CardInstance`s (`{ id, cardId, counters? }`) with
   stable run-wide ids, and per-copy run state has a home (`counters`). What remains: board stickers
