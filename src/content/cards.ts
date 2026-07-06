@@ -49,6 +49,16 @@ export interface CardDef {
    *  face, since there's no data bag to auto-render. Lives on the static catalogue, never in
    *  `GameState` — see `rules/effects.ts`'s `EffectContext`. */
   resolve?: Resolver;
+  /**
+   * Bespoke per-round production behavior for a `building`/`work` card whose output isn't fully
+   * described by `produces`/`cultureOutput`/`effect.gain` (e.g. a future scaling building reading
+   * its own `self.counters`, mirroring Cornucopia's per-play `resolve`). When present it *replaces*
+   * the declarative default built from those fields. Separate from `resolve`: a building/work card's
+   * production ticks every upkeep while staffed, never at play, so it can't share the play-time
+   * resolver without risking a one-shot play field (draw, population, destroy) firing every round —
+   * see `rules/effects.ts`'s `resolveProduction`.
+   */
+  produce?: Resolver;
   /** Hand-authored effect text for the card face, used when the declarative `effect` bag can't
    *  describe the card (a `resolve`-driven card). Takes precedence over the auto-generated
    *  `describeCard` text. */

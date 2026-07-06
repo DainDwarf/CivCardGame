@@ -1,5 +1,5 @@
-import { addResources, type Resources } from './resources';
-import { tableauProduction, tableauCultureOutput, workZoneProduction } from './production';
+import { type Resources } from './resources';
+import { applyTableauProduction, applyWorkZoneProduction } from './production';
 import { foodUpkeep } from './population';
 import { resolveCard } from './effects';
 import { tickThreats } from './threats';
@@ -55,9 +55,8 @@ export function resolveHandEvents(G: GameState): void {
  * drift.
  */
 export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
-  addResources(G.resources, tableauProduction(G.tableau));
-  addResources(G.resources, workZoneProduction(G.workZone));
-  G.culture += tableauCultureOutput(G.tableau);
+  applyTableauProduction(G);
+  applyWorkZoneProduction(G);
   tickThreats(G);
   missionUpkeep?.(G);
   G.resources.food -= foodUpkeep(G);

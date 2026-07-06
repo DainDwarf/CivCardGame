@@ -43,6 +43,17 @@ describe('applyUpkeep with a threat', () => {
   });
 });
 
+describe('applyUpkeep production', () => {
+  it('resolves staffed buildings and Work cards through their own production', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }];
+    G.workZone = [{ id: 2, cardId: 'corvee', workers: 1 }];
+    applyUpkeep(G);
+    expect(G.resources.food).toBe(2); // farm's +2🌾; blankState has 0 population, so none eaten
+    expect(G.resources.production).toBe(3); // corvée's +3🔨
+  });
+});
+
 describe('projectedDelta with events', () => {
   it("folds a barbarian sitting in hand into the projected military delta", () => {
     const G = blankState('enlightenment');

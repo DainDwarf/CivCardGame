@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyEffect } from './effects';
-import { tableauCultureOutput } from './production';
+import { applyTableauProduction } from './production';
 import { applyUpkeep } from './upkeep';
 import { cultureLevel, cultureProgress, effectiveHandSize } from './culture';
 import { blankState, instancesFromCardIds } from './state';
@@ -27,15 +27,24 @@ describe('culture: immediate gain via card effect', () => {
 
 describe('culture: per-round output from operating buildings', () => {
   it('counts culture from a staffed theater', () => {
-    expect(tableauCultureOutput([b('theater', 1)])).toBe(2);
+    const G = blankState('enlightenment');
+    G.tableau = [b('theater', 1)];
+    applyTableauProduction(G);
+    expect(G.culture).toBe(2);
   });
 
   it('ignores culture from an unstaffed theater', () => {
-    expect(tableauCultureOutput([b('theater', 0)])).toBe(0);
+    const G = blankState('enlightenment');
+    G.tableau = [b('theater', 0)];
+    applyTableauProduction(G);
+    expect(G.culture).toBe(0);
   });
 
   it('ignores buildings with no cultureOutput', () => {
-    expect(tableauCultureOutput([b('farm', 1), b('library', 1)])).toBe(0);
+    const G = blankState('enlightenment');
+    G.tableau = [b('farm', 1), b('library', 1)];
+    applyTableauProduction(G);
+    expect(G.culture).toBe(0);
   });
 
   it('applyUpkeep accumulates culture from operating theaters', () => {

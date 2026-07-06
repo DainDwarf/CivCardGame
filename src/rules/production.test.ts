@@ -1,13 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { tableauProduction } from './production';
+import { applyTableauProduction } from './production';
+import { blankState } from './state';
 import type { BuildingInstance } from './state';
 
 let nextId = 1;
 const b = (cardId: string, workers: number): BuildingInstance => ({ id: nextId++, cardId, workers });
 
-describe('tableauProduction', () => {
+describe('applyTableauProduction', () => {
   it('counts only staffed buildings', () => {
-    expect(tableauProduction([b('farm', 1), b('farm', 0), b('workshop', 1)])).toEqual({
+    const G = blankState('enlightenment');
+    G.tableau = [b('farm', 1), b('farm', 0), b('workshop', 1)];
+    applyTableauProduction(G);
+    expect(G.resources).toEqual({
       food: 2, // only the one staffed farm
       production: 2, // staffed workshop
       science: 0,
@@ -17,6 +21,9 @@ describe('tableauProduction', () => {
   });
 
   it('self-sufficient walls produce military without workers', () => {
-    expect(tableauProduction([b('walls', 0)])).toEqual({ food: 0, production: 0, science: 0, military: 3, money: 0 });
+    const G = blankState('enlightenment');
+    G.tableau = [b('walls', 0)];
+    applyTableauProduction(G);
+    expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 3, money: 0 });
   });
 });

@@ -1,29 +1,22 @@
-import { CARDS } from '../content/cards';
+import { resolveProduction } from './effects';
 import { isOperating } from './population';
-import { addResources, emptyResources, type Resources } from './resources';
-import type { BuildingInstance, WorkInstance } from './state';
+import type { BuildingInstance, GameState, WorkInstance } from './state';
 
-/** Per-round output of all OPERATING (staffed) buildings. */
-export function tableauProduction(tableau: BuildingInstance[]): Resources {
-  return tableau.reduce(
-    (acc, b) => (isOperating(b) ? addResources(acc, CARDS[b.cardId].produces ?? {}) : acc),
-    emptyResources(),
-  );
+/** Resolve one round's production for every OPERATING (staffed) instance in a zone — each
+ *  instance's own `produce` (or the declarative default) computes and applies its output, the
+ *  same resolver spine `tickThreats` reuses for threats. An idle instance never ticks (filtered
+ *  here, not inside the resolver), so a future counter-driven `produce` can't escalate while
+ *  unstaffed. */
+function resolveZoneProduction(G: GameState, zone: readonly (BuildingInstance | WorkInstance)[]): void {
+  for (const inst of zone) if (isOperating(inst)) resolveProduction({ G, self: inst });
 }
 
-/** Per-round output of all OPERATING (staffed) Work cards — their card's `effect.gain`. Unstaffed
- *  work produces nothing. */
-export function workZoneProduction(workZone: WorkInstance[]): Resources {
-  return workZone.reduce(
-    (acc, w) => (isOperating(w) ? addResources(acc, CARDS[w.cardId].effect?.gain ?? {}) : acc),
-    emptyResources(),
-  );
+/** Per-round production tick for every staffed building in the tableau. */
+export function applyTableauProduction(G: GameState): void {
+  resolveZoneProduction(G, G.tableau);
 }
 
-/** Per-round culture output of all OPERATING (staffed) buildings. */
-export function tableauCultureOutput(tableau: BuildingInstance[]): number {
-  return tableau.reduce(
-    (sum, b) => (isOperating(b) ? sum + (CARDS[b.cardId].cultureOutput ?? 0) : sum),
-    0,
-  );
+/** Per-round production tick for every staffed Work card in the workZone. */
+export function applyWorkZoneProduction(G: GameState): void {
+  resolveZoneProduction(G, G.workZone);
 }

@@ -179,7 +179,12 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   resolver receives an `EffectContext` (`{ G, self: CardInstance, target?, answer? }`) so an effect
   can know *which exact copy* is resolving (reading/writing `self.counters`) and *what* it targets; a
   Destroy card's demolition is now a resolver behavior via `ctx.target`, not a special branch in
-  `playCard`. An **interactive**
+  `playCard`. A **second, narrower spine**, `resolveProduction(ctx)`, is production's counterpart —
+  picks `CardDef.produce` if a card defines one, else a declarative default built from `produces`/
+  `cultureOutput`/`effect.gain`. It's deliberately not `resolveCard` reused: that default also applies
+  one-shot play fields (`draw`/`population`/`territory`/`destroy`), which must never fire on a
+  recurring per-round tick, so production gets its own default resolver rather than overloading the
+  play one. An **interactive**
   effect (Foresight) suspends mid-resolution: its resolver reveals options, parks them in
   `G.pendingInteraction`, and returns (`ctx.answer === undefined`); `moves.ts`'s `resolveInteraction`
   re-enters the same resolver with the chosen index (`ctx.answer`) to finish it — a two-branch
@@ -193,11 +198,14 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   card data itself, deliberately: it just calls `resolveCard({ G, self: t })` per threat, the
   same resolver spine every other card resolves through, so a threat card computes and applies
   its own drain and bumps its own escalation counter inside its `resolve` — the engine only asks
-  it to resolve, it never resolves on the card's behalf), `upkeep.ts` (`applyUpkeep`: operating
-  buildings *and* staffed work produce → threats tick (each resolving itself) → mission ticks →
-  population eats food; plus `discardWorkZone` (end-of-turn work filing) and `projectedDelta`
-  for the UI), and
-  `production.ts` / `tableau.ts` (derived stats — including `usedTerritory` / `freeTerritory`,
+  it to resolve, it never resolves on the card's behalf), `upkeep.ts` (`applyUpkeep`: staffed
+  buildings and work resolve their own production → threats tick (each resolving itself) → mission
+  ticks → population eats food; plus `discardWorkZone` (end-of-turn work filing) and
+  `projectedDelta` for the UI), `production.ts` (`applyTableauProduction`/`applyWorkZoneProduction` —
+  each calls `resolveProduction` per *operating* (staffed) instance in the tableau/workZone, same
+  as `tickThreats` does for threats; `applyUpkeep` never reads a building's `produces`/`cultureOutput`
+  or a work card's `effect.gain` itself, it only asks each instance to produce), `tableau.ts`
+  (derived stats — including `usedTerritory` / `freeTerritory`,
   the territory cap that gates how many buildings can occupy the tableau), and
   `deckBuilder.ts` (deck *construction* — `addCard`/`removeCard` on a plain `string[]`,
   returning `'invalid'` on an unresolvable cardId, mirroring `moves.ts`'s `'invalid'`

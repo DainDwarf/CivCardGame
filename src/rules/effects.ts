@@ -1,6 +1,7 @@
 import { addResources, subtractResources, type Resources } from './resources';
 import { drawCard } from './deck';
 import { CARDS } from '../content/cards';
+import type { CardDef } from '../content/cards';
 import type { CardInstance, GameState } from './state';
 
 /** The immediate, one-shot effect a card applies when played. */
@@ -110,5 +111,29 @@ export function specToResolver(effect?: CardEffect): Resolver {
 export function resolveCard(ctx: EffectContext): void {
   const card = CARDS[ctx.self.cardId];
   const resolver = card.resolve ?? specToResolver(card.effect);
+  resolver(ctx);
+}
+
+/**
+ * Build a production resolver from a card's declarative production fields — the default for
+ * every `building`/`work` card whose per-round output is fully described by `produces`/
+ * `cultureOutput`/`effect.gain`. Deliberately narrower than `specToResolver`: it applies only
+ * `gain`/`culture`, never a one-shot play field (`draw`/`population`/`territory`/`destroy`) a
+ * card might also declare — those must never fire on a recurring tick.
+ */
+function defaultProduce(card: CardDef): Resolver {
+  return (ctx) => applyEffect(ctx.G, { gain: card.produces ?? card.effect?.gain, culture: card.cultureOutput });
+}
+
+/**
+ * Resolve one operating (staffed) building/Work instance's per-round production through its own
+ * resolver: `card.produce` if it defines one, otherwise the declarative default above. Production's
+ * counterpart to `resolveCard` — the caller (the upkeep production tick) must never read
+ * `produces`/`cultureOutput`/`effect.gain` itself and reinterpret them; it only asks the card to
+ * produce. Mirrors `tickThreats`'s reuse of `resolveCard` for the same reason.
+ */
+export function resolveProduction(ctx: EffectContext): void {
+  const card = CARDS[ctx.self.cardId];
+  const resolver = card.produce ?? defaultProduce(card);
   resolver(ctx);
 }
