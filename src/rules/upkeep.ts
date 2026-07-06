@@ -2,6 +2,7 @@ import { addResources, type Resources } from './resources';
 import { tableauProduction, tableauCultureOutput, workZoneProduction } from './production';
 import { foodUpkeep } from './population';
 import { resolveCard } from './effects';
+import { tickThreats } from './threats';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameState } from './state';
 
@@ -48,13 +49,15 @@ export function resolveHandEvents(G: GameState): void {
 
 /**
  * Resolve the resource side of end-of-round upkeep: operating (staffed) buildings and Work
- * cards produce, the mission ticks, then the population eats food. Single source of truth
- * shared by the run loop's `onEnd` and the UI projection below, so they never drift.
+ * cards produce, any board threats tick (drain + escalate), the mission ticks, then the
+ * population eats food. Single source of truth shared by the run loop's `onEnd` and the UI
+ * projection below, so they never drift.
  */
 export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
   addResources(G.resources, tableauProduction(G.tableau));
   addResources(G.resources, workZoneProduction(G.workZone));
   G.culture += tableauCultureOutput(G.tableau);
+  tickThreats(G);
   missionUpkeep?.(G);
   G.resources.food -= foodUpkeep(G);
 }

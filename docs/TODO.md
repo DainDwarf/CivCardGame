@@ -36,15 +36,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     `[size: M]` `[phase: 3]`
   - **Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — ✅ done — see
     *Done / shipped* below. `[size: M]` `[phase: 3]`
-  - **Step 6.3a — Threat zone (pure core)** — a persistent board hazard as real run state. Add
-    `threats: ThreatInstance[]` to `GameState` (`rules/state.ts` — `{ id, cardId, level }`, init
-    `[]` in `blankState`) and a new `rules/threats.ts`: `addThreat(G, cardId)` (level 0) and
-    `tickThreats(G)` (subtract the threat's current drain from `G.resources`, then `level += 1`
-    — apply-then-increment, so round 1 drains 0). Drain magnitude = the threat card's base
-    `effect.loss` × `level`, computed via Step 6.1's scale-by-counter helper. Extend
-    `rules/population.ts`'s `nextInstanceId` to also scan `G.threats`. Call `tickThreats(G)`
-    inside `applyUpkeep` (`rules/upkeep.ts`) as a universal step (no-op when empty) so it also
-    flows into `projectedDelta`'s UI preview. Unit-test in `rules/threats.test.ts`. No UI.
+  - **Step 6.3a — Threat zone (pure core)** — ✅ done — see *Done / shipped* below.
     `[size: S]` `[phase: 3]`
   - **Step 6.3b — Threat on the board + Creeping Decay mission** — render + author the real
     infinite mission. `Board.tsx` renders `G.threats` (near the mission HUD) as `CardFace`s with
@@ -132,6 +124,19 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 6.3a — Threat zone (pure core)** — `GameState` gained `threats: ThreatInstance[]`
+  (`rules/state.ts` — `{ id, cardId, level }`, empty in `blankState`; mission-seeded only, so a
+  no-op field on every run that doesn't use one) and a new `rules/threats.ts`: `addThreat(G,
+  cardId)` seeds one at level 0, `tickThreats(G)` drains `level * cardId`'s base `effect.loss`
+  from `G.resources` (via `resources.ts`'s `scaleResources`, the same scale-by-counter primitive
+  Step 6.1's Cornucopia uses) *then* increments `level` — apply-then-increment, so the round a
+  threat is added deals no drain yet. `rules/population.ts`'s `nextInstanceId` now also scans
+  `G.threats`, since it shares the run-wide instance-id space. `tickThreats` is called
+  unconditionally from `upkeep.ts`'s `applyUpkeep` (a no-op when `threats` is empty), so it flows
+  into `projectedDelta`'s UI preview for free with no risk of drift between preview and actual —
+  confirmed by an `applyUpkeep`-level test alongside `rules/threats.test.ts`'s direct coverage of
+  `addThreat`/`tickThreats` (level-0 no-drain, drain-then-escalate, no-threats no-op). No UI, no
+  real threat-seeding mission yet — that's Step 6.3b's Creeping Decay.
 - **Phase 3 Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — `MissionDef`'s
   `reward` and `map` are now optional (`'infinite'` missions have neither). `rules/rewards.ts`'s
   `computeRewards` gains an infinite branch — Influence = rounds survived

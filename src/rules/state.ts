@@ -49,6 +49,19 @@ export type BuildingInstance = PlacedCard;
  *  instance is cleared. */
 export type WorkInstance = PlacedCard;
 
+/** A persistent board hazard, seeded by a mission's `setup` (`rules/threats.ts`'s `addThreat`) —
+ *  not a card in any pile, and never player-playable. Escalates every upkeep (`tickThreats`):
+ *  drains `level * cardId`'s base `effect.loss` from resources, then increments — so the round
+ *  it's added deals no drain yet. `id` shares the run-wide instance-id space (`population.ts`'s
+ *  `nextInstanceId`) with every other card/placed instance. */
+export interface ThreatInstance {
+  id: number;
+  /** Key into the CARDS catalogue — its `effect.loss` is the per-level drain unit. */
+  cardId: string;
+  /** How many upkeeps this threat has ticked through so far. */
+  level: number;
+}
+
 /**
  * GameState is the entire serializable run state (the engine's `G`). It must stay
  * JSON-serializable (save/load, undo, and headless simulation depend on it). It lives
@@ -90,6 +103,9 @@ export interface GameState {
    * files to `discard`). Populated by `playCard`, reset in `endTurn`'s `discardWorkZone`.
    */
   workZone: WorkInstance[];
+  /** Persistent board hazards, ticking (draining resources, escalating) every upkeep — see
+   *  `rules/threats.ts`. Mission-seeded only; empty on every run that doesn't use one. */
+  threats: ThreatInstance[];
   /**
    * Territory available — the tableau may hold at most this many buildings. Each building
    * fills one slot; building cards become unplayable when it is full. Expanded by territory
@@ -160,6 +176,7 @@ export function blankState(missionId: string): GameState {
     removed: [],
     tableau: [],
     workZone: [],
+    threats: [],
     territory: 6,
     culture: 0,
     handSize: 5,

@@ -118,11 +118,18 @@ timeline entirely and into a new always-visible bottom banner (never `position: 
 the map's existing viewport-fixed workaround) instead of a node, since they have no map position
 and are never locked/cleared. `Board.tsx`'s gameover overlay and `MissionDetailPanel` both guard
 the now-optional `mission.reward` and show an infinite-specific reward line ("Influence = rounds
-survived") instead of a card face. No real `'infinite'` mission ships yet — that's **Step 6.3**'s
-Creeping Decay, once a threat exists to drive one. Still to come: tutorial missions (Step 8), the
-threat zone + Creeping Decay (Step 6.3a/6.3b), and `Stats` surfacing a per-run reward (deferred
-since `RunResult` deliberately excludes rewards, and there's no per-run record of whether that
-run was a first clear).
+survived") instead of a card face. **Phase 3 Step 6.3a** (threat zone, pure core) is also done:
+`GameState` gained `threats: ThreatInstance[]` (`{ id, cardId, level }`, mission-seeded only,
+empty on every run that doesn't use one) and `rules/threats.ts` — `addThreat` seeds one at level
+0, `tickThreats` drains `level * cardId`'s base `effect.loss` (via `resources.ts`'s
+`scaleResources`, the same "scale an effect by a counter" primitive Step 6.1's Cornucopia uses)
+*then* increments `level`, apply-then-increment so the round a threat is added deals no drain yet.
+`tickThreats` is called unconditionally from `upkeep.ts`'s `applyUpkeep` (a no-op when `threats`
+is empty), so it flows into `projectedDelta`'s UI preview for free — no UI of its own, and no
+real threat-seeding mission exists yet. That's **Step 6.3b**'s Creeping Decay, once the board
+rendering + the mission itself are authored. Still to come: tutorial missions (Step 8), Step
+6.3b, and `Stats` surfacing a per-run reward (deferred since `RunResult` deliberately excludes
+rewards, and there's no per-run record of whether that run was a first clear).
 
 ## Commands
 
@@ -145,7 +152,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/rules/` — all real game logic *and* the core state type. `state.ts` defines
   `GameState` (boardgame.io's `G` — the serializable run state, including `population`,
   each tableau building's assigned `workers`, the `territory` cap on tableau size, the
-  transient `workZone` of played `work` cards awaiting staffing, the
+  transient `workZone` of played `work` cards awaiting staffing, `threats` (persistent
+  board hazards — `ThreatInstance[]`, `{ id, cardId, level }`; mission-seeded only, see
+  `threats.ts` below), the
   card zones `deck`/`hand`/`discard`/`removed` — each a `CardInstance[]` (`{ id, cardId, counters? }`),
   so every card in a pile has a stable per-run **instance id** and can carry its own per-copy state as
   it cycles hand→discard→deck→hand (`PlacedCard` extends `CardInstance` with `workers`; `id`s are
@@ -173,10 +182,14 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   re-entrant resolver, all plain data so undo/clone survive),
   `population.ts` (worker staffing over both buildings and work cards via the `Staffable`
   layer — `requiredWorkersOf` / `isOperating` / `freePopulation` /
-  `findStaffable`, `addBuilding`/`addWork` with a shared `nextInstanceId` allocator — plus
-  `foodUpkeep`), `upkeep.ts` (`applyUpkeep`: operating buildings *and* staffed work
-  produce → mission ticks → population eats food; plus `discardWorkZone` (end-of-turn work
-  filing) and `projectedDelta` for the UI), and
+  `findStaffable`, `addBuilding`/`addWork` with a shared `nextInstanceId` allocator (also
+  scanning `G.threats`, which shares this same instance-id space) — plus
+  `foodUpkeep`), `threats.ts` (persistent board hazards — `addThreat` seeds one at level 0,
+  mission-`setup`-only; `tickThreats` drains `level * cardId`'s base `effect.loss` via
+  `resources.ts`'s `scaleResources`, *then* increments `level` — apply-then-increment, so
+  the round a threat is added deals no drain yet), `upkeep.ts` (`applyUpkeep`: operating
+  buildings *and* staffed work produce → threats tick → mission ticks → population eats
+  food; plus `discardWorkZone` (end-of-turn work filing) and `projectedDelta` for the UI), and
   `production.ts` / `tableau.ts` (derived stats — including `usedTerritory` / `freeTerritory`,
   the territory cap that gates how many buildings can occupy the tableau), and
   `deckBuilder.ts` (deck *construction* — `addCard`/`removeCard` on a plain `string[]`,

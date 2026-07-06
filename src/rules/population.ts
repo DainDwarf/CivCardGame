@@ -57,7 +57,8 @@ export function autoStaffCount(G: GameState, cardId: string): number {
  *  zone is what keeps ids unique run-wide, so a building or Work box minted at play never collides
  *  with a card already sitting in the deck. `pendingInteraction.options` are cards lifted out of the
  *  deck awaiting a choice (e.g. Foresight's peek); no move mints while an interaction is pending
- *  today, but scanning them keeps the invariant robust if a future interactive card ever does. Ids
+ *  today, but scanning them keeps the invariant robust if a future interactive card ever does. Also
+ *  scans `G.threats` (`rules/threats.ts`), which shares this same instance-id space. Ids
  *  of a card that has left every zone may be reused, which is harmless since nothing references them. */
 export function nextInstanceId(G: GameState): number {
   let max = 0;
@@ -68,6 +69,7 @@ export function nextInstanceId(G: GameState): number {
   for (const c of G.discard) max = Math.max(max, c.id);
   for (const c of G.removed) max = Math.max(max, c.id);
   for (const c of G.pendingInteraction?.options ?? []) max = Math.max(max, c.id);
+  for (const t of G.threats) max = Math.max(max, t.id);
   return max + 1;
 }
 

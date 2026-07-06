@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveHandEvents, projectedDelta } from './upkeep';
+import { resolveHandEvents, projectedDelta, applyUpkeep } from './upkeep';
 import { blankState, instancesFromCardIds } from './state';
 
 describe('resolveHandEvents', () => {
@@ -30,6 +30,17 @@ describe('resolveHandEvents', () => {
     resolveHandEvents(G);
     expect(G.hand.map((c) => c.cardId)).toEqual(['farm', 'workshop']);
     expect(G.removed).toEqual([]);
+  });
+});
+
+describe('applyUpkeep with a threat', () => {
+  it('ticks a seeded threat as part of the normal upkeep pass', () => {
+    const G = blankState('enlightenment');
+    G.resources.military = 10;
+    G.threats = [{ id: 1, cardId: 'barbarian', level: 1 }];
+    applyUpkeep(G);
+    expect(G.resources.military).toBe(6); // barbarian's base loss (4) * level (1)
+    expect(G.threats[0].level).toBe(2);
   });
 });
 
