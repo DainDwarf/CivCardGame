@@ -119,16 +119,20 @@ the map's existing viewport-fixed workaround) instead of a node, since they have
 and are never locked/cleared. `Board.tsx`'s gameover overlay and `MissionDetailPanel` both guard
 the now-optional `mission.reward` and show an infinite-specific reward line ("Influence = rounds
 survived") instead of a card face. **Phase 3 Step 6.3a** (threat zone, pure core) is also done:
-`GameState` gained `threats: ThreatInstance[]` (`{ id, cardId, level }`, mission-seeded only,
-empty on every run that doesn't use one) and `rules/threats.ts` — `addThreat` seeds one at level
-0, `tickThreats` drains `level * cardId`'s base `effect.loss` (via `resources.ts`'s
-`scaleResources`, the same "scale an effect by a counter" primitive Step 6.1's Cornucopia uses)
-*then* increments `level`, apply-then-increment so the round a threat is added deals no drain yet.
-`tickThreats` is called unconditionally from `upkeep.ts`'s `applyUpkeep` (a no-op when `threats`
-is empty), so it flows into `projectedDelta`'s UI preview for free — no UI of its own, and no
-real threat-seeding mission exists yet. That's **Step 6.3b**'s Creeping Decay, once the board
-rendering + the mission itself are authored. Still to come: tutorial missions (Step 8), Step
-6.3b, and `Stats` surfacing a per-run reward (deferred since `RunResult` deliberately excludes
+`GameState` gained `threats: ThreatInstance[]` — `ThreatInstance` is just a `CardInstance`
+(mission-seeded only via `rules/threats.ts`'s `addThreat`, bare `{ id, cardId }`; empty on every
+run that doesn't use one). Its escalation is **the card's own responsibility, not the engine's**:
+`tickThreats` doesn't read or scale any card data itself — it only calls `resolveCard({ G, self:
+t })` per threat each upkeep, the exact same resolver spine every other card resolves through. A
+threat card computes and applies its own drain and bumps its own counter inside its `resolve`
+closure, mirroring Cornucopia's per-play growth (Step 6.1), just tick-triggered instead of
+play-triggered — so a future Creeping Decay never touches the declarative `effect` bag at all,
+same as Cornucopia doesn't. `tickThreats` is called unconditionally from `upkeep.ts`'s
+`applyUpkeep` (a no-op when `threats` is empty), so it flows into `projectedDelta`'s UI preview
+for free — no UI of its own, and no real threat-seeding mission exists yet. That's **Step 6.3b**'s
+Creeping Decay, once the board rendering + the mission itself are authored. Still to come:
+tutorial missions (Step 8), Step 6.3b, and `Stats` surfacing a per-run reward (deferred since
+`RunResult` deliberately excludes
 rewards, and there's no per-run record of whether that run was a first clear).
 
 ## Commands
@@ -153,7 +157,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `GameState` (boardgame.io's `G` — the serializable run state, including `population`,
   each tableau building's assigned `workers`, the `territory` cap on tableau size, the
   transient `workZone` of played `work` cards awaiting staffing, `threats` (persistent
-  board hazards — `ThreatInstance[]`, `{ id, cardId, level }`; mission-seeded only, see
+  board hazards — `ThreatInstance[]`, each just a `CardInstance`; mission-seeded only, see
   `threats.ts` below), the
   card zones `deck`/`hand`/`discard`/`removed` — each a `CardInstance[]` (`{ id, cardId, counters? }`),
   so every card in a pile has a stable per-run **instance id** and can carry its own per-copy state as
@@ -184,12 +188,15 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   layer — `requiredWorkersOf` / `isOperating` / `freePopulation` /
   `findStaffable`, `addBuilding`/`addWork` with a shared `nextInstanceId` allocator (also
   scanning `G.threats`, which shares this same instance-id space) — plus
-  `foodUpkeep`), `threats.ts` (persistent board hazards — `addThreat` seeds one at level 0,
-  mission-`setup`-only; `tickThreats` drains `level * cardId`'s base `effect.loss` via
-  `resources.ts`'s `scaleResources`, *then* increments `level` — apply-then-increment, so
-  the round a threat is added deals no drain yet), `upkeep.ts` (`applyUpkeep`: operating
-  buildings *and* staffed work produce → threats tick → mission ticks → population eats
-  food; plus `discardWorkZone` (end-of-turn work filing) and `projectedDelta` for the UI), and
+  `foodUpkeep`), `threats.ts` (persistent board hazards, mission-`setup`-only —
+  `addThreat` seeds one bare, no counters yet; `tickThreats` does **not** read or scale any
+  card data itself, deliberately: it just calls `resolveCard({ G, self: t })` per threat, the
+  same resolver spine every other card resolves through, so a threat card computes and applies
+  its own drain and bumps its own escalation counter inside its `resolve` — the engine only asks
+  it to resolve, it never resolves on the card's behalf), `upkeep.ts` (`applyUpkeep`: operating
+  buildings *and* staffed work produce → threats tick (each resolving itself) → mission ticks →
+  population eats food; plus `discardWorkZone` (end-of-turn work filing) and `projectedDelta`
+  for the UI), and
   `production.ts` / `tableau.ts` (derived stats — including `usedTerritory` / `freeTerritory`,
   the territory cap that gates how many buildings can occupy the tableau), and
   `deckBuilder.ts` (deck *construction* — `addCard`/`removeCard` on a plain `string[]`,

@@ -50,17 +50,14 @@ export type BuildingInstance = PlacedCard;
 export type WorkInstance = PlacedCard;
 
 /** A persistent board hazard, seeded by a mission's `setup` (`rules/threats.ts`'s `addThreat`) —
- *  not a card in any pile, and never player-playable. Escalates every upkeep (`tickThreats`):
- *  drains `level * cardId`'s base `effect.loss` from resources, then increments — so the round
- *  it's added deals no drain yet. `id` shares the run-wide instance-id space (`population.ts`'s
+ *  not a card in any pile, and never player-playable, but otherwise a plain `CardInstance`: its
+ *  escalation lives in its own `counters` (via `getCounter`/`bumpCounter`), and each upkeep tick
+ *  resolves it through the same resolver spine every other card uses (`rules/threats.ts`'s
+ *  `tickThreats` just calls `resolveCard`) — the *card's own* `resolve` computes and applies its
+ *  drain and bumps its own counter, mirroring Cornucopia's per-play growth, just tick-triggered
+ *  instead of play-triggered. `id` shares the run-wide instance-id space (`population.ts`'s
  *  `nextInstanceId`) with every other card/placed instance. */
-export interface ThreatInstance {
-  id: number;
-  /** Key into the CARDS catalogue — its `effect.loss` is the per-level drain unit. */
-  cardId: string;
-  /** How many upkeeps this threat has ticked through so far. */
-  level: number;
-}
+export type ThreatInstance = CardInstance;
 
 /**
  * GameState is the entire serializable run state (the engine's `G`). It must stay

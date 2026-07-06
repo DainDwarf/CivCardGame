@@ -4,10 +4,10 @@ import { nextInstanceId } from './population';
 import { blankState } from './state';
 
 describe('addThreat', () => {
-  it('seeds a threat at level 0', () => {
+  it('seeds a threat bare, no counters yet', () => {
     const G = blankState('enlightenment');
     addThreat(G, 'barbarian');
-    expect(G.threats).toEqual([{ id: 1, cardId: 'barbarian', level: 0 }]);
+    expect(G.threats).toEqual([{ id: 1, cardId: 'barbarian' }]);
   });
 
   it('shares the run-wide instance-id space', () => {
@@ -20,26 +20,28 @@ describe('addThreat', () => {
 });
 
 describe('tickThreats', () => {
-  it('deals no drain the round a threat is added (level 0)', () => {
+  it('resolves each threat through the same resolver spine every card uses', () => {
+    // barbarian has no bespoke resolve, so its declarative default (a flat -4 military) applies
+    // unscaled on every tick — tickThreats itself has no opinion on escalation, only the card does.
     const G = blankState('enlightenment');
     G.resources.military = 10;
-    addThreat(G, 'barbarian'); // barbarian's base loss is 4 military
+    G.threats = [{ id: 1, cardId: 'barbarian' }];
     tickThreats(G);
-    expect(G.resources.military).toBe(10);
-    expect(G.threats[0].level).toBe(1);
+    expect(G.resources.military).toBe(6);
+    tickThreats(G);
+    expect(G.resources.military).toBe(2);
   });
 
-  it('drains baseLoss * level and escalates level after', () => {
+  it("a card that scales itself off its own counter (Cornucopia's growth resolver) escalates across ticks", () => {
+    // Reuses Cornucopia purely to exercise the generic tick-through-resolveCard wiring against a
+    // counter-scaling resolver — not real threat content (that's Step 6.3b's Creeping Decay).
     const G = blankState('enlightenment');
-    G.resources.military = 10;
-    G.threats = [{ id: 1, cardId: 'barbarian', level: 1 }];
+    G.threats = [{ id: 1, cardId: 'cornucopia' }];
     tickThreats(G);
-    expect(G.resources.military).toBe(6); // 10 - 4*1
-    expect(G.threats[0].level).toBe(2);
-
+    expect(G.resources.food).toBe(1); // scaleResources({food:1}, 0+1)
     tickThreats(G);
-    expect(G.resources.military).toBe(-2); // 6 - 4*2, no clamp
-    expect(G.threats[0].level).toBe(3);
+    expect(G.resources.food).toBe(3); // +2, scaleResources({food:1}, 1+1)
+    expect(G.threats[0].counters).toEqual({ plays: 2 });
   });
 
   it('is a no-op when there are no threats', () => {

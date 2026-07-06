@@ -49,9 +49,10 @@ export function resolveHandEvents(G: GameState): void {
 
 /**
  * Resolve the resource side of end-of-round upkeep: operating (staffed) buildings and Work
- * cards produce, any board threats tick (drain + escalate), the mission ticks, then the
- * population eats food. Single source of truth shared by the run loop's `onEnd` and the UI
- * projection below, so they never drift.
+ * cards produce, any board threats tick (each resolving its own card's effect, escalation
+ * included — see `rules/threats.ts`), the mission ticks, then the population eats food. Single
+ * source of truth shared by the run loop's `onEnd` and the UI projection below, so they never
+ * drift.
  */
 export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
   addResources(G.resources, tableauProduction(G.tableau));

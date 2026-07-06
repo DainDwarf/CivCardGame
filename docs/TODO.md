@@ -42,10 +42,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     infinite mission. `Board.tsx` renders `G.threats` (near the mission HUD) as `CardFace`s with
     a live "−N 🔨/round (growing)" badge and click → existing `CardZoomOverlay`; reads only
     `GameState`, never the mission. Reframe the gameover overlay for a threat-driven collapse
-    (Influence = rounds survived). Add the **Creeping Decay** `event` card (`content/cards.ts`,
-    `effect: { loss: { production: 1 } }` = per-turn base) and an infinite mission whose `setup`
-    seeds it via `addThreat`; the growing production drain forces `coreCollapse` → `'ruin'`
-    (`run/engine.ts`), which realizes the score. `[size: M]` `[phase: 3]`
+    (Influence = rounds survived). Add the **Creeping Decay** `event` card (`content/cards.ts`) —
+    per Step 6.3a's corrected design, it owns its drain via a bespoke `resolve` (reading its own
+    `getCounter(self, 'level')`, scaling a base 1 production loss by it, then bumping its own
+    counter — mirroring Cornucopia's `resolve`, not a declarative `effect.loss`) — and an infinite
+    mission whose `setup` seeds it via `addThreat`; the growing production drain forces
+    `coreCollapse` → `'ruin'` (`run/engine.ts`), which realizes the score. `[size: M]` `[phase: 3]`
   - **Link 6.1 ↔ 6.3:** both express a value that *changes over the run* by scaling a card's
     effect by an integer counter. They differ in **trigger and storage** — 6.1 escalates *per copy
     played* (Cornucopia, counter in that copy's own `CardInstance.counters`) while 6.3 escalates
@@ -125,18 +127,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
 - **Phase 3 Step 6.3a — Threat zone (pure core)** — `GameState` gained `threats: ThreatInstance[]`
-  (`rules/state.ts` — `{ id, cardId, level }`, empty in `blankState`; mission-seeded only, so a
-  no-op field on every run that doesn't use one) and a new `rules/threats.ts`: `addThreat(G,
-  cardId)` seeds one at level 0, `tickThreats(G)` drains `level * cardId`'s base `effect.loss`
-  from `G.resources` (via `resources.ts`'s `scaleResources`, the same scale-by-counter primitive
-  Step 6.1's Cornucopia uses) *then* increments `level` — apply-then-increment, so the round a
-  threat is added deals no drain yet. `rules/population.ts`'s `nextInstanceId` now also scans
-  `G.threats`, since it shares the run-wide instance-id space. `tickThreats` is called
-  unconditionally from `upkeep.ts`'s `applyUpkeep` (a no-op when `threats` is empty), so it flows
-  into `projectedDelta`'s UI preview for free with no risk of drift between preview and actual —
-  confirmed by an `applyUpkeep`-level test alongside `rules/threats.test.ts`'s direct coverage of
-  `addThreat`/`tickThreats` (level-0 no-drain, drain-then-escalate, no-threats no-op). No UI, no
-  real threat-seeding mission yet — that's Step 6.3b's Creeping Decay.
+  (`rules/state.ts` — `ThreatInstance` is just a `CardInstance`, empty in `blankState`;
+  mission-seeded only, so a no-op field on every run that doesn't use one) and a new
+  `rules/threats.ts`: `addThreat(G, cardId)` seeds one bare (no counters yet). Escalation is
+  **the card's responsibility, not the engine's** — an earlier draft had `tickThreats` read and
+  scale `CARDS[cardId].effect.loss` itself, which was caught in review as bypassing the resolver
+  spine (`effects.ts`'s `resolveCard`, "the single path 'the card's effect' runs through").
+  Corrected: `tickThreats(G)` just calls `resolveCard({ G, self: t })` per threat — the threat
+  card's own `resolve` computes and applies its drain and bumps its own counter, mirroring
+  Cornucopia's per-play growth (Step 6.1) but tick-triggered instead of play-triggered, so a
+  future Creeping Decay never touches the declarative `effect` bag at all (same as Cornucopia
+  doesn't). `rules/population.ts`'s `nextInstanceId` now also scans `G.threats`, since it shares
+  the run-wide instance-id space. `tickThreats` is called unconditionally from `upkeep.ts`'s
+  `applyUpkeep` (a no-op when `threats` is empty), so it flows into `projectedDelta`'s UI preview
+  for free with no risk of drift between preview and actual — confirmed by an `applyUpkeep`-level
+  test alongside `rules/threats.test.ts`'s direct coverage (a flat-loss card ticking unscaled, a
+  counter-scaling resolver escalating across ticks, no-threats no-op). No UI, no real
+  threat-seeding mission yet — that's Step 6.3b's Creeping Decay.
 - **Phase 3 Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — `MissionDef`'s
   `reward` and `map` are now optional (`'infinite'` missions have neither). `rules/rewards.ts`'s
   `computeRewards` gains an infinite branch — Influence = rounds survived

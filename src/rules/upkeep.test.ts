@@ -34,13 +34,12 @@ describe('resolveHandEvents', () => {
 });
 
 describe('applyUpkeep with a threat', () => {
-  it('ticks a seeded threat as part of the normal upkeep pass', () => {
+  it('resolves a seeded threat as part of the normal upkeep pass', () => {
     const G = blankState('enlightenment');
     G.resources.military = 10;
-    G.threats = [{ id: 1, cardId: 'barbarian', level: 1 }];
+    G.threats = [{ id: 1, cardId: 'barbarian' }];
     applyUpkeep(G);
-    expect(G.resources.military).toBe(6); // barbarian's base loss (4) * level (1)
-    expect(G.threats[0].level).toBe(2);
+    expect(G.resources.military).toBe(6); // barbarian's own resolver applied its flat -4 loss
   });
 });
 
