@@ -44,14 +44,16 @@ export function describeCost(c: CardDef): string {
   return parts.join(' · ');
 }
 
-/** Presentation-only summary of a card's extra conditions for play — culture-level gate and
- *  discard cost — shown in their own banded section on the card face. (Work cards show their
- *  worker spaces as a meeple column instead, via the shared worker-icon rendering.) */
+/** Presentation-only summary of a card's extra conditions for play — culture-level gate, discard
+ *  cost, and a dynamic card's scaling rule (`dynamicRule`) — shown in their own banded section on
+ *  the card face. (Work cards show their worker spaces as a meeple column instead, via the shared
+ *  worker-icon rendering.) */
 export function describeConditions(c: CardDef): string {
   const parts: string[] = [];
   if (c.kind === 'event') parts.push(c.effect?.remove ? 'resolves at end of round, then removed' : 'resolves at end of round');
   if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
   if (c.discardCost) parts.push(`discard ${c.discardCost}`);
+  if (c.dynamicRule) parts.push(c.dynamicRule);
   return parts.join(' · ');
 }
 
@@ -136,8 +138,9 @@ interface CardFaceCommonProps {
   as?: 'div' | 'button';
   title?: string;
   /** Replaces the auto-generated effect text with a caller-supplied string — used for run-aware
-   *  text a static `CardDef` can't produce (e.g. a card's `dynamicText(G)` current value in hand).
-   *  Falls back to `describeCard(card)` when absent. */
+   *  text a static `CardDef` can't produce (e.g. a card's `dynamicText(G, self)` current value,
+   *  computed by the caller wherever a real run instance exists: hand, drag/ghost clones, zoom,
+   *  pile viewers). Falls back to `describeCard(card)` when absent. */
   overrideText?: string;
   onPointerDown?: (e: React.PointerEvent<HTMLElement>) => void;
   onClick?: (e: React.MouseEvent<HTMLElement>) => void;

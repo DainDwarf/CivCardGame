@@ -55,10 +55,18 @@ export interface CardDef {
   description?: string;
   /** Run-aware effect text: given the live `GameState` and the specific card instance being
    *  rendered, returns that copy's *current* effect summary (e.g. Cornucopia's growing "+N🌾", which
-   *  depends on how often *this* copy has been played). Rendered only where a real instance exists
-   *  (the hand); static contexts (Collection, deck editor) fall back to `description`/`describeCard`.
-   *  The card owns its own display logic — the shell renders it blindly, with no per-card branch. */
+   *  depends on how often *this* copy has been played). Rendered in the card's bottom-most text
+   *  band, everywhere a real instance exists in the run (hand, drag/ghost clones, zoom, pile
+   *  viewers); static contexts (Collection, deck editor) have no instance to read, so they fall
+   *  back to `description`/`describeCard`, which should read as the card's *base* value — the
+   *  scaling rule itself is `dynamicRule`'s job, not this one's. The card owns its own display
+   *  logic — the shell renders it blindly, with no per-card branch. */
   dynamicText?: (G: GameState, self: CardInstance) => string;
+  /** Static, run-independent text describing *how* a dynamic card's effect scales (e.g. "+1 more
+   *  each time this copy is played this run") — shown in the conditions band (alongside discard
+   *  cost / culture-level gates), in every context, live instance or not, since the rule itself
+   *  never changes. Pairs with `dynamicText`, which supplies the actual current number below it. */
+  dynamicRule?: string;
   /** `building` cards: per-round output once staffed. */
   produces?: Partial<Resources>;
   /** `building` cards: per-round culture gained while staffed — accumulates on G.culture. */
@@ -102,7 +110,8 @@ export const CARDS: Record<string, CardDef> = {
   // Cornucopia never buffs the others.
   cornucopia: {
     id: 'cornucopia', name: 'Cornucopia', kind: 'action', cost: {},
-    description: '+1🌾, +1 more each time this copy is played this run',
+    description: '+1🌾',
+    dynamicRule: '+1 each time played',
     dynamicText: (_G, self) => `+${getCounter(self, 'plays') + 1}🌾`,
     resolve: ({ G, self }) => {
       addResources(G.resources, scaleResources({ food: 1 }, getCounter(self, 'plays') + 1));

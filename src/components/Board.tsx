@@ -142,19 +142,33 @@ function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
   );
 }
 
-/** Collapse a flat list of card ids into one entry per type with a count, keeping first-seen order. */
-function groupCards(ids: string[]): { cardId: string; count: number }[] {
+/** Collapse a list of card instances into one tile per type with a count, keeping first-seen
+ *  order — *except* a card with `dynamicText`, which never groups: each copy can carry its own
+ *  live value (e.g. two Cornucopia with different play counts), so a shared count would either
+ *  hide that or force picking one copy's value to speak for the stack. Each stays its own
+ *  single-count entry, keyed by its stable instance id, carrying the instance so the caller can
+ *  compute its current `dynamicText`. */
+function groupCards(insts: CardInstance[]): { key: number | string; cardId: string; inst: CardInstance; count: number }[] {
   const order: string[] = [];
-  const counts = new Map<string, number>();
-  for (const id of ids) {
-    const n = counts.get(id);
-    if (n) counts.set(id, n + 1);
+  const groups = new Map<string, { inst: CardInstance; count: number }>();
+  const singles: { key: number; cardId: string; inst: CardInstance; count: number }[] = [];
+  for (const inst of insts) {
+    if (CARDS[inst.cardId].dynamicText) {
+      singles.push({ key: inst.id, cardId: inst.cardId, inst, count: 1 });
+      continue;
+    }
+    const g = groups.get(inst.cardId);
+    if (g) g.count += 1;
     else {
-      counts.set(id, 1);
-      order.push(id);
+      groups.set(inst.cardId, { inst, count: 1 });
+      order.push(inst.cardId);
     }
   }
-  return order.map((cardId) => ({ cardId, count: counts.get(cardId)! }));
+  const grouped = order.map((cardId) => {
+    const g = groups.get(cardId)!;
+    return { key: cardId, cardId, inst: g.inst, count: g.count };
+  });
+  return [...grouped, ...singles];
 }
 
 /** A pile token flanking the hand (deck / discard / removed). Clickable when `onView` is given. */
@@ -407,6 +421,9 @@ interface Ghost {
   cardId: string;
   rect: Rect;
   anim: 'play' | 'drop';
+  /** A dynamic card's live current-value text, captured at spawn time (before its resolver runs
+   *  and bumps its counter) so the flying clone shows the same value the hand card just did. */
+  overrideText?: string;
 }
 
 /** A card being dragged from the hand toward the board. */
@@ -530,8 +547,8 @@ export function Board({
   const [pending, setPending] = useState<PendingPlay | null>(null);
   const [pendingDestroy, setPendingDestroy] = useState<PendingDestroy | null>(null);
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
-  const [zoom, setZoom] = useState<string | null>(null);
-  const [pileView, setPileView] = useState<{ title: string; cards: string[] } | null>(null);
+  const [zoom, setZoom] = useState<{ cardId: string; overrideText?: string } | null>(null);
+  const [pileView, setPileView] = useState<{ title: string; cards: CardInstance[] } | null>(null);
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
   const [rejectMsg, setRejectMsg] = useState<string | null>(null);
@@ -735,18 +752,18 @@ export function Board({
   }
 
   /** Spawn a transient clone that animates a card out, then clean it up. */
-  function spawnGhost(cardId: string, rect: Rect, anim: 'play' | 'drop') {
+  function spawnGhost(cardId: string, rect: Rect, anim: 'play' | 'drop', overrideText?: string) {
     const id = ghostSeq.current++;
-    setGhosts((gs) => [...gs, { id, cardId, rect, anim }]);
+    setGhosts((gs) => [...gs, { id, cardId, rect, anim, overrideText }]);
     window.setTimeout(() => setGhosts((gs) => gs.filter((x) => x.id !== id)), anim === 'drop' ? 360 : 440);
   }
 
   /** Fly-up animation from a card's slot in the hand (used by the discard-cost flow). */
-  function ghostFromSlot(key: number, cardId: string) {
+  function ghostFromSlot(key: number, cardId: string, overrideText?: string) {
     const el = cardEls.current.get(key);
     if (!el) return;
     const r = el.getBoundingClientRect();
-    spawnGhost(cardId, { left: r.left, top: r.top, width: r.width, height: r.height }, 'play');
+    spawnGhost(cardId, { left: r.left, top: r.top, width: r.width, height: r.height }, 'play', overrideText);
   }
 
   /** Try to play a dragged card released over the board. */
@@ -783,14 +800,20 @@ export function Board({
       setPending({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key, need, discards: [] });
       return;
     }
-    spawnGhost(d.cardId, { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h }, 'drop');
+    spawnGhost(
+      d.cardId,
+      { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h },
+      'drop',
+      card.dynamicText?.(G, G.hand[d.handIdx]),
+    );
     moves.playCard(d.handIdx);
   }
 
   /** Resolve a finished drag: a non-drag press zooms; a drag over the board plays. */
   function finishDrag(d: DragState, x: number, y: number) {
     if (!d.active) {
-      setZoom(d.cardId); // it was a click, not a drag
+      // it was a click, not a drag
+      setZoom({ cardId: d.cardId, overrideText: CARDS[d.cardId].dynamicText?.(G, G.hand[d.handIdx]) });
     } else {
       const barTop = handBarRef.current?.getBoundingClientRect().top ?? Infinity;
       if (y < barTop) attemptPlay(d, x, y); // released above the hand bar = over the board
@@ -874,7 +897,7 @@ export function Board({
       } else {
         // It was a click, not a drag — zoom the building's card (mirrors finishDrag for hand cards).
         const inst = buildingById.get(d.id);
-        if (inst) setZoom(inst.cardId);
+        if (inst) setZoom({ cardId: inst.cardId });
       }
       setSlotDrag(null);
       setHoverSlot(null);
@@ -1039,7 +1062,7 @@ export function Board({
       ? pending.discards.filter((d) => d !== i)
       : [...pending.discards, i];
     if (discards.length === pending.need) {
-      ghostFromSlot(pending.playedKey, pending.cardId);
+      ghostFromSlot(pending.playedKey, pending.cardId, CARDS[pending.cardId].dynamicText?.(G, G.hand[pending.handIdx]));
       moves.playCard(pending.handIdx, discards);
       setPending(null);
     } else {
@@ -1050,7 +1073,11 @@ export function Board({
   /** Fire the destroy move against a chosen building instance, then exit targeting mode. */
   function handleDestroyTarget(instanceId: number) {
     if (!pendingDestroy) return;
-    ghostFromSlot(pendingDestroy.playedKey, pendingDestroy.cardId);
+    ghostFromSlot(
+      pendingDestroy.playedKey,
+      pendingDestroy.cardId,
+      CARDS[pendingDestroy.cardId].dynamicText?.(G, G.hand[pendingDestroy.handIdx]),
+    );
     moves.playCard(pendingDestroy.handIdx, [], instanceId);
     setPendingDestroy(null);
   }
@@ -1174,7 +1201,7 @@ export function Board({
                     onStaffPointerDown={onStaffPointerDown}
                     onDestroy={() => handleDestroyTarget(inst.id)}
                     onZoomClick={
-                      gameover && overlayMinimized ? () => setZoom(inst.cardId) : undefined
+                      gameover && overlayMinimized ? () => setZoom({ cardId: inst.cardId }) : undefined
                     }
                   />
                 )}
@@ -1284,7 +1311,10 @@ export function Board({
                     style={card.isNew ? { animationDelay: `${Math.min(card.newOrder, 6) * 70}ms` } : undefined}
                     onPointerDown={(e) => onCardPointerDown(e, card)}
                     onClick={() => {
-                      if (gameover && overlayMinimized) { setZoom(card.cardId); return; }
+                      if (gameover && overlayMinimized) {
+                        setZoom({ cardId: card.cardId, overrideText: c.dynamicText?.(G, card.inst) });
+                        return;
+                      }
                       if (pending) handlePendingClick(card);
                       else if (pendingDestroy && card.handIdx === pendingDestroy.handIdx) setPendingDestroy(null);
                     }}
@@ -1298,13 +1328,13 @@ export function Board({
             variant={styles.pileDiscard}
             label="discard"
             count={G.discard.length}
-            onView={() => setPileView({ title: 'Discard pile', cards: G.discard.map((c) => c.cardId) })}
+            onView={() => setPileView({ title: 'Discard pile', cards: G.discard })}
           />
           <Pile
             variant={styles.pileRemoved}
             label="removed"
             count={G.removed.length}
-            onView={() => setPileView({ title: 'Removed from deck', cards: G.removed.map((c) => c.cardId) })}
+            onView={() => setPileView({ title: 'Removed from deck', cards: G.removed })}
           />
 
           {warnEndRound && (shouldWarn || confirmEndTurn) ? (
@@ -1351,6 +1381,7 @@ export function Board({
             <CardFace
               key={g.id}
               card={CARDS[g.cardId]}
+              overrideText={g.overrideText}
               className={`${styles.ghostCard} ${g.anim === 'drop' ? styles.ghostDrop : styles.ghostPlay}`}
               style={{ left: px(g.rect.left), top: px(g.rect.top), width: px(g.rect.width), height: px(g.rect.height) }}
             />
@@ -1377,6 +1408,7 @@ export function Board({
           <div className={styles.dragLayer} aria-hidden="true">
             <CardFace
               card={CARDS[drag.cardId]}
+              overrideText={CARDS[drag.cardId].dynamicText?.(G, G.hand[drag.handIdx])}
               className={styles.dragCard}
               style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
             />
@@ -1434,15 +1466,19 @@ export function Board({
               <p className={styles.empty}>Empty.</p>
             ) : (
               <div className={styles.pileGrid}>
-                {groupCards(pileView.cards).map((g) => (
-                  <CardFace
-                    key={g.cardId}
-                    card={CARDS[g.cardId]}
-                    className={styles.staticCard}
-                    countBadge={g.count}
-                    onClick={(e) => { e.stopPropagation(); setZoom(g.cardId); }}
-                  />
-                ))}
+                {groupCards(pileView.cards).map((g) => {
+                  const overrideText = CARDS[g.cardId].dynamicText?.(G, g.inst);
+                  return (
+                    <CardFace
+                      key={g.key}
+                      card={CARDS[g.cardId]}
+                      overrideText={overrideText}
+                      className={styles.staticCard}
+                      countBadge={g.count}
+                      onClick={(e) => { e.stopPropagation(); setZoom({ cardId: g.cardId, overrideText }); }}
+                    />
+                  );
+                })}
               </div>
             )}
             <p className={styles.pileHint}>Click a card to zoom · click outside to close</p>
@@ -1461,6 +1497,7 @@ export function Board({
                 <CardFace
                   key={opt.id}
                   card={CARDS[opt.cardId]}
+                  overrideText={CARDS[opt.cardId].dynamicText?.(G, opt)}
                   className={styles.interactionCard}
                   onClick={() => moves.resolveInteraction(i)}
                 />
@@ -1473,7 +1510,8 @@ export function Board({
       {/* Zoomed card preview, opened by clicking a card. Sits above the pile viewer
           (CardZoomOverlay's backdrop is z-index 80 vs. .pileBackdrop's 75). */}
       <CardZoomOverlay
-        cardId={zoom}
+        cardId={zoom?.cardId ?? null}
+        overrideText={zoom?.overrideText}
         onClose={() => setZoom(null)}
         hint="Drag a card onto the board to play · click anywhere to close"
       />

@@ -9,10 +9,15 @@ import styles from './CardZoomOverlay.module.css';
  */
 export function CardZoomOverlay({
   cardId,
+  overrideText,
   onClose,
   hint,
 }: {
   cardId: string | null;
+  /** A dynamic card's live current-value text (see `CardDef.dynamicText`) — passed by callers that
+   *  have a real run instance to read (Board.tsx); absent in static contexts (Collection, deck
+   *  editor), which fall back to the card's own description. */
+  overrideText?: string;
   onClose: () => void;
   hint: string;
 }) {
@@ -20,7 +25,7 @@ export function CardZoomOverlay({
   return (
     <div className={styles.backdrop} onClick={onClose} role="dialog" aria-modal="true">
       <div className={styles.wrap}>
-        <CardFace card={CARDS[cardId]} className={styles.card} />
+        <CardFace card={CARDS[cardId]} overrideText={overrideText} className={styles.card} />
       </div>
       <p className={styles.hint}>{hint}</p>
     </div>

@@ -44,7 +44,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     instance, not accreted onto `GameState` as named fields. First card shipped: **Cornucopia**
     (`content/cards.ts`) — a `resolve`-driven `action` gaining `+1🌾` plus `+1` per prior play *of
     that same copy* this run (playing one copy never buffs another); its growing value surfaces via a
-    card-owned `dynamicText(G, self)` hook rendered on the hand card face (`CardFace`'s `overrideText`).
+    card-owned `dynamicText(G, self)` hook rendered wherever a real run instance exists (`CardFace`'s
+    `overrideText` — see the "shows their live value everywhere" entry below for the full site list).
     `[size: M]` `[phase: 3]`
   - **Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — make the infinite kind
     real and reachable, tested with a throwaway mission before any threat exists.
@@ -130,7 +131,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Bug: white flash between mission lore panel and board/deck popup** — Step 5.3's `MissionDetailPanel` → `LaunchPopup` handoff on "Continue" shows a brief white flash, likely the backdrop unmounting/remounting between the two modals rather than one panel morphing into the next. `[size: S]` `[phase: 3]`
 - **Barbarian Tide's lore should show the Barbarian card** — `MissionDetailPanel` (Step 5.3) only shows the mission's *reward* card face; Barbarian Tide's lore column should also preview the Barbarian event card itself, since that's the card the mission is actually about. `[size: S]` `[?]` `[phase: 3]`
 - **Mission Lore cards should be click-to-zoom** — any `CardFace` shown in `MissionDetailPanel` (the reward unlock, and the Barbarian preview above) should open the shared `CardZoomOverlay` on click, same as hand/pile-viewer/Collection cards. `[size: S]` `[phase: 3]`
-- **Dynamic cards should show their live value everywhere in the run** — a card with a `CardDef.dynamicText(G, self)` hook (e.g. Cornucopia's growing "+N🌾") currently renders its current value **only** on the hand card face (`Board.tsx` passes `overrideText={c.dynamicText?.(G, card.inst)}`). Every *other* place a run card is drawn falls back to the static `description`: the drag-ghost clone (`spawnGhost`/`ghostFromSlot` `CardFace`s), the `CardZoomOverlay`, and the pile viewers (deck/discard/removed) — plus any list-views. So a Cornucopia mid-drag or zoomed shows the base text, not its real current gain. Fix: thread the `CardInstance` (not just `cardId`) and `G` into those render sites and pass `overrideText`. Note the pile viewers currently map instances→`cardId` (`G.discard.map(c => c.cardId)`), dropping `counters` — they'd need the full instance to compute `dynamicText`. `[size: S]` `[phase: 3]`
+- **Bug: worker-drag start looks disabled when no idle population is free** — dragging a worker off a building/Work box onto another building's staffing area, when there's no idle population available to complete the move, shows the OS "unavailable" cursor because the staff-toggle `<button>` is `disabled`. That reads as "you can't drag this" rather than "there's nowhere for it to go yet," which will confuse the player. `[size: S]` `[?]`
 
 ## Game design & balance
 
@@ -161,6 +162,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Dynamic cards show their live value everywhere in the run, split into two bands** —
+  `CardDef` gains `dynamicRule?: string`, a static line describing *how* a dynamic card's effect
+  scales (e.g. Cornucopia's "+1 each time played"), rendered in the existing conditions
+  band (`CardFace.tsx`'s `describeConditions`) alongside discard cost / culture-level gates — in
+  every context, live instance or not, since the rule text itself never changes. `dynamicText`
+  keeps its old job — the bottom-most text band's actual *current* number — but is now threaded
+  through every run render site, not just the hand: the discard-cost and destroy-targeting ghost
+  flights (`spawnGhost`/`ghostFromSlot` gained an `overrideText` param, computed from
+  `G.hand[handIdx]` before the play resolves, so the flying clone matches what the hand card just
+  showed), the drag clone, the zoom overlay (`Board.tsx`'s `zoom` state became `{ cardId,
+  overrideText } | null`; `CardZoomOverlay` gained an `overrideText` prop, unused by its two
+  static callers), and the discard/removed pile viewers. The pile viewers needed a real rework,
+  not just threading: `pileView` now carries `CardInstance[]` (not `cardId[]`), and `groupCards`
+  no longer coalesces a dynamic card's copies into one shared-count tile (two Cornucopia with
+  different play counts can't share one number) — a card with `dynamicText` always renders as its
+  own single-count entry, keyed by its stable instance id. Foresight's peek modal is covered too —
+  `pendingInteraction.options` were already full `CardInstance`s, just missing the `overrideText`
+  wiring, so a revealed Cornucopia now shows its real current gain instead of the base "+1🌾".
 - **Card-effect resolver + interaction rewrite** (plan: `.claude/plans/we-are-doing-code-wondrous-hoare.md`)
   — replaced the flat `CardEffect` data-bag + growing `applyEffect` switch with a **resolver spine**:
   every card resolves through one path, `resolveCard(ctx)`, picking its own `CardDef.resolve` closure
