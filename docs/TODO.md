@@ -30,7 +30,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Step 5.2 — Shop** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
   - **Step 5.3 — Mission detail panel** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
 - **Step 6 — Infinite missions** — endless, replayable missions that never win and pay
-  Influence = rounds survived. Cut into substeps; suggested order **6.1 → 6.2 → 6.3a → 6.3b**.
+  Influence = rounds survived. Cut into substeps; suggested order **6.1 → 6.2 → 6.3a → 6.3b → 6.3c**.
   `[phase: 3]`
   - **Step 6.1 — Non-fixed (dynamic) card effects** — ✅ done — see *Done / shipped* below.
     `[size: M]` `[phase: 3]`
@@ -38,16 +38,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     *Done / shipped* below. `[size: M]` `[phase: 3]`
   - **Step 6.3a — Threat zone (pure core)** — ✅ done — see *Done / shipped* below.
     `[size: S]` `[phase: 3]`
-  - **Step 6.3b — Threat on the board + Creeping Decay mission** — render + author the real
-    infinite mission. `Board.tsx` renders `G.threats` (near the mission HUD) as `CardFace`s with
-    a live "−N 🔨/round (growing)" badge and click → existing `CardZoomOverlay`; reads only
-    `GameState`, never the mission. Reframe the gameover overlay for a threat-driven collapse
-    (Influence = rounds survived). Add the **Creeping Decay** `event` card (`content/cards.ts`) —
-    per Step 6.3a's corrected design, it owns its drain via a bespoke `resolve` (reading its own
+  - **Step 6.3b — Threat UI + Long Winter's food drain as a real threat card** — render
+    `G.threats` on the board (`Board.tsx`, near the mission HUD) as `CardFace`s with a live
+    "−N 🔨/round (growing)" badge and click → existing `CardZoomOverlay`; reads only
+    `GameState`, never the mission. Then refactor Long Winter's `onUpkeep` hand-drain of 2 extra
+    Food (currently a mission special-case) into a real threat card seeded via `addThreat` in
+    Long Winter's `setup` — the first real exercise of the threat-zone UI, on a mission that
+    already exists. `[size: M]` `[phase: 3]`
+  - **Step 6.3c — Creeping Decay infinite mission** — wire threat UI + dynamic card + infinite
+    mission together. Add the **Creeping Decay** `event` card (`content/cards.ts`) — per Step
+    6.3a's corrected design, it owns its drain via a bespoke `resolve` (reading its own
     `getCounter(self, 'level')`, scaling a base 1 production loss by it, then bumping its own
     counter — mirroring Cornucopia's `resolve`, not a declarative `effect.loss`) — and an infinite
     mission whose `setup` seeds it via `addThreat`; the growing production drain forces
-    `coreCollapse` → `'ruin'` (`run/engine.ts`), which realizes the score. `[size: M]` `[phase: 3]`
+    `coreCollapse` → `'ruin'` (`run/engine.ts`), which realizes the score. Reframe the gameover
+    overlay for a threat-driven collapse (Influence = rounds survived). `[size: M]` `[phase: 3]`
   - **Link 6.1 ↔ 6.3:** both express a value that *changes over the run* by scaling a card's
     effect by an integer counter. They differ in **trigger and storage** — 6.1 escalates *per copy
     played* (Cornucopia, counter in that copy's own `CardInstance.counters`) while 6.3 escalates
@@ -84,7 +89,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - Culture-based missions (depend on the Culture resource) `[?]` `[phase: 4]`
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
 - Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
-- **Long Winter's food drain as a real event card** — currently `onUpkeep` hand-drains 2 extra Food each round (a mission special-case); instead make it a genuine `event` card that's auto-played at the start of the run, can't be removed, and sticks on the board for the mission's duration. `[?]` `[phase: 3]`
 - **Foresight corner case: empty draw pile silently wastes the card** — `content/cards.ts`'s Foresight resolver does `G.deck.slice(0, 3)` and bails on `length === 0` without reshuffling, so playing it with an empty deck (but a full discard) pays its 1🌾science, files to discard, and does *nothing* — no peek, no feedback — contradicting its own "Peek the top 3" text. `unplayableReason` (`rules/playability.ts`) has no draw-pile gate, so nothing stops the play. Fix depends on the eager-reshuffle item above (once `G.deck` is empty only when the discard is too, Foresight's `slice` sees the real pile); then **also handle the deck-AND-discard-both-empty case** — either gate the card as unplayable then (add an `UnplayableReason` kind, mirroring `noBuildingsToDestroy`) so it can't be wasted, or let it peek/draw fewer than 3 gracefully. Decide which; a hard gate matches the existing "don't let a play fizzle for nothing" precedent. `[size: S]` `[phase: 3]`
 
 ## UI (`src/components/`)
@@ -143,7 +147,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   for free with no risk of drift between preview and actual — confirmed by an `applyUpkeep`-level
   test alongside `rules/threats.test.ts`'s direct coverage (a flat-loss card ticking unscaled, a
   counter-scaling resolver escalating across ticks, no-threats no-op). No UI, no real
-  threat-seeding mission yet — that's Step 6.3b's Creeping Decay.
+  threat-seeding mission yet — that's Step 6.3b's board UI and Step 6.3c's Creeping Decay.
 - **Phase 3 Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — `MissionDef`'s
   `reward` and `map` are now optional (`'infinite'` missions have neither). `rules/rewards.ts`'s
   `computeRewards` gains an infinite branch — Influence = rounds survived
@@ -166,7 +170,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   famine-defeat-outcome stop, and the mission staying un-cleared after either — then removed
   once confirmed, since it's a harness, not real content. `rules/rewards.test.ts` and
   `meta/store.test.ts` cover the infinite branch directly (no real infinite mission exists yet to
-  exercise via `run/run.test.ts` — that's Step 6.3b's Creeping Decay).
+  exercise via `run/run.test.ts` — that's Step 6.3c's Creeping Decay).
 - **Dynamic cards show their live value everywhere in the run, split into two bands** —
   `CardDef` gains `dynamicRule?: string`, a static line describing *how* a dynamic card's effect
   scales (e.g. Cornucopia's "+1 each time played"), rendered in the existing conditions
