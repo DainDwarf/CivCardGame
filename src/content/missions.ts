@@ -135,4 +135,30 @@ export const MISSIONS: Record<string, MissionDef> = {
     reward: { influence: 2, unlockCardId: 'conquest' },
     map: { col: 1, row: 2 },
   },
+
+  the_long_decline: {
+    id: 'the_long_decline',
+    name: 'The Long Decline',
+    lore:
+      'Every empire believes itself eternal. Foundations that took generations to lay begin, ' +
+      'imperceptibly, to crumble — a beam here, a bridge there — and no council session ever ' +
+      'votes to let it happen. It simply does. There is no enemy at the gate; the rot is already ' +
+      'inside the walls, and it never stops getting worse.',
+    description:
+      'There is no victory here — only how long you can outlast it. Creeping Decay drains a ' +
+      'little more Production every round, forever. Survive as many rounds as you can before ' +
+      'your economy collapses into ruin.',
+    prereqs: [],
+    setup: (G) => {
+      addThreat(G, 'creeping_decay');
+    },
+    // Never wins on its own — an 'infinite' mission has no fixed win state. The only ending is
+    // the universal core-resource-floor collapse, forced eventually by the threat's own escalation.
+    objective: () => false,
+    failure: () => false,
+    progress: (G) => `Round ${G.round} · Production ${G.resources.production}`,
+    victoryHint: 'There is no victory — only rounds survived.',
+    failureHint: 'Your Production falling below zero as the decay outpaces your economy.',
+    kind: 'infinite',
+  },
 };

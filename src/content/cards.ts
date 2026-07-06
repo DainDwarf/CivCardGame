@@ -1,4 +1,4 @@
-import { addResources, scaleResources, type Resources } from '../rules/resources';
+import { addResources, scaleResources, subtractResources, type Resources } from '../rules/resources';
 import { bumpCounter, getCounter, type CardInstance, type GameState } from '../rules/state';
 import { shuffleFromState } from '../rules/rng';
 import type { CardEffect, Resolver } from '../rules/effects';
@@ -203,5 +203,22 @@ export const CARDS: Record<string, CardDef> = {
     id: 'harsh_winter', name: 'Harsh Winter', kind: 'threat', cost: {},
     effect: { loss: { food: 2 } },
     description: '−2🌾 every round',
+  },
+
+  // Creeping Decay: the first *escalating* threat — mirrors Cornucopia's own-counter growth
+  // (Step 6.1) but draining instead of gaining, and tick-triggered instead of play-triggered. A
+  // bespoke `resolve` (not a declarative `effect.loss`) since the drain scales with its own
+  // `level` counter: −1🔨 the first tick, −2 the next, and so on, eventually forcing Production
+  // negative and a 'ruin' core collapse — the mission built around it (The Long Decline) never
+  // wins on its own; that collapse is its only ending.
+  creeping_decay: {
+    id: 'creeping_decay', name: 'Creeping Decay', kind: 'threat', cost: {},
+    description: '−1🔨 every round, worsening',
+    dynamicRule: '+1 more each round',
+    dynamicText: (_G, self) => `−${getCounter(self, 'level') + 1}🔨 every round`,
+    resolve: ({ G, self }) => {
+      subtractResources(G.resources, scaleResources({ production: 1 }, getCounter(self, 'level') + 1));
+      bumpCounter(self, 'level');
+    },
   },
 };

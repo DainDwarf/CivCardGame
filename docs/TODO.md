@@ -40,15 +40,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     `[size: S]` `[phase: 3]`
   - **Step 6.3b — Threat UI + Long Winter's food drain as a real threat card** — ✅ done — see
     *Done / shipped* below. `[size: M]` `[phase: 3]`
-  - **Step 6.3c — Creeping Decay infinite mission** — wire threat UI + dynamic card + infinite
-    mission together. Add the **Creeping Decay** `threat` card (`content/cards.ts`, the new
-    `CardKind` from Step 6.3b) — per Step 6.3a's corrected design, it owns its drain via a bespoke
-    `resolve` (reading its own
-    `getCounter(self, 'level')`, scaling a base 1 production loss by it, then bumping its own
-    counter — mirroring Cornucopia's `resolve`, not a declarative `effect.loss`) — and an infinite
-    mission whose `setup` seeds it via `addThreat`; the growing production drain forces
-    `coreCollapse` → `'ruin'` (`run/engine.ts`), which realizes the score. Reframe the gameover
-    overlay for a threat-driven collapse (Influence = rounds survived). `[size: M]` `[phase: 3]`
+  - **Step 6.3c — Creeping Decay infinite mission** — ✅ done — see *Done / shipped* below.
+    `[size: M]` `[phase: 3]`
   - **Link 6.1 ↔ 6.3:** both express a value that *changes over the run* by scaling a card's
     effect by an integer counter. They differ in **trigger and storage** — 6.1 escalates *per copy
     played* (Cornucopia, counter in that copy's own `CardInstance.counters`) while 6.3 escalates
@@ -182,6 +175,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 6.3c — Creeping Decay infinite mission** — the first *real* infinite mission,
+  and the first *escalating* threat. **Creeping Decay** (`content/cards.ts`, a `threat` card) owns
+  its drain via a bespoke `resolve` — reads its own `getCounter(self, 'level')`, scales a base
+  −1🔨 by `level + 1`, applies it via `scaleResources`/`subtractResources`, then bumps its own
+  counter — mirroring Cornucopia's per-play growth resolver (Step 6.1), just tick-triggered instead
+  of play-triggered. **The Long Decline** (`content/missions.ts`, `kind: 'infinite'`) seeds it once
+  via `addThreat` in `setup`; its `objective`/`failure` are both `() => false` — an infinite mission
+  never wins or fails on its own, so the escalating drain forcing Production negative and tripping
+  the universal `coreCollapse` → `'ruin'` (`run/engine.ts`) is its *only* ending, at which point
+  `computeRewards`' existing infinite branch pays Influence = rounds survived. No gameover-overlay
+  or campaign-map changes were needed — the generic `'infinite'`-kind plumbing (gameover reward
+  line, the campaign map's bottom banner, `MissionDetailPanel`, `applyRunResult`) already built in
+  Step 6.2 renders/handles a real infinite mission with zero further changes, confirmed both by a
+  `run/run.test.ts` integration test (a Farm keeps Food flat so Production, not famine, is what
+  collapses first — proving the threat, not an unrelated resource floor, ends the run) and an
+  in-browser click-through of the full mission → threat-zone → zoom → end-run path.
 - **Phase 3 Step 6.3b — Threat UI + Long Winter's food drain as a real threat card** — `G.threats`
   now renders on the board: `Board.tsx`'s new `ThreatZone` is a real, in-flow **left column** of
   `.gamearea` (`.threatColumn`, its own `overflow-y: auto`), not a floating overlay — a first pass

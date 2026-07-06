@@ -154,8 +154,20 @@ banner label ("Threat" vs "Event"), and is excluded everywhere `'event'` already
 never player-owned or player-editable. The Long Winter mission's `onUpkeep` hand-drain of 2 Food is
 now gone entirely, replaced by a real card, **Harsh Winter** (`content/cards.ts`) — a flat,
 non-escalating `effect.loss: { food: 2 }` needing no bespoke `resolve` — seeded once via `addThreat`
-in the mission's (now-added) `setup`. Still to come:
-tutorial missions (Step 8), Step 6.3c's Creeping Decay, and `Stats` surfacing a per-run reward
+in the mission's (now-added) `setup`. **Phase 3 Step 6.3c** (Creeping Decay infinite mission) is
+also done — the first *escalating* threat and the first *real* infinite mission: **Creeping Decay**
+(`content/cards.ts`, `kind: 'threat'`) owns its drain via a bespoke `resolve` — reads its own
+`getCounter(self, 'level')`, scales a base −1🔨 by `level + 1` via `scaleResources`, applies it with
+`subtractResources`, then bumps its own counter — mirroring Cornucopia's per-play growth resolver
+(Step 6.1), just tick-triggered instead of play-triggered. **The Long Decline** (`content/missions.ts`,
+`kind: 'infinite'`) seeds it once via `addThreat` in `setup`; its `objective`/`failure` are both
+`() => false` (an `'infinite'` mission never wins or fails on its own), so the escalating drain
+forcing Production negative and tripping the universal `coreCollapse` → `'ruin'` (`run/engine.ts`)
+is its only ending — at which point `computeRewards`'s existing infinite branch pays Influence =
+rounds survived. No gameover-overlay, campaign-map, or reward-plumbing changes were needed: the
+generic `'infinite'`-kind handling already built in Step 6.2 rendered and scored a real infinite
+mission with zero further changes. Still to come:
+tutorial missions (Step 8), and `Stats` surfacing a per-run reward
 (deferred since `RunResult` deliberately excludes
 rewards, and there's no per-run record of whether that run was a first clear).
 

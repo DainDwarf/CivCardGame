@@ -82,3 +82,38 @@ describe('mission: barbarian_tide', () => {
     expect(coreCollapse(G.resources)).toBe('revolt'); // defeat comes from the universal core floor
   });
 });
+
+describe('mission: the_long_decline', () => {
+  const m = MISSIONS.the_long_decline;
+
+  it('is an infinite mission with no map/reward', () => {
+    expect(m.kind).toBe('infinite');
+    expect(m.reward).toBeUndefined();
+    expect(m.map).toBeUndefined();
+  });
+
+  it('setup seeds the Creeping Decay threat', () => {
+    const G = blankState('the_long_decline');
+    m.setup!(G);
+    expect(G.threats).toEqual([{ id: 1, cardId: 'creeping_decay' }]);
+  });
+
+  it('never wins on its own — objective and failure are both always false', () => {
+    const G = blankState('the_long_decline');
+    G.round = 999;
+    G.resources.production = 999;
+    expect(m.objective(G)).toBe(false);
+    expect(m.failure(G)).toBe(false);
+  });
+
+  it('the seeded threat escalates production loss round over round via the shared tick', () => {
+    const G = blankState('the_long_decline');
+    m.setup!(G);
+    G.resources.production = 10;
+    tickThreats(G);
+    expect(G.resources.production).toBe(9);
+    tickThreats(G);
+    expect(G.resources.production).toBe(7);
+    expect(m.failure(G)).toBe(false); // the mission owns no failure — core collapse ends it
+  });
+});

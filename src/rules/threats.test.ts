@@ -61,4 +61,15 @@ describe('tickThreats', () => {
     tickThreats(G);
     expect(G.resources.food).toBe(1); // unscaled — no counter, unlike Cornucopia's growth above
   });
+
+  it('resolves Creeping Decay (Step 6.3c) as an escalating Production drain via its own counter', () => {
+    const G = blankState('the_long_decline');
+    G.resources.production = 10;
+    G.threats = [{ id: 1, cardId: 'creeping_decay' }];
+    tickThreats(G);
+    expect(G.resources.production).toBe(9); // -1, scaleResources({production:1}, 0+1)
+    tickThreats(G);
+    expect(G.resources.production).toBe(7); // -2 more, scaleResources({production:1}, 1+1)
+    expect(G.threats[0].counters).toEqual({ level: 2 });
+  });
 });

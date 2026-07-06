@@ -159,6 +159,19 @@ describe('run loop (headless integration)', () => {
     client.stop();
   });
 
+  it('the_long_decline (Step 6.3c): Creeping Decay drains Production round over round until ruin collapses the run', () => {
+    const client = start('the_long_decline');
+    playByName(client, 'farm'); // +2 Food/round staffed, offsetting population's upkeep, so Food
+    // stays flat and Production is what collapses first — proving the threat, not famine, ends the run.
+    client.events.endTurn(); // production 5-1(farm cost)-1(decay) = 3; food 5+2-2 = 5
+    client.events.endTurn(); // production 3-2(decay) = 1; food unchanged at 5
+    client.events.endTurn(); // production 1-3(decay) = -2 -> ruin
+    const { G, ctx } = client.getState();
+    expect(G.resources.food).toBe(5); // never went negative — famine wasn't the cause
+    expect(ctx.gameover).toEqual({ outcome: 'defeat', reason: 'ruin', missionId: 'the_long_decline' });
+    client.stop();
+  });
+
   it('barbarian_tide seeds four barbarian events into the run, and they cannot be played', () => {
     const client = start('barbarian_tide');
     const { G } = client.getState();
