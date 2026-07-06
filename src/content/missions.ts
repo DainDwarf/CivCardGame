@@ -1,5 +1,5 @@
 import type { GameState } from '../rules/state';
-import { shuffleFromState } from '../rules';
+import { instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 
 /** Number of Barbarian event cards seeded into the deck by Barbarian Tide. */
 const BARBARIANS = 4;
@@ -109,19 +109,20 @@ export const MISSIONS: Record<string, MissionDef> = {
       `Four waves of Barbarians are hidden in your deck. Each one you draw strikes at the end of the round — draining 4 Military — then is gone. Build up your Military and survive all ${BARBARIANS} to win; let it fall below zero and your civilization is overrun.`,
     prereqs: ['long_winter'],
     setup: (G) => {
-      for (let i = 0; i < BARBARIANS; i++) G.deck.push('barbarian');
-      // Shuffle the barbarians into the deck deterministically from the run's RNG stream.
+      // Mint the barbarian events as card instances continuing past the deck's existing ids, then
+      // shuffle them into the deck deterministically from the run's RNG stream.
+      G.deck.push(...instancesFromCardIds(Array(BARBARIANS).fill('barbarian'), nextInstanceId(G)));
       const { result, rngState } = shuffleFromState(G.deck, G.rngState);
       G.deck = result;
       G.rngState = rngState;
       G.resources.military += 4; // capital garrison — layer on top of the starting baseline
     },
     objective: (G) =>
-      G.removed.filter((id) => id === 'barbarian').length >= BARBARIANS && G.resources.military >= 0,
+      G.removed.filter((c) => c.cardId === 'barbarian').length >= BARBARIANS && G.resources.military >= 0,
     // No mission-specific failure: the universal core resource floor handles defeat (Military < 0).
     failure: () => false,
     progress: (G) =>
-      `Barbarians beaten ${G.removed.filter((id) => id === 'barbarian').length}/${BARBARIANS} · Military ${G.resources.military}`,
+      `Barbarians beaten ${G.removed.filter((c) => c.cardId === 'barbarian').length}/${BARBARIANS} · Military ${G.resources.military}`,
     victoryHint: `Survive all ${BARBARIANS} Barbarian waves without your Military falling below zero.`,
     failureHint: 'Your Military falling below zero — the barbarians overrun you.',
     kind: 'standard',

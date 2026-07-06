@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { addBuilding, addWork, applyEffect, findStaffable, freePopulation, requiredWorkersOf, subtractResources, unplayableReason } from '../rules';
+import { addBuilding, addWork, findStaffable, freePopulation, requiredWorkersOf, resolveCard, subtractResources, unplayableReason } from '../rules';
 import { CARDS } from '../content/cards';
 
 /**
@@ -25,8 +25,11 @@ export function playCard(
   discardHandIdxs: number[] = [],
   destroyInstanceId?: number,
 ): 'invalid' | void {
+  // No card may be played while an interaction is pending — the player must answer it first.
+  if (G.pendingInteraction) return 'invalid';
   if (playHandIdx < 0 || playHandIdx >= G.hand.length) return 'invalid';
-  const cardId = G.hand[playHandIdx];
+  const played = G.hand[playHandIdx];
+  const cardId = played.cardId;
 
   const card = CARDS[cardId];
   if (!card || unplayableReason(G, card)) return 'invalid';
@@ -51,29 +54,43 @@ export function playCard(
 
   // All validated — pay costs and remove all played/sacrificed cards from hand first.
   subtractResources(G.resources, card.cost);
-  const sacrificeIds = discardHandIdxs.map((i) => G.hand[i]);
+  const sacrifices = discardHandIdxs.map((i) => G.hand[i]);
   for (const i of [playHandIdx, ...discardHandIdxs].sort((a, b) => b - a)) G.hand.splice(i, 1);
 
   // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
   // return the not-yet-filed sacrifices back into the deck.
   // A building card is placed in the tableau; a work card sticks onto the board and produces only
-  // while staffed (at upkeep); everything else applies its effect immediately.
+  // while staffed (at upkeep); everything else resolves its effect immediately through the single
+  // resolver path (which also performs a Destroy card's demolition, via `target`).
   if (card.kind === 'building') {
     addBuilding(G, cardId);
   } else if (card.kind === 'work') {
     addWork(G, cardId);
   } else {
-    applyEffect(G, card.effect);
+    // Resolve on the played *instance* — so a self-scaling card (Cornucopia) reads/writes its own
+    // copy's counters, which then ride along as that same instance files to discard below.
+    resolveCard({ G, self: played, target: destroyInstanceId });
   }
-  if (card.effect?.destroy && destroyInstanceId !== undefined) {
-    const idx = G.tableau.findIndex((b) => b.id === destroyInstanceId);
-    // The demolished building left the tableau — its card goes to the removed pile.
-    if (idx !== -1) G.removed.push(G.tableau.splice(idx, 1)[0].cardId);
-  }
-  for (const id of sacrificeIds) G.discard.push(id);
+  for (const c of sacrifices) G.discard.push(c);
   // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,
-  // filed at end of turn) stay put; only action cards recycle to the discard here.
-  if (card.kind === 'action') G.discard.push(cardId);
+  // filed at end of turn) stay put; only action cards recycle to the discard here — the same
+  // instance object, carrying whatever counters its resolver just bumped.
+  if (card.kind === 'action') G.discard.push(played);
+}
+
+/**
+ * Answer the pending interaction: re-enter the suspended card's resolver with the chosen option
+ * index, which completes the effect and clears `G.pendingInteraction`. The move counterpart of a
+ * resolver that revealed options and returned (see `PendingInteraction`). Rejects when nothing is
+ * pending or the index is out of range.
+ */
+export function resolveInteraction(G: GameState, answer: number): 'invalid' | void {
+  const pending = G.pendingInteraction;
+  if (!pending) return 'invalid';
+  if (answer < 0 || answer >= pending.options.length) return 'invalid';
+  // Reconstruct the suspended card's `self` from the parked interaction (its instance already filed
+  // to discard on the suspending pass; the resume path reads `options`, not its own counters).
+  resolveCard({ G, self: { id: pending.instanceId, cardId: pending.cardId }, answer });
 }
 
 /** Assign one idle population to a specific staffable (building or Work card, identified by `id`),

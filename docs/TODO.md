@@ -32,18 +32,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 6 — Infinite missions** — endless, replayable missions that never win and pay
   Influence = rounds survived. Cut into substeps; suggested order **6.1 → 6.2 → 6.3a → 6.3b**.
   `[phase: 3]`
-  - **Step 6.1 — Non-fixed (dynamic) card effects** — introduce effects whose magnitude scales
-    with a run-scoped counter, and ship the first one. Today every effect is a static
-    `CardEffect` applied by `rules/effects.ts`'s `applyEffect`; add the ability for an effect's
-    magnitude to be scaled by a counter at play time, wired through `run/moves.ts`'s `playCard`.
-    That counter needs a home on `GameState` — add a **typed field** for it when building this
-    step (there is deliberately no generic `Record<string, number>` bag; keep the typed-state
-    discipline). First card: **Cornucopia** (`content/cards.ts`, `action`) — gains `+1 food`
-    **and** raises every future Cornucopia's gain by 1 for the rest of the run. UI note: `CardFace`
-    renders *static* effect text, so a growing "+N food" needs a live-number surface (badge /
-    derived text) — pick a minimal display. **Ship the scale-an-effect-by-a-counter step as a
-    reusable pure helper, not baked into Cornucopia's path — Step 6.3 is its second caller (see
-    Link below).** `[size: M]` `[phase: 3]`
+  - **Step 6.1 — Non-fixed (dynamic) card effects** — ✅ **done**, delivered across Stages 2 and 4
+    of the card-effect resolver rewrite (see the plan referenced in *Done / shipped* below). A card
+    whose magnitude scales with a run-scoped counter is now expressible: `rules/resources.ts`'s
+    `scaleResources` is the reusable "scale an effect by a counter" primitive (Step 6.3's drain is
+    its second caller). Stage 4 then made the counter **per-instance**: every card in a pile is a
+    `CardInstance` (`{ id, cardId, counters? }`) with a stable run-wide id, and the counter lives in
+    *that copy's own* `counters` map — read/written via `getCounter`/`bumpCounter` (`rules/state.ts`),
+    card-owned, *not* a typed per-card field and *not* a central `GameState` bag. **This reverses the
+    earlier "add a typed field, no generic bag" guidance:** card-specific numbers belong on the card
+    instance, not accreted onto `GameState` as named fields. First card shipped: **Cornucopia**
+    (`content/cards.ts`) — a `resolve`-driven `action` gaining `+1🌾` plus `+1` per prior play *of
+    that same copy* this run (playing one copy never buffs another); its growing value surfaces via a
+    card-owned `dynamicText(G, self)` hook rendered on the hand card face (`CardFace`'s `overrideText`).
+    `[size: M]` `[phase: 3]`
   - **Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — make the infinite kind
     real and reachable, tested with a throwaway mission before any threat exists.
     `MissionDef.kind: 'standard' | 'infinite'` already exists (`content/missions.ts`); make
@@ -82,15 +84,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     (`run/engine.ts`), which realizes the score. `[size: M]` `[phase: 3]`
   - **Link 6.1 ↔ 6.3:** both express a value that *changes over the run* by scaling a card's
     effect by an integer counter. They differ in **trigger and storage** — 6.1 escalates *per copy
-    played* (Cornucopia, counter on a typed `GameState` field) while 6.3 escalates *per turn* (the
-    threat tick, counter is `ThreatInstance.level`). So 6.1 must ship the "scale an effect's
-    magnitude by a counter" primitive as a **pure helper** (base effect + multiplier → scaled
-    effect), and 6.3a consumes that same helper for its drain. Build 6.1's helper with 6.3 as its
-    second caller in mind.
-- **Step 7 — Stickers** *(last, deepest)* — resolve per-copy identity first (deck entries
-  → `{ cardId, instanceId? }`). Board stickers (`setup.ts` modifiers); card stickers
-  (per-copy, read by `effects.ts` / `production.ts`); shop sells + attach UI.
-  `[size: L]` `[?]` `[phase: 3]`
+    played* (Cornucopia, counter in that copy's own `CardInstance.counters`) while 6.3 escalates
+    *per turn* (the threat tick, counter is `ThreatInstance.level`). 6.1 shipped the "scale an
+    effect's magnitude by a counter" primitive as the **pure helper** `scaleResources` (bundle ×
+    factor); 6.3a consumes that same helper for its drain.
+- **Step 7 — Stickers** *(last, deepest)* — the per-copy-identity precursor is now **done** (Stage 4
+  of the resolver rewrite): pile cards are already `CardInstance`s (`{ id, cardId, counters? }`) with
+  stable run-wide ids, and per-copy run state has a home (`counters`). What remains: board stickers
+  (`setup.ts` modifiers); card stickers (per-copy, read by `effects.ts` / `production.ts` — note these
+  would need to persist *across runs* on the collection, unlike `counters` which are run-scoped);
+  shop sells + attach UI. `[size: L]` `[?]` `[phase: 3]`
 - **Step 8 — Tutorial missions** — the first few meta missions double as tutorials,
   introducing mechanics progressively; tutorial entry-node missions on the map. Covers
   designing several missions, onboarding indicators/popups, and careful pacing so new
@@ -116,6 +119,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
 - Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
 - **Long Winter's food drain as a real event card** — currently `onUpkeep` hand-drains 2 extra Food each round (a mission special-case); instead make it a genuine `event` card that's auto-played at the start of the run, can't be removed, and sticks on the board for the mission's duration. `[?]` `[phase: 3]`
+- **Reshuffle the discard the instant the deck hits 0, not on the next draw attempt** — today `rules/deck.ts`'s `drawCard` reshuffles the discard back into the deck only lazily, *when a draw is attempted on an empty deck*. This leaves a window where `G.deck` reads empty even though cards are available (in discard), which any effect that inspects the draw pile mid-turn (e.g. Foresight peeking the top N — see below) misreads as "no cards left." Reshuffle eagerly as soon as the last card is drawn so `G.deck` is only ever empty when the discard is *also* empty, making "is the draw pile empty?" a truthful, single check for every consumer. `[size: S]` `[phase: 3]`
+- **Foresight corner case: empty draw pile silently wastes the card** — `content/cards.ts`'s Foresight resolver does `G.deck.slice(0, 3)` and bails on `length === 0` without reshuffling, so playing it with an empty deck (but a full discard) pays its 1🌾science, files to discard, and does *nothing* — no peek, no feedback — contradicting its own "Peek the top 3" text. `unplayableReason` (`rules/playability.ts`) has no draw-pile gate, so nothing stops the play. Fix depends on the eager-reshuffle item above (once `G.deck` is empty only when the discard is too, Foresight's `slice` sees the real pile); then **also handle the deck-AND-discard-both-empty case** — either gate the card as unplayable then (add an `UnplayableReason` kind, mirroring `noBuildingsToDestroy`) so it can't be wasted, or let it peek/draw fewer than 3 gracefully. Decide which; a hard gate matches the existing "don't let a play fizzle for nothing" precedent. `[size: S]` `[phase: 3]`
 
 ## UI (`src/components/`)
 
@@ -125,6 +130,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Bug: white flash between mission lore panel and board/deck popup** — Step 5.3's `MissionDetailPanel` → `LaunchPopup` handoff on "Continue" shows a brief white flash, likely the backdrop unmounting/remounting between the two modals rather than one panel morphing into the next. `[size: S]` `[phase: 3]`
 - **Barbarian Tide's lore should show the Barbarian card** — `MissionDetailPanel` (Step 5.3) only shows the mission's *reward* card face; Barbarian Tide's lore column should also preview the Barbarian event card itself, since that's the card the mission is actually about. `[size: S]` `[?]` `[phase: 3]`
 - **Mission Lore cards should be click-to-zoom** — any `CardFace` shown in `MissionDetailPanel` (the reward unlock, and the Barbarian preview above) should open the shared `CardZoomOverlay` on click, same as hand/pile-viewer/Collection cards. `[size: S]` `[phase: 3]`
+- **Dynamic cards should show their live value everywhere in the run** — a card with a `CardDef.dynamicText(G, self)` hook (e.g. Cornucopia's growing "+N🌾") currently renders its current value **only** on the hand card face (`Board.tsx` passes `overrideText={c.dynamicText?.(G, card.inst)}`). Every *other* place a run card is drawn falls back to the static `description`: the drag-ghost clone (`spawnGhost`/`ghostFromSlot` `CardFace`s), the `CardZoomOverlay`, and the pile viewers (deck/discard/removed) — plus any list-views. So a Cornucopia mid-drag or zoomed shows the base text, not its real current gain. Fix: thread the `CardInstance` (not just `cardId`) and `G` into those render sites and pass `overrideText`. Note the pile viewers currently map instances→`cardId` (`G.discard.map(c => c.cardId)`), dropping `counters` — they'd need the full instance to compute `dynamicText`. `[size: S]` `[phase: 3]`
 
 ## Game design & balance
 
@@ -155,6 +161,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Card-effect resolver + interaction rewrite** (plan: `.claude/plans/we-are-doing-code-wondrous-hoare.md`)
+  — replaced the flat `CardEffect` data-bag + growing `applyEffect` switch with a **resolver spine**:
+  every card resolves through one path, `resolveCard(ctx)`, picking its own `CardDef.resolve` closure
+  or the declarative default `specToResolver(effect)`; the `EffectContext` (`{ G, self, target?,
+  answer? }`) is the seam that lets an effect know which card is resolving and what it targets. Shipped
+  in four green stages (one commit each):
+  - **Stage 1** — resolver spine, behavior-preserving; `destroy`/`remove` folded in from `playCard`.
+  - **Stage 2** — Cornucopia (first dynamic-effect card) + `scaleResources` primitive.
+  - **Stage 3** — interaction layer: plain-data `pendingInteraction` on `G`, a two-branch re-entrant
+    resolver + `resolveInteraction` move, resolve-only modal; Foresight (first interactive card).
+  - **Stage 4** — **per-copy identity**: card zones (`hand`/`deck`/`discard`/`removed`) went from
+    `string[]` to `CardInstance[]` (`{ id, cardId, counters? }`), `PlacedCard` extends `CardInstance`,
+    and `nextInstanceId` now scans every zone so ids are unique run-wide. Per-instance run state lives
+    in each copy's own `counters` (via `getCounter`/`bumpCounter`), replacing the interim central
+    `GameState.cardState` bag; Cornucopia's growth is now genuinely per-copy (playing one never buffs
+    another). `instancesFromCardIds` is the shared mint path (setup, mission-injected cards, tests).
 - **Mystery card reuses `CardFace`** — `CampaignMap.tsx`'s hand-rolled `MysteryCard` (a
   one-off grey box borrowing only `CardFace.module.css`'s outer `.card` class) is gone;
   `CardFace` now takes a `faceDown` prop (a discriminated union with `card`, so `card` is

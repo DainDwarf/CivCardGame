@@ -37,10 +37,10 @@ function start(missionId: string, board: RunConfig['board'] = 'tribe') {
 /** Play a card by name, resolving hand indices at call time. */
 function playByName(client: ReturnType<typeof start>, cardId: string, discardIds: string[] = []) {
   const hand = client.getState().G.hand;
-  const idx = hand.indexOf(cardId);
+  const idx = hand.findIndex((c) => c.cardId === cardId);
   if (idx === -1) throw new Error(`playByName: '${cardId}' not in hand`);
   client.moves.playCard(idx, discardIds.map((d) => {
-    const i = hand.indexOf(d);
+    const i = hand.findIndex((c) => c.cardId === d);
     if (i === -1) throw new Error(`playByName: discard '${d}' not in hand`);
     return i;
   }));
@@ -52,7 +52,7 @@ describe('run loop (headless integration)', () => {
     const { G } = client.getState();
     expect(G.round).toBe(1);
     expect(G.population).toBe(2);
-    expect(G.hand).toEqual(['farm', 'workshop', 'corvee', 'library', 'harvest']);
+    expect(G.hand.map((c) => c.cardId)).toEqual(['farm', 'workshop', 'corvee', 'library', 'harvest']);
     expect(G.resources.production).toBe(5);
     client.stop();
   });
@@ -72,7 +72,9 @@ describe('run loop (headless integration)', () => {
     const client = start('enlightenment'); // population 2, all idle
     playByName(client, 'farm'); // farm card is placed as a farm building -> auto-staffed on play
     const after = client.getState().G;
-    expect(after.tableau).toEqual([{ id: 1, cardId: 'farm', workers: 1 }]);
+    // Instance ids are now unique across all zones, so a building minted while a full deck still
+    // holds ids gets a high id, not 1 — assert shape, not the exact number (checked via `id` below).
+    expect(after.tableau).toEqual([{ id: expect.any(Number), cardId: 'farm', workers: 1 }]);
     expect(after.removed).toEqual([]); // the card *is* the building — not removed on play
     expect(after.discard).toEqual([]); // building cards don't recycle
     // staffing is still hand-adjustable: return the worker, then reassign it
@@ -99,15 +101,15 @@ describe('run loop (headless integration)', () => {
     const client = start('enlightenment'); // hand: farm, workshop, corvee, library, harvest; pop 2
     playByName(client, 'corvee'); // work box auto-staffs 1 worker; +3 production deferred
     const { G } = client.getState();
-    expect(G.workZone).toEqual([{ id: 1, cardId: 'corvee', workers: 1 }]);
+    expect(G.workZone).toEqual([{ id: expect.any(Number), cardId: 'corvee', workers: 1 }]);
     expect(G.resources.production).toBe(5); // output not yet applied
-    expect(G.hand).toEqual(['farm', 'workshop', 'library', 'harvest']);
+    expect(G.hand.map((c) => c.cardId)).toEqual(['farm', 'workshop', 'library', 'harvest']);
     expect(G.discard).toEqual([]); // work card stays on the board, not discarded on play
     client.events.endTurn();
     const after = client.getState().G;
     expect(after.resources.production).toBe(8); // staffed work produced +3 during upkeep
     expect(after.workZone).toEqual([]); // work zone cleared
-    expect(after.discard).toContain('corvee'); // and the card filed to discard at end of turn
+    expect(after.discard.map((c) => c.cardId)).toContain('corvee'); // and the card filed to discard at end of turn
     client.stop();
   });
 
@@ -118,7 +120,7 @@ describe('run loop (headless integration)', () => {
     playByName(client, 'corvee'); // no idle pop, but a work card is never gated on it
     const { G } = client.getState();
     expect(G.workZone).toEqual([{ id: expect.any(Number), cardId: 'corvee', workers: 0 }]);
-    expect(G.hand).not.toContain('corvee'); // it left the hand onto the board
+    expect(G.hand.map((c) => c.cardId)).not.toContain('corvee'); // it left the hand onto the board
     client.stop();
   });
 
@@ -161,9 +163,9 @@ describe('run loop (headless integration)', () => {
     const client = start('barbarian_tide');
     const { G } = client.getState();
     // All four barbarians are in play from the start — split across deck and the opening hand.
-    expect([...G.deck, ...G.hand].filter((id) => id === 'barbarian').length).toBe(4);
+    expect([...G.deck, ...G.hand].filter((c) => c.cardId === 'barbarian').length).toBe(4);
     // If one was dealt into the opening hand, playing it is rejected (events only auto-resolve).
-    const idx = G.hand.indexOf('barbarian');
+    const idx = G.hand.findIndex((c) => c.cardId === 'barbarian');
     if (idx !== -1) {
       const before = client.getState().G.hand;
       client.moves.playCard(idx);

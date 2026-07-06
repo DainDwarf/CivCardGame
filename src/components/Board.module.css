@@ -1158,6 +1158,57 @@
   cursor: pointer;
 }
 
+/* --- Interaction modal: a card effect suspended awaiting a player choice (e.g. Foresight) --- */
+/* Resolve-only by design: NO click-outside / Escape dismiss. The reveal has already committed
+   (cards lifted off the deck, undo stack cleared), so the only exit is picking an option — a
+   dismiss path would soft-lock the run (endTurn blocked, nothing to undo to). */
+.interactionBackdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  background: rgb(var(--scrim-rgb) / 0.6);
+  animation: fadeIn 0.15s ease;
+  /* Above the pile viewer (75) and zoom (80); below the gameover overlay (100). */
+  z-index: 90;
+}
+
+.interactionPanel {
+  max-width: min(680px, calc(92vw / var(--ui-scale, 1)));
+  max-height: calc(80vh / var(--ui-scale, 1));
+  overflow-y: auto;
+  padding: 1rem 1.25rem 1.25rem;
+  border-radius: 12px;
+  background: var(--surface-raised);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  animation: zoomIn 0.16s ease-out;
+  text-align: center;
+}
+
+.interactionPrompt {
+  margin: 0 0 0.75rem;
+}
+
+.interactionGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 0.6rem;
+  justify-content: center;
+}
+
+/* A pickable revealed card — click to choose it and resolve the interaction. */
+.interactionCard {
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.interactionCard:hover {
+  transform: translateY(-4px);
+}
+
 /* --- End-of-run overlay --- */
 
 /* Full-screen dimmed backdrop. */

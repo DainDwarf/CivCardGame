@@ -72,8 +72,11 @@ export function describeBuilding(b: CardDef, includeWorkers = true): string {
   return parts.join(' · ');
 }
 
-/** Presentation-only summary of what a card does (no game logic here). */
+/** Presentation-only summary of what a card does (no game logic here). A `resolve`-driven card
+ *  whose behavior the declarative `effect` can't express authors its own `description`, which wins
+ *  over the auto-generated text below. */
 export function describeCard(c: CardDef): string {
+  if (c.description) return c.description;
   const e = c.effect;
   const parts: string[] = [];
   if (e?.gain) {
@@ -132,6 +135,10 @@ interface CardFaceCommonProps {
    *  handling via a parent). Defaults to `'div'`. */
   as?: 'div' | 'button';
   title?: string;
+  /** Replaces the auto-generated effect text with a caller-supplied string — used for run-aware
+   *  text a static `CardDef` can't produce (e.g. a card's `dynamicText(G)` current value in hand).
+   *  Falls back to `describeCard(card)` when absent. */
+  overrideText?: string;
   onPointerDown?: (e: React.PointerEvent<HTMLElement>) => void;
   onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }
@@ -176,7 +183,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
   props,
   ref,
 ) {
-  const { className, style, as = 'div', title, onPointerDown, onClick } = props;
+  const { className, style, as = 'div', title, overrideText, onPointerDown, onClick } = props;
 
   if (props.faceDown) {
     const rootClassName = `${styles.card} ${styles.faceDown}${className ? ` ${className}` : ''}`;
@@ -226,7 +233,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
   }
 
   const { card, countBadge, alwaysShowBadge, badgeClassName } = props;
-  const text = describeCard(card);
+  const text = overrideText ?? describeCard(card);
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
   // Worker-space meeples: building and work cards show their `workers` capacity (default 1,

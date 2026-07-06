@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
-import { blankState, coreCollapse } from '../rules';
+import { blankState, coreCollapse, instancesFromCardIds } from '../rules';
 
 describe('mission: enlightenment', () => {
   const m = MISSIONS.enlightenment;
@@ -45,7 +45,7 @@ describe('mission: barbarian_tide', () => {
     const G = blankState('barbarian_tide');
     const before = G.resources.military;
     m.setup!(G);
-    expect(G.deck.filter((id) => id === 'barbarian').length).toBe(4);
+    expect(G.deck.filter((c) => c.cardId === 'barbarian').length).toBe(4);
     expect(G.resources.military).toBe(before + 4);
   });
 
@@ -55,16 +55,16 @@ describe('mission: barbarian_tide', () => {
 
   it('objective needs all four barbarians beaten with military still standing', () => {
     const G = blankState('barbarian_tide');
-    G.removed = ['barbarian', 'barbarian', 'barbarian'];
+    G.removed = instancesFromCardIds(['barbarian', 'barbarian', 'barbarian']);
     G.resources.military = 5;
     expect(m.objective(G)).toBe(false); // only three beaten
-    G.removed.push('barbarian');
+    G.removed.push({ id: 4, cardId: 'barbarian' });
     expect(m.objective(G)).toBe(true); // four beaten, military >= 0
   });
 
   it('beating the fourth barbarian by going military-negative is a defeat, not a win', () => {
     const G = blankState('barbarian_tide');
-    G.removed = ['barbarian', 'barbarian', 'barbarian', 'barbarian'];
+    G.removed = instancesFromCardIds(['barbarian', 'barbarian', 'barbarian', 'barbarian']);
     G.resources.military = -1;
     expect(m.objective(G)).toBe(false); // the fatal blow doesn't count as survival
     expect(m.failure(G)).toBe(false); // the mission owns no failure

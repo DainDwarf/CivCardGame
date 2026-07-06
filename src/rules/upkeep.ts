@@ -1,9 +1,9 @@
 import { addResources, type Resources } from './resources';
 import { tableauProduction, tableauCultureOutput, workZoneProduction } from './production';
 import { foodUpkeep } from './population';
-import { applyEffect } from './effects';
+import { resolveCard } from './effects';
 import { CARDS } from '../content/cards';
-import type { GameState } from './state';
+import type { CardInstance, GameState } from './state';
 
 export type MissionUpkeep = (G: GameState) => void;
 
@@ -14,7 +14,9 @@ export type MissionUpkeep = (G: GameState) => void;
  * end of turn. Not part of `applyUpkeep` itself, since the projection clone runs upkeep too.
  */
 export function discardWorkZone(G: GameState): void {
-  for (const w of G.workZone) G.discard.push(w.cardId);
+  // File each work card to discard as a plain card instance (its workZone id is free to reuse once
+  // the zone is cleared), dropping the staffing-only `workers`/`counters` a work box carried.
+  for (const w of G.workZone) G.discard.push({ id: w.id, cardId: w.cardId });
   G.workZone = [];
 }
 
@@ -26,17 +28,21 @@ export function discardWorkZone(G: GameState): void {
  * (e.g. a draw) can't reorder the sweep. Shared by `endTurn` and `projectedDelta`.
  */
 export function resolveHandEvents(G: GameState): void {
-  const events: string[] = [];
-  const kept: string[] = [];
-  for (const id of G.hand) {
-    if (CARDS[id]?.kind === 'event') events.push(id);
-    else kept.push(id);
+  const events: CardInstance[] = [];
+  const kept: CardInstance[] = [];
+  for (const c of G.hand) {
+    if (CARDS[c.cardId]?.kind === 'event') events.push(c);
+    else kept.push(c);
   }
   G.hand = kept;
-  for (const id of events) {
-    const card = CARDS[id];
-    applyEffect(G, card.effect);
-    (card.effect?.remove ? G.removed : G.discard).push(id);
+  for (const c of events) {
+    const card = CARDS[c.cardId];
+    // Events auto-resolve at end of turn with no player present, so their resolvers must be
+    // non-interactive (must not set `G.pendingInteraction` — there'd be no UI to answer it). Only
+    // `action` cards may currently open an interaction; keep any future `event` resolver deterministic.
+    resolveCard({ G, self: c });
+    // `remove` is a filing decision (exile vs. discard), owned here, not by the resolver.
+    (card.effect?.remove ? G.removed : G.discard).push(c);
   }
 }
 

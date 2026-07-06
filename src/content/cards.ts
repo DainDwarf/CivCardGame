@@ -1,5 +1,7 @@
-import type { Resources } from '../rules/resources';
-import type { CardEffect } from '../rules/effects';
+import { addResources, scaleResources, type Resources } from '../rules/resources';
+import { bumpCounter, getCounter, type CardInstance, type GameState } from '../rules/state';
+import { shuffleFromState } from '../rules/rng';
+import type { CardEffect, Resolver } from '../rules/effects';
 
 export type CardKind = 'building' | 'action' | 'work' | 'event';
 
@@ -37,8 +39,26 @@ export interface CardDef {
   cultureLevelReq?: number;
   /** Immediate one-shot effect when played (resource gain/loss, draw, population, territory,
    *  culture, or demolish). `building` cards have none — their output is the passive `produces`
-   *  below; `work` cards defer their `effect.gain` until staffed at upkeep. */
+   *  below; `work` cards defer their `effect.gain` until staffed at upkeep. This declarative bag
+   *  drives both the default resolver (`specToResolver`) and the card's auto-generated text
+   *  (`describeCard`) / play gates (`unplayableReason`), so most cards need only this. */
   effect?: CardEffect;
+  /** Bespoke play-time behavior for a card whose logic the declarative `effect` can't express
+   *  (self-reference, per-card state, targeting, interaction). When present it *replaces* the
+   *  default resolver derived from `effect`; the card then authors its own `description` for the
+   *  face, since there's no data bag to auto-render. Lives on the static catalogue, never in
+   *  `GameState` — see `rules/effects.ts`'s `EffectContext`. */
+  resolve?: Resolver;
+  /** Hand-authored effect text for the card face, used when the declarative `effect` bag can't
+   *  describe the card (a `resolve`-driven card). Takes precedence over the auto-generated
+   *  `describeCard` text. */
+  description?: string;
+  /** Run-aware effect text: given the live `GameState` and the specific card instance being
+   *  rendered, returns that copy's *current* effect summary (e.g. Cornucopia's growing "+N🌾", which
+   *  depends on how often *this* copy has been played). Rendered only where a real instance exists
+   *  (the hand); static contexts (Collection, deck editor) fall back to `description`/`describeCard`.
+   *  The card owns its own display logic — the shell renders it blindly, with no per-card branch. */
+  dynamicText?: (G: GameState, self: CardInstance) => string;
   /** `building` cards: per-round output once staffed. */
   produces?: Partial<Resources>;
   /** `building` cards: per-round culture gained while staffed — accumulates on G.culture. */
@@ -74,6 +94,61 @@ export const CARDS: Record<string, CardDef> = {
   settlers: { id: 'settlers', name: 'Settlers', kind: 'action', cost: { food: 2 }, effect: { population: 1 } },
   eureka: { id: 'eureka', name: 'Eureka!', kind: 'action', cost: {}, discardCost: 1, effect: { gain: { science: 3 } } },
   inspiration: { id: 'inspiration', name: 'Inspiration', kind: 'action', cost: { money: 1 }, effect: { draw: 2 } },
+
+  // Cornucopia: a bespoke-resolver card whose gain *grows* with a *per-instance* play counter (the
+  // first per-instance-state card). Each physical copy gains +1🌾 its first play and +1 more for
+  // every prior play *of that same copy* this run — the count lives in the instance's own `counters`
+  // (via getCounter/bumpCounter) and rides with the card through discard/reshuffle, so playing one
+  // Cornucopia never buffs the others.
+  cornucopia: {
+    id: 'cornucopia', name: 'Cornucopia', kind: 'action', cost: {},
+    description: '+1🌾, +1 more each time this copy is played this run',
+    dynamicText: (_G, self) => `+${getCounter(self, 'plays') + 1}🌾`,
+    resolve: ({ G, self }) => {
+      addResources(G.resources, scaleResources({ food: 1 }, getCounter(self, 'plays') + 1));
+      bumpCounter(self, 'plays');
+    },
+  },
+
+  // Foresight: the first *interactive* card — its effect suspends mid-resolution for a player choice.
+  // Reveals the top 3 of the draw pile, you draw 1, the rest shuffle back. The two-branch resolver
+  // (keyed on `answer === undefined`) parks the revealed cards in G.pendingInteraction on the first
+  // pass and completes on resume; see rules/state.ts's PendingInteraction.
+  foresight: {
+    id: 'foresight', name: 'Foresight', kind: 'action', cost: { science: 1 },
+    description: 'Peek the top 3 cards; draw 1, shuffle the rest back',
+    resolve: (ctx) => {
+      const { G } = ctx;
+      if (ctx.answer === undefined) {
+        // Reveal: lift up to 3 off the top of the draw pile into a choice tray. Removing them (not
+        // merely reading) makes GameContext's !sameDeck reveal-boundary fire, clearing the undo
+        // stack so the peek can't be un-seen. An empty draw pile fizzles (no discard reshuffle here).
+        const options = G.deck.slice(0, 3);
+        if (options.length === 0) return;
+        G.deck = G.deck.slice(options.length);
+        G.pendingInteraction = {
+          cardId: ctx.self.cardId,
+          instanceId: ctx.self.id,
+          kind: 'chooseCard',
+          prompt: 'Draw one — the rest shuffle back',
+          options,
+          pick: 1,
+        };
+        return;
+      }
+      // Resume: `answer` is the chosen index (0 is valid — hence `=== undefined` above). Draw it; the
+      // rest return to the deck, which then reshuffles deterministically from the run's RNG stream.
+      const pending = G.pendingInteraction;
+      if (!pending) return;
+      const chosen = pending.options[ctx.answer];
+      if (chosen !== undefined) G.hand.push(chosen);
+      const rest = pending.options.filter((_, i) => i !== ctx.answer);
+      const { result, rngState } = shuffleFromState([...rest, ...G.deck], G.rngState);
+      G.deck = result;
+      G.rngState = rngState;
+      G.pendingInteraction = null;
+    },
+  },
 
   // --- Work cards: stick onto the board as a staffable box; produce only while staffed,
   //     then recycle to the discard at end of turn. ---
