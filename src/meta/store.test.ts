@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { exportSave, importSave, type PlayerStore } from './store';
+import { applyRunResult, exportSave, importSave, type PlayerStore } from './store';
 import { DEFAULT_DECKS } from '../content/decks';
 import { STARTING_COLLECTION } from '../content/collection';
 import { cloneDecks } from '../rules/deckBuilder';
 import type { RunResult } from '../contract';
+import type { MissionDef } from '../content/missions';
 
 /** Unicode-safe base64 for constructing bogus save payloads below, mirroring the
  *  encoding `exportSave` itself uses internally (plain `btoa` throws on non-Latin1 text). */
@@ -91,5 +92,90 @@ describe('exportSave / importSave', () => {
     const bogus = toBase64(JSON.stringify({ schemaVersion: 1, store: { runHistory: store.runHistory, decks: store.decks } }));
     const result = importSave(bogus);
     expect(result.ok).toBe(false);
+  });
+});
+
+function standardMission(): MissionDef {
+  return {
+    id: 'std',
+    name: 'std',
+    lore: '',
+    description: '',
+    prereqs: [],
+    objective: () => false,
+    failure: () => false,
+    progress: () => '',
+    victoryHint: '',
+    failureHint: null,
+    kind: 'standard',
+    reward: { influence: 2, unlockCardId: 'granary' },
+    map: { col: 0, row: 0 },
+  };
+}
+
+function infiniteMission(): MissionDef {
+  return {
+    id: 'toto',
+    name: 'toto',
+    lore: '',
+    description: '',
+    prereqs: [],
+    objective: () => false,
+    failure: () => false,
+    progress: () => '',
+    victoryHint: '',
+    failureHint: null,
+    kind: 'infinite',
+  };
+}
+
+function runResult(missionId: string, outcome: RunResult['outcome'], turnsTaken: number): RunResult {
+  return {
+    outcome,
+    missionId,
+    stats: {
+      turnsTaken,
+      finalResources: { food: 0, production: 0, money: 0, science: 0, military: 0 },
+      strategicResources: { population: 0, territory: 0, culture: 0 },
+    },
+  };
+}
+
+describe('applyRunResult', () => {
+  it('a standard mission victory marks mapProgress and pays the first-clear reward', () => {
+    const store = sampleStore();
+    const next = applyRunResult(store, runResult('std', 'victory', 12), standardMission());
+    expect(next.mapProgress.std).toBe(true);
+    expect(next.influence).toBe(store.influence + 2);
+    expect(next.collection.granary).toBe(1);
+  });
+
+  it('a standard mission defeat pays nothing and leaves mapProgress untouched', () => {
+    const store = sampleStore();
+    const next = applyRunResult(store, runResult('std', 'defeat', 3), standardMission());
+    expect(next.mapProgress.std).toBeUndefined();
+    expect(next.influence).toBe(store.influence);
+  });
+
+  it('an infinite mission pays Influence = rounds survived on a victory-outcome stop', () => {
+    const store = sampleStore();
+    const next = applyRunResult(store, runResult('toto', 'victory', 10), infiniteMission());
+    expect(next.influence).toBe(store.influence + 10);
+    expect(next.mapProgress.toto).toBeUndefined();
+  });
+
+  it('an infinite mission pays the same Influence on a defeat-outcome stop — outcome doesn\'t gate the payout', () => {
+    const store = sampleStore();
+    const next = applyRunResult(store, runResult('toto', 'defeat', 10), infiniteMission());
+    expect(next.influence).toBe(store.influence + 10);
+    expect(next.mapProgress.toto).toBeUndefined();
+  });
+
+  it('an infinite mission never marks mapProgress, even across repeated attempts', () => {
+    let store = sampleStore();
+    store = applyRunResult(store, runResult('toto', 'victory', 5), infiniteMission());
+    store = applyRunResult(store, runResult('toto', 'defeat', 8), infiniteMission());
+    expect(store.mapProgress.toto).toBeUndefined();
+    expect(store.influence).toBe(3 + 5 + 8);
   });
 });

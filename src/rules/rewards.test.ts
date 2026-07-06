@@ -22,6 +22,22 @@ function mission(reward: MissionDef['reward']): MissionDef {
   };
 }
 
+function infiniteMission(): MissionDef {
+  return {
+    id: 'm-infinite',
+    name: 'm-infinite',
+    lore: '',
+    description: '',
+    prereqs: [],
+    objective: () => false,
+    failure: () => false,
+    progress: () => '',
+    victoryHint: '',
+    failureHint: null,
+    kind: 'infinite',
+  };
+}
+
 describe('computeRewards', () => {
   it('grants Influence and the unlock on a first clear', () => {
     const m = mission({ influence: 2, unlockCardId: 'granary' });
@@ -52,9 +68,25 @@ describe('computeRewards', () => {
     expect(result.collection.granary).toBe(2);
   });
 
-  it('every mission reward names a real card id', () => {
+  it('every standard mission reward names a real card id', () => {
     for (const m of Object.values(MISSIONS)) {
-      expect(CARDS[m.reward.unlockCardId]).toBeDefined();
+      if (m.kind !== 'standard') continue;
+      expect(CARDS[m.reward!.unlockCardId]).toBeDefined();
     }
+  });
+});
+
+describe('computeRewards — infinite missions', () => {
+  it('pays Influence equal to rounds survived, with no unlock', () => {
+    const m = infiniteMission();
+    const result = computeRewards(m, false, {}, 10);
+    expect(result.influence).toBe(10);
+    expect(result.collection).toEqual({});
+  });
+
+  it('pays out on every attempt — "already completed" is meaningless for an infinite mission', () => {
+    const m = infiniteMission();
+    const result = computeRewards(m, true, {}, 7);
+    expect(result.influence).toBe(7);
   });
 });

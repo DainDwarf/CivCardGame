@@ -32,39 +32,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 6 — Infinite missions** — endless, replayable missions that never win and pay
   Influence = rounds survived. Cut into substeps; suggested order **6.1 → 6.2 → 6.3a → 6.3b**.
   `[phase: 3]`
-  - **Step 6.1 — Non-fixed (dynamic) card effects** — ✅ **done**, delivered across Stages 2 and 4
-    of the card-effect resolver rewrite (see the plan referenced in *Done / shipped* below). A card
-    whose magnitude scales with a run-scoped counter is now expressible: `rules/resources.ts`'s
-    `scaleResources` is the reusable "scale an effect by a counter" primitive (Step 6.3's drain is
-    its second caller). Stage 4 then made the counter **per-instance**: every card in a pile is a
-    `CardInstance` (`{ id, cardId, counters? }`) with a stable run-wide id, and the counter lives in
-    *that copy's own* `counters` map — read/written via `getCounter`/`bumpCounter` (`rules/state.ts`),
-    card-owned, *not* a typed per-card field and *not* a central `GameState` bag. **This reverses the
-    earlier "add a typed field, no generic bag" guidance:** card-specific numbers belong on the card
-    instance, not accreted onto `GameState` as named fields. First card shipped: **Cornucopia**
-    (`content/cards.ts`) — a `resolve`-driven `action` gaining `+1🌾` plus `+1` per prior play *of
-    that same copy* this run (playing one copy never buffs another); its growing value surfaces via a
-    card-owned `dynamicText(G, self)` hook rendered wherever a real run instance exists (`CardFace`'s
-    `overrideText` — see the "shows their live value everywhere" entry below for the full site list).
+  - **Step 6.1 — Non-fixed (dynamic) card effects** — ✅ done — see *Done / shipped* below.
     `[size: M]` `[phase: 3]`
-  - **Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — make the infinite kind
-    real and reachable, tested with a throwaway mission before any threat exists.
-    `MissionDef.kind: 'standard' | 'infinite'` already exists (`content/missions.ts`); make
-    `reward?` and `map?` **optional** (infinite missions have neither). Scoring:
-    `rules/rewards.ts`'s `computeRewards` gains an infinite branch (Influence = rounds survived
-    = `RunResult.stats.turnsTaken` = `G.round`), paid **every attempt**; `app/App.tsx`'s
-    `recordResult` pays it regardless of `outcome` and **never** marks `mapProgress`. Guard the
-    direct `mission.reward.unlockCardId` reads in the gameover overlay (`components/Board.tsx`)
-    and the `MissionDetailPanel` reward preview (`meta/CampaignMap.tsx`) — both break on a
-    rewardless mission. UI: a **fixed bottom banner** in `CampaignMap.tsx` listing infinite
-    missions — a `flex: 0 0 auto` sibling of `.canvas` inside `.screen` (mirror `.header`),
-    **never `position: fixed`** (the app's `transform: scale()` wrapper breaks viewport-fixed;
-    that's why the map already scrolls inside `.canvas`). Filter infinite missions *out* of the
-    timeline nodes and *into* the banner, always available, click → existing `setDetail` →
-    `MissionDetailPanel` → `LaunchPopup` flow. Test harness: mock mission **`toto`**
-    (`kind: 'infinite'`, no threat) that force-ends at round 10 via an explicit objective/failure,
-    to verify banner + launch + that ~10 Influence is paid whether the stop reads as victory or
-    defeat. `[size: M]` `[phase: 3]`
+  - **Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — ✅ done — see
+    *Done / shipped* below. `[size: M]` `[phase: 3]`
   - **Step 6.3a — Threat zone (pure core)** — a persistent board hazard as real run state. Add
     `threats: ThreatInstance[]` to `GameState` (`rules/state.ts` — `{ id, cardId, level }`, init
     `[]` in `blankState`) and a new `rules/threats.ts`: `addThreat(G, cardId)` (level 0) and
@@ -161,6 +132,29 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 6.2 — Infinite-mission plumbing + campaign UI + scoring** — `MissionDef`'s
+  `reward` and `map` are now optional (`'infinite'` missions have neither). `rules/rewards.ts`'s
+  `computeRewards` gains an infinite branch — Influence = rounds survived
+  (`RunResult.stats.turnsTaken`), paid regardless of `alreadyCompleted` or unlock, no collection
+  change. The actual store fold was pulled out of `App.tsx`'s `recordResult` into a new pure,
+  unit-tested `meta/store.ts`'s `applyRunResult(store, result, mission)`: a `'standard'` mission
+  marks `mapProgress` and pays its reward only on a victory outcome, same as before; an
+  `'infinite'` mission never touches `mapProgress` and pays on *every* attempt, win or lose —
+  `recordResult` is now a one-line `persist(applyRunResult(...))`. The direct
+  `mission.reward.unlockCardId` reads in the gameover overlay (`Board.tsx`) and
+  `MissionDetailPanel` (`CampaignMap.tsx`) are now guarded, and both render an infinite-specific
+  line ("Influence = rounds survived" / "No unlock — paid every attempt") instead of a card face.
+  `CampaignMap.tsx` splits missions by `kind`: `'infinite'` ones are filtered out of the
+  DAG/timeline and into a new always-visible bottom banner (`.infiniteBanner`, a `flex: 0 0 auto`
+  sibling of `.canvas`, never `position: fixed` — matches the map's existing viewport-fixed
+  workaround) reusing the already-CVD-vetted `--map-node-available` tokens plus a glyph + text
+  label (no color-only state). Verified end-to-end in-browser with a throwaway `toto` mission
+  (`kind: 'infinite'`, objective `round > 10`, no failure of its own) — banner placement, detail
+  panel, launch, ~equal-to-round-count Influence paid on both a victory-outcome stop and a
+  famine-defeat-outcome stop, and the mission staying un-cleared after either — then removed
+  once confirmed, since it's a harness, not real content. `rules/rewards.test.ts` and
+  `meta/store.test.ts` cover the infinite branch directly (no real infinite mission exists yet to
+  exercise via `run/run.test.ts` — that's Step 6.3b's Creeping Decay).
 - **Dynamic cards show their live value everywhere in the run, split into two bands** —
   `CardDef` gains `dynamicRule?: string`, a static line describing *how* a dynamic card's effect
   scales (e.g. Cornucopia's "+1 each time played"), rendered in the existing conditions
@@ -195,6 +189,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     in each copy's own `counters` (via `getCounter`/`bumpCounter`), replacing the interim central
     `GameState.cardState` bag; Cornucopia's growth is now genuinely per-copy (playing one never buffs
     another). `instancesFromCardIds` is the shared mint path (setup, mission-injected cards, tests).
+- **Phase 3 Step 6.1 — Non-fixed (dynamic) card effects** — delivered across Stages 2 and 4 of the
+  resolver rewrite just above: `scaleResources` (`rules/resources.ts`) is the reusable "scale an
+  effect by a counter" primitive (Step 6.3's threat drain reuses it), and Stage 4's per-instance
+  `counters` gave every card copy its own run-scoped number — **reversing the earlier "add a typed
+  field, no generic bag" guidance**: card-specific numbers belong on the card instance, not
+  accreted onto `GameState` as named fields. First card shipped: **Cornucopia** (`content/cards.ts`)
+  — a `resolve`-driven `action` gaining `+1🌾` plus `+1` per prior play *of that same copy* this run
+  (playing one copy never buffs another); its growing value surfaces via a card-owned
+  `dynamicText(G, self)` hook (see "Dynamic cards show their live value everywhere" below for the
+  full render-site list).
 - **Mystery card reuses `CardFace`** — `CampaignMap.tsx`'s hand-rolled `MysteryCard` (a
   one-off grey box borrowing only `CardFace.module.css`'s outer `.card` class) is gone;
   `CardFace` now takes a `faceDown` prop (a discriminated union with `card`, so `card` is

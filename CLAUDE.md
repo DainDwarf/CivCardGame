@@ -104,12 +104,25 @@ reward — an Influence line (struck through once already cleared) under a subti
 face-down `faceDown` mode (pre-clear, since which card a mission unlocks stays a surprise
 until it's actually cleared) or the real unlocked card via `CardFace` (post-clear) beneath it. Its
 "Continue" hands off to `LaunchPopup` (the board/deck picker, unchanged apart from dropping
-the lore/reward text its header used to carry, now that Step 5.3 owns that). Still to come:
-tutorial missions (Step 8), `RunResult.score`/reward for
-`'infinite'` missions (Step 6 — no infinite
-mission exists yet to produce one), and `Stats` surfacing a per-run reward (deferred since
-`RunResult` deliberately excludes rewards, and there's no per-run record of whether that run
-was a first clear).
+the lore/reward text its header used to carry, now that Step 5.3 owns that). **Phase 3 Step 6.2**
+(infinite-mission plumbing) is also done: `MissionDef`'s `reward` and `map` are now optional
+(`'infinite'` missions have neither — no dedicated `RunResult.score` field turned out to be
+needed; `rules/rewards.ts`'s `computeRewards` scores an infinite attempt straight off
+`RunResult.stats.turnsTaken`, Influence = rounds survived, paid on *every* attempt regardless of
+outcome, no unlock). The store-fold that used to live inline in `App.tsx`'s `recordResult` is now
+`meta/store.ts`'s `applyRunResult(store, result, mission)` — a pure, unit-tested function: a
+`'standard'` mission still marks `mapProgress` and pays its reward only on a victory outcome;
+an `'infinite'` mission never touches `mapProgress` and pays win or lose.
+`CampaignMap.tsx` splits missions by `kind`: `'infinite'` ones are filtered out of the DAG/
+timeline entirely and into a new always-visible bottom banner (never `position: fixed`, matching
+the map's existing viewport-fixed workaround) instead of a node, since they have no map position
+and are never locked/cleared. `Board.tsx`'s gameover overlay and `MissionDetailPanel` both guard
+the now-optional `mission.reward` and show an infinite-specific reward line ("Influence = rounds
+survived") instead of a card face. No real `'infinite'` mission ships yet — that's **Step 6.3**'s
+Creeping Decay, once a threat exists to drive one. Still to come: tutorial missions (Step 8), the
+threat zone + Creeping Decay (Step 6.3a/6.3b), and `Stats` surfacing a per-run reward (deferred
+since `RunResult` deliberately excludes rewards, and there's no per-run record of whether that
+run was a first clear).
 
 ## Commands
 

@@ -75,9 +75,12 @@ export function CampaignMap({
   uiScale: number;
   onLaunch: (config: RunConfig) => void;
 }) {
-  const missions = Object.values(MISSIONS);
-  const maxCol = missions.reduce((m, x) => Math.max(m, x.map.col), 0);
-  const maxRow = missions.reduce((m, x) => Math.max(m, x.map.row), 0);
+  // 'infinite' missions (Step 6) have no map position and never appear as a timeline node —
+  // they're always available, so they live in the bottom banner instead (rendered below).
+  const missions = Object.values(MISSIONS).filter((m) => m.kind !== 'infinite');
+  const infiniteMissions = Object.values(MISSIONS).filter((m) => m.kind === 'infinite');
+  const maxCol = missions.reduce((m, x) => Math.max(m, x.map!.col), 0);
+  const maxRow = missions.reduce((m, x) => Math.max(m, x.map!.row), 0);
   const timelineWidth = PAD_X * 2 + maxCol * COL_W + NODE_W;
   const nodeAreaHeight = PAD_Y * 2 + maxRow * ROW_H + NODE_H;
 
@@ -149,10 +152,10 @@ export function CampaignMap({
                       <line
                         key={`${pid}->${m.id}`}
                         className={styles.edge}
-                        x1={nodeLeft(from.map.col) + NODE_W / 2}
-                        y1={nodeTop(from.map.row) + NODE_H / 2}
-                        x2={nodeLeft(m.map.col) + NODE_W / 2}
-                        y2={nodeTop(m.map.row) + NODE_H / 2}
+                        x1={nodeLeft(from.map!.col) + NODE_W / 2}
+                        y1={nodeTop(from.map!.row) + NODE_H / 2}
+                        x2={nodeLeft(m.map!.col) + NODE_W / 2}
+                        y2={nodeTop(m.map!.row) + NODE_H / 2}
                       />
                     );
                   }),
@@ -169,7 +172,7 @@ export function CampaignMap({
                   key={m.id}
                   type="button"
                   className={`${styles.node} ${styles[state]}`}
-                  style={{ left: `${nodeLeft(m.map.col)}px`, top: `${nodeTop(m.map.row)}px`, width: `${NODE_W}px` }}
+                  style={{ left: `${nodeLeft(m.map!.col)}px`, top: `${nodeTop(m.map!.row)}px`, width: `${NODE_W}px` }}
                   disabled={locked}
                   title={locked ? 'Complete its prerequisite to reveal this.' : undefined}
                   onPointerDown={(e) => e.stopPropagation()}
@@ -188,6 +191,30 @@ export function CampaignMap({
           </div>
         </div>
       </div>
+
+      {/* 'infinite' missions never gate on prereqs and are never cleared/locked — they're
+          always available, so they get their own row rather than a timeline node. A `flex: 0 0
+          auto` sibling of .canvas (mirroring .header), never `position: fixed` — the app's
+          transform:scale() wrapper breaks viewport-fixed positioning (see CLAUDE.md's UI-scaling
+          invariants), which is why the map itself scrolls inside .canvas instead. */}
+      {infiniteMissions.length > 0 && (
+        <div className={styles.infiniteBanner}>
+          {infiniteMissions.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={styles.infiniteNode}
+              onClick={() => setDetail(m)}
+            >
+              <span className={styles.nodeGlyph} aria-hidden="true">♾️</span>
+              <span className={styles.infiniteNodeText}>
+                <span className={styles.nodeName}>{m.name}</span>
+                <span className={styles.nodeState}>Always available</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {detail && (
         <MissionDetailPanel
@@ -217,10 +244,12 @@ export function CampaignMap({
  * Step 5.3's mission detail panel — the first step of the launch flow, inserted between the
  * map and `LaunchPopup`. Same modal shell/size as `LaunchPopup` (`styles.popup`) so the two
  * steps feel like one flow. Left column is narrative lore plus the mechanical explanation
- * (objective/failure hints); right column is the reward: Influence (struck through once
- * already claimed) and the unlock — the real card face once cleared (under a "Cards already
- * unlocked" subtitle), or `CardFace`'s `faceDown` mode beforehand, since which card a mission
- * grants stays a surprise until it's actually cleared (see `rules/rewards.ts`).
+ * (objective/failure hints); right column is the reward. A `'standard'` mission shows Influence
+ * (struck through once already claimed) and the unlock — the real card face once cleared (under
+ * a "Cards already unlocked" subtitle), or `CardFace`'s `faceDown` mode beforehand, since which
+ * card a mission grants stays a surprise until it's actually cleared (see `rules/rewards.ts`). An
+ * `'infinite'` mission (Step 6) has neither a fixed Influence amount nor an unlock — it scores
+ * rounds survived every attempt — so it gets its own reward line instead.
  */
 function MissionDetailPanel({
   mission,
@@ -233,7 +262,8 @@ function MissionDetailPanel({
   onCancel: () => void;
   onContinue: () => void;
 }) {
-  const unlockCard = CARDS[mission.reward.unlockCardId];
+  const infinite = mission.kind === 'infinite';
+  const unlockCard = mission.reward ? CARDS[mission.reward.unlockCardId] : null;
   return (
     <div className={styles.popupBackdrop} onClick={onCancel} role="dialog" aria-modal="true">
       <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
@@ -253,15 +283,24 @@ function MissionDetailPanel({
 
           <div className={styles.rewardColumn}>
             <h3 className={styles.pickerTitle}>Reward</h3>
-            <p className={`${styles.rewardInfluence}${alreadyCleared ? ` ${styles.struckOut}` : ''}`}>
-              +{mission.reward.influence} ⭐ Influence
-            </p>
-            <span className={styles.rewardSubtitle}>
-              {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
-            </span>
-            <div className={styles.rewardCards}>
-              {alreadyCleared ? <CardFace card={unlockCard} /> : <CardFace faceDown />}
-            </div>
+            {infinite ? (
+              <>
+                <p className={styles.rewardInfluence}>⭐ Influence = rounds survived</p>
+                <span className={styles.rewardSubtitle}>No unlock — paid every attempt</span>
+              </>
+            ) : (
+              <>
+                <p className={`${styles.rewardInfluence}${alreadyCleared ? ` ${styles.struckOut}` : ''}`}>
+                  +{mission.reward!.influence} ⭐ Influence
+                </p>
+                <span className={styles.rewardSubtitle}>
+                  {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
+                </span>
+                <div className={styles.rewardCards}>
+                  {alreadyCleared ? <CardFace card={unlockCard!} /> : <CardFace faceDown />}
+                </div>
+              </>
+            )}
           </div>
         </div>
 

@@ -1,8 +1,11 @@
 import type { RunResult } from '../contract';
 import { DEFAULT_DECKS, type DeckDef } from '../content/decks';
 import { STARTING_COLLECTION } from '../content/collection';
+import type { MissionDef } from '../content/missions';
 import { cloneDecks } from '../rules/deckBuilder';
 import type { OwnedCards } from '../rules/collection';
+import { computeRewards } from '../rules/rewards';
+import { isCompleted } from '../rules/campaign';
 
 /**
  * The persisted player store (`localStorage`). `mapProgress` is a completed-mission-ids
@@ -80,6 +83,41 @@ export function saveStore(store: PlayerStore): void {
   } catch {
     // Ignored — see doc comment above.
   }
+}
+
+/** How many past runs the Stats screen shows. */
+export const HISTORY_LIMIT = 10;
+
+/**
+ * Folds a finished run's `RunResult` into the store — history, `mapProgress`, and the
+ * mission's reward (`rules/rewards.ts`). Pulled out of `App.tsx`'s `recordResult` into its
+ * own pure function so the standard-vs-infinite payout branching is unit-tested directly
+ * rather than buried in a component (see CLAUDE.md's core/shell boundary). A `'standard'`
+ * mission marks `mapProgress` and pays its one-time first-clear reward only on a victory
+ * outcome; an `'infinite'` mission (Step 6) never touches `mapProgress` and pays Influence
+ * = rounds survived on *every* attempt, win or lose. `alreadyCompleted` is read from
+ * `store.mapProgress` as it stood before this result, so a first clear is never masked by
+ * its own just-applied update.
+ */
+export function applyRunResult(store: PlayerStore, result: RunResult, mission: MissionDef): PlayerStore {
+  const infinite = mission.kind === 'infinite';
+  const alreadyCompleted = isCompleted(store.mapProgress, result.missionId);
+  const mapProgress =
+    !infinite && result.outcome === 'victory'
+      ? { ...store.mapProgress, [result.missionId]: true as const }
+      : store.mapProgress;
+  const { influence, collection } = infinite
+    ? computeRewards(mission, alreadyCompleted, store.collection, result.stats.turnsTaken)
+    : result.outcome === 'victory'
+      ? computeRewards(mission, alreadyCompleted, store.collection)
+      : { influence: 0, collection: store.collection };
+  return {
+    ...store,
+    runHistory: [result, ...store.runHistory].slice(0, HISTORY_LIMIT),
+    mapProgress,
+    influence: store.influence + influence,
+    collection,
+  };
 }
 
 /**

@@ -41,15 +41,18 @@ export interface MissionDef {
    *  scores an attempt instead. All current missions are `'standard'`. */
   kind: 'standard' | 'infinite';
   /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
-   *  `computeRewards`) — replays pay nothing. `unlockCardId` is required because every
-   *  mission grants exactly one unlock by design (docs/DESIGN.md, "Economy & progression");
-   *  it must name a real `content/cards.ts` id (pinned by a coherence test). */
-  reward: { influence: number; unlockCardId: string };
+   *  `computeRewards`) — replays pay nothing. `unlockCardId` must name a real
+   *  `content/cards.ts` id (pinned by a coherence test). Every `'standard'` mission grants
+   *  exactly one unlock by design (docs/DESIGN.md, "Economy & progression"); `'infinite'`
+   *  missions have none — they score Influence = rounds survived instead. */
+  reward?: { influence: number; unlockCardId: string };
   /** Authored position on the campaign map's DAG grid (`meta/CampaignMap.tsx`): `col` is
    *  the horizontal chronology slot (later = further along history), `row` the vertical
    *  branch offset among siblings. Authored rather than auto-computed — matches the
-   *  "authored DAG" in docs/DESIGN.md and keeps control over the narrow tree's shape. */
-  map: { col: number; row: number };
+   *  "authored DAG" in docs/DESIGN.md and keeps control over the narrow tree's shape.
+   *  `'infinite'` missions have none — they never appear as a timeline node, only in the
+   *  campaign map's always-available bottom banner. */
+  map?: { col: number; row: number };
 }
 
 export const MISSIONS: Record<string, MissionDef> = {

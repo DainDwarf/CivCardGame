@@ -4,11 +4,9 @@ import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
 import { AccessibilityWelcome } from '../components/AccessibilityWelcome';
 import { GameProvider, useGame } from '../run/GameContext';
-import { loadStore, saveStore, type PlayerStore } from '../meta/store';
+import { applyRunResult, loadStore, saveStore, type PlayerStore } from '../meta/store';
 import { MAX_DECKS } from '../rules/deckBuilder';
 import { buyTier } from '../rules/shop';
-import { computeRewards } from '../rules/rewards';
-import { isCompleted } from '../rules/campaign';
 import { MISSIONS } from '../content/missions';
 import { applyTheme, loadSettings, saveSettings, type Settings } from '../meta/settings';
 import type { DeckDef } from '../content/decks';
@@ -16,9 +14,6 @@ import type { RunConfig, RunResult } from '../contract';
 import styles from './App.module.css';
 
 type View = { screen: 'menu' } | { screen: 'run'; config: RunConfig };
-
-/** How many past runs the Stats screen shows. */
-const HISTORY_LIMIT = 10;
 
 /** Fade duration (ms) for each half of a screen transition — see `App`'s `transition()`.
  *  The full effect (cover, then reveal) takes 2×`FADE_MS`. Read by both the JS timing
@@ -134,26 +129,10 @@ export function App() {
 
   // A run also lands here when the player hits Restart instead of End Run — that
   // discards the run without leaving GameProvider, so it would otherwise never be recorded.
-  // A victory also marks the mission complete in mapProgress, unlocking anything gated on
-  // it (rules/campaign.ts), and pays out the mission's reward (rules/rewards.ts) — but only
-  // on a *first* clear, so `alreadyCompleted` must be read from the store as it stood before
-  // this result, never the post-update mapProgress below (that would make every clear look
-  // like a first clear).
+  // The actual history/mapProgress/reward folding is `meta/store.ts`'s `applyRunResult` — a
+  // pure, unit-tested function, not buried here (see CLAUDE.md's core/shell boundary).
   function recordResult(result: RunResult) {
-    const alreadyCompleted = isCompleted(store.mapProgress, result.missionId);
-    const mapProgress =
-      result.outcome === 'victory' ? { ...store.mapProgress, [result.missionId]: true as const } : store.mapProgress;
-    const { influence, collection } =
-      result.outcome === 'victory'
-        ? computeRewards(MISSIONS[result.missionId], alreadyCompleted, store.collection)
-        : { influence: 0, collection: store.collection };
-    persist({
-      ...store,
-      runHistory: [result, ...store.runHistory].slice(0, HISTORY_LIMIT),
-      mapProgress,
-      influence: store.influence + influence,
-      collection,
-    });
+    persist(applyRunResult(store, result, MISSIONS[result.missionId]));
   }
 
   function saveDeck(deck: DeckDef) {

@@ -1533,10 +1533,19 @@ export function Board({
       const defeatMessage = (gameover.reason && COLLAPSE_MESSAGES[gameover.reason]) ?? 'your civilization has fallen.';
       // Preview-only: mirrors the same computeRewards call App.tsx's recordResult makes for
       // real on End Run, off the same pre-run mapProgress/collection, so the two can't diverge.
-      const alreadyCompleted = won && isCompleted(mapProgress, mission.id);
-      const reward = won ? computeRewards(mission, alreadyCompleted, collection) : null;
+      // An 'infinite' mission has no win state and never touches mapProgress — its Influence
+      // (rounds survived) is paid every attempt, win or lose, so its preview isn't gated on `won`.
+      const alreadyCompleted = won && mission.kind !== 'infinite' && isCompleted(mapProgress, mission.id);
+      const reward =
+        mission.kind === 'infinite'
+          ? computeRewards(mission, false, collection, G.round)
+          : won
+            ? computeRewards(mission, alreadyCompleted, collection)
+            : null;
       const unlockedCard =
-        reward && !isOwned(collection, mission.reward.unlockCardId) ? CARDS[mission.reward.unlockCardId] : null;
+        reward && mission.reward && !isOwned(collection, mission.reward.unlockCardId)
+          ? CARDS[mission.reward.unlockCardId]
+          : null;
       return (
         <div className={styles.gameoverOverlay}>
           <div className={styles.gameoverPanel}>
