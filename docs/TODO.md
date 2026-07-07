@@ -14,7 +14,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Phase 3 — planned steps (economy & progression)
 
 > The Phase 3 design is locked in [`DESIGN.md`](DESIGN.md) (*Economy & progression*); this is
-> the actionable cut, held here for later sessions. Suggested order: 1 → 2 & 3 → 4 → 5 → 6 → 7 → 8 → 9
+> the actionable cut, held here for later sessions. Suggested order: 1 → 2 & 3 → 4 → 5 → 6 → 7 → 8
 > (Steps 0, 1, 2, and 3 are **done**). **Steps 1+2+3+4 form a playable spine** — unlock cards from
 > missions, own copies, build capped decks — before the map/shop UI (Step 5) lands.
 > Pre-alpha: **no save migration**, replace the store shape freely.
@@ -85,15 +85,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   onto the run's starting resource profile (like a mission's `setup` modifiers) — no per-instance identity
   question, so entirely independent of Step 7's collection rework. Whether several stack on one board is a
   deferred balance detail (DESIGN.md open question). `[size: M]` `[phase: 3]`
-- **Step 9 — Tutorial missions** — the first few meta missions double as tutorials,
+- **Step 9 — Peripheral** — `Stats` rework once rewards/trends exist.
+  Independent. `[phase: 3]`
+
+## Phase 4 — planned steps (content & balance)
+
+> Phase 4 is content expansion + balance tuning with the headless simulator (see
+> [`DESIGN.md`](DESIGN.md) *Build roadmap*). It kicks off with tutorial onboarding, since new
+> content is what a new player meets first.
+
+- **Step 1 — Tutorial missions** — the first few meta missions double as tutorials,
   introducing mechanics progressively; tutorial entry-node missions on the map. Covers
   designing several missions, onboarding indicators/popups, and careful pacing so new
   mechanics aren't dumped on the player all at once. Rough pacing: the starting deck holds
   only `work`/`action` cards, no buildings — mission 1 unlocks the first buildings (House,
   Farm, Workshop); mission 2 introduces territory limitation (and maybe conquest?) alongside
-  them. Goal is to reach a certain population. Unlocks culture stuff. Mission 3 explains culture, goal to reach culture lvl2. `[size: L]` `[?]` `[phase: 3]`
-- **Step 10 — Peripheral** — `Stats` rework once rewards/trends exist.
-  Independent. `[phase: 3]`
+  them. Goal is to reach a certain population. Unlocks culture stuff. Mission 3 explains culture, goal to reach culture lvl2. `[size: L]` `[?]` `[phase: 4]`
 
 ## Meta loop (`src/meta/`)
 
@@ -108,7 +115,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   screen). Also add a visual hint on a card's Collection tile/group when it has an available upgrade
   (a tier buy or an unstickered instance) so the player doesn't have to open every card to find out.
   `[?]` `[phase: 3]`
-- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 10** above. `[?]` `[phase: 3]`
+- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 9** above. `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
 
