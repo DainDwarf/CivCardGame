@@ -211,9 +211,10 @@ a fixed, authored amount (*not* scaled by how you played); infinite missions pay
 per attempt — that's the only performance-scaled source. Influence is spent only in the shop.
 
 **Ownership & copies.** The collection tracks, per card, how many copies you own
-(`number | 'unlimited'`; an absent entry = not yet unlocked). A mission unlock grants the
-first copy; the **shop** raises that to ×2 / ×4 / unlimited. The deck editor caps each card
-at the number you own (unlimited = no cap) — the first deck-construction constraint to bite
+(`number`; an absent entry = not yet unlocked). A mission unlock grants the
+first copy; the **shop** raises that along a bounded ×1 / ×2 / ×4 / ×8 ladder (no infinite
+tier — every owned count is a finite, instantiable number). The deck editor caps each card
+at the number you own — the first deck-construction constraint to bite
 (general size/rarity constraints stay Phase 4).
 
 **Two non-overlapping channels.** *Missions = breadth* (a new card type, board, or wonder).

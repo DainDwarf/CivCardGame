@@ -57,12 +57,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   mutate and must never persist back). The precursor is already **done** (Stage 4 of the resolver
   rewrite): pile cards are `CardInstance`s with per-copy state (`counters`). Suggested order 7.1 → 7.6.
   `[size: L]` `[phase: 3]`
-  - **Step 7.1 — Bounded copy tiers (drop `'unlimited'`)** — copy counts become ×1/×2/×4/×8, no
-    infinite tier. Makes instances bounded (you can't instantiate infinity) and independently
-    *simplifies* two systems: `rules/shop.ts`'s `TIER_LADDER`/`nextTier` lose the terminal `'unlimited'`
-    rung (ladder ends at ×8), and `rules/collection.ts` (`copiesOwned`/`isOwned`) + `rules/deckBuilder.ts`'s
-    `addCard` lose their `'unlimited'` branch. `content/collection.ts`'s `STARTING_COLLECTION` and any
-    basics that were unlimited reseed to a finite count. Pre-alpha: no migration. `[size: S]` `[phase: 3]`
+  - **Step 7.1 — Bounded copy tiers (drop `'unlimited'`)** — ✅ done — see *Done / shipped* below.
+    `[size: S]` `[phase: 3]`
   - **Step 7.2 — Uniform meta card instances** — the collection stops being a per-cardId count and
     becomes a set of identified copies; deck lists go from `string[]` of cardIds to **meta instance ids**.
     Needs a persistent, append-only meta id allocator (buying ×2→×4 appends ids, never renumbers, or deck
@@ -119,6 +115,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - Culture-based missions (depend on the Culture resource) `[?]` `[phase: 4]`
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
 - Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
+- **Age tag on cards** — tag each card with the age it unlocks in, so the player can sort/filter by age `[?]` `[phase: 4]`
 - **Foresight corner case: empty draw pile silently wastes the card** — `content/cards.ts`'s Foresight resolver does `G.deck.slice(0, 3)` and bails on `length === 0` without reshuffling, so playing it with an empty deck (but a full discard) pays its 1🌾science, files to discard, and does *nothing* — no peek, no feedback — contradicting its own "Peek the top 3" text. `unplayableReason` (`rules/playability.ts`) has no draw-pile gate, so nothing stops the play. Fix depends on the eager-reshuffle item above (once `G.deck` is empty only when the discard is too, Foresight's `slice` sees the real pile); then **also handle the deck-AND-discard-both-empty case** — either gate the card as unplayable then (add an `UnplayableReason` kind, mirroring `noBuildingsToDestroy`) so it can't be wasted, or let it peek/draw fewer than 3 gracefully. Decide which; a hard gate matches the existing "don't let a play fizzle for nothing" precedent. `[size: S]` `[phase: 3]`
 
 ## UI (`src/components/`)
@@ -216,6 +213,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 7.1 — Bounded copy tiers (drop `'unlimited'`)** — copy counts are now ×1/×2/×4/×8,
+  no infinite tier — instances are bounded (you can't instantiate infinity), the precondition for
+  Step 7.2's uniform meta card instances. `rules/shop.ts`'s `TIER_LADDER`/`nextTier` lost the
+  terminal `'unlimited'` rung (the ladder now ends at ×8); `rules/collection.ts`'s `OwnedCards` is
+  now a plain `Record<string, number>` (`copiesOwned`/`isOwned` simplified to match), and
+  `rules/deckBuilder.ts`'s `addCard` lost its `'unlimited'`-skips-the-cap branch. `CardFace`'s
+  `countBadge` prop dropped its `'unlimited'` arm (no more "∞" badge; `Shop.tsx`'s tier-upgrade
+  label too). `content/collection.ts`'s `STARTING_COLLECTION` reseeded the three basics that were
+  `'unlimited'` (settlers/corvee/harvest) to `2` each — matching every other starting card's "just
+  enough for the starting deck" count, since the starting deck only ever needs 2 of each. Pre-alpha:
+  no migration.
 - **Phase 3 Step 6.3c — Creeping Decay infinite mission** — the first *real* infinite mission,
   and the first *escalating* threat. **Creeping Decay** (`content/cards.ts`, a `threat` card) owns
   its drain via a bespoke `resolve` — reads its own `getCounter(self, 'level')`, scales a base

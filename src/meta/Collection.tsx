@@ -12,7 +12,7 @@ import styles from './Collection.module.css';
  * so nothing here should hint at what's still out there, including a total count.
  * Cards render as the same `CardFace` tiles as the deck editor's picker grid, grouped
  * by kind; clicking one opens the run loop's card-zoom overlay. Each tile carries its
- * own `countBadge` (copies owned — ×2/×4/∞), the same badge the deck banner/pile viewer
+ * own `countBadge` (copies owned — ×2/×4/×8), the same badge the deck banner/pile viewer
  * use for deck-count.
  */
 export function Collection({ collection }: { collection: OwnedCards }) {

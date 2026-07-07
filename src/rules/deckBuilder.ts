@@ -23,16 +23,14 @@ export const MAX_DECKS = 6;
  *  Also enforces the copy cap (Phase 3 Step 2): `deck` may not hold more copies of
  *  `cardId` than `collection` owns (an absent/zero entry, i.e. not yet unlocked, so
  *  rejects the same as any other invalid add — a locked card was never offered to add
- *  in the first place, see `DeckEditor.tsx`'s picker filter). `'unlimited'` never caps. */
+ *  in the first place, see `DeckEditor.tsx`'s picker filter). */
 export function addCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
   if (!(cardId in CARDS)) return 'invalid';
   // Event and threat cards are mission-injected only — never player-editable into a deck.
   if (CARDS[cardId].kind === 'event' || CARDS[cardId].kind === 'threat') return 'invalid';
   const owned = copiesOwned(collection, cardId);
-  if (owned !== 'unlimited') {
-    const current = deck.filter((id) => id === cardId).length;
-    if (current >= owned) return 'invalid';
-  }
+  const current = deck.filter((id) => id === cardId).length;
+  if (current >= owned) return 'invalid';
   return [...deck, cardId];
 }
 

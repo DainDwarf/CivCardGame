@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { nextTier, buyTier } from './shop';
 
 describe('nextTier', () => {
-  it('walks the ×1 → ×2 → ×4 → unlimited ladder with its costs', () => {
+  it('walks the ×1 → ×2 → ×4 → ×8 ladder with its costs', () => {
     expect(nextTier(1)).toEqual({ to: 2, cost: 1 });
     expect(nextTier(2)).toEqual({ to: 4, cost: 2 });
-    expect(nextTier(4)).toEqual({ to: 'unlimited', cost: 5 });
+    expect(nextTier(4)).toEqual({ to: 8, cost: 5 });
   });
 
-  it('returns null at the terminal tier (unlimited)', () => {
-    expect(nextTier('unlimited')).toBeNull();
+  it('returns null at the terminal tier (×8)', () => {
+    expect(nextTier(8)).toBeNull();
   });
 
   it('returns null for a not-owned card (0 copies) and off-ladder counts', () => {
@@ -24,9 +24,9 @@ describe('buyTier', () => {
     expect(result).toEqual({ influence: 4, collection: { farm: 2 } });
   });
 
-  it('upgrades ×4 to unlimited', () => {
+  it('upgrades ×4 to ×8', () => {
     const result = buyTier({ farm: 4 }, 5, 'farm');
-    expect(result).toEqual({ influence: 0, collection: { farm: 'unlimited' } });
+    expect(result).toEqual({ influence: 0, collection: { farm: 8 } });
   });
 
   it('does not mutate the input collection', () => {
@@ -40,7 +40,7 @@ describe('buyTier', () => {
   });
 
   it('returns null when the card is already at its cap', () => {
-    expect(buyTier({ farm: 'unlimited' }, 99, 'farm')).toBeNull();
+    expect(buyTier({ farm: 8 }, 99, 'farm')).toBeNull();
   });
 
   it('returns null when the player cannot afford the upgrade', () => {

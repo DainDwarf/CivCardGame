@@ -72,12 +72,10 @@ export function DeckEditor({
   const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');
 
-  // Copies of `cardId` still available to add — owned minus what's already in the deck,
-  // 'unlimited' passed through untouched. Shared by `atCap` and the picker's badge so both
-  // read the same number.
-  function remainingCopies(cardId: string): number | 'unlimited' {
+  // Copies of `cardId` still available to add — owned minus what's already in the deck.
+  // Shared by `atCap` and the picker's badge so both read the same number.
+  function remainingCopies(cardId: string): number {
     const owned = copiesOwned(collection, cardId);
-    if (owned === 'unlimited') return 'unlimited';
     const inDeck = deck.cards.filter((id) => id === cardId).length;
     return Math.max(0, owned - inDeck);
   }
@@ -86,18 +84,16 @@ export function DeckEditor({
   // (rules/deckBuilder.ts) so the picker tile can visually reflect the same limit rather
   // than just silently no-opping on click/drag.
   function atCap(cardId: string): boolean {
-    const remaining = remainingCopies(cardId);
-    return remaining !== 'unlimited' && remaining <= 0;
+    return remainingCopies(cardId) <= 0;
   }
 
   // The picker's count badge shows *remaining* copies, not total owned — how many more of
   // this card can still be added. A card owned only once never shows a badge at all (the
   // ×N badge is only meaningful when there's a stack to distinguish from).
-  function pickerBadge(cardId: string): number | 'unlimited' | undefined {
+  function pickerBadge(cardId: string): number | undefined {
     const owned = copiesOwned(collection, cardId);
-    if (owned === 'unlimited') return 'unlimited';
     if (owned <= 1) return undefined;
-    return remainingCopies(cardId) as number;
+    return remainingCopies(cardId);
   }
 
   function handleAdd(cardId: string) {

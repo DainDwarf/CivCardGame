@@ -166,7 +166,17 @@ forcing Production negative and tripping the universal `coreCollapse` → `'ruin
 is its only ending — at which point `computeRewards`'s existing infinite branch pays Influence =
 rounds survived. No gameover-overlay, campaign-map, or reward-plumbing changes were needed: the
 generic `'infinite'`-kind handling already built in Step 6.2 rendered and scored a real infinite
-mission with zero further changes. Still to come:
+mission with zero further changes. **Phase 3 Step 7.1** (bounded copy tiers) is also done — the
+first substep of the Step 7 card-stickers rework: `rules/collection.ts`'s `OwnedCards` is now a
+plain `Record<string, number>` — the `'unlimited'` tier is gone, so every owned count is bounded
+(instantiable), the precondition Step 7.2's uniform meta card instances needs. `rules/shop.ts`'s
+`TIER_LADDER` now ends at ×8 (dropping the terminal `'unlimited'` rung) and `nextTier`/`buyTier`
+lost their `'unlimited'` special-casing; `rules/deckBuilder.ts`'s `addCard` lost its
+`'unlimited'`-never-caps branch, since the owned count is now always a plain number to compare
+against. `CardFace`'s `countBadge` prop dropped its `'unlimited'`/"∞" arm (`Shop.tsx`'s
+tier-upgrade label too — just `×N` now). `content/collection.ts`'s `STARTING_COLLECTION` reseeded
+the three basics that were `'unlimited'` (settlers/corvee/harvest) to `2` each, matching every
+other starting card's "just enough for the starting deck" count. Still to come:
 tutorial missions (Step 8), and `Stats` surfacing a per-run reward
 (deferred since `RunResult` deliberately excludes
 rewards, and there's no per-run record of whether that run was a first clear).

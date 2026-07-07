@@ -155,11 +155,11 @@ export type CardFaceProps =
       card: CardDef;
       faceDown?: false;
       /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile
-       *  viewer), or "∞" for `'unlimited'` (Collection / deck editor picker, showing copies
-       *  owned). Suppressed at exactly 1 unless `alwaysShowBadge` opts in — a lone card in a
-       *  stack doesn't need a "×1", but the deck editor picker's *remaining-copies* badge does
-       *  (1 left to add is still worth stating), so it sets that flag explicitly. */
-      countBadge?: number | 'unlimited';
+       *  viewer, Collection / deck editor picker showing copies owned). Suppressed at
+       *  exactly 1 unless `alwaysShowBadge` opts in — a lone card in a stack doesn't need
+       *  a "×1", but the deck editor picker's *remaining-copies* badge does (1 left to add
+       *  is still worth stating), so it sets that flag explicitly. */
+      countBadge?: number;
       /** Shows `countBadge` even when it's exactly `1` (or `0`) instead of only `> 1`. See
        *  `countBadge`'s doc for why the deck editor picker needs this and stack-count badges
        *  elsewhere don't. */
@@ -269,9 +269,9 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
       </div>
       {conditions && <div className={styles.cardConditions}>{conditions}</div>}
       {text && <div className={styles.cardText}>{text}</div>}
-      {countBadge !== undefined && (countBadge === 'unlimited' || countBadge > 1 || alwaysShowBadge) && (
+      {countBadge !== undefined && (countBadge > 1 || alwaysShowBadge) && (
         <span className={`${styles.countBadge}${badgeClassName ? ` ${badgeClassName}` : ''}`}>
-          {countBadge === 'unlimited' ? '∞' : `×${countBadge}`}
+          ×{countBadge}
         </span>
       )}
     </>

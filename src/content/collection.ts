@@ -6,9 +6,9 @@ import type { OwnedCards } from '../rules/collection';
  * starting deck. Everything else is unlocked through missions.
  */
 export const STARTING_COLLECTION: OwnedCards = {
-  settlers: 'unlimited',
-  corvee: 'unlimited',
-  harvest: 'unlimited',
+  settlers: 2,
+  corvee: 2,
+  harvest: 2,
   farm: 2,
   workshop: 2,
   library: 1,

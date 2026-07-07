@@ -7,10 +7,10 @@ import styles from './Shop.module.css';
 
 /**
  * The Shop screen (Phase 3 Step 5.2): spend Influence (⭐) to deepen cards you already own,
- * raising each along the copy-tier ladder ×1 → ×2 → ×4 → unlimited (`rules/shop.ts`). The shop
+ * raising each along the copy-tier ladder ×1 → ×2 → ×4 → ×8 (`rules/shop.ts`). The shop
  * sells *depth* only — new cards come from mission unlocks, never here (docs/DESIGN.md,
  * "Economy & progression"). Only *upgradeable* owned cards are listed: `nextTier` returns null
- * for a maxed (unlimited) or not-yet-owned card, so that one predicate both hides the ∞ basics
+ * for a maxed (×8) or not-yet-owned card, so that one predicate both hides maxed cards
  * and excludes anything not unlocked. Buying is one click — a purchase only ever adds copies,
  * so there's no confirm step. Tiles mirror `Collection.tsx`'s grouped grid.
  */
@@ -35,7 +35,7 @@ export function Shop({
   function tile(c: CardDef) {
     const up = nextTier(copiesOwned(collection, c.id))!; // filtered to upgradeable above
     const affordable = influence >= up.cost;
-    const target = up.to === 'unlimited' ? '∞' : `×${up.to}`;
+    const target = `×${up.to}`;
     return (
       <div key={c.id} className={styles.tileWrap}>
         <CardFace card={c} className={styles.tile} countBadge={copiesOwned(collection, c.id)} alwaysShowBadge />

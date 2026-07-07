@@ -4,25 +4,25 @@ import type { DeckDef } from '../content/decks';
 import type { OwnedCards } from './collection';
 
 // Generous ownership so tests unrelated to the copy cap aren't gated by it.
-const UNLIMITED: OwnedCards = { farm: 'unlimited', library: 'unlimited' };
+const GENEROUS: OwnedCards = { farm: 8, library: 8 };
 
 describe('addCard', () => {
   it('appends a valid card', () => {
-    expect(addCard(['farm'], 'library', UNLIMITED)).toEqual(['farm', 'library']);
+    expect(addCard(['farm'], 'library', GENEROUS)).toEqual(['farm', 'library']);
   });
 
   it('rejects an unknown cardId', () => {
-    expect(addCard(['farm'], 'not-a-card', UNLIMITED)).toBe('invalid');
+    expect(addCard(['farm'], 'not-a-card', GENEROUS)).toBe('invalid');
   });
 
   it('does not mutate the input', () => {
     const deck = ['farm'];
-    addCard(deck, 'library', UNLIMITED);
+    addCard(deck, 'library', GENEROUS);
     expect(deck).toEqual(['farm']);
   });
 
   it('works starting from an empty deck', () => {
-    expect(addCard([], 'farm', UNLIMITED)).toEqual(['farm']);
+    expect(addCard([], 'farm', GENEROUS)).toEqual(['farm']);
   });
 
   it('rejects a not-yet-unlocked card', () => {
@@ -35,18 +35,13 @@ describe('addCard', () => {
     expect(addCard(['farm', 'farm'], 'farm', owns2)).toBe('invalid');
   });
 
-  it('never caps an unlimited card', () => {
-    const owns: OwnedCards = { farm: 'unlimited' };
-    expect(addCard(['farm', 'farm', 'farm'], 'farm', owns)).toEqual(['farm', 'farm', 'farm', 'farm']);
-  });
-
   it('rejects an event card even if somehow "owned"', () => {
-    const owns: OwnedCards = { barbarian: 'unlimited' };
+    const owns: OwnedCards = { barbarian: 8 };
     expect(addCard([], 'barbarian', owns)).toBe('invalid');
   });
 
   it('rejects a threat card even if somehow "owned"', () => {
-    const owns: OwnedCards = { harsh_winter: 'unlimited' };
+    const owns: OwnedCards = { harsh_winter: 8 };
     expect(addCard([], 'harsh_winter', owns)).toBe('invalid');
   });
 });
