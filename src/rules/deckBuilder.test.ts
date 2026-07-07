@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { addCard, removeCard, groupCounts, resolveDeckCards, buildSeedDecks } from './deckBuilder';
+import { addCard, removeCard, groupCounts, resolveDeckCards, buildSeedDecks, decksContaining } from './deckBuilder';
 import type { DeckDef, DeckSeed } from '../content/decks';
 import { collectionFromCounts, type OwnedCards } from './collection';
 
@@ -108,6 +108,22 @@ describe('resolveDeckCards', () => {
 
   it('returns undefined for an unresolvable deckId', () => {
     expect(resolveDeckCards('nope', decks, GENEROUS)).toBeUndefined();
+  });
+});
+
+describe('decksContaining', () => {
+  const decks: DeckDef[] = [
+    { id: 'a', name: 'A', cards: [farmId(0)] },
+    { id: 'b', name: 'B', cards: [farmId(0), libraryId(0)] },
+    { id: 'c', name: 'C', cards: [libraryId(1)] },
+  ];
+
+  it('finds every deck holding the instance', () => {
+    expect(decksContaining(farmId(0), decks).map((d) => d.id)).toEqual(['a', 'b']);
+  });
+
+  it('returns an empty list for an owned instance in no deck', () => {
+    expect(decksContaining(farmId(1), decks)).toEqual([]);
   });
 });
 

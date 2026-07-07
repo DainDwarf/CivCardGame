@@ -70,6 +70,13 @@ export function resolveDeckCards(deckId: string, decks: DeckDef[], collection: O
     .filter((cardId): cardId is string => cardId !== undefined);
 }
 
+/** Every deck currently holding `instanceId` (Phase 3 Step 7.3 — the Collection screen's
+ *  per-instance view uses this so a copy's deck membership is visible *before* a future
+ *  sticker, Step 7.5, singles it out). Empty if the instance is owned but sits in no deck. */
+export function decksContaining(instanceId: string, decks: DeckDef[]): DeckDef[] {
+  return decks.filter((d) => d.cards.includes(instanceId));
+}
+
 /** Turns content-authored `DeckSeed`s (cardIds) into real, player-store `DeckDef`s
  *  (instance ids) by matching each cardId occurrence to an owned instance off `collection`
  *  — in `instancesOf` order, consuming each instance at most once across all seeds so two

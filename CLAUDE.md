@@ -204,7 +204,15 @@ instance→cardId translation; every meta screen that displays or launches a dec
 (`App.tsx`/`MetaMenu.tsx`/`CampaignMap.tsx`/`Decks.tsx`/`DeckDisplay.tsx`) threads `collection`
 down to it. `parsePlayerStore` also gained a shape check on `collection.instances`/`nextId`
 (not just "is an object") so a pre-Step-7.2 save resets to a fresh store instead of crashing
-deep inside `copiesOwned`. Still to come:
+deep inside `copiesOwned`. **Phase 3 Step 7.3** (Collection per-instance view) is also done —
+the anti-surprise mechanism a future sticker (Step 7.5) needs: clicking an owned card tile in
+`Collection.tsx` now opens `meta/CardInstancePanel.tsx` instead of jumping straight to the card
+zoom — a row per owned instance ("Farm 1/2", "Farm 2/2"), each naming the deck(s) it currently
+sits in or "unused", via the new `rules/deckBuilder.ts`'s `decksContaining(instanceId, decks)`
+(filters decks whose `cards` includes that instance id). Clicking a row still opens the shared
+`CardZoomOverlay` — every instance renders identically today, since there's no sticker field
+yet. `Collection.tsx` gained a `decks` prop (threaded from `MetaMenu.tsx`, which already held
+it) purely to resolve that usage text. Still to come:
 tutorial missions (Step 8), and `Stats` surfacing a per-run reward
 (deferred since `RunResult` deliberately excludes
 rewards, and there's no per-run record of whether that run was a first clear).

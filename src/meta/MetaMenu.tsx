@@ -106,7 +106,7 @@ export function MetaMenu({
         {screen === 'mission' && (
           <CampaignMap decks={decks} collection={collection} mapProgress={mapProgress} uiScale={uiScale} onLaunch={onLaunch} />
         )}
-        {screen === 'collection' && <Collection collection={collection} />}
+        {screen === 'collection' && <Collection collection={collection} decks={decks} />}
         {screen === 'shop' && <Shop collection={collection} influence={influence} onBuyTier={onBuyTier} />}
         {screen === 'decks' && (
           <Decks

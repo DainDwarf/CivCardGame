@@ -61,12 +61,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     `[size: S]` `[phase: 3]`
   - **Step 7.2 — Uniform meta card instances** — ✅ done — see *Done / shipped* below.
     `[size: L]` `[phase: 3]`
-  - **Step 7.3 — Collection per-instance view** — clicking a grouped card stack in `Collection.tsx`
-    opens a per-instance detail (Farm 1/2, Farm 2/2), each showing its deck usage ("in *Aggro*,
-    *Midrange*" / "unused"). This is the anti-surprise mechanism: attaching a sticker (7.5) becomes an
-    *explicit, informed* pick of one instance whose consequences (which decks it's in) are on screen
-    before the click — killing both failure directions (a surprise sticker in a deck you didn't mean to
-    touch, or a sticker landing on the shelf copy instead of the decked one). `[size: M]` `[phase: 3]`
+  - **Step 7.3 — Collection per-instance view** — ✅ done — see *Done / shipped* below.
+    `[size: M]` `[phase: 3]`
   - **Step 7.4 — Ordered deck assignment** — the deck editor assigns *fungible* copies by a deterministic
     order (first Farm added → 1/2, second → 2/2; removal pops the highest-index in-deck instance first) so
     instance→deck identity stays stable and low-churn as decks are edited. This is the default for still-
@@ -210,6 +206,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 7.3 — Collection per-instance view** — clicking a card tile in `Collection.tsx`
+  now opens `meta/CardInstancePanel.tsx` instead of jumping straight to the card zoom: a row per
+  owned instance ("Farm 1/2", "Farm 2/2"), each naming the deck(s) it currently sits in (via the
+  new `rules/deckBuilder.ts`'s `decksContaining(instanceId, decks)`, filtering decks whose `cards`
+  includes that instance id) or "unused" if it's in none. Clicking a row opens the same shared
+  `CardZoomOverlay` (every instance looks identical today — no sticker field yet, Step 7.5).
+  This is the anti-surprise mechanism Step 7.5 needs: attaching a future sticker becomes an
+  *informed* pick of one instance whose deck consequences are already on screen, rather than a
+  surprise landing on the wrong copy. `Collection.tsx` now takes a `decks` prop (threaded from
+  `MetaMenu.tsx`, which already had it) to resolve usage.
 - **Phase 3 Step 7.2 — Uniform meta card instances** — the collection stops being a per-cardId
   count and becomes a set of identified copies: `rules/collection.ts`'s `OwnedCards` is now
   `{ instances: MetaCardInstance[], nextId }` (`MetaCardInstance` just `{ id, cardId }` — no

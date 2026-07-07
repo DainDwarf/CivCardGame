@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { CARDS } from '../content/cards';
+import type { DeckDef } from '../content/decks';
 import { CardFace } from '../components/CardFace';
-import { CardZoomOverlay } from '../components/CardZoomOverlay';
 import { copiesOwned, isOwned, type OwnedCards } from '../rules/collection';
+import { CardInstancePanel } from './CardInstancePanel';
 import styles from './Collection.module.css';
 
 /**
@@ -11,12 +12,14 @@ import styles from './Collection.module.css';
  * (not shown locked/greyed) — unlocking it via a mission is meant to be a surprise,
  * so nothing here should hint at what's still out there, including a total count.
  * Cards render as the same `CardFace` tiles as the deck editor's picker grid, grouped
- * by kind; clicking one opens the run loop's card-zoom overlay. Each tile carries its
- * own `countBadge` (copies owned — ×2/×4/×8), the same badge the deck banner/pile viewer
- * use for deck-count.
+ * by kind; clicking one opens `CardInstancePanel` (Phase 3 Step 7.3) — the per-copy
+ * detail view (Farm 1/2, Farm 2/2) with each instance's deck usage, the anti-surprise
+ * mechanism a future sticker (Step 7.5) needs before it can single out one copy. Each
+ * tile still carries its own `countBadge` (copies owned — ×2/×4/×8), the same badge the
+ * deck banner/pile viewer use for deck-count.
  */
-export function Collection({ collection }: { collection: OwnedCards }) {
-  const [zoom, setZoom] = useState<string | null>(null);
+export function Collection({ collection, decks }: { collection: OwnedCards; decks: DeckDef[] }) {
+  const [detail, setDetail] = useState<string | null>(null);
 
   // Event and threat cards are mission-injected and never part of the player's collection.
   const cards = Object.values(CARDS).filter(
@@ -41,7 +44,7 @@ export function Collection({ collection }: { collection: OwnedCards }) {
                 card={c}
                 className={styles.tile}
                 countBadge={copiesOwned(collection, c.id)}
-                onClick={() => setZoom(c.id)}
+                onClick={() => setDetail(c.id)}
               />
             ))}
           </div>
@@ -58,7 +61,7 @@ export function Collection({ collection }: { collection: OwnedCards }) {
                 card={c}
                 className={styles.tile}
                 countBadge={copiesOwned(collection, c.id)}
-                onClick={() => setZoom(c.id)}
+                onClick={() => setDetail(c.id)}
               />
             ))}
           </div>
@@ -75,14 +78,16 @@ export function Collection({ collection }: { collection: OwnedCards }) {
                 card={c}
                 className={styles.tile}
                 countBadge={copiesOwned(collection, c.id)}
-                onClick={() => setZoom(c.id)}
+                onClick={() => setDetail(c.id)}
               />
             ))}
           </div>
         </>
       )}
 
-      <CardZoomOverlay cardId={zoom} onClose={() => setZoom(null)} hint="Click anywhere to close" />
+      {detail && (
+        <CardInstancePanel cardId={detail} collection={collection} decks={decks} onClose={() => setDetail(null)} />
+      )}
     </div>
   );
 }
