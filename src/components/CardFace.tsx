@@ -198,7 +198,7 @@ export type CardFaceProps =
   | (CardFaceCommonProps & {
       /** Renders a grey face-down back instead of a real card — the same header/banner/
        *  description band layout as a real face, all blank, plus a "?" glyph — the pre-clear
-       *  stand-in for a mission's still-secret unlock (`CampaignMap.tsx`'s `MissionDetailPanel`),
+       *  stand-in for a mission's still-secret unlock (`CampaignMap.tsx`'s `MissionFlowPopup`),
        *  since there's no `CardDef` to show yet. No `card`/badge props apply in this mode. */
       faceDown: true;
     });

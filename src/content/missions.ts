@@ -16,7 +16,7 @@ export interface MissionDef {
   id: string;
   name: string;
   /** Narrative flavour text — the bulk of the mission detail panel
-   *  (`meta/CampaignMap.tsx`'s `MissionDetailPanel`). Distinct from `description`, which
+   *  (`meta/CampaignMap.tsx`'s `MissionFlowPopup`, 'detail' step). Distinct from `description`, which
    *  states the mechanical objective. */
   lore: string;
   description: string;

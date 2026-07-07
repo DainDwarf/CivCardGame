@@ -140,7 +140,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **Stable card ordering across views** — cards currently "move around" when adding/removing in the deck editor (and potentially other card grids); pick a sensible, stable sort order (by kind? cost? catalogue order?) and apply it consistently everywhere cards are listed — collection, deck editor picker/banner, pile viewers. `[size: S] [?] `
-- **Bug: white flash between mission lore panel and board/deck popup** — Step 5.3's `MissionDetailPanel` → `LaunchPopup` handoff on "Continue" shows a brief white flash, likely the backdrop unmounting/remounting between the two modals rather than one panel morphing into the next. `[size: S]` `[phase: 3]`
 - **Barbarian Tide's lore should show the Barbarian card** — `MissionDetailPanel` (Step 5.3) only shows the mission's *reward* card face; Barbarian Tide's lore column should also preview the Barbarian event card itself, since that's the card the mission is actually about. Also applies to threat cards in Long Winter and Long Decline `[size: S]` `[?]` `[phase: 3]`
 - **Mission Lore cards should be click-to-zoom** — any `CardFace` shown in `MissionDetailPanel` (the reward unlock, and the Barbarian preview above) should open the shared `CardZoomOverlay` on click, same as hand/pile-viewer/Collection cards. `[size: S]` `[phase: 3]`
 - **Bug: worker-drag start looks disabled when no idle population is free** — dragging a worker off a building/Work box onto another building's staffing area, when there's no idle population available to complete the move, shows the OS "unavailable" cursor because the staff-toggle `<button>` is `disabled`. That reads as "you can't drag this" rather than "there's nowhere for it to go yet," which will confuse the player. `[size: S]` `[?]`
@@ -230,6 +229,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Bug fix: white flash between mission lore panel and board/deck popup** — root cause matched
+  the TODO's hypothesis: `MissionDetailPanel` and `LaunchPopup` (`meta/CampaignMap.tsx`) were two
+  separate components, each mounting its own `.popupBackdrop` (which carries a mount-time `fadeIn`
+  animation from `opacity: 0`). Clicking "Continue" unmounted the first backdrop and mounted the
+  second, replaying that fade-in from transparent and briefly exposing the light screen behind.
+  Fixed by merging both into one `MissionFlowPopup` component sharing a single, persistent
+  backdrop/popup shell across both steps (`step: 'detail' | 'launch'` on one `flow` state instead
+  of two separate `detail`/`launching` state slots) — "Continue" now just flips `step`, swapping
+  the inner content only, so the backdrop never remounts and the fade-in never replays.
 - **Phase 3 Step 7.9 (item 1/4) — Distinct sticker icons** — `content/stickers.ts`'s `StickerDef`
   gained an `icon` field (💪 Reinforced, ⚡ Efficient, 💧 Irrigation); `CardFace`'s `stickerBadge`
   prop changed from a bare boolean to the attached sticker id(s), rendering each one's own icon

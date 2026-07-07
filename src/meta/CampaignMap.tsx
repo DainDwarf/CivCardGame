@@ -58,9 +58,9 @@ function describeBoard(board: (typeof BOARDS)[BoardId]): string {
  *
  * Ages (`content/ages.ts`) label ranges of the timeline as right-arrow bands across the top; only a
  * single "Testing" placeholder ships for now. Clicking a cleared/available node opens
- * `MissionDetailPanel` first — lore, explanation, and a reward preview; its "Continue" hands off to
- * `LaunchPopup` (board picker left, deck picker right), which assembles the `RunConfig` and calls
- * `onLaunch`.
+ * `MissionFlowPopup` on its 'detail' step — lore, explanation, and a reward preview; its "Continue"
+ * advances the same popup to its 'launch' step (board picker left, deck picker right), which
+ * assembles the `RunConfig` and calls `onLaunch`.
  */
 export function CampaignMap({
   decks,
@@ -88,10 +88,11 @@ export function CampaignMap({
   const nodeAreaHeight = PAD_Y * 2 + maxRow * ROW_H + NODE_H;
 
   // Two-step launch flow: a node click opens the detail panel (lore, explanation,
-  // reward); its "Continue" hands off to the board/deck launch popup. Only cleared/available
-  // nodes set either.
-  const [detail, setDetail] = useState<MissionDef | null>(null);
-  const [launching, setLaunching] = useState<MissionDef | null>(null);
+  // reward); its "Continue" advances to the board/deck picker. Both steps render inside one
+  // persistent popup (see MissionFlowPopup) so the backdrop never unmounts/remounts between
+  // them — that remount was the source of a white-flash bug (the backdrop's fade-in replaying
+  // from transparent on every mount).
+  const [flow, setFlow] = useState<{ mission: MissionDef; step: 'detail' | 'launch' } | null>(null);
 
   // Drag-to-pan: grabbing empty canvas scrolls it horizontally. Nodes stopPropagation on
   // their own pointerdown so a pan never starts from a node (avoids click/drag ambiguity).
@@ -179,7 +180,7 @@ export function CampaignMap({
                   disabled={locked}
                   title={locked ? 'Complete its prerequisite to reveal this.' : undefined}
                   onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => !locked && setDetail(m)}
+                  onClick={() => !locked && setFlow({ mission: m, step: 'detail' })}
                 >
                   <span className={styles.nodeGlyph} aria-hidden="true">
                     {cleared ? '✓' : locked ? '🔒' : '▶'}
@@ -207,7 +208,7 @@ export function CampaignMap({
               key={m.id}
               type="button"
               className={styles.infiniteNode}
-              onClick={() => setDetail(m)}
+              onClick={() => setFlow({ mission: m, step: 'detail' })}
             >
               <span className={styles.nodeGlyph} aria-hidden="true">♾️</span>
               <span className={styles.infiniteNodeText}>
@@ -219,24 +220,16 @@ export function CampaignMap({
         </div>
       )}
 
-      {detail && (
-        <MissionDetailPanel
-          mission={detail}
-          alreadyCleared={isCompleted(mapProgress, detail.id)}
-          onCancel={() => setDetail(null)}
-          onContinue={() => {
-            setLaunching(detail);
-            setDetail(null);
-          }}
-        />
-      )}
-
-      {launching && (
-        <LaunchPopup
-          mission={launching}
+      {flow && (
+        <MissionFlowPopup
+          key={flow.mission.id}
+          mission={flow.mission}
+          step={flow.step}
+          alreadyCleared={isCompleted(mapProgress, flow.mission.id)}
           decks={decks}
           collection={collection}
-          onClose={() => setLaunching(null)}
+          onCancel={() => setFlow(null)}
+          onContinue={() => setFlow({ mission: flow.mission, step: 'launch' })}
           onLaunch={onLaunch}
         />
       )}
@@ -245,103 +238,47 @@ export function CampaignMap({
 }
 
 /**
- * The mission detail panel — the first step of the launch flow, inserted between the map and
- * `LaunchPopup`. Same modal shell/size as `LaunchPopup` (`styles.popup`) so the two steps feel like
- * one flow. Left column is narrative lore plus the mechanical explanation (objective/failure hints);
- * right column is the reward. A `'standard'` mission shows Influence (struck through once already
- * claimed) and the unlock — the real card face once cleared (under a "Cards already unlocked"
- * subtitle), or `CardFace`'s `faceDown` mode beforehand, since which card a mission grants stays a
- * surprise until it's actually cleared (see `rules/rewards.ts`). An `'infinite'` mission has neither
- * a fixed Influence amount nor an unlock — it scores rounds survived every attempt — so it gets its
- * own reward line instead.
+ * The launch flow's popup — one persistent `styles.popupBackdrop`/`styles.popup` shell shared by
+ * both steps ('detail' then 'launch'), so advancing via "Continue" only swaps the inner content,
+ * never unmounts/remounts the backdrop. (An earlier version rendered the two steps as separate
+ * components, each with its own backdrop; the backdrop's mount-time `fadeIn` animation replaying
+ * from `opacity: 0` on that remount caused a visible white flash between steps.)
+ *
+ * **Detail step** — lore, the mechanical explanation (objective/failure hints), and a reward
+ * preview. A `'standard'` mission shows Influence (struck through once already claimed) and the
+ * unlock — the real card face once cleared (under a "Cards already unlocked" subtitle), or
+ * `CardFace`'s `faceDown` mode beforehand, since which card a mission grants stays a surprise until
+ * it's actually cleared (see `rules/rewards.ts`). An `'infinite'` mission has neither a fixed
+ * Influence amount nor an unlock — it scores rounds survived every attempt — so it gets its own
+ * reward line instead.
+ *
+ * **Launch step** — a board picker on the left, a deck picker on the right (lore/reward already
+ * shown in the detail step). Nothing is pre-selected; "Start Mission" stays disabled until the
+ * player has chosen both. Clicking an unselected deck selects it; clicking the already-selected
+ * deck opens its list-view (`DeckListOverlay`, no edit/copy/delete).
  */
-function MissionDetailPanel({
+function MissionFlowPopup({
   mission,
+  step,
   alreadyCleared,
-  onCancel,
-  onContinue,
-}: {
-  mission: MissionDef;
-  alreadyCleared: boolean;
-  onCancel: () => void;
-  onContinue: () => void;
-}) {
-  const infinite = mission.kind === 'infinite';
-  const unlockCard = mission.reward ? CARDS[mission.reward.unlockCardId] : null;
-  return (
-    <div className={styles.popupBackdrop} onClick={onCancel} role="dialog" aria-modal="true">
-      <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.popupHeader}>
-          <h2 className={styles.popupTitle}>{mission.name}</h2>
-        </div>
-
-        <div className={styles.detailBody}>
-          <div className={styles.loreColumn}>
-            <p className={styles.loreText}>{mission.lore}</p>
-            <p className={styles.popupDesc}>{mission.description}</p>
-            <p className={styles.popupHints}>
-              🏆 {mission.victoryHint}
-              {mission.failureHint && <> · 💀 {mission.failureHint}</>}
-            </p>
-          </div>
-
-          <div className={styles.rewardColumn}>
-            <h3 className={styles.pickerTitle}>Reward</h3>
-            {infinite ? (
-              <>
-                <p className={styles.rewardInfluence}>⭐ Influence = rounds survived</p>
-                <span className={styles.rewardSubtitle}>No unlock — paid every attempt</span>
-              </>
-            ) : (
-              <>
-                <p className={`${styles.rewardInfluence}${alreadyCleared ? ` ${styles.struckOut}` : ''}`}>
-                  +{mission.reward!.influence} ⭐ Influence
-                </p>
-                <span className={styles.rewardSubtitle}>
-                  {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
-                </span>
-                <div className={styles.rewardCards}>
-                  {alreadyCleared ? <CardFace card={unlockCard!} /> : <CardFace faceDown />}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.popupFooter}>
-          <button type="button" className={styles.cancelBtn} onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="button" className={styles.startBtn} onClick={onContinue}>
-            Continue
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * The node launch panel — the launch flow's second step, reached via `MissionDetailPanel`'s
- * "Continue": a board picker on the left, a deck picker on the right. Lore, explanation, and
- * the reward preview already live in the detail panel, so this step is purely board+deck
- * selection. Nothing is pre-selected; "Start Mission" stays disabled until the player has
- * chosen both. Clicking an unselected deck selects it; clicking the already-selected deck
- * opens its list-view (`DeckListOverlay`, no edit/copy/delete).
- */
-function LaunchPopup({
-  mission,
   decks,
   collection,
-  onClose,
+  onCancel,
+  onContinue,
   onLaunch,
 }: {
   mission: MissionDef;
+  step: 'detail' | 'launch';
+  alreadyCleared: boolean;
   decks: DeckDef[];
   collection: OwnedCards;
-  onClose: () => void;
+  onCancel: () => void;
+  onContinue: () => void;
   onLaunch: (config: RunConfig) => void;
 }) {
+  const infinite = mission.kind === 'infinite';
+  const unlockCard = mission.reward ? CARDS[mission.reward.unlockCardId] : null;
+
   const [boardId, setBoardId] = useState<BoardId | null>(null);
   const [deckId, setDeckId] = useState<string | null>(null);
   // The deck whose list-view overlay is open (opened by re-clicking the selected deck).
@@ -357,60 +294,101 @@ function LaunchPopup({
 
   return (
     <>
-      <div className={styles.popupBackdrop} onClick={onClose} role="dialog" aria-modal="true">
+      <div className={styles.popupBackdrop} onClick={onCancel} role="dialog" aria-modal="true">
         <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
           <div className={styles.popupHeader}>
             <h2 className={styles.popupTitle}>{mission.name}</h2>
           </div>
 
-          <div className={styles.pickers}>
-            <section className={styles.picker}>
-              <h3 className={styles.pickerTitle}>Government</h3>
-              <div className={styles.boardList}>
-                {BOARD_IDS.map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={`${styles.optionCard}${boardId === id ? ` ${styles.selected}` : ''}`}
-                    aria-pressed={boardId === id}
-                    onClick={() => setBoardId(id)}
-                  >
-                    <span className={styles.optionName}>{BOARDS[id].name}</span>
-                    <span className={styles.optionDesc}>{BOARDS[id].description}</span>
-                  </button>
-                ))}
+          {step === 'detail' ? (
+            <div className={styles.detailBody}>
+              <div className={styles.loreColumn}>
+                <p className={styles.loreText}>{mission.lore}</p>
+                <p className={styles.popupDesc}>{mission.description}</p>
+                <p className={styles.popupHints}>
+                  🏆 {mission.victoryHint}
+                  {mission.failureHint && <> · 💀 {mission.failureHint}</>}
+                </p>
               </div>
-              {board && <p className={styles.detail}>{describeBoard(board)}</p>}
-            </section>
 
-            <section className={styles.picker}>
-              <h3 className={styles.pickerTitle}>Deck</h3>
-              {decks.length === 0 ? (
-                <p className={styles.detail}>No decks yet — build one in the Decks tab.</p>
-              ) : (
-                <div className={styles.deckList}>
-                  {decks.map((d) => (
-                    <DeckTile
-                      key={d.id}
-                      deck={d}
-                      collection={collection}
-                      selected={deckId === d.id}
-                      title={deckId === d.id ? "Click to view this deck's cards" : 'Click to select this deck'}
-                      onClick={() => (deckId === d.id ? setViewing(d) : setDeckId(d.id))}
-                    />
+              <div className={styles.rewardColumn}>
+                <h3 className={styles.pickerTitle}>Reward</h3>
+                {infinite ? (
+                  <>
+                    <p className={styles.rewardInfluence}>⭐ Influence = rounds survived</p>
+                    <span className={styles.rewardSubtitle}>No unlock — paid every attempt</span>
+                  </>
+                ) : (
+                  <>
+                    <p className={`${styles.rewardInfluence}${alreadyCleared ? ` ${styles.struckOut}` : ''}`}>
+                      +{mission.reward!.influence} ⭐ Influence
+                    </p>
+                    <span className={styles.rewardSubtitle}>
+                      {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
+                    </span>
+                    <div className={styles.rewardCards}>
+                      {alreadyCleared ? <CardFace card={unlockCard!} /> : <CardFace faceDown />}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className={styles.pickers}>
+              <section className={styles.picker}>
+                <h3 className={styles.pickerTitle}>Government</h3>
+                <div className={styles.boardList}>
+                  {BOARD_IDS.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`${styles.optionCard}${boardId === id ? ` ${styles.selected}` : ''}`}
+                      aria-pressed={boardId === id}
+                      onClick={() => setBoardId(id)}
+                    >
+                      <span className={styles.optionName}>{BOARDS[id].name}</span>
+                      <span className={styles.optionDesc}>{BOARDS[id].description}</span>
+                    </button>
                   ))}
                 </div>
-              )}
-            </section>
-          </div>
+                {board && <p className={styles.detail}>{describeBoard(board)}</p>}
+              </section>
+
+              <section className={styles.picker}>
+                <h3 className={styles.pickerTitle}>Deck</h3>
+                {decks.length === 0 ? (
+                  <p className={styles.detail}>No decks yet — build one in the Decks tab.</p>
+                ) : (
+                  <div className={styles.deckList}>
+                    {decks.map((d) => (
+                      <DeckTile
+                        key={d.id}
+                        deck={d}
+                        collection={collection}
+                        selected={deckId === d.id}
+                        title={deckId === d.id ? "Click to view this deck's cards" : 'Click to select this deck'}
+                        onClick={() => (deckId === d.id ? setViewing(d) : setDeckId(d.id))}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
 
           <div className={styles.popupFooter}>
-            <button type="button" className={styles.cancelBtn} onClick={onClose}>
+            <button type="button" className={styles.cancelBtn} onClick={onCancel}>
               Cancel
             </button>
-            <button type="button" className={styles.startBtn} onClick={start} disabled={!canStart}>
-              Start Mission
-            </button>
+            {step === 'detail' ? (
+              <button type="button" className={styles.startBtn} onClick={onContinue}>
+                Continue
+              </button>
+            ) : (
+              <button type="button" className={styles.startBtn} onClick={start} disabled={!canStart}>
+                Start Mission
+              </button>
+            )}
           </div>
         </div>
       </div>
