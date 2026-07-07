@@ -3,9 +3,8 @@ import type { RunResult } from '../contract';
 import styles from './Stats.module.css';
 
 /**
- * The Stats screen — the run history that used to sit inline on Mission Select
- * (Phase 2 build plan step 6 pulled it out into its own nav entry). Purely a
- * display of `RunResult[]`; `App.tsx` still owns loading/persisting the history.
+ * The Stats screen — the run history, its own nav entry. Purely a display of `RunResult[]`;
+ * `App.tsx` still owns loading/persisting the history.
  */
 export function Stats({ runHistory }: { runHistory: RunResult[] }) {
   return (

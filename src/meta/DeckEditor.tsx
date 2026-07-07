@@ -21,11 +21,11 @@ const DRAG_THRESHOLD = 6;
 /** A card being dragged between the picker and the deck banner. */
 interface DragState {
   cardId: string;
-  /** Set only for a *stickered* instance (Step 7.5) — dragged/clicked by identity rather than
+  /** Set only for a *stickered* instance — dragged/clicked by identity rather than
    *  through `cardId`'s fungible LIFO pool. Absent for a plain copy. */
   instanceId?: string;
   /** The dragged instance's attached sticker ids, carried along so the drag clone can show
-   *  the same per-sticker icon badge (Step 7.9) as the tile it was picked up from. */
+   *  the same per-sticker icon badge as the tile it was picked up from. */
   stickers?: string[];
   source: 'picker' | 'banner';
   pointerId: number;
@@ -43,7 +43,7 @@ interface DragState {
 }
 
 /**
- * Build/edit a single deck (Phase 2 build plan step 7). Edits `initialDeck` in place —
+ * Build/edit a single deck. Edits `initialDeck` in place —
  * every deck is player-owned, so there's no "duplicate a built-in" indirection. Cards are
  * the same run-loop `CardFace` used on the board: a main picker area (grouped by kind, same
  * as before) and a bottom banner representing the deck itself, grouped into ×N stacks like
@@ -64,7 +64,7 @@ export function DeckEditor({
    *  wrapper, so the drag clone's inline coordinates must be divided by it (visual → local),
    *  same as `Board.tsx`. */
   uiScale: number;
-  /** The player's ownership — the picker only ever offers owned cards (Phase 3 Step 2):
+  /** The player's ownership — the picker only ever offers owned cards:
    *  a not-yet-unlocked card is omitted entirely, not shown locked. */
   collection: OwnedCards;
   onSave: (deck: DeckDef) => void;
@@ -86,11 +86,11 @@ export function DeckEditor({
   const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');
 
-  // Unstickered copies of `cardId` still available to add — owned (unstickered pool only,
-  // Step 7.5: a stickered instance is never part of this fungible tile) minus what's already
-  // in the deck. Shared by `atCap` and the picker's badge so both read the same number.
-  // `deck.cards` holds meta instance ids (Phase 3 Step 7.2), so counting "in this deck" means
-  // resolving each instance id back to its cardId via `collection`, not comparing ids directly.
+  // Unstickered copies of `cardId` still available to add — owned (unstickered pool only:
+  // a stickered instance is never part of this fungible tile) minus what's already in the deck.
+  // Shared by `atCap` and the picker's badge so both read the same number. `deck.cards` holds
+  // meta instance ids, so counting "in this deck" means resolving each instance id back to its
+  // cardId via `collection`, not comparing ids directly.
   function remainingCopies(cardId: string): number {
     const owned = unstickeredInstancesOf(collection, cardId).length;
     const inDeck = deck.cards.filter((instanceId) => {
@@ -117,9 +117,9 @@ export function DeckEditor({
     return remainingCopies(cardId);
   }
 
-  // Owned, stickered instances of `cardId` not currently in the deck — Step 7.5's by-identity
-  // picker tiles, one per instance (never grouped, since a sticker makes each worth
-  // distinguishing from its siblings).
+  // Owned, stickered instances of `cardId` not currently in the deck — by-identity picker tiles,
+  // one per instance (never grouped, since a sticker makes each worth distinguishing from its
+  // siblings).
   function stickeredNotInDeck(cardId: string) {
     return instancesOf(collection, cardId).filter((inst) => hasSticker(inst) && !deck.cards.includes(inst.id));
   }
@@ -138,8 +138,7 @@ export function DeckEditor({
     });
   }
 
-  // By-identity add/remove for a stickered instance (Step 7.5) — bypasses the fungible LIFO
-  // pool entirely.
+  // By-identity add/remove for a stickered instance — bypasses the fungible LIFO pool entirely.
   function handleAddInstance(instanceId: string) {
     setDeck((d) => {
       const next = addInstance(d.cards, instanceId, collection);
@@ -240,7 +239,7 @@ export function DeckEditor({
   }, [drag?.pointerId]);
 
   // A card's picker tiles: the fungible ×N tile (only if at least one unstickered copy is
-  // owned) followed by one tile per owned, not-yet-in-deck *stickered* instance (Step 7.5) —
+  // owned) followed by one tile per owned, not-yet-in-deck *stickered* instance —
   // each addressable and draggable by its own identity, never folded into the fungible stack.
   function pickerTiles(c: CardDef): ReactNode[] {
     const tiles: ReactNode[] = [];

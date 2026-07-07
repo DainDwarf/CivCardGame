@@ -6,10 +6,10 @@ import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
 import styles from './Decks.module.css';
 
 /**
- * The Decks screen — every deck in the player's store, fully editable (Phase 2 build
- * plan step 7). There's no "premade" tier anymore: the starting decks are just seed
- * data (`content/decks.ts`'s `DEFAULT_DECKS`) copied into a new player's store, edited
- * and deleted the same as anything the player builds from scratch.
+ * The Decks screen — every deck in the player's store, fully editable. There's no "premade"
+ * tier: the starting decks are just seed data (`content/decks.ts`'s `DEFAULT_DECKS`) copied
+ * into a new player's store, edited and deleted the same as anything the player builds from
+ * scratch.
  *
  * Visually a *shelf of decks*: each deck is a `DeckTile` (a hover-revealed shingled fan of
  * its cards) and clicking one opens a `DeckListOverlay` — both shared with the campaign-map
@@ -32,7 +32,7 @@ export function Decks({
   onDelete,
 }: {
   decks: DeckDef[];
-  /** Resolves each deck's meta instance ids back to cardIds for display (Phase 3 Step 7.2). */
+  /** Resolves each deck's meta instance ids back to cardIds for display. */
   collection: OwnedCards;
   onNew: () => void;
   onEdit: (deck: DeckDef) => void;

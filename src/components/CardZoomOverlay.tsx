@@ -18,13 +18,13 @@ export function CardZoomOverlay({
   cardId: string | null;
   /** A stickered instance's true stats (`rules/stickers.ts`'s `effectiveCard`) — passed by callers
    *  with a real instance to read (Board.tsx's run instances; the meta screens' owned/deck-group
-   *  instances, Step 7.9); absent falls back to the catalogue's plain `CARDS[cardId]`. */
+   *  instances); absent falls back to the catalogue's plain `CARDS[cardId]`. */
   overrideCard?: CardDef;
   /** A dynamic card's live current-value text (see `CardDef.dynamicText`) — passed by callers that
    *  have a real run instance to read (Board.tsx); absent in static contexts (Collection, deck
    *  editor), which fall back to the card's own description. */
   overrideText?: string;
-  /** The zoomed instance's attached sticker id(s) (`CardFace`'s bottom-left badge row, Step 7.9) —
+  /** The zoomed instance's attached sticker id(s) (`CardFace`'s bottom-left badge row) —
    *  shown alongside `overrideCard`'s updated numbers, not instead of them. Absent for a plain
    *  copy or a static context with no instance to read. */
   stickerBadge?: string[];

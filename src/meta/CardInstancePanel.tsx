@@ -9,13 +9,12 @@ import { CardZoomOverlay } from '../components/CardZoomOverlay';
 import styles from './CardInstancePanel.module.css';
 
 /**
- * Step 7.3's anti-surprise mechanism: one owned copy of a card at a time, each row naming
- * the decks it currently sits in ("in Aggro, Midrange") or "unused". Step 7.5 built the
- * sticker on top of exactly this: each row also names any sticker already attached
- * (`content/stickers.ts`'s name), and — in `attach` mode — an unstickered row offers an
- * "Attach ⭐cost" button instead of opening the zoom, so the deck consequences shown here are
- * on screen *before* the pick, not discovered after. Plain browsing (no `attach` prop) keeps
- * the original click-to-zoom behaviour unchanged.
+ * The anti-surprise mechanism: one owned copy of a card at a time, each row naming the decks it
+ * currently sits in ("in Aggro, Midrange") or "unused". The sticker flow builds on exactly this:
+ * each row also names any sticker already attached (`content/stickers.ts`'s name), and — in `attach`
+ * mode — an unstickered row offers an "Attach ⭐cost" button instead of opening the zoom, so the deck
+ * consequences shown here are on screen *before* the pick, not discovered after. Plain browsing (no
+ * `attach` prop) keeps the original click-to-zoom behaviour unchanged.
  */
 export function CardInstancePanel({
   cardId,
@@ -29,8 +28,8 @@ export function CardInstancePanel({
   decks: DeckDef[];
   /** When set, the panel is in sticker-purchase mode (`meta/Shop.tsx`): every row shows an
    *  "Attach" button for this one sticker instead of opening the zoom, disabled (with an
-   *  explanatory title) on a row that's already full (`MAX_STICKERS`, Step 7.7 raised this
-   *  from one to two) or that the player can't afford. Attaching the *same* sticker a row
+   *  explanatory title) on a row that's already full (`MAX_STICKERS`) or that the player can't
+   *  afford. Attaching the *same* sticker a row
    *  already carries is allowed on purpose — it stacks (`rules/stickers.ts`'s `effectiveGain`/
    *  `effectiveCost` count occurrences). */
   attach?: {

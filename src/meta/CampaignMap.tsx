@@ -44,11 +44,10 @@ function describeBoard(board: (typeof BOARDS)[BoardId]): string {
 }
 
 /**
- * The Campaign Map — Phase 3 Step 5.1, replacing the flat `MissionSelect` list. The
- * campaign is humanity's history as a branching tech tree (docs/DESIGN.md): a "long but
- * narrow" horizontal chronology the player scrolls through to orient themselves. Each
- * mission is a node positioned by its authored `map: {col,row}` (`content/missions.ts`),
- * edges are drawn from `prereqs`, and per-node state comes from `rules/campaign.ts`:
+ * The Campaign Map. The campaign is humanity's history as a branching tech tree (docs/DESIGN.md): a
+ * "long but narrow" horizontal chronology the player scrolls through to orient themselves. Each
+ * mission is a node positioned by its authored `map: {col,row}` (`content/missions.ts`), edges are
+ * drawn from `prereqs`, and per-node state comes from `rules/campaign.ts`:
  *
  *  - **cleared** (`isCompleted`) — ✓, replayable, opens the launch popup;
  *  - **available** (`isAvailable`, not yet cleared) — opens the launch popup;
@@ -57,12 +56,11 @@ function describeBoard(board: (typeof BOARDS)[BoardId]): string {
  *    surprise" hide-everything precedent — the node's *existence* orients the player in
  *    history, its *identity* stays hidden), and clicking it is inert.
  *
- * Ages (`content/ages.ts`) label ranges of the timeline as right-arrow bands across the
- * top; only a single "Testing" placeholder ships for now. Clicking a cleared/available
- * node opens `MissionDetailPanel` (Step 5.3) first — lore, explanation, and a reward
- * preview; its "Continue" hands off to `LaunchPopup` (board picker left, deck picker
- * right), which assembles the `RunConfig` and calls `onLaunch`. Same props contract as
- * the old `MissionSelect`.
+ * Ages (`content/ages.ts`) label ranges of the timeline as right-arrow bands across the top; only a
+ * single "Testing" placeholder ships for now. Clicking a cleared/available node opens
+ * `MissionDetailPanel` first — lore, explanation, and a reward preview; its "Continue" hands off to
+ * `LaunchPopup` (board picker left, deck picker right), which assembles the `RunConfig` and calls
+ * `onLaunch`.
  */
 export function CampaignMap({
   decks,
@@ -73,14 +71,14 @@ export function CampaignMap({
 }: {
   decks: DeckDef[];
   /** Resolves each deck's meta instance ids back to cardIds for display, and translates the
-   *  chosen deck into a run's cardId deck via `buildRunConfig` (Phase 3 Step 7.2). */
+   *  chosen deck into a run's cardId deck via `buildRunConfig`. */
   collection: OwnedCards;
   mapProgress: Record<string, true>;
   /** Whole-UI scale (settings) — converts pointer-drag deltas (visual px) to scroll px. */
   uiScale: number;
   onLaunch: (config: RunConfig) => void;
 }) {
-  // 'infinite' missions (Step 6) have no map position and never appear as a timeline node —
+  // 'infinite' missions have no map position and never appear as a timeline node —
   // they're always available, so they live in the bottom banner instead (rendered below).
   const missions = Object.values(MISSIONS).filter((m) => m.kind !== 'infinite');
   const infiniteMissions = Object.values(MISSIONS).filter((m) => m.kind === 'infinite');
@@ -89,7 +87,7 @@ export function CampaignMap({
   const timelineWidth = PAD_X * 2 + maxCol * COL_W + NODE_W;
   const nodeAreaHeight = PAD_Y * 2 + maxRow * ROW_H + NODE_H;
 
-  // Two-step launch flow (Step 5.3): a node click opens the detail panel (lore, explanation,
+  // Two-step launch flow: a node click opens the detail panel (lore, explanation,
   // reward); its "Continue" hands off to the board/deck launch popup. Only cleared/available
   // nodes set either.
   const [detail, setDetail] = useState<MissionDef | null>(null);
@@ -247,15 +245,15 @@ export function CampaignMap({
 }
 
 /**
- * Step 5.3's mission detail panel — the first step of the launch flow, inserted between the
- * map and `LaunchPopup`. Same modal shell/size as `LaunchPopup` (`styles.popup`) so the two
- * steps feel like one flow. Left column is narrative lore plus the mechanical explanation
- * (objective/failure hints); right column is the reward. A `'standard'` mission shows Influence
- * (struck through once already claimed) and the unlock — the real card face once cleared (under
- * a "Cards already unlocked" subtitle), or `CardFace`'s `faceDown` mode beforehand, since which
- * card a mission grants stays a surprise until it's actually cleared (see `rules/rewards.ts`). An
- * `'infinite'` mission (Step 6) has neither a fixed Influence amount nor an unlock — it scores
- * rounds survived every attempt — so it gets its own reward line instead.
+ * The mission detail panel — the first step of the launch flow, inserted between the map and
+ * `LaunchPopup`. Same modal shell/size as `LaunchPopup` (`styles.popup`) so the two steps feel like
+ * one flow. Left column is narrative lore plus the mechanical explanation (objective/failure hints);
+ * right column is the reward. A `'standard'` mission shows Influence (struck through once already
+ * claimed) and the unlock — the real card face once cleared (under a "Cards already unlocked"
+ * subtitle), or `CardFace`'s `faceDown` mode beforehand, since which card a mission grants stays a
+ * surprise until it's actually cleared (see `rules/rewards.ts`). An `'infinite'` mission has neither
+ * a fixed Influence amount nor an unlock — it scores rounds survived every attempt — so it gets its
+ * own reward line instead.
  */
 function MissionDetailPanel({
   mission,
@@ -324,7 +322,7 @@ function MissionDetailPanel({
 }
 
 /**
- * The node launch panel — Step 5.3's second step, reached via `MissionDetailPanel`'s
+ * The node launch panel — the launch flow's second step, reached via `MissionDetailPanel`'s
  * "Continue": a board picker on the left, a deck picker on the right. Lore, explanation, and
  * the reward preview already live in the detail panel, so this step is purely board+deck
  * selection. Nothing is pre-selected; "Start Mission" stays disabled until the player has

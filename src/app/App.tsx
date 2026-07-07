@@ -151,7 +151,7 @@ export function App() {
     persist({ ...store, decks: store.decks.filter((d) => d.id !== id) });
   }
 
-  // The shop's write path (Phase 3 Step 5.2): spend Influence to raise a card's copy tier.
+  // The shop's write path: spend Influence to raise a card's copy tier.
   // `buyTier` is the pure rule (rules/shop.ts) and returns null for an unaffordable / maxed /
   // not-owned card, so a rejected buy is a silent no-op here — the Shop's button is already
   // disabled when unaffordable, making this a backstop like saveDeck's MAX_DECKS check.
@@ -161,7 +161,7 @@ export function App() {
     persist({ ...store, influence: result.influence, collection: result.collection });
   }
 
-  // The sticker shop's write path (Phase 3 Step 7.5): spend Influence to attach a sticker to
+  // The sticker shop's write path: spend Influence to attach a sticker to
   // one chosen owned instance. `buySticker` is the pure rule (rules/stickers.ts) and returns
   // null for an unaffordable / already-stickered / unowned instance, so a rejected attach is a
   // silent no-op here — same backstop pattern as `buyCardTier`.

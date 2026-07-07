@@ -11,17 +11,15 @@ import type { CardDef } from '../content/cards';
 import styles from './Shop.module.css';
 
 /**
- * The Shop screen (Phase 3 Step 5.2, extended by Step 7.5): spend Influence (⭐) to deepen
- * cards you already own — copy-tier upgrades (×1 → ×2 → ×4 → ×8, `rules/shop.ts`) and, since
- * Step 7.5, permanent card stickers (`content/stickers.ts`) attached to one chosen owned
- * instance — up to `MAX_STICKERS` (2, Step 7.7) per instance. The shop sells *depth* only — new
- * cards come from mission unlocks, never here (docs/DESIGN.md, "Economy & progression"). A card
- * is listed if it has *either* a tier left to buy or an owned instance with room for another
- * sticker (`stickerableInstancesOf`) — a card already at ×8 with every copy fully stickered
- * finally drops off the list. Tier-buying stays one click (a
- * purchase only ever adds copies); attaching a sticker needs a target instance, so it opens
- * `CardInstancePanel` in its `attach` mode — the same per-copy picker Step 7.3 built, reused
- * rather than inventing a second one.
+ * The Shop screen: spend Influence (⭐) to deepen cards you already own — copy-tier upgrades
+ * (×1 → ×2 → ×4 → ×8, `rules/shop.ts`) and permanent card stickers (`content/stickers.ts`) attached
+ * to one chosen owned instance, up to `MAX_STICKERS` (2) per instance. The shop sells *depth* only —
+ * new cards come from mission unlocks, never here (docs/DESIGN.md, "Economy & progression"). A card
+ * is listed if it has *either* a tier left to buy or an owned instance with room for another sticker
+ * (`stickerableInstancesOf`) — a card already at ×8 with every copy fully stickered finally drops off
+ * the list. Tier-buying stays one click (a purchase only ever adds copies); attaching a sticker needs
+ * a target instance, so it opens `CardInstancePanel` in its `attach` mode — the same per-copy picker
+ * reused rather than inventing a second one.
  */
 export function Shop({
   collection,
@@ -36,7 +34,7 @@ export function Shop({
   decks: DeckDef[];
   influence: number;
   onBuyTier: (cardId: string) => void;
-  /** Attach a sticker to one chosen owned instance (Phase 3 Step 7.5) — spends Influence and
+  /** Attach a sticker to one chosen owned instance — spends Influence and
    *  mutates that instance in the store (`App.tsx`'s `attachSticker`). */
   onAttachSticker: (instanceId: string, stickerId: string) => void;
 }) {
@@ -45,7 +43,7 @@ export function Shop({
   // Event and threat cards are mission-injected and never part of the player's collection; a
   // card is shown if it's owned *and* has something left to buy — a tier upgrade, or a sticker
   // slot (an owned instance with room) *and* at least one sticker that actually applies to it
-  // (`stickerAppliesTo` — e.g. Irrigation only lists on food buildings, Step 7.8).
+  // (`stickerAppliesTo` — e.g. Irrigation only lists on food buildings).
   const cards = Object.values(CARDS).filter((c) => {
     if (c.kind === 'event' || c.kind === 'threat') return false;
     const owned = copiesOwned(collection, c.id);
@@ -63,7 +61,7 @@ export function Shop({
     const owned = copiesOwned(collection, c.id);
     const up = nextTier(owned);
     const hasStickerSlot = stickerableInstancesOf(collection, c.id).length > 0;
-    // Only offer the stickers that actually apply to this card (Step 7.8) — no per-card
+    // Only offer the stickers that actually apply to this card — no per-card
     // hard-coding here; each sticker's own `appliesTo` decides via `stickerAppliesTo`.
     const applicableStickers = Object.values(STICKERS).filter((s) => stickerAppliesTo(s, c));
     return (

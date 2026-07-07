@@ -28,7 +28,7 @@ export function DeckTile({
   title = "Click to view this deck's cards",
 }: {
   deck: DeckDef;
-  /** Resolves `deck.cards`' meta instance ids back to cardIds for display (Phase 3 Step 7.2). */
+  /** Resolves `deck.cards`' meta instance ids back to cardIds for display. */
   collection: OwnedCards;
   onClick?: () => void;
   selected?: boolean;
@@ -86,7 +86,7 @@ export function DeckListOverlay({
   actions,
 }: {
   deck: DeckDef;
-  /** Resolves `deck.cards`' meta instance ids back to cardIds for display (Phase 3 Step 7.2). */
+  /** Resolves `deck.cards`' meta instance ids back to cardIds for display. */
   collection: OwnedCards;
   onClose: () => void;
   actions?: ReactNode;

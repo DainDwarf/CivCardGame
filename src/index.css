@@ -168,7 +168,7 @@
   --drop-pill-bg: rgba(255, 255, 255, 0.9);
   --drop-pill-text: #2c2c2c;
 
-  /* ── Campaign map (Phase 3 Step 5.1) ──
+  /* ── Campaign map ──
      Age band + DAG edges + the three node states. Node state is signalled by glyph (✓/▶/🔒)
      and a text label as well as color, so these fall through to Light under the CVD themes
      rather than needing per-deficiency overrides (there's a non-color backup). */
@@ -354,7 +354,7 @@
      reddish-purple), which stay mutually distinguishable under this deficiency. Only hued/
      semantic tokens are overridden here — neutrals, text, and surfaces fall through to Light's
      `:root`. Operating/idle building state gets extra lightness separation on top of the hue
-     change, since that pair is a color-only signal (no text/icon backup) — see docs/TODO.md. */
+     change, since that pair is a color-only signal (no text/icon backup). */
 
   /* ── Accent (blue) ── */
   --accent: #0072b2;

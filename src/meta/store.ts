@@ -10,9 +10,9 @@ import { isCompleted } from '../rules/campaign';
 /**
  * The persisted player store (`localStorage`). `mapProgress` is a completed-mission-ids
  * set — `App.tsx`'s `recordResult` marks a mission complete on victory, and
- * `rules/campaign.ts`'s `availableMissions` reads it to gate the campaign map's DAG
- * (Phase 3 Step 3) via each `MissionDef`'s `prereqs`. Just the completion flag: the
- * Influence/unlock reward for clearing a mission is still Step 4's job.
+ * `rules/campaign.ts`'s `availableMissions` reads it to gate the campaign map's DAG via each
+ * `MissionDef`'s `prereqs`. Just the completion flag: the Influence/unlock reward for clearing a
+ * mission lives in `rules/rewards.ts`, paid out separately by `recordResult`.
  */
 export interface PlayerStore {
   runHistory: RunResult[];
@@ -101,7 +101,7 @@ export const HISTORY_LIMIT = 10;
  * own pure function so the standard-vs-infinite payout branching is unit-tested directly
  * rather than buried in a component (see CLAUDE.md's core/shell boundary). A `'standard'`
  * mission marks `mapProgress` and pays its one-time first-clear reward only on a victory
- * outcome; an `'infinite'` mission (Step 6) never touches `mapProgress` and pays Influence
+ * outcome; an `'infinite'` mission never touches `mapProgress` and pays Influence
  * = rounds survived on *every* attempt, win or lose. `alreadyCompleted` is read from
  * `store.mapProgress` as it stood before this result, so a first clear is never masked by
  * its own just-applied update.

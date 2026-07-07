@@ -36,7 +36,7 @@ const CARD_ART: Record<string, string> = {
 };
 export const artFor = (id: string) => CARD_ART[id] ?? '🏛️';
 
-/** Bottom-left row of per-sticker badges (Phase 3 Step 7.9) — `CardFace`'s own `stickerBadge` prop
+/** Bottom-left row of per-sticker badges — `CardFace`'s own `stickerBadge` prop
  *  renders this, and a non-`CardFace` board box that needs the identical treatment (`Board.tsx`'s
  *  `BuildingBox`/`WorkBox`, which own their own custom markup rather than rendering a `CardFace`)
  *  imports the component rather than reaching into this module's CSS classes directly — keeping
@@ -186,9 +186,9 @@ export type CardFaceProps =
       /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
        *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
       badgeClassName?: string;
-      /** A bottom-left row of small circular badges for a *stickered* meta card instance
-       *  (Phase 3 Step 7.5) — the attached sticker id(s), one circle per entry, each showing
-       *  that sticker's own icon glyph (Step 7.9) and its name as a hover title; a duplicate id
+      /** A bottom-left row of small circular badges for a *stickered* meta card instance —
+       *  the attached sticker id(s), one circle per entry, each showing
+       *  that sticker's own icon glyph and its name as a hover title; a duplicate id
        *  (a stacked sticker) renders as two circles, so the row itself hints at the stack.
        *  Sticker name/effect text still lives in the caller's own row/panel (e.g.
        *  `CardInstancePanel`) for anything beyond this hover title. Absent/empty for a plain

@@ -21,14 +21,12 @@ const NAV: { screen: Screen; icon: string; label: string }[] = [
 ];
 
 /**
- * The meta menu's shell (Phase 2 build plan step 6, "extend the meta menu"): a left
- * column of big nav buttons switches between the meta screens. Mission is the campaign
- * map — the DAG of missions, each node opening a board/deck launch popup (`CampaignMap.tsx`,
- * Phase 3 Step 5.1); Collection is a read-only shell; Shop spends Influence on copy-tier
- * upgrades (`Shop.tsx`, Phase 3 Step 5.2); Decks is fully editable (step 7);
- * Stats is the run history, split out so the map stays focused on launching. `deckEditor` isn't
- * in `NAV` — it's only reachable via an action on the Decks screen (New/Edit), never a
- * bare tab with no deck loaded. `App.tsx` mounts this in place of the run view
+ * The meta menu's shell: a left column of big nav buttons switches between the meta screens.
+ * Mission is the campaign map — the DAG of missions, each node opening a board/deck launch popup
+ * (`CampaignMap.tsx`); Collection is a read-only shell; Shop spends Influence on copy-tier upgrades
+ * (`Shop.tsx`); Decks is fully editable; Stats is the run history, split out so the map stays focused
+ * on launching. `deckEditor` isn't in `NAV` — it's only reachable via an action on the Decks screen
+ * (New/Edit), never a bare tab with no deck loaded. `App.tsx` mounts this in place of the run view
  * whenever `screen === 'menu'`.
  */
 export function MetaMenu({
@@ -47,13 +45,13 @@ export function MetaMenu({
   runHistory: RunResult[];
   decks: DeckDef[];
   /** The player's card ownership — forwarded to `Collection`/`DeckEditor` (omit not-yet-unlocked
-   *  cards, Phase 3 Step 2) and to `Shop` (list upgradeable cards, Step 5.2). */
+   *  cards) and to `Shop` (list upgradeable cards). */
   collection: OwnedCards;
   /** The meta-currency (docs/DESIGN.md, "Economy & progression") — shown at the top of the nav
    *  column, and forwarded to `Shop` where it gates and is spent on copy-tier upgrades. */
   influence: number;
   /** Completed mission ids — forwarded to `CampaignMap` so it can gate the DAG's node
-   *  states (Phase 3 Step 3, `rules/campaign.ts`). */
+   *  states (`rules/campaign.ts`). */
   mapProgress: Record<string, true>;
   /** Whole-UI scale (settings) — forwarded to `DeckEditor` (drag-clone coordinate math) and
    *  `CampaignMap` (pointer-drag pan). */
@@ -61,10 +59,10 @@ export function MetaMenu({
   onLaunch: (config: RunConfig) => void;
   onSaveDeck: (deck: DeckDef) => void;
   onDeleteDeck: (id: string) => void;
-  /** Buy the next copy tier for a card (Phase 3 Step 5.2) — spends Influence and bumps the
+  /** Buy the next copy tier for a card — spends Influence and bumps the
    *  card's ownership in the store (`App.tsx`'s `buyCardTier`). */
   onBuyTier: (cardId: string) => void;
-  /** Attach a sticker to one chosen owned instance (Phase 3 Step 7.5) — spends Influence and
+  /** Attach a sticker to one chosen owned instance — spends Influence and
    *  mutates that instance in the store (`App.tsx`'s `attachSticker`). */
   onAttachSticker: (instanceId: string, stickerId: string) => void;
 }) {
