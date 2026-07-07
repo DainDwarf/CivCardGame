@@ -14,7 +14,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Phase 3 — planned steps (economy & progression)
 
 > The Phase 3 design is locked in [`DESIGN.md`](DESIGN.md) (*Economy & progression*); this is
-> the actionable cut, held here for later sessions. Suggested order: 1 → 2 & 3 → 4 → 5 → 6 → 7 → 8
+> the actionable cut, held here for later sessions. Suggested order: 1 → 2 & 3 → 4 → 5 → 6 → 7 → 8 → 9
 > (Steps 0, 1, 2, and 3 are **done**). **Steps 1+2+3+4 form a playable spine** — unlock cards from
 > missions, own copies, build capped decks — before the map/shop UI (Step 5) lands.
 > Pre-alpha: **no save migration**, replace the store shape freely.
@@ -42,26 +42,73 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     *Done / shipped* below. `[size: M]` `[phase: 3]`
   - **Step 6.3c — Creeping Decay infinite mission** — ✅ done — see *Done / shipped* below.
     `[size: M]` `[phase: 3]`
-- **Step 7 — Stickers** *(last, deepest)* — the per-copy-identity precursor is now **done** (Stage 4
-  of the resolver rewrite): pile cards are already `CardInstance`s (`{ id, cardId, counters? }`) with
-  stable run-wide ids, and per-copy run state has a home (`counters`). What remains: board stickers
-  (`setup.ts` modifiers); card stickers (per-copy, read by `effects.ts` / `production.ts` — note these
-  would need to persist *across runs* on the collection, unlike `counters` which are run-scoped);
-  shop sells + attach UI. `[size: L]` `[?]` `[phase: 3]`
-- **Step 8 — Tutorial missions** — the first few meta missions double as tutorials,
+- **Step 7 — Card stickers** *(last, deepest)* — permanent per-copy card buffs bought with Influence
+  (DESIGN.md *Economy & progression*: "a card sticker buffs a *single owned copy* forever"). **Design
+  settled in discussion (2026-07-07):** model the meta collection as **uniform card instances** — every
+  owned copy is an identified `CardInstance` and decks reference copies by instance id — rather than
+  lazily minting identity only when a sticker is applied. Rationale: with uniform instances, stickering
+  is a pure *in-place mutation of one instance that touches nothing else* — no bare-count→instance
+  conversion, so no deck reconciliation and no way to duplicate a copy by forgetting a branch (the trap
+  the first attempt hit: the deck already held both farms, was unaware of the sticker, and a stickered
+  3rd farm slipped past the 2-copy cap). Every deck referencing that instance sees the sticker for free
+  (single source of truth); the "which of my two farms gets it, the decked one or the shelf one?"
+  ambiguity is resolved by an explicit per-instance pick (7.3) over stable, ordered identities (7.4).
+  The run boundary still deep-copies each meta instance into a fresh run `CardInstance` (run `counters`
+  mutate and must never persist back). The precursor is already **done** (Stage 4 of the resolver
+  rewrite): pile cards are `CardInstance`s with per-copy state (`counters`). Suggested order 7.1 → 7.6.
+  `[size: L]` `[phase: 3]`
+  - **Step 7.1 — Bounded copy tiers (drop `'unlimited'`)** — copy counts become ×1/×2/×4/×8, no
+    infinite tier. Makes instances bounded (you can't instantiate infinity) and independently
+    *simplifies* two systems: `rules/shop.ts`'s `TIER_LADDER`/`nextTier` lose the terminal `'unlimited'`
+    rung (ladder ends at ×8), and `rules/collection.ts` (`copiesOwned`/`isOwned`) + `rules/deckBuilder.ts`'s
+    `addCard` lose their `'unlimited'` branch. `content/collection.ts`'s `STARTING_COLLECTION` and any
+    basics that were unlimited reseed to a finite count. Pre-alpha: no migration. `[size: S]` `[phase: 3]`
+  - **Step 7.2 — Uniform meta card instances** — the collection stops being a per-cardId count and
+    becomes a set of identified copies; deck lists go from `string[]` of cardIds to **meta instance ids**.
+    Needs a persistent, append-only meta id allocator (buying ×2→×4 appends ids, never renumbers, or deck
+    refs break) — distinct from the run's `nextInstanceId`. `deckBuilder`'s `groupCounts` regroups
+    instances by `cardId` for the ×N display; the copy cap becomes "copies of a cardId ≤ owned instances."
+    No sticker yet — this is the identity substrate everything else rests on. `[size: L]` `[phase: 3]`
+  - **Step 7.3 — Collection per-instance view** — clicking a grouped card stack in `Collection.tsx`
+    opens a per-instance detail (Farm 1/2, Farm 2/2), each showing its deck usage ("in *Aggro*,
+    *Midrange*" / "unused"). This is the anti-surprise mechanism: attaching a sticker (7.5) becomes an
+    *explicit, informed* pick of one instance whose consequences (which decks it's in) are on screen
+    before the click — killing both failure directions (a surprise sticker in a deck you didn't mean to
+    touch, or a sticker landing on the shelf copy instead of the decked one). `[size: M]` `[phase: 3]`
+  - **Step 7.4 — Ordered deck assignment** — the deck editor assigns *fungible* copies by a deterministic
+    order (first Farm added → 1/2, second → 2/2; removal pops the highest-index in-deck instance first) so
+    instance→deck identity stays stable and low-churn as decks are edited. This is the default for still-
+    *identical* copies only; once 7.5 lets a copy differ, a distinguished instance is placed by identity
+    (see 7.5). `[size: M]` `[phase: 3]`
+  - **Step 7.5 — Card stickers in the meta (not yet in the run)** — shop sells stickers; attaching one
+    mutates a chosen collection instance in place (a `stickers` field on the instance). A stickered
+    instance is no longer fungible, so the deck editor handles it *by identity* — added/kept/removed
+    explicitly, not by the 7.4 LIFO order (which stays the default only for the copies still identical to
+    each other). Meta + UI only; the run loop still ignores stickers this step. `[size: M]` `[phase: 3]`
+  - **Step 7.6 — Card stickers in the run loop** — `setup.ts` carries each deck instance's stickers into
+    its run `CardInstance`; a sticker that changes production/effects composes **through**
+    `resolveProduction`/`resolveCard`, never read raw off the sticker data (same discipline as
+    threats/Cornucopia — the resolver spine). `[size: M]` `[phase: 3]`
+- **Step 8 — Board stickers** — permanent board modifiers bought with Influence (DESIGN.md: board
+  stickers *are* the "board modifiers" — one concept, not two). The *easy* half of stickers: a board
+  isn't multi-copy, so a board sticker just lives on the board entry in the meta and `setup.ts` layers it
+  onto the run's starting resource profile (like a mission's `setup` modifiers) — no per-instance identity
+  question, so entirely independent of Step 7's collection rework. Whether several stack on one board is a
+  deferred balance detail (DESIGN.md open question). `[size: M]` `[phase: 3]`
+- **Step 9 — Tutorial missions** — the first few meta missions double as tutorials,
   introducing mechanics progressively; tutorial entry-node missions on the map. Covers
   designing several missions, onboarding indicators/popups, and careful pacing so new
   mechanics aren't dumped on the player all at once. Rough pacing: the starting deck holds
   only `work`/`action` cards, no buildings — mission 1 unlocks the first buildings (House,
   Farm, Workshop); mission 2 introduces territory limitation (and maybe conquest?) alongside
   them. Goal is to reach a certain population. Unlocks culture stuff. Mission 3 explains culture, goal to reach culture lvl2. `[size: L]` `[?]` `[phase: 3]`
-- **Step 9 — Peripheral** — `Stats` rework once rewards/trends exist.
+- **Step 10 — Peripheral** — `Stats` rework once rewards/trends exist.
   Independent. `[phase: 3]`
 
 ## Meta loop (`src/meta/`)
 
 - **Card modifiers** — attach persistent modifiers to individual cards → **decided as stickers**; see **Step 7** above. `[phase: 3]`
-- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 9** above. `[?]` `[phase: 3]`
+- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 10** above. `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
 
