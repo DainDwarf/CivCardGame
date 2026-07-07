@@ -2,8 +2,8 @@ import type { RunResult } from '../contract';
 import { DEFAULT_DECKS, type DeckDef } from '../content/decks';
 import { STARTING_COLLECTION } from '../content/collection';
 import type { MissionDef } from '../content/missions';
-import { cloneDecks } from '../rules/deckBuilder';
-import type { OwnedCards } from '../rules/collection';
+import { buildSeedDecks } from '../rules/deckBuilder';
+import { collectionFromCounts, type OwnedCards } from '../rules/collection';
 import { computeRewards } from '../rules/rewards';
 import { isCompleted } from '../rules/campaign';
 
@@ -29,11 +29,12 @@ const STORAGE_KEY = 'civcardgame:player-store';
  *  submenu's "Clear save" action (`GameMenu.tsx`) can reset to it directly, besides its
  *  use here as `loadStore`'s fallback. */
 export function emptyStore(): PlayerStore {
+  const collection = collectionFromCounts(STARTING_COLLECTION);
   return {
     runHistory: [],
-    decks: cloneDecks(DEFAULT_DECKS),
+    decks: buildSeedDecks(DEFAULT_DECKS, collection),
     influence: 0,
-    collection: { ...STARTING_COLLECTION },
+    collection,
     mapProgress: {},
   };
 }
@@ -43,10 +44,13 @@ export function emptyStore(): PlayerStore {
  * may predate a field) and `importSave` (reading a pasted/uploaded save file). Returns
  * `null` if `raw` isn't recognizable as a store at all; a missing/invalid `decks` key
  * is *not* fatal — it just means this store predates the deck-editor feature, so it's
- * seeded with the starting decks a fresh install would have had, without losing
- * runHistory. `influence`/`collection`/`mapProgress` are new fields with no such
- * precedent (pre-alpha: no save migration, see docs/TODO.md), so a store missing any of
- * them is simply unrecognized.
+ * seeded with the starting decks a fresh install would have had (resolved against this
+ * store's own `collection`), without losing runHistory. `influence`/`collection`/
+ * `mapProgress` are new fields with no such precedent (pre-alpha: no save migration, see
+ * docs/TODO.md), so a store missing any of them is simply unrecognized — this includes a
+ * pre-Step-7.2 `collection` (a bare `{ cardId: count }` map, not `{ instances, nextId }`):
+ * without this check it would pass the loose `typeof === 'object'` test and only fail much
+ * later, deep inside `copiesOwned`, so it's checked by shape here instead.
  */
 function parsePlayerStore(raw: unknown): PlayerStore | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -54,13 +58,16 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
   if (!Array.isArray(obj.runHistory)) return null;
   if (typeof obj.influence !== 'number') return null;
   if (!obj.collection || typeof obj.collection !== 'object') return null;
+  const collectionObj = obj.collection as Record<string, unknown>;
+  if (!Array.isArray(collectionObj.instances) || typeof collectionObj.nextId !== 'number') return null;
   if (!obj.mapProgress || typeof obj.mapProgress !== 'object') return null;
-  const decks = Array.isArray(obj.decks) ? (obj.decks as DeckDef[]) : cloneDecks(DEFAULT_DECKS);
+  const collection = obj.collection as OwnedCards;
+  const decks = Array.isArray(obj.decks) ? (obj.decks as DeckDef[]) : buildSeedDecks(DEFAULT_DECKS, collection);
   return {
     runHistory: obj.runHistory as RunResult[],
     decks,
     influence: obj.influence,
-    collection: obj.collection as OwnedCards,
+    collection,
     mapProgress: obj.mapProgress as Record<string, true>,
   };
 }

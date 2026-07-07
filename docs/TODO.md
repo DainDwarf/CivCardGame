@@ -59,12 +59,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `[size: L]` `[phase: 3]`
   - **Step 7.1 — Bounded copy tiers (drop `'unlimited'`)** — ✅ done — see *Done / shipped* below.
     `[size: S]` `[phase: 3]`
-  - **Step 7.2 — Uniform meta card instances** — the collection stops being a per-cardId count and
-    becomes a set of identified copies; deck lists go from `string[]` of cardIds to **meta instance ids**.
-    Needs a persistent, append-only meta id allocator (buying ×2→×4 appends ids, never renumbers, or deck
-    refs break) — distinct from the run's `nextInstanceId`. `deckBuilder`'s `groupCounts` regroups
-    instances by `cardId` for the ×N display; the copy cap becomes "copies of a cardId ≤ owned instances."
-    No sticker yet — this is the identity substrate everything else rests on. `[size: L]` `[phase: 3]`
+  - **Step 7.2 — Uniform meta card instances** — ✅ done — see *Done / shipped* below.
+    `[size: L]` `[phase: 3]`
   - **Step 7.3 — Collection per-instance view** — clicking a grouped card stack in `Collection.tsx`
     opens a per-instance detail (Farm 1/2, Farm 2/2), each showing its deck usage ("in *Aggro*,
     *Midrange*" / "unused"). This is the anti-surprise mechanism: attaching a sticker (7.5) becomes an
@@ -103,6 +99,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Meta loop (`src/meta/`)
 
+- **End-of-Phase-3 cleanup: simplify save parsing, not remove it** — `meta/store.ts`'s `SCHEMA_VERSION`/`exportSave`/`importSave` plumbing stays (still the real save/load-file mechanism); what should go is `parsePlayerStore`'s per-field *leniency* (the decks-missing fallback, the field-by-field shape checks written to tolerate a store that predates some Phase 3 field). Once Phase 3 ships, assume every save in the world is already Phase-3-shaped — pre-alpha players are told to clear their save regularly — so `parsePlayerStore` can go back to a plain "does this parse as a `PlayerStore`" check instead of carrying per-field pre-Phase-3 fallbacks. `[phase: 3]`
 - **Card modifiers** — attach persistent modifiers to individual cards → **decided as stickers**; see **Step 7** above. `[phase: 3]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 10** above. `[?]` `[phase: 3]`
 
@@ -213,6 +210,32 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 7.2 — Uniform meta card instances** — the collection stops being a per-cardId
+  count and becomes a set of identified copies: `rules/collection.ts`'s `OwnedCards` is now
+  `{ instances: MetaCardInstance[], nextId }` (`MetaCardInstance` just `{ id, cardId }` — no
+  sticker field yet, that's Step 7.5), with `nextId` a persistent, append-only allocator distinct
+  from the run's `population.ts`'s `nextInstanceId` (that one scans run zones; this one just
+  counts up — buying ×2→×4 or a mission unlock appends fresh ids via `grantCopies`, never
+  renumbering, so a `DeckDef`'s instance-id references never go stale). `copiesOwned`/`isOwned`
+  are now derived by filtering instances. `DeckDef.cards` (`content/decks.ts`) changed meaning
+  from cardIds to meta instance ids; `rules/deckBuilder.ts`'s `addCard`/`removeCard` pick *any*
+  owned/in-deck instance of a cardId (copies are still fungible — Step 7.4 will pick a stable
+  order once stickers make instances worth distinguishing), and `groupCounts`/`resolveDeckCards`
+  now take the collection to resolve instance ids back to cardIds for display and for the run
+  boundary respectively. Content authoring stays in cardIds: `content/decks.ts`'s `DEFAULT_DECKS`
+  is now `DeckSeed[]` (plain cardId lists, since instance identity doesn't exist until a
+  collection is actually seeded) and `content/collection.ts`'s `STARTING_COLLECTION` is a plain
+  `Record<cardId, count>`; `deckBuilder.ts`'s new `buildSeedDecks` resolves a `DeckSeed[]` into
+  real `DeckDef[]` against a freshly-granted collection — the one function `meta/store.ts`'s
+  `emptyStore` (and its `parsePlayerStore` decks-fallback) goes through. `contract.ts`'s
+  `buildRunConfig` gained a required `collection` param to do that same instance→cardId
+  translation when assembling a `RunConfig`; `App.tsx`/`MetaMenu.tsx`/`CampaignMap.tsx`/
+  `Decks.tsx`/`DeckDisplay.tsx` all thread `collection` down to wherever a deck's cards are
+  displayed or launched. `parsePlayerStore` also gained a shape check on `collection.instances`/
+  `nextId` (not just "is an object") so a pre-Step-7.2 save (a bare `{ cardId: count }` map)
+  resets to a fresh store instead of crashing deep inside `copiesOwned`. `cloneDecks` is gone —
+  `buildSeedDecks` already returns fresh objects, so nothing needed it. No sticker yet; this is
+  the identity substrate Steps 7.3–7.6 build on.
 - **Phase 3 Step 7.1 — Bounded copy tiers (drop `'unlimited'`)** — copy counts are now ×1/×2/×4/×8,
   no infinite tier — instances are bounded (you can't instantiate infinity), the precondition for
   Step 7.2's uniform meta card instances. `rules/shop.ts`'s `TIER_LADDER`/`nextTier` lost the

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { DeckDef } from '../content/decks';
 import { MAX_DECKS } from '../rules/deckBuilder';
+import type { OwnedCards } from '../rules/collection';
 import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
 import styles from './Decks.module.css';
 
@@ -24,12 +25,15 @@ import styles from './Decks.module.css';
  */
 export function Decks({
   decks,
+  collection,
   onNew,
   onEdit,
   onCopy,
   onDelete,
 }: {
   decks: DeckDef[];
+  /** Resolves each deck's meta instance ids back to cardIds for display (Phase 3 Step 7.2). */
+  collection: OwnedCards;
   onNew: () => void;
   onEdit: (deck: DeckDef) => void;
   onCopy: (deck: DeckDef) => void;
@@ -56,6 +60,7 @@ export function Decks({
           <DeckTile
             key={deck.id}
             deck={deck}
+            collection={collection}
             onClick={() => {
               setSelected(deck);
               setConfirmingDeleteId(null);
@@ -122,6 +127,7 @@ export function Decks({
       {selected && (
         <DeckListOverlay
           deck={selected}
+          collection={collection}
           onClose={() => setSelected(null)}
           actions={
             <>

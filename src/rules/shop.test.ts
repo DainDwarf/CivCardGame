@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { nextTier, buyTier } from './shop';
+import { copiesOwned, collectionFromCounts } from './collection';
 
 describe('nextTier', () => {
   it('walks the ×1 → ×2 → ×4 → ×8 ladder with its costs', () => {
@@ -20,31 +21,41 @@ describe('nextTier', () => {
 
 describe('buyTier', () => {
   it('deducts the cost and bumps the card to its next tier', () => {
-    const result = buyTier({ farm: 1 }, 5, 'farm');
-    expect(result).toEqual({ influence: 4, collection: { farm: 2 } });
+    const result = buyTier(collectionFromCounts({ farm: 1 }), 5, 'farm');
+    expect(result!.influence).toBe(4);
+    expect(copiesOwned(result!.collection, 'farm')).toBe(2);
   });
 
   it('upgrades ×4 to ×8', () => {
-    const result = buyTier({ farm: 4 }, 5, 'farm');
-    expect(result).toEqual({ influence: 0, collection: { farm: 8 } });
+    const result = buyTier(collectionFromCounts({ farm: 4 }), 5, 'farm');
+    expect(result!.influence).toBe(0);
+    expect(copiesOwned(result!.collection, 'farm')).toBe(8);
+  });
+
+  it('grants fresh instances distinct from the ones already owned', () => {
+    const before = collectionFromCounts({ farm: 1 });
+    const result = buyTier(before, 5, 'farm')!;
+    const ids = result.collection.instances.filter((i) => i.cardId === 'farm').map((i) => i.id);
+    expect(new Set(ids).size).toBe(2);
+    expect(ids).toContain(before.instances[0].id);
   });
 
   it('does not mutate the input collection', () => {
-    const collection = { farm: 1 };
+    const collection = collectionFromCounts({ farm: 1 });
     buyTier(collection, 5, 'farm');
-    expect(collection).toEqual({ farm: 1 });
+    expect(copiesOwned(collection, 'farm')).toBe(1);
   });
 
   it('returns null when the card is not owned', () => {
-    expect(buyTier({}, 99, 'farm')).toBeNull();
+    expect(buyTier(collectionFromCounts({}), 99, 'farm')).toBeNull();
   });
 
   it('returns null when the card is already at its cap', () => {
-    expect(buyTier({ farm: 8 }, 99, 'farm')).toBeNull();
+    expect(buyTier(collectionFromCounts({ farm: 8 }), 99, 'farm')).toBeNull();
   });
 
   it('returns null when the player cannot afford the upgrade', () => {
     // ×2 → ×4 costs 2; with only 1 Influence it must fail and spend nothing.
-    expect(buyTier({ farm: 2 }, 1, 'farm')).toBeNull();
+    expect(buyTier(collectionFromCounts({ farm: 2 }), 1, 'farm')).toBeNull();
   });
 });

@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { applyRunResult, exportSave, importSave, type PlayerStore } from './store';
 import { DEFAULT_DECKS } from '../content/decks';
 import { STARTING_COLLECTION } from '../content/collection';
-import { cloneDecks } from '../rules/deckBuilder';
+import { buildSeedDecks } from '../rules/deckBuilder';
+import { collectionFromCounts, copiesOwned } from '../rules/collection';
 import type { RunResult } from '../contract';
 import type { MissionDef } from '../content/missions';
 
@@ -28,11 +29,12 @@ function sampleRunResult(): RunResult {
 }
 
 function sampleStore(): PlayerStore {
+  const collection = collectionFromCounts(STARTING_COLLECTION);
   return {
     runHistory: [sampleRunResult()],
-    decks: cloneDecks(DEFAULT_DECKS),
+    decks: buildSeedDecks(DEFAULT_DECKS, collection),
     influence: 3,
-    collection: { ...STARTING_COLLECTION },
+    collection,
     mapProgress: { enlightenment: true },
   };
 }
@@ -84,12 +86,21 @@ describe('exportSave / importSave', () => {
     const { decks: _decks, ...withoutDecks } = store;
     const bogus = toBase64(JSON.stringify({ schemaVersion: 1, store: withoutDecks }));
     const result = importSave(bogus);
-    expect(result).toEqual({ ok: true, store: { ...withoutDecks, decks: cloneDecks(DEFAULT_DECKS) } });
+    expect(result).toEqual({ ok: true, store: { ...withoutDecks, decks: buildSeedDecks(DEFAULT_DECKS, withoutDecks.collection) } });
   });
 
   it('rejects a save missing influence/collection/mapProgress — no migration path for these newer fields', () => {
     const store = sampleStore();
     const bogus = toBase64(JSON.stringify({ schemaVersion: 1, store: { runHistory: store.runHistory, decks: store.decks } }));
+    const result = importSave(bogus);
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects a pre-Step-7.2 collection shape (a bare cardId→count map) rather than loading it', () => {
+    const store = sampleStore();
+    const bogus = toBase64(
+      JSON.stringify({ schemaVersion: 1, store: { ...store, collection: { farm: 2 } } }),
+    );
     const result = importSave(bogus);
     expect(result.ok).toBe(false);
   });
@@ -147,7 +158,7 @@ describe('applyRunResult', () => {
     const next = applyRunResult(store, runResult('std', 'victory', 12), standardMission());
     expect(next.mapProgress.std).toBe(true);
     expect(next.influence).toBe(store.influence + 2);
-    expect(next.collection.granary).toBe(1);
+    expect(copiesOwned(next.collection, 'granary')).toBe(1);
   });
 
   it('a standard mission defeat pays nothing and leaves mapProgress untouched', () => {

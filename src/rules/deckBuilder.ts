@@ -1,6 +1,6 @@
 import { CARDS } from '../content/cards';
-import type { DeckDef } from '../content/decks';
-import { copiesOwned, type OwnedCards } from './collection';
+import type { DeckDef, DeckSeed } from '../content/decks';
+import { findInstance, instancesOf, type OwnedCards } from './collection';
 
 /**
  * Deck *construction* — building/editing the card lists a player saves in the meta
@@ -14,56 +14,79 @@ import { copiesOwned, type OwnedCards } from './collection';
  *  as its reflection. */
 export const MAX_DECKS = 6;
 
-/** Appends one copy of `cardId`. `'invalid'` if `cardId` isn't in the `CARDS`
- *  catalogue — a data-coherence check (not a Phase 4 balance rule; see
- *  docs/DESIGN.md's deferred "deck construction constraints"). Mirrors the `'invalid'`
- *  signal `src/run/moves.ts` uses for rejected input, adapted to a function that
- *  returns a new array rather than mutating a draft. Does not mutate `deck`.
- *
- *  Also enforces the copy cap (Phase 3 Step 2): `deck` may not hold more copies of
- *  `cardId` than `collection` owns (an absent/zero entry, i.e. not yet unlocked, so
- *  rejects the same as any other invalid add — a locked card was never offered to add
- *  in the first place, see `DeckEditor.tsx`'s picker filter). */
+/** Appends one copy of `cardId` — picks any owned instance of that cardId not already in
+ *  `deck` (copies are still fungible; a future card sticker, Step 7.5, is what makes one
+ *  instance worth distinguishing from another). `'invalid'` if `cardId` isn't in the
+ *  `CARDS` catalogue (a data-coherence check, not a Phase 4 balance rule; see
+ *  docs/DESIGN.md's deferred "deck construction constraints"), or if every owned copy is
+ *  already in the deck (Phase 3 Step 2's copy cap — an absent/zero entry, i.e. not yet
+ *  unlocked, rejects the same as any other invalid add, see `DeckEditor.tsx`'s picker
+ *  filter). Mirrors the `'invalid'` signal `src/run/moves.ts` uses for rejected input.
+ *  Does not mutate `deck`. */
 export function addCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
   if (!(cardId in CARDS)) return 'invalid';
   // Event and threat cards are mission-injected only — never player-editable into a deck.
   if (CARDS[cardId].kind === 'event' || CARDS[cardId].kind === 'threat') return 'invalid';
-  const owned = copiesOwned(collection, cardId);
-  const current = deck.filter((id) => id === cardId).length;
-  if (current >= owned) return 'invalid';
-  return [...deck, cardId];
+  const inDeck = new Set(deck);
+  const free = instancesOf(collection, cardId).find((inst) => !inDeck.has(inst.id));
+  if (!free) return 'invalid';
+  return [...deck, free.id];
 }
 
-/** Removes the first occurrence of `cardId`. `'invalid'` if it isn't present. Does
- *  not mutate `deck`. */
-export function removeCard(deck: string[], cardId: string): string[] | 'invalid' {
-  const idx = deck.indexOf(cardId);
+/** Removes one instance of `cardId` from the deck. Any owned instance matching `cardId`
+ *  works equally well — copies are still fungible until a sticker (Step 7.5) distinguishes
+ *  one; a stable pick-order for that case is Step 7.4's job, not this one's. `'invalid'` if
+ *  the deck holds no instance of `cardId`. Does not mutate `deck`. */
+export function removeCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
+  const idx = deck.findIndex((instanceId) => findInstance(collection, instanceId)?.cardId === cardId);
   if (idx === -1) return 'invalid';
   return [...deck.slice(0, idx), ...deck.slice(idx + 1)];
 }
 
-/** Collapse a flat list of card ids into one entry per card with a count, first-seen
- *  order. */
-export function groupCounts(ids: string[]): { cardId: string; count: number }[] {
+/** Collapse a deck's instance-id list into one entry per cardId with a count, first-seen
+ *  order — resolving each instance id back to its cardId via `collection`. An instance id
+ *  the collection no longer recognizes (shouldn't happen; owned instances are never
+ *  removed) is silently skipped rather than throwing. */
+export function groupCounts(instanceIds: string[], collection: OwnedCards): { cardId: string; count: number }[] {
   const order: string[] = [];
   const counts = new Map<string, number>();
-  for (const id of ids) {
-    if (!counts.has(id)) order.push(id);
-    counts.set(id, (counts.get(id) ?? 0) + 1);
+  for (const instanceId of instanceIds) {
+    const cardId = findInstance(collection, instanceId)?.cardId;
+    if (!cardId) continue;
+    if (!counts.has(cardId)) order.push(cardId);
+    counts.set(cardId, (counts.get(cardId) ?? 0) + 1);
   }
   return order.map((cardId) => ({ cardId, count: counts.get(cardId)! }));
 }
 
-/** Resolve a `deckId` to its card list from the player's own decks. `undefined` if
- *  not found. */
-export function resolveDeckCards(deckId: string, decks: DeckDef[]): string[] | undefined {
-  return decks.find((d) => d.id === deckId)?.cards;
+/** Resolve a `deckId` to its cardId list (not instance ids) from the player's own decks,
+ *  via `collection` — `undefined` if the deck isn't found. An instance id the collection no
+ *  longer recognizes is dropped rather than surfaced as, say, `undefined` in the list. */
+export function resolveDeckCards(deckId: string, decks: DeckDef[], collection: OwnedCards): string[] | undefined {
+  const deck = decks.find((d) => d.id === deckId);
+  if (!deck) return undefined;
+  return deck.cards
+    .map((instanceId) => findInstance(collection, instanceId)?.cardId)
+    .filter((cardId): cardId is string => cardId !== undefined);
 }
 
-/** Deep-copies a deck list so nothing shares references with its source (e.g.
- *  `content/decks.ts`'s `DEFAULT_DECKS`). The one function both real seeding
- *  (`meta/store.ts`) and any fixture derived from `DEFAULT_DECKS` should go through,
- *  so callers exercise the same clone path production code does. */
-export function cloneDecks(decks: DeckDef[]): DeckDef[] {
-  return decks.map((d) => ({ ...d, cards: [...d.cards] }));
+/** Turns content-authored `DeckSeed`s (cardIds) into real, player-store `DeckDef`s
+ *  (instance ids) by matching each cardId occurrence to an owned instance off `collection`
+ *  — in `instancesOf` order, consuming each instance at most once across all seeds so two
+ *  seed decks never end up sharing an id meant to represent distinct copies. An occurrence
+ *  that outruns the owned count (shouldn't happen; `STARTING_COLLECTION` is authored to
+ *  cover `DEFAULT_DECKS` exactly, see `collection.test.ts`) is silently dropped rather than
+ *  throwing. */
+export function buildSeedDecks(seeds: DeckSeed[], collection: OwnedCards): DeckDef[] {
+  const consumed = new Map<string, number>();
+  return seeds.map((seed) => {
+    const cards = seed.cards
+      .map((cardId) => {
+        const used = consumed.get(cardId) ?? 0;
+        consumed.set(cardId, used + 1);
+        return instancesOf(collection, cardId)[used]?.id;
+      })
+      .filter((instanceId): instanceId is string => instanceId !== undefined);
+    return { id: seed.id, name: seed.name, cards };
+  });
 }

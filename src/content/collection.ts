@@ -1,11 +1,11 @@
-import type { OwnedCards } from '../rules/collection';
-
 /**
- * A fresh player's starting ownership (`meta/store.ts`'s `emptyStore`) — deliberately
- * narrow (docs/TODO.md, Phase 3 Step 1): just enough to build `content/decks.ts`'s
- * starting deck. Everything else is unlocked through missions.
+ * A fresh player's starting ownership counts (`meta/store.ts`'s `emptyStore`, via
+ * `rules/collection.ts`'s `collectionFromCounts`) — deliberately narrow (docs/TODO.md,
+ * Phase 3 Step 1): just enough to build `content/decks.ts`'s starting deck. Everything
+ * else is unlocked through missions. A plain `{ cardId: count }` map, not an `OwnedCards`
+ * itself (Phase 3 Step 7.2): instance identity doesn't exist until it's actually granted.
  */
-export const STARTING_COLLECTION: OwnedCards = {
+export const STARTING_COLLECTION: Record<string, number> = {
   settlers: 2,
   corvee: 2,
   harvest: 2,

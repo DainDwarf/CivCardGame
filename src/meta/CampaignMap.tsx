@@ -5,6 +5,7 @@ import { BOARDS, type BoardId } from '../content/boards';
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import type { Resources } from '../rules/resources';
+import type { OwnedCards } from '../rules/collection';
 import { buildRunConfig, type RunConfig } from '../contract';
 import { isCompleted, isAvailable } from '../rules/campaign';
 import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
@@ -65,11 +66,15 @@ function describeBoard(board: (typeof BOARDS)[BoardId]): string {
  */
 export function CampaignMap({
   decks,
+  collection,
   mapProgress,
   uiScale,
   onLaunch,
 }: {
   decks: DeckDef[];
+  /** Resolves each deck's meta instance ids back to cardIds for display, and translates the
+   *  chosen deck into a run's cardId deck via `buildRunConfig` (Phase 3 Step 7.2). */
+  collection: OwnedCards;
   mapProgress: Record<string, true>;
   /** Whole-UI scale (settings) — converts pointer-drag deltas (visual px) to scroll px. */
   uiScale: number;
@@ -232,6 +237,7 @@ export function CampaignMap({
         <LaunchPopup
           mission={launching}
           decks={decks}
+          collection={collection}
           onClose={() => setLaunching(null)}
           onLaunch={onLaunch}
         />
@@ -328,11 +334,13 @@ function MissionDetailPanel({
 function LaunchPopup({
   mission,
   decks,
+  collection,
   onClose,
   onLaunch,
 }: {
   mission: MissionDef;
   decks: DeckDef[];
+  collection: OwnedCards;
   onClose: () => void;
   onLaunch: (config: RunConfig) => void;
 }) {
@@ -346,7 +354,7 @@ function LaunchPopup({
 
   function start() {
     if (!boardId || !deckId) return;
-    onLaunch(buildRunConfig({ missionId: mission.id, boardId, deckId }, crypto.randomUUID(), decks));
+    onLaunch(buildRunConfig({ missionId: mission.id, boardId, deckId }, crypto.randomUUID(), decks, collection));
   }
 
   return (
@@ -387,6 +395,7 @@ function LaunchPopup({
                     <DeckTile
                       key={d.id}
                       deck={d}
+                      collection={collection}
                       selected={deckId === d.id}
                       title={deckId === d.id ? "Click to view this deck's cards" : 'Click to select this deck'}
                       onClick={() => (deckId === d.id ? setViewing(d) : setDeckId(d.id))}
@@ -408,7 +417,7 @@ function LaunchPopup({
         </div>
       </div>
 
-      {viewing && <DeckListOverlay deck={viewing} onClose={() => setViewing(null)} />}
+      {viewing && <DeckListOverlay deck={viewing} collection={collection} onClose={() => setViewing(null)} />}
     </>
   );
 }

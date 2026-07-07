@@ -1,4 +1,4 @@
-import { isOwned, type OwnedCards } from './collection';
+import { grantCopies, isOwned, type OwnedCards } from './collection';
 import type { MissionDef } from '../content/missions';
 
 /** What a completed run actually pays out: Influence plus (if not already owned) the
@@ -29,6 +29,6 @@ export function computeRewards(
   if (mission.kind === 'infinite') return { influence: turnsTaken ?? 0, collection };
   if (alreadyCompleted || !mission.reward) return { influence: 0, collection };
   const { influence, unlockCardId } = mission.reward;
-  const nextCollection = isOwned(collection, unlockCardId) ? collection : { ...collection, [unlockCardId]: 1 };
+  const nextCollection = isOwned(collection, unlockCardId) ? collection : grantCopies(collection, unlockCardId, 1);
   return { influence, collection: nextCollection };
 }

@@ -2,6 +2,7 @@ import type { BoardId } from './content/boards';
 import type { DeckDef } from './content/decks';
 import type { Resources } from './rules/resources';
 import { resolveDeckCards } from './rules/deckBuilder';
+import type { OwnedCards } from './rules/collection';
 import { shuffle } from './rules/rng';
 
 /**
@@ -56,15 +57,17 @@ export interface RunResult {
 }
 
 /**
- * Assemble a `RunConfig` from the player's meta-loop selection, a run seed, and the
- * player's own deck list (there's no static registry to fall back on — every deck
- * lives in the player's store). An unresolvable `deckId` (e.g. the source deck was
- * deleted) produces an empty `deck: []` rather than throwing, matching the codebase's
- * general fall-back-don't-throw style (e.g. `meta/store.ts`'s `loadStore`). The
- * player's deck is never mutated, only copied and reordered.
+ * Assemble a `RunConfig` from the player's meta-loop selection, a run seed, the player's
+ * own deck list, and their card collection — a deck's `cards` are meta instance ids
+ * (Phase 3 Step 7.2), so resolving it to the run's cardId deck needs the collection to
+ * translate. There's no static deck registry to fall back on — every deck lives in the
+ * player's store. An unresolvable `deckId` (e.g. the source deck was deleted) produces an
+ * empty `deck: []` rather than throwing, matching the codebase's general
+ * fall-back-don't-throw style (e.g. `meta/store.ts`'s `loadStore`). The player's deck is
+ * never mutated, only copied and reordered.
  */
-export function buildRunConfig(selection: RunSelection, seed: string, decks: DeckDef[]): RunConfig {
-  const cards = resolveDeckCards(selection.deckId, decks) ?? [];
+export function buildRunConfig(selection: RunSelection, seed: string, decks: DeckDef[], collection: OwnedCards): RunConfig {
+  const cards = resolveDeckCards(selection.deckId, decks, collection) ?? [];
   return {
     deck: shuffle(cards, seed),
     board: selection.boardId,

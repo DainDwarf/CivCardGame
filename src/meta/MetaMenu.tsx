@@ -104,13 +104,14 @@ export function MetaMenu({
       </nav>
       <div className={styles.content}>
         {screen === 'mission' && (
-          <CampaignMap decks={decks} mapProgress={mapProgress} uiScale={uiScale} onLaunch={onLaunch} />
+          <CampaignMap decks={decks} collection={collection} mapProgress={mapProgress} uiScale={uiScale} onLaunch={onLaunch} />
         )}
         {screen === 'collection' && <Collection collection={collection} />}
         {screen === 'shop' && <Shop collection={collection} influence={influence} onBuyTier={onBuyTier} />}
         {screen === 'decks' && (
           <Decks
             decks={decks}
+            collection={collection}
             onNew={() => openEditor({ id: crypto.randomUUID(), name: 'New Deck', cards: [] })}
             onEdit={openEditor}
             onCopy={(deck) => openEditor({ id: crypto.randomUUID(), name: `${deck.name} (Copy)`, cards: [...deck.cards] })}

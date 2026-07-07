@@ -1,4 +1,4 @@
-import { copiesOwned, type OwnedCards } from './collection';
+import { copiesOwned, grantCopies, type OwnedCards } from './collection';
 
 /**
  * The meta shop (docs/DESIGN.md, "Economy & progression"; Phase 3 Step 5.2). The shop sells
@@ -40,10 +40,12 @@ export interface PurchaseResult {
 
 /** Attempt to buy the next copy tier for `cardId`. Returns `null` (a no-op signal, mirroring
  *  `moves.ts`'s `'invalid'`) when the card isn't owned, is already at its cap, or the player
- *  can't afford it. On success, returns the reduced Influence and a new collection with the
- *  card bumped to its next tier (immutable — the input `collection` is untouched). */
+ *  can't afford it. On success, returns the reduced Influence and a new collection granted
+ *  the newly-bought copies as fresh instances (`rules/collection.ts`'s `grantCopies`) —
+ *  immutable, the input `collection` is untouched. */
 export function buyTier(collection: OwnedCards, influence: number, cardId: string): PurchaseResult | null {
-  const up = nextTier(copiesOwned(collection, cardId));
+  const current = copiesOwned(collection, cardId);
+  const up = nextTier(current);
   if (!up || influence < up.cost) return null;
-  return { influence: influence - up.cost, collection: { ...collection, [cardId]: up.to } };
+  return { influence: influence - up.cost, collection: grantCopies(collection, cardId, up.to - current) };
 }

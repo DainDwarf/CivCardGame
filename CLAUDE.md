@@ -176,7 +176,35 @@ lost their `'unlimited'` special-casing; `rules/deckBuilder.ts`'s `addCard` lost
 against. `CardFace`'s `countBadge` prop dropped its `'unlimited'`/"∞" arm (`Shop.tsx`'s
 tier-upgrade label too — just `×N` now). `content/collection.ts`'s `STARTING_COLLECTION` reseeded
 the three basics that were `'unlimited'` (settlers/corvee/harvest) to `2` each, matching every
-other starting card's "just enough for the starting deck" count. Still to come:
+other starting card's "just enough for the starting deck" count. **Phase 3 Step 7.2**
+(uniform meta card instances) is also done — the identity substrate the rest of Step 7 rests
+on: `rules/collection.ts`'s `OwnedCards` is now `{ instances: MetaCardInstance[], nextId }`
+(`MetaCardInstance` just `{ id, cardId }` — no sticker field yet, that's Step 7.5) instead of a
+per-cardId count, with `nextId` a persistent, append-only allocator (`grantCopies`'s writer) —
+distinct from the run's `population.ts`'s `nextInstanceId`, which scans run zones instead of
+counting up; granting copies only ever appends, never renumbers, so a `DeckDef`'s instance-id
+references never go stale. `copiesOwned`/`isOwned` are now derived by filtering instances.
+`DeckDef.cards` (`content/decks.ts`) changed meaning from cardIds to meta instance ids — the
+point being that two decks referencing the same instance see a future sticker on it for free
+(single source of truth), rather than each deck holding an independent copy of "farm."
+`rules/deckBuilder.ts`'s `addCard`/`removeCard` pick *any* owned/in-deck instance of a cardId
+(copies are still fungible; Step 7.4 will pick a stable order once stickers make an instance
+worth distinguishing from another), and `groupCounts`/`resolveDeckCards` now take the
+collection to resolve instance ids back to cardIds — for the ×N display and for translating a
+launched deck into the run's cardId deck, respectively. Content authoring stays in cardIds,
+since instance identity doesn't exist until a collection is actually seeded:
+`content/decks.ts`'s `DEFAULT_DECKS` is now `DeckSeed[]` (plain cardId lists) and
+`content/collection.ts`'s `STARTING_COLLECTION` is a plain `Record<cardId, count>`;
+`deckBuilder.ts`'s new `buildSeedDecks` resolves a `DeckSeed[]` into real `DeckDef[]` against a
+freshly-granted collection — the one function `meta/store.ts`'s `emptyStore` (and its
+`parsePlayerStore` decks-fallback) goes through, replacing the old `cloneDecks` (now gone —
+`buildSeedDecks` already returns fresh objects, so nothing needed a separate deep-copy step).
+`contract.ts`'s `buildRunConfig` gained a required `collection` param to do that same
+instance→cardId translation; every meta screen that displays or launches a deck
+(`App.tsx`/`MetaMenu.tsx`/`CampaignMap.tsx`/`Decks.tsx`/`DeckDisplay.tsx`) threads `collection`
+down to it. `parsePlayerStore` also gained a shape check on `collection.instances`/`nextId`
+(not just "is an object") so a pre-Step-7.2 save resets to a fresh store instead of crashing
+deep inside `copiesOwned`. Still to come:
 tutorial missions (Step 8), and `Stats` surfacing a per-run reward
 (deferred since `RunResult` deliberately excludes
 rewards, and there's no per-run record of whether that run was a first clear).
@@ -253,17 +281,27 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   or a work card's `effect.gain` itself, it only asks each instance to produce), `tableau.ts`
   (derived stats — including `usedTerritory` / `freeTerritory`,
   the territory cap that gates how many buildings can occupy the tableau), and
-  `deckBuilder.ts` (deck *construction* — `addCard`/`removeCard` on a plain `string[]`,
-  returning `'invalid'` on an unresolvable cardId, mirroring `moves.ts`'s `'invalid'`
-  signal; `groupCounts`, `resolveDeckCards`, `cloneDecks`, and `MAX_DECKS` — the committed
+  `deckBuilder.ts` (deck *construction* — a `DeckDef.cards` entry is a meta instance id
+  (Phase 3 Step 7.2), not a cardId, so `addCard`/`removeCard` resolve through the player's
+  `OwnedCards` to pick/match an instance, returning `'invalid'` on an unresolvable cardId or a
+  capped/absent one, mirroring `moves.ts`'s `'invalid'` signal; `groupCounts`/`resolveDeckCards`
+  likewise take the collection to translate instance ids back to cardIds (for the ×N display
+  and for the run boundary, respectively); `buildSeedDecks` turns content-authored `DeckSeed`s
+  (cardIds) into real `DeckDef`s (instance ids) against a freshly-granted collection — the one
+  path `meta/store.ts` seeds a fresh store's decks through; and `MAX_DECKS` — the committed
   cap on how many decks a player may own (the number is balance-tunable, the limit itself is
   a core rule), enforced at the deck writer in `App.tsx`'s `saveDeck` with `Decks.tsx`'s
   disabled "+ New Deck" button as its UI reflection — distinct from `deck.ts`,
-  which owns the *in-run* draw pile, not deck editing), `collection.ts` (`OwnedCards`
-  — `Record<cardId, number | 'unlimited'>`, an absent entry meaning not yet unlocked —
-  plus `copiesOwned`/`isOwned` read helpers; `rules/rewards.ts` (mission unlock) and
-  `rules/shop.ts` (shop purchase) are its writers), and `shop.ts` (the copy-tier economy —
-  `TIER_LADDER`, `nextTier`, and the immutable `buyTier` purchase; see Phase 3 Step 5.2 above).
+  which owns the *in-run* draw pile, not deck editing), `collection.ts` (`OwnedCards` —
+  `{ instances: MetaCardInstance[], nextId }`, Phase 3 Step 7.2's uniform meta card instances;
+  each `MetaCardInstance` is just `{ id, cardId }` (no sticker field yet — Step 7.5), and
+  `nextId` is a persistent, append-only allocator distinct from the run's `population.ts`'s
+  `nextInstanceId` — granting copies only ever appends via `grantCopies`, never renumbers, so a
+  `DeckDef`'s instance-id references never go stale. `copiesOwned`/`isOwned` are derived by
+  filtering instances (an absent cardId meaning not yet unlocked); `rules/rewards.ts` (mission
+  unlock) and `rules/shop.ts` (shop purchase) are `grantCopies`'s callers), and `shop.ts` (the
+  copy-tier economy — `TIER_LADDER`, `nextTier`, and the immutable `buyTier` purchase, which
+  grants the newly-bought copies as fresh instances; see Phase 3 Step 5.2 above).
   Unit tests sit alongside. **When adding
   a rule, put the logic here and test it directly — never bury it in a move or a
   component.**
@@ -297,14 +335,18 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `remove: true`, in which case it's destroyed to `removed` instead (see `rules/upkeep.ts`'s
   `resolveHandEvents`). Barbarian, the one event so far, sets `remove: true` (`effect.loss`
   removes resources — the mirror of `gain`).
-  Also `decks.ts` (`DeckDef` + `DEFAULT_DECKS` — seed data for a new player's deck list;
-  a fresh player starts with exactly one deck, `'starter'`, deliberately narrow enough to
-  be built from `collection.ts`'s `STARTING_COLLECTION` alone; every deck (seed or
-  player-made) is equally player-editable, there's no separate read-only "built-in"
-  registry — see `meta/store.ts`), `collection.ts` (`STARTING_COLLECTION`, an
-  `OwnedCards` — see `rules/collection.ts` below — seeding a fresh player's card
-  ownership), `boards.ts` (`BOARDS` — government boards; each sets all 8 starting
-  resources: the 5 core plus population/territory/culture), and `missions.ts`
+  Also `decks.ts` (`DeckDef` — a real player deck, `cards` a `string[]` of meta instance ids
+  (Phase 3 Step 7.2) — plus `DeckSeed` and `DEFAULT_DECKS`: content-authoring shape/data for
+  a fresh player's deck list, written in plain cardIds since instance identity doesn't exist
+  until a collection is seeded; `rules/deckBuilder.ts`'s `buildSeedDecks` resolves a
+  `DeckSeed[]` into real `DeckDef[]`. A fresh player starts with exactly one deck, `'starter'`,
+  deliberately narrow enough to be built from `collection.ts`'s `STARTING_COLLECTION` alone;
+  every deck (seed-derived or player-made) is equally player-editable, there's no separate
+  read-only "built-in" registry — see `meta/store.ts`), `collection.ts` (`STARTING_COLLECTION`,
+  a plain `Record<cardId, count>` — not an `OwnedCards` itself, same reasoning as `DeckSeed`;
+  `rules/collection.ts`'s `collectionFromCounts` turns it into a real, instance-bearing
+  `OwnedCards` at seed time), `boards.ts` (`BOARDS` — government boards; each sets all 8
+  starting resources: the 5 core plus population/territory/culture), and `missions.ts`
   (`MISSIONS` — each mission supplies its `objective` and `failure` as pure predicates
   over `GameState`, plus an optional `onUpkeep`).
 
@@ -465,10 +507,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   bugs* fix in docs/TODO.md's Done/shipped, where an unthemed `body` was exactly such a
   gap (revealed through the run loop's hand bar's transparent top edge).
 
-See `src/contract.ts` for the `RunConfig`/`RunResult` types, `buildRunConfig` (now
-takes the player's `decks` as a required argument — there's no static deck registry to
-fall back on), and `reshuffleRunConfig` (re-shuffles an existing `RunConfig.deck`
-directly, used by `GameContext.tsx`'s restart) — the spine between the two loops
+See `src/contract.ts` for the `RunConfig`/`RunResult` types, `buildRunConfig` (takes the
+player's `decks` and `collection` as required arguments — there's no static deck registry
+to fall back on, and a deck's cards are meta instance ids (Phase 3 Step 7.2) that need the
+collection to resolve to cardIds), and `reshuffleRunConfig` (re-shuffles an existing
+`RunConfig.deck` directly, used by `GameContext.tsx`'s restart) — the spine between the two loops
 (docs/DESIGN.md, "The contract").
 
 ## Conventions

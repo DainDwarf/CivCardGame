@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { groupCounts } from '../rules/deckBuilder';
+import type { OwnedCards } from '../rules/collection';
 import { CardFace } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './DeckDisplay.module.css';
@@ -19,18 +20,21 @@ import styles from './DeckDisplay.module.css';
  */
 export function DeckTile({
   deck,
+  collection,
   onClick,
   selected = false,
   actions,
   title = "Click to view this deck's cards",
 }: {
   deck: DeckDef;
+  /** Resolves `deck.cards`' meta instance ids back to cardIds for display (Phase 3 Step 7.2). */
+  collection: OwnedCards;
   onClick?: () => void;
   selected?: boolean;
   actions?: ReactNode;
   title?: string;
 }) {
-  const groups = groupCounts(deck.cards);
+  const groups = groupCounts(deck.cards, collection);
   const mid = (groups.length - 1) / 2;
   return (
     <div
@@ -75,10 +79,13 @@ export function DeckTile({
  */
 export function DeckListOverlay({
   deck,
+  collection,
   onClose,
   actions,
 }: {
   deck: DeckDef;
+  /** Resolves `deck.cards`' meta instance ids back to cardIds for display (Phase 3 Step 7.2). */
+  collection: OwnedCards;
   onClose: () => void;
   actions?: ReactNode;
 }) {
@@ -98,7 +105,7 @@ export function DeckListOverlay({
             <p className={styles.empty}>This deck is empty.</p>
           ) : (
             <div className={styles.listGrid}>
-              {groupCounts(deck.cards).map((g) => (
+              {groupCounts(deck.cards, collection).map((g) => (
                 <CardFace
                   key={g.cardId}
                   card={CARDS[g.cardId]}

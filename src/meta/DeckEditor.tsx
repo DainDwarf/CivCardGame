@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { addCard, removeCard, groupCounts } from '../rules/deckBuilder';
-import { copiesOwned, isOwned, type OwnedCards } from '../rules/collection';
+import { copiesOwned, findInstance, isOwned, type OwnedCards } from '../rules/collection';
 import { CardFace } from '../components/CardFace';
 import styles from './DeckEditor.module.css';
 
@@ -73,10 +73,12 @@ export function DeckEditor({
   const works = cards.filter((c) => c.kind === 'work');
 
   // Copies of `cardId` still available to add — owned minus what's already in the deck.
-  // Shared by `atCap` and the picker's badge so both read the same number.
+  // Shared by `atCap` and the picker's badge so both read the same number. `deck.cards`
+  // holds meta instance ids (Phase 3 Step 7.2), so counting "in this deck" means resolving
+  // each instance id back to its cardId via `collection`, not comparing ids directly.
   function remainingCopies(cardId: string): number {
     const owned = copiesOwned(collection, cardId);
-    const inDeck = deck.cards.filter((id) => id === cardId).length;
+    const inDeck = deck.cards.filter((instanceId) => findInstance(collection, instanceId)?.cardId === cardId).length;
     return Math.max(0, owned - inDeck);
   }
 
@@ -105,7 +107,7 @@ export function DeckEditor({
 
   function handleRemove(cardId: string) {
     setDeck((d) => {
-      const next = removeCard(d.cards, cardId);
+      const next = removeCard(d.cards, cardId, collection);
       return next === 'invalid' ? d : { ...d, cards: next };
     });
   }
@@ -278,7 +280,7 @@ export function DeckEditor({
         {deck.cards.length === 0 && (
           <p className={styles.empty}>Click or drag a card above to add it.</p>
         )}
-        {groupCounts(deck.cards).map((g) => (
+        {groupCounts(deck.cards, collection).map((g) => (
           <CardFace
             key={g.cardId}
             as="button"
