@@ -24,9 +24,9 @@ Two consequences we deliberately design toward:
    condition. The same deck is a different test in every mission.
 2. Because the deck is fixed and runs are **seeded**, runs are reproducible — which
    enables replays and **headless simulation** (run a deck vs. a mission over many
-   seeds to measure win rate). This is our balancing tool. ✅ (Seeded RNG is planned;
-   the engine currently uses a deterministic deck order — shuffle + seed wiring arrives
-   with the meta/sim phase.)
+   seeds to measure win rate). This is our balancing tool. ✅ (Seeded RNG is
+   implemented: `rules/rng.ts` seeds the deck shuffle from `RunConfig.seed`, and the
+   in-run discard-pile reshuffle draws from the persisted `GameState.rngState` stream.)
 
 ## Theme & framing
 
@@ -50,8 +50,8 @@ through a narrow, serializable contract — `src/contract.ts`:
 
 ```
 RunConfig   (meta → run)
-  deck: CardId[]        // the run deck: player's meta deck + mission-injected cards
-                        //   (e.g. disasters); locked for the whole run
+  deck: DeckCard[]      // the run deck ({ cardId, stickers? }): player's meta deck +
+                        //   mission-injected cards (e.g. disasters); locked for the whole run
   board: BoardId        // government board — sets the run's starting resources
   missionId: string     // looked up in the MISSIONS registry — the run resolves it
   seed: string          // deterministic draws → replays & simulation
@@ -83,12 +83,14 @@ where the two are merged into one immutable run configuration. 🔧
 
 ### Card kinds ✅ / 🔧 details
 
-There are **four** card kinds — the `CardKind` values in `content/cards.ts`:
-`building`, `action`, `work`, `event`. They differ by how they leave your hand.
-By default a card returns to the **discard** pile once it's done being useful
-(reshuffled into the deck when it runs dry) — the **removed** pile is the
-exception, used only where a specific *effect* says so. Discard-vs-removed is
-never a property of the *kind*; it's decided by the effect that files the card:
+There are **five** card kinds — the `CardKind` values in `content/cards.ts`:
+`building`, `action`, `work`, `event`, `threat`. The first four differ by how they
+leave your hand; `threat` is the odd one out — it never enters a hand or pile at all,
+living instead in a persistent board zone (see below). By default a card returns to the
+**discard** pile once it's done being useful (reshuffled into the deck when it runs
+dry) — the **removed** pile is the exception, used only where a specific *effect* says
+so. Discard-vs-removed is never a property of the *kind*; it's decided by the effect
+that files the card:
 
 - **Building (commit):** the card *is* the building. Pay a cost to play; it leaves
   the deck and enters your **tableau** (one territory slot), producing **every
@@ -113,6 +115,10 @@ never a property of the *kind*; it's decided by the effect that files the card:
   **removed** instead — gone for the rest of the run — but that's Barbarian's
   own effect talking, not an inherent property of being an Event. → mission
   *pressure*.
+- **Threat (board hazard):** never in a hand, pile, or deck — a mission seeds it
+  directly into the persistent `GameState.threats` zone at setup, where it stays for
+  the rest of the run. What it does is up to the card. Never player-owned or
+  player-playable, so it's excluded everywhere `event` is. → persistent *pressure*.
 
 ### Turn structure 🔧
 
