@@ -36,6 +36,24 @@ const CARD_ART: Record<string, string> = {
 };
 export const artFor = (id: string) => CARD_ART[id] ?? '🏛️';
 
+/** Bottom-left row of per-sticker badges (Phase 3 Step 7.9) — `CardFace`'s own `stickerBadge` prop
+ *  renders this, and a non-`CardFace` board box that needs the identical treatment (`Board.tsx`'s
+ *  `BuildingBox`/`WorkBox`, which own their own custom markup rather than rendering a `CardFace`)
+ *  imports the component rather than reaching into this module's CSS classes directly — keeping
+ *  the sticker row's one visual definition here, not duplicated at each call site. */
+export function StickerRow({ stickers }: { stickers?: string[] }) {
+  if (!stickers || stickers.length === 0) return null;
+  return (
+    <span className={styles.stickerRow} aria-hidden="true">
+      {stickers.map((id, i) => (
+        <span key={i} className={styles.sticker} title={STICKERS[id]?.name}>
+          {STICKERS[id]?.icon ?? '🏷️'}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /** Presentation-only cost label, e.g. "2🌾" · "3🔨" · "" (blank when free). Extra conditions
  *  (culture level, reserved population, discard cost) are shown separately — see
  *  `describeConditions`. */
@@ -283,15 +301,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
           ×{countBadge}
         </span>
       )}
-      {stickerBadge && stickerBadge.length > 0 && (
-        <span className={styles.stickerRow} aria-hidden="true">
-          {stickerBadge.map((id, i) => (
-            <span key={i} className={styles.sticker} title={STICKERS[id]?.name}>
-              {STICKERS[id]?.icon ?? '🏷️'}
-            </span>
-          ))}
-        </span>
-      )}
+      <StickerRow stickers={stickerBadge} />
     </>
   );
 

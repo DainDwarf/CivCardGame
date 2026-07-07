@@ -360,11 +360,21 @@ already only ever read `self.stickers`. `DeckEditor.tsx`'s picker/banner/drag-cl
 `effectiveCard(...)` through as well; `CardZoomOverlay` gained the same `stickerBadge` pass-through
 prop `overrideCard` already had, and `CardInstancePanel`'s zoom (`Collection`'s and `Shop`'s
 shared per-copy drill-down) now tracks *which* instance was clicked (not just an open/closed
-boolean) so its zoom can resolve that instance's `effectiveCard`/stickers too. Still to come:
-a visible sticker badge on a stickered card *in* the run loop (7.6 didn't wire that up — Board.tsx
-still shows no `stickerBadge` at all), tutorial missions (Step 9), and `Stats` surfacing a per-run
-reward (deferred since `RunResult` deliberately excludes rewards, and there's no per-run record of
-whether that run was a first clear).
+boolean) so its zoom can resolve that instance's `effectiveCard`/stickers too. **Step 7.9's fourth
+item** (loop cards stay visibly stickered) is also done, completing Step 7.9: `Board.tsx`'s every
+`CardFace` render site (hand, the play/ghost clone, the drag clone, the pile viewer, an
+interactive-effect's revealed options, the threat column, and the zoom overlay) now passes
+`stickerBadge` through alongside the `effectiveCard` numbers Step 7.6 already wired, mirroring the
+meta screens' Step 7.9 (item 3) treatment. `BuildingBox`/`WorkBox` (the tableau/work-strip boxes)
+don't render a `CardFace` at all — they're bespoke markup — so they needed their own badge: a new
+`StickerRow` component (`CardFace.tsx`) is the one place the bottom-left badge row is drawn;
+`CardFace` itself renders it for its own `stickerBadge` prop, and `BuildingBox`/`WorkBox` import
+the component directly rather than reaching into `CardFace.module.css`'s classes from `Board.tsx`,
+keeping the row's visual definition in one place. `.buildingBox` gained `position: relative` so the
+badge (which straddles the box's bottom-left corner, same as a `CardFace`) has something to anchor
+to. Still to come: tutorial missions (Step 9), and `Stats` surfacing a per-run reward (deferred
+since `RunResult` deliberately excludes rewards, and there's no per-run record of whether that run
+was a first clear).
 
 ## Commands
 

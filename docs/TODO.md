@@ -78,12 +78,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     1. **Distinct icons** ✅ done — see *Done / shipped* below.
     2. **Bottom-left placement** ✅ done — see *Done / shipped* below.
     3. **Meta screens show effective values too** ✅ done — see *Done / shipped* below.
-    4. **Loop cards stay visibly stickered** — Step 7.6 made a stickered card's *numbers* correct in
-       the run, but never passes `stickerBadge` through any of `Board.tsx`'s CardFace renders, so a
-       stickered copy in hand/tableau looks identical to a plain one except for its stats. Wire
-       `stickerBadge` through the run loop's renders too (same `!!self.stickers?.length` check
-       `effectiveCard` already uses), so a stickered copy reads as visibly special in the run, not
-       only in the meta. `[size: M]` `[phase: 3]`
+    4. **Loop cards stay visibly stickered** ✅ done — see *Done / shipped* below.
 - **Step 8 — Board stickers** — permanent board modifiers bought with Influence (DESIGN.md: board
   stickers *are* the "board modifiers" — one concept, not two). The *easy* half of stickers: a board
   isn't multi-copy, so a board sticker just lives on the board entry in the meta and `setup.ts` layers it
@@ -260,8 +255,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   through too; `CardZoomOverlay` gained the same `stickerBadge` pass-through prop `overrideCard`
   already had, and `CardInstancePanel`'s zoom (`Collection`'s and `Shop`'s shared per-copy drill-down)
   now tracks *which* instance was clicked (not just an open/closed boolean) so its zoom can resolve
-  that instance's `effectiveCard`/stickers too. Item 4 of Step 7.9 (run-loop badge wiring) is still
-  open.
+  that instance's `effectiveCard`/stickers too.
+- **Phase 3 Step 7.9 (item 4/4) — Loop cards stay visibly stickered** — completes Step 7.9:
+  `Board.tsx`'s every `CardFace` render site (hand, the play/discard-cost ghost clone, the drag
+  clone, the pile viewer, an interactive effect's revealed options, the threat column, and the
+  zoom overlay) now passes `stickerBadge` through alongside the `effectiveCard` numbers Step 7.6
+  already wired — the `Ghost` interface and `spawnGhost`/`ghostFromSlot` gained a `stickers` field/
+  param so the flying clone carries the played instance's badge too, and the `zoom` state gained a
+  `stickerBadge` field threaded into every `setZoom` call. `BuildingBox`/`WorkBox` (the tableau/
+  work-strip boxes) render bespoke markup, not a `CardFace`, so they needed their own badge: rather
+  than have `Board.tsx` reach into `CardFace.module.css`'s classes directly (coupling a different
+  component to CardFace's internals), the bottom-left badge row was pulled out into its own
+  `StickerRow` component (`CardFace.tsx`) — `CardFace` renders it for its own `stickerBadge` prop,
+  and `BuildingBox`/`WorkBox` import the component itself, so the row's one visual definition stays
+  in one place. `.buildingBox` gained `position: relative` so the badge (straddling the box's
+  bottom-left corner, same as a `CardFace`) has a positioning context to anchor to.
 - **Phase 3 Step 7.8 — Add Irrigation sticker (self-contained sticker model)** — Irrigation
   (`content/stickers.ts`) is the first sticker whose eligibility depends on the *card*, not just
   the copy: it attaches only to a food-producing building (+1 food, nothing else). Rather than

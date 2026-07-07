@@ -16,7 +16,7 @@ import { isCompleted } from '../rules/campaign';
 import { computeRewards } from '../rules/rewards';
 import { isOwned, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
-import { CardFace, COST_ICON, artFor, describeBuilding } from './CardFace';
+import { CardFace, COST_ICON, StickerRow, artFor, describeBuilding } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
 
@@ -149,7 +149,13 @@ function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
  *  the sibling `.gameContent`, so a tall threat stack never creeps in front of the tableau. Reads
  *  only `GameState`, never the mission, so it renders identically no matter which mission seeded
  *  these (docs/TODO.md Phase 3 Step 6.3b). Renders nothing when no threats are seeded. */
-function ThreatZone({ G, onZoom }: { G: GameState; onZoom: (cardId: string, overrideText?: string) => void }) {
+function ThreatZone({
+  G,
+  onZoom,
+}: {
+  G: GameState;
+  onZoom: (cardId: string, overrideText?: string, stickerBadge?: string[]) => void;
+}) {
   if (G.threats.length === 0) return null;
   return (
     <div className={styles.threatColumn}>
@@ -161,8 +167,9 @@ function ThreatZone({ G, onZoom }: { G: GameState; onZoom: (cardId: string, over
             key={t.id}
             card={card}
             overrideText={overrideText}
+            stickerBadge={t.stickers}
             className={styles.staticCard}
-            onClick={() => onZoom(t.cardId, overrideText)}
+            onClick={() => onZoom(t.cardId, overrideText, t.stickers)}
           />
         );
       })}
@@ -355,6 +362,7 @@ function BuildingBox({
           </span>
         </div>
       </div>
+      <StickerRow stickers={inst.stickers} />
     </div>
   );
 }
@@ -421,6 +429,7 @@ function WorkBox({
           <span className={styles.bldOutput} aria-hidden="true">{gain}</span>
         </div>
       </div>
+      <StickerRow stickers={inst.stickers} />
     </div>
   );
 }
@@ -455,6 +464,9 @@ interface Ghost {
   /** A dynamic card's live current-value text, captured at spawn time (before its resolver runs
    *  and bumps its counter) so the flying clone shows the same value the hand card just did. */
   overrideText?: string;
+  /** The played instance's attached sticker id(s) — captured at spawn time so the flying clone
+   *  shows the same sticker badge the hand card just did. */
+  stickers?: string[];
 }
 
 /** A card being dragged from the hand toward the board. */
@@ -578,7 +590,7 @@ export function Board({
   const [pending, setPending] = useState<PendingPlay | null>(null);
   const [pendingDestroy, setPendingDestroy] = useState<PendingDestroy | null>(null);
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
-  const [zoom, setZoom] = useState<{ cardId: string; overrideText?: string; overrideCard?: CardDef } | null>(null);
+  const [zoom, setZoom] = useState<{ cardId: string; overrideText?: string; overrideCard?: CardDef; stickerBadge?: string[] } | null>(null);
   const [pileView, setPileView] = useState<{ title: string; cards: CardInstance[] } | null>(null);
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
@@ -783,18 +795,18 @@ export function Board({
   }
 
   /** Spawn a transient clone that animates a card out, then clean it up. */
-  function spawnGhost(card: CardDef, rect: Rect, anim: 'play' | 'drop', overrideText?: string) {
+  function spawnGhost(card: CardDef, rect: Rect, anim: 'play' | 'drop', overrideText?: string, stickers?: string[]) {
     const id = ghostSeq.current++;
-    setGhosts((gs) => [...gs, { id, card, rect, anim, overrideText }]);
+    setGhosts((gs) => [...gs, { id, card, rect, anim, overrideText, stickers }]);
     window.setTimeout(() => setGhosts((gs) => gs.filter((x) => x.id !== id)), anim === 'drop' ? 360 : 440);
   }
 
   /** Fly-up animation from a card's slot in the hand (used by the discard-cost flow). */
-  function ghostFromSlot(key: number, card: CardDef, overrideText?: string) {
+  function ghostFromSlot(key: number, card: CardDef, overrideText?: string, stickers?: string[]) {
     const el = cardEls.current.get(key);
     if (!el) return;
     const r = el.getBoundingClientRect();
-    spawnGhost(card, { left: r.left, top: r.top, width: r.width, height: r.height }, 'play', overrideText);
+    spawnGhost(card, { left: r.left, top: r.top, width: r.width, height: r.height }, 'play', overrideText, stickers);
   }
 
   /** Try to play a dragged card released over the board. */
@@ -836,6 +848,7 @@ export function Board({
       { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h },
       'drop',
       card.dynamicText?.(G, G.hand[d.handIdx]),
+      G.hand[d.handIdx].stickers,
     );
     moves.playCard(d.handIdx);
   }
@@ -848,6 +861,7 @@ export function Board({
         cardId: d.cardId,
         overrideCard: effectiveCard(CARDS[d.cardId], G.hand[d.handIdx]),
         overrideText: CARDS[d.cardId].dynamicText?.(G, G.hand[d.handIdx]),
+        stickerBadge: G.hand[d.handIdx].stickers,
       });
     } else {
       const barTop = handBarRef.current?.getBoundingClientRect().top ?? Infinity;
@@ -932,7 +946,7 @@ export function Board({
       } else {
         // It was a click, not a drag — zoom the building's card (mirrors finishDrag for hand cards).
         const inst = buildingById.get(d.id);
-        if (inst) setZoom({ cardId: inst.cardId, overrideCard: effectiveCard(CARDS[inst.cardId], inst) });
+        if (inst) setZoom({ cardId: inst.cardId, overrideCard: effectiveCard(CARDS[inst.cardId], inst), stickerBadge: inst.stickers });
       }
       setSlotDrag(null);
       setHoverSlot(null);
@@ -1101,6 +1115,7 @@ export function Board({
         pending.playedKey,
         effectiveCard(CARDS[pending.cardId], G.hand[pending.handIdx]),
         CARDS[pending.cardId].dynamicText?.(G, G.hand[pending.handIdx]),
+        G.hand[pending.handIdx].stickers,
       );
       moves.playCard(pending.handIdx, discards);
       setPending(null);
@@ -1116,6 +1131,7 @@ export function Board({
       pendingDestroy.playedKey,
       effectiveCard(CARDS[pendingDestroy.cardId], G.hand[pendingDestroy.handIdx]),
       CARDS[pendingDestroy.cardId].dynamicText?.(G, G.hand[pendingDestroy.handIdx]),
+      G.hand[pendingDestroy.handIdx].stickers,
     );
     moves.playCard(pendingDestroy.handIdx, [], instanceId);
     setPendingDestroy(null);
@@ -1198,7 +1214,10 @@ export function Board({
         ref={gameareaRef}
         style={{ top: 0, bottom: insets.bottom, paddingTop: insets.top }}
       >
-        <ThreatZone G={G} onZoom={(cardId, overrideText) => setZoom({ cardId, overrideText })} />
+        <ThreatZone
+          G={G}
+          onZoom={(cardId, overrideText, stickerBadge) => setZoom({ cardId, overrideText, stickerBadge })}
+        />
         <div className={styles.gameContent}>
           <div className={styles.slotGrid}>
             {layout.map((key, slotIdx) => {
@@ -1243,7 +1262,12 @@ export function Board({
                       onDestroy={() => handleDestroyTarget(inst.id)}
                       onZoomClick={
                         gameover && overlayMinimized
-                          ? () => setZoom({ cardId: inst.cardId, overrideCard: effectiveCard(CARDS[inst.cardId], inst) })
+                          ? () =>
+                              setZoom({
+                                cardId: inst.cardId,
+                                overrideCard: effectiveCard(CARDS[inst.cardId], inst),
+                                stickerBadge: inst.stickers,
+                              })
                           : undefined
                       }
                     />
@@ -1350,6 +1374,7 @@ export function Board({
                     // A card owning run-aware text (e.g. Cornucopia's growing gain) renders its
                     // current value here; the shell just asks, with no per-card branch.
                     overrideText={c.dynamicText?.(G, card.inst)}
+                    stickerBadge={card.inst.stickers}
                     ref={(el) => {
                       if (el) cardEls.current.set(card.key, el as HTMLButtonElement);
                       else cardEls.current.delete(card.key);
@@ -1359,7 +1384,12 @@ export function Board({
                     onPointerDown={(e) => onCardPointerDown(e, card)}
                     onClick={() => {
                       if (gameover && overlayMinimized) {
-                        setZoom({ cardId: card.cardId, overrideCard: ec, overrideText: c.dynamicText?.(G, card.inst) });
+                        setZoom({
+                          cardId: card.cardId,
+                          overrideCard: ec,
+                          overrideText: c.dynamicText?.(G, card.inst),
+                          stickerBadge: card.inst.stickers,
+                        });
                         return;
                       }
                       if (pending) handlePendingClick(card);
@@ -1429,6 +1459,7 @@ export function Board({
               key={g.id}
               card={g.card}
               overrideText={g.overrideText}
+              stickerBadge={g.stickers}
               className={`${styles.ghostCard} ${g.anim === 'drop' ? styles.ghostDrop : styles.ghostPlay}`}
               style={{ left: px(g.rect.left), top: px(g.rect.top), width: px(g.rect.width), height: px(g.rect.height) }}
             />
@@ -1456,6 +1487,7 @@ export function Board({
             <CardFace
               card={effectiveCard(CARDS[drag.cardId], G.hand[drag.handIdx])}
               overrideText={CARDS[drag.cardId].dynamicText?.(G, G.hand[drag.handIdx])}
+              stickerBadge={G.hand[drag.handIdx].stickers}
               className={styles.dragCard}
               style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
             />
@@ -1521,9 +1553,13 @@ export function Board({
                       key={g.key}
                       card={ec}
                       overrideText={overrideText}
+                      stickerBadge={g.inst.stickers}
                       className={styles.staticCard}
                       countBadge={g.count}
-                      onClick={(e) => { e.stopPropagation(); setZoom({ cardId: g.cardId, overrideCard: ec, overrideText }); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setZoom({ cardId: g.cardId, overrideCard: ec, overrideText, stickerBadge: g.inst.stickers });
+                      }}
                     />
                   );
                 })}
@@ -1546,6 +1582,7 @@ export function Board({
                   key={opt.id}
                   card={effectiveCard(CARDS[opt.cardId], opt)}
                   overrideText={CARDS[opt.cardId].dynamicText?.(G, opt)}
+                  stickerBadge={opt.stickers}
                   className={styles.interactionCard}
                   onClick={() => moves.resolveInteraction(i)}
                 />
@@ -1561,6 +1598,7 @@ export function Board({
         cardId={zoom?.cardId ?? null}
         overrideCard={zoom?.overrideCard}
         overrideText={zoom?.overrideText}
+        stickerBadge={zoom?.stickerBadge}
         onClose={() => setZoom(null)}
         hint="Drag a card onto the board to play · click anywhere to close"
       />

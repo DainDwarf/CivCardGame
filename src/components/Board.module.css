@@ -453,6 +453,7 @@
 
 /* A building box, filling its slot. */
 .buildingBox {
+  position: relative; /* anchors the bottom-left sticker badge row (CardFace.module.css's stickerRow) */
   box-sizing: border-box;
   width: 100%;
   min-height: 92px;
