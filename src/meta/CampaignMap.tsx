@@ -10,6 +10,7 @@ import { buildRunConfig, type RunConfig } from '../contract';
 import { isCompleted, isAvailable } from '../rules/campaign';
 import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
 import { CardFace } from '../components/CardFace';
+import { CardZoomOverlay } from '../components/CardZoomOverlay';
 import styles from './CampaignMap.module.css';
 
 const BOARD_IDS = Object.keys(BOARDS) as BoardId[];
@@ -283,6 +284,9 @@ function MissionFlowPopup({
   const [deckId, setDeckId] = useState<string | null>(null);
   // The deck whose list-view overlay is open (opened by re-clicking the selected deck).
   const [viewing, setViewing] = useState<DeckDef | null>(null);
+  // The reward card zoomed via click (only ever the already-unlocked reward — a face-down
+  // card has nothing to reveal).
+  const [zoomCardId, setZoomCardId] = useState<string | null>(null);
 
   const board = boardId ? BOARDS[boardId] : null;
   const canStart = boardId !== null && deckId !== null;
@@ -327,7 +331,15 @@ function MissionFlowPopup({
                       {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
                     </span>
                     <div className={styles.rewardCards}>
-                      {alreadyCleared ? <CardFace card={unlockCard!} /> : <CardFace faceDown />}
+                      {alreadyCleared ? (
+                        <CardFace
+                          card={unlockCard!}
+                          className={styles.zoomableCard}
+                          onClick={() => setZoomCardId(unlockCard!.id)}
+                        />
+                      ) : (
+                        <CardFace faceDown />
+                      )}
                     </div>
                   </>
                 )}
@@ -394,6 +406,7 @@ function MissionFlowPopup({
       </div>
 
       {viewing && <DeckListOverlay deck={viewing} collection={collection} onClose={() => setViewing(null)} />}
+      <CardZoomOverlay cardId={zoomCardId} onClose={() => setZoomCardId(null)} />
     </>
   );
 }

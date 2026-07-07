@@ -308,6 +308,10 @@
   margin-top: 0.3rem;
 }
 
+.zoomableCard {
+  cursor: pointer;
+}
+
 .picker {
   min-width: 0;
 }
