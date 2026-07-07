@@ -19,20 +19,13 @@ export interface CardEffect {
   territory?: number;
   /** Culture gained immediately — adds to G.culture (e.g. Cultural Festival). */
   culture?: number;
-  /**
-   * Remove a player-chosen building from the tableau, freeing its territory slot and
-   * returning its workers to the idle pool (the demolished card files to the removed pile).
-   * The target is chosen by the UI and threaded through as `EffectContext.target`; the demolition
-   * runs inside the resolver (`specToResolver`), while `playCard` still validates the target up
-   * front (must be supplied and present in the tableau).
-   */
+  /** Demolish a player-chosen tableau building, freeing its slot and returning its workers; the
+   *  demolished card files to `removed`. The target is chosen by the UI and threaded as
+   *  `EffectContext.target` (validated up front by `playCard`, applied inside the resolver). */
   destroy?: true;
-  /**
-   * Exile *this* card to the removed pile once it resolves, instead of the default discard
-   * (e.g. a disaster event you don't want recurring). Currently only set on `event` cards,
-   * checked by `rules/upkeep.ts`'s `resolveHandEvents` — without it, a resolved card discards
-   * like anything else. Not a trait of any `kind`; it's the effect that decides.
-   */
+  /** Exile *this* card to `removed` once it resolves, instead of the default discard (e.g. a
+   *  one-shot disaster event). Checked by `rules/upkeep.ts`'s `resolveHandEvents`; not a trait of
+   *  any `kind` — the effect decides. Currently only on `event` cards. */
   remove?: true;
 }
 
@@ -90,13 +83,11 @@ function demolish(G: GameState, instanceId?: number): void {
 }
 
 /**
- * Build a resolver from a declarative `CardEffect` — the default for the ~90% of cards whose
- * behavior is fully described by the data bag (`describeCard`/`unplayableReason` read the same
- * data). Reproduces `applyEffect` exactly, plus the `destroy` mutation (folded in from `playCard`
- * so all effect behavior resolves through one path) and a Reinforced sticker's +1 to `gain`
- * (`rules/stickers.ts`'s `effectiveGain` — see its doc for why a bespoke `resolve` doesn't get
- * this for free). `remove` is *not* handled here: it governs where the played card itself files
- * afterwards, a caller-owned lifecycle decision (see `resolveHandEvents`), not a mutation of `G`.
+ * Build a resolver from a declarative `CardEffect` — the default for the ~90% of cards fully
+ * described by the data bag. Reproduces `applyEffect`, plus the `destroy` mutation (folded in so all
+ * effect behavior resolves through one path) and a sticker's `effectiveGain`. `remove` is *not*
+ * handled here: it decides where the played card files afterwards (a caller-owned lifecycle decision,
+ * see `resolveHandEvents`), not a mutation of `G`.
  */
 export function specToResolver(effect?: CardEffect): Resolver {
   return (ctx) => {
@@ -117,23 +108,19 @@ export function resolveCard(ctx: EffectContext): void {
 }
 
 /**
- * Build a production resolver from a card's declarative production fields — the default for
- * every `building`/`work` card whose per-round output is fully described by `produces`/
- * `cultureOutput`/`effect.gain`. Deliberately narrower than `specToResolver`: it applies only
- * `gain`/`culture`, never a one-shot play field (`draw`/`population`/`territory`/`destroy`) a
- * card might also declare — those must never fire on a recurring tick. A Reinforced sticker's
- * +1 (`effectiveGain`) applies here too, same as the play-time default above.
+ * Build a production resolver from a card's declarative production fields. Deliberately narrower
+ * than `specToResolver`: applies only `gain`/`culture` (via `effectiveGain`), never a one-shot play
+ * field (`draw`/`population`/`territory`/`destroy`) a card might also declare — those must never
+ * fire on a recurring tick.
  */
 function defaultProduce(card: CardDef): Resolver {
   return (ctx) => applyEffect(ctx.G, { gain: effectiveGain(card.produces ?? card.effect?.gain, ctx.self), culture: card.cultureOutput });
 }
 
 /**
- * Resolve one operating (staffed) building/Work instance's per-round production through its own
- * resolver: `card.produce` if it defines one, otherwise the declarative default above. Production's
- * counterpart to `resolveCard` — the caller (the upkeep production tick) must never read
- * `produces`/`cultureOutput`/`effect.gain` itself and reinterpret them; it only asks the card to
- * produce. Mirrors `tickThreats`'s reuse of `resolveCard` for the same reason.
+ * Resolve one operating (staffed) instance's per-round production: `card.produce` if it owns one,
+ * otherwise the declarative default above. Production's counterpart to `resolveCard` — the caller
+ * only asks the card to produce, never reading `produces`/`cultureOutput` itself.
  */
 export function resolveProduction(ctx: EffectContext): void {
   const card = CARDS[ctx.self.cardId];

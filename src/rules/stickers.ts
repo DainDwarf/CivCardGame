@@ -3,21 +3,15 @@ import { CARDS, type CardDef } from '../content/cards';
 import { findInstance, isStickerFull, type OwnedCards } from './collection';
 import type { Resources } from './resources';
 
-/** The minimal shape `effectiveGain`/`effectiveCost`/`effectiveCard` need — any card holder
- *  that carries a `stickers` array works, whether that's a run `CardInstance` (`state.ts`), a
- *  meta `MetaCardInstance` (`collection.ts`), or a deck-editor display group (`deckBuilder.ts`'s
- *  `DeckGroupEntry`) — the run loop and the meta screens (Step 7.9's "meta screens show
- *  effective values too") read the same effective stats through the same functions. */
+/** The minimal shape `effectiveGain`/`effectiveCost`/`effectiveCard` need — any holder carrying a
+ *  `stickers` array (a run `CardInstance`, a meta `MetaCardInstance`, or a deck-editor display
+ *  group), so run and meta screens read the same effective stats through the same functions. */
 export interface StickeredInstance {
   stickers?: string[];
 }
 
-/**
- * The meta sticker shop (Phase 3 Step 7.5): spend Influence to attach a permanent sticker to
- * one chosen owned `MetaCardInstance`, mutating it in place. Mirrors `rules/shop.ts`'s
- * `buyTier` — the one pure place this logic lives; `meta/Shop.tsx` is its UI consumer and
- * `App.tsx`'s `attachSticker` its write path.
- */
+/** Result of a sticker purchase — the updated Influence + collection. Mirrors `rules/shop.ts`'s
+ *  `buyTier`; `meta/Shop.tsx` is the UI consumer, `App.tsx`'s `attachSticker` the write path. */
 export interface StickerPurchase {
   influence: number;
   collection: OwnedCards;
@@ -25,21 +19,18 @@ export interface StickerPurchase {
 
 /** Whether `sticker` may attach to `card` — the one eligibility dispatcher every site routes
  *  through (shop listing/offer, `buySticker`'s reject). A sticker owns its own condition via its
- *  `appliesTo` predicate (`content/stickers.ts`); absent = attaches to anything (Reinforced,
- *  Efficient). No caller inspects a card's `kind`/`produces` or branches on a sticker id itself
- *  (Step 7.8), so a new restricted sticker is authored on its def alone. */
+ *  `appliesTo` predicate (`content/stickers.ts`); absent = attaches to anything. No caller inspects
+ *  a card's `kind`/`produces` or branches on a sticker id, so a new restricted sticker is authored
+ *  on its def alone. */
 export function stickerAppliesTo(sticker: StickerDef, card: CardDef): boolean {
   return sticker.appliesTo?.(card) ?? true;
 }
 
-/** Attempt to attach `stickerId` to `instanceId`. Returns `null` (a no-op signal, mirroring
- *  `shop.ts`'s `buyTier`) when the sticker or instance doesn't exist, the sticker doesn't apply
- *  to that card (`stickerAppliesTo` — this is the *authoritative* eligibility guard; the shop UI
- *  only mirrors it), the instance is already full (`MAX_STICKERS`, Step 7.7), or the player can't
- *  afford it. The *same* sticker id can be attached twice — a design choice, not an oversight:
- *  two Reinforced on one copy stacks to +2 (`effectiveGain`/`effectiveCost` below fold once per
- *  attached copy). Appends rather than replaces, so a once-stickered instance keeps its first
- *  sticker when a second is attached. Immutable — the input `collection` is untouched. */
+/** Attempt to attach `stickerId` to `instanceId`. Returns `null` (mirroring `shop.ts`'s `buyTier`)
+ *  when the sticker or instance doesn't exist, the sticker doesn't apply (`stickerAppliesTo`, the
+ *  authoritative guard the shop UI only mirrors), the instance is already full, or the player can't
+ *  afford it. The *same* sticker id can be attached twice by design — two Reinforced stacks to +2
+ *  (the folds below apply once per attached copy). Appends (never replaces); immutable. */
 export function buySticker(
   collection: OwnedCards,
   influence: number,
@@ -57,22 +48,18 @@ export function buySticker(
 }
 
 /**
- * Card stickers in the run loop (Phase 3 Step 7.6, made self-contained in Step 7.8): the two
- * functions below are the *only* place a sticker's actual effect is applied — `rules/effects.ts`'s
- * declarative default resolvers (`defaultProduce`/`specToResolver`) and the two cost sites
- * (`unplayableReason`, `playCard`) all call through here rather than reading `self.stickers` and
- * reimplementing the bump themselves, so resolution and the `effectiveCard` display below never
- * diverge. Each *dispatches to the sticker's own `applyGain`/`applyCost` hook* (`content/stickers.ts`)
- * — it holds no sticker-specific knowledge itself, so a new sticker's effect is authored on its def.
+ * Card stickers in the run loop: the two functions below are the *only* place a sticker's actual
+ * effect is applied — `rules/effects.ts`'s declarative default resolvers and the two cost sites
+ * (`unplayableReason`, `playCard`) all call through here rather than reimplementing the bump, so
+ * resolution and the `effectiveCard` display below never diverge. Each dispatches to the sticker's
+ * own `applyGain`/`applyCost` hook (`content/stickers.ts`) — no sticker-specific knowledge here.
  *
  * Both are a plain fold over `self.stickers`, applying each attached copy's hook in turn — so
- * stacking (two Reinforced → +2) and composing (Reinforced + Efficient) fall out for free, and
- * a sticker whose def lacks the relevant hook (Efficient in the gain fold) is skipped via `?? out`.
+ * stacking (two Reinforced → +2) and composing (Reinforced + Efficient) fall out for free, and a
+ * sticker whose def lacks the relevant hook is skipped via `?? out`.
  *
  * Neither is consulted by a card's own bespoke `resolve`/`produce` (e.g. Cornucopia) — a sticker
- * only augments the *declarative* default, so a sticker on a bespoke-resolver card is a known
- * v1 gap (its `dynamicText` display doesn't reflect it either, so display and resolution still
- * agree — see `state.ts`'s `CardInstance.stickers`).
+ * only augments the *declarative* default (a known v1 gap; see `state.ts`'s `CardInstance.stickers`).
  */
 
 /** Fold each attached sticker's `applyGain` over `base` in order. `undefined` in → `undefined`
@@ -93,10 +80,10 @@ export function effectiveCost(cost: Partial<Resources>, self: StickeredInstance)
 }
 
 /** A card instance's *displayed* stats after any attached sticker — a shallow `CardDef` copy with
- *  `cost`/`produces`/`effect.gain` swapped for their `effectiveCost`/`effectiveGain` values, so
- *  every render site that already does `card={CARDS[cardId]}` can instead pass `effectiveCard(CARDS[cardId],
- *  self)` and show the true number with zero changes to `CardFace`/`describeCost`/`describeBuilding`
- *  themselves. Returns `card` unchanged (no new object) when the instance carries no sticker. */
+ *  `cost`/`produces`/`effect.gain` swapped for their effective values, so any render site doing
+ *  `card={CARDS[cardId]}` can pass `effectiveCard(CARDS[cardId], self)` instead and show the true
+ *  number with no change to `CardFace`/`describeCost`/`describeBuilding`. Returns `card` unchanged
+ *  when the instance carries no sticker. */
 export function effectiveCard(card: CardDef, self: StickeredInstance): CardDef {
   if (!self.stickers?.length) return card;
   const produces = card.produces && effectiveGain(card.produces, self);

@@ -4,21 +4,10 @@ import { effectiveCost } from '../rules/stickers';
 import { CARDS } from '../content/cards';
 
 /**
- * Play a card from hand, routed by `kind`:
- * - `building`: placed into the tableau (one territory slot, auto-staffed from idle pop) where it
- *   produces each round while staffed. The card is *not* filed to a pile while it stays in play.
- *   Whether it later goes to `discard` or `removed` isn't decided by being a `building` — it's
- *   whatever effect takes it out of the tableau; see `effect.destroy` below, the only such effect
- *   today, which sends it to `removed`.
- * - `work`: sticks onto the board (into the workZone, auto-staffed) and resolves *nothing* now —
- *   it produces its `effect.gain` only while staffed, at end-of-turn upkeep; its cardId is held
- *   in the workZone until it files to the discard at end of turn.
- * - `action`: resolves its `effect` immediately, then recycles to the discard.
- * Costs may include resources and a discard cost: `discardHandIdxs` gives the hand positions of
- * cards to sacrifice (distinct indices, not the played card's slot). Cards with `effect.destroy`
- * require a `destroyInstanceId` — the exact building instance to demolish (frees its territory
- * slot and workers; that demolished card goes to the removed pile). Moves are the only place `G`
- * may change.
+ * Play a card from hand — the sole entry for putting a card into play. Pays costs (resources plus a
+ * discard cost: `discardHandIdxs` gives the hand positions to sacrifice, distinct from the played
+ * slot), then routes by `kind` (see the inline routing below). A card with `effect.destroy` requires
+ * `destroyInstanceId`, the tableau building to demolish. Moves are the only place `G` may change.
  */
 export function playCard(
   G: GameState,

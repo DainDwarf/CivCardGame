@@ -2,11 +2,10 @@ import { emptyResources, type Resources } from './resources';
 import { seededRng } from './rng';
 
 /**
- * A card with a stable per-run identity. Every card living in a zone (`hand`/`deck`/`discard`/
- * `removed`) or on the board (`tableau`/`workZone`) is one of these: `cardId` (a key into the CARDS
- * catalogue) is *what* it is, `id` is *which physical copy* — unique within the run, so a resolver,
- * the UI, or a mission can target this exact copy even among identical siblings, and per-copy state
- * (below) rides with it as it cycles hand→discard→deck→hand.
+ * A card with a stable per-run identity. Every card in a zone (`hand`/`deck`/`discard`/`removed`)
+ * or on the board (`tableau`/`workZone`) is one of these: `cardId` is *what* it is, `id` is *which
+ * physical copy* — unique within the run, so a resolver, the UI, or a mission can target this exact
+ * copy among identical siblings, and per-copy state rides with it as it cycles hand→discard→deck.
  */
 export interface CardInstance {
   /** Stable identity, unique within the run — assigned once, at mint (setup or play). */
@@ -14,12 +13,9 @@ export interface CardInstance {
   /** Key into the CARDS catalogue. */
   cardId: string;
   /**
-   * Per-instance run counters, effect-layer-owned — a card whose behavior depends on how *its own
-   * copy* has been used (e.g. Cornucopia's play count) keeps its number here, keyed however its
-   * resolver chooses. Deliberately a generic map, not bespoke named fields: cards own their own
-   * numbers, so neither this shared type nor `GameState` accretes card-specific variables. Absent
-   * until a resolver first writes one. Plain data, carried by structuredClone/undo for free. Read/
-   * written via `getCounter`/`bumpCounter`.
+   * Per-instance run counters (e.g. Cornucopia's play count), keyed however the card's resolver
+   * chooses — a generic map, not bespoke fields, per the *cards own their own numbers* convention.
+   * Absent until a resolver first writes one; read/written via `getCounter`/`bumpCounter`.
    *
    * NOTE: three transitions deliberately drop `counters` when re-minting a plain instance, harmless
    * today because no work/building/interactive card uses one — but the exact spots a *future* such
@@ -29,43 +25,33 @@ export interface CardInstance {
    */
   counters?: Record<string, number>;
   /**
-   * Permanent sticker ids carried over from the owning meta `MetaCardInstance` (`rules/collection.ts`)
-   * at run setup (Phase 3 Step 7.6) — copied once, at mint, and never written to during a run (no
-   * mechanic attaches/removes a sticker mid-run). `rules/stickers.ts`'s `effectiveGain`/`effectiveCost`/
-   * `effectiveCard` are the only readers; a card's own `resolve`/`produce` (a bespoke one, e.g.
-   * Cornucopia) is *not* composed through them, same as a threat's own drain isn't reinterpreted by
-   * the tick loop — a v1 gap, not a bug: a sticker only affects the declarative default resolvers.
+   * Permanent sticker ids, copied once from the owning `MetaCardInstance` at run setup and never
+   * written during a run. `rules/stickers.ts`'s `effectiveGain`/`effectiveCost`/`effectiveCard` are
+   * the only readers — and they compose only the *declarative default* resolvers, so a card's own
+   * bespoke `resolve`/`produce` (e.g. Cornucopia) is not sticker-adjusted (a v1 gap, not a bug).
    */
   stickers?: string[];
 }
 
-/** A card placed on the board as a staffable instance — a building in the `tableau` or a Work card
- *  in the `workZone`. A `CardInstance` plus the population assigned to staff it. The card *is* the
- *  building/work box (there's no separate entity), and `id` targets this exact one (staffing,
- *  demolish, its slot) even among identical siblings. */
+/** A `CardInstance` placed on the board as a staffable — a building in the `tableau` or a Work card
+ *  in the `workZone` — plus the population assigned to staff it. */
 export interface PlacedCard extends CardInstance {
   /** Population currently assigned to this instance. */
   workers: number;
 }
 
-/** A building erected in the tableau. A `building` card played from hand becomes one of these and
- *  stays in play until demolished (then its card files to the `removed` pile); it produces its
- *  card's `produces`/`cultureOutput` each round while staffed. */
+/** A building erected in the tableau: stays in play until demolished, producing its card's
+ *  `produces`/`cultureOutput` each round while staffed. */
 export type BuildingInstance = PlacedCard;
 
-/** A Work card played onto the board this turn. Transient: it produces its card's `effect.gain`
- *  only while staffed, then the card files to `discard` at end of turn (see `endTurn`) and the
- *  instance is cleared. */
+/** A Work card played onto the board this turn. Transient: produces its card's `effect.gain` only
+ *  while staffed, then files to `discard` at end of turn (see `endTurn`). */
 export type WorkInstance = PlacedCard;
 
-/** A persistent board hazard, seeded by a mission's `setup` (`rules/threats.ts`'s `addThreat`) —
- *  not a card in any pile, and never player-playable, but otherwise a plain `CardInstance`: its
- *  escalation lives in its own `counters` (via `getCounter`/`bumpCounter`), and each upkeep tick
- *  resolves it through the same resolver spine every other card uses (`rules/threats.ts`'s
- *  `tickThreats` just calls `resolveCard`) — the *card's own* `resolve` computes and applies its
- *  drain and bumps its own counter, mirroring Cornucopia's per-play growth, just tick-triggered
- *  instead of play-triggered. `id` shares the run-wide instance-id space (`population.ts`'s
- *  `nextInstanceId`) with every other card/placed instance. */
+/** A persistent board hazard, mission-seeded and never in a pile or player-playable, but otherwise a
+ *  plain `CardInstance`: its escalation lives in its own `counters`, and each upkeep tick resolves it
+ *  through the shared resolver spine (`rules/threats.ts`'s `tickThreats` just calls `resolveCard`, so
+ *  the threat card computes its own drain). Shares the run-wide instance-id space. */
 export type ThreatInstance = CardInstance;
 
 /**
@@ -79,92 +65,67 @@ export interface GameState {
   resources: Resources;
   /** Total population — a pool of workers. Everyone eats food each round. */
   population: number;
-  /** Cards in hand — each a `CardInstance` (identity-bearing, so an individual copy can carry its
-   *  own per-instance state as it's played and recycled). */
+  /** Cards in hand. */
   hand: CardInstance[];
   /** Draw pile. */
   deck: CardInstance[];
-  /** Discard pile — where a card lands by default once it's played and resolved (or, for a
-   *  Work card, once its turn on the board ends, or an `event` card once it auto-resolves —
-   *  see `rules/upkeep.ts`'s `resolveHandEvents`). Going to `removed` instead is always the
-   *  exception, driven by a specific effect rather than a card's `kind`: a `building` card
-   *  goes there only if some other card's `effect.destroy` targets it (demolishing it out of
-   *  the tableau), and an `event` card goes there only if its own `effect.remove` is set
-   *  (currently just Barbarian). Reshuffled into the deck when it runs dry. */
+  /** Discard pile — the default landing spot once a card is played and resolved (or a Work card's
+   *  turn ends, or an `event` auto-resolves). Reshuffled into the deck when it runs dry. Going to
+   *  `removed` instead is the exception, driven by the *effect* not the kind — see `removed`. */
   discard: CardInstance[];
   /**
-   * Exile pile — cards permanently removed from the deck for the rest of the run (never
-   * drawn again, never reshuffled). This is *not* the tableau: a building in play is an
-   * active entity on the board, whereas a removed card is gone from play. A `building` card
-   * moves here when demolished (via another card's `effect.destroy`), and an auto-resolved
-   * `event` card moves here if its own effect sets `remove: true` (currently just Barbarian)
-   * — see `discard`'s doc comment above for why neither is an inherent rule of its `kind`.
+   * Exile pile — cards permanently removed from the deck (never drawn or reshuffled again); distinct
+   * from the tableau (an active board entity). A card lands here only when a specific effect files it
+   * there, never by its `kind`: a `building` when another card's `effect.destroy` demolishes it, an
+   * auto-resolved `event` when its own `effect.remove` is set (currently just Barbarian).
    */
   removed: CardInstance[];
   /** Buildings in play (each a placed `building` card), tracking their assigned workers. */
   tableau: BuildingInstance[];
-  /**
-   * Work cards played this turn, each tracking its assigned workers. Transient: not
-   * territory-capped, produces only while staffed, and cleared at end of turn (each card
-   * files to `discard`). Populated by `playCard`, reset in `endTurn`'s `discardWorkZone`.
-   */
+  /** Work cards played this turn, tracking assigned workers. Transient: not territory-capped,
+   *  produces only while staffed, cleared at end of turn (each files to `discard`). */
   workZone: WorkInstance[];
-  /** Persistent board hazards, ticking (draining resources, escalating) every upkeep — see
-   *  `rules/threats.ts`. Mission-seeded only; empty on every run that doesn't use one. */
+  /** Persistent board hazards, ticking every upkeep — see `rules/threats.ts`. Mission-seeded only;
+   *  empty on every run that doesn't use one. */
   threats: ThreatInstance[];
-  /**
-   * Territory available — the tableau may hold at most this many buildings. Each building
-   * fills one slot; building cards become unplayable when it is full. Expanded by territory
-   * cards (Conquest, Develop).
-   */
+  /** Territory available — the tableau may hold at most this many buildings (one slot each);
+   *  building cards become unplayable when full. Expanded by territory cards (Conquest, Develop). */
   territory: number;
-  /**
-   * Culture accumulated so far — a civilization-wide gauge, not a spendable currency.
-   * Grows each round from operating cultural buildings (e.g. Theater) and from card
-   * effects (e.g. Cultural Festival). Some cards require a minimum culture level to play.
-   */
+  /** Culture accumulated so far — a civilization-wide gauge, not a spendable currency. Grows from
+   *  operating cultural buildings (Theater) and card effects (Cultural Festival); some cards gate on
+   *  a minimum level. */
   culture: number;
   /** How many cards to draw up to at the start of each round. */
   handSize: number;
   /** Which mission this run is playing (looked up in the MISSIONS registry). */
   missionId: string;
-  /**
-   * Persisted state of the run's RNG stream (`rules/rng.ts`'s `seededRng`/
-   * `shuffleFromState`), advanced each time the discard pile reshuffles into a new
-   * deck. Setup seeds this from `RunConfig.seed`; from there it's just data, so undo
-   * and structuredClone carry it for free.
-   */
+  /** Persisted state of the run's RNG stream (`rules/rng.ts`), advanced on each reshuffle. Setup
+   *  seeds it from `RunConfig.seed`; from there it's just data, carried by undo/structuredClone. */
   rngState: readonly number[];
-  /**
-   * A card effect suspended awaiting a player choice, or `null` when none is pending. While set,
-   * the run is "paused" on that choice: `endTurn` no-ops and undo is blocked until it resolves (see
-   * `PendingInteraction`). Plain data, carried by undo/structuredClone for free.
-   */
+  /** A card effect suspended awaiting a player choice, or `null` when none is pending. While set,
+   *  `endTurn` no-ops and undo is blocked until it resolves (see `PendingInteraction`). */
   pendingInteraction: PendingInteraction | null;
 }
 
 /**
- * A card effect suspended mid-resolution, waiting on a player choice (`rules/effects.ts`'s
- * resolver `EffectContext.answer`). Plain data on `GameState` so it survives structuredClone/undo
- * and stays in the framework-free core: the resolver reveals options, parks them here, and returns;
- * the UI renders a prompt from this; `run/moves.ts`'s `resolveInteraction` re-enters the same card's
- * resolver with the chosen index, which completes the effect and clears this back to `null`.
- * A pending interaction is **non-cancelable** — the reveal has already committed (e.g. Foresight
- * lifts cards off the deck, clearing the undo stack), so the only exit is answering it.
+ * A card effect suspended mid-resolution, waiting on a player choice. Plain data on `GameState` so
+ * it survives structuredClone/undo: the resolver reveals options, parks them here, and returns; the
+ * UI renders a prompt from this; `run/moves.ts`'s `resolveInteraction` re-enters the same card's
+ * resolver with the chosen index, completing the effect and clearing this back to `null`.
+ * **Non-cancelable** — the reveal has already committed (e.g. Foresight lifts cards off the deck,
+ * clearing the undo stack), so the only exit is answering it.
  */
 export interface PendingInteraction {
   /** The card whose resolver is suspended — `resolveInteraction` re-enters *this* card's resolver. */
   cardId: string;
-  /** The suspended card's own instance id, so the resume pass can reconstruct its `self` (the copy
-   *  that was played). Carried for completeness; today's one interactive card (Foresight) reads only
-   *  its parked `options`, not its own counters. */
+  /** The suspended card's own instance id, so the resume pass can reconstruct its `self`. */
   instanceId: number;
   /** Which choice shape this is (drives the UI prompt). Only `'chooseCard'` exists so far. */
   kind: 'chooseCard';
   /** Prompt text for the modal header — authored by the card, so the shell needs no per-card copy. */
   prompt: string;
-  /** The revealed card instances the player picks from — full instances (not bare ids) so the chosen
-   *  copy keeps its identity when it moves into the hand. */
+  /** The revealed card instances to pick from — full instances (not bare ids) so the chosen copy
+   *  keeps its identity when it moves into the hand. */
   options: CardInstance[];
   /** How many to pick (1 today). */
   pick: number;
@@ -206,20 +167,18 @@ export function bumpCounter(inst: CardInstance, key: string, by = 1): number {
 }
 
 /** Mint fresh card instances from an ordered list of card ids, assigning sequential ids from
- *  `startId`. The one path that turns a plain `string[]` (a `RunConfig.deck`, a mission's injected
- *  cards, a test fixture) into identity-bearing zone contents — shared by `run/setup.ts` and tests
- *  so no one re-implements id assignment. Ids must stay unique within the run: `startId` defaults to
- *  1 for a fresh deck; a later bulk mint (e.g. a mission seeding extra cards) passes
- *  `nextInstanceId(G)` so it continues past whatever ids already exist. */
+ *  `startId`. The shared path turning a plain `string[]` (a `RunConfig.deck`, a mission's injected
+ *  cards, a test fixture) into identity-bearing zone contents, so no one re-implements id assignment.
+ *  Ids must stay unique within the run: `startId` defaults to 1 for a fresh deck; a later bulk mint
+ *  passes `nextInstanceId(G)` to continue past existing ids. */
 export function instancesFromCardIds(cardIds: readonly string[], startId = 1): CardInstance[] {
   return cardIds.map((cardId, i) => ({ id: startId + i, cardId }));
 }
 
-/** Mint fresh, identity-bearing instances from a run's resolved deck list (`RunConfig.deck` —
- *  `rules/deckBuilder.ts`'s `DeckCard`), carrying each entry's permanent stickers (if any) onto
- *  its instance. The sticker-aware counterpart to `instancesFromCardIds` above, used only by
- *  `run/setup.ts`: a mission's injected cards (barbarians, threats) have no meta instance behind
- *  them, so they mint through the plain cardId path instead. */
+/** Mint fresh instances from a run's resolved deck list (`rules/deckBuilder.ts`'s `DeckCard`),
+ *  carrying each entry's permanent stickers. The sticker-aware counterpart to `instancesFromCardIds`,
+ *  used only by `run/setup.ts`: a mission's injected cards have no meta instance behind them, so they
+ *  mint through the plain cardId path instead. */
 export function instancesFromDeckCards(cards: readonly { cardId: string; stickers?: string[] }[], startId = 1): CardInstance[] {
   return cards.map((c, i) => ({
     id: startId + i,
