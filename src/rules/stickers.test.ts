@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buySticker, effectiveCard, effectiveCost, effectiveGain } from './stickers';
+import { buySticker, effectiveCard, effectiveCost, effectiveGain, stickerAppliesTo } from './stickers';
 import { collectionFromCounts } from './collection';
 import type { CardInstance } from './state';
 import { CARDS } from '../content/cards';
+import { STICKERS } from '../content/stickers';
 
 describe('buySticker', () => {
   it('attaches the sticker and deducts its cost', () => {
@@ -62,6 +63,53 @@ describe('buySticker', () => {
     const collection = collectionFromCounts({ farm: 1 });
     const [a] = collection.instances.map((i) => i.id);
     expect(buySticker(collection, 1, a, 'reinforced')).toBeNull();
+  });
+
+  it('attaches an eligible restricted sticker (Irrigation on a food building)', () => {
+    const collection = collectionFromCounts({ farm: 1 });
+    const [a] = collection.instances.map((i) => i.id);
+    const result = buySticker(collection, 5, a, 'irrigation');
+    expect(result).not.toBeNull();
+    expect(result!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['irrigation']);
+  });
+
+  it('rejects a restricted sticker on an ineligible card (Irrigation on a non-food building)', () => {
+    const collection = collectionFromCounts({ workshop: 1 });
+    const [a] = collection.instances.map((i) => i.id);
+    expect(buySticker(collection, 5, a, 'irrigation')).toBeNull();
+  });
+});
+
+describe('stickerAppliesTo (Irrigation eligibility, Step 7.8)', () => {
+  it('applies to a food-producing building', () => {
+    expect(stickerAppliesTo(STICKERS.irrigation, CARDS.farm)).toBe(true);
+  });
+
+  it('does not apply to a non-food building', () => {
+    expect(stickerAppliesTo(STICKERS.irrigation, CARDS.workshop)).toBe(false);
+  });
+
+  it('does not apply to a non-building card', () => {
+    expect(stickerAppliesTo(STICKERS.irrigation, CARDS.settlers)).toBe(false);
+  });
+
+  it('an unrestricted sticker (Reinforced) applies to everything', () => {
+    expect(stickerAppliesTo(STICKERS.reinforced, CARDS.farm)).toBe(true);
+    expect(stickerAppliesTo(STICKERS.reinforced, CARDS.workshop)).toBe(true);
+    expect(stickerAppliesTo(STICKERS.reinforced, CARDS.settlers)).toBe(true);
+  });
+});
+
+describe('effectiveGain (Irrigation, Step 7.8)', () => {
+  it('bumps only food by 1, leaving other outputs untouched', () => {
+    const self: CardInstance = { id: 1, cardId: 'colossus', stickers: ['irrigation'] };
+    expect(effectiveGain({ food: 1, science: 1, military: 1 }, self)).toEqual({ food: 1 + 1, science: 1, military: 1 });
+  });
+
+  it('composes with Reinforced on the same copy', () => {
+    const self: CardInstance = { id: 1, cardId: 'farm', stickers: ['irrigation', 'reinforced'] };
+    // Reinforced +1 to every key, then Irrigation +1 to food → food 2+1+1 = 4.
+    expect(effectiveGain({ food: 2 }, self)).toEqual({ food: 4 });
   });
 });
 

@@ -72,13 +72,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     `[size: M]` `[phase: 3]`
   - **Step 7.7 — Raise the sticker cap to 2 per instance** — ✅ done — see *Done / shipped* below.
     `[size: S]` `[phase: 3]`
-  - **Step 7.8 — Add Irrigation sticker** — unlike Reinforced's blanket "+1 to whatever this copy
-    produces," Irrigation only attaches to (and only bumps) a **food-producing building**: +1 food
-    production, no effect on anything else. Needs a card-aware check before applying (does this
-    card's `produces` include `food`?), not just a self-stickers lookup like `effectiveGain` does
-    today — the first sticker whose eligibility depends on the card, not just the copy. Open design
-    question for whoever picks this up: does the shop/attach UI hide Irrigation entirely on an
-    ineligible card, or offer it and have it silently do nothing? `[size: S]` `[phase: 3]` `[?]`
+  - **Step 7.8 — Add Irrigation sticker** — ✅ done — see *Done / shipped* below. `[size: S]` `[phase: 3]`
   - **Step 7.9 — Sticker UI: per-sticker icons, bottom-left badge, effective values everywhere** —
     four related gaps left after 7.5/7.6:
     1. **Distinct icons** — `CardFace`'s `stickerBadge` is one hardcoded 🏷️ regardless of which
@@ -236,6 +230,26 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 7.8 — Add Irrigation sticker (self-contained sticker model)** — Irrigation
+  (`content/stickers.ts`) is the first sticker whose eligibility depends on the *card*, not just
+  the copy: it attaches only to a food-producing building (+1 food, nothing else). Rather than
+  hard-code that check at the shop's selection site (the trap a prior attempt fell into —
+  scattering sticker rules the way over-specific card logic scattered before the resolver
+  rewrite), a sticker now **owns its own logic** on its `StickerDef`: an optional `appliesTo(card)`
+  predicate (absent = any card) plus `applyGain`/`applyCost` effect hooks (applied once per
+  attached copy). `rules/stickers.ts` became a generic dispatcher with *no* sticker-specific
+  knowledge — `stickerAppliesTo(sticker, card)` routes every eligibility question (shop
+  listing/offer, and `buySticker`'s authoritative reject), and `effectiveGain`/`effectiveCost`
+  are now a plain **fold** over `self.stickers` applying each attached copy's own hook (`?? out`
+  skips a sticker lacking that hook), so stacking/composing fall out for free and their
+  `(base, self)` signatures — hence the whole run-loop wiring — are untouched. Reinforced/Efficient
+  migrated onto hooks with no behavior change; the removed `stickerCount` is subsumed by the fold.
+  `Shop.tsx` lists/offers only the stickers whose `appliesTo` matches a card (Irrigation hidden on
+  non-food buildings and non-buildings). The two hooks cover output + play-cost only; a future
+  sticker touching `workers`/`cultureOutput`/`draw` adds a new hook here plus one compose site in
+  `effectiveCard` — the named extensibility seam. Known v1 gap (unchanged from 7.6): a sticker
+  augments only the *declarative* producer, never a card's bespoke `produce()`; all current food
+  buildings are declarative, so Irrigation works today.
 - **Phase 3 Step 7.7 — Raise the sticker cap to 2 per instance** — `rules/collection.ts` splits
   what used to be one conflated concept (cap=1 made "has a sticker" and "is full" the same check)
   into two: `hasSticker` (unchanged, `>= 1`) still drives fungible-pool exclusion and display

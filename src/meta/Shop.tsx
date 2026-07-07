@@ -5,6 +5,7 @@ import { STICKERS } from '../content/stickers';
 import { CardFace } from '../components/CardFace';
 import { copiesOwned, stickerableInstancesOf, type OwnedCards } from '../rules/collection';
 import { nextTier } from '../rules/shop';
+import { stickerAppliesTo } from '../rules/stickers';
 import { CardInstancePanel } from './CardInstancePanel';
 import type { CardDef } from '../content/cards';
 import styles from './Shop.module.css';
@@ -42,13 +43,17 @@ export function Shop({
   const [picking, setPicking] = useState<{ cardId: string; stickerId: string } | null>(null);
 
   // Event and threat cards are mission-injected and never part of the player's collection; a
-  // card is shown if it's owned *and* has something left to buy — a tier upgrade or a sticker
-  // slot (an owned instance with no sticker yet).
+  // card is shown if it's owned *and* has something left to buy — a tier upgrade, or a sticker
+  // slot (an owned instance with room) *and* at least one sticker that actually applies to it
+  // (`stickerAppliesTo` — e.g. Irrigation only lists on food buildings, Step 7.8).
   const cards = Object.values(CARDS).filter((c) => {
     if (c.kind === 'event' || c.kind === 'threat') return false;
     const owned = copiesOwned(collection, c.id);
     if (owned === 0) return false;
-    return nextTier(owned) !== null || stickerableInstancesOf(collection, c.id).length > 0;
+    const hasStickerSlot =
+      stickerableInstancesOf(collection, c.id).length > 0 &&
+      Object.values(STICKERS).some((s) => stickerAppliesTo(s, c));
+    return nextTier(owned) !== null || hasStickerSlot;
   });
   const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'action');
@@ -58,6 +63,9 @@ export function Shop({
     const owned = copiesOwned(collection, c.id);
     const up = nextTier(owned);
     const hasStickerSlot = stickerableInstancesOf(collection, c.id).length > 0;
+    // Only offer the stickers that actually apply to this card (Step 7.8) — no per-card
+    // hard-coding here; each sticker's own `appliesTo` decides via `stickerAppliesTo`.
+    const applicableStickers = Object.values(STICKERS).filter((s) => stickerAppliesTo(s, c));
     return (
       <div key={c.id} className={styles.tileWrap}>
         <CardFace card={c} className={styles.tile} countBadge={owned} alwaysShowBadge />
@@ -74,7 +82,7 @@ export function Shop({
           </button>
         )}
         {hasStickerSlot &&
-          Object.values(STICKERS).map((s) => (
+          applicableStickers.map((s) => (
             <button
               key={s.id}
               type="button"

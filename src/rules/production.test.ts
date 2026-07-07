@@ -34,4 +34,12 @@ describe('applyTableauProduction', () => {
     applyTableauProduction(G);
     expect(G.resources.food).toBe(5); // reinforced farm's 3 + plain farm's 2
   });
+
+  it('an Irrigation building produces +1 food through upkeep (Step 7.8)', () => {
+    const G = blankState('enlightenment');
+    const irrigated: BuildingInstance = { id: nextId++, cardId: 'farm', workers: 1, stickers: ['irrigation'] };
+    G.tableau = [irrigated];
+    applyTableauProduction(G);
+    expect(G.resources.food).toBe(3); // farm's base 2 + Irrigation's +1, via the same fold as Reinforced
+  });
 });

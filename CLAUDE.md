@@ -224,8 +224,9 @@ rather than drifting to a different one — which is what keeps Step 7.3's per-i
 distinguished instance has to be placed *by identity* instead of by this default order.
 **Phase 3 Step 7.5** (card stickers in the meta, not yet in the run) is also done —
 this step's payoff for the whole uniform-instance rework: `content/stickers.ts`'s `STICKERS`
-is a small, deliberately inert catalogue (`Reinforced`, `Efficient` — name/description/cost
-only; nothing reads them yet, Step 7.6 wires an effect in). `rules/collection.ts`'s
+is a small, deliberately inert catalogue (`Reinforced`, `Efficient` — name/description/cost;
+nothing reads them yet, Step 7.6 wires an effect in — and Step 7.8 later adds `appliesTo`/
+`applyGain`/`applyCost` behavior hooks, see below). `rules/collection.ts`'s
 `MetaCardInstance` gained an optional `stickers?: string[]`, capped at one sticker per
 instance (a v1 choice, easily relaxed later) — `hasSticker`/`unstickeredInstancesOf` are the
 two predicates everything else is built from. `rules/stickers.ts`'s `buySticker` is the one
@@ -258,10 +259,13 @@ written to during a run. `rules/deckBuilder.ts`'s `resolveDeckCards` now returns
 collection) instead of a bare cardId `string[]`; `contract.ts`'s `RunConfig.deck` is `DeckCard[]`
 accordingly, and `run/setup.ts`'s `instancesFromDeckCards` (`state.ts`, mirroring the existing
 `instancesFromCardIds`) mints each entry's stickers onto its run instance. `rules/stickers.ts` is
-now also the run-side home for interpreting a sticker's actual effect — `effectiveGain`
-(Reinforced's "+1 to this copy's output": bumps every resource key a gain/produce bundle already
-has by 1) and `effectiveCost` (Efficient's "-1 to play," floored at 0 per resource) are the
-*only* places a sticker id is read and interpreted, so resolution and display never diverge.
+now also the run-side home for *applying* a sticker's effect — `effectiveGain` (Reinforced's
+"+1 to this copy's output": bumps every resource key a gain/produce bundle already has by 1) and
+`effectiveCost` (Efficient's "-1 to play," floored at 0 per resource) are the *only* places a
+sticker's effect touches run values, so resolution and display never diverge. (Step 7.8 later
+moved the *interpretation* itself — what each sticker actually does — onto per-sticker
+`applyGain`/`applyCost` hooks on the `StickerDef`; these two functions became a generic fold that
+dispatches to them. See Step 7.8 below.)
 `rules/effects.ts`'s declarative default resolvers (`defaultProduce`/`specToResolver`) compose
 `effectiveGain` in; the two cost sites — `rules/playability.ts`'s `unplayableReason` (which now
 takes a `self: CardInstance` param instead of just the static `CardDef`) and `run/moves.ts`'s
@@ -290,17 +294,39 @@ the new `isStickerFull`/`MAX_STICKERS` (`= 2`) asks the narrower "can this insta
 sticker" question, used only by the attach flow. `rules/stickers.ts`'s `buySticker` now appends to
 `stickers` rather than replacing, rejecting only once already full. Attaching the *same* sticker
 id twice is allowed **on purpose**: two Reinforced on one copy stacks to +2, not a no-op —
-`effectiveGain`/`effectiveCost` moved from a presence check (`Array.includes`) to an occurrence
-*count* (`stickerCount`) so a duplicate compounds instead of doing nothing while still spending the
-Influence. `CardInstancePanel`'s attach button/title only guards the full case now (no
+`effectiveGain`/`effectiveCost` moved from a presence check (`Array.includes`) to counting
+*occurrences* so a duplicate compounds instead of doing nothing while still spending the Influence
+(Step 7.8 later generalized this to a fold over `self.stickers`, so occurrence-counting fell out
+for free). `CardInstancePanel`'s attach button/title only guards the full case now (no
 duplicate-reject). `Shop.tsx`'s "does this card still have a sticker slot" check moved to a new
 `stickerableInstancesOf` (room for another — not full) rather than the stricter
 `unstickeredInstancesOf` (no sticker at all), which would have hidden a card's second-sticker slot
 the moment every owned copy already had one. No run-loop changes were needed: `effectiveGain`/
 `effectiveCost` already iterate by sticker id and now by count, so both stacking (same sticker
-twice) and composing (two different stickers) fall out of the same code path (tested). Still to
-come: an Irrigation sticker
-(Step 7.8), sticker UI polish — per-sticker icons, a bottom-left badge, and the meta screens
+twice) and composing (two different stickers) fall out of the same code path (tested). **Phase 3
+Step 7.8** (Irrigation, and a self-contained sticker model) is also done — the first sticker whose
+eligibility depends on the *card*, not just the copy: **Irrigation** attaches only to a
+food-producing building (`c.kind === 'building' && (c.produces?.food ?? 0) > 0`) and bumps only
+that food output. Rather than hard-code that check at the shop's selection site — which would
+scatter sticker rules the way over-specific card logic scattered before the resolver rewrite — a
+sticker now **owns its own logic** on its `StickerDef` (`content/stickers.ts`): an optional
+`appliesTo(card)` predicate (absent = any card, like Reinforced/Efficient) plus `applyGain`/
+`applyCost` effect hooks, each applied once per attached copy. `rules/stickers.ts` became a generic
+dispatcher holding *no* sticker-specific knowledge: `stickerAppliesTo(sticker, card)` routes every
+eligibility question (`Shop.tsx`'s listing/offer filters, and `buySticker`'s *authoritative*
+reject — the shop UI only mirrors it), and `effectiveGain`/`effectiveCost` are now a plain fold
+over `self.stickers` applying each attached copy's own hook (`?? out` skips a sticker lacking that
+hook and preserves the running value), so stacking/composing still fall out for free and their
+`(base, self)` signatures — hence the entire run-loop wiring (`effects.ts`/`playability.ts`/
+`moves.ts`/`effectiveCard`/`Board.tsx`) — stayed untouched. Reinforced/Efficient migrated onto the
+hooks with no behavior change; `stickerCount` is gone, subsumed by the fold. `Shop.tsx` lists and
+offers only the stickers whose `appliesTo` matches a card (Irrigation hidden on non-food buildings
+and non-buildings). The two hooks cover per-copy output + play-cost only — a future sticker
+touching `workers`/`cultureOutput`/`draw` needs a new hook here plus one compose site in
+`effectiveCard`, the named extensibility seam. The v1 gap is unchanged: a sticker augments only the
+*declarative* producer, never a card's bespoke `produce()` (all current food buildings are
+declarative, so Irrigation works today). Still to
+come: sticker UI polish — per-sticker icons, a bottom-left badge, and the meta screens
 (`Collection`/`Shop`/`CardInstancePanel`) showing a stickered copy's effective values the way the
 run loop now does, plus a visible badge on a stickered card *in* the run loop, which 7.6 didn't
 wire up (Step 7.9) — tutorial missions (Step 9), and `Stats` surfacing a per-run reward (deferred

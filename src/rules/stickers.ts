@@ -1,8 +1,8 @@
-import { STICKERS } from '../content/stickers';
+import { STICKERS, type StickerDef } from '../content/stickers';
+import { CARDS, type CardDef } from '../content/cards';
 import { findInstance, isStickerFull, type OwnedCards } from './collection';
 import type { CardInstance } from './state';
 import type { Resources } from './resources';
-import type { CardDef } from '../content/cards';
 
 /**
  * The meta sticker shop (Phase 3 Step 7.5): spend Influence to attach a permanent sticker to
@@ -15,13 +15,23 @@ export interface StickerPurchase {
   collection: OwnedCards;
 }
 
+/** Whether `sticker` may attach to `card` — the one eligibility dispatcher every site routes
+ *  through (shop listing/offer, `buySticker`'s reject). A sticker owns its own condition via its
+ *  `appliesTo` predicate (`content/stickers.ts`); absent = attaches to anything (Reinforced,
+ *  Efficient). No caller inspects a card's `kind`/`produces` or branches on a sticker id itself
+ *  (Step 7.8), so a new restricted sticker is authored on its def alone. */
+export function stickerAppliesTo(sticker: StickerDef, card: CardDef): boolean {
+  return sticker.appliesTo?.(card) ?? true;
+}
+
 /** Attempt to attach `stickerId` to `instanceId`. Returns `null` (a no-op signal, mirroring
- *  `shop.ts`'s `buyTier`) when the sticker or instance doesn't exist, the instance is already
- *  full (`MAX_STICKERS`, Step 7.7), or the player can't afford it. The *same* sticker id can be
- *  attached twice — a design choice, not an oversight: two Reinforced on one copy stacks to +2
- *  (`effectiveGain`/`effectiveCost` below count occurrences, not just presence). Appends rather
- *  than replaces, so a once-stickered instance keeps its first sticker when a second is
- *  attached. Immutable — the input `collection` is untouched. */
+ *  `shop.ts`'s `buyTier`) when the sticker or instance doesn't exist, the sticker doesn't apply
+ *  to that card (`stickerAppliesTo` — this is the *authoritative* eligibility guard; the shop UI
+ *  only mirrors it), the instance is already full (`MAX_STICKERS`, Step 7.7), or the player can't
+ *  afford it. The *same* sticker id can be attached twice — a design choice, not an oversight:
+ *  two Reinforced on one copy stacks to +2 (`effectiveGain`/`effectiveCost` below fold once per
+ *  attached copy). Appends rather than replaces, so a once-stickered instance keeps its first
+ *  sticker when a second is attached. Immutable — the input `collection` is untouched. */
 export function buySticker(
   collection: OwnedCards,
   influence: number,
@@ -31,6 +41,7 @@ export function buySticker(
   const sticker = STICKERS[stickerId];
   const inst = findInstance(collection, instanceId);
   if (!sticker || !inst || isStickerFull(inst) || influence < sticker.cost) return null;
+  if (!stickerAppliesTo(sticker, CARDS[inst.cardId])) return null;
   const instances = collection.instances.map((i) =>
     i.id === instanceId ? { ...i, stickers: [...(i.stickers ?? []), stickerId] } : i,
   );
@@ -38,46 +49,38 @@ export function buySticker(
 }
 
 /**
- * Card stickers in the run loop (Phase 3 Step 7.6): the two functions below are the *only*
- * place a sticker's actual effect is interpreted — `rules/effects.ts`'s declarative default
- * resolvers (`defaultProduce`/`specToResolver`) and the two cost sites (`unplayableReason`,
- * `playCard`) all call through here rather than reading `self.stickers` and reimplementing the
- * bump themselves, so resolution and the `effectiveCard` display below never diverge. Hardcoded
- * by sticker id, same "just a few, hand-matched" style as Cornucopia/Creeping Decay's bespoke
- * resolvers — real variety is Phase 4.
+ * Card stickers in the run loop (Phase 3 Step 7.6, made self-contained in Step 7.8): the two
+ * functions below are the *only* place a sticker's actual effect is applied — `rules/effects.ts`'s
+ * declarative default resolvers (`defaultProduce`/`specToResolver`) and the two cost sites
+ * (`unplayableReason`, `playCard`) all call through here rather than reading `self.stickers` and
+ * reimplementing the bump themselves, so resolution and the `effectiveCard` display below never
+ * diverge. Each *dispatches to the sticker's own `applyGain`/`applyCost` hook* (`content/stickers.ts`)
+ * — it holds no sticker-specific knowledge itself, so a new sticker's effect is authored on its def.
+ *
+ * Both are a plain fold over `self.stickers`, applying each attached copy's hook in turn — so
+ * stacking (two Reinforced → +2) and composing (Reinforced + Efficient) fall out for free, and
+ * a sticker whose def lacks the relevant hook (Efficient in the gain fold) is skipped via `?? out`.
  *
  * Neither is consulted by a card's own bespoke `resolve`/`produce` (e.g. Cornucopia) — a sticker
- * only augments the *declarative* default, so Reinforced on a bespoke-resolver card is a known
+ * only augments the *declarative* default, so a sticker on a bespoke-resolver card is a known
  * v1 gap (its `dynamicText` display doesn't reflect it either, so display and resolution still
  * agree — see `state.ts`'s `CardInstance.stickers`).
- *
- * A sticker can be attached to the same instance twice (Step 7.7 raised the cap to
- * `MAX_STICKERS` = 2 without banning a duplicate id), so both functions count *occurrences*,
- * not just presence — two Reinforced stacks to +2, two Efficient to -2.
  */
-function stickerCount(self: CardInstance, stickerId: string): number {
-  return self.stickers?.filter((id) => id === stickerId).length ?? 0;
-}
 
-/** Reinforced: "+1 to this copy's output" per copy attached — bumps every resource key `base`
- *  actually produces by the number of Reinforced stickers on `self`. `undefined` in, `undefined`
- *  out (a card with no gain has nothing to reinforce). */
+/** Fold each attached sticker's `applyGain` over `base` in order. `undefined` in → `undefined`
+ *  out (a card with no gain has nothing to reinforce). The `?? out` is load-bearing: it both
+ *  skips a sticker lacking `applyGain` (e.g. Efficient) and preserves the running value. */
 export function effectiveGain(base: Partial<Resources> | undefined, self: CardInstance): Partial<Resources> | undefined {
-  const count = stickerCount(self, 'reinforced');
-  if (!base || count === 0) return base;
-  const out: Partial<Resources> = {};
-  for (const [k, v] of Object.entries(base) as [keyof Resources, number][]) out[k] = v + count;
+  let out = base;
+  for (const id of self.stickers ?? []) out = STICKERS[id]?.applyGain?.(out) ?? out;
   return out;
 }
 
-/** Efficient: "Costs 1 less to play" per copy attached — knocks the number of Efficient stickers
- *  on `self` off every resource key `cost` charges, floored at 0 per resource (never pays you to
- *  play a card). */
+/** Fold each attached sticker's `applyCost` over `cost` in order (each hook is responsible for
+ *  its own flooring). `?? out` skips a sticker lacking `applyCost` (e.g. Reinforced). */
 export function effectiveCost(cost: Partial<Resources>, self: CardInstance): Partial<Resources> {
-  const count = stickerCount(self, 'efficient');
-  if (count === 0) return cost;
-  const out: Partial<Resources> = {};
-  for (const [k, v] of Object.entries(cost) as [keyof Resources, number][]) out[k] = Math.max(0, v - count);
+  let out = cost;
+  for (const id of self.stickers ?? []) out = STICKERS[id]?.applyCost?.(out) ?? out;
   return out;
 }
 
