@@ -105,7 +105,6 @@ export function CardInstancePanel({
           overrideCard={zoomed ? effectiveCard(card, zoomed) : undefined}
           stickerBadge={zoomed?.stickers}
           onClose={() => setZoomInstance(null)}
-          hint="Click anywhere to close"
         />
       )}
     </>

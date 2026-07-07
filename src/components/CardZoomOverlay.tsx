@@ -13,7 +13,6 @@ export function CardZoomOverlay({
   overrideText,
   stickerBadge,
   onClose,
-  hint,
 }: {
   cardId: string | null;
   /** A stickered instance's true stats (`rules/stickers.ts`'s `effectiveCard`) — passed by callers
@@ -29,7 +28,6 @@ export function CardZoomOverlay({
    *  copy or a static context with no instance to read. */
   stickerBadge?: string[];
   onClose: () => void;
-  hint: string;
 }) {
   if (!cardId) return null;
   return (
@@ -42,7 +40,7 @@ export function CardZoomOverlay({
           className={styles.card}
         />
       </div>
-      <p className={styles.hint}>{hint}</p>
+      <p className={styles.hint}>Click anywhere to close</p>
     </div>
   );
 }

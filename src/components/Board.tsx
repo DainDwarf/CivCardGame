@@ -1600,7 +1600,6 @@ export function Board({
         overrideText={zoom?.overrideText}
         stickerBadge={zoom?.stickerBadge}
         onClose={() => setZoom(null)}
-        hint="Drag a card onto the board to play · click anywhere to close"
       />
 
       {/* Minimized inspect pill — lives inside .app but pointer-events: auto overrides boardInert. */}

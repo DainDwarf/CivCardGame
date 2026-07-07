@@ -129,7 +129,6 @@ export function DeckListOverlay({
         overrideCard={zoom ? effectiveCard(CARDS[zoom.cardId], zoom) : undefined}
         stickerBadge={zoom?.stickers}
         onClose={() => setZoom(null)}
-        hint="Click anywhere to close"
       />
     </>
   );
