@@ -1,8 +1,15 @@
-# CivCardGame — TODO / Idea Backlog
+# CivCardGame — TODO / Planner
 
-> A scratch list for ideas caught **in passing** so they aren't lost — *not* a
-> committed plan. Anything here is a candidate, not a promise. Decided, designed
-> work lives in [`DESIGN.md`](DESIGN.md); this is the inbox that feeds it.
+> A **rudimentary, temporary planner** — a lightweight ticket manager and
+> scratchpad, *not* a durable record. Items are planned here, executed one by one,
+> and brainstormed/refined in place. Content is grouped by codebase area, with a
+> *Done / shipped* archive at the bottom.
+>
+> **This content is designed to be discarded:** at each version bump the shipped
+> items are erased and replaced by short one-line [`CHANGELOG.md`](../CHANGELOG.md)
+> entries. So TODO.md holds *transient* planning state; [`DESIGN.md`](DESIGN.md)
+> holds the *decided design*, and `CHANGELOG.md` the *durable history*. Nothing
+> durable should reference an item here — the citation would rot when this is wiped.
 
 **How we use it:** say *"jot: …"* or *"TODO: …"* (or "note that down") mid-task and
 the idea lands here as a one-liner without derailing what we're doing. We triage
