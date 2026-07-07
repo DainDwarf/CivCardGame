@@ -301,9 +301,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `Shop.tsx` lists/offers only the stickers whose `appliesTo` matches a card (Irrigation hidden on
   non-food buildings and non-buildings). The two hooks cover output + play-cost only; a future
   sticker touching `workers`/`cultureOutput`/`draw` adds a new hook here plus one compose site in
-  `effectiveCard` — the named extensibility seam. Known v1 gap (unchanged from 7.6): a sticker
-  augments only the *declarative* producer, never a card's bespoke `produce()`; all current food
-  buildings are declarative, so Irrigation works today.
+  `effectiveCard` — the named extensibility seam. The v1 gap noted here at the time (a sticker
+  augmenting only the *declarative* producer, never a card's bespoke `produce()`) is since closed:
+  `effects.ts`'s `gainResources` now folds `effectiveGain` into a bespoke resolver's output too, so
+  Irrigation would apply the same way to a bespoke food producer, not just a declarative one.
 - **Phase 3 Step 7.7 — Raise the sticker cap to 2 per instance** — `rules/collection.ts` splits
   what used to be one conflated concept (cap=1 made "has a sticker" and "is full" the same check)
   into two: `hasSticker` (unchanged, `>= 1`) still drives fungible-pool exclusion and display
@@ -335,8 +336,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `specToResolver` compose `effectiveGain` in, and the two cost sites (`playability.ts`'s
   `unplayableReason`, now taking a `self: CardInstance` param, and `moves.ts`'s `playCard`) compose
   `effectiveCost` in — so resolution never reads `self.stickers` ad hoc. A bespoke `resolve`/`produce`
-  (Cornucopia, threats) is *not* composed through either function — a deliberate v1 gap, kept
-  consistent since such a card's `dynamicText` display doesn't reflect a sticker either.
+  (Cornucopia, threats) was *not* composed through either function at the time — a v1 gap since
+  closed: `effects.ts`'s `gainResources` now routes every card's resource output, bespoke or
+  declarative, through `effectiveGain`, so a bespoke resolver's `dynamicText` display and its actual
+  gain agree with a sticker the same way the declarative default does.
   `rules/population.ts`'s `addBuilding`/`addWork` gained an optional `stickers` param — without it a
   stickered building/work card would silently lose its bonus the instant it left hand for the
   tableau/workZone, since a fresh instance used to be minted from just `cardId`.

@@ -27,8 +27,9 @@ export interface CardInstance {
   /**
    * Permanent sticker ids, copied once from the owning `MetaCardInstance` at run setup and never
    * written during a run. `rules/stickers.ts`'s `effectiveGain`/`effectiveCost`/`effectiveCard` are
-   * the only readers — and they compose only the *declarative default* resolvers, so a card's own
-   * bespoke `resolve`/`produce` (e.g. Cornucopia) is not sticker-adjusted (a v1 gap, not a bug).
+   * the only readers, and they compose every output path — the declarative default *and* a card's
+   * own bespoke `resolve`/`produce` (e.g. Cornucopia) — since all gain routes through `effects.ts`'s
+   * `gainResources` fold.
    */
   stickers?: string[];
 }

@@ -1,13 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { applyEffect, resolveCard, resolveProduction, specToResolver } from './effects';
+import { applyEffect, gainResources, resolveCard, resolveProduction, specToResolver } from './effects';
 import { blankState, instancesFromCardIds } from './state';
+import { CARDS } from '../content/cards';
 
 describe('applyEffect', () => {
-  it('adds resource gains', () => {
+  it('ignores gain — gain is applied via gainResources, not here (no double-apply)', () => {
     const G = blankState('enlightenment');
-    applyEffect(G, { gain: { science: 3, food: 1 } });
-    expect(G.resources.science).toBe(3);
-    expect(G.resources.food).toBe(1);
+    applyEffect(G, { gain: { science: 3, food: 1 }, culture: 2 });
+    expect(G.resources.science).toBe(0);
+    expect(G.resources.food).toBe(0);
+    expect(G.culture).toBe(2); // non-gain fields still apply
   });
 
   it('draws cards', () => {
@@ -95,10 +97,36 @@ describe('resolveCard', () => {
     expect(G.resources.science).toBe(4); // Eureka's base +3, Reinforced +1
   });
 
-  it("a bespoke resolver (Cornucopia) never sees a Reinforced sticker's bonus — a known v1 gap", () => {
+  it("a bespoke resolver (Cornucopia) now sees a Reinforced sticker's bonus (gap closed)", () => {
     const G = blankState('enlightenment');
     resolveCard({ G, self: { id: 1, cardId: 'cornucopia', stickers: ['reinforced'] } });
-    expect(G.resources.food).toBe(1); // its own resolve computes +1, unaware of the sticker
+    expect(G.resources.food).toBe(2); // base +1 (first play) + Reinforced +1
+  });
+
+  it("Cornucopia's card face shows the sticker-adjusted gain (resolve/display agree)", () => {
+    const G = blankState('enlightenment');
+    const text = CARDS.cornucopia.dynamicText!(G, { id: 1, cardId: 'cornucopia', stickers: ['reinforced'] });
+    expect(text).toBe('+2🌾'); // first play base +1, Reinforced +1 — matches the +2 food the resolver grants
+  });
+});
+
+describe('gainResources', () => {
+  it('folds output stickers over the base bag', () => {
+    const G = blankState('enlightenment');
+    gainResources({ G, self: { id: 1, cardId: 'x', stickers: ['reinforced'] } }, { science: 2 });
+    expect(G.resources.science).toBe(3); // +2 base, Reinforced +1
+  });
+
+  it('applies an unstickered bag unchanged', () => {
+    const G = blankState('enlightenment');
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { food: 2 });
+    expect(G.resources.food).toBe(2);
+  });
+
+  it('is a no-op on an undefined bag', () => {
+    const G = blankState('enlightenment');
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, undefined);
+    expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 0, money: 0 });
   });
 });
 

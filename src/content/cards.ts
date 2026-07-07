@@ -1,7 +1,8 @@
-import { addResources, scaleResources, subtractResources, type Resources } from '../rules/resources';
+import { scaleResources, subtractResources, type Resources } from '../rules/resources';
 import { bumpCounter, getCounter, type CardInstance, type GameState } from '../rules/state';
 import { shuffleFromState } from '../rules/rng';
-import type { CardEffect, Resolver } from '../rules/effects';
+import { gainResources, type CardEffect, type Resolver } from '../rules/effects';
+import { effectiveGain } from '../rules/stickers';
 
 export type CardKind = 'building' | 'action' | 'work' | 'event' | 'threat';
 
@@ -123,17 +124,23 @@ export const CARDS: Record<string, CardDef> = {
   // first per-instance-state card). Each physical copy gains +1🌾 its first play and +1 more for
   // every prior play *of that same copy* this run — the count lives in the instance's own `counters`
   // (via getCounter/bumpCounter) and rides with the card through discard/reshuffle, so playing one
-  // Cornucopia never buffs the others.
-  cornucopia: {
-    id: 'cornucopia', name: 'Cornucopia', kind: 'action', cost: {},
-    description: '+1🌾',
-    dynamicRule: '+1 each time played',
-    dynamicText: (_G, self) => `+${getCounter(self, 'plays') + 1}🌾`,
-    resolve: ({ G, self }) => {
-      addResources(G.resources, scaleResources({ food: 1 }, getCounter(self, 'plays') + 1));
-      bumpCounter(self, 'plays');
-    },
-  },
+  // Cornucopia never buffs the others. The base gain is folded through stickers via the shared
+  // `gainResources`/`effectiveGain`, so e.g. Reinforced correctly bumps this card's output too.
+  cornucopia: ((): CardDef => {
+    // Base gain of THIS copy right now (before stickers): +1🌾, +1 more per prior play of this same
+    // copy. The one place resolve and the card-face text compute that base, so the two never disagree.
+    const base = (self: CardInstance) => scaleResources({ food: 1 }, getCounter(self, 'plays') + 1);
+    return {
+      id: 'cornucopia', name: 'Cornucopia', kind: 'action', cost: {},
+      description: '+1🌾',
+      dynamicRule: '+1 each time played',
+      dynamicText: (_G, self) => `+${effectiveGain(base(self), self)!.food}🌾`,
+      resolve: (ctx) => {
+        gainResources(ctx, base(ctx.self));
+        bumpCounter(ctx.self, 'plays');
+      },
+    };
+  })(),
 
   // Foresight: the first *interactive* card — its effect suspends mid-resolution for a player choice.
   // Reveals the top 3 of the draw pile, you draw 1, the rest shuffle back. The two-branch resolver

@@ -29,9 +29,11 @@ export interface CardEffect {
   remove?: true;
 }
 
+/** Applies every field a sticker never touches (loss/draw/population/territory/culture). Gain is
+ *  deliberately excluded — it reaches `G` only through `gainResources`, the one path a sticker's
+ *  `effectiveGain` can fold over it. */
 export function applyEffect(G: GameState, effect?: CardEffect): void {
   if (!effect) return;
-  if (effect.gain) addResources(G.resources, effect.gain);
   if (effect.loss) subtractResources(G.resources, effect.loss);
   if (effect.draw) {
     for (let i = 0; i < effect.draw; i++) drawCard(G);
@@ -70,6 +72,15 @@ export interface EffectContext {
  *  static catalogue (`CardDef.resolve`), never in `GameState` — see `EffectContext`. */
 export type Resolver = (ctx: EffectContext) => void;
 
+/** The ONE path a card's output reaches G: fold this copy's output stickers over `base`, then add.
+ *  Every gain — declarative (`specToResolver`), production (`defaultProduce`), and bespoke
+ *  `resolve`/`produce` — routes through here, so no output can reach G unstickered. No-op on an
+ *  absent/empty bag. A bespoke resolver must add output through this, never `addResources` directly. */
+export function gainResources(ctx: EffectContext, base: Partial<Resources> | undefined): void {
+  const g = effectiveGain(base, ctx.self);
+  if (g) addResources(ctx.G.resources, g);
+}
+
 /** Demolish a tableau building by instance id, filing its card to `removed` (frees the slot and its
  *  workers). No-op if the id is absent or not in the tableau. */
 function demolish(G: GameState, instanceId?: number): void {
@@ -84,14 +95,16 @@ function demolish(G: GameState, instanceId?: number): void {
 
 /**
  * Build a resolver from a declarative `CardEffect` — the default for the ~90% of cards fully
- * described by the data bag. Reproduces `applyEffect`, plus the `destroy` mutation (folded in so all
- * effect behavior resolves through one path) and a sticker's `effectiveGain`. `remove` is *not*
- * handled here: it decides where the played card files afterwards (a caller-owned lifecycle decision,
- * see `resolveHandEvents`), not a mutation of `G`.
+ * described by the data bag. Routes `gain` through `gainResources` (the shared sticker fold),
+ * everything else through `applyEffect`, plus the `destroy` mutation (folded in so all effect
+ * behavior resolves through one path). `remove` is *not* handled here: it decides where the played
+ * card files afterwards (a caller-owned lifecycle decision, see `resolveHandEvents`), not a mutation
+ * of `G`.
  */
 export function specToResolver(effect?: CardEffect): Resolver {
   return (ctx) => {
-    applyEffect(ctx.G, { ...effect, gain: effectiveGain(effect?.gain, ctx.self) });
+    gainResources(ctx, effect?.gain);
+    applyEffect(ctx.G, effect);
     if (effect?.destroy) demolish(ctx.G, ctx.target);
   };
 }
@@ -109,12 +122,15 @@ export function resolveCard(ctx: EffectContext): void {
 
 /**
  * Build a production resolver from a card's declarative production fields. Deliberately narrower
- * than `specToResolver`: applies only `gain`/`culture` (via `effectiveGain`), never a one-shot play
- * field (`draw`/`population`/`territory`/`destroy`) a card might also declare — those must never
- * fire on a recurring tick.
+ * than `specToResolver`: applies only `gain` (via the shared `gainResources`) and `culture`, never a
+ * one-shot play field (`draw`/`population`/`territory`/`destroy`) a card might also declare — those
+ * must never fire on a recurring tick.
  */
 function defaultProduce(card: CardDef): Resolver {
-  return (ctx) => applyEffect(ctx.G, { gain: effectiveGain(card.produces ?? card.effect?.gain, ctx.self), culture: card.cultureOutput });
+  return (ctx) => {
+    gainResources(ctx, card.produces ?? card.effect?.gain);
+    applyEffect(ctx.G, { culture: card.cultureOutput });
+  };
 }
 
 /**
