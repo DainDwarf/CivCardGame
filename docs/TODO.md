@@ -70,14 +70,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     below. `[size: M]` `[phase: 3]`
   - **Step 7.6 — Card stickers in the run loop** — ✅ done — see *Done / shipped* below.
     `[size: M]` `[phase: 3]`
-  - **Step 7.7 — Raise the sticker cap to 2 per instance** — `MetaCardInstance.stickers` is capped at
-    one (Step 7.5's "v1 choice, easily relaxed later" — now the thing to relax). Touches
-    `rules/collection.ts`'s `hasSticker` (an instance stops being fungible once it has *two*, not one)
-    and `rules/stickers.ts`'s `buySticker` (append to `stickers` rather than replace, reject once
-    already at 2); `CardInstancePanel`'s attach UI needs to let a once-stickered instance take a
-    second sticker instead of disabling outright. `rules/stickers.ts`'s `effectiveGain`/`effectiveCost`
-    already iterate by sticker id, so a second sticker composing (e.g. Reinforced + Efficient on the
-    same copy) should fall out for free — worth a test once it lands. `[size: S]` `[phase: 3]`
+  - **Step 7.7 — Raise the sticker cap to 2 per instance** — ✅ done — see *Done / shipped* below.
+    `[size: S]` `[phase: 3]`
   - **Step 7.8 — Add Irrigation sticker** — unlike Reinforced's blanket "+1 to whatever this copy
     produces," Irrigation only attaches to (and only bumps) a **food-producing building**: +1 food
     production, no effect on anything else. Needs a card-aware check before applying (does this
@@ -241,6 +235,25 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 7.7 — Raise the sticker cap to 2 per instance** — `rules/collection.ts` splits
+  what used to be one conflated concept (cap=1 made "has a sticker" and "is full" the same check)
+  into two: `hasSticker` (unchanged, `>= 1`) still drives fungible-pool exclusion and display
+  grouping (`deckBuilder.ts`'s `addCard`/`removeCard`/`groupCounts`, `DeckEditor.tsx`'s picker) — a
+  once-stickered instance is still non-fungible and still gets its own tile/badge, exactly as
+  before. The new `isStickerFull`/`MAX_STICKERS` (2) is the "can't take another" check instead,
+  used only by the attach flow: `rules/stickers.ts`'s `buySticker` now appends to `stickers`
+  rather than replacing, rejecting only once already full. Attaching the *same* sticker id twice
+  is allowed on purpose, not a gap: two Reinforced on one copy stacks to +2 — `effectiveGain`/
+  `effectiveCost` were changed from a presence check (`.includes`) to an occurrence *count*
+  (`stickerCount`) so a duplicate compounds instead of being a no-op. `CardInstancePanel`'s attach
+  button/title only guards the full case now. `Shop.tsx`'s "does this card still have a sticker
+  slot" check moved to a new `stickerableInstancesOf` (room for another, i.e. not full) rather
+  than `unstickeredInstancesOf` (no sticker at all) — the old check would have hidden a card's
+  second-sticker slot once every copy had one sticker already. No run-loop changes needed:
+  `effectiveGain`/`effectiveCost` already iterate by sticker id and now by count, so stacking
+  (same sticker twice) and composing (two different stickers) both fall out of the same code path
+  (tested).
 
 - **Phase 3 Step 7.6 — Card stickers in the run loop** — `state.ts`'s `CardInstance` gained an
   optional `stickers?: string[]`, copied once at mint and never written to during a run.

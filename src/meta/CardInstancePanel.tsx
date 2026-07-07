@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { STICKERS } from '../content/stickers';
-import { hasSticker, instancesOf, type OwnedCards } from '../rules/collection';
+import { instancesOf, isStickerFull, type OwnedCards } from '../rules/collection';
 import { decksContaining } from '../rules/deckBuilder';
 import { CardZoomOverlay } from '../components/CardZoomOverlay';
 import styles from './CardInstancePanel.module.css';
@@ -28,8 +28,10 @@ export function CardInstancePanel({
   decks: DeckDef[];
   /** When set, the panel is in sticker-purchase mode (`meta/Shop.tsx`): every row shows an
    *  "Attach" button for this one sticker instead of opening the zoom, disabled (with an
-   *  explanatory title) on a row that already carries a sticker (Step 7.5 caps one sticker
-   *  per instance) or that the player can't afford. */
+   *  explanatory title) on a row that's already full (`MAX_STICKERS`, Step 7.7 raised this
+   *  from one to two) or that the player can't afford. Attaching the *same* sticker a row
+   *  already carries is allowed on purpose — it stacks (`rules/stickers.ts`'s `effectiveGain`/
+   *  `effectiveCost` count occurrences). */
   attach?: {
     stickerId: string;
     influence: number;
@@ -60,7 +62,7 @@ export function CardInstancePanel({
             {instances.map((inst, i) => {
               const usedIn = decksContaining(inst.id, decks).map((d) => d.name);
               const stickerNames = (inst.stickers ?? []).map((id) => STICKERS[id]?.name ?? id);
-              const canAttachHere = attachSticker && !hasSticker(inst) && attach!.influence >= attachSticker.cost;
+              const canAttachHere = !!attachSticker && !isStickerFull(inst) && attach!.influence >= attachSticker.cost;
               return (
                 <div
                   key={inst.id}
@@ -79,8 +81,8 @@ export function CardInstancePanel({
                       disabled={!canAttachHere}
                       onClick={() => attach!.onAttach(inst.id)}
                       title={
-                        hasSticker(inst)
-                          ? 'This copy already carries a sticker'
+                        isStickerFull(inst)
+                          ? 'This copy already carries the maximum number of stickers'
                           : canAttachHere
                             ? `Attach ${attachSticker.name} for ${attachSticker.cost} Influence`
                             : 'Not enough Influence'

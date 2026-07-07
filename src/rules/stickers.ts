@@ -1,5 +1,5 @@
 import { STICKERS } from '../content/stickers';
-import { findInstance, hasSticker, type OwnedCards } from './collection';
+import { findInstance, isStickerFull, type OwnedCards } from './collection';
 import type { CardInstance } from './state';
 import type { Resources } from './resources';
 import type { CardDef } from '../content/cards';
@@ -16,9 +16,12 @@ export interface StickerPurchase {
 }
 
 /** Attempt to attach `stickerId` to `instanceId`. Returns `null` (a no-op signal, mirroring
- *  `shop.ts`'s `buyTier`) when the sticker or instance doesn't exist, the instance already
- *  carries one (Step 7.5 caps one sticker per instance), or the player can't afford it.
- *  Immutable — the input `collection` is untouched. */
+ *  `shop.ts`'s `buyTier`) when the sticker or instance doesn't exist, the instance is already
+ *  full (`MAX_STICKERS`, Step 7.7), or the player can't afford it. The *same* sticker id can be
+ *  attached twice — a design choice, not an oversight: two Reinforced on one copy stacks to +2
+ *  (`effectiveGain`/`effectiveCost` below count occurrences, not just presence). Appends rather
+ *  than replaces, so a once-stickered instance keeps its first sticker when a second is
+ *  attached. Immutable — the input `collection` is untouched. */
 export function buySticker(
   collection: OwnedCards,
   influence: number,
@@ -27,8 +30,10 @@ export function buySticker(
 ): StickerPurchase | null {
   const sticker = STICKERS[stickerId];
   const inst = findInstance(collection, instanceId);
-  if (!sticker || !inst || hasSticker(inst) || influence < sticker.cost) return null;
-  const instances = collection.instances.map((i) => (i.id === instanceId ? { ...i, stickers: [stickerId] } : i));
+  if (!sticker || !inst || isStickerFull(inst) || influence < sticker.cost) return null;
+  const instances = collection.instances.map((i) =>
+    i.id === instanceId ? { ...i, stickers: [...(i.stickers ?? []), stickerId] } : i,
+  );
   return { influence: influence - sticker.cost, collection: { ...collection, instances } };
 }
 
@@ -45,26 +50,34 @@ export function buySticker(
  * only augments the *declarative* default, so Reinforced on a bespoke-resolver card is a known
  * v1 gap (its `dynamicText` display doesn't reflect it either, so display and resolution still
  * agree — see `state.ts`'s `CardInstance.stickers`).
+ *
+ * A sticker can be attached to the same instance twice (Step 7.7 raised the cap to
+ * `MAX_STICKERS` = 2 without banning a duplicate id), so both functions count *occurrences*,
+ * not just presence — two Reinforced stacks to +2, two Efficient to -2.
  */
-function instanceHasSticker(self: CardInstance, stickerId: string): boolean {
-  return !!self.stickers?.includes(stickerId);
+function stickerCount(self: CardInstance, stickerId: string): number {
+  return self.stickers?.filter((id) => id === stickerId).length ?? 0;
 }
 
-/** Reinforced: "+1 to this copy's output" — bumps every resource key `base` actually produces
- *  by 1. `undefined` in, `undefined` out (a card with no gain has nothing to reinforce). */
+/** Reinforced: "+1 to this copy's output" per copy attached — bumps every resource key `base`
+ *  actually produces by the number of Reinforced stickers on `self`. `undefined` in, `undefined`
+ *  out (a card with no gain has nothing to reinforce). */
 export function effectiveGain(base: Partial<Resources> | undefined, self: CardInstance): Partial<Resources> | undefined {
-  if (!base || !instanceHasSticker(self, 'reinforced')) return base;
+  const count = stickerCount(self, 'reinforced');
+  if (!base || count === 0) return base;
   const out: Partial<Resources> = {};
-  for (const [k, v] of Object.entries(base) as [keyof Resources, number][]) out[k] = v + 1;
+  for (const [k, v] of Object.entries(base) as [keyof Resources, number][]) out[k] = v + count;
   return out;
 }
 
-/** Efficient: "Costs 1 less to play" — knocks 1 off every resource key `cost` charges, floored
- *  at 0 per resource (never pays you to play a card). */
+/** Efficient: "Costs 1 less to play" per copy attached — knocks the number of Efficient stickers
+ *  on `self` off every resource key `cost` charges, floored at 0 per resource (never pays you to
+ *  play a card). */
 export function effectiveCost(cost: Partial<Resources>, self: CardInstance): Partial<Resources> {
-  if (!instanceHasSticker(self, 'efficient')) return cost;
+  const count = stickerCount(self, 'efficient');
+  if (count === 0) return cost;
   const out: Partial<Resources> = {};
-  for (const [k, v] of Object.entries(cost) as [keyof Resources, number][]) out[k] = Math.max(0, v - 1);
+  for (const [k, v] of Object.entries(cost) as [keyof Resources, number][]) out[k] = Math.max(0, v - count);
   return out;
 }
 

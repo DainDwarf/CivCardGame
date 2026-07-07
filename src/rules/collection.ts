@@ -13,20 +13,26 @@
  * uses it to resolve a deck's instance ids back to cardIds and to cap how many copies of an owned
  * card a deck may include.
  *
- * `stickers` (Phase 3 Step 7.5) is the payoff this identity substrate was built for: a card
- * sticker (`content/stickers.ts`) mutates one chosen instance in place via `rules/stickers.ts`'s
- * `buySticker`. A stickered instance is capped at one sticker and is no longer fungible with its
- * siblings — `rules/deckBuilder.ts`'s `addCard`/`removeCard` (the default LIFO order) only ever
- * pick from the *unstickered* pool (`unstickeredInstancesOf`); a stickered instance is added to
- * or removed from a deck only by explicit identity (`addInstance`/`removeInstance`).
+ * `stickers` (Phase 3 Step 7.5, cap raised to 2 in Step 7.7) is the payoff this identity
+ * substrate was built for: a card sticker (`content/stickers.ts`) mutates one chosen instance in
+ * place via `rules/stickers.ts`'s `buySticker`. Carrying *any* sticker (`hasSticker`) already
+ * makes an instance non-fungible with its siblings — `rules/deckBuilder.ts`'s `addCard`/
+ * `removeCard` (the default LIFO order) only ever pick from the *unstickered* pool
+ * (`unstickeredInstancesOf`); a stickered instance is added to or removed from a deck only by
+ * explicit identity (`addInstance`/`removeInstance`). That's a separate question from whether an
+ * instance has *room for another* sticker — `isStickerFull`/`stickerableInstancesOf` below, which
+ * only the shop's attach flow cares about.
  */
 export interface MetaCardInstance {
   id: string;
   cardId: string;
-  /** Sticker ids attached to this instance — absent/empty for a plain copy. Capped at one
-   *  (Step 7.5's v1 choice; easy to relax later, no design commitment either way). */
+  /** Sticker ids attached to this instance — absent/empty for a plain copy. Capped at
+   *  `MAX_STICKERS` (Step 7.7 raised Step 7.5's original cap of one to two). */
   stickers?: string[];
 }
+
+/** The cap on stickers a single instance may carry (Step 7.7 raised this from 1 to 2). */
+export const MAX_STICKERS = 2;
 
 export interface OwnedCards {
   instances: MetaCardInstance[];
@@ -54,9 +60,19 @@ export function instancesOf(collection: OwnedCards, cardId: string): MetaCardIns
 }
 
 /** Whether `instance` carries a sticker — the one predicate `deckBuilder.ts`'s fungible-pool
- *  filtering and the shop's sticker-target picker both check. */
+ *  filtering (and `groupCounts`'s display grouping) checks: any sticker at all, even just one of
+ *  `MAX_STICKERS`, already makes an instance worth tracking individually. Distinct from
+ *  `isStickerFull`, which asks whether *another* sticker can still be attached. */
 export function hasSticker(instance: MetaCardInstance): boolean {
   return !!instance.stickers && instance.stickers.length > 0;
+}
+
+/** Whether `instance` already carries `MAX_STICKERS` and can take no more — the shop's
+ *  attach-eligibility check (`buySticker`'s reject, `CardInstancePanel`'s disabled attach
+ *  button). A once-stickered instance (1 of 2) is not full yet, even though `hasSticker` above
+ *  is already true for it. */
+export function isStickerFull(instance: MetaCardInstance): boolean {
+  return (instance.stickers?.length ?? 0) >= MAX_STICKERS;
 }
 
 /** Owned instances of `cardId` that carry no sticker yet — the fungible pool `addCard`/
@@ -64,6 +80,14 @@ export function hasSticker(instance: MetaCardInstance): boolean {
  *  added/removed by explicit identity. */
 export function unstickeredInstancesOf(collection: OwnedCards, cardId: string): MetaCardInstance[] {
   return instancesOf(collection, cardId).filter((i) => !hasSticker(i));
+}
+
+/** Owned instances of `cardId` that still have room for another sticker (0 or 1 of
+ *  `MAX_STICKERS`) — what the shop checks to decide whether a card still has an attach target,
+ *  distinct from `unstickeredInstancesOf`'s stricter "no sticker at all" (Step 7.7: a
+ *  once-stickered instance can still take a second). */
+export function stickerableInstancesOf(collection: OwnedCards, cardId: string): MetaCardInstance[] {
+  return instancesOf(collection, cardId).filter((i) => !isStickerFull(i));
 }
 
 /** Resolve an instance by its id — `undefined` if not owned (e.g. a stale deck reference). */

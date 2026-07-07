@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { copiesOwned, isOwned, collectionFromCounts, grantCopies, emptyCollection, findInstance } from './collection';
+import {
+  copiesOwned,
+  isOwned,
+  collectionFromCounts,
+  grantCopies,
+  emptyCollection,
+  findInstance,
+  isStickerFull,
+  stickerableInstancesOf,
+} from './collection';
 import { STARTING_COLLECTION } from '../content/collection';
 import { DEFAULT_DECKS } from '../content/decks';
 import { groupCounts, buildSeedDecks } from './deckBuilder';
@@ -50,6 +59,37 @@ describe('findInstance', () => {
 
   it('returns undefined for an unknown id', () => {
     expect(findInstance(emptyCollection(), 'nope')).toBeUndefined();
+  });
+});
+
+describe('isStickerFull', () => {
+  it('is false with no stickers or just one', () => {
+    expect(isStickerFull({ id: '0', cardId: 'farm' })).toBe(false);
+    expect(isStickerFull({ id: '0', cardId: 'farm', stickers: ['reinforced'] })).toBe(false);
+  });
+
+  it('is true once at MAX_STICKERS, even as duplicates of the same sticker', () => {
+    expect(isStickerFull({ id: '0', cardId: 'farm', stickers: ['reinforced', 'reinforced'] })).toBe(true);
+    expect(isStickerFull({ id: '0', cardId: 'farm', stickers: ['reinforced', 'efficient'] })).toBe(true);
+  });
+});
+
+describe('stickerableInstancesOf', () => {
+  it('includes a once-stickered instance (room for a second)', () => {
+    let collection = grantCopies(emptyCollection(), 'farm', 1);
+    const [a] = collection.instances.map((i) => i.id);
+    collection = { ...collection, instances: collection.instances.map((i) => (i.id === a ? { ...i, stickers: ['reinforced'] } : i)) };
+    expect(stickerableInstancesOf(collection, 'farm').map((i) => i.id)).toEqual([a]);
+  });
+
+  it('excludes a full instance', () => {
+    let collection = grantCopies(emptyCollection(), 'farm', 1);
+    const [a] = collection.instances.map((i) => i.id);
+    collection = {
+      ...collection,
+      instances: collection.instances.map((i) => (i.id === a ? { ...i, stickers: ['reinforced', 'efficient'] } : i)),
+    };
+    expect(stickerableInstancesOf(collection, 'farm')).toEqual([]);
   });
 });
 

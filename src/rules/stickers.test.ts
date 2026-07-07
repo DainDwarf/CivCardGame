@@ -32,11 +32,30 @@ describe('buySticker', () => {
     expect(buySticker(collection, 5, 'not-owned', 'reinforced')).toBeNull();
   });
 
-  it('rejects an instance that already carries a sticker', () => {
+  it('appends a second, different sticker to a once-stickered instance', () => {
     const collection = collectionFromCounts({ farm: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    const first = buySticker(collection, 5, a, 'reinforced')!;
-    expect(buySticker(first.collection, first.influence, a, 'efficient')).toBeNull();
+    const first = buySticker(collection, 10, a, 'reinforced')!;
+    const second = buySticker(first.collection, first.influence, a, 'efficient');
+    expect(second).not.toBeNull();
+    expect(second!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['reinforced', 'efficient']);
+  });
+
+  it('rejects a third sticker once the instance is full', () => {
+    const collection = collectionFromCounts({ farm: 1 });
+    const [a] = collection.instances.map((i) => i.id);
+    const first = buySticker(collection, 10, a, 'reinforced')!;
+    const second = buySticker(first.collection, first.influence, a, 'efficient')!;
+    expect(buySticker(second.collection, second.influence, a, 'reinforced')).toBeNull();
+  });
+
+  it('allows attaching the same sticker twice — it stacks', () => {
+    const collection = collectionFromCounts({ farm: 1 });
+    const [a] = collection.instances.map((i) => i.id);
+    const first = buySticker(collection, 10, a, 'reinforced')!;
+    const second = buySticker(first.collection, first.influence, a, 'reinforced');
+    expect(second).not.toBeNull();
+    expect(second!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['reinforced', 'reinforced']);
   });
 
   it('rejects an unaffordable purchase', () => {
@@ -61,6 +80,11 @@ describe('effectiveGain (Reinforced)', () => {
     const self: CardInstance = { id: 1, cardId: 'farm', stickers: ['reinforced'] };
     expect(effectiveGain(undefined, self)).toBeUndefined();
   });
+
+  it('stacks two Reinforced stickers on the same instance to +2', () => {
+    const self: CardInstance = { id: 1, cardId: 'farm', stickers: ['reinforced', 'reinforced'] };
+    expect(effectiveGain({ food: 2 }, self)).toEqual({ food: 4 });
+  });
 });
 
 describe('effectiveCost (Efficient)', () => {
@@ -77,6 +101,19 @@ describe('effectiveCost (Efficient)', () => {
   it('leaves cost untouched on an unstickered instance', () => {
     const self: CardInstance = { id: 1, cardId: 'farm' };
     expect(effectiveCost({ production: 2 }, self)).toEqual({ production: 2 });
+  });
+
+  it('stacks two Efficient stickers on the same instance to -2, still floored at 0', () => {
+    const self: CardInstance = { id: 1, cardId: 'farm', stickers: ['efficient', 'efficient'] };
+    expect(effectiveCost({ production: 3, food: 1 }, self)).toEqual({ production: 1, food: 0 });
+  });
+});
+
+describe('a doubly-stickered instance (Step 7.7)', () => {
+  it('composes two different stickers (Reinforced + Efficient) on the same copy', () => {
+    const self: CardInstance = { id: 1, cardId: 'farm', stickers: ['reinforced', 'efficient'] };
+    expect(effectiveGain({ food: 2 }, self)).toEqual({ food: 3 });
+    expect(effectiveCost({ production: 2 }, self)).toEqual({ production: 1 });
   });
 });
 

@@ -3,7 +3,7 @@ import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { STICKERS } from '../content/stickers';
 import { CardFace } from '../components/CardFace';
-import { copiesOwned, unstickeredInstancesOf, type OwnedCards } from '../rules/collection';
+import { copiesOwned, stickerableInstancesOf, type OwnedCards } from '../rules/collection';
 import { nextTier } from '../rules/shop';
 import { CardInstancePanel } from './CardInstancePanel';
 import type { CardDef } from '../content/cards';
@@ -13,10 +13,11 @@ import styles from './Shop.module.css';
  * The Shop screen (Phase 3 Step 5.2, extended by Step 7.5): spend Influence (⭐) to deepen
  * cards you already own — copy-tier upgrades (×1 → ×2 → ×4 → ×8, `rules/shop.ts`) and, since
  * Step 7.5, permanent card stickers (`content/stickers.ts`) attached to one chosen owned
- * instance. The shop sells *depth* only — new cards come from mission unlocks, never here
- * (docs/DESIGN.md, "Economy & progression"). A card is listed if it has *either* a tier left
- * to buy or an unstickered owned instance a sticker could still land on — a card already at
- * ×8 with every copy stickered finally drops off the list. Tier-buying stays one click (a
+ * instance — up to `MAX_STICKERS` (2, Step 7.7) per instance. The shop sells *depth* only — new
+ * cards come from mission unlocks, never here (docs/DESIGN.md, "Economy & progression"). A card
+ * is listed if it has *either* a tier left to buy or an owned instance with room for another
+ * sticker (`stickerableInstancesOf`) — a card already at ×8 with every copy fully stickered
+ * finally drops off the list. Tier-buying stays one click (a
  * purchase only ever adds copies); attaching a sticker needs a target instance, so it opens
  * `CardInstancePanel` in its `attach` mode — the same per-copy picker Step 7.3 built, reused
  * rather than inventing a second one.
@@ -47,7 +48,7 @@ export function Shop({
     if (c.kind === 'event' || c.kind === 'threat') return false;
     const owned = copiesOwned(collection, c.id);
     if (owned === 0) return false;
-    return nextTier(owned) !== null || unstickeredInstancesOf(collection, c.id).length > 0;
+    return nextTier(owned) !== null || stickerableInstancesOf(collection, c.id).length > 0;
   });
   const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'action');
@@ -56,7 +57,7 @@ export function Shop({
   function tile(c: CardDef) {
     const owned = copiesOwned(collection, c.id);
     const up = nextTier(owned);
-    const hasStickerSlot = unstickeredInstancesOf(collection, c.id).length > 0;
+    const hasStickerSlot = stickerableInstancesOf(collection, c.id).length > 0;
     return (
       <div key={c.id} className={styles.tileWrap}>
         <CardFace card={c} className={styles.tile} countBadge={owned} alwaysShowBadge />

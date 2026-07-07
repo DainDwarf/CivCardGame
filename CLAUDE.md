@@ -280,8 +280,27 @@ hand for the tableau/workZone, since a fresh instance used to be minted from jus
 `groupCards` (the run's own pile-viewer grouping, distinct from `deckBuilder.ts`'s `groupCounts`)
 now also singles out a stickered instance rather than folding it into a ×N stack, mirroring its
 existing `dynamicText` exception (a stickered copy's numbers, like a dynamic card's, can diverge
-from its siblings). Still to come: raising the one-sticker cap to two and an Irrigation sticker
-(Step 7.7/7.8), sticker UI polish — per-sticker icons, a bottom-left badge, and the meta screens
+from its siblings). **Phase 3 Step 7.7** (raise the sticker cap to 2 per instance) is also done:
+`rules/collection.ts` splits what a cap of 1 let stay conflated into two separate predicates —
+`hasSticker` (unchanged, `>= 1`) still drives fungible-pool exclusion and display grouping
+(`deckBuilder.ts`'s `addCard`/`removeCard`/`groupCounts`, `DeckEditor.tsx`'s picker split into a
+generic fungible tile plus one addressable tile per stickered instance) — a once-stickered
+instance is still non-fungible and still gets its own tile/badge exactly as before Step 7.7 — while
+the new `isStickerFull`/`MAX_STICKERS` (`= 2`) asks the narrower "can this instance take *another*
+sticker" question, used only by the attach flow. `rules/stickers.ts`'s `buySticker` now appends to
+`stickers` rather than replacing, rejecting only once already full. Attaching the *same* sticker
+id twice is allowed **on purpose**: two Reinforced on one copy stacks to +2, not a no-op —
+`effectiveGain`/`effectiveCost` moved from a presence check (`Array.includes`) to an occurrence
+*count* (`stickerCount`) so a duplicate compounds instead of doing nothing while still spending the
+Influence. `CardInstancePanel`'s attach button/title only guards the full case now (no
+duplicate-reject). `Shop.tsx`'s "does this card still have a sticker slot" check moved to a new
+`stickerableInstancesOf` (room for another — not full) rather than the stricter
+`unstickeredInstancesOf` (no sticker at all), which would have hidden a card's second-sticker slot
+the moment every owned copy already had one. No run-loop changes were needed: `effectiveGain`/
+`effectiveCost` already iterate by sticker id and now by count, so both stacking (same sticker
+twice) and composing (two different stickers) fall out of the same code path (tested). Still to
+come: an Irrigation sticker
+(Step 7.8), sticker UI polish — per-sticker icons, a bottom-left badge, and the meta screens
 (`Collection`/`Shop`/`CardInstancePanel`) showing a stickered copy's effective values the way the
 run loop now does, plus a visible badge on a stickered card *in* the run loop, which 7.6 didn't
 wire up (Step 7.9) — tutorial missions (Step 9), and `Stats` surfacing a per-run reward (deferred
