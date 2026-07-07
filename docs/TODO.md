@@ -112,7 +112,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Meta loop (`src/meta/`)
 
 - **End-of-Phase-3 cleanup: simplify save parsing, not remove it** — `meta/store.ts`'s `SCHEMA_VERSION`/`exportSave`/`importSave` plumbing stays (still the real save/load-file mechanism); what should go is `parsePlayerStore`'s per-field *leniency* (the decks-missing fallback, the field-by-field shape checks written to tolerate a store that predates some Phase 3 field). Once Phase 3 ships, assume every save in the world is already Phase-3-shaped — pre-alpha players are told to clear their save regularly — so `parsePlayerStore` can go back to a plain "does this parse as a `PlayerStore`" check instead of carrying per-field pre-Phase-3 fallbacks. `[phase: 3]`
-- **Card modifiers** — attach persistent modifiers to individual cards → **decided as stickers**; see **Step 7** above. `[phase: 3]`
 - **Fuse Shop into Collection (and the future board menu)** — `Shop.tsx` and `Collection.tsx` are largely
   redundant today: both list the same owned cards grouped the same way. Instead of a separate nav tab,
   clicking a card in Collection should open its per-instance panel already able to do everything Shop
@@ -126,7 +125,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Cards & content (`src/content/`)
 
-- **Remove Settlers, replace with a Hut building** `[?]` `[phase: 3]`
+- **Remove Settlers, replace with a Hut building** `[?]` `[phase: 4]`
 - **Disasters — expand** — the `event` card mechanic shipped (see `CHANGELOG.md`); grow it out with more disaster types beyond the Barbarian and missions that inject them (details TBD) `[?]` `[phase: 4]`
 - New mission type: "Metropolis" `[?]` `[phase: 4]`
 - New mission: "Build the Wonder" `[?]` `[phase: 4]`
@@ -154,9 +153,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Minimum deck size — 20 cards** — enforce a floor on deck size (mirrors the existing
   `MAX_DECKS` cap precedent — a core rule enforced at the deck writer, not just a UI gate);
   also means adjusting `content/decks.ts`'s starter deck up to 20 cards to satisfy it.
-  `[phase: 3]`
+  `[phase: 4]`
 - **Default hand limit — 4 instead of 5** — lower the base starting hand size from 5 to 4.
-  `[phase: 3]`
+  `[phase: 4]`
 
 ## Tech debt / architecture
 
@@ -213,7 +212,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     when expanding territory" — which become thin `CardDef.on` handlers instead of one-off
     engine edits. Note the self-removal footgun any such handler shares: reassign the zone
     array (`filter`), never `splice`, since `tickThreats`/`resolveZoneProduction` iterate with
-    `for...of`. `[size: L]` `[?]` `[phase: 4]`
+    `for...of`. `[size: L]` `[?]` `[phase: 3]`
 
 ---
 
