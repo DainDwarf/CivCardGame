@@ -225,7 +225,8 @@ of buying copies outright in the shop.
 **Stickers** are permanent modifiers bought with Influence: a **card sticker** buffs a
 *single owned copy* of a card forever; a **board sticker** modifies a board's starting
 profile (board stickers *are* the "board modifiers" — one concept, not two). Card stickers
-need per-copy identity (decks are bare `CardId[]` today), so they are the last, deepest piece.
+needed per-copy identity — decks reference owned copies by instance id, not bare `CardId[]`
+(Phase 3 Step 7.2) — which is why they shipped last, as the deepest piece.
 
 ### Campaign map — humanity's tech tree ✅ / 🔧
 

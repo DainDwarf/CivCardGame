@@ -15,6 +15,7 @@ import type { GameState } from '../rules';
 import { isCompleted } from '../rules/campaign';
 import { computeRewards } from '../rules/rewards';
 import { isOwned, type OwnedCards } from '../rules/collection';
+import { effectiveCard } from '../rules/stickers';
 import { CardFace, COST_ICON, artFor, describeBuilding } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
@@ -170,17 +171,18 @@ function ThreatZone({ G, onZoom }: { G: GameState; onZoom: (cardId: string, over
 }
 
 /** Collapse a list of card instances into one tile per type with a count, keeping first-seen
- *  order — *except* a card with `dynamicText`, which never groups: each copy can carry its own
- *  live value (e.g. two Cornucopia with different play counts), so a shared count would either
- *  hide that or force picking one copy's value to speak for the stack. Each stays its own
- *  single-count entry, keyed by its stable instance id, carrying the instance so the caller can
- *  compute its current `dynamicText`. */
+ *  order — *except* a card with `dynamicText`, or a stickered instance, neither of which ever
+ *  groups: each such copy can carry its own live value or its own sticker-adjusted stats (e.g.
+ *  two Cornucopia with different play counts, or one stickered Farm among several plain ones),
+ *  so a shared count would either hide that or force picking one copy's value to speak for the
+ *  stack. Each stays its own single-count entry, keyed by its stable instance id, carrying the
+ *  instance so the caller can compute its current `dynamicText`/`effectiveCard`. */
 function groupCards(insts: CardInstance[]): { key: number | string; cardId: string; inst: CardInstance; count: number }[] {
   const order: string[] = [];
   const groups = new Map<string, { inst: CardInstance; count: number }>();
   const singles: { key: number; cardId: string; inst: CardInstance; count: number }[] = [];
   for (const inst of insts) {
-    if (CARDS[inst.cardId].dynamicText) {
+    if (CARDS[inst.cardId].dynamicText || inst.stickers?.length) {
       singles.push({ key: inst.id, cardId: inst.cardId, inst, count: 1 });
       continue;
     }
@@ -302,7 +304,7 @@ function BuildingBox({
    *  instead, since `onPointerDown` never fires there (view-only board). */
   onZoomClick?: () => void;
 }) {
-  const bld = CARDS[inst.cardId];
+  const bld = effectiveCard(CARDS[inst.cardId], inst);
   const req = requiredWorkersOf(inst);
   const selfSufficient = req === 0;
   const staffed = isOperating(inst);
@@ -380,7 +382,7 @@ function WorkBox({
   boxRef?: (el: HTMLDivElement | null) => void;
   onStaffPointerDown?: (e: React.PointerEvent, inst: WorkInstance) => void;
 }) {
-  const card = CARDS[inst.cardId];
+  const card = effectiveCard(CARDS[inst.cardId], inst);
   const req = requiredWorkersOf(inst);
   const selfSufficient = req === 0;
   const staffed = isOperating(inst);
@@ -445,7 +447,9 @@ type Rect = { left: number; top: number; width: number; height: number };
 /** A transient clone that animates a card leaving the hand: 'play' flies up, 'drop' absorbs. */
 interface Ghost {
   id: number;
-  cardId: string;
+  /** Captured at spawn time (via `effectiveCard`) so a stickered copy's true cost/output still
+   *  shows on the flying clone, same as the hand card it left. */
+  card: CardDef;
   rect: Rect;
   anim: 'play' | 'drop';
   /** A dynamic card's live current-value text, captured at spawn time (before its resolver runs
@@ -523,8 +527,8 @@ interface WorkerDrag {
  * gates themselves — shared with `playCard` — this just renders it for the dimming
  * logic, drag gate, and rejection message.
  */
-function whyUnplayable(card: CardDef, G: GameState): string | null {
-  const reason = unplayableReason(G, card);
+function whyUnplayable(card: CardDef, G: GameState, self: CardInstance): string | null {
+  const reason = unplayableReason(G, card, self);
   if (!reason) return null;
   switch (reason.kind) {
     case 'cost': {
@@ -574,7 +578,7 @@ export function Board({
   const [pending, setPending] = useState<PendingPlay | null>(null);
   const [pendingDestroy, setPendingDestroy] = useState<PendingDestroy | null>(null);
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
-  const [zoom, setZoom] = useState<{ cardId: string; overrideText?: string } | null>(null);
+  const [zoom, setZoom] = useState<{ cardId: string; overrideText?: string; overrideCard?: CardDef } | null>(null);
   const [pileView, setPileView] = useState<{ title: string; cards: CardInstance[] } | null>(null);
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
@@ -779,25 +783,25 @@ export function Board({
   }
 
   /** Spawn a transient clone that animates a card out, then clean it up. */
-  function spawnGhost(cardId: string, rect: Rect, anim: 'play' | 'drop', overrideText?: string) {
+  function spawnGhost(card: CardDef, rect: Rect, anim: 'play' | 'drop', overrideText?: string) {
     const id = ghostSeq.current++;
-    setGhosts((gs) => [...gs, { id, cardId, rect, anim, overrideText }]);
+    setGhosts((gs) => [...gs, { id, card, rect, anim, overrideText }]);
     window.setTimeout(() => setGhosts((gs) => gs.filter((x) => x.id !== id)), anim === 'drop' ? 360 : 440);
   }
 
   /** Fly-up animation from a card's slot in the hand (used by the discard-cost flow). */
-  function ghostFromSlot(key: number, cardId: string, overrideText?: string) {
+  function ghostFromSlot(key: number, card: CardDef, overrideText?: string) {
     const el = cardEls.current.get(key);
     if (!el) return;
     const r = el.getBoundingClientRect();
-    spawnGhost(cardId, { left: r.left, top: r.top, width: r.width, height: r.height }, 'play', overrideText);
+    spawnGhost(card, { left: r.left, top: r.top, width: r.width, height: r.height }, 'play', overrideText);
   }
 
   /** Try to play a dragged card released over the board. */
   function attemptPlay(d: DragState, x: number, y: number) {
     if (gameover) return; // run is over — drags may still zoom on click, but never play
     const card = CARDS[d.cardId];
-    const reason = whyUnplayable(card, G);
+    const reason = whyUnplayable(card, G, G.hand[d.handIdx]);
     if (reason) {
       rejectShake(d.key, reason);
       return;
@@ -828,7 +832,7 @@ export function Board({
       return;
     }
     spawnGhost(
-      d.cardId,
+      effectiveCard(card, G.hand[d.handIdx]),
       { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h },
       'drop',
       card.dynamicText?.(G, G.hand[d.handIdx]),
@@ -840,7 +844,11 @@ export function Board({
   function finishDrag(d: DragState, x: number, y: number) {
     if (!d.active) {
       // it was a click, not a drag
-      setZoom({ cardId: d.cardId, overrideText: CARDS[d.cardId].dynamicText?.(G, G.hand[d.handIdx]) });
+      setZoom({
+        cardId: d.cardId,
+        overrideCard: effectiveCard(CARDS[d.cardId], G.hand[d.handIdx]),
+        overrideText: CARDS[d.cardId].dynamicText?.(G, G.hand[d.handIdx]),
+      });
     } else {
       const barTop = handBarRef.current?.getBoundingClientRect().top ?? Infinity;
       if (y < barTop) attemptPlay(d, x, y); // released above the hand bar = over the board
@@ -924,7 +932,7 @@ export function Board({
       } else {
         // It was a click, not a drag — zoom the building's card (mirrors finishDrag for hand cards).
         const inst = buildingById.get(d.id);
-        if (inst) setZoom({ cardId: inst.cardId });
+        if (inst) setZoom({ cardId: inst.cardId, overrideCard: effectiveCard(CARDS[inst.cardId], inst) });
       }
       setSlotDrag(null);
       setHoverSlot(null);
@@ -1089,7 +1097,11 @@ export function Board({
       ? pending.discards.filter((d) => d !== i)
       : [...pending.discards, i];
     if (discards.length === pending.need) {
-      ghostFromSlot(pending.playedKey, pending.cardId, CARDS[pending.cardId].dynamicText?.(G, G.hand[pending.handIdx]));
+      ghostFromSlot(
+        pending.playedKey,
+        effectiveCard(CARDS[pending.cardId], G.hand[pending.handIdx]),
+        CARDS[pending.cardId].dynamicText?.(G, G.hand[pending.handIdx]),
+      );
       moves.playCard(pending.handIdx, discards);
       setPending(null);
     } else {
@@ -1102,7 +1114,7 @@ export function Board({
     if (!pendingDestroy) return;
     ghostFromSlot(
       pendingDestroy.playedKey,
-      pendingDestroy.cardId,
+      effectiveCard(CARDS[pendingDestroy.cardId], G.hand[pendingDestroy.handIdx]),
       CARDS[pendingDestroy.cardId].dynamicText?.(G, G.hand[pendingDestroy.handIdx]),
     );
     moves.playCard(pendingDestroy.handIdx, [], instanceId);
@@ -1230,7 +1242,9 @@ export function Board({
                       onStaffPointerDown={onStaffPointerDown}
                       onDestroy={() => handleDestroyTarget(inst.id)}
                       onZoomClick={
-                        gameover && overlayMinimized ? () => setZoom({ cardId: inst.cardId }) : undefined
+                        gameover && overlayMinimized
+                          ? () => setZoom({ cardId: inst.cardId, overrideCard: effectiveCard(CARDS[inst.cardId], inst) })
+                          : undefined
                       }
                     />
                   )}
@@ -1306,8 +1320,11 @@ export function Board({
               {hand.length === 0 && <p className={styles.empty}>No cards in hand.</p>}
               {hand.map((card) => {
                 const c = CARDS[card.cardId];
+                // A stickered copy's true cost/output (e.g. Efficient's discount) — same object as
+                // `c` when unstickered, see `effectiveCard`.
+                const ec = effectiveCard(c, card.inst);
                 // Discard cost never blocks play — it's waived when you can't cover it.
-                const affordable = whyUnplayable(c, G) === null;
+                const affordable = whyUnplayable(c, G, card.inst) === null;
                 const isPending = pending?.handIdx === card.handIdx;
                 const isPendingDestroy = pendingDestroy?.handIdx === card.handIdx;
                 const isSacrifice = pending?.discards.includes(card.handIdx) ?? false;
@@ -1329,7 +1346,7 @@ export function Board({
                   <CardFace
                     key={card.key}
                     as="button"
-                    card={c}
+                    card={ec}
                     // A card owning run-aware text (e.g. Cornucopia's growing gain) renders its
                     // current value here; the shell just asks, with no per-card branch.
                     overrideText={c.dynamicText?.(G, card.inst)}
@@ -1342,7 +1359,7 @@ export function Board({
                     onPointerDown={(e) => onCardPointerDown(e, card)}
                     onClick={() => {
                       if (gameover && overlayMinimized) {
-                        setZoom({ cardId: card.cardId, overrideText: c.dynamicText?.(G, card.inst) });
+                        setZoom({ cardId: card.cardId, overrideCard: ec, overrideText: c.dynamicText?.(G, card.inst) });
                         return;
                       }
                       if (pending) handlePendingClick(card);
@@ -1410,7 +1427,7 @@ export function Board({
           {ghosts.map((g) => (
             <CardFace
               key={g.id}
-              card={CARDS[g.cardId]}
+              card={g.card}
               overrideText={g.overrideText}
               className={`${styles.ghostCard} ${g.anim === 'drop' ? styles.ghostDrop : styles.ghostPlay}`}
               style={{ left: px(g.rect.left), top: px(g.rect.top), width: px(g.rect.width), height: px(g.rect.height) }}
@@ -1437,7 +1454,7 @@ export function Board({
           </div>
           <div className={styles.dragLayer} aria-hidden="true">
             <CardFace
-              card={CARDS[drag.cardId]}
+              card={effectiveCard(CARDS[drag.cardId], G.hand[drag.handIdx])}
               overrideText={CARDS[drag.cardId].dynamicText?.(G, G.hand[drag.handIdx])}
               className={styles.dragCard}
               style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
@@ -1498,14 +1515,15 @@ export function Board({
               <div className={styles.pileGrid}>
                 {groupCards(pileView.cards).map((g) => {
                   const overrideText = CARDS[g.cardId].dynamicText?.(G, g.inst);
+                  const ec = effectiveCard(CARDS[g.cardId], g.inst);
                   return (
                     <CardFace
                       key={g.key}
-                      card={CARDS[g.cardId]}
+                      card={ec}
                       overrideText={overrideText}
                       className={styles.staticCard}
                       countBadge={g.count}
-                      onClick={(e) => { e.stopPropagation(); setZoom({ cardId: g.cardId, overrideText }); }}
+                      onClick={(e) => { e.stopPropagation(); setZoom({ cardId: g.cardId, overrideCard: ec, overrideText }); }}
                     />
                   );
                 })}
@@ -1526,7 +1544,7 @@ export function Board({
               {G.pendingInteraction.options.map((opt, i) => (
                 <CardFace
                   key={opt.id}
-                  card={CARDS[opt.cardId]}
+                  card={effectiveCard(CARDS[opt.cardId], opt)}
                   overrideText={CARDS[opt.cardId].dynamicText?.(G, opt)}
                   className={styles.interactionCard}
                   onClick={() => moves.resolveInteraction(i)}
@@ -1541,6 +1559,7 @@ export function Board({
           (CardZoomOverlay's backdrop is z-index 80 vs. .pileBackdrop's 75). */}
       <CardZoomOverlay
         cardId={zoom?.cardId ?? null}
+        overrideCard={zoom?.overrideCard}
         overrideText={zoom?.overrideText}
         onClose={() => setZoom(null)}
         hint="Drag a card onto the board to play · click anywhere to close"

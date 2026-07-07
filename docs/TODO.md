@@ -55,7 +55,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   ambiguity is resolved by an explicit per-instance pick (7.3) over stable, ordered identities (7.4).
   The run boundary still deep-copies each meta instance into a fresh run `CardInstance` (run `counters`
   mutate and must never persist back). The precursor is already **done** (Stage 4 of the resolver
-  rewrite): pile cards are `CardInstance`s with per-copy state (`counters`). Suggested order 7.1 → 7.6.
+  rewrite): pile cards are `CardInstance`s with per-copy state (`counters`). Suggested order 7.1 → 7.9
+  (7.7/7.8/7.9 added 2026-07-07, after 7.6 shipped — polish/expansion, not required for the core loop).
   `[size: L]` `[phase: 3]`
   - **Step 7.1 — Bounded copy tiers (drop `'unlimited'`)** — ✅ done — see *Done / shipped* below.
     `[size: S]` `[phase: 3]`
@@ -67,10 +68,42 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     `[size: M]` `[phase: 3]`
   - **Step 7.5 — Card stickers in the meta (not yet in the run)** — ✅ done — see *Done / shipped*
     below. `[size: M]` `[phase: 3]`
-  - **Step 7.6 — Card stickers in the run loop** — `setup.ts` carries each deck instance's stickers into
-    its run `CardInstance`; a sticker that changes production/effects composes **through**
-    `resolveProduction`/`resolveCard`, never read raw off the sticker data (same discipline as
-    threats/Cornucopia — the resolver spine). `[size: M]` `[phase: 3]`
+  - **Step 7.6 — Card stickers in the run loop** — ✅ done — see *Done / shipped* below.
+    `[size: M]` `[phase: 3]`
+  - **Step 7.7 — Raise the sticker cap to 2 per instance** — `MetaCardInstance.stickers` is capped at
+    one (Step 7.5's "v1 choice, easily relaxed later" — now the thing to relax). Touches
+    `rules/collection.ts`'s `hasSticker` (an instance stops being fungible once it has *two*, not one)
+    and `rules/stickers.ts`'s `buySticker` (append to `stickers` rather than replace, reject once
+    already at 2); `CardInstancePanel`'s attach UI needs to let a once-stickered instance take a
+    second sticker instead of disabling outright. `rules/stickers.ts`'s `effectiveGain`/`effectiveCost`
+    already iterate by sticker id, so a second sticker composing (e.g. Reinforced + Efficient on the
+    same copy) should fall out for free — worth a test once it lands. `[size: S]` `[phase: 3]`
+  - **Step 7.8 — Add Irrigation sticker** — unlike Reinforced's blanket "+1 to whatever this copy
+    produces," Irrigation only attaches to (and only bumps) a **food-producing building**: +1 food
+    production, no effect on anything else. Needs a card-aware check before applying (does this
+    card's `produces` include `food`?), not just a self-stickers lookup like `effectiveGain` does
+    today — the first sticker whose eligibility depends on the card, not just the copy. Open design
+    question for whoever picks this up: does the shop/attach UI hide Irrigation entirely on an
+    ineligible card, or offer it and have it silently do nothing? `[size: S]` `[phase: 3]` `[?]`
+  - **Step 7.9 — Sticker UI: per-sticker icons, bottom-left badge, effective values everywhere** —
+    four related gaps left after 7.5/7.6:
+    1. **Distinct icons** — `CardFace`'s `stickerBadge` is one hardcoded 🏷️ regardless of which
+       sticker is attached; each `content/stickers.ts` entry should carry its own icon glyph, shown
+       instead of the generic tag.
+    2. **Bottom-left placement** — today the badge sits in the opposite corner from the ×N count
+       badge (top-right); move it to a fixed bottom-left slot of its own instead of sharing/opposing
+       the count badge's corner.
+    3. **Meta screens show effective values too** — Step 7.6's `effectiveCard` fixed the *run loop*
+       (hand/tableau/workZone/pile-viewer/zoom all show a stickered copy's true cost/output), but
+       `Collection.tsx`, `Shop.tsx`, and `CardInstancePanel.tsx` still render the raw `CARDS[cardId]`
+       — they need the same `effectiveCard` treatment so a stickered copy's real numbers show before
+       it's ever taken into a run, not just after.
+    4. **Loop cards stay visibly stickered** — Step 7.6 made a stickered card's *numbers* correct in
+       the run, but never passes `stickerBadge` through any of `Board.tsx`'s CardFace renders, so a
+       stickered copy in hand/tableau looks identical to a plain one except for its stats. Wire
+       `stickerBadge` through the run loop's renders too (same `!!self.stickers?.length` check
+       `effectiveCard` already uses), so a stickered copy reads as visibly special in the run, not
+       only in the meta. `[size: M]` `[phase: 3]`
 - **Step 8 — Board stickers** — permanent board modifiers bought with Influence (DESIGN.md: board
   stickers *are* the "board modifiers" — one concept, not two). The *easy* half of stickers: a board
   isn't multi-copy, so a board sticker just lives on the board entry in the meta and `setup.ts` layers it
@@ -208,6 +241,33 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 7.6 — Card stickers in the run loop** — `state.ts`'s `CardInstance` gained an
+  optional `stickers?: string[]`, copied once at mint and never written to during a run.
+  `rules/deckBuilder.ts`'s `resolveDeckCards` now returns `DeckCard[]` (`{cardId, stickers?}`, stickers
+  copied out of the collection rather than aliased) instead of a bare `string[]`; `RunConfig.deck` is
+  `DeckCard[]` accordingly, and `run/setup.ts`'s new `instancesFromDeckCards` (mirroring
+  `instancesFromCardIds`) mints each entry's stickers onto its run instance. `rules/stickers.ts` is now
+  also the run-side home for interpreting a sticker's actual effect: `effectiveGain` (Reinforced's +1
+  per produced resource) and `effectiveCost` (Efficient's −1 per cost resource, floored at 0) are the
+  *only* places a sticker id is read and interpreted — `rules/effects.ts`'s `defaultProduce`/
+  `specToResolver` compose `effectiveGain` in, and the two cost sites (`playability.ts`'s
+  `unplayableReason`, now taking a `self: CardInstance` param, and `moves.ts`'s `playCard`) compose
+  `effectiveCost` in — so resolution never reads `self.stickers` ad hoc. A bespoke `resolve`/`produce`
+  (Cornucopia, threats) is *not* composed through either function — a deliberate v1 gap, kept
+  consistent since such a card's `dynamicText` display doesn't reflect a sticker either.
+  `rules/population.ts`'s `addBuilding`/`addWork` gained an optional `stickers` param — without it a
+  stickered building/work card would silently lose its bonus the instant it left hand for the
+  tableau/workZone, since a fresh instance used to be minted from just `cardId`.
+  `rules/stickers.ts`'s new `effectiveCard(card, self)` is the display-side counterpart: a shallow
+  `CardDef` copy with `cost`/`produces`/`effect.gain` swapped for their effective values, so every
+  `Board.tsx` render site that already did `card={CARDS[cardId]}` swaps in `effectiveCard(...)`
+  with no `CardFace` changes at all (hand, tableau `BuildingBox`/`WorkBox`, drag clone, play/discard
+  ghosts, the pile viewer, zoom overlay, Foresight's interaction options) — `CardZoomOverlay` gained an
+  `overrideCard` prop for this. `groupCards` (the run's pile-viewer grouping) now also singles out a
+  stickered instance instead of folding it into a ×N stack, same reasoning as its existing
+  `dynamicText` exception. Meta-screen display (Collection/Shop/CardInstancePanel showing effective
+  values) and an in-run sticker badge are explicitly **not** part of this step — see Step 7.9.
 
 - **Phase 3 Step 7.5 — Card stickers in the meta (not yet in the run)** — `content/stickers.ts`'s
   `STICKERS` is a small, deliberately inert catalogue (Reinforced/Efficient — name/description/cost

@@ -2,7 +2,8 @@ import type { CardDef } from '../content/cards';
 import { canAfford, type Resources } from './resources';
 import { cultureLevel } from './culture';
 import { freeTerritory } from './tableau';
-import type { GameState } from './state';
+import type { CardInstance, GameState } from './state';
+import { effectiveCost } from './stickers';
 
 /**
  * Structured reason a card cannot currently be played — one variant per gate `playCard`
@@ -17,13 +18,17 @@ export type UnplayableReason =
   | { kind: 'noBuildingsToDestroy' }
   | { kind: 'event' };
 
-/** Why `card` cannot be played right now, or null if it can. */
-export function unplayableReason(G: GameState, card: CardDef): UnplayableReason | null {
+/** Why `card` cannot be played right now, or null if it can. `self` is the exact hand instance
+ *  being checked — its own attached sticker (e.g. Efficient) may discount `card.cost` below the
+ *  catalogue's raw number (`rules/stickers.ts`'s `effectiveCost`), so affordability is always
+ *  checked against *this copy's* actual price, not the static card. */
+export function unplayableReason(G: GameState, card: CardDef, self: CardInstance): UnplayableReason | null {
   // Event cards are never player-playable — they auto-resolve at end of turn.
   if (card.kind === 'event') return { kind: 'event' };
-  if (!canAfford(G.resources, card.cost)) {
+  const cost = effectiveCost(card.cost, self);
+  if (!canAfford(G.resources, cost)) {
     const missing: Partial<Resources> = {};
-    for (const [k, v] of Object.entries(card.cost) as [keyof Resources, number][]) {
+    for (const [k, v] of Object.entries(cost) as [keyof Resources, number][]) {
       if (v > 0 && G.resources[k] < v) missing[k] = v - G.resources[k];
     }
     return { kind: 'cost', missing };

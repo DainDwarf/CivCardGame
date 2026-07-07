@@ -250,12 +250,43 @@ row shows the sticker's name/effect already attached (if any) and an "Attach ⭐
 (disabled once-stickered or unaffordable) instead of opening the zoom — `Shop.tsx` opens it
 when the player clicks one of a card's small "🏷️ ⭐cost → StickerName" buttons, alongside its
 existing copy-tier upgrade button; a card now stays listed in the shop if it has *either* a
-tier left to buy or an unstickered instance a sticker could still land on. Still to come: card
-stickers in the run loop (Step 7.6 — `setup.ts` carrying a deck instance's stickers into its
-run `CardInstance`, composed through `resolveProduction`/`resolveCard`, never read raw),
-tutorial missions (Step 8), and `Stats` surfacing a per-run reward (deferred since `RunResult`
-deliberately excludes rewards, and there's no per-run record of whether that run was a first
-clear).
+tier left to buy or an unstickered instance a sticker could still land on. **Phase 3 Step 7.6**
+(card stickers in the run loop) is also done: `rules/state.ts`'s `CardInstance` gained an
+optional `stickers?: string[]`, copied once at mint from the owning meta instance and never
+written to during a run. `rules/deckBuilder.ts`'s `resolveDeckCards` now returns `DeckCard[]`
+(`{ cardId, stickers? }`, each `stickers` array copied rather than aliased out of the
+collection) instead of a bare cardId `string[]`; `contract.ts`'s `RunConfig.deck` is `DeckCard[]`
+accordingly, and `run/setup.ts`'s `instancesFromDeckCards` (`state.ts`, mirroring the existing
+`instancesFromCardIds`) mints each entry's stickers onto its run instance. `rules/stickers.ts` is
+now also the run-side home for interpreting a sticker's actual effect — `effectiveGain`
+(Reinforced's "+1 to this copy's output": bumps every resource key a gain/produce bundle already
+has by 1) and `effectiveCost` (Efficient's "-1 to play," floored at 0 per resource) are the
+*only* places a sticker id is read and interpreted, so resolution and display never diverge.
+`rules/effects.ts`'s declarative default resolvers (`defaultProduce`/`specToResolver`) compose
+`effectiveGain` in; the two cost sites — `rules/playability.ts`'s `unplayableReason` (which now
+takes a `self: CardInstance` param instead of just the static `CardDef`) and `run/moves.ts`'s
+`playCard` — compose `effectiveCost` in. A card's own bespoke `resolve`/`produce` (Cornucopia,
+a threat) is *not* composed through either function — a deliberate v1 gap, kept consistent since
+such a card's `dynamicText` display doesn't reflect a sticker either, so resolution and display
+still agree. `rules/population.ts`'s `addBuilding`/`addWork` gained an optional `stickers` param:
+without it, a stickered building/work card would silently lose its bonus the instant it left
+hand for the tableau/workZone, since a fresh instance used to be minted from just `cardId`.
+`rules/stickers.ts`'s `effectiveCard(card, self)` is the display-side counterpart: a shallow
+`CardDef` copy with `cost`/`produces`/`effect.gain` swapped for their effective values, so every
+`Board.tsx` render site that already did `card={CARDS[cardId]}` swaps in
+`effectiveCard(CARDS[cardId], self)` instead, with zero `CardFace` changes — hand, the tableau's
+`BuildingBox`/`WorkBox`, the drag clone, play/discard ghosts, the pile viewer, the zoom overlay
+(`CardZoomOverlay` gained an `overrideCard` prop for this), and Foresight's interaction options.
+`groupCards` (the run's own pile-viewer grouping, distinct from `deckBuilder.ts`'s `groupCounts`)
+now also singles out a stickered instance rather than folding it into a ×N stack, mirroring its
+existing `dynamicText` exception (a stickered copy's numbers, like a dynamic card's, can diverge
+from its siblings). Still to come: raising the one-sticker cap to two and an Irrigation sticker
+(Step 7.7/7.8), sticker UI polish — per-sticker icons, a bottom-left badge, and the meta screens
+(`Collection`/`Shop`/`CardInstancePanel`) showing a stickered copy's effective values the way the
+run loop now does, plus a visible badge on a stickered card *in* the run loop, which 7.6 didn't
+wire up (Step 7.9) — tutorial missions (Step 9), and `Stats` surfacing a per-run reward (deferred
+since `RunResult` deliberately excludes rewards, and there's no per-run record of whether that
+run was a first clear).
 
 ## Commands
 

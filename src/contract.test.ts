@@ -35,7 +35,7 @@ describe('buildRunConfig', () => {
     const b = buildRunConfig(selection, 'seed-1', decks, collection);
     expect(a.deck).toEqual(b.deck);
     const startingCardIds = DEFAULT_DECKS.find((d) => d.id === 'starter')!.cards;
-    expect([...a.deck].sort()).toEqual([...startingCardIds].sort());
+    expect(a.deck.map((c) => c.cardId).sort()).toEqual([...startingCardIds].sort());
   });
 
   it('produces a different order for a different seed', () => {
@@ -64,7 +64,7 @@ describe('reshuffleRunConfig', () => {
     const { decks, collection } = fixture();
     const config = buildRunConfig(selection, 'seed-1', decks, collection);
     const reshuffled = reshuffleRunConfig(config, 'seed-2');
-    expect([...reshuffled.deck].sort()).toEqual([...config.deck].sort());
+    expect(reshuffled.deck.map((c) => c.cardId).sort()).toEqual(config.deck.map((c) => c.cardId).sort());
   });
 
   it('preserves board, missionId, and deckId', () => {

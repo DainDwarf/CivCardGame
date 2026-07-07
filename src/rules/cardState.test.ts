@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { blankState, getCounter, bumpCounter, type CardInstance } from './state';
+import { blankState, getCounter, bumpCounter, instancesFromDeckCards, type CardInstance } from './state';
 import { scaleResources } from './resources';
 import { resolveCard } from './effects';
 
@@ -16,6 +16,26 @@ describe('scaleResources', () => {
     const base = { food: 1 };
     scaleResources(base, 5);
     expect(base).toEqual({ food: 1 });
+  });
+});
+
+describe('instancesFromDeckCards', () => {
+  it('mints sequential ids, carrying stickers onto the instance', () => {
+    const insts = instancesFromDeckCards([{ cardId: 'farm', stickers: ['reinforced'] }, { cardId: 'library' }]);
+    expect(insts).toEqual([
+      { id: 1, cardId: 'farm', stickers: ['reinforced'] },
+      { id: 2, cardId: 'library' },
+    ]);
+  });
+
+  it('omits the stickers field entirely for an unstickered entry (stays bare, like a plain mint)', () => {
+    const [inst] = instancesFromDeckCards([{ cardId: 'farm' }]);
+    expect('stickers' in inst).toBe(false);
+  });
+
+  it('continues ids from a later startId', () => {
+    const insts = instancesFromDeckCards([{ cardId: 'farm' }, { cardId: 'library' }], 10);
+    expect(insts.map((i) => i.id)).toEqual([10, 11]);
   });
 });
 

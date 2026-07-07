@@ -1,7 +1,7 @@
 import type { BoardId } from './content/boards';
 import type { DeckDef } from './content/decks';
 import type { Resources } from './rules/resources';
-import { resolveDeckCards } from './rules/deckBuilder';
+import { resolveDeckCards, type DeckCard } from './rules/deckBuilder';
 import type { OwnedCards } from './rules/collection';
 import { shuffle } from './rules/rng';
 
@@ -27,8 +27,9 @@ export interface RunSelection {
  * (Phase 2 step 4) — this module only owns assembling the config itself.
  */
 export interface RunConfig {
-  /** Card IDs in draw order, already shuffled deterministically from `seed`. */
-  deck: string[];
+  /** Cards in draw order, already shuffled deterministically from `seed` — each carries its
+   *  cardId and any permanent stickers its owning meta instance carries (Phase 3 Step 7.6). */
+  deck: DeckCard[];
   board: BoardId;
   missionId: string;
   /** The deck this run was launched with — kept for display/record-keeping. Reshuffling

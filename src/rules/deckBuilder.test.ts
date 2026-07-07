@@ -188,12 +188,20 @@ describe('resolveDeckCards', () => {
     { id: 'b', name: 'B', cards: [libraryId(0)] },
   ];
 
-  it('resolves a matching deckId to cardIds', () => {
-    expect(resolveDeckCards('b', decks, GENEROUS)).toEqual(['library']);
+  it('resolves a matching deckId to cardId + sticker entries', () => {
+    expect(resolveDeckCards('b', decks, GENEROUS)).toEqual([{ cardId: 'library' }]);
   });
 
   it('returns undefined for an unresolvable deckId', () => {
     expect(resolveDeckCards('nope', decks, GENEROUS)).toBeUndefined();
+  });
+
+  it("carries a stickered instance's stickers along, copied rather than aliased", () => {
+    const collection = withSticker(farmId(0));
+    const result = resolveDeckCards('a', decks, collection);
+    expect(result).toEqual([{ cardId: 'farm', stickers: ['reinforced'] }]);
+    const stickeredInstance = collection.instances.find((i) => i.id === farmId(0))!;
+    expect(result![0].stickers).not.toBe(stickeredInstance.stickers);
   });
 });
 
@@ -220,7 +228,7 @@ describe('buildSeedDecks', () => {
     const [deck] = buildSeedDecks(seeds, collection);
     expect(deck.cards.length).toBe(3);
     expect(new Set(deck.cards).size).toBe(3);
-    expect(resolveDeckCards('a', [deck], collection)).toEqual(['farm', 'farm', 'library']);
+    expect(resolveDeckCards('a', [deck], collection)).toEqual([{ cardId: 'farm' }, { cardId: 'farm' }, { cardId: 'library' }]);
   });
 
   it('does not share instances across two seed decks', () => {

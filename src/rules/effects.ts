@@ -3,6 +3,7 @@ import { drawCard } from './deck';
 import { CARDS } from '../content/cards';
 import type { CardDef } from '../content/cards';
 import type { CardInstance, GameState } from './state';
+import { effectiveGain } from './stickers';
 
 /** The immediate, one-shot effect a card applies when played. */
 export interface CardEffect {
@@ -92,13 +93,14 @@ function demolish(G: GameState, instanceId?: number): void {
  * Build a resolver from a declarative `CardEffect` — the default for the ~90% of cards whose
  * behavior is fully described by the data bag (`describeCard`/`unplayableReason` read the same
  * data). Reproduces `applyEffect` exactly, plus the `destroy` mutation (folded in from `playCard`
- * so all effect behavior resolves through one path). `remove` is *not* handled here: it governs
- * where the played card itself files afterwards, a caller-owned lifecycle decision (see
- * `resolveHandEvents`), not a mutation of `G`.
+ * so all effect behavior resolves through one path) and a Reinforced sticker's +1 to `gain`
+ * (`rules/stickers.ts`'s `effectiveGain` — see its doc for why a bespoke `resolve` doesn't get
+ * this for free). `remove` is *not* handled here: it governs where the played card itself files
+ * afterwards, a caller-owned lifecycle decision (see `resolveHandEvents`), not a mutation of `G`.
  */
 export function specToResolver(effect?: CardEffect): Resolver {
   return (ctx) => {
-    applyEffect(ctx.G, effect);
+    applyEffect(ctx.G, { ...effect, gain: effectiveGain(effect?.gain, ctx.self) });
     if (effect?.destroy) demolish(ctx.G, ctx.target);
   };
 }
@@ -119,10 +121,11 @@ export function resolveCard(ctx: EffectContext): void {
  * every `building`/`work` card whose per-round output is fully described by `produces`/
  * `cultureOutput`/`effect.gain`. Deliberately narrower than `specToResolver`: it applies only
  * `gain`/`culture`, never a one-shot play field (`draw`/`population`/`territory`/`destroy`) a
- * card might also declare — those must never fire on a recurring tick.
+ * card might also declare — those must never fire on a recurring tick. A Reinforced sticker's
+ * +1 (`effectiveGain`) applies here too, same as the play-time default above.
  */
 function defaultProduce(card: CardDef): Resolver {
-  return (ctx) => applyEffect(ctx.G, { gain: card.produces ?? card.effect?.gain, culture: card.cultureOutput });
+  return (ctx) => applyEffect(ctx.G, { gain: effectiveGain(card.produces ?? card.effect?.gain, ctx.self), culture: card.cultureOutput });
 }
 
 /**

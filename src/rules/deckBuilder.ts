@@ -99,15 +99,29 @@ export function groupCounts(instanceIds: string[], collection: OwnedCards): Deck
   return [...fungible, ...stickered];
 }
 
-/** Resolve a `deckId` to its cardId list (not instance ids) from the player's own decks,
- *  via `collection` — `undefined` if the deck isn't found. An instance id the collection no
- *  longer recognizes is dropped rather than surfaced as, say, `undefined` in the list. */
-export function resolveDeckCards(deckId: string, decks: DeckDef[], collection: OwnedCards): string[] | undefined {
+/** A resolved run-bound card: its cardId plus any permanent stickers its owning meta instance
+ *  carries (Phase 3 Step 7.6) — `RunConfig.deck`'s element shape, and `resolveDeckCards`'s
+ *  return type below. */
+export interface DeckCard {
+  cardId: string;
+  stickers?: string[];
+}
+
+/** Resolve a `deckId` to its run-bound card list (cardId + stickers, not instance ids) from the
+ *  player's own decks, via `collection` — `undefined` if the deck isn't found. An instance id the
+ *  collection no longer recognizes is dropped rather than surfaced as, say, `undefined` in the
+ *  list. Each entry's `stickers` is copied (never the same array reference as the live
+ *  `MetaCardInstance`), so a run never aliases into the player's persisted collection. */
+export function resolveDeckCards(deckId: string, decks: DeckDef[], collection: OwnedCards): DeckCard[] | undefined {
   const deck = decks.find((d) => d.id === deckId);
   if (!deck) return undefined;
-  return deck.cards
-    .map((instanceId) => findInstance(collection, instanceId)?.cardId)
-    .filter((cardId): cardId is string => cardId !== undefined);
+  const cards: DeckCard[] = [];
+  for (const instanceId of deck.cards) {
+    const inst = findInstance(collection, instanceId);
+    if (!inst) continue;
+    cards.push({ cardId: inst.cardId, ...(inst.stickers?.length ? { stickers: [...inst.stickers] } : {}) });
+  }
+  return cards;
 }
 
 /** Every deck currently holding `instanceId` (Phase 3 Step 7.3 — the Collection screen's

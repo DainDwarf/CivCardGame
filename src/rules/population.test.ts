@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  addBuilding,
   addWork,
   assignedWorkers,
   autoStaffCount,
@@ -70,6 +71,20 @@ describe('auto-staffing a new building (all-or-nothing)', () => {
     G.population = 3;
     expect(autoStaffCount(G, 'walls')).toBe(0);
   });
+
+  it("carries the played instance's stickers onto the new tableau instance (Phase 3 Step 7.6)", () => {
+    const G = blankState('enlightenment');
+    G.population = 1;
+    addBuilding(G, 'farm', ['reinforced']);
+    expect(G.tableau).toEqual([{ id: 1, cardId: 'farm', workers: 1, stickers: ['reinforced'] }]);
+  });
+
+  it('omits the stickers field entirely when the played instance carried none', () => {
+    const G = blankState('enlightenment');
+    G.population = 1;
+    addBuilding(G, 'farm');
+    expect(G.tableau).toEqual([{ id: 1, cardId: 'farm', workers: 1 }]);
+  });
 });
 
 describe('Work cards as staffables', () => {
@@ -92,6 +107,13 @@ describe('Work cards as staffables', () => {
     G.population = 0;
     addWork(G, 'harvest');
     expect(G.workZone).toEqual([{ id: 1, cardId: 'harvest', workers: 0 }]);
+  });
+
+  it("carries the played instance's stickers onto the new work box (Phase 3 Step 7.6) — otherwise a Reinforced Work card would silently lose its bonus the instant it's placed", () => {
+    const G = blankState('enlightenment');
+    G.population = 1;
+    addWork(G, 'corvee', ['reinforced']);
+    expect(G.workZone).toEqual([{ id: 1, cardId: 'corvee', workers: 1, stickers: ['reinforced'] }]);
   });
 
   it('instance ids are unique across the tableau and the workZone', () => {

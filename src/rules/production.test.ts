@@ -26,4 +26,12 @@ describe('applyTableauProduction', () => {
     applyTableauProduction(G);
     expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 3, money: 0 });
   });
+
+  it("a Reinforced building produces its base output +1, its plain sibling unaffected", () => {
+    const G = blankState('enlightenment');
+    const reinforced: BuildingInstance = { id: nextId++, cardId: 'farm', workers: 1, stickers: ['reinforced'] };
+    G.tableau = [reinforced, b('farm', 1)];
+    applyTableauProduction(G);
+    expect(G.resources.food).toBe(5); // reinforced farm's 3 + plain farm's 2
+  });
 });

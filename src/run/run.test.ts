@@ -20,7 +20,13 @@ const FIXTURE_DECK = [
 ];
 
 function start(missionId: string, board: RunConfig['board'] = 'tribe') {
-  const config: RunConfig = { deck: [...FIXTURE_DECK], board, missionId, deckId: 'fixture', seed: 'test-seed' };
+  const config: RunConfig = {
+    deck: FIXTURE_DECK.map((cardId) => ({ cardId })),
+    board,
+    missionId,
+    deckId: 'fixture',
+    seed: 'test-seed',
+  };
   let state: RunState = createRun(config);
   return {
     getState: () => ({ G: state.G, ctx: { gameover: state.gameover } }),

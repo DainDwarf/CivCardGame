@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyEffect, resolveCard, specToResolver } from './effects';
+import { applyEffect, resolveCard, resolveProduction, specToResolver } from './effects';
 import { blankState, instancesFromCardIds } from './state';
 
 describe('applyEffect', () => {
@@ -87,5 +87,31 @@ describe('resolveCard', () => {
     const G = blankState('enlightenment');
     resolveCard({ G, self: { id: 1, cardId: 'cultural_festival' } });
     expect(G.culture).toBe(3);
+  });
+
+  it("a Reinforced sticker bumps a declarative card's gain by 1 (Phase 3 Step 7.6)", () => {
+    const G = blankState('enlightenment');
+    resolveCard({ G, self: { id: 1, cardId: 'eureka', stickers: ['reinforced'] } });
+    expect(G.resources.science).toBe(4); // Eureka's base +3, Reinforced +1
+  });
+
+  it("a bespoke resolver (Cornucopia) never sees a Reinforced sticker's bonus — a known v1 gap", () => {
+    const G = blankState('enlightenment');
+    resolveCard({ G, self: { id: 1, cardId: 'cornucopia', stickers: ['reinforced'] } });
+    expect(G.resources.food).toBe(1); // its own resolve computes +1, unaware of the sticker
+  });
+});
+
+describe('resolveProduction', () => {
+  it("a Reinforced sticker bumps a building's per-round produces by 1 per resource", () => {
+    const G = blankState('enlightenment');
+    resolveProduction({ G, self: { id: 1, cardId: 'farm', stickers: ['reinforced'] } });
+    expect(G.resources.food).toBe(3); // farm's base +2, Reinforced +1
+  });
+
+  it('leaves an unstickered building at its base output', () => {
+    const G = blankState('enlightenment');
+    resolveProduction({ G, self: { id: 1, cardId: 'farm' } });
+    expect(G.resources.food).toBe(2);
   });
 });

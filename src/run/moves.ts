@@ -1,5 +1,6 @@
 import type { GameState } from '../rules';
 import { addBuilding, addWork, findStaffable, freePopulation, requiredWorkersOf, resolveCard, subtractResources, unplayableReason } from '../rules';
+import { effectiveCost } from '../rules/stickers';
 import { CARDS } from '../content/cards';
 
 /**
@@ -32,7 +33,7 @@ export function playCard(
   const cardId = played.cardId;
 
   const card = CARDS[cardId];
-  if (!card || unplayableReason(G, card)) return 'invalid';
+  if (!card || unplayableReason(G, card, played)) return 'invalid';
   // A destroy card needs a valid target instance in the tableau.
   if (card.effect?.destroy) {
     if (destroyInstanceId === undefined) return 'invalid';
@@ -52,8 +53,9 @@ export function playCard(
     reserved.add(i);
   }
 
-  // All validated — pay costs and remove all played/sacrificed cards from hand first.
-  subtractResources(G.resources, card.cost);
+  // All validated — pay costs (an Efficient sticker discounts this exact copy's price) and
+  // remove all played/sacrificed cards from hand first.
+  subtractResources(G.resources, effectiveCost(card.cost, played));
   const sacrifices = discardHandIdxs.map((i) => G.hand[i]);
   for (const i of [playHandIdx, ...discardHandIdxs].sort((a, b) => b - a)) G.hand.splice(i, 1);
 
@@ -63,9 +65,9 @@ export function playCard(
   // while staffed (at upkeep); everything else resolves its effect immediately through the single
   // resolver path (which also performs a Destroy card's demolition, via `target`).
   if (card.kind === 'building') {
-    addBuilding(G, cardId);
+    addBuilding(G, cardId, played.stickers);
   } else if (card.kind === 'work') {
-    addWork(G, cardId);
+    addWork(G, cardId, played.stickers);
   } else {
     // Resolve on the played *instance* — so a self-scaling card (Cornucopia) reads/writes its own
     // copy's counters, which then ride along as that same instance files to discard below.

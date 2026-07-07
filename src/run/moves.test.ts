@@ -196,6 +196,37 @@ describe('playCard: per-instance card state (Cornucopia)', () => {
   });
 });
 
+describe('playCard: card stickers in the run loop (Phase 3 Step 7.6)', () => {
+  it("an Efficient sticker discounts this exact copy's cost by 1 per resource, floored at 0", () => {
+    const G = blankState('enlightenment');
+    G.hand = [{ id: 1, cardId: 'farm', stickers: ['efficient'] }]; // farm normally costs 1 production
+    G.resources.production = 0; // couldn't afford the raw cost at all
+    G.population = 1;
+    play(G, 'farm');
+    expect(G.tableau).toEqual([{ id: 1, cardId: 'farm', workers: 1, stickers: ['efficient'] }]);
+    expect(G.resources.production).toBe(0); // discounted to free, nothing charged
+  });
+
+  it('an unstickered copy of the same card still pays the full raw cost', () => {
+    const G = blankState('enlightenment');
+    G.hand = instancesFromCardIds(['farm']);
+    G.resources.production = 0;
+    G.population = 1;
+    play(G, 'farm');
+    expect(G.tableau).toEqual([]); // unaffordable — rejected
+    expect(G.hand.map((c) => c.cardId)).toEqual(['farm']); // stays in hand
+  });
+
+  it("a Reinforced sticker bumps a played action card's gain by 1, riding to discard on the same copy", () => {
+    const G = blankState('enlightenment');
+    // Eureka costs a discard of 1 — a spare card in hand covers it.
+    G.hand = [{ id: 1, cardId: 'eureka', stickers: ['reinforced'] }, { id: 2, cardId: 'x' }];
+    play(G, 'eureka', ['x']);
+    expect(G.resources.science).toBe(4); // Eureka's base +3, Reinforced +1
+    expect(G.discard).toContainEqual({ id: 1, cardId: 'eureka', stickers: ['reinforced'] });
+  });
+});
+
 describe('transferWorker: moving a worker directly between two buildings', () => {
   it('moves one worker from the source building to the target in a single call', () => {
     const G = blankState('enlightenment');

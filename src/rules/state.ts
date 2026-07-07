@@ -28,6 +28,15 @@ export interface CardInstance {
    * `self` for a resume pass).
    */
   counters?: Record<string, number>;
+  /**
+   * Permanent sticker ids carried over from the owning meta `MetaCardInstance` (`rules/collection.ts`)
+   * at run setup (Phase 3 Step 7.6) — copied once, at mint, and never written to during a run (no
+   * mechanic attaches/removes a sticker mid-run). `rules/stickers.ts`'s `effectiveGain`/`effectiveCost`/
+   * `effectiveCard` are the only readers; a card's own `resolve`/`produce` (a bespoke one, e.g.
+   * Cornucopia) is *not* composed through them, same as a threat's own drain isn't reinterpreted by
+   * the tick loop — a v1 gap, not a bug: a sticker only affects the declarative default resolvers.
+   */
+  stickers?: string[];
 }
 
 /** A card placed on the board as a staffable instance — a building in the `tableau` or a Work card
@@ -204,4 +213,17 @@ export function bumpCounter(inst: CardInstance, key: string, by = 1): number {
  *  `nextInstanceId(G)` so it continues past whatever ids already exist. */
 export function instancesFromCardIds(cardIds: readonly string[], startId = 1): CardInstance[] {
   return cardIds.map((cardId, i) => ({ id: startId + i, cardId }));
+}
+
+/** Mint fresh, identity-bearing instances from a run's resolved deck list (`RunConfig.deck` —
+ *  `rules/deckBuilder.ts`'s `DeckCard`), carrying each entry's permanent stickers (if any) onto
+ *  its instance. The sticker-aware counterpart to `instancesFromCardIds` above, used only by
+ *  `run/setup.ts`: a mission's injected cards (barbarians, threats) have no meta instance behind
+ *  them, so they mint through the plain cardId path instead. */
+export function instancesFromDeckCards(cards: readonly { cardId: string; stickers?: string[] }[], startId = 1): CardInstance[] {
+  return cards.map((c, i) => ({
+    id: startId + i,
+    cardId: c.cardId,
+    ...(c.stickers?.length ? { stickers: c.stickers } : {}),
+  }));
 }

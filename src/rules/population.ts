@@ -73,16 +73,21 @@ export function nextInstanceId(G: GameState): number {
   return max + 1;
 }
 
-/** Erect a building card in the tableau, auto-staffing it from the idle pool (all-or-nothing). */
-export function addBuilding(G: GameState, cardId: string): void {
+/** Erect a building card in the tableau, auto-staffing it from the idle pool (all-or-nothing).
+ *  `stickers` (if the played hand instance carried any) rides onto the new tableau instance —
+ *  otherwise a Reinforced building would silently lose its bonus the moment it's placed, since
+ *  `resolveProduction`'s `effectiveGain` reads stickers off *this* instance, not the played card's
+ *  original one (Phase 3 Step 7.6). */
+export function addBuilding(G: GameState, cardId: string, stickers?: string[]): void {
   const workers = autoStaffCount(G, cardId);
-  G.tableau.push({ id: nextInstanceId(G), cardId, workers });
+  G.tableau.push({ id: nextInstanceId(G), cardId, workers, ...(stickers?.length ? { stickers } : {}) });
 }
 
-/** Play a Work card onto the board, auto-staffing it from the idle pool (all-or-nothing). */
-export function addWork(G: GameState, cardId: string): void {
+/** Play a Work card onto the board, auto-staffing it from the idle pool (all-or-nothing). Carries
+ *  `stickers` onto the new work-zone instance, same reasoning as `addBuilding` above. */
+export function addWork(G: GameState, cardId: string, stickers?: string[]): void {
   const workers = autoStaffCount(G, cardId);
-  G.workZone.push({ id: nextInstanceId(G), cardId, workers });
+  G.workZone.push({ id: nextInstanceId(G), cardId, workers, ...(stickers?.length ? { stickers } : {}) });
 }
 
 /** Find a staffable (building or Work card) by its instance id, searching both zones. */
