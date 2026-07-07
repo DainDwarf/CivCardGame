@@ -23,6 +23,10 @@ export interface StickerDef {
   id: string;
   name: string;
   description: string;
+  /** A distinct glyph identifying this sticker wherever a stickered instance shows a badge
+   *  (`CardFace`'s `stickerBadge`, Step 7.9) — one per sticker, so the badge reads as *which*
+   *  sticker(s) a copy carries instead of a single generic 🏷️ regardless of identity. */
+  icon: string;
   /** Influence price to attach one copy. */
   cost: number;
   /** Which cards this sticker may attach to. Absent = any owned card (Reinforced, Efficient).
@@ -45,6 +49,7 @@ export const STICKERS: Record<string, StickerDef> = {
     id: 'reinforced',
     name: 'Reinforced',
     description: "+1 to this copy's output",
+    icon: '💪',
     cost: 3,
     // +1 to every resource key the card actually produces (a multi-output building bumps each).
     applyGain: (base) => {
@@ -58,6 +63,7 @@ export const STICKERS: Record<string, StickerDef> = {
     id: 'efficient',
     name: 'Efficient',
     description: 'Costs 1 less to play',
+    icon: '⚡',
     cost: 3,
     // -1 off every resource key the card charges, floored at 0 (never pays you to play a card).
     applyCost: (cost) => {
@@ -70,6 +76,7 @@ export const STICKERS: Record<string, StickerDef> = {
     id: 'irrigation',
     name: 'Irrigation',
     description: '+1 food (food buildings only)',
+    icon: '💧',
     cost: 3,
     // Attaches only to a building that already produces food; bumps *only* that food output.
     appliesTo: (c) => c.kind === 'building' && (c.produces?.food ?? 0) > 0,

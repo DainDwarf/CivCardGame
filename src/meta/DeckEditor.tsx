@@ -23,6 +23,9 @@ interface DragState {
   /** Set only for a *stickered* instance (Step 7.5) — dragged/clicked by identity rather than
    *  through `cardId`'s fungible LIFO pool. Absent for a plain copy. */
   instanceId?: string;
+  /** The dragged instance's attached sticker ids, carried along so the drag clone can show
+   *  the same per-sticker icon badge (Step 7.9) as the tile it was picked up from. */
+  stickers?: string[];
   source: 'picker' | 'banner';
   pointerId: number;
   startX: number;
@@ -162,6 +165,7 @@ export function DeckEditor({
     cardId: string,
     source: 'picker' | 'banner',
     instanceId?: string,
+    stickers?: string[],
   ) {
     if (e.button !== 0) return;
     // A capped *fungible* picker tile is inert — same as a disabled button, no drag/click
@@ -172,6 +176,7 @@ export function DeckEditor({
     setDrag({
       cardId,
       instanceId,
+      stickers,
       source,
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -259,9 +264,9 @@ export function DeckEditor({
           as="button"
           card={c}
           className={styles.pickerTile}
-          stickerBadge
+          stickerBadge={inst.stickers}
           title="Click or drag into the deck to add this stickered copy"
-          onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker', inst.id)}
+          onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker', inst.id, inst.stickers)}
         />,
       );
     }
@@ -332,9 +337,9 @@ export function DeckEditor({
             card={CARDS[g.cardId]}
             className={styles.bannerTile}
             countBadge={g.count}
-            stickerBadge={g.instanceId !== undefined}
+            stickerBadge={g.stickers}
             title={g.instanceId ? 'Click or drag out of the deck to remove this stickered copy' : 'Click or drag out of the deck to remove a copy'}
-            onPointerDown={(e) => onTilePointerDown(e, g.cardId, 'banner', g.instanceId)}
+            onPointerDown={(e) => onTilePointerDown(e, g.cardId, 'banner', g.instanceId, g.stickers)}
           />
         ))}
       </div>
@@ -346,7 +351,7 @@ export function DeckEditor({
         <CardFace
           card={CARDS[drag.cardId]}
           className={styles.dragClone}
-          stickerBadge={!!drag.instanceId}
+          stickerBadge={drag.stickers}
           style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
         />
       </div>

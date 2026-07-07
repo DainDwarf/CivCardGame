@@ -75,9 +75,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Step 7.8 — Add Irrigation sticker** — ✅ done — see *Done / shipped* below. `[size: S]` `[phase: 3]`
   - **Step 7.9 — Sticker UI: per-sticker icons, bottom-left badge, effective values everywhere** —
     four related gaps left after 7.5/7.6:
-    1. **Distinct icons** — `CardFace`'s `stickerBadge` is one hardcoded 🏷️ regardless of which
-       sticker is attached; each `content/stickers.ts` entry should carry its own icon glyph, shown
-       instead of the generic tag.
+    1. **Distinct icons** ✅ done — see *Done / shipped* below.
     2. **Bottom-left placement** — today the badge sits in the opposite corner from the ×N count
        badge (top-right); move it to a fixed bottom-left slot of its own instead of sharing/opposing
        the count badge's corner.
@@ -230,6 +228,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 7.9 (item 1/4) — Distinct sticker icons** — `content/stickers.ts`'s `StickerDef`
+  gained an `icon` field (💪 Reinforced, ⚡ Efficient, 💧 Irrigation); `CardFace`'s `stickerBadge`
+  prop changed from a bare boolean to the attached sticker id(s), rendering each one's own icon
+  (via a `STICKERS` lookup) instead of one hardcoded 🏷️ regardless of identity — a duplicate id
+  (a stacked sticker, Step 7.7) renders its icon twice rather than deduplicating, so the badge
+  itself hints at the stack. The badge's CSS moved from a fixed `width` to `min-width` + padding
+  so it widens for a second icon instead of clipping. Every caller now threads the real id(s)
+  through: `deckBuilder.ts`'s `groupCounts` already carried `stickers` per entry, so
+  `DeckDisplay.tsx`/`DeckEditor.tsx`'s banner and picker tiles pass it straight through;
+  `DeckEditor.tsx`'s drag-clone needed a new `stickers` field on its `DragState`, captured at
+  pointer-down alongside `instanceId` so the dragged clone shows the same badge as the tile it
+  was picked up from. `Shop.tsx`'s per-sticker "Attach" button also swapped its generic 🏷️ for
+  `s.icon`, for the same reason (a distinct offer button showing an identical glyph for every
+  sticker was the same bug in miniature). Items 2–4 of Step 7.9 (bottom-left placement, meta
+  screens' effective values, run-loop badge wiring) are still open.
 - **Phase 3 Step 7.8 — Add Irrigation sticker (self-contained sticker model)** — Irrigation
   (`content/stickers.ts`) is the first sticker whose eligibility depends on the *card*, not just
   the copy: it attaches only to a food-producing building (+1 food, nothing else). Rather than

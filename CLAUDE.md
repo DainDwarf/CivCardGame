@@ -325,11 +325,23 @@ and non-buildings). The two hooks cover per-copy output + play-cost only — a f
 touching `workers`/`cultureOutput`/`draw` needs a new hook here plus one compose site in
 `effectiveCard`, the named extensibility seam. The v1 gap is unchanged: a sticker augments only the
 *declarative* producer, never a card's bespoke `produce()` (all current food buildings are
-declarative, so Irrigation works today). Still to
-come: sticker UI polish — per-sticker icons, a bottom-left badge, and the meta screens
+declarative, so Irrigation works today). **Phase 3 Step 7.9's first item** (distinct sticker
+icons) is also done: `StickerDef` gained an `icon` glyph (💪 Reinforced, ⚡ Efficient, 💧
+Irrigation); `CardFace`'s `stickerBadge` prop changed from a bare boolean to the attached sticker
+id(s) themselves, rendering each one's own icon via a `STICKERS` lookup instead of one hardcoded
+🏷️ regardless of which sticker is actually attached — a duplicate id (a stacked sticker, Step 7.7)
+renders its icon twice rather than deduplicating, so the badge itself hints at the stack; the
+badge's CSS moved from a fixed `width` to `min-width` + padding so it widens for a second icon
+instead of clipping. Every render site already had (or was one hop from) the real id(s) —
+`deckBuilder.ts`'s `groupCounts` already carried `stickers` per entry, so `DeckDisplay.tsx`/
+`DeckEditor.tsx`'s banner and picker tiles pass it straight through; `DeckEditor.tsx`'s drag clone
+needed a new `stickers` field on its `DragState`, captured at pointer-down alongside `instanceId`.
+`Shop.tsx`'s per-sticker "Attach" button also swapped its generic 🏷️ for `s.icon`, the same bug in
+miniature (one glyph standing in for every sticker's offer button). Still to
+come: the rest of Step 7.9 — a bottom-left badge placement, the meta screens
 (`Collection`/`Shop`/`CardInstancePanel`) showing a stickered copy's effective values the way the
 run loop now does, plus a visible badge on a stickered card *in* the run loop, which 7.6 didn't
-wire up (Step 7.9) — tutorial missions (Step 9), and `Stats` surfacing a per-run reward (deferred
+wire up — tutorial missions (Step 9), and `Stats` surfacing a per-run reward (deferred
 since `RunResult` deliberately excludes rewards, and there's no per-run record of whether that
 run was a first clear).
 

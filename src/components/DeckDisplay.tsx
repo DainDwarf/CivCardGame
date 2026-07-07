@@ -60,7 +60,7 @@ export function DeckTile({
                 className={styles.miniCard}
                 countBadge={g.count}
                 badgeClassName={styles.miniBadge}
-                stickerBadge={g.instanceId !== undefined}
+                stickerBadge={g.stickers}
               />
             </span>
           ))
@@ -112,7 +112,7 @@ export function DeckListOverlay({
                   card={CARDS[g.cardId]}
                   className={styles.listCard}
                   countBadge={g.count}
-                  stickerBadge={g.instanceId !== undefined}
+                  stickerBadge={g.stickers}
                   onClick={(e) => {
                     e.stopPropagation();
                     setZoom(g.cardId);

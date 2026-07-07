@@ -243,14 +243,17 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
 
-/* Opposite-corner marker for a stickered meta card instance (Phase 3 Step 7.5) — a bare glyph,
-   not a color-identity badge, so it needs no new theme token and reads fine in every theme. */
+/* Opposite-corner marker for a stickered meta card instance (Phase 3 Step 7.5) — bare glyph(s),
+   not a color-identity badge, so it needs no new theme token and reads fine in every theme.
+   `min-width` (not a fixed `width`) plus horizontal padding lets it widen for a second attached
+   sticker's icon (Step 7.9's per-sticker glyphs) instead of clipping. */
 .stickerBadge {
   position: absolute;
   top: -8px;
   left: -8px;
-  width: 22px;
+  min-width: 22px;
   height: 22px;
+  padding: 0 4px;
   border-radius: 11px;
   background: var(--badge-bg);
   font-size: 0.85rem;

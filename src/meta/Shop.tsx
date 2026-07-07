@@ -91,7 +91,7 @@ export function Shop({
               onClick={() => setPicking({ cardId: c.id, stickerId: s.id })}
               title={influence >= s.cost ? `Attach ${s.name} (${s.description}) to a copy for ${s.cost} Influence` : 'Not enough Influence'}
             >
-              <span aria-hidden="true">🏷️</span>
+              <span aria-hidden="true">{s.icon}</span>
               {s.cost} → {s.name}
             </button>
           ))}

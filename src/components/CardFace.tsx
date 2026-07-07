@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import type { CardDef } from '../content/cards';
+import { STICKERS } from '../content/stickers';
 import type { Resources } from '../rules';
 import styles from './CardFace.module.css';
 
@@ -168,9 +169,11 @@ export type CardFaceProps =
        *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
       badgeClassName?: string;
       /** A small opposite-corner marker for a *stickered* meta card instance (Phase 3 Step
-       *  7.5) — just a "🏷️" glyph, no sticker identity shown here (the name/effect text lives
-       *  in the caller's own row/panel, e.g. `CardInstancePanel`). Absent for a plain copy. */
-      stickerBadge?: boolean;
+       *  7.5) — the attached sticker id(s), rendered as each sticker's own icon glyph (Step
+       *  7.9) rather than one generic tag; a duplicate id (a stacked sticker) renders its icon
+       *  twice, so the badge itself hints at the stack. Sticker name/effect text still lives in
+       *  the caller's own row/panel (e.g. `CardInstancePanel`). Absent/empty for a plain copy. */
+      stickerBadge?: string[];
     })
   | (CardFaceCommonProps & {
       /** Renders a grey face-down back instead of a real card — the same header/banner/
@@ -278,8 +281,10 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
           ×{countBadge}
         </span>
       )}
-      {stickerBadge && (
-        <span className={styles.stickerBadge} aria-hidden="true">🏷️</span>
+      {stickerBadge && stickerBadge.length > 0 && (
+        <span className={styles.stickerBadge} aria-hidden="true">
+          {stickerBadge.map((id) => STICKERS[id]?.icon ?? '🏷️').join('')}
+        </span>
       )}
     </>
   );
