@@ -12,10 +12,20 @@
  * rather than showing them locked — unlocking one is meant to be a surprise. `rules/deckBuilder.ts`
  * uses it to resolve a deck's instance ids back to cardIds and to cap how many copies of an owned
  * card a deck may include.
+ *
+ * `stickers` (Phase 3 Step 7.5) is the payoff this identity substrate was built for: a card
+ * sticker (`content/stickers.ts`) mutates one chosen instance in place via `rules/stickers.ts`'s
+ * `buySticker`. A stickered instance is capped at one sticker and is no longer fungible with its
+ * siblings — `rules/deckBuilder.ts`'s `addCard`/`removeCard` (the default LIFO order) only ever
+ * pick from the *unstickered* pool (`unstickeredInstancesOf`); a stickered instance is added to
+ * or removed from a deck only by explicit identity (`addInstance`/`removeInstance`).
  */
 export interface MetaCardInstance {
   id: string;
   cardId: string;
+  /** Sticker ids attached to this instance — absent/empty for a plain copy. Capped at one
+   *  (Step 7.5's v1 choice; easy to relax later, no design commitment either way). */
+  stickers?: string[];
 }
 
 export interface OwnedCards {
@@ -41,6 +51,19 @@ export function isOwned(collection: OwnedCards, cardId: string): boolean {
 /** Every owned instance of `cardId`, in the order they were granted. */
 export function instancesOf(collection: OwnedCards, cardId: string): MetaCardInstance[] {
   return collection.instances.filter((i) => i.cardId === cardId);
+}
+
+/** Whether `instance` carries a sticker — the one predicate `deckBuilder.ts`'s fungible-pool
+ *  filtering and the shop's sticker-target picker both check. */
+export function hasSticker(instance: MetaCardInstance): boolean {
+  return !!instance.stickers && instance.stickers.length > 0;
+}
+
+/** Owned instances of `cardId` that carry no sticker yet — the fungible pool `addCard`/
+ *  `removeCard`'s default LIFO order draws from (Step 7.5); a stickered instance is only ever
+ *  added/removed by explicit identity. */
+export function unstickeredInstancesOf(collection: OwnedCards, cardId: string): MetaCardInstance[] {
+  return instancesOf(collection, cardId).filter((i) => !hasSticker(i));
 }
 
 /** Resolve an instance by its id — `undefined` if not owned (e.g. a stale deck reference). */

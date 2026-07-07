@@ -221,10 +221,41 @@ array position. So a deck's copies of an identical card stay a stable, low-index
 the owned instances as the deck is edited — add, remove, add again returns the same instance
 rather than drifting to a different one — which is what keeps Step 7.3's per-instance picker
 ("Farm 1/2") meaningful across edits, and what Step 7.5's sticker pick will need once a
-distinguished instance has to be placed *by identity* instead of by this default order. Still to
-come: card stickers in the meta (Step 7.5) and the run loop (Step 7.6), tutorial missions
-(Step 8), and `Stats` surfacing a per-run reward (deferred since `RunResult` deliberately
-excludes rewards, and there's no per-run record of whether that run was a first clear).
+distinguished instance has to be placed *by identity* instead of by this default order.
+**Phase 3 Step 7.5** (card stickers in the meta, not yet in the run) is also done —
+this step's payoff for the whole uniform-instance rework: `content/stickers.ts`'s `STICKERS`
+is a small, deliberately inert catalogue (`Reinforced`, `Efficient` — name/description/cost
+only; nothing reads them yet, Step 7.6 wires an effect in). `rules/collection.ts`'s
+`MetaCardInstance` gained an optional `stickers?: string[]`, capped at one sticker per
+instance (a v1 choice, easily relaxed later) — `hasSticker`/`unstickeredInstancesOf` are the
+two predicates everything else is built from. `rules/stickers.ts`'s `buySticker` is the one
+pure purchase (mirrors `shop.ts`'s `buyTier`): spends Influence, mutates one chosen instance
+in place, immutable otherwise; `App.tsx`'s `attachSticker` is its write path. A stickered
+instance stops being fungible, so `rules/deckBuilder.ts`'s `addCard`/`removeCard` (the default
+LIFO order) now draw only from `unstickeredInstancesOf` — a stickered instance is never
+auto-picked — and two new functions, `addInstance`/`removeInstance`, add/remove one *by
+identity* instead. `groupCounts` reflects the same split: a stickered instance breaks out of
+its cardId's ×N stack into its own `{ cardId, count: 1, instanceId, stickers }` entry (appended
+after the fungible groups) rather than being folded in — `DeckEditor.tsx`'s picker mirrors this
+at the source, rendering a card's normal fungible tile (only if at least one unstickered copy
+remains) *plus* one addressable tile per owned, not-yet-in-deck stickered instance, each
+draggable/clickable into the deck banner by its own identity via `addInstance`/`removeInstance`
+rather than the fungible `addCard`/`removeCard` path. `CardFace` gained a `stickerBadge`
+prop — a bare 🏷️ glyph in the opposite corner from the existing ×N badge, no new color token
+— so a stickered tile is visually distinguishable everywhere `groupCounts` output is rendered
+(`DeckEditor`, `components/DeckDisplay.tsx`'s deck tile/list-view). The purchase flow reuses
+Step 7.3's `CardInstancePanel` rather than inventing a second per-instance picker: a new
+optional `attach` prop switches it from plain browse-and-zoom into a picker mode where every
+row shows the sticker's name/effect already attached (if any) and an "Attach ⭐cost" button
+(disabled once-stickered or unaffordable) instead of opening the zoom — `Shop.tsx` opens it
+when the player clicks one of a card's small "🏷️ ⭐cost → StickerName" buttons, alongside its
+existing copy-tier upgrade button; a card now stays listed in the shop if it has *either* a
+tier left to buy or an unstickered instance a sticker could still land on. Still to come: card
+stickers in the run loop (Step 7.6 — `setup.ts` carrying a deck instance's stickers into its
+run `CardInstance`, composed through `resolveProduction`/`resolveCard`, never read raw),
+tutorial missions (Step 8), and `Stats` surfacing a per-run reward (deferred since `RunResult`
+deliberately excludes rewards, and there's no per-run record of whether that run was a first
+clear).
 
 ## Commands
 

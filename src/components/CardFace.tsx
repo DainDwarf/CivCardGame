@@ -167,6 +167,10 @@ export type CardFaceProps =
       /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
        *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
       badgeClassName?: string;
+      /** A small opposite-corner marker for a *stickered* meta card instance (Phase 3 Step
+       *  7.5) — just a "🏷️" glyph, no sticker identity shown here (the name/effect text lives
+       *  in the caller's own row/panel, e.g. `CardInstancePanel`). Absent for a plain copy. */
+      stickerBadge?: boolean;
     })
   | (CardFaceCommonProps & {
       /** Renders a grey face-down back instead of a real card — the same header/banner/
@@ -239,7 +243,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
     );
   }
 
-  const { card, countBadge, alwaysShowBadge, badgeClassName } = props;
+  const { card, countBadge, alwaysShowBadge, badgeClassName, stickerBadge } = props;
   const text = overrideText ?? describeCard(card);
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
@@ -273,6 +277,9 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
         <span className={`${styles.countBadge}${badgeClassName ? ` ${badgeClassName}` : ''}`}>
           ×{countBadge}
         </span>
+      )}
+      {stickerBadge && (
+        <span className={styles.stickerBadge} aria-hidden="true">🏷️</span>
       )}
     </>
   );

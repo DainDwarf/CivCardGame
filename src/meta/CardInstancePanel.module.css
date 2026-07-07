@@ -88,6 +88,16 @@
   background: rgb(var(--accent-rgb) / 12%);
 }
 
+/* Sticker-attach mode (Step 7.5) — the row itself no longer opens the zoom, only its own
+   Attach button does, so it shouldn't read as clickable. */
+.rowStatic {
+  cursor: default;
+}
+
+.rowStatic:hover {
+  background: var(--surface);
+}
+
 .rowLabel {
   font-weight: 600;
 }
@@ -96,4 +106,31 @@
   color: var(--text-secondary);
   font-size: 0.85rem;
   text-align: right;
+}
+
+/* Step 7.5's sticker-attach mode — mirrors Shop.module.css's .buyBtn (same accent, same
+   disabled treatment) since it's the same kind of one-click Influence purchase. */
+.attachBtn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-on-accent);
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.attachBtn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.attachBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }

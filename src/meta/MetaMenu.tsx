@@ -42,6 +42,7 @@ export function MetaMenu({
   onSaveDeck,
   onDeleteDeck,
   onBuyTier,
+  onAttachSticker,
 }: {
   runHistory: RunResult[];
   decks: DeckDef[];
@@ -63,6 +64,9 @@ export function MetaMenu({
   /** Buy the next copy tier for a card (Phase 3 Step 5.2) — spends Influence and bumps the
    *  card's ownership in the store (`App.tsx`'s `buyCardTier`). */
   onBuyTier: (cardId: string) => void;
+  /** Attach a sticker to one chosen owned instance (Phase 3 Step 7.5) — spends Influence and
+   *  mutates that instance in the store (`App.tsx`'s `attachSticker`). */
+  onAttachSticker: (instanceId: string, stickerId: string) => void;
 }) {
   const [screen, setScreen] = useState<Screen>('mission');
   const [editingDeck, setEditingDeck] = useState<DeckDef | null>(null);
@@ -107,7 +111,15 @@ export function MetaMenu({
           <CampaignMap decks={decks} collection={collection} mapProgress={mapProgress} uiScale={uiScale} onLaunch={onLaunch} />
         )}
         {screen === 'collection' && <Collection collection={collection} decks={decks} />}
-        {screen === 'shop' && <Shop collection={collection} influence={influence} onBuyTier={onBuyTier} />}
+        {screen === 'shop' && (
+          <Shop
+            collection={collection}
+            decks={decks}
+            influence={influence}
+            onBuyTier={onBuyTier}
+            onAttachSticker={onAttachSticker}
+          />
+        )}
         {screen === 'decks' && (
           <Decks
             decks={decks}

@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { addCard, removeCard, groupCounts, resolveDeckCards, buildSeedDecks, decksContaining } from './deckBuilder';
+import {
+  addCard,
+  removeCard,
+  addInstance,
+  removeInstance,
+  groupCounts,
+  resolveDeckCards,
+  buildSeedDecks,
+  decksContaining,
+} from './deckBuilder';
 import type { DeckDef, DeckSeed } from '../content/decks';
 import { collectionFromCounts, type OwnedCards } from './collection';
 
@@ -13,6 +22,15 @@ function farmId(n: number): string {
 }
 function libraryId(n: number): string {
   return GENEROUS.instances.filter((i) => i.cardId === 'library')[n].id;
+}
+
+/** `GENEROUS` with `instanceId` mutated to carry a sticker — for Step 7.5's fungible-pool
+ *  exclusion tests. */
+function withSticker(instanceId: string): OwnedCards {
+  return {
+    ...GENEROUS,
+    instances: GENEROUS.instances.map((i) => (i.id === instanceId ? { ...i, stickers: ['reinforced'] } : i)),
+  };
 }
 
 describe('addCard', () => {
@@ -54,6 +72,21 @@ describe('addCard', () => {
     const owns = collectionFromCounts({ harsh_winter: 8 });
     expect(addCard([], 'harsh_winter', owns)).toBe('invalid');
   });
+
+  it('skips a stickered instance — never picked by the fungible LIFO order', () => {
+    const owns2 = collectionFromCounts({ farm: 2 });
+    const [a, b] = owns2.instances.map((i) => i.id);
+    const stickered = { ...owns2, instances: owns2.instances.map((i) => (i.id === a ? { ...i, stickers: ['reinforced'] } : i)) };
+    // The lowest-index instance (a) is stickered, so the add should reach for b instead.
+    expect(addCard([], 'farm', stickered)).toEqual([b]);
+  });
+
+  it('rejects once every unstickered copy is in the deck, even with a stickered copy still spare', () => {
+    const owns2 = collectionFromCounts({ farm: 2 });
+    const [a, b] = owns2.instances.map((i) => i.id);
+    const stickered = { ...owns2, instances: owns2.instances.map((i) => (i.id === a ? { ...i, stickers: ['reinforced'] } : i)) };
+    expect(addCard([b], 'farm', stickered)).toBe('invalid');
+  });
 });
 
 describe('removeCard', () => {
@@ -81,6 +114,35 @@ describe('removeCard', () => {
     const readded = addCard(removed, 'farm', GENEROUS) as string[];
     expect(readded.sort()).toEqual(deck.sort());
   });
+
+  it('never removes a stickered instance, even if it is the highest-index in-deck copy', () => {
+    const stickered = withSticker(farmId(1));
+    const deck = [farmId(0), farmId(1)];
+    // farmId(1) is stickered — the fungible remove must fall back to farmId(0) instead.
+    expect(removeCard(deck, 'farm', stickered)).toEqual([farmId(1)]);
+  });
+});
+
+describe('addInstance / removeInstance', () => {
+  it('adds a specific instance by identity', () => {
+    expect(addInstance([], farmId(0), GENEROUS)).toEqual([farmId(0)]);
+  });
+
+  it('rejects an instance already in the deck', () => {
+    expect(addInstance([farmId(0)], farmId(0), GENEROUS)).toBe('invalid');
+  });
+
+  it('rejects an instance the collection does not own', () => {
+    expect(addInstance([], 'not-owned', GENEROUS)).toBe('invalid');
+  });
+
+  it('removes a specific instance by identity', () => {
+    expect(removeInstance([farmId(0), farmId(1)], farmId(0))).toEqual([farmId(1)]);
+  });
+
+  it('rejects removing an instance not in the deck', () => {
+    expect(removeInstance([farmId(0)], farmId(1))).toBe('invalid');
+  });
 });
 
 describe('groupCounts', () => {
@@ -101,6 +163,22 @@ describe('groupCounts', () => {
 
   it('silently skips an instance id the collection no longer recognizes', () => {
     expect(groupCounts(['stale-id', farmId(0)], GENEROUS)).toEqual([{ cardId: 'farm', count: 1 }]);
+  });
+
+  it('breaks a stickered instance out of the fungible stack into its own entry', () => {
+    const stickered = withSticker(farmId(1));
+    expect(groupCounts([farmId(0), farmId(1)], stickered)).toEqual([
+      { cardId: 'farm', count: 1 },
+      { cardId: 'farm', count: 1, instanceId: farmId(1), stickers: ['reinforced'] },
+    ]);
+  });
+
+  it('appends stickered entries after every fungible group', () => {
+    const stickered = withSticker(farmId(0));
+    expect(groupCounts([farmId(0), libraryId(0)], stickered)).toEqual([
+      { cardId: 'library', count: 1 },
+      { cardId: 'farm', count: 1, instanceId: farmId(0), stickers: ['reinforced'] },
+    ]);
   });
 });
 

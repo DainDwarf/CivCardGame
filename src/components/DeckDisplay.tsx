@@ -54,12 +54,13 @@ export function DeckTile({
           <span className={styles.stackEmpty}>Empty deck</span>
         ) : (
           groups.map((g, i) => (
-            <span key={g.cardId} className={styles.mini} style={{ '--i': i } as React.CSSProperties}>
+            <span key={g.instanceId ?? g.cardId} className={styles.mini} style={{ '--i': i } as React.CSSProperties}>
               <CardFace
                 card={CARDS[g.cardId]}
                 className={styles.miniCard}
                 countBadge={g.count}
                 badgeClassName={styles.miniBadge}
+                stickerBadge={g.instanceId !== undefined}
               />
             </span>
           ))
@@ -107,10 +108,11 @@ export function DeckListOverlay({
             <div className={styles.listGrid}>
               {groupCounts(deck.cards, collection).map((g) => (
                 <CardFace
-                  key={g.cardId}
+                  key={g.instanceId ?? g.cardId}
                   card={CARDS[g.cardId]}
                   className={styles.listCard}
                   countBadge={g.count}
+                  stickerBadge={g.instanceId !== undefined}
                   onClick={(e) => {
                     e.stopPropagation();
                     setZoom(g.cardId);

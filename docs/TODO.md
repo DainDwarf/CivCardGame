@@ -65,11 +65,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     `[size: M]` `[phase: 3]`
   - **Step 7.4 — Ordered deck assignment** — ✅ done — see *Done / shipped* below.
     `[size: M]` `[phase: 3]`
-  - **Step 7.5 — Card stickers in the meta (not yet in the run)** — shop sells stickers; attaching one
-    mutates a chosen collection instance in place (a `stickers` field on the instance). A stickered
-    instance is no longer fungible, so the deck editor handles it *by identity* — added/kept/removed
-    explicitly, not by the 7.4 LIFO order (which stays the default only for the copies still identical to
-    each other). Meta + UI only; the run loop still ignores stickers this step. `[size: M]` `[phase: 3]`
+  - **Step 7.5 — Card stickers in the meta (not yet in the run)** — ✅ done — see *Done / shipped*
+    below. `[size: M]` `[phase: 3]`
   - **Step 7.6 — Card stickers in the run loop** — `setup.ts` carries each deck instance's stickers into
     its run `CardInstance`; a sticker that changes production/effects composes **through**
     `resolveProduction`/`resolveCard`, never read raw off the sticker data (same discipline as
@@ -94,6 +91,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **End-of-Phase-3 cleanup: simplify save parsing, not remove it** — `meta/store.ts`'s `SCHEMA_VERSION`/`exportSave`/`importSave` plumbing stays (still the real save/load-file mechanism); what should go is `parsePlayerStore`'s per-field *leniency* (the decks-missing fallback, the field-by-field shape checks written to tolerate a store that predates some Phase 3 field). Once Phase 3 ships, assume every save in the world is already Phase-3-shaped — pre-alpha players are told to clear their save regularly — so `parsePlayerStore` can go back to a plain "does this parse as a `PlayerStore`" check instead of carrying per-field pre-Phase-3 fallbacks. `[phase: 3]`
 - **Card modifiers** — attach persistent modifiers to individual cards → **decided as stickers**; see **Step 7** above. `[phase: 3]`
+- **Fuse Shop into Collection (and the future board menu)** — `Shop.tsx` and `Collection.tsx` are largely
+  redundant today: both list the same owned cards grouped the same way. Instead of a separate nav tab,
+  clicking a card in Collection should open its per-instance panel already able to do everything Shop
+  does for that cardId — buy the next copy tier, attach a sticker to a chosen instance — rather than
+  bouncing to a different screen. Same idea applies to boards once **Step 8**'s board stickers land (a
+  future board menu should let you buy/attach a board's modifiers in place, not a separate board-shop
+  screen). Also add a visual hint on a card's Collection tile/group when it has an available upgrade
+  (a tier buy or an unstickered instance) so the player doesn't have to open every card to find out.
+  `[?]` `[phase: 3]`
 - **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 10** above. `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
@@ -202,6 +208,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 7.5 — Card stickers in the meta (not yet in the run)** — `content/stickers.ts`'s
+  `STICKERS` is a small, deliberately inert catalogue (Reinforced/Efficient — name/description/cost
+  only, nothing reads them yet; Step 7.6 wires an effect in). `rules/collection.ts`'s
+  `MetaCardInstance` gained an optional `stickers?: string[]`, capped at one per instance;
+  `rules/stickers.ts`'s `buySticker` spends Influence and mutates one chosen instance in place
+  (mirrors `shop.ts`'s `buyTier`), wired via `App.tsx`'s `attachSticker`. A stickered instance
+  stops being fungible: `deckBuilder.ts`'s `addCard`/`removeCard` now draw only from
+  `unstickeredInstancesOf`, and two new functions, `addInstance`/`removeInstance`, add/remove a
+  chosen instance *by identity*. `groupCounts` breaks a stickered instance out of its cardId's ×N
+  stack into its own entry; `DeckEditor.tsx`'s picker mirrors this — a card's fungible tile plus one
+  addressable tile per owned, not-yet-in-deck stickered instance. `CardFace` gained a `stickerBadge`
+  (a bare 🏷️ glyph, no new color token) so a stickered tile reads as distinct everywhere. The
+  purchase flow reuses Step 7.3's `CardInstancePanel` via a new `attach` mode (shows each row's
+  existing sticker and an "Attach ⭐cost" button) rather than a second picker; `Shop.tsx` opens it
+  from a card's new "🏷️ ⭐cost → StickerName" buttons, alongside the existing tier-upgrade button.
 
 - **Phase 3 Step 7.4 — Ordered deck assignment** — `rules/deckBuilder.ts`'s `addCard`/`removeCard`
   now assign *fungible* copies in a deterministic order instead of picking by incidental deck-array

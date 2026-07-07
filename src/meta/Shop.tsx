@@ -1,54 +1,91 @@
+import { useState } from 'react';
 import { CARDS } from '../content/cards';
+import type { DeckDef } from '../content/decks';
+import { STICKERS } from '../content/stickers';
 import { CardFace } from '../components/CardFace';
-import { copiesOwned, type OwnedCards } from '../rules/collection';
+import { copiesOwned, unstickeredInstancesOf, type OwnedCards } from '../rules/collection';
 import { nextTier } from '../rules/shop';
+import { CardInstancePanel } from './CardInstancePanel';
 import type { CardDef } from '../content/cards';
 import styles from './Shop.module.css';
 
 /**
- * The Shop screen (Phase 3 Step 5.2): spend Influence (⭐) to deepen cards you already own,
- * raising each along the copy-tier ladder ×1 → ×2 → ×4 → ×8 (`rules/shop.ts`). The shop
- * sells *depth* only — new cards come from mission unlocks, never here (docs/DESIGN.md,
- * "Economy & progression"). Only *upgradeable* owned cards are listed: `nextTier` returns null
- * for a maxed (×8) or not-yet-owned card, so that one predicate both hides maxed cards
- * and excludes anything not unlocked. Buying is one click — a purchase only ever adds copies,
- * so there's no confirm step. Tiles mirror `Collection.tsx`'s grouped grid.
+ * The Shop screen (Phase 3 Step 5.2, extended by Step 7.5): spend Influence (⭐) to deepen
+ * cards you already own — copy-tier upgrades (×1 → ×2 → ×4 → ×8, `rules/shop.ts`) and, since
+ * Step 7.5, permanent card stickers (`content/stickers.ts`) attached to one chosen owned
+ * instance. The shop sells *depth* only — new cards come from mission unlocks, never here
+ * (docs/DESIGN.md, "Economy & progression"). A card is listed if it has *either* a tier left
+ * to buy or an unstickered owned instance a sticker could still land on — a card already at
+ * ×8 with every copy stickered finally drops off the list. Tier-buying stays one click (a
+ * purchase only ever adds copies); attaching a sticker needs a target instance, so it opens
+ * `CardInstancePanel` in its `attach` mode — the same per-copy picker Step 7.3 built, reused
+ * rather than inventing a second one.
  */
 export function Shop({
   collection,
+  decks,
   influence,
   onBuyTier,
+  onAttachSticker,
 }: {
   collection: OwnedCards;
+  /** Forwarded to the sticker-attach picker so it can show each candidate instance's deck
+   *  usage, same as `Collection.tsx`'s browsing view. */
+  decks: DeckDef[];
   influence: number;
   onBuyTier: (cardId: string) => void;
+  /** Attach a sticker to one chosen owned instance (Phase 3 Step 7.5) — spends Influence and
+   *  mutates that instance in the store (`App.tsx`'s `attachSticker`). */
+  onAttachSticker: (instanceId: string, stickerId: string) => void;
 }) {
+  const [picking, setPicking] = useState<{ cardId: string; stickerId: string } | null>(null);
+
   // Event and threat cards are mission-injected and never part of the player's collection; a
-  // card is shown only if it's owned *and* has a tier left to buy (nextTier !== null covers both).
-  const cards = Object.values(CARDS).filter(
-    (c) => c.kind !== 'event' && c.kind !== 'threat' && nextTier(copiesOwned(collection, c.id)) !== null,
-  );
+  // card is shown if it's owned *and* has something left to buy — a tier upgrade or a sticker
+  // slot (an owned instance with no sticker yet).
+  const cards = Object.values(CARDS).filter((c) => {
+    if (c.kind === 'event' || c.kind === 'threat') return false;
+    const owned = copiesOwned(collection, c.id);
+    if (owned === 0) return false;
+    return nextTier(owned) !== null || unstickeredInstancesOf(collection, c.id).length > 0;
+  });
   const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');
 
   function tile(c: CardDef) {
-    const up = nextTier(copiesOwned(collection, c.id))!; // filtered to upgradeable above
-    const affordable = influence >= up.cost;
-    const target = `×${up.to}`;
+    const owned = copiesOwned(collection, c.id);
+    const up = nextTier(owned);
+    const hasStickerSlot = unstickeredInstancesOf(collection, c.id).length > 0;
     return (
       <div key={c.id} className={styles.tileWrap}>
-        <CardFace card={c} className={styles.tile} countBadge={copiesOwned(collection, c.id)} alwaysShowBadge />
-        <button
-          type="button"
-          className={styles.buyBtn}
-          disabled={!affordable}
-          onClick={() => onBuyTier(c.id)}
-          title={affordable ? `Upgrade to ${target} for ${up.cost} Influence` : 'Not enough Influence'}
-        >
-          <span aria-hidden="true">⭐</span>
-          {up.cost} → {target}
-        </button>
+        <CardFace card={c} className={styles.tile} countBadge={owned} alwaysShowBadge />
+        {up && (
+          <button
+            type="button"
+            className={styles.buyBtn}
+            disabled={influence < up.cost}
+            onClick={() => onBuyTier(c.id)}
+            title={influence >= up.cost ? `Upgrade to ×${up.to} for ${up.cost} Influence` : 'Not enough Influence'}
+          >
+            <span aria-hidden="true">⭐</span>
+            {up.cost} → ×{up.to}
+          </button>
+        )}
+        {hasStickerSlot &&
+          Object.values(STICKERS).map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className={styles.buyBtn}
+              disabled={influence < s.cost}
+              onClick={() => setPicking({ cardId: c.id, stickerId: s.id })}
+              title={influence >= s.cost ? `Attach ${s.name} (${s.description}) to a copy for ${s.cost} Influence` : 'Not enough Influence'}
+            >
+              <span aria-hidden="true">🏷️</span>
+              {s.cost} → {s.name}
+            </button>
+          ))}
       </div>
     );
   }
@@ -57,7 +94,7 @@ export function Shop({
     <div className={styles.shop}>
       <h1 className={styles.title}>Shop</h1>
       <p className={styles.subtitle}>
-        Spend Influence on extra copies of cards you own. New cards come from missions.
+        Spend Influence on extra copies and permanent stickers for cards you own. New cards come from missions.
       </p>
       <div className={styles.balance}>
         <span aria-hidden="true">⭐</span>
@@ -65,7 +102,7 @@ export function Shop({
       </div>
 
       {cards.length === 0 ? (
-        <p className={styles.empty}>Nothing to upgrade right now — every card you own is at its cap.</p>
+        <p className={styles.empty}>Nothing to buy right now — every card you own is fully upgraded and stickered.</p>
       ) : (
         <>
           {buildings.length > 0 && (
@@ -87,6 +124,23 @@ export function Shop({
             </>
           )}
         </>
+      )}
+
+      {picking && (
+        <CardInstancePanel
+          cardId={picking.cardId}
+          collection={collection}
+          decks={decks}
+          attach={{
+            stickerId: picking.stickerId,
+            influence,
+            onAttach: (instanceId) => {
+              onAttachSticker(instanceId, picking.stickerId);
+              setPicking(null);
+            },
+          }}
+          onClose={() => setPicking(null)}
+        />
       )}
     </div>
   );

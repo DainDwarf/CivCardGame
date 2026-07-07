@@ -7,6 +7,7 @@ import { GameProvider, useGame } from '../run/GameContext';
 import { applyRunResult, loadStore, saveStore, type PlayerStore } from '../meta/store';
 import { MAX_DECKS } from '../rules/deckBuilder';
 import { buyTier } from '../rules/shop';
+import { buySticker } from '../rules/stickers';
 import { MISSIONS } from '../content/missions';
 import { applyTheme, loadSettings, saveSettings, type Settings } from '../meta/settings';
 import type { DeckDef } from '../content/decks';
@@ -160,6 +161,16 @@ export function App() {
     persist({ ...store, influence: result.influence, collection: result.collection });
   }
 
+  // The sticker shop's write path (Phase 3 Step 7.5): spend Influence to attach a sticker to
+  // one chosen owned instance. `buySticker` is the pure rule (rules/stickers.ts) and returns
+  // null for an unaffordable / already-stickered / unowned instance, so a rejected attach is a
+  // silent no-op here — same backstop pattern as `buyCardTier`.
+  function attachSticker(instanceId: string, stickerId: string) {
+    const result = buySticker(store.collection, store.influence, instanceId, stickerId);
+    if (!result) return;
+    persist({ ...store, influence: result.influence, collection: result.collection });
+  }
+
   return (
     // Whole-UI scale wrapper — a transform:scale() container so `position: fixed` children
     // (hand bar, burger, deck-editor banner, drag clones) reparent to it and scale as one.
@@ -208,6 +219,7 @@ export function App() {
             onSaveDeck={saveDeck}
             onDeleteDeck={deleteDeck}
             onBuyTier={buyCardTier}
+            onAttachSticker={attachSticker}
           />
         </>
       )}
