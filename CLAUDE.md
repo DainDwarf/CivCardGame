@@ -337,13 +337,19 @@ instead of clipping. Every render site already had (or was one hop from) the rea
 `DeckEditor.tsx`'s banner and picker tiles pass it straight through; `DeckEditor.tsx`'s drag clone
 needed a new `stickers` field on its `DragState`, captured at pointer-down alongside `instanceId`.
 `Shop.tsx`'s per-sticker "Attach" button also swapped its generic 🏷️ for `s.icon`, the same bug in
-miniature (one glyph standing in for every sticker's offer button). Still to
-come: the rest of Step 7.9 — a bottom-left badge placement, the meta screens
-(`Collection`/`Shop`/`CardInstancePanel`) showing a stickered copy's effective values the way the
-run loop now does, plus a visible badge on a stickered card *in* the run loop, which 7.6 didn't
-wire up — tutorial missions (Step 9), and `Stats` surfacing a per-run reward (deferred
-since `RunResult` deliberately excludes rewards, and there's no per-run record of whether that
-run was a first clear).
+miniature (one glyph standing in for every sticker's offer button). **Step 7.9's second item**
+(bottom-left badge placement) is also done: the sticker marker moved from a single top-left pill
+(concatenated icons in one badge) to a bottom-left row (`CardFace.module.css`'s `stickerRow`/
+`sticker`) of individual circles, one per attached sticker id — straddling the bottom edge the way
+`countBadge` straddles its own corner, card-toned (`--card-face-top` + a thin border) rather than
+the accent `--badge-bg`, so it reads as "part of the card" rather than a count/notification marker;
+a stacked sticker (a duplicate id) now renders as two circles side by side instead of a doubled
+glyph crowded into one badge, and each circle carries its sticker's name as a hover title. Still to
+come: the rest of Step 7.9 — the meta screens (`Collection`/`Shop`/`CardInstancePanel`) showing a
+stickered copy's effective values the way the run loop now does, plus a visible badge on a
+stickered card *in* the run loop, which 7.6 didn't wire up — tutorial missions (Step 9), and
+`Stats` surfacing a per-run reward (deferred since `RunResult` deliberately excludes rewards, and
+there's no per-run record of whether that run was a first clear).
 
 ## Commands
 

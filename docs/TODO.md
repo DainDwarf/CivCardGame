@@ -76,9 +76,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Step 7.9 — Sticker UI: per-sticker icons, bottom-left badge, effective values everywhere** —
     four related gaps left after 7.5/7.6:
     1. **Distinct icons** ✅ done — see *Done / shipped* below.
-    2. **Bottom-left placement** — today the badge sits in the opposite corner from the ×N count
-       badge (top-right); move it to a fixed bottom-left slot of its own instead of sharing/opposing
-       the count badge's corner.
+    2. **Bottom-left placement** ✅ done — see *Done / shipped* below.
     3. **Meta screens show effective values too** — Step 7.6's `effectiveCard` fixed the *run loop*
        (hand/tableau/workZone/pile-viewer/zoom all show a stickered copy's true cost/output), but
        `Collection.tsx`, `Shop.tsx`, and `CardInstancePanel.tsx` still render the raw `CARDS[cardId]`
@@ -243,6 +241,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `s.icon`, for the same reason (a distinct offer button showing an identical glyph for every
   sticker was the same bug in miniature). Items 2–4 of Step 7.9 (bottom-left placement, meta
   screens' effective values, run-loop badge wiring) are still open.
+- **Phase 3 Step 7.9 (item 2/4) — Bottom-left sticker badge placement** — the sticker marker moved
+  from a single top-left pill (concatenated icons in one badge, sharing the ×N count badge's
+  opposite corner) to a bottom-left row (`CardFace.module.css`'s `stickerRow`/`sticker`) of
+  individual circles, one per attached sticker id — straddling the bottom edge the way `countBadge`
+  straddles its own corner, card-toned (`--card-face-top` + a thin border) rather than the accent
+  `--badge-bg`, so it reads as "part of the card" rather than a count/notification marker. A
+  stacked sticker (a duplicate id) now renders as two circles side by side instead of a doubled
+  glyph crowded into one badge, and each circle carries its sticker's name as a hover title. Items
+  3–4 of Step 7.9 (meta screens' effective values, run-loop badge wiring) are still open.
 - **Phase 3 Step 7.8 — Add Irrigation sticker (self-contained sticker model)** — Irrigation
   (`content/stickers.ts`) is the first sticker whose eligibility depends on the *card*, not just
   the copy: it attaches only to a food-producing building (+1 food, nothing else). Rather than

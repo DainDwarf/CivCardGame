@@ -168,11 +168,13 @@ export type CardFaceProps =
       /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
        *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
       badgeClassName?: string;
-      /** A small opposite-corner marker for a *stickered* meta card instance (Phase 3 Step
-       *  7.5) — the attached sticker id(s), rendered as each sticker's own icon glyph (Step
-       *  7.9) rather than one generic tag; a duplicate id (a stacked sticker) renders its icon
-       *  twice, so the badge itself hints at the stack. Sticker name/effect text still lives in
-       *  the caller's own row/panel (e.g. `CardInstancePanel`). Absent/empty for a plain copy. */
+      /** A bottom-left row of small circular badges for a *stickered* meta card instance
+       *  (Phase 3 Step 7.5) — the attached sticker id(s), one circle per entry, each showing
+       *  that sticker's own icon glyph (Step 7.9) and its name as a hover title; a duplicate id
+       *  (a stacked sticker) renders as two circles, so the row itself hints at the stack.
+       *  Sticker name/effect text still lives in the caller's own row/panel (e.g.
+       *  `CardInstancePanel`) for anything beyond this hover title. Absent/empty for a plain
+       *  copy. */
       stickerBadge?: string[];
     })
   | (CardFaceCommonProps & {
@@ -282,8 +284,12 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
         </span>
       )}
       {stickerBadge && stickerBadge.length > 0 && (
-        <span className={styles.stickerBadge} aria-hidden="true">
-          {stickerBadge.map((id) => STICKERS[id]?.icon ?? '🏷️').join('')}
+        <span className={styles.stickerRow} aria-hidden="true">
+          {stickerBadge.map((id, i) => (
+            <span key={i} className={styles.sticker} title={STICKERS[id]?.name}>
+              {STICKERS[id]?.icon ?? '🏷️'}
+            </span>
+          ))}
         </span>
       )}
     </>
