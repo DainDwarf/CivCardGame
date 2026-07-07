@@ -14,17 +14,14 @@ import { findInstance, hasSticker, instancesOf, unstickeredInstancesOf, type Own
  *  as its reflection. */
 export const MAX_DECKS = 6;
 
-/** Appends one copy of `cardId` — picks the *lowest-index* owned, **unstickered** instance of
- *  that cardId not already in `deck` (`unstickeredInstancesOf` is granted order, so this is
- *  the first Farm added → 1/2, second → 2/2, etc. — Step 7.4's deterministic assignment).
- *  Copies are fungible only until stickered (Step 7.5); a stickered instance is never picked
- *  by this default order — see `addInstance` for adding one by identity. `'invalid'` if
- *  `cardId` isn't in the `CARDS` catalogue (a data-coherence check, not a Phase 4 balance
- *  rule; see docs/DESIGN.md's deferred "deck construction constraints"), or if every
- *  unstickered owned copy is already in the deck (Phase 3 Step 2's copy cap — an absent/zero
- *  entry, i.e. not yet unlocked, rejects the same as any other invalid add, see
- *  `DeckEditor.tsx`'s picker filter). Mirrors the `'invalid'` signal `src/run/moves.ts` uses
- *  for rejected input. Does not mutate `deck`. */
+/** Appends one copy of `cardId` — picks the *lowest-index* owned, **unstickered** instance of that
+ *  cardId not already in `deck` (`unstickeredInstancesOf` is granted order, so the first Farm added →
+ *  1/2, second → 2/2, etc.). Copies are fungible only until stickered; a stickered instance is never
+ *  picked by this default order — see `addInstance` for adding one by identity. `'invalid'` if
+ *  `cardId` isn't in the `CARDS` catalogue (a data-coherence check, not a deferred balance rule), or
+ *  if every unstickered owned copy is already in the deck (an absent/zero entry — not yet unlocked —
+ *  rejects like any other invalid add). Mirrors the `'invalid'` signal `run/moves.ts` uses. Does not
+ *  mutate `deck`. */
 export function addCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
   if (!(cardId in CARDS)) return 'invalid';
   // Event and threat cards are mission-injected only — never player-editable into a deck.
@@ -37,11 +34,9 @@ export function addCard(deck: string[], cardId: string, collection: OwnedCards):
 
 /** Removes the *highest-index* in-deck, **unstickered** instance of `cardId` — the mirror of
  *  `addCard`'s lowest-index pick, so a deck's copies of a still-fungible card stay a stable,
- *  low-index-first prefix of the owned instances as the deck is edited (Step 7.4): add,
- *  remove, add again and the same instance comes back rather than churning to a different
- *  one. Never removes a stickered instance — see `removeInstance` for removing one by
- *  identity. `'invalid'` if the deck holds no unstickered instance of `cardId`. Does not
- *  mutate `deck`. */
+ *  low-index-first prefix of the owned instances: add, remove, add again and the same instance comes
+ *  back rather than churning. Never removes a stickered instance — see `removeInstance`. `'invalid'`
+ *  if the deck holds no unstickered instance of `cardId`. Does not mutate `deck`. */
 export function removeCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
   const inDeck = unstickeredInstancesOf(collection, cardId).filter((inst) => deck.includes(inst.id));
   const toRemove = inDeck[inDeck.length - 1];
@@ -49,10 +44,10 @@ export function removeCard(deck: string[], cardId: string, collection: OwnedCard
   return deck.filter((instanceId) => instanceId !== toRemove.id);
 }
 
-/** Adds a specific owned instance to `deck` by identity — the only way a *stickered* instance
- *  is ever added (Step 7.5): it's no longer fungible with its siblings, so the player picks it
- *  explicitly rather than relying on `addCard`'s LIFO order. `'invalid'` if `instanceId` isn't
- *  owned or is already in the deck. Does not mutate `deck`. */
+/** Adds a specific owned instance to `deck` by identity — the only way a *stickered* instance is
+ *  ever added: no longer fungible with its siblings, so the player picks it explicitly rather than
+ *  relying on `addCard`'s LIFO order. `'invalid'` if `instanceId` isn't owned or is already in the
+ *  deck. Does not mutate `deck`. */
 export function addInstance(deck: string[], instanceId: string, collection: OwnedCards): string[] | 'invalid' {
   if (!findInstance(collection, instanceId)) return 'invalid';
   if (deck.includes(instanceId)) return 'invalid';
@@ -67,12 +62,10 @@ export function removeInstance(deck: string[], instanceId: string): string[] | '
 }
 
 /** One display entry per group of same-looking deck cards: a fungible cardId gets a single
- *  ×N-counted entry (first-seen order), same as before Step 7.5. A **stickered** instance
- *  breaks out of that grouping into its own entry — `count: 1`, `instanceId` set, `stickers`
- *  carried along — since it's no longer interchangeable with its unstickered siblings and
- *  needs to be addressable (and removable) by identity, not folded into the stack. Stickered
- *  entries are appended after the fungible ones, in deck order. An instance id the collection
- *  no longer recognizes (shouldn't happen; owned instances are never removed) is silently
+ *  ×N-counted entry (first-seen order). A **stickered** instance breaks out into its own entry
+ *  (`count: 1`, `instanceId` set, `stickers` carried) since it's no longer interchangeable and must
+ *  be addressable by identity, not folded into the stack. Stickered entries are appended after the
+ *  fungible ones, in deck order. An instance id the collection no longer recognizes is silently
  *  skipped rather than throwing. */
 export interface DeckGroupEntry {
   cardId: string;
@@ -100,8 +93,7 @@ export function groupCounts(instanceIds: string[], collection: OwnedCards): Deck
 }
 
 /** A resolved run-bound card: its cardId plus any permanent stickers its owning meta instance
- *  carries (Phase 3 Step 7.6) — `RunConfig.deck`'s element shape, and `resolveDeckCards`'s
- *  return type below. */
+ *  carries — `RunConfig.deck`'s element shape, and `resolveDeckCards`'s return type below. */
 export interface DeckCard {
   cardId: string;
   stickers?: string[];
@@ -124,9 +116,8 @@ export function resolveDeckCards(deckId: string, decks: DeckDef[], collection: O
   return cards;
 }
 
-/** Every deck currently holding `instanceId` (Phase 3 Step 7.3 — the Collection screen's
- *  per-instance view uses this so a copy's deck membership is visible *before* a future
- *  sticker, Step 7.5, singles it out). Empty if the instance is owned but sits in no deck. */
+/** Every deck currently holding `instanceId` — the Collection screen's per-instance view uses this
+ *  so a copy's deck membership is visible. Empty if the instance is owned but sits in no deck. */
 export function decksContaining(instanceId: string, decks: DeckDef[]): DeckDef[] {
   return decks.filter((d) => d.cards.includes(instanceId));
 }

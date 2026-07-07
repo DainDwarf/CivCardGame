@@ -1,37 +1,25 @@
 /**
- * Per-player card ownership (docs/DESIGN.md, "Economy & progression"; Phase 3 Step 7.2's
- * "uniform meta card instances"). Every owned copy is an identified `MetaCardInstance`, not
- * just a bare count — this is the identity substrate a future card sticker (Step 7.5) mutates
- * in place, and that a `DeckDef` (`content/decks.ts`) references by instance id rather than by
- * cardId, so two decks holding "the same" copy see any future sticker on it for free. `nextId`
- * is a persistent, append-only allocator — distinct from the run's `population.ts`'s
- * `nextInstanceId` (which scans run zones instead): granting copies only ever appends, never
- * renumbers, so a `DeckDef`'s instance-id references never go stale.
+ * Per-player card ownership (docs/DESIGN.md, "Economy & progression"). Every owned copy is an
+ * identified `MetaCardInstance`, not a bare count — the identity substrate a card sticker mutates in
+ * place, and that a `DeckDef` references by instance id (not cardId), so two decks holding "the same"
+ * copy see a sticker on it for free. `nextId` is a persistent, append-only allocator (distinct from
+ * the run's `population.ts` `nextInstanceId`): granting copies only appends, never renumbers, so a
+ * `DeckDef`'s instance-id references never go stale.
  *
- * `Collection`/`DeckEditor` (Phase 3 Step 2) read this to omit not-yet-unlocked cards entirely,
- * rather than showing them locked — unlocking one is meant to be a surprise. `rules/deckBuilder.ts`
- * uses it to resolve a deck's instance ids back to cardIds and to cap how many copies of an owned
- * card a deck may include.
- *
- * `stickers` (Phase 3 Step 7.5, cap raised to 2 in Step 7.7) is the payoff this identity
- * substrate was built for: a card sticker (`content/stickers.ts`) mutates one chosen instance in
- * place via `rules/stickers.ts`'s `buySticker`. Carrying *any* sticker (`hasSticker`) already
- * makes an instance non-fungible with its siblings — `rules/deckBuilder.ts`'s `addCard`/
- * `removeCard` (the default LIFO order) only ever pick from the *unstickered* pool
- * (`unstickeredInstancesOf`); a stickered instance is added to or removed from a deck only by
- * explicit identity (`addInstance`/`removeInstance`). That's a separate question from whether an
- * instance has *room for another* sticker — `isStickerFull`/`stickerableInstancesOf` below, which
- * only the shop's attach flow cares about.
+ * Carrying *any* sticker makes an instance non-fungible with its siblings — `deckBuilder.ts`'s
+ * `addCard`/`removeCard` (default LIFO) only draw from the *unstickered* pool
+ * (`unstickeredInstancesOf`); a stickered instance is added/removed only by explicit identity. That's
+ * distinct from whether an instance has *room for another* sticker (`isStickerFull`/
+ * `stickerableInstancesOf`, which only the shop's attach flow cares about).
  */
 export interface MetaCardInstance {
   id: string;
   cardId: string;
-  /** Sticker ids attached to this instance — absent/empty for a plain copy. Capped at
-   *  `MAX_STICKERS` (Step 7.7 raised Step 7.5's original cap of one to two). */
+  /** Sticker ids attached to this instance — absent/empty for a plain copy. Capped at `MAX_STICKERS`. */
   stickers?: string[];
 }
 
-/** The cap on stickers a single instance may carry (Step 7.7 raised this from 1 to 2). */
+/** The cap on stickers a single instance may carry. */
 export const MAX_STICKERS = 2;
 
 export interface OwnedCards {
@@ -75,17 +63,15 @@ export function isStickerFull(instance: MetaCardInstance): boolean {
   return (instance.stickers?.length ?? 0) >= MAX_STICKERS;
 }
 
-/** Owned instances of `cardId` that carry no sticker yet — the fungible pool `addCard`/
- *  `removeCard`'s default LIFO order draws from (Step 7.5); a stickered instance is only ever
- *  added/removed by explicit identity. */
+/** Owned instances of `cardId` that carry no sticker yet — the fungible pool `addCard`/`removeCard`'s
+ *  default LIFO order draws from; a stickered instance is only ever added/removed by explicit identity. */
 export function unstickeredInstancesOf(collection: OwnedCards, cardId: string): MetaCardInstance[] {
   return instancesOf(collection, cardId).filter((i) => !hasSticker(i));
 }
 
-/** Owned instances of `cardId` that still have room for another sticker (0 or 1 of
- *  `MAX_STICKERS`) — what the shop checks to decide whether a card still has an attach target,
- *  distinct from `unstickeredInstancesOf`'s stricter "no sticker at all" (Step 7.7: a
- *  once-stickered instance can still take a second). */
+/** Owned instances of `cardId` that still have room for another sticker (0 or 1 of `MAX_STICKERS`) —
+ *  what the shop checks for an attach target, distinct from `unstickeredInstancesOf`'s stricter "no
+ *  sticker at all" (a once-stickered instance can still take a second). */
 export function stickerableInstancesOf(collection: OwnedCards, cardId: string): MetaCardInstance[] {
   return instancesOf(collection, cardId).filter((i) => !isStickerFull(i));
 }

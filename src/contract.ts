@@ -6,10 +6,9 @@ import type { OwnedCards } from './rules/collection';
 import { shuffle } from './rules/rng';
 
 /**
- * The provisional selection a player builds up on the Mission screen
- * (`src/meta/MissionSelect.tsx`, one tab of `src/meta/MetaMenu.tsx`). Lives here, not
- * in the shell, so `buildRunConfig`
- * can promote it into a `RunConfig` without the core reaching into a React module.
+ * The provisional selection a player builds up on the Mission screen (`meta/CampaignMap.tsx`). Lives
+ * here, not in the shell, so `buildRunConfig` can promote it into a `RunConfig` without the core
+ * reaching into a React module.
  */
 export interface RunSelection {
   missionId: string;
@@ -20,15 +19,14 @@ export interface RunSelection {
 }
 
 /**
- * The spine between the two loops (see docs/DESIGN.md, "The contract"). The meta loop
- * owns durable choices (deck, board); a mission owns per-run modifiers; `RunConfig` is
- * where the two are merged into one immutable starting configuration. Board baseline
- * resources and mission disaster-injection are layered on during run setup, not here
- * (Phase 2 step 4) — this module only owns assembling the config itself.
+ * The spine between the two loops (see docs/DESIGN.md, "The contract"). The meta loop owns durable
+ * choices (deck, board); a mission owns per-run modifiers; `RunConfig` merges the two into one
+ * immutable starting configuration. Board baseline resources and mission injection are layered on
+ * during run setup, not here — this module only assembles the config.
  */
 export interface RunConfig {
-  /** Cards in draw order, already shuffled deterministically from `seed` — each carries its
-   *  cardId and any permanent stickers its owning meta instance carries (Phase 3 Step 7.6). */
+  /** Cards in draw order, already shuffled deterministically from `seed` — each carries its cardId
+   *  and any permanent stickers from its owning meta instance. */
   deck: DeckCard[];
   board: BoardId;
   missionId: string;
@@ -58,14 +56,11 @@ export interface RunResult {
 }
 
 /**
- * Assemble a `RunConfig` from the player's meta-loop selection, a run seed, the player's
- * own deck list, and their card collection — a deck's `cards` are meta instance ids
- * (Phase 3 Step 7.2), so resolving it to the run's cardId deck needs the collection to
- * translate. There's no static deck registry to fall back on — every deck lives in the
- * player's store. An unresolvable `deckId` (e.g. the source deck was deleted) produces an
- * empty `deck: []` rather than throwing, matching the codebase's general
- * fall-back-don't-throw style (e.g. `meta/store.ts`'s `loadStore`). The player's deck is
- * never mutated, only copied and reordered.
+ * Assemble a `RunConfig` from the player's meta-loop selection, a run seed, their deck list, and
+ * their collection — a deck's `cards` are meta instance ids, so resolving it to a run's cardId deck
+ * needs the collection to translate. There's no static deck registry to fall back on. An unresolvable
+ * `deckId` (e.g. the source deck was deleted) yields an empty `deck: []` rather than throwing (the
+ * codebase's fall-back-don't-throw style). The player's deck is never mutated, only copied.
  */
 export function buildRunConfig(selection: RunSelection, seed: string, decks: DeckDef[], collection: OwnedCards): RunConfig {
   const cards = resolveDeckCards(selection.deckId, decks, collection) ?? [];
@@ -80,10 +75,9 @@ export function buildRunConfig(selection: RunSelection, seed: string, decks: Dec
 
 /**
  * Re-shuffle an existing `RunConfig`'s deck with a fresh seed (used on restart —
- * `src/run/GameContext.tsx`). Operates on `config.deck` directly rather than looking
- * `deckId` back up in the player's store: `shuffle` is a full permutation regardless
- * of input order, so the already-resolved starting deck is all that's needed, and this
- * stays pure core with no dependency on the player's deck list at all.
+ * `run/GameContext.tsx`). Operates on `config.deck` directly rather than re-looking up `deckId`:
+ * `shuffle` is a full permutation regardless of input order, so the already-resolved deck is all
+ * that's needed, keeping this pure core with no dependency on the player's deck list.
  */
 export function reshuffleRunConfig(config: RunConfig, seed: string): RunConfig {
   return { ...config, deck: shuffle(config.deck, seed), seed };

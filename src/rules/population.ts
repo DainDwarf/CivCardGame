@@ -77,7 +77,7 @@ export function nextInstanceId(G: GameState): number {
  *  `stickers` (if the played hand instance carried any) rides onto the new tableau instance —
  *  otherwise a Reinforced building would silently lose its bonus the moment it's placed, since
  *  `resolveProduction`'s `effectiveGain` reads stickers off *this* instance, not the played card's
- *  original one (Phase 3 Step 7.6). */
+ *  original one. */
 export function addBuilding(G: GameState, cardId: string, stickers?: string[]): void {
   const workers = autoStaffCount(G, cardId);
   G.tableau.push({ id: nextInstanceId(G), cardId, workers, ...(stickers?.length ? { stickers } : {}) });
