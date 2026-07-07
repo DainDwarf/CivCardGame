@@ -63,11 +63,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     `[size: L]` `[phase: 3]`
   - **Step 7.3 — Collection per-instance view** — ✅ done — see *Done / shipped* below.
     `[size: M]` `[phase: 3]`
-  - **Step 7.4 — Ordered deck assignment** — the deck editor assigns *fungible* copies by a deterministic
-    order (first Farm added → 1/2, second → 2/2; removal pops the highest-index in-deck instance first) so
-    instance→deck identity stays stable and low-churn as decks are edited. This is the default for still-
-    *identical* copies only; once 7.5 lets a copy differ, a distinguished instance is placed by identity
-    (see 7.5). `[size: M]` `[phase: 3]`
+  - **Step 7.4 — Ordered deck assignment** — ✅ done — see *Done / shipped* below.
+    `[size: M]` `[phase: 3]`
   - **Step 7.5 — Card stickers in the meta (not yet in the run)** — shop sells stickers; attaching one
     mutates a chosen collection instance in place (a `stickers` field on the instance). A stickered
     instance is no longer fungible, so the deck editor handles it *by identity* — added/kept/removed
@@ -205,6 +202,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 7.4 — Ordered deck assignment** — `rules/deckBuilder.ts`'s `addCard`/`removeCard`
+  now assign *fungible* copies in a deterministic order instead of picking by incidental deck-array
+  or collection-iteration position: `addCard` already picked the lowest-index free instance (via
+  `instancesOf`'s granted order — unchanged), and `removeCard` now mirrors it, popping the
+  *highest*-index in-deck instance rather than the first one found scanning the deck array. Net
+  effect: a still-identical card's copies in a deck stay a stable, low-index-first prefix of the
+  owned instances as the deck is edited — add, remove, add again returns the same instance rather
+  than churning to a different one. This is the ordering Step 7.5's per-instance sticker pick
+  (7.3's `CardInstancePanel`) needs to stay meaningful: once copies can differ, this LIFO order is
+  only the *default* for the copies still identical to each other.
 
 - **Phase 3 Step 7.3 — Collection per-instance view** — clicking a card tile in `Collection.tsx`
   now opens `meta/CardInstancePanel.tsx` instead of jumping straight to the card zoom: a row per

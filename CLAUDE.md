@@ -212,10 +212,19 @@ sits in or "unused", via the new `rules/deckBuilder.ts`'s `decksContaining(insta
 (filters decks whose `cards` includes that instance id). Clicking a row still opens the shared
 `CardZoomOverlay` — every instance renders identically today, since there's no sticker field
 yet. `Collection.tsx` gained a `decks` prop (threaded from `MetaMenu.tsx`, which already held
-it) purely to resolve that usage text. Still to come:
-tutorial missions (Step 8), and `Stats` surfacing a per-run reward
-(deferred since `RunResult` deliberately excludes
-rewards, and there's no per-run record of whether that run was a first clear).
+it) purely to resolve that usage text. **Phase 3 Step 7.4** (ordered deck assignment) is also
+done: `rules/deckBuilder.ts`'s `addCard`/`removeCard` now assign still-fungible copies by a
+deterministic, low-churn order — `addCard` already picked the lowest-index free instance (via
+`instancesOf`'s granted-order iteration, unchanged); `removeCard` now mirrors it, popping the
+*highest*-index in-deck instance rather than whichever occurrence `deck.findIndex` hit first by
+array position. So a deck's copies of an identical card stay a stable, low-index-first prefix of
+the owned instances as the deck is edited — add, remove, add again returns the same instance
+rather than drifting to a different one — which is what keeps Step 7.3's per-instance picker
+("Farm 1/2") meaningful across edits, and what Step 7.5's sticker pick will need once a
+distinguished instance has to be placed *by identity* instead of by this default order. Still to
+come: card stickers in the meta (Step 7.5) and the run loop (Step 7.6), tutorial missions
+(Step 8), and `Stats` surfacing a per-run reward (deferred since `RunResult` deliberately
+excludes rewards, and there's no per-run record of whether that run was a first clear).
 
 ## Commands
 

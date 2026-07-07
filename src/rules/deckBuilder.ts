@@ -14,15 +14,16 @@ import { findInstance, instancesOf, type OwnedCards } from './collection';
  *  as its reflection. */
 export const MAX_DECKS = 6;
 
-/** Appends one copy of `cardId` — picks any owned instance of that cardId not already in
- *  `deck` (copies are still fungible; a future card sticker, Step 7.5, is what makes one
- *  instance worth distinguishing from another). `'invalid'` if `cardId` isn't in the
- *  `CARDS` catalogue (a data-coherence check, not a Phase 4 balance rule; see
- *  docs/DESIGN.md's deferred "deck construction constraints"), or if every owned copy is
- *  already in the deck (Phase 3 Step 2's copy cap — an absent/zero entry, i.e. not yet
- *  unlocked, rejects the same as any other invalid add, see `DeckEditor.tsx`'s picker
- *  filter). Mirrors the `'invalid'` signal `src/run/moves.ts` uses for rejected input.
- *  Does not mutate `deck`. */
+/** Appends one copy of `cardId` — picks the *lowest-index* owned instance of that cardId not
+ *  already in `deck` (`instancesOf` is granted order, so this is the first Farm added → 1/2,
+ *  second → 2/2, etc. — Step 7.4's deterministic assignment). Copies are still fungible; a
+ *  future card sticker (Step 7.5) is what makes one instance worth distinguishing from
+ *  another. `'invalid'` if `cardId` isn't in the `CARDS` catalogue (a data-coherence check,
+ *  not a Phase 4 balance rule; see docs/DESIGN.md's deferred "deck construction
+ *  constraints"), or if every owned copy is already in the deck (Phase 3 Step 2's copy cap —
+ *  an absent/zero entry, i.e. not yet unlocked, rejects the same as any other invalid add,
+ *  see `DeckEditor.tsx`'s picker filter). Mirrors the `'invalid'` signal `src/run/moves.ts`
+ *  uses for rejected input. Does not mutate `deck`. */
 export function addCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
   if (!(cardId in CARDS)) return 'invalid';
   // Event and threat cards are mission-injected only — never player-editable into a deck.
@@ -33,14 +34,16 @@ export function addCard(deck: string[], cardId: string, collection: OwnedCards):
   return [...deck, free.id];
 }
 
-/** Removes one instance of `cardId` from the deck. Any owned instance matching `cardId`
- *  works equally well — copies are still fungible until a sticker (Step 7.5) distinguishes
- *  one; a stable pick-order for that case is Step 7.4's job, not this one's. `'invalid'` if
- *  the deck holds no instance of `cardId`. Does not mutate `deck`. */
+/** Removes the *highest-index* in-deck instance of `cardId` — the mirror of `addCard`'s
+ *  lowest-index pick, so a deck's copies of a still-identical card stay a stable,
+ *  low-index-first prefix of the owned instances as the deck is edited (Step 7.4): add,
+ *  remove, add again and the same instance comes back rather than churning to a different
+ *  one. `'invalid'` if the deck holds no instance of `cardId`. Does not mutate `deck`. */
 export function removeCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
-  const idx = deck.findIndex((instanceId) => findInstance(collection, instanceId)?.cardId === cardId);
-  if (idx === -1) return 'invalid';
-  return [...deck.slice(0, idx), ...deck.slice(idx + 1)];
+  const inDeck = instancesOf(collection, cardId).filter((inst) => deck.includes(inst.id));
+  const toRemove = inDeck[inDeck.length - 1];
+  if (!toRemove) return 'invalid';
+  return deck.filter((instanceId) => instanceId !== toRemove.id);
 }
 
 /** Collapse a deck's instance-id list into one entry per cardId with a count, first-seen

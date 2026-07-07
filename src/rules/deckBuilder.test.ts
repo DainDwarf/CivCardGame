@@ -57,11 +57,12 @@ describe('addCard', () => {
 });
 
 describe('removeCard', () => {
-  it('removes an instance of the given cardId', () => {
-    const deck = [farmId(0), libraryId(0), farmId(1)];
+  it('removes the highest-index in-deck instance, not deck-array order', () => {
+    // farmId(1) sits before farmId(0) in the deck array; the highest-*index* owned
+    // instance (farmId(1)) should still be the one that leaves.
+    const deck = [farmId(1), libraryId(0), farmId(0)];
     const next = removeCard(deck, 'farm', GENEROUS);
-    expect(next).not.toBe('invalid');
-    expect((next as string[]).sort()).toEqual([farmId(1), libraryId(0)].sort());
+    expect(next).toEqual([libraryId(0), farmId(0)]);
   });
 
   it('rejects a cardId not present in the deck', () => {
@@ -72,6 +73,13 @@ describe('removeCard', () => {
     const deck = [farmId(0), libraryId(0)];
     removeCard(deck, 'farm', GENEROUS);
     expect(deck).toEqual([farmId(0), libraryId(0)]);
+  });
+
+  it('round-trips with addCard: remove then re-add returns the same instance', () => {
+    const deck = [farmId(0), farmId(1)];
+    const removed = removeCard(deck, 'farm', GENEROUS) as string[];
+    const readded = addCard(removed, 'farm', GENEROUS) as string[];
+    expect(readded.sort()).toEqual(deck.sort());
   });
 });
 
