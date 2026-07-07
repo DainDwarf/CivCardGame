@@ -4,6 +4,7 @@ import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { groupCounts } from '../rules/deckBuilder';
 import type { OwnedCards } from '../rules/collection';
+import { effectiveCard } from '../rules/stickers';
 import { CardFace } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './DeckDisplay.module.css';
@@ -56,7 +57,7 @@ export function DeckTile({
           groups.map((g, i) => (
             <span key={g.instanceId ?? g.cardId} className={styles.mini} style={{ '--i': i } as React.CSSProperties}>
               <CardFace
-                card={CARDS[g.cardId]}
+                card={effectiveCard(CARDS[g.cardId], g)}
                 className={styles.miniCard}
                 countBadge={g.count}
                 badgeClassName={styles.miniBadge}
@@ -90,7 +91,7 @@ export function DeckListOverlay({
   onClose: () => void;
   actions?: ReactNode;
 }) {
-  const [zoom, setZoom] = useState<string | null>(null);
+  const [zoom, setZoom] = useState<{ cardId: string; stickers?: string[] } | null>(null);
   return (
     <>
       <div className={styles.backdrop} onClick={onClose} role="dialog" aria-modal="true">
@@ -109,13 +110,13 @@ export function DeckListOverlay({
               {groupCounts(deck.cards, collection).map((g) => (
                 <CardFace
                   key={g.instanceId ?? g.cardId}
-                  card={CARDS[g.cardId]}
+                  card={effectiveCard(CARDS[g.cardId], g)}
                   className={styles.listCard}
                   countBadge={g.count}
                   stickerBadge={g.stickers}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setZoom(g.cardId);
+                    setZoom({ cardId: g.cardId, stickers: g.stickers });
                   }}
                 />
               ))}
@@ -123,7 +124,13 @@ export function DeckListOverlay({
           )}
         </div>
       </div>
-      <CardZoomOverlay cardId={zoom} onClose={() => setZoom(null)} hint="Click anywhere to close" />
+      <CardZoomOverlay
+        cardId={zoom?.cardId ?? null}
+        overrideCard={zoom ? effectiveCard(CARDS[zoom.cardId], zoom) : undefined}
+        stickerBadge={zoom?.stickers}
+        onClose={() => setZoom(null)}
+        hint="Click anywhere to close"
+      />
     </>
   );
 }

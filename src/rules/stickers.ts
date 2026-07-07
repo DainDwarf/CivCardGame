@@ -1,8 +1,16 @@
 import { STICKERS, type StickerDef } from '../content/stickers';
 import { CARDS, type CardDef } from '../content/cards';
 import { findInstance, isStickerFull, type OwnedCards } from './collection';
-import type { CardInstance } from './state';
 import type { Resources } from './resources';
+
+/** The minimal shape `effectiveGain`/`effectiveCost`/`effectiveCard` need — any card holder
+ *  that carries a `stickers` array works, whether that's a run `CardInstance` (`state.ts`), a
+ *  meta `MetaCardInstance` (`collection.ts`), or a deck-editor display group (`deckBuilder.ts`'s
+ *  `DeckGroupEntry`) — the run loop and the meta screens (Step 7.9's "meta screens show
+ *  effective values too") read the same effective stats through the same functions. */
+export interface StickeredInstance {
+  stickers?: string[];
+}
 
 /**
  * The meta sticker shop (Phase 3 Step 7.5): spend Influence to attach a permanent sticker to
@@ -70,7 +78,7 @@ export function buySticker(
 /** Fold each attached sticker's `applyGain` over `base` in order. `undefined` in → `undefined`
  *  out (a card with no gain has nothing to reinforce). The `?? out` is load-bearing: it both
  *  skips a sticker lacking `applyGain` (e.g. Efficient) and preserves the running value. */
-export function effectiveGain(base: Partial<Resources> | undefined, self: CardInstance): Partial<Resources> | undefined {
+export function effectiveGain(base: Partial<Resources> | undefined, self: StickeredInstance): Partial<Resources> | undefined {
   let out = base;
   for (const id of self.stickers ?? []) out = STICKERS[id]?.applyGain?.(out) ?? out;
   return out;
@@ -78,7 +86,7 @@ export function effectiveGain(base: Partial<Resources> | undefined, self: CardIn
 
 /** Fold each attached sticker's `applyCost` over `cost` in order (each hook is responsible for
  *  its own flooring). `?? out` skips a sticker lacking `applyCost` (e.g. Reinforced). */
-export function effectiveCost(cost: Partial<Resources>, self: CardInstance): Partial<Resources> {
+export function effectiveCost(cost: Partial<Resources>, self: StickeredInstance): Partial<Resources> {
   let out = cost;
   for (const id of self.stickers ?? []) out = STICKERS[id]?.applyCost?.(out) ?? out;
   return out;
@@ -89,7 +97,7 @@ export function effectiveCost(cost: Partial<Resources>, self: CardInstance): Par
  *  every render site that already does `card={CARDS[cardId]}` can instead pass `effectiveCard(CARDS[cardId],
  *  self)` and show the true number with zero changes to `CardFace`/`describeCost`/`describeBuilding`
  *  themselves. Returns `card` unchanged (no new object) when the instance carries no sticker. */
-export function effectiveCard(card: CardDef, self: CardInstance): CardDef {
+export function effectiveCard(card: CardDef, self: StickeredInstance): CardDef {
   if (!self.stickers?.length) return card;
   const produces = card.produces && effectiveGain(card.produces, self);
   const gain = card.effect?.gain && effectiveGain(card.effect.gain, self);

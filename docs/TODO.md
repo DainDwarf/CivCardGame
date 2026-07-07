@@ -77,11 +77,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     four related gaps left after 7.5/7.6:
     1. **Distinct icons** ✅ done — see *Done / shipped* below.
     2. **Bottom-left placement** ✅ done — see *Done / shipped* below.
-    3. **Meta screens show effective values too** — Step 7.6's `effectiveCard` fixed the *run loop*
-       (hand/tableau/workZone/pile-viewer/zoom all show a stickered copy's true cost/output), but
-       `Collection.tsx`, `Shop.tsx`, and `CardInstancePanel.tsx` still render the raw `CARDS[cardId]`
-       — they need the same `effectiveCard` treatment so a stickered copy's real numbers show before
-       it's ever taken into a run, not just after.
+    3. **Meta screens show effective values too** ✅ done — see *Done / shipped* below.
     4. **Loop cards stay visibly stickered** — Step 7.6 made a stickered card's *numbers* correct in
        the run, but never passes `stickerBadge` through any of `Board.tsx`'s CardFace renders, so a
        stickered copy in hand/tableau looks identical to a plain one except for its stats. Wire
@@ -250,6 +246,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   stacked sticker (a duplicate id) now renders as two circles side by side instead of a doubled
   glyph crowded into one badge, and each circle carries its sticker's name as a hover title. Items
   3–4 of Step 7.9 (meta screens' effective values, run-loop badge wiring) are still open.
+- **Phase 3 Step 7.9 (item 3/4) — Meta screens show effective values too** — every meta-side
+  `CardFace` for a stickered instance now shows *both* pieces of information together, not one
+  replacing the other — the bottom-left badge (which sticker) alongside the card's own displayed
+  cost/output text now reflecting what that sticker actually does (via `rules/stickers.ts`'s
+  `effectiveCard`, the same function the run loop already used), rather than the plain catalogue
+  numbers a badge alone would leave ambiguous next to. `effectiveGain`/`effectiveCost`/
+  `effectiveCard`'s `self` parameter was narrowed from the run's `CardInstance` to a new minimal
+  `StickeredInstance` (`{ stickers?: string[] }`) so the same three functions serve a meta
+  `MetaCardInstance` and a deck-editor `DeckGroupEntry` too, not just a run instance. `DeckEditor.tsx`'s
+  picker/banner/drag-clone tiles and `DeckDisplay.tsx`'s deck-tile fan/list-view tiles (which item
+  2/4 wired for `stickerBadge` but left showing the raw catalogue card) now pass `effectiveCard(...)`
+  through too; `CardZoomOverlay` gained the same `stickerBadge` pass-through prop `overrideCard`
+  already had, and `CardInstancePanel`'s zoom (`Collection`'s and `Shop`'s shared per-copy drill-down)
+  now tracks *which* instance was clicked (not just an open/closed boolean) so its zoom can resolve
+  that instance's `effectiveCard`/stickers too. Item 4 of Step 7.9 (run-loop badge wiring) is still
+  open.
 - **Phase 3 Step 7.8 — Add Irrigation sticker (self-contained sticker model)** — Irrigation
   (`content/stickers.ts`) is the first sticker whose eligibility depends on the *card*, not just
   the copy: it attaches only to a food-producing building (+1 food, nothing else). Rather than

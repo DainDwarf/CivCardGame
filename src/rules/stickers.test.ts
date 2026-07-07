@@ -172,17 +172,17 @@ describe('effectiveCard', () => {
   });
 
   it("reflects Reinforced's +1 in produces and Efficient's -1 in cost", () => {
-    const reinforced = effectiveCard(CARDS.farm, { id: 1, cardId: 'farm', stickers: ['reinforced'] });
+    const reinforced = effectiveCard(CARDS.farm, { stickers: ['reinforced'] });
     expect(reinforced.produces).toEqual({ food: 3 });
     expect(reinforced.cost).toEqual(CARDS.farm.cost); // unaffected by Reinforced
 
-    const efficient = effectiveCard(CARDS.farm, { id: 2, cardId: 'farm', stickers: ['efficient'] });
+    const efficient = effectiveCard(CARDS.farm, { stickers: ['efficient'] });
     expect(efficient.cost).toEqual({ production: 0 });
     expect(efficient.produces).toEqual(CARDS.farm.produces); // unaffected by Efficient
   });
 
   it("reflects Reinforced's +1 in a work card's effect.gain", () => {
-    const reinforced = effectiveCard(CARDS.corvee, { id: 1, cardId: 'corvee', stickers: ['reinforced'] });
+    const reinforced = effectiveCard(CARDS.corvee, { stickers: ['reinforced'] });
     expect(reinforced.effect?.gain).toEqual({ production: 4 });
   });
 });

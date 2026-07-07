@@ -4,6 +4,7 @@ import type { DeckDef } from '../content/decks';
 import { STICKERS } from '../content/stickers';
 import { instancesOf, isStickerFull, type OwnedCards } from '../rules/collection';
 import { decksContaining } from '../rules/deckBuilder';
+import { effectiveCard } from '../rules/stickers';
 import { CardZoomOverlay } from '../components/CardZoomOverlay';
 import styles from './CardInstancePanel.module.css';
 
@@ -39,10 +40,11 @@ export function CardInstancePanel({
   };
   onClose: () => void;
 }) {
-  const [zoom, setZoom] = useState(false);
+  const [zoomInstance, setZoomInstance] = useState<string | null>(null);
   const card = CARDS[cardId];
   const instances = instancesOf(collection, cardId);
   const attachSticker = attach ? STICKERS[attach.stickerId] : undefined;
+  const zoomed = instances.find((i) => i.id === zoomInstance);
 
   return (
     <>
@@ -67,7 +69,7 @@ export function CardInstancePanel({
                 <div
                   key={inst.id}
                   className={`${styles.row}${attachSticker ? ` ${styles.rowStatic}` : ''}`}
-                  onClick={attachSticker ? undefined : () => setZoom(true)}
+                  onClick={attachSticker ? undefined : () => setZoomInstance(inst.id)}
                 >
                   <span className={styles.rowLabel}>
                     {card.name} {i + 1}/{instances.length}
@@ -99,7 +101,13 @@ export function CardInstancePanel({
         </div>
       </div>
       {!attachSticker && (
-        <CardZoomOverlay cardId={zoom ? cardId : null} onClose={() => setZoom(false)} hint="Click anywhere to close" />
+        <CardZoomOverlay
+          cardId={zoomInstance ? cardId : null}
+          overrideCard={zoomed ? effectiveCard(card, zoomed) : undefined}
+          stickerBadge={zoomed?.stickers}
+          onClose={() => setZoomInstance(null)}
+          hint="Click anywhere to close"
+        />
       )}
     </>
   );

@@ -10,6 +10,7 @@ import {
   unstickeredInstancesOf,
   type OwnedCards,
 } from '../rules/collection';
+import { effectiveCard } from '../rules/stickers';
 import { CardFace } from '../components/CardFace';
 import styles from './DeckEditor.module.css';
 
@@ -262,7 +263,7 @@ export function DeckEditor({
         <CardFace
           key={inst.id}
           as="button"
-          card={c}
+          card={effectiveCard(c, inst)}
           className={styles.pickerTile}
           stickerBadge={inst.stickers}
           title="Click or drag into the deck to add this stickered copy"
@@ -334,7 +335,7 @@ export function DeckEditor({
           <CardFace
             key={g.instanceId ?? g.cardId}
             as="button"
-            card={CARDS[g.cardId]}
+            card={effectiveCard(CARDS[g.cardId], g)}
             className={styles.bannerTile}
             countBadge={g.count}
             stickerBadge={g.stickers}
@@ -349,7 +350,7 @@ export function DeckEditor({
     {drag?.active && (
       <div className={styles.dragLayer} aria-hidden="true">
         <CardFace
-          card={CARDS[drag.cardId]}
+          card={effectiveCard(CARDS[drag.cardId], { stickers: drag.stickers })}
           className={styles.dragClone}
           stickerBadge={drag.stickers}
           style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}

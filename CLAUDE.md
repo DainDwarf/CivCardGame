@@ -344,12 +344,27 @@ miniature (one glyph standing in for every sticker's offer button). **Step 7.9's
 `countBadge` straddles its own corner, card-toned (`--card-face-top` + a thin border) rather than
 the accent `--badge-bg`, so it reads as "part of the card" rather than a count/notification marker;
 a stacked sticker (a duplicate id) now renders as two circles side by side instead of a doubled
-glyph crowded into one badge, and each circle carries its sticker's name as a hover title. Still to
-come: the rest of Step 7.9 — the meta screens (`Collection`/`Shop`/`CardInstancePanel`) showing a
-stickered copy's effective values the way the run loop now does, plus a visible badge on a
-stickered card *in* the run loop, which 7.6 didn't wire up — tutorial missions (Step 9), and
-`Stats` surfacing a per-run reward (deferred since `RunResult` deliberately excludes rewards, and
-there's no per-run record of whether that run was a first clear).
+glyph crowded into one badge, and each circle carries its sticker's name as a hover title.
+**Step 7.9's third item** (meta screens show effective values too) is also done: every meta-side
+`CardFace` for a stickered instance now shows *both* pieces of information together, not one
+replacing the other — the bottom-left badge (which sticker) alongside the card's own displayed
+cost/output text now reflecting what that sticker actually does (via `rules/stickers.ts`'s
+`effectiveCard`, the same function the run loop already used), rather than the plain catalogue
+numbers a badge alone would leave ambiguous next to. `effectiveGain`/`effectiveCost`/
+`effectiveCard`'s `self` parameter was narrowed from the run's `CardInstance` to a new minimal
+`StickeredInstance` (`{ stickers?: string[] }`) so the same three functions serve a meta
+`MetaCardInstance` and a deck-editor `DeckGroupEntry` too, not just a run instance — all three
+already only ever read `self.stickers`. `DeckEditor.tsx`'s picker/banner/drag-clone tiles and
+`DeckDisplay.tsx`'s deck-tile fan/list-view tiles (Step 7.9's second item wired their
+`stickerBadge` but left their `card` prop as the raw catalogue entry) now pass
+`effectiveCard(...)` through as well; `CardZoomOverlay` gained the same `stickerBadge` pass-through
+prop `overrideCard` already had, and `CardInstancePanel`'s zoom (`Collection`'s and `Shop`'s
+shared per-copy drill-down) now tracks *which* instance was clicked (not just an open/closed
+boolean) so its zoom can resolve that instance's `effectiveCard`/stickers too. Still to come:
+a visible sticker badge on a stickered card *in* the run loop (7.6 didn't wire that up — Board.tsx
+still shows no `stickerBadge` at all), tutorial missions (Step 9), and `Stats` surfacing a per-run
+reward (deferred since `RunResult` deliberately excludes rewards, and there's no per-run record of
+whether that run was a first clear).
 
 ## Commands
 
