@@ -206,7 +206,7 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // Creeping Decay: the first *escalating* threat — mirrors Cornucopia's own-counter growth
-  // (Step 6.1) but draining instead of gaining, and tick-triggered instead of play-triggered. A
+  // but draining instead of gaining, and tick-triggered instead of play-triggered. A
   // bespoke `resolve` (not a declarative `effect.loss`) since the drain scales with its own
   // `level` counter: −1🔨 the first tick, −2 the next, and so on, eventually forcing Production
   // negative and a 'ruin' core collapse — the mission built around it (The Long Decline) never

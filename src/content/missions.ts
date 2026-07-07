@@ -15,7 +15,7 @@ const BARBARIANS = 4;
 export interface MissionDef {
   id: string;
   name: string;
-  /** Narrative flavour text — the bulk of the Step 5.3 mission detail panel
+  /** Narrative flavour text — the bulk of the mission detail panel
    *  (`meta/CampaignMap.tsx`'s `MissionDetailPanel`). Distinct from `description`, which
    *  states the mechanical objective. */
   lore: string;
@@ -37,7 +37,7 @@ export interface MissionDef {
   victoryHint: string;
   /** One-liner describing the mission-specific defeat condition; null if famine is the only loss. */
   failureHint: string | null;
-  /** `'standard'` missions are binary complete/not; `'infinite'` (Step 6) has no win state and
+  /** `'standard'` missions are binary complete/not; `'infinite'` has no win state and
    *  scores an attempt instead. All current missions are `'standard'`. */
   kind: 'standard' | 'infinite';
   /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
@@ -64,7 +64,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'Scholars who once worked in isolation now trade letters across borders, and a citizenry ' +
       'that can read starts asking its rulers harder questions.',
     description: 'Reach 30 Science by the end of round 12.',
-    // Test DAG (docs/TODO.md Phase 3 Step 3): gated behind The Long Winter.
+    // Test DAG: gated behind The Long Winter.
     prereqs: ['long_winter'],
     objective: (G) => G.resources.science >= 30,
     failure: (G) => G.round > 12 && G.resources.science < 30,
@@ -89,7 +89,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     prereqs: [],
     // The 2-extra-Food-per-round drain is now a real threat card (Harsh Winter), seeded once here
     // rather than a mission-onUpkeep special case — it ticks via the same tickThreats→resolveCard
-    // spine every other threat uses (docs/TODO.md Phase 3 Step 6.3b).
+    // spine every other threat uses.
     setup: (G) => {
       addThreat(G, 'harsh_winter');
     },

@@ -2,7 +2,7 @@ import type { Resources } from '../rules/resources';
 import type { CardDef } from './cards';
 
 /**
- * Card stickers (docs/DESIGN.md, "Economy & progression"; Phase 3 Step 7.5): permanent,
+ * Card stickers (docs/DESIGN.md, "Economy & progression"): permanent,
  * per-copy buffs bought with Influence and attached to one owned `MetaCardInstance`
  * (`rules/collection.ts`) forever. **A sticker owns its own logic** — both what it may attach
  * to (`appliesTo`) and what it does (`applyGain`/`applyCost`) are declared right here, on the
@@ -10,7 +10,7 @@ import type { CardDef } from './cards';
  * `produce` closures follow. Every consumer routes through `rules/stickers.ts` — the eligibility
  * dispatcher `stickerAppliesTo` and the effect fold in `effectiveGain`/`effectiveCost` — which
  * carry *no* sticker-specific knowledge, so a new sticker (with a new attach condition or a new
- * output/cost tweak) is added here alone, never at a call site (Step 7.8). Deliberately small —
+ * output/cost tweak) is added here alone, never at a call site. Deliberately small —
  * real variety/balance is Phase 4.
  *
  * The two effect hooks cover per-copy *output* and *play-cost* only — the two things the granular
@@ -24,7 +24,7 @@ export interface StickerDef {
   name: string;
   description: string;
   /** A distinct glyph identifying this sticker wherever a stickered instance shows a badge
-   *  (`CardFace`'s `stickerBadge`, Step 7.9) — one per sticker, so the badge reads as *which*
+   *  (`CardFace`'s `stickerBadge`) — one per sticker, so the badge reads as *which*
    *  sticker(s) a copy carries instead of a single generic 🏷️ regardless of identity. */
   icon: string;
   /** Influence price to attach one copy. */

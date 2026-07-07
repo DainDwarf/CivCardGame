@@ -5,10 +5,10 @@ export interface DeckDef {
   id: string;
   name: string;
   /** Meta card-*instance* ids (`rules/collection.ts`'s `OwnedCards`), in draw order before
-   *  shuffling — Phase 3 Step 7.2. Not cardIds: resolve each to a cardId via the player's
-   *  collection (`rules/deckBuilder.ts`'s `resolveDeckCards`/`groupCounts`). Referencing a
-   *  specific owned copy, rather than just a cardId, is what lets a future card sticker
-   *  (Step 7.5) live on one instance and be seen by every deck that includes it. */
+   *  shuffling. Not cardIds: resolve each to a cardId via the player's collection
+   *  (`rules/deckBuilder.ts`'s `resolveDeckCards`/`groupCounts`). Referencing a specific owned copy,
+   *  rather than just a cardId, is what lets a card sticker live on one instance and be seen by every
+   *  deck that includes it. */
   cards: string[];
 }
 
@@ -29,9 +29,9 @@ export interface DeckSeed {
  * one starting, fully-editable deck. Never read directly by the run loop or the meta screens;
  * `buildSeedDecks` turns this into the real `DeckDef`(s) a fresh store's `decks` holds.
  *
- * Deliberately a single narrow deck (docs/TODO.md, Phase 3 Step 1), built entirely from
- * cards `content/collection.ts`'s `STARTING_COLLECTION` actually owns — every other
- * deck a player has is unlocked/built from scratch as their collection grows.
+ * Deliberately a single narrow deck, built entirely from cards `content/collection.ts`'s
+ * `STARTING_COLLECTION` actually owns — every other deck a player has is unlocked/built from
+ * scratch as their collection grows.
  */
 export const DEFAULT_DECKS: DeckSeed[] = [
   {

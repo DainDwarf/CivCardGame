@@ -148,7 +148,7 @@ function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
  *  other card. A real layout column, not a floating overlay: the slot grid reflows beside it via
  *  the sibling `.gameContent`, so a tall threat stack never creeps in front of the tableau. Reads
  *  only `GameState`, never the mission, so it renders identically no matter which mission seeded
- *  these (docs/TODO.md Phase 3 Step 6.3b). Renders nothing when no threats are seeded. */
+ *  these. Renders nothing when no threats are seeded. */
 function ThreatZone({
   G,
   onZoom,
