@@ -1,6 +1,7 @@
 import { scaleResources, subtractResources, type Resources } from '../rules/resources';
-import { bumpCounter, getCounter, type CardInstance, type GameState } from '../rules/state';
+import { bumpCounter, getCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { shuffleFromState } from '../rules/rng';
+import { emitEvent } from '../rules/events';
 import { gainResources, type CardEffect, type Resolver } from '../rules/effects';
 import { effectiveGain } from '../rules/stickers';
 
@@ -73,6 +74,21 @@ export interface CardDef {
    * see `rules/effects.ts`'s `resolveProduction`.
    */
   produce?: Resolver;
+  /**
+   * Event-bus reactions (`rules/events.ts`): a map from a game-event type to a handler that runs when
+   * that event fires — the way a card reacts to something whose *timing it doesn't own* (a draw, a
+   * discard elsewhere, a resource crossing a threshold), without a bespoke branch in the engine. Each
+   * handler is an ordinary `Resolver`, run through the same `EffectContext` spine (with `ctx.event`
+   * set to the trigger), so it mutates `ctx.G` and adds output through `gainResources` (sticker-folded)
+   * exactly like `resolve`. Dispatch scope per event: the event's *subject* (the drawn/discarded card
+   * itself) plus every *operating* tableau building and every threat — see `dispatchEvent`. Rules a
+   * handler must respect: be **pure over `G`** (the projection clone re-runs it every HUD render, so no
+   * logging/animation/IO); **never open a `pendingInteraction`** (the bus can fire at upkeep with no
+   * player, like `resolveHandEvents`); and **`filter`, never `splice`**, to self-remove from a zone
+   * (the `for...of` footgun `tickThreats`/production share). A handler may set `G.pendingDefeat` to
+   * declare a loss itself.
+   */
+  on?: Partial<Record<GameEventType, Resolver>>;
   /**
    * `objective` cards only: the mission's win/lose condition, owned by the card the way every other
    * card owns its logic. Two **pure-read predicates** over the live run state — `met` (the win
@@ -208,7 +224,12 @@ export const CARDS: Record<string, CardDef> = {
       const pending = G.pendingInteraction;
       if (!pending) return;
       const chosen = pending.options[ctx.answer];
-      if (chosen !== undefined) G.hand.push(chosen);
+      if (chosen !== undefined) {
+        G.hand.push(chosen);
+        // Foresight draws a *chosen* card, not the top of the deck, so it can't route through
+        // `drawCard` — emit the `draw` event itself (an effect-caused draw, so on-draw observers fire).
+        emitEvent(G, { type: 'draw', instanceId: chosen.id, cardId: chosen.cardId, source: 'effect' });
+      }
       const rest = pending.options.filter((_, i) => i !== ctx.answer);
       const { result, rngState } = shuffleFromState([...rest, ...G.deck], G.rngState);
       G.deck = result;
@@ -232,6 +253,58 @@ export const CARDS: Record<string, CardDef> = {
 
   // --- Territory management: reclaim a slot by demolishing a building. ---
   destroy: { id: 'destroy', name: 'Destroy', kind: 'action', cost: { production: 1 }, effect: { destroy: true } },
+
+  // --- Event-bus example cards (`rules/events.ts`): each reacts to an event whose *timing it
+  //     doesn't own*, via a `CardDef.on` handler — the trigger layer's first consumers. Kept
+  //     deckable (playable, not mission-only) so they're immediately feel-testable.
+
+  // Scriptorium — *observer* of the on-draw event: while operating, gains money each time an
+  // action/effect draws a card — *not* the routine round-start refill (it filters on the draw's
+  // `source`; the dispatcher also applies the staffing gate, so an idle Scriptorium never fires). A
+  // building with no passive `produces`: its whole output is the reaction.
+  scriptorium: {
+    id: 'scriptorium', name: 'Scriptorium', kind: 'building', cost: { production: 3 }, workers: 1, tags: ['building'],
+    description: '+1💰 each time a card effect draws a card (while staffed; not the round-start draw)',
+    on: {
+      draw: (ctx) => {
+        if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
+      },
+    },
+  },
+
+  // Salvage — *self-triggered* by the on-discard event: reacts to *its own* discard, but only a
+  // sacrifice (a discard-cost cost), not the routine end-of-turn recycle. The reason rides on the
+  // event, so the handler tells them apart. Played normally it does nothing (its value is being fed
+  // to another card's discard cost).
+  salvage: {
+    id: 'salvage', name: 'Salvage', kind: 'action', cost: {},
+    description: 'When discarded as a sacrifice: +2🔨',
+    on: {
+      discard: (ctx) => {
+        if (ctx.event?.type === 'discard' && ctx.event.reason === 'sacrifice') gainResources(ctx, { production: 2 });
+      },
+    },
+  },
+
+  // Treasury — *threshold* observer of the on-resourceChange event: the first time money crosses 10
+  // (comparing the boundary's before-snapshot against live G), pays out once — a per-copy `fired`
+  // counter, like Cornucopia's, so it fires once per physical copy, not once globally. Needs staffing
+  // (observer scope), hence "while staffed".
+  treasury: {
+    id: 'treasury', name: 'Treasury', kind: 'building', cost: { production: 2, money: 2 }, workers: 1, tags: ['building'],
+    description: 'While staffed, the first time your 💰 reaches 10: +5🔬 (once)',
+    on: {
+      resourceChange: (ctx) => {
+        const e = ctx.event;
+        if (e?.type !== 'resourceChange') return;
+        if (getCounter(ctx.self, 'fired')) return;
+        if (e.before.resources.money < 10 && ctx.G.resources.money >= 10) {
+          gainResources(ctx, { science: 5 });
+          bumpCounter(ctx.self, 'fired');
+        }
+      },
+    },
+  },
 
   // --- Event cards: mission-injected, not player-playable. Auto-resolve at end of turn;
   //     `remove: true` sends this one to removed instead of the default discard. ---

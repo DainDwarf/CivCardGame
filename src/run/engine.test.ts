@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { createRun, endTurn, type RunState } from './engine';
+import { createRun, endTurn, applyMove, type RunState } from './engine';
 import { instancesFromCardIds } from '../rules';
+import { playCard } from './moves';
 import type { RunConfig } from '../contract';
 
 /** A run with an empty draw pile, so the hand can be set explicitly and stays stable across turns. */
@@ -8,6 +9,48 @@ function run(missionId: string): RunState {
   const config: RunConfig = { deck: [], board: 'tribe', boardStickers: [], missionId, deckId: 'd', seed: 's' };
   return createRun(config);
 }
+
+describe('event bus through the turn loop', () => {
+  it('an on-draw building (Scriptorium) ignores the round-start refill', () => {
+    let state = run('enlightenment');
+    state.G.resources.food = 50; // keep famine out of it
+    state.G.tableau = [{ id: 99, cardId: 'scriptorium', workers: 1 }]; // operating
+    // Reset the piles: an empty hand + a known draw pile so the next turn start draws a known count
+    // (createRun already drew the config deck into the opening hand).
+    state.G.hand = [];
+    state.G.deck = instancesFromCardIds(['farm', 'farm', 'farm'], 200);
+    state.G.discard = [];
+    state.G.resources.money = 0;
+    state = endTurn(state); // upkeep → next beginTurn refills the hand (turnStart draws, not effect)
+    expect(state.gameover).toBeUndefined();
+    expect(state.G.hand.length).toBe(3);
+    expect(state.G.resources.money).toBe(0); // round-start refill does NOT pay Scriptorium
+    expect(state.G.events).toEqual([]); // queue drained — committed-state invariant
+  });
+
+  it('an on-draw building (Scriptorium) pays out when a card effect (Inspiration) draws', () => {
+    let state = run('enlightenment');
+    state.G.resources.food = 50; // keep famine out of it
+    state.G.tableau = [{ id: 99, cardId: 'scriptorium', workers: 1 }]; // operating
+    state.G.hand = instancesFromCardIds(['inspiration'], 300); // Inspiration: cost 1💰, draws 2
+    state.G.deck = instancesFromCardIds(['farm', 'farm'], 200);
+    state.G.discard = [];
+    state.G.resources.money = 5;
+    state = applyMove(state, playCard, 0); // play Inspiration from hand index 0
+    expect(state.gameover).toBeUndefined();
+    // 5 start − 1 cost + 2 (Scriptorium firing on each of Inspiration's two effect draws) = 6.
+    expect(state.G.resources.money).toBe(6);
+    expect(state.G.events).toEqual([]);
+  });
+
+  it('a card-declared defeat (G.pendingDefeat) is read by checkEndIf with its own reason', () => {
+    let state = run('enlightenment');
+    state.G.resources.food = 20;
+    state.G.pendingDefeat = { reason: 'the doom clock struck' };
+    state = endTurn(state);
+    expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'the doom clock struck' });
+  });
+});
 
 describe('endTurn event resolution', () => {
   it('auto-resolves an event left in hand and destroys it (removed, not discarded)', () => {

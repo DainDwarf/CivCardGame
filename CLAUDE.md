@@ -114,6 +114,25 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     it deliberately omits the one-shot play fields.
     An interactive effect suspends into `pendingInteraction` and re-enters via
     `moves.resolveInteraction` — all plain data, so undo/clone survive.
+  - `events.ts` — the **event bus**: the general trigger layer letting a card react to an event
+    whose *timing it doesn't own* (a draw, a discard elsewhere, a resource crossing a threshold)
+    via a `CardDef.on?: { draw?/discard?/resourceChange? }` handler — run through the *same*
+    `resolveCard`/`EffectContext` spine (extended with `ctx.event`), so a handler is authored like
+    any bespoke `resolve` and its gains still fold through stickers. Two verbs, split so the bus
+    never dispatches mid-mutation: **emit** (`emitEvent` → push to `G.events`, done at a semantic
+    site as a step runs — a `draw` in `deck.ts`, a `discard` with its *reason* at each discard
+    site) and **flush** (`flushEvents(G, before)` at a *step boundary* — `applyMove`/`beginTurn`/
+    `endTurn`/`applyUpkeep` — which synthesizes a `resourceChange` from a before-snapshot, then
+    drains `G.events` to `dispatchEvent`, cascade-capped by `MAX_EVENT_CASCADE`). `dispatchEvent`
+    runs `on[type]` on the event's *subject* (self-triggered) plus every operating tableau building
+    and threat (observer, reusing production's `isOperating` gate), in fixed order for determinism.
+    **`G.events` is always drained to `[]` in any committed/undo-visible state** (see `state.ts`),
+    so structuredClone/undo/determinism are untouched. A handler may set `G.pendingDefeat` to
+    *declare a loss itself* (`engine.ts`'s `checkEndIf` polls it) — the counterpart to a threat
+    that can only drain a resource into collapse. Handlers must be pure over `G` (the projection
+    clone re-runs upkeep every render) and must not open a `pendingInteraction`. This *replaces*
+    the old "no event bus" property once documented on `objective.ts`/`state.ts`; the objective
+    readers still stay off it (pure polls, never firing).
   - `population.ts` — worker staffing over buildings *and* work cards through one `Staffable`
     layer (`requiredWorkersOf`/`isOperating`/`freePopulation`/`findStaffable`,
     `addBuilding`/`addWork`, the shared `nextInstanceId` allocator, `foodUpkeep`).

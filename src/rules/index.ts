@@ -6,6 +6,7 @@ export * from './deck';
 export * from './deckBuilder';
 export * from './objective';
 export * from './effects';
+export * from './events';
 export * from './playability';
 export * from './population';
 export * from './production';

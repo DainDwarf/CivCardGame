@@ -2,6 +2,25 @@ import { describe, it, expect } from 'vitest';
 import { resolveHandEvents, projectedDelta, applyUpkeep } from './upkeep';
 import { blankState, instancesFromCardIds } from './state';
 
+describe('projectedDelta — event-bus reachability', () => {
+  it('reflects an upkeep-triggered handler in the HUD preview (Treasury crossing 10 during production)', () => {
+    // Market produces +2💰 during upkeep, pushing money 9 → 11, which crosses Treasury's threshold
+    // and pays +5🔬. Because applyUpkeep flushes the bus, projectedDelta (which clones + runs upkeep)
+    // must show that +5🔬 — otherwise the preview would lie about what ending the turn does.
+    const G = blankState('enlightenment');
+    G.resources.money = 9;
+    G.tableau = [
+      { id: 1, cardId: 'market', workers: 1 },
+      { id: 2, cardId: 'treasury', workers: 1 },
+    ];
+    const delta = projectedDelta(G);
+    expect(delta.resources.money).toBe(2); // market's production
+    expect(delta.resources.science).toBe(5); // Treasury reacting to the 30-crossing, mid-upkeep
+    expect(G.resources.science).toBe(0); // projection is a dry run — real G untouched
+    expect(G.events).toEqual([]); // and no events leaked onto the real G
+  });
+});
+
 describe('resolveHandEvents', () => {
   it('applies an event left in hand and destroys it to the removed pile', () => {
     const G = blankState('barbarian_tide');

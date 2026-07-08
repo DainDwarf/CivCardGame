@@ -55,6 +55,42 @@ export type WorkInstance = PlacedCard;
  *  the threat card computes its own drain). Shares the run-wide instance-id space. */
 export type ThreatInstance = CardInstance;
 
+/** Why a card was filed to a pile — rides on a `discard` event so a card's `on.discard` handler can
+ *  tell a *sacrifice* (a discard-cost cost, which should trigger) from an *end-of-turn recycle* (which
+ *  usually shouldn't). Every discard site emits with its reason; the handler decides what to do. */
+export type DiscardReason = 'sacrifice' | 'demolish' | 'endOfTurn' | 'workFiled' | 'event';
+
+/** Where a `draw` came from — rides on the `draw` event so an `on.draw` handler can tell the routine
+ *  round-start refill (`'turnStart'`, `drawUpTo`) from a draw an action/effect *caused* (`'effect'`,
+ *  the default: `effect.draw`, Foresight, etc.). Scriptorium reacts only to `'effect'` draws. */
+export type DrawSource = 'turnStart' | 'effect';
+
+/** A snapshot of every *value* field a threshold/`resourceChange` handler might watch, taken by the
+ *  event-flush boundary *before* a step ran. A handler compares `before` against the live `G` (e.g.
+ *  `before.resources.money < 30 && G.resources.money >= 30`) to fire on the exact crossing. */
+export interface ValueSnapshot {
+  resources: Resources;
+  population: number;
+  territory: number;
+  culture: number;
+}
+
+/**
+ * A game event dispatched to card `on` handlers (`rules/events.ts`). Plain data so it rides on `G`
+ * and survives structuredClone/undo. Two flavours ride the same union: **discrete** events name a
+ * subject instance (`draw`/`discard`) and are *emitted* at their semantic site as a step runs;
+ * **value** events (`resourceChange`) carry a before-snapshot and are *synthesized* by the flush
+ * boundary via diff (resource writes have no single choke point). See `rules/events.ts` for how each
+ * is dispatched to subscribers.
+ */
+export type GameEvent =
+  | { type: 'draw'; instanceId: number; cardId: string; source: DrawSource }
+  | { type: 'discard'; instanceId: number; cardId: string; reason: DiscardReason }
+  | { type: 'resourceChange'; before: ValueSnapshot };
+
+/** The discriminant keys of `GameEvent` — the set of triggers a `CardDef.on` map may key on. */
+export type GameEventType = GameEvent['type'];
+
 /**
  * GameState is the entire serializable run state (the engine's `G`). It must stay
  * JSON-serializable (save/load, undo, and headless simulation depend on it). It lives
@@ -112,6 +148,20 @@ export interface GameState {
   /** A card effect suspended awaiting a player choice, or `null` when none is pending. While set,
    *  `endTurn` no-ops and undo is blocked until it resolves (see `PendingInteraction`). */
   pendingInteraction: PendingInteraction | null;
+  /**
+   * The event bus's transient queue (`rules/events.ts`). Sites *emit* by pushing here as a step runs
+   * (a cheap append, safe mid-mutation — never dispatch from a mutation site); the step boundary then
+   * *flushes* it, draining every event to its `on` handlers. **Invariant: empty (`[]`) in every
+   * committed / undo-visible state** — every `flushEvents` leaves it drained, so structuredClone/undo
+   * only ever snapshot `[]`. It lives on `G` (not a side channel) so it's plain serializable data
+   * like `pendingInteraction`, but nothing lasting is ever stored in it. */
+  events: GameEvent[];
+  /**
+   * A card-declared defeat, or `null`/absent when none. A card's `on` handler may set this (with its
+   * own reason) to *end the run itself* — `run/engine.ts`'s `checkEndIf` polls it as a defeat, the
+   * counterpart to a threat that can only drain a resource into collapse. The bus capability behind
+   * the "threat owns its own defeat" pattern; the engine never writes it. */
+  pendingDefeat?: { reason: string } | null;
 }
 
 /**
@@ -157,6 +207,8 @@ export function blankState(missionId: string): GameState {
     missionId,
     rngState: seededRng('blank').getState(),
     pendingInteraction: null,
+    events: [],
+    pendingDefeat: null,
   };
 }
 

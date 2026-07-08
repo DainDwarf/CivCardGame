@@ -2,6 +2,7 @@ import { type Resources } from './resources';
 import { applyTableauProduction, applyWorkZoneProduction } from './production';
 import { foodUpkeep } from './population';
 import { resolveCard } from './effects';
+import { emitEvent, flushEvents, snapshot } from './events';
 import { tickThreats } from './threats';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameState } from './state';
@@ -17,7 +18,10 @@ export type MissionUpkeep = (G: GameState) => void;
 export function discardWorkZone(G: GameState): void {
   // File each work card to discard as a plain card instance (its workZone id is free to reuse once
   // the zone is cleared), dropping the staffing-only `workers`/`counters` a work box carried.
-  for (const w of G.workZone) G.discard.push({ id: w.id, cardId: w.cardId });
+  for (const w of G.workZone) {
+    G.discard.push({ id: w.id, cardId: w.cardId });
+    emitEvent(G, { type: 'discard', instanceId: w.id, cardId: w.cardId, reason: 'workFiled' });
+  }
   G.workZone = [];
 }
 
@@ -44,6 +48,7 @@ export function resolveHandEvents(G: GameState): void {
     resolveCard({ G, self: c });
     // `remove` is a filing decision (exile vs. discard), owned here, not by the resolver.
     (card.effect?.remove ? G.removed : G.discard).push(c);
+    emitEvent(G, { type: 'discard', instanceId: c.id, cardId: c.cardId, reason: 'event' });
   }
 }
 
@@ -55,11 +60,16 @@ export function resolveHandEvents(G: GameState): void {
  * drift.
  */
 export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
+  const before = snapshot(G);
   applyTableauProduction(G);
   applyWorkZoneProduction(G);
   tickThreats(G);
   missionUpkeep?.(G);
   G.resources.food -= foodUpkeep(G);
+  // Dispatch everything upkeep emitted (production draws, threat/work discards) plus the round's net
+  // resourceChange. Reachable from `projectedDelta`'s clone below, so handler effects show in the HUD
+  // preview too — the whole point of flushing *inside* upkeep, not only in `engine.ts`.
+  flushEvents(G, before);
 }
 
 /** The net change the player would see if they ended the round right now. */
@@ -73,7 +83,11 @@ export function projectedDelta(G: GameState, missionUpkeep?: MissionUpkeep): Pro
   applyUpkeep(clone, missionUpkeep);
   // Events in hand auto-resolve at end of turn too, so fold their impact into the delta the
   // player sees (e.g. a Barbarian's Military drain + its collapse warning).
+  const beforeEvents = snapshot(clone);
   resolveHandEvents(clone);
+  // Mirror `endTurn`: flush what the hand events emitted (their discards, any resourceChange) so the
+  // preview matches the real turn end, not a pre-dispatch snapshot of it.
+  flushEvents(clone, beforeEvents);
   return {
     resources: {
       food: clone.resources.food - G.resources.food,

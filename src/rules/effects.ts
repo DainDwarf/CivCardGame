@@ -2,7 +2,8 @@ import { addResources, subtractResources, type Resources } from './resources';
 import { drawCard } from './deck';
 import { CARDS } from '../content/cards';
 import type { CardDef } from '../content/cards';
-import type { CardInstance, GameState } from './state';
+import type { CardInstance, GameEvent, GameState } from './state';
+import { emitEvent } from './events';
 import { effectiveGain } from './stickers';
 
 /** The immediate, one-shot effect a card applies when played. */
@@ -66,6 +67,12 @@ export interface EffectContext {
    * `0` is a valid answer.
    */
   answer?: number;
+  /**
+   * The event this resolution is reacting to, set only when the bus (`rules/events.ts`) is running a
+   * card's `on` handler — a handler reads it for the trigger's detail (which card was discarded and
+   * why, the before-snapshot for a threshold). Absent on a normal play/production resolution.
+   */
+  event?: GameEvent;
 }
 
 /** A card's play-time behavior: mutate `ctx.G` given the resolving card and its target. Lives on the
@@ -91,6 +98,7 @@ function demolish(G: GameState, instanceId?: number): void {
   // File the demolished card to removed as a plain card instance (its staffing-only `workers` is
   // dropped); keep its id so the removed pile stays identity-consistent with every other zone.
   G.removed.push({ id: building.id, cardId: building.cardId });
+  emitEvent(G, { type: 'discard', instanceId: building.id, cardId: building.cardId, reason: 'demolish' });
 }
 
 /**
@@ -142,4 +150,17 @@ export function resolveProduction(ctx: EffectContext): void {
   const card = CARDS[ctx.self.cardId];
   const resolver = card.produce ?? defaultProduce(card);
   resolver(ctx);
+}
+
+/**
+ * Run one card's reaction to an event: dispatch `CARDS[self.cardId].on?.[event.type]` on `ctx`. The
+ * event-bus counterpart to `resolveCard`/`resolveProduction` — the single place an `on` handler runs,
+ * so a handler is authored like any bespoke resolver (mutate `ctx.G`, add output through
+ * `gainResources` so stickers still fold). No-op if the card has no handler for this event type (the
+ * dispatcher pre-filters to subscribers, but this stays safe on its own). `ctx.event` is guaranteed
+ * set by the caller (`rules/events.ts`'s `dispatchEvent`).
+ */
+export function runEventHandler(ctx: EffectContext): void {
+  if (!ctx.event) return;
+  CARDS[ctx.self.cardId]?.on?.[ctx.event.type]?.(ctx);
 }

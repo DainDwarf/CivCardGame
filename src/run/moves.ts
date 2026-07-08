@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { addBuilding, addWork, findStaffable, freePopulation, requiredWorkersOf, resolveCard, subtractResources, unplayableReason } from '../rules';
+import { addBuilding, addWork, emitEvent, findStaffable, freePopulation, requiredWorkersOf, resolveCard, subtractResources, unplayableReason } from '../rules';
 import { effectiveCost } from '../rules/stickers';
 import { CARDS } from '../content/cards';
 
@@ -62,7 +62,10 @@ export function playCard(
     // copy's counters, which then ride along as that same instance files to discard below.
     resolveCard({ G, self: played, target: destroyInstanceId });
   }
-  for (const c of sacrifices) G.discard.push(c);
+  for (const c of sacrifices) {
+    G.discard.push(c);
+    emitEvent(G, { type: 'discard', instanceId: c.id, cardId: c.cardId, reason: 'sacrifice' });
+  }
   // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,
   // filed at end of turn) stay put; only action cards recycle to the discard here — the same
   // instance object, carrying whatever counters its resolver just bumped.

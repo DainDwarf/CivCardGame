@@ -174,60 +174,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Tech debt / architecture
 
-- **Event-bus / trigger layer for card effects** — Today a card's `resolve`/`produce`
-  closure can only fire at a **fixed, small set of engine-owned trigger points**: on-play
-  (`run/moves.ts` `playCard`→`resolveCard`), per-round production for *operating*
-  tableau/workZone instances (`applyUpkeep`→`rules/production.ts`→`resolveProduction`),
-  per-round threat tick (`applyUpkeep`→`rules/threats.ts` `tickThreats`→`resolveCard`),
-  end-of-turn `event` cards in hand (`run/engine.ts` `endTurn`→`resolveHandEvents`), and
-  interaction resume (`resolveInteraction`). There is **no general event bus**, so a whole
-  class of card can't be expressed — anything keyed on a game event whose *timing the card
-  doesn't own*. Walls found in a five-card thought experiment:
-  - **on-draw** — "building that gives +1💰 each time you draw while staffed." `rules/deck.ts`'s
-    `drawCard(G)` is a leaf that just `shift`s into `hand`; no resolver, no tableau access.
-  - **on-discard** — "card that resolves when discarded by another card." Every discard is a
-    plain array push (`playCard`'s sacrifice loop, `endTurn`'s hand recycle, `discardWorkZone`,
-    `rules/effects.ts`'s `demolish`); nothing runs a resolver on the discarded card. Also needs
-    to distinguish *discarded-as-a-sacrifice* (should trigger) from *discarded at end of turn*
-    (shouldn't).
-  - **on-resource-change / on-threshold** — "threat that vanishes once money ≥ 30." A threat
-    *can* self-remove today because `tickThreats` resolves it every upkeep — **but only at end
-    of round.** An action granting +5💰 mid-turn should retire the threat *the moment money
-    crosses 30*, not wait for upkeep. That needs a resource-change (or threshold-crossed)
-    event, which doesn't exist. Resource mutations have no choke point: they flow through
-    `rules/resources.ts`'s `addResources`/`subtractResources` **and** direct writes in
-    `applyEffect` (`G.population`/`territory`/`culture +=`).
-
-  **Design shape (for whoever picks this up):**
-  - **Keep "cards own their logic."** A handler is just another resolver closure on the static
-    catalogue — e.g. `CardDef.on?: { draw?: Resolver; discard?: Resolver; resourceChange?:
-    Resolver }` — run through the existing `EffectContext` (`{ G, self, ... }`) / `resolveCard`
-    spine. The bus dispatches; the card computes. No new bespoke branches in moves/upkeep.
-  - **Two dispatch flavours:** *self-triggered* (on-discard — run the handler on the instance
-    the event is *about*) and *observer* (on-draw / on-resource-change — run the handler on
-    every subscribed instance in a zone, e.g. staffed tableau buildings or threats reacting to
-    someone else's event). Respect the staffing gate for tableau observers, exactly as
-    `resolveZoneProduction` filters on `isOperating`.
-  - **Recommended mechanism: post-step diff/reconcile, not mutation-site hooks.** Rather than
-    emitting synchronously from inside `addResources`/`drawCard` (which forces every mutation
-    through a choke point and invites re-entrancy — a resource-change handler that changes
-    resources re-firing itself), run a pure `dispatch(G, event)` at **step boundaries** (after
-    a move resolves; after each upkeep sub-step). Snapshot-diff for value events — the exact
-    pattern `projectedDelta` already uses (`structuredClone` + compare). The +5💰 example still
-    feels immediate: the threat is gone by the time the play finishes resolving, same turn,
-    same action — it just fires at move-granularity, not mid-resolver. Everything stays plain
-    data on `G` (no `EventEmitter` object), so structuredClone/undo/determinism are untouched.
-  - **Open questions to settle:** which zones each event scans (on-draw → staffed tableau only,
-    or hand too?); re-entrancy/termination guard (queue events + cap cascade depth, or
-    diff-only-at-boundary so within-step changes don't recurse); ordering when several
-    subscribers react to one event; and how effects that fire *during a move* surface — they
-    needn't be in `projectedDelta` (already happened), but upkeep-time subscribers must be.
-  - **Payoff / consumers:** absorbs existing backlog probes — "Card effects that trigger on
-    discard / on draw, to enable combos" (*Game design & balance*) and "Card that gives a draw
-    when expanding territory" — which become thin `CardDef.on` handlers instead of one-off
-    engine edits. Note the self-removal footgun any such handler shares: reassign the zone
-    array (`filter`), never `splice`, since `tickThreats`/`resolveZoneProduction` iterate with
-    `for...of`. `[size: L]` `[?]` `[phase: 3]`
+- **Enlightenment deadline as a threat that owns its own defeat** — surface Enlightenment's
+  currently-invisible round-12 deadline (today `enlightenment_goal.objective.failed`'s
+  `G.round > 12 && science < 30`) as a visible countdown threat card, seeded via mission `setup`
+  like Long Winter's Harsh Winter. **Hard constraint: the threat itself must own the gameover**,
+  not the objective. Now **unblocked** — the event bus (shipped, below) added the declare-defeat
+  capability: a card's `on` handler may set `G.pendingDefeat` (its own reason), which
+  `run/engine.ts`'s `checkEndIf` polls as a defeat. So the countdown threat can be a real card
+  with an `on.resourceChange`/tick hook that sets `pendingDefeat` when the deadline passes without
+  30 science, rather than the engine polling a mission/objective predicate. Do *not* implement the
+  pure-display-countdown stopgap; make the threat authoritative. `[size: M]` `[?]` `[phase: 3]`
 
 ---
 
@@ -244,6 +200,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Event-bus / trigger layer for card effects** — the general trigger layer so a card can react
+  to an event whose *timing it doesn't own* (on-draw, on-discard, on-resource-threshold), via a
+  `CardDef.on?: { draw?/discard?/resourceChange?: Resolver }` handler run through the *existing*
+  `resolveCard`/`EffectContext` spine (extended with `ctx.event`) — no new bespoke branches in
+  moves/upkeep. New `rules/events.ts`: sites **emit** (`emitEvent` → push to `G.events`, at a
+  semantic site as a step runs — a `draw` in `deck.ts`, a `discard` *with its reason* at each
+  discard site); step boundaries **flush** (`flushEvents(G, before)` in `applyMove`/`beginTurn`/
+  `endTurn`/`applyUpkeep`) — synthesize a `resourceChange` from a before-snapshot, then drain
+  `G.events` to `dispatchEvent`, cascade-capped by `MAX_EVENT_CASCADE`. Dispatch runs `on[type]` on
+  the event's *subject* (self-triggered) + every operating tableau building & threat (observer,
+  reusing production's `isOperating` gate), fixed order for determinism. **Uniform queue on `G`**,
+  always drained to `[]` in a committed/undo state (so structuredClone/undo/determinism untouched).
+  Added the **declare-defeat** capability (`G.pendingDefeat`, polled by `checkEndIf`) that unblocks
+  the Enlightenment-threat ticket above. Proven with three real deckable cards (Scriptorium on
+  effect-draw, Salvage on-discard-sacrifice, Treasury on-10-threshold) + a full unit suite (`events.test.ts`,
+  plus engine/upkeep integration incl. projection reachability). Followed the approved plan
+  `.claude/plans/we-are-opening-a-magical-teapot.md`. `[size: L]` `[phase: 3]`
 
 - **Phase 3 Step 9.2 — Collection UI rework + card upgrades** — reworked `meta/CardInstancePanel.tsx`
   (the fused detail view Step 9.1 created) from a text row-list into the **Board tab's model**: each
