@@ -228,11 +228,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     its numbers match a launched run. Purely presentational (a board id + attached sticker ids, no
     `GameContext`, no logic), so it's reused across meta screens (the Board menu now, mission-select
     later) — the board counterpart to Collection's real `CardFace`s.
-  - `BoardLeftColumn` renders the board's left column — the mission's `G.objective` card (the
-    goal, with an "Objective" violet-banner `CardFace`) atop its `G.threats` hazards — as
-    `CardFace`s, reading only `GameState`, never the mission (it replaced the old fixed top-left
-    `MissionWidget`; the objective card now carries the mission name + live progress, its zoom the
-    win-condition text). The `.groundBackdrop` is tinted per government board via a `data-board`
+  - `BoardLeftColumn` renders the board's left strip — the mission's `G.objective` card (the goal,
+    an "Objective" violet-banner `CardFace`) pinned as its own distinct plaque flush in the top-left
+    **corner** (`.objectiveCorner`, a violet-framed nook — always exactly one card), above a separate
+    scrolling **threat zone** (`.threatZone`) of its `G.threats` hazards — all `CardFace`s, reading
+    only `GameState`, never the mission (it replaced the old fixed top-left `MissionWidget`; the
+    objective card now carries the mission name + live progress, its zoom the win-condition text).
+    The `.groundBackdrop` is tinted per government board via a `data-board`
     attribute matched in `Board.module.css` — a CSS-only edit per board, no component change.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left nav switches five screens:
   - `CampaignMap.tsx` (Mission tab) — the mission DAG as a horizontally-scrollable tech

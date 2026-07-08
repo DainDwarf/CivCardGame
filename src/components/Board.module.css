@@ -317,10 +317,12 @@
   background: var(--board-republic-ground);
 }
 
-/* The play area: a row holding the threat column (left, when any threats are seeded) beside the
-   main play column (slot grid above the work strip), bounded to end exactly above the hand bar
-   so neither scrolls nor sits behind it. paddingTop (inline) clears the sticky banner. No
-   background of its own — .groundBackdrop shows through. */
+/* The play area: a row holding the left strip (objective corner + threat zone, when seeded) beside
+   the main play column (slot grid above the work strip), bounded to end exactly above the hand bar
+   so neither scrolls nor sits behind it. It spans top:0 → the left strip rises into the true
+   top-left corner; only .gameContent carries the banner-height top inset (the banner is centered/
+   narrow, so only the full-width play column needs to clear it). No background of its own —
+   .groundBackdrop shows through. */
 .gamearea {
   position: fixed;
   left: 0;
@@ -331,13 +333,41 @@
   flex-direction: row;
 }
 
-/* The board's left column: the mission's objective card (G.objective) atop its persistent hazards
-   (G.threats) — a real, in-flow column (not a floating overlay, which used to creep in front of the
+/* The board's left strip: a fixed-width column holding the objective corner (top) above the
+   threat zone. A real, in-flow column (not a floating overlay, which used to creep in front of the
    slot grid) so the slot grid reflows beside it instead of underneath it. Reads only GameState,
    never the mission (see Board.tsx's BoardLeftColumn); not rendered at all when neither exists. */
 .boardLeft {
   flex: 0 0 auto;
   width: 150px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* The objective corner: the mission's single win/lose objective card (G.objective), pinned flush
+   in the very top-left corner as its own surface-filled nook — framed like the resource banner (no
+   line border, a soft drop-shadow) so it reads as a floating panel set apart from the threat column
+   below. Always exactly one card (the goal), so it takes its natural height and never scrolls or
+   stacks. Flush to the strip's top/left edges (no outer gap), so it genuinely reads as the board's
+   corner; the rounded bottom-right closes off the nook toward the play area. */
+.objectiveCorner {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  padding: 10px 8px 12px;
+  background: var(--surface);
+  /* Same framing as the resource banner: no line border, a soft drop-shadow instead. */
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  border-bottom-right-radius: 14px;
+}
+
+/* The threat zone: the persistent hazards (G.threats) as a centered stack below the objective
+   corner, scrolling if they pile up. Renders nothing when there are no threats. */
+.threatZone {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -347,8 +377,10 @@
   box-sizing: border-box;
 }
 
-/* The main play column (slot grid + work strip), filling whatever width the left column
-   (objective + threats, if any) doesn't take. */
+/* The main play column (slot grid + work strip), filling whatever width the left strip
+   (objective corner + threat zone, if any) doesn't take. Carries the banner-height top inset
+   (inline `paddingTop`, Board.tsx) so this full-width column clears the sticky centered banner —
+   the left strip beside it deliberately does not, so the objective reaches the top-left corner. */
 .gameContent {
   flex: 1;
   min-width: 0;

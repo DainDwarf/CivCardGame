@@ -127,13 +127,14 @@ function CultureBar({ culture, projected }: { culture: number; projected: number
   );
 }
 
-/** The board's left column: the mission's **objective** card (`G.objective`, the goal — pinned at
- *  top) above its persistent **hazards** (`G.threats`), each rendered as a real `CardFace` — click
- *  to zoom, same as any other card. Both live on `GameState`, so this reads *only* `GameState`,
- *  never the mission: the objective card's own `dynamicText` supplies its live progress and its
- *  `Objective` banner/violet identity sets it apart from the red threat cards below. A real layout
- *  column, not a floating overlay: the slot grid reflows beside it via the sibling `.gameContent`,
- *  so a tall stack never creeps in front of the tableau. Renders nothing when neither exists. */
+/** The board's left strip: the mission's **objective** card (`G.objective`, the goal) pinned as its
+ *  own distinct plaque flush in the very **top-left corner** — always exactly one card — above the
+ *  separate **threat zone** of persistent **hazards** (`G.threats`, which can be several and scroll).
+ *  Each is a real `CardFace` — click to zoom, same as any other card. Both live on `GameState`, so
+ *  this reads *only* `GameState`, never the mission: the objective card's own `dynamicText` supplies
+ *  its live progress and its `Objective` violet identity (echoed by the corner's violet frame) sets
+ *  it apart from the red threat cards below. A real layout column, not a floating overlay: the slot
+ *  grid reflows beside it via the sibling `.gameContent`. Renders nothing when neither exists. */
 function BoardLeftColumn({
   G,
   onZoom,
@@ -148,28 +149,34 @@ function BoardLeftColumn({
   return (
     <div className={styles.boardLeft}>
       {objective && objectiveCard && (
-        <CardFace
-          card={objectiveCard}
-          overrideText={objectiveText}
-          stickerBadge={objective.stickers}
-          className={styles.staticCard}
-          onClick={() => onZoom(objective.cardId, objectiveText, objective.stickers)}
-        />
-      )}
-      {G.threats.map((t) => {
-        const card = CARDS[t.cardId];
-        const overrideText = card.dynamicText?.(G, t);
-        return (
+        <div className={styles.objectiveCorner}>
           <CardFace
-            key={t.id}
-            card={card}
-            overrideText={overrideText}
-            stickerBadge={t.stickers}
+            card={objectiveCard}
+            overrideText={objectiveText}
+            stickerBadge={objective.stickers}
             className={styles.staticCard}
-            onClick={() => onZoom(t.cardId, overrideText, t.stickers)}
+            onClick={() => onZoom(objective.cardId, objectiveText, objective.stickers)}
           />
-        );
-      })}
+        </div>
+      )}
+      {G.threats.length > 0 && (
+        <div className={styles.threatZone}>
+          {G.threats.map((t) => {
+            const card = CARDS[t.cardId];
+            const overrideText = card.dynamicText?.(G, t);
+            return (
+              <CardFace
+                key={t.id}
+                card={card}
+                overrideText={overrideText}
+                stickerBadge={t.stickers}
+                className={styles.staticCard}
+                onClick={() => onZoom(t.cardId, overrideText, t.stickers)}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1208,13 +1215,17 @@ export function Board({
       <div
         className={styles.gamearea}
         ref={gameareaRef}
-        style={{ top: 0, bottom: insets.bottom, paddingTop: insets.top }}
+        style={{ top: 0, bottom: insets.bottom }}
       >
         <BoardLeftColumn
           G={G}
           onZoom={(cardId, overrideText, stickerBadge) => setZoom({ cardId, overrideText, stickerBadge })}
         />
-        <div className={styles.gameContent}>
+        {/* The banner is centered/narrow, so only the full-width play column needs to clear it —
+            the left strip sits at the far edge where the banner isn't, letting the objective rise
+            into the true top-left corner. So the banner-height top inset lives here, not on the
+            whole gamearea. */}
+        <div className={styles.gameContent} style={{ paddingTop: insets.top }}>
           <div className={styles.slotGrid}>
             {layout.map((key, slotIdx) => {
               const inst = key != null ? buildingById.get(key) : undefined;
