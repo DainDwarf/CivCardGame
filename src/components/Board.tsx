@@ -295,6 +295,7 @@ function BuildingBox({
   idle,
   dragging,
   workerDragSource,
+  workerDropTarget,
   pendingDestroy,
   onPointerDown,
   onStaffPointerDown,
@@ -307,6 +308,9 @@ function BuildingBox({
   dragging?: boolean;
   /** True while this building's own worker is being dragged out of it (fades the toggle). */
   workerDragSource?: boolean;
+  /** True while a dragged worker hovers this building and it can accept it (see the matching
+   *  gate on `disabled` below — the carried worker fills the slot directly, no idle pool needed). */
+  workerDropTarget?: boolean;
   pendingDestroy?: boolean;
   onPointerDown?: (e: React.PointerEvent) => void;
   onStaffPointerDown?: (e: React.PointerEvent, inst: BuildingInstance) => void;
@@ -344,8 +348,13 @@ function BuildingBox({
           onPointerDown={(e) => { e.stopPropagation(); onStaffPointerDown?.(e, inst); }}
           // Only disable when there's nothing to do: no worker to reclaim AND not enough idle to
           // staff. Gating on `inst.workers === 0` (not `!staffed`) keeps a partially-staffed
-          // building interactive so its worker can always be pulled back off.
-          disabled={gameover || (inst.workers === 0 && idle < req)}
+          // building interactive so its worker can always be pulled back off. `workerDropTarget`
+          // overrides the idle gate while a worker is actively being dragged onto this box — a
+          // native `disabled` button renders an OS "not-allowed" cursor on hover regardless of any
+          // in-flight custom drag, which would otherwise make a perfectly valid drop target (the
+          // carried worker fills it directly via `transferWorker`, no idle pool involved) look
+          // unusable mid-drag.
+          disabled={gameover || (inst.workers === 0 && idle < req && !workerDropTarget)}
           aria-pressed={staffed}
           aria-label={staffed ? `unstaff ${bld.name}` : `staff ${bld.name}`}
         >
@@ -419,7 +428,9 @@ function WorkBox({
             workerDragSource ? ` ${styles.staffDragSource}` : ''
           }`}
           onPointerDown={(e) => { e.stopPropagation(); onStaffPointerDown?.(e, inst); }}
-          disabled={gameover || (inst.workers === 0 && idle < req)}
+          // See BuildingBox's matching gate: `dropTarget` overrides the idle gate mid-drag so a
+          // valid transfer target doesn't render an OS "not-allowed" cursor while a worker hovers it.
+          disabled={gameover || (inst.workers === 0 && idle < req && !dropTarget)}
           aria-pressed={staffed}
           aria-label={staffed ? `unstaff ${card.name}` : `staff ${card.name}`}
         >
@@ -1265,6 +1276,7 @@ export function Board({
                       gameover={!!gameover}
                       idle={idle}
                       workerDragSource={isWorkerDragSource}
+                      workerDropTarget={isWorkerDropTarget}
                       pendingDestroy={!!pendingDestroy}
                       onPointerDown={(e) => onBoxPointerDown(e, inst, slotIdx)}
                       onStaffPointerDown={onStaffPointerDown}
