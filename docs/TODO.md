@@ -92,8 +92,35 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   onto the run's starting resource profile (like a mission's `setup` modifiers) — no per-instance identity
   question, so entirely independent of Step 7's collection rework. Whether several stack on one board is a
   deferred balance detail (DESIGN.md open question). `[size: M]` `[phase: 3]`
-- **Step 9 — Peripheral** — `Stats` rework once rewards/trends exist.
-  Independent. `[phase: 3]`
+- **Step 9 — Meta UI rework** — a multi-part pass over the meta screens now that the
+  economy (Steps 1–8) is in place; cut into substeps. Only ordering constraint is **9.1 → 9.2**
+  (9.2 reworks the detail view 9.1 fuses into); 9.3/9.4/9.5 are independent of each other and of
+  9.1/9.2. `[phase: 3]`
+  - **Step 9.1 — Fuse Shop into Collection** — `Shop.tsx` and `Collection.tsx` are largely
+    redundant today: both list the same owned cards grouped the same way. Instead of a
+    separate nav tab, clicking a card in Collection should open a detail view already able
+    to do everything Shop does for that cardId — buy the next copy tier, attach a sticker
+    to a chosen instance — rather than bouncing to a different screen. Same idea applies to
+    boards once Step 8's board stickers land (a future board menu should let you buy/attach
+    a board's modifiers in place, not a separate board-shop screen). `[?]` `[phase: 3]`
+  - **Step 9.2 — Collection UI rework + card upgrades** — the collection grid keeps
+    grouping by cardId regardless of stickers applied (a stickered instance still needs its
+    own addressable identity in the grid, per Step 7's per-instance model). Clicking a card
+    group opens a detailed view for that card — real `CardFace`s, not text — where you can
+    buy the next copy tier and buy/apply stickers. Available stickers for that card sit in a
+    tray on the right; drag-and-drop a sticker from the tray onto a card face buys and
+    applies it in one gesture (replacing Step 7.5's separate attach-mode panel). Depends on
+    9.1 landing first (this *is* the fused detail view). `[size: M]` `[?]` `[phase: 3]`
+  - **Step 9.3 — Board UI rework** — TBD; the board-select/launch UI equivalent once Step 8's
+    board stickers exist. `[?]` `[blocked]` `[phase: 3]`
+  - **Step 9.4 — Mission lore and select rework** — includes the now-folded-in "Barbarian
+    Tide's lore should show the Barbarian card" ticket: `MissionDetailPanel` only shows the
+    mission's *reward* card face today; its lore column should also preview the mission's
+    own threat/event card (Barbarian Tide's Barbarian, Long Winter/Long Decline's threats),
+    since that's the card the mission is actually about. `[size: S]` `[?]` `[phase: 3]`
+  - **Step 9.5 — Stats UI rework** — `Stats.tsx` is currently a plain list of run-result rows
+    (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show
+    (rewards, trends across runs). `[?]` `[phase: 3]`
 
 ## Phase 4 — planned steps (content & balance)
 
@@ -112,16 +139,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Meta loop (`src/meta/`)
 
 - **End-of-Phase-3 cleanup: simplify save parsing, not remove it** — `meta/store.ts`'s `SCHEMA_VERSION`/`exportSave`/`importSave` plumbing stays (still the real save/load-file mechanism); what should go is `parsePlayerStore`'s per-field *leniency* (the decks-missing fallback, the field-by-field shape checks written to tolerate a store that predates some Phase 3 field). Once Phase 3 ships, assume every save in the world is already Phase-3-shaped — pre-alpha players are told to clear their save regularly — so `parsePlayerStore` can go back to a plain "does this parse as a `PlayerStore`" check instead of carrying per-field pre-Phase-3 fallbacks. `[phase: 3]`
-- **Fuse Shop into Collection (and the future board menu)** — `Shop.tsx` and `Collection.tsx` are largely
-  redundant today: both list the same owned cards grouped the same way. Instead of a separate nav tab,
-  clicking a card in Collection should open its per-instance panel already able to do everything Shop
-  does for that cardId — buy the next copy tier, attach a sticker to a chosen instance — rather than
-  bouncing to a different screen. Same idea applies to boards once **Step 8**'s board stickers land (a
-  future board menu should let you buy/attach a board's modifiers in place, not a separate board-shop
-  screen). Also add a visual hint on a card's Collection tile/group when it has an available upgrade
-  (a tier buy or an unstickered instance) so the player doesn't have to open every card to find out.
-  `[?]` `[phase: 3]`
-- **Stats screen UI rework** — `Stats.tsx` is currently a plain list of run-result rows (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show (rewards, trends across runs) → **Step 9** above. `[?]` `[phase: 3]`
+- **Visual hint for available card upgrades** — a card's Collection tile/group should hint when it has
+  an available upgrade (a tier buy or an unstickered instance) so the player doesn't have to open every
+  card to find out. Folds into **Step 9.2**'s detail-view rework. `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
 
@@ -140,7 +160,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **Stable card ordering across views** — cards currently "move around" when adding/removing in the deck editor (and potentially other card grids); pick a sensible, stable sort order (by kind? cost? catalogue order?) and apply it consistently everywhere cards are listed — collection, deck editor picker/banner, pile viewers. `[size: S] [?] ` `[phase: 3]`
-- **Barbarian Tide's lore should show the Barbarian card** — `MissionDetailPanel` (Step 5.3) only shows the mission's *reward* card face; Barbarian Tide's lore column should also preview the Barbarian event card itself, since that's the card the mission is actually about. Also applies to threat cards in Long Winter and Long Decline `[size: S]` `[?]` `[phase: 3]`
 - **Bug: worker-drag start looks disabled when no idle population is free** — dragging a worker off a building/Work box onto another building's staffing area, when there's no idle population available to complete the move, shows the OS "unavailable" cursor because the staff-toggle `<button>` is `disabled`. That reads as "you can't drag this" rather than "there's nowhere for it to go yet," which will confuse the player. `[size: S]` `[?]` `[phase: 3]`
 
 ## Game design & balance
