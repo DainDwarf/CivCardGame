@@ -1,4 +1,4 @@
-import { isOperating } from './population';
+import { findStaffable, isOperating } from './population';
 import { runEventHandler, resolveEndTurn } from './effects';
 import { evaluateObjective } from './objective';
 import { CARDS } from '../content/cards';
@@ -63,8 +63,9 @@ function valueChanged(G: GameState, before: ValueSnapshot): boolean {
 
 /** The subject instance a discrete event names (`draw`/`discard`), reconstructed bare (`{id, cardId}`)
  *  like `resolveInteraction` does — the card may have moved zones since, so we don't chase its live
- *  copy or its counters. `undefined` for a value (`resourceChange`) or broadcast (`endTurn`) event,
- *  which name no subject. */
+ *  copy or its counters (see the review's #2 finding: a bare subject's stickers/counters are still
+ *  lost). `undefined` for a value (`resourceChange`) or broadcast (`endTurn`) event, which name no
+ *  subject. */
 function subjectOf(event: GameEvent): CardInstance | undefined {
   if (event.type === 'resourceChange' || event.type === 'endTurn') return undefined;
   return { id: event.instanceId, cardId: event.cardId };
@@ -84,6 +85,15 @@ function subjectOf(event: GameEvent): CardInstance | undefined {
  * must not open a `pendingInteraction` (the bus can fire at upkeep with no player) and should `filter`,
  * never `splice`, to self-remove — the zone loops here iterate a snapshot (`[...G.tableau]`), so a
  * splice wouldn't corrupt *this* dispatch, but `filter` keeps the array-identity discipline uniform.
+ *
+ * A `building`/`work` subject is a *staffable* — its handler carries the same "while staffed"
+ * contract as the observer walk applies to it, so the subject path must apply the identical
+ * `isOperating` gate rather than firing unconditionally (e.g. Scriptorium drawn into hand is not
+ * an operating copy and must not pay out on its own draw). That only makes sense once the subject
+ * is resolved to its *live* zone instance (a bare `{id, cardId}` has no `workers` to gate on), so a
+ * building/work subject is looked up via `findStaffable` instead of dispatched bare; a subject of any
+ * other kind (action/event/threat/objective — never staffable) keeps firing unconditionally, since it
+ * never had a staffing contract to begin with.
  */
 export function dispatchEvent(G: GameState, event: GameEvent): void {
   const seen = new Set<number>();
@@ -96,7 +106,15 @@ export function dispatchEvent(G: GameState, event: GameEvent): void {
   };
 
   const subject = subjectOf(event);
-  if (subject) run(subject);
+  if (subject) {
+    const kind = CARDS[subject.cardId]?.kind;
+    if (kind === 'building' || kind === 'work') {
+      const live = findStaffable(G, subject.id);
+      if (live && isOperating(live)) run(live);
+    } else {
+      run(subject);
+    }
+  }
   // Snapshot the observer zones first: a handler may add/remove from them, but this event's
   // subscriber set is fixed at dispatch time.
   for (const b of [...G.tableau]) if (isOperating(b)) run(b);

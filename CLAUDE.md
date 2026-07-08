@@ -126,7 +126,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     then drains `G.events` to `dispatchEvent`, cascade-capped by `MAX_EVENT_CASCADE`). `dispatchEvent`
     runs `on[type]` on the event's *subject* (self-triggered) plus every operating tableau building,
     operating Work card, and threat (observer, reusing production's `isOperating` gate), in fixed
-    order for determinism. The **broadcast `endTurn`** event is the exception: it names no subject and
+    order for determinism. A `building`/`work` subject is itself staffable, so it carries the same
+    "while staffed" contract as the observer walk and is resolved to its live zone instance and gated
+    by `isOperating` too (a card only just drawn into hand is not an operating copy and must not
+    self-trigger); a subject of any other kind (never staffable) fires unconditionally. The
+    **broadcast `endTurn`** event is the exception: it names no subject and
     every operating in-play subscriber runs `resolveEndTurn` (its `on.endTurn`, else the default
     production/threat-drain) — it's *what drives per-round production and threat drains*, dispatched
     directly at the upkeep boundary by `applyUpkeep` (not queued), so it runs at the exact slot

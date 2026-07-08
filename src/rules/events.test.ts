@@ -150,6 +150,21 @@ describe('dispatchEvent — subject scope (self-triggered) + reason', () => {
     dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'scriptorium', source: 'effect' });
     expect(G.resources.money).toBe(1);
   });
+
+  it('a building/work subject not in an operating zone slot does not self-trigger (staffing gate)', () => {
+    // A freshly-drawn Scriptorium sits in hand, not the tableau — it is not an operating copy and
+    // must not pay out on its own draw (the bug: it used to fire unconditionally as the subject).
+    const G = blankState('enlightenment');
+    dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'scriptorium', source: 'effect' });
+    expect(G.resources.money).toBe(0);
+  });
+
+  it('a building/work subject in the tableau but understaffed does not self-trigger', () => {
+    const G = withScriptorium();
+    G.tableau[0].workers = 0; // Scriptorium needs 1
+    dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'scriptorium', source: 'effect' });
+    expect(G.resources.money).toBe(0);
+  });
 });
 
 describe('dispatchEvent — endTurn broadcast (production + threat drains)', () => {
