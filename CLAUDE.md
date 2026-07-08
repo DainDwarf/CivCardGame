@@ -60,9 +60,13 @@ shop, mission selection — the *only* place decks are edited). See
     **snapshotted into `RunConfig.boardStickers` at launch** (never re-looked-up in the core
     `setup.ts`), so buying one mid-campaign can't retroactively change an in-progress/restarted
     run. Provisional cap of 2 per board (balance is Phase 4). Board stickers have their own **Board**
-    nav tab (`meta/BoardMenu.tsx`), where each board renders as a `BoardMini` (Step 9.3.2's mini-board)
-    with interim, still button-based buys beneath it (Step 9.3.3 replaces them with a drag-drop sticker
-    tray). Current board stickers: Fertile Land, Garrison, Frontier.
+    nav tab (`meta/BoardMenu.tsx`): each board renders as a `BoardMini` (Step 9.3.2's mini-board) in a
+    grid beside a right-side **tray** of draggable sticker chips — dragging a chip onto a board
+    buys+attaches it in one gesture (the board counterpart to the card sticker tray), a hand-rolled
+    pointer-drag like `DeckEditor.tsx` (no DnD library). During a drag only the *valid* target boards
+    for that chip highlight (`applies · under the cap · affordable`, the single `isValidTarget`
+    predicate gating both the highlight and the drop); an invalid/missed drop no-ops.
+    Current board stickers: Fertile Land, Garrison, Frontier.
 
 ## Commands
 
@@ -221,10 +225,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     tile opens `CardInstancePanel.tsx`, a per-owned-instance drill-down.
   - `Shop.tsx` — the copy-tier + sticker shop; lists only cards with a tier or sticker slot
     left, each buy button calling back into `App.tsx` (`onBuyTier`/`onAttachSticker`).
-  - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: lists every board as a `BoardMini`
-    (Step 9.3.2's mini-board) with one-click board-sticker buys (`onBuyBoardSticker`) beneath it.
-    The buy `<button>`s are still the interim surface (Step 9.3.3 replaces them with a drag-drop
-    sticker tray); `describeBoard`/`RESOURCE_ICON`/`BOARD_IDS` live in the shared `meta/boardDisplay.ts`.
+  - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: a grid of every board as a `BoardMini`
+    (Step 9.3.2's mini-board) beside a right-side tray of draggable sticker chips; dragging a chip onto
+    a board calls `onBuyBoardSticker` to buy+attach in one gesture (only *valid* targets highlight
+    mid-drag). `describeBoard`/`RESOURCE_ICON`/`BOARD_IDS` live in the shared `meta/boardDisplay.ts`.
   - `Decks.tsx` — every deck as a tile (a hover-revealed card fan grouped ×N via
     `groupCounts`); the tile + its list-view overlay are the shared `DeckTile`/
     `DeckListOverlay` (`components/DeckDisplay.tsx`, also used by the launch popup), with

@@ -63,8 +63,8 @@ export function MetaMenu({
   /** Board stickers attached per board — forwarded to `BoardMenu` (buy/list) and `CampaignMap` (the
    *  launch popup's board picker shows the *effective* profile). */
   boardStickers: BoardStickers;
-  /** Whole-UI scale (settings) — forwarded to `DeckEditor` (drag-clone coordinate math) and
-   *  `CampaignMap` (pointer-drag pan). */
+  /** Whole-UI scale (settings) — forwarded to `DeckEditor` and `BoardMenu` (drag-clone coordinate
+   *  math) and `CampaignMap` (pointer-drag pan). */
   uiScale: number;
   onLaunch: (config: RunConfig) => void;
   onSaveDeck: (deck: DeckDef) => void;
@@ -137,7 +137,12 @@ export function MetaMenu({
           />
         )}
         {screen === 'board' && (
-          <BoardMenu boardStickers={boardStickers} influence={influence} onBuyBoardSticker={onBuyBoardSticker} />
+          <BoardMenu
+            boardStickers={boardStickers}
+            influence={influence}
+            uiScale={uiScale}
+            onBuyBoardSticker={onBuyBoardSticker}
+          />
         )}
         {screen === 'decks' && (
           <Decks

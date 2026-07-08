@@ -1,9 +1,10 @@
-/* The Board screen: a grid of board tiles with one-click board-sticker buys. Mirrors the
-   Shop's screen chrome (title/subtitle/balance) and the interim Boards section it was lifted
-   from. All color via theme tokens. */
+/* The Board screen: a two-column layout — a grid of BoardMini tiles (left) and a tray of
+   draggable board-sticker chips (right). Dragging a chip onto a board buys+attaches it. Mirrors
+   the Shop's screen chrome (title/subtitle/balance). All color via theme tokens; only the allowed
+   white/black scrims are literals. */
 .boardMenu {
   font-family: system-ui, -apple-system, sans-serif;
-  max-width: 1000px;
+  max-width: 1100px;
   color: var(--text);
 }
 
@@ -16,6 +17,7 @@
 .subtitle {
   color: var(--text-secondary);
   margin: 0 0 0.8rem;
+  max-width: 640px;
 }
 
 .balance {
@@ -31,13 +33,43 @@
   font-size: 0.95rem;
 }
 
+/* Boards left, sticker tray right. The tray keeps a fixed width; the board grid takes the rest.
+   Wraps the tray under the boards on a narrow viewport rather than forcing horizontal body scroll
+   (UI-scaling invariant #1). */
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .boardGrid {
+  flex: 1 1 500px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 0.8rem;
 }
 
 .boardTile {
+  padding: 0.4rem;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  /* Smooth the highlight in/out as boards become valid targets during a drag. */
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* A valid drop target for the chip being dragged — an accent outline + soft glow so the player
+   sees exactly which boards will accept it. */
+.boardTileValid {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 30%);
+}
+
+/* The sticker tray — a bordered panel of draggable chips. Bounded height with its own scroll so a
+   long list never grows the body (UI-scaling invariant #1). */
+.tray {
+  flex: 0 0 200px;
+  align-self: stretch;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -45,38 +77,86 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
+  max-height: calc(80vh / var(--ui-scale, 1));
+  overflow-y: auto;
 }
 
-.boardBuys {
+.trayTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.trayChips {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: auto;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.buyBtn {
+/* A draggable sticker chip: icon · name · cost. Cursor grab affordance; picked up by pointerdown. */
+.chip {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  padding: 0.4rem 0.3rem;
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--text-on-accent);
-  background: var(--accent);
-  border: none;
+  gap: 0.4rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  cursor: pointer;
+  background: var(--surface-card);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
 }
 
-.buyBtn:hover:not(:disabled) {
-  filter: brightness(1.08);
+.chip:hover {
+  border-color: var(--accent);
 }
 
-.buyBtn:disabled {
+/* Not affordable for any board — inert, no drag starts (pointerdown handler omitted in JSX). */
+.chipDisabled {
   opacity: 0.4;
   cursor: default;
   box-shadow: none;
+}
+
+.chipDisabled:hover {
+  border-color: var(--border);
+}
+
+.chipIcon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.chipName {
+  flex: 1 1 auto;
+}
+
+.chipCost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  color: var(--text-secondary);
+  font-weight: 800;
+}
+
+/* The overlay the dragged chip clone lives in — fixed and pointer-transparent so it never eats the
+   pointerup that ends the drag. Matches DeckEditor's `.dragLayer`. */
+.dragLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* The chip following the cursor mid-drag — positioned (inline left/top/width/height, px-converted
+   in the component) and tilted, matching the run loop's / deck editor's drag-clone treatment. */
+.dragClone {
+  position: fixed;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.4);
+  transform: rotate(-3deg) scale(1.05);
+  transform-origin: center;
+  cursor: grabbing;
 }

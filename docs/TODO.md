@@ -106,10 +106,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tray on the right; drag-and-drop a sticker from the tray onto a card face buys and
     applies it in one gesture (replacing Step 7.5's separate attach-mode panel). Depends on
     9.1 landing first (this *is* the fused detail view). `[size: M]` `[?]` `[phase: 3]`
-  - **Step 9.3 — Board UI rework** — the board-select/launch UI equivalent now that Step 8's
+  - **Step 9.3 — Board UI rework** ✅ done — the board-select/launch UI equivalent now that Step 8's
     board stickers exist. Replaces Step 8's interim `Shop.tsx` Boards section with an in-place board
     menu (buy/attach a board's modifiers where you view it, mirroring 9.1's fused card detail view).
-    Cut into three substeps. `[?]` `[phase: 3]`
+    Cut into three substeps, all shipped. `[?]` `[phase: 3]`
     1. **Move boards to their own tab** ✅ done — a new **Board** nav tab (`meta/BoardMenu.tsx`) that
        lifts the interim, still button-based Boards buy surface verbatim out of `Shop.tsx`; no game
        logic or buy behaviour changed. Groundwork for the visual rework in 9.3.2/9.3.3.
@@ -119,8 +119,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
        `BoardMenu.tsx` now renders each board as a `BoardMini` in place of the `describeBoard` text
        profile; the buy `<button>`s still sit beneath it (replaced in 9.3.3). Presentational only (no
        `GameContext`/logic), so mission-select can reuse it later.
-    3. **Drag-drop sticker tray** — available board stickers sit in a tray; drag one onto a board to
-       buy+apply in one gesture, mirroring 9.2's card sticker tray.
+    3. **Drag-drop sticker tray** ✅ done — available board stickers sit in a right-side tray of
+       draggable chips; drag one onto a board to buy+apply in one gesture, mirroring 9.2's card
+       sticker tray (a hand-rolled pointer-drag like `DeckEditor.tsx`, no DnD library). Only *valid*
+       target boards highlight mid-drag (`isValidTarget` = applies · under the cap · affordable —
+       the single predicate gating both the highlight and the drop); an invalid/missed drop no-ops.
+       Replaced the interim per-board buy `<button>`s.
   - **Step 9.4 — Mission lore and select rework** — includes the now-folded-in "Barbarian
     Tide's lore should show the Barbarian card" ticket: `MissionDetailPanel` only shows the
     mission's *reward* card face today; its lore column should also preview the mission's
