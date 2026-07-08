@@ -127,12 +127,16 @@ function CultureBar({ culture, projected }: { culture: number; projected: number
   );
 }
 
-/** Fixed widget in the top-left corner: shows mission name, live progress, and a tooltip. */
+/** Fixed widget in the top-left corner: shows mission name, live progress, and a tooltip.
+ *  INTERIM (Step 1): still reads the progress line off the mission's now-seeded objective card
+ *  (`G.objective`'s `dynamicText`), which replaced the removed `mission.progress`. Step 2 replaces
+ *  this whole widget with the objective card rendered as a `CardFace` above the threat zone. */
 function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
+  const progress = G.objective ? CARDS[G.objective.cardId].dynamicText?.(G, G.objective) ?? '' : '';
   return (
     <div className={styles.missionWidget} tabIndex={0}>
       <div className={styles.missionName}>{mission.name}</div>
-      <div className={styles.missionProgress}>🎯 {mission.progress(G)}</div>
+      <div className={styles.missionProgress}>🎯 {progress}</div>
       <div className={`${styles.tooltip} ${styles.tooltipLeft} ${styles.tooltipWide}`} role="tooltip">
         <strong>{mission.name}</strong>
         <span className={styles.ttBody}>{mission.description}</span>

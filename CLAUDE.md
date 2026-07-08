@@ -99,7 +99,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     carries its own per-copy state in its own `counters` map (via `getCounter`/`bumpCounter`)
     — cards own their own numbers, so playing one copy never touches another's. Also the
     tableau (`PlacedCard` = `CardInstance` + `workers`), `workZone` (played `work` awaiting
-    staffing), `threats` (persistent hazards, each a `CardInstance`), and
+    staffing), `threats` (persistent hazards, each a `CardInstance`), `objective` (the mission's
+    win/lose card, seeded once — see `objective.ts`), and
     `pendingInteraction` (a card effect suspended awaiting a player choice; while set,
     `endTurn` no-ops and undo is blocked). `instancesFromCardIds` is the shared mint path;
     `blankState()` builds an empty one. Instance ids are unique across *all* zones.
@@ -119,6 +120,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup;
     `tickThreats` just calls `resolveCard` per threat, so the threat card computes its own
     behaviour — the engine never reads or scales its data.
+  - `objective.ts` — the win/lose counterpart to `threats.ts`: `seedObjective` seeds the mission's
+    objective card into `G.objective` at setup; `objectiveMet`/`objectiveFailed` read that card's
+    own pure `objective.met`/`.failed` hook, so `engine.ts`'s `checkEndIf` polls the *card*, never a
+    mission predicate. Read-only (never mutates `G`), so no resolver spine / event bus is involved.
   - `production.ts` — `resolveProduction` per *operating* (staffed) tableau/workZone
     instance; the engine asks each instance to produce, never reads its `produces` itself.
   - `upkeep.ts` — `applyUpkeep` (production → threats tick → mission tick → food eaten),
@@ -147,11 +152,15 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   logic that rides on it, not pure data tables. **A building card *is* the building** —
   there's no separate building catalogue. One file per catalogue:
   - `cards.ts` — `CARDS`, the single card catalogue (`CardKind` =
-    building/action/work/event/threat; see DESIGN.md → *Card kinds* for what each kind does
-    and how it leaves play). A `building` carries its own stats
+    building/action/work/event/threat/objective; see DESIGN.md → *Card kinds* for what each kind
+    does and how it leaves play). A `building` carries its own stats
     (`produces`/`cultureOutput`/`workers`/`tags`) right on the `CardDef`. Whether a card
     files to `discard` vs `removed` is a property of the *effect* that files it, never the
-    kind (e.g. Destroy's `effect.destroy`, an event's `effect.remove`).
+    kind (e.g. Destroy's `effect.destroy`, an event's `effect.remove`). An `objective` card owns
+    its mission's win/lose logic via a pure-read `objective` hook (`{ met, failed? }`), the way a
+    `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
+    for "a card the player builds decks with" (excludes event/threat/objective), used by the
+    deck-add reject and the Collection/DeckEditor pickers.
   - `decks.ts` — `DeckDef` (a player deck; `cards` is meta instance ids) plus `DeckSeed`/
     `DEFAULT_DECKS` (content authored in plain cardIds, resolved by `buildSeedDecks`). A
     fresh player starts with one editable deck; there's no read-only "built-in" tier.
@@ -163,8 +172,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
   - `boards.ts` — `BOARDS` (government boards; each sets all 8 starting resources: the 5
     core plus population/territory/culture).
-  - `missions.ts` — `MISSIONS`; each supplies `objective`/`failure` as pure predicates over
-    `GameState`, plus optional `setup`/`onUpkeep`/`kind`/`prereqs`/`map`/`reward`/`lore`.
+  - `missions.ts` — `MISSIONS`; each names an `objectiveCardId` (its win/lose condition, made into
+    an `objective` card that owns the predicates — `run/setup.ts` seeds it into `GameState.objective`
+    and `run/engine.ts`'s `checkEndIf` polls it via `rules/objective.ts`), plus optional
+    `setup`/`onUpkeep`/`kind`/`prereqs`/`map`/`reward`/`lore`.
 
 **Shell — the run loop (`src/run/`) + React:**
 

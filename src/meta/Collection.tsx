@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CARDS } from '../content/cards';
+import { CARDS, isDeckable } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { CardFace } from '../components/CardFace';
 import { copiesOwned, isOwned, type OwnedCards } from '../rules/collection';
@@ -35,10 +35,8 @@ export function Collection({
 }) {
   const [detail, setDetail] = useState<string | null>(null);
 
-  // Event and threat cards are mission-injected and never part of the player's collection.
-  const cards = Object.values(CARDS).filter(
-    (c) => c.kind !== 'event' && c.kind !== 'threat' && isOwned(collection, c.id),
-  );
+  // Mission-injected cards (event/threat/objective) are never part of the player's collection.
+  const cards = Object.values(CARDS).filter((c) => isDeckable(c) && isOwned(collection, c.id));
   const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CARDS, type CardDef } from '../content/cards';
+import { CARDS, isDeckable, type CardDef } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { addCard, removeCard, addInstance, removeInstance, groupCounts } from '../rules/deckBuilder';
 import {
@@ -77,11 +77,9 @@ export function DeckEditor({
   const dragRef = useRef<DragState | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
 
-  // Event and threat cards are mission-injected and can never be added to a deck; the picker
-  // only offers cards the player has actually unlocked.
-  const cards = Object.values(CARDS).filter(
-    (c) => c.kind !== 'event' && c.kind !== 'threat' && isOwned(collection, c.id),
-  );
+  // Mission-injected cards (event/threat/objective) can never be added to a deck; the picker
+  // only offers deckable cards the player has actually unlocked.
+  const cards = Object.values(CARDS).filter((c) => isDeckable(c) && isOwned(collection, c.id));
   const buildings = cards.filter((c) => c.kind === 'building');
   const actions = cards.filter((c) => c.kind === 'action');
   const works = cards.filter((c) => c.kind === 'work');

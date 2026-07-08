@@ -70,6 +70,7 @@ export function nextInstanceId(G: GameState): number {
   for (const c of G.removed) max = Math.max(max, c.id);
   for (const c of G.pendingInteraction?.options ?? []) max = Math.max(max, c.id);
   for (const t of G.threats) max = Math.max(max, t.id);
+  if (G.objective) max = Math.max(max, G.objective.id);
   return max + 1;
 }
 

@@ -73,6 +73,11 @@ describe('addCard', () => {
     expect(addCard([], 'harsh_winter', owns)).toBe('invalid');
   });
 
+  it('rejects an objective card even if somehow "owned"', () => {
+    const owns = collectionFromCounts({ enlightenment_goal: 8 });
+    expect(addCard([], 'enlightenment_goal', owns)).toBe('invalid');
+  });
+
   it('skips a stickered instance — never picked by the fungible LIFO order', () => {
     const owns2 = collectionFromCounts({ farm: 2 });
     const [a, b] = owns2.instances.map((i) => i.id);

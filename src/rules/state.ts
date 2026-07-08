@@ -89,6 +89,12 @@ export interface GameState {
   /** Persistent board hazards, ticking every upkeep — see `rules/threats.ts`. Mission-seeded only;
    *  empty on every run that doesn't use one. */
   threats: ThreatInstance[];
+  /** The mission's win/lose condition as a card — seeded once at setup from the mission's
+   *  `objectiveCardId` (`rules/objective.ts`'s `seedObjective`). Its card owns the win/lose *logic*
+   *  (the `objective` hook, polled by `run/engine.ts`'s `checkEndIf`) and its progress readout;
+   *  unlike a threat it never mutates `G`. Absent only on a bare `blankState` (tests/simulator) or a
+   *  mission without one. */
+  objective?: CardInstance;
   /** Territory available — the tableau may hold at most this many buildings (one slot each);
    *  building cards become unplayable when full. Expanded by territory cards (Conquest, Develop). */
   territory: number;

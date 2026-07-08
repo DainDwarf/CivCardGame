@@ -4,7 +4,7 @@ import { shuffleFromState } from '../rules/rng';
 import { gainResources, type CardEffect, type Resolver } from '../rules/effects';
 import { effectiveGain } from '../rules/stickers';
 
-export type CardKind = 'building' | 'action' | 'work' | 'event' | 'threat';
+export type CardKind = 'building' | 'action' | 'work' | 'event' | 'threat' | 'objective';
 
 export interface CardDef {
   id: string;
@@ -33,6 +33,13 @@ export interface CardDef {
    *   upkeep via `tickThreats`→`resolveCard` and stays on the board indefinitely — the card's own
    *   `effect`/`resolve` computes and applies its drain (and, for one that escalates, bumps its own
    *   counter), the same resolver spine every other card resolves through.
+   * - `objective`: a mission's win/lose condition made into a card — the positive counterpart to
+   *   `threat`. Seeded once at setup into `GameState.objective` (`rules/objective.ts`'s
+   *   `seedObjective`) from the mission's `objectiveCardId`, never in hand/deck/collection/deck
+   *   editor. Unlike a threat it has *no* per-upkeep effect and never mutates `G` — it owns its
+   *   mission's win/lose *logic* instead, as the pure-read `objective` hook below (`rules/objective.ts`
+   *   polls it from `run/engine.ts`'s `checkEndIf` at move granularity), plus a `dynamicText` for its
+   *   live progress line. A real `CardInstance`, so a future objective can carry its own `counters`.
    */
   kind: CardKind;
   /** Resources required to play. Absent keys are free (e.g. {} = no cost). */
@@ -66,6 +73,20 @@ export interface CardDef {
    * see `rules/effects.ts`'s `resolveProduction`.
    */
   produce?: Resolver;
+  /**
+   * `objective` cards only: the mission's win/lose condition, owned by the card the way every other
+   * card owns its logic. Two **pure-read predicates** over the live run state — `met` (the win
+   * condition) and optional `failed` (a mission-specific defeat, e.g. a deadline; core-resource
+   * collapse stays universal in `run/engine.ts`). Read-only by contract: unlike `resolve`/`produce`
+   * they never mutate `G`, so they need no resolver spine and no event bus — `run/engine.ts`'s
+   * `checkEndIf` (via `rules/objective.ts`) polls them after every move/upkeep step, so a threshold
+   * like "30 science" fires the instant it's crossed. `self` is the seeded objective instance, so a
+   * future objective can read its own `counters`. Pair with `dynamicText` for the progress readout.
+   */
+  objective?: {
+    met: (G: GameState, self: CardInstance) => boolean;
+    failed?: (G: GameState, self: CardInstance) => boolean;
+  };
   /** Hand-authored effect text for the card face, used when the declarative `effect` bag can't
    *  describe the card (a `resolve`-driven card). Takes precedence over the auto-generated
    *  `describeCard` text. */
@@ -91,6 +112,20 @@ export interface CardDef {
   /** `building` cards: classification tags, e.g. 'building' | 'wonder'. */
   tags?: string[];
 }
+
+/** Whether a card is one the player builds decks with. `event` (mission-injected into the deck),
+ *  `threat` (seeded onto the board) and `objective` (the mission's win/lose card) are mission-only —
+ *  never in a deck/collection/deck editor. The single source for every such filter
+ *  (`rules/deckBuilder.ts`'s add-reject, the Collection/DeckEditor pickers), so adding a future
+ *  mission-only kind is one edit here, not a scattered `!== 'event' && !== 'threat' && …` list. */
+export function isDeckable(card: CardDef): boolean {
+  return card.kind === 'building' || card.kind === 'action' || card.kind === 'work';
+}
+
+/** Number of Barbarian waves in the Barbarian Tide mission. Lives here (not in `content/missions.ts`)
+ *  so the single source is shared by the `barbarian_tide` mission (how many events it seeds) and the
+ *  `barbarian_tide_goal` objective card (how many must be beaten to win / the "N/4" progress line). */
+export const BARBARIANS = 4;
 
 /**
  * The card catalogue. A `building` card *is* the building it becomes in the tableau (its stats
@@ -227,5 +262,43 @@ export const CARDS: Record<string, CardDef> = {
       subtractResources(G.resources, scaleResources({ production: 1 }, getCounter(self, 'level') + 1));
       bumpCounter(self, 'level');
     },
+  },
+
+  // --- Objective cards: a mission's win/lose condition made into a card (see the `objective` kind
+  //     doc above). `rules/objective.ts`'s `seedObjective` seeds one into `GameState.objective` from
+  //     the mission's `objectiveCardId`; never in hand/deck/collection/deck editor. Each owns its
+  //     mission's win (`objective.met`) and any mission-specific defeat (`objective.failed`) as pure
+  //     reads over `G` — moved off `MissionDef` so objective cards own their logic like every other
+  //     card — plus a live progress line (`dynamicText`). No `effect`/`resolve`: they never mutate G.
+  long_winter_goal: {
+    id: 'long_winter_goal', name: 'The Long Winter', kind: 'objective', cost: {},
+    description: 'Endure 15 rounds of brutal winter without starving.',
+    objective: { met: (G) => G.round > 15 },
+    dynamicText: (G) => `Endured ${Math.min(G.round, 15)}/15`,
+  },
+  enlightenment_goal: {
+    id: 'enlightenment_goal', name: 'The Enlightenment', kind: 'objective', cost: {},
+    description: 'Reach 30 Science before round 12 ends.',
+    objective: {
+      met: (G) => G.resources.science >= 30,
+      failed: (G) => G.round > 12 && G.resources.science < 30,
+    },
+    dynamicText: (G) => `${G.resources.science}/30🔬`,
+  },
+  barbarian_tide_goal: {
+    id: 'barbarian_tide_goal', name: 'Barbarian Tide', kind: 'objective', cost: {},
+    description: `Survive all ${BARBARIANS} Barbarian waves without your Military falling below zero.`,
+    objective: {
+      met: (G) =>
+        G.removed.filter((c) => c.cardId === 'barbarian').length >= BARBARIANS && G.resources.military >= 0,
+    },
+    dynamicText: (G) =>
+      `Beaten ${G.removed.filter((c) => c.cardId === 'barbarian').length}/${BARBARIANS}`,
+  },
+  the_long_decline_goal: {
+    id: 'the_long_decline_goal', name: 'The Long Decline', kind: 'objective', cost: {},
+    description: 'There is no victory — only how many rounds you can outlast the decay.',
+    objective: { met: () => false },
+    dynamicText: (G) => `Round ${G.round}`,
   },
 };

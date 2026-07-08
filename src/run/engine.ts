@@ -1,5 +1,5 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, coreCollapse, discardWorkZone, drawUpTo, resolveHandEvents, type CollapseReason, type GameState } from '../rules';
+import { applyUpkeep, coreCollapse, discardWorkZone, drawUpTo, objectiveFailed, objectiveMet, resolveHandEvents, type CollapseReason, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
 import type { RunConfig, RunResult } from '../contract';
 
@@ -12,12 +12,12 @@ export interface RunState {
 
 function checkEndIf(state: RunState): RunState {
   const { G } = state;
-  const mission = MISSIONS[G.missionId];
-  if (!mission) return state;
-  if (mission.objective(G)) return { ...state, gameover: { outcome: 'victory', missionId: G.missionId } };
+  // Win/lose is owned by the mission's objective *card* (`G.objective`), polled here through
+  // `rules/objective.ts`. Core-resource collapse stays a universal defeat between the two.
+  if (objectiveMet(G)) return { ...state, gameover: { outcome: 'victory', missionId: G.missionId } };
   const collapse = coreCollapse(G.resources);
   if (collapse) return { ...state, gameover: { outcome: 'defeat', reason: collapse, missionId: G.missionId } };
-  if (mission.failure(G)) return { ...state, gameover: { outcome: 'defeat', missionId: G.missionId } };
+  if (objectiveFailed(G)) return { ...state, gameover: { outcome: 'defeat', missionId: G.missionId } };
   return state;
 }
 

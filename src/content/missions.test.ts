@@ -1,22 +1,37 @@
 import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
-import { blankState, coreCollapse, instancesFromCardIds, tickThreats } from '../rules';
+import { CARDS } from './cards';
+import {
+  blankState,
+  coreCollapse,
+  instancesFromCardIds,
+  objectiveFailed,
+  objectiveMet,
+  seedObjective,
+  tickThreats,
+} from '../rules';
+
+// Win/lose now lives on each mission's objective *card* (`GameState.objective`), so these drive it
+// through the same production path `run/engine.ts` uses: `seedObjective` then `objectiveMet`/
+// `objectiveFailed` (which read the card's `objective.met`/`.failed` hook off `G`).
 
 describe('mission: enlightenment', () => {
   const m = MISSIONS.enlightenment;
 
   it('objective is met at 30 science', () => {
     const G = blankState('enlightenment');
+    seedObjective(G, m.objectiveCardId);
     G.resources.science = 30;
-    expect(m.objective(G)).toBe(true);
-    expect(m.failure(G)).toBe(false);
+    expect(objectiveMet(G)).toBe(true);
+    expect(objectiveFailed(G)).toBe(false);
   });
 
   it('fails once round passes 12 short of the goal', () => {
     const G = blankState('enlightenment');
+    seedObjective(G, m.objectiveCardId);
     G.round = 13;
     G.resources.science = 20;
-    expect(m.failure(G)).toBe(true);
+    expect(objectiveFailed(G)).toBe(true);
   });
 });
 
@@ -36,16 +51,18 @@ describe('mission: long_winter', () => {
   it('drains 2 food each upkeep tick via the seeded threat (famine itself is enforced globally, not by the mission)', () => {
     const G = blankState('long_winter');
     m.setup!(G);
+    seedObjective(G, m.objectiveCardId);
     G.resources.food = 5;
     tickThreats(G);
     expect(G.resources.food).toBe(3);
-    expect(m.failure(G)).toBe(false);
+    expect(objectiveFailed(G)).toBe(false);
   });
 
   it('objective is met after surviving 15 rounds', () => {
     const G = blankState('long_winter');
+    seedObjective(G, m.objectiveCardId);
     G.round = 16;
-    expect(m.objective(G)).toBe(true);
+    expect(objectiveMet(G)).toBe(true);
   });
 });
 
@@ -66,19 +83,21 @@ describe('mission: barbarian_tide', () => {
 
   it('objective needs all four barbarians beaten with military still standing', () => {
     const G = blankState('barbarian_tide');
+    seedObjective(G, m.objectiveCardId);
     G.removed = instancesFromCardIds(['barbarian', 'barbarian', 'barbarian']);
     G.resources.military = 5;
-    expect(m.objective(G)).toBe(false); // only three beaten
+    expect(objectiveMet(G)).toBe(false); // only three beaten
     G.removed.push({ id: 4, cardId: 'barbarian' });
-    expect(m.objective(G)).toBe(true); // four beaten, military >= 0
+    expect(objectiveMet(G)).toBe(true); // four beaten, military >= 0
   });
 
   it('beating the fourth barbarian by going military-negative is a defeat, not a win', () => {
     const G = blankState('barbarian_tide');
+    seedObjective(G, m.objectiveCardId);
     G.removed = instancesFromCardIds(['barbarian', 'barbarian', 'barbarian', 'barbarian']);
     G.resources.military = -1;
-    expect(m.objective(G)).toBe(false); // the fatal blow doesn't count as survival
-    expect(m.failure(G)).toBe(false); // the mission owns no failure
+    expect(objectiveMet(G)).toBe(false); // the fatal blow doesn't count as survival
+    expect(objectiveFailed(G)).toBe(false); // the objective owns no failure
     expect(coreCollapse(G.resources)).toBe('revolt'); // defeat comes from the universal core floor
   });
 });
@@ -100,20 +119,33 @@ describe('mission: the_long_decline', () => {
 
   it('never wins on its own — objective and failure are both always false', () => {
     const G = blankState('the_long_decline');
+    seedObjective(G, m.objectiveCardId);
     G.round = 999;
     G.resources.production = 999;
-    expect(m.objective(G)).toBe(false);
-    expect(m.failure(G)).toBe(false);
+    expect(objectiveMet(G)).toBe(false);
+    expect(objectiveFailed(G)).toBe(false);
   });
 
   it('the seeded threat escalates production loss round over round via the shared tick', () => {
     const G = blankState('the_long_decline');
     m.setup!(G);
+    seedObjective(G, m.objectiveCardId);
     G.resources.production = 10;
     tickThreats(G);
     expect(G.resources.production).toBe(9);
     tickThreats(G);
     expect(G.resources.production).toBe(7);
-    expect(m.failure(G)).toBe(false); // the mission owns no failure — core collapse ends it
+    expect(objectiveFailed(G)).toBe(false); // the objective owns no failure — core collapse ends it
+  });
+});
+
+describe('mission objective cards', () => {
+  it('every mission names a real objective card that owns its win logic', () => {
+    for (const m of Object.values(MISSIONS)) {
+      const card = CARDS[m.objectiveCardId];
+      expect(card, `${m.id} → ${m.objectiveCardId}`).toBeDefined();
+      expect(card.kind).toBe('objective');
+      expect(typeof card.objective?.met).toBe('function');
+    }
   });
 });

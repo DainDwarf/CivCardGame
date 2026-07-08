@@ -83,10 +83,10 @@ where the two are merged into one immutable run configuration. 🔧
 
 ### Card kinds ✅ / 🔧 details
 
-There are **five** card kinds — the `CardKind` values in `content/cards.ts`:
-`building`, `action`, `work`, `event`, `threat`. The first four differ by how they
-leave your hand; `threat` is the odd one out — it never enters a hand or pile at all,
-living instead in a persistent board zone (see below). By default a card returns to the
+There are **six** card kinds — the `CardKind` values in `content/cards.ts`:
+`building`, `action`, `work`, `event`, `threat`, `objective`. The first four differ by how they
+leave your hand; `threat` and `objective` are the odd ones out — they never enter a hand or pile
+at all, living instead in persistent board zones (see below). By default a card returns to the
 **discard** pile once it's done being useful (reshuffled into the deck when it runs
 dry) — the **removed** pile is the exception, used only where a specific *effect* says
 so. Discard-vs-removed is never a property of the *kind*; it's decided by the effect
@@ -119,6 +119,12 @@ that files the card:
   directly into the persistent `GameState.threats` zone at setup, where it stays for
   the rest of the run. What it does is up to the card. Never player-owned or
   player-playable, so it's excluded everywhere `event` is. → persistent *pressure*.
+- **Objective (win/lose goal):** the mission's victory/defeat condition made into a card,
+  the positive counterpart to `threat`. A mission names one `objectiveCardId`; it's seeded
+  into the `GameState.objective` zone at setup and owns its mission's win/lose *logic* via a
+  pure-read `objective` hook (`{ met, failed? }`, polled by the engine's `checkEndIf`) plus a
+  live progress readout. Never in a hand/pile/deck and excluded everywhere `event`/`threat`
+  are (`isDeckable`). → the mission's *goal*.
 
 ### Turn structure 🔧
 
@@ -157,21 +163,29 @@ Further expansion axes (`Faith`, …) remain possible.
 
 ## Mission system — objective & failure as data ✅
 
-A mission is the unit of a run. It carries everything that varies between runs,
-and **both** the objective and the failure are predicates over the run state:
+A mission is the unit of a run. It carries everything that varies between runs. Its
+win/lose condition is a **card** (`kind: 'objective'`, see *Card kinds*) — the mission
+just names an `objectiveCardId`, and that card owns the win/lose predicates so it behaves
+like every other card that owns its logic:
 
 ```
 MissionDef
   id, name, description
-  setup:     modifiers to the starting state (resources, deck constraints, era)
-  objective: (state) => { met: boolean; progress: number }   // the WIN
-  failure:   (state) => boolean                               // the LOSE
-  rewards:   granted on victory (currency, card unlocks)
+  setup:           modifiers to the starting state (resources, deck constraints, era)
+  objectiveCardId: the mission's win/lose card, seeded into GameState.objective at setup
+  rewards:         granted on victory (currency, card unlocks)
   tier/difficulty
+
+CardDef (kind: 'objective')
+  objective: { met: (G, self) => boolean; failed?: (G, self) => boolean }  // WIN / mission LOSE
+  dynamicText: (G, self) => string                                          // live progress line
 ```
 
-Objective/failure evaluators are **pure functions in `src/rules/`**, so they are
-unit-testable and reusable by the headless simulator.
+The `objective.met`/`.failed` hooks are **pure read functions** (they never mutate `G`), living
+on the catalogue in `src/content/`, polled by `rules/objective.ts` from the engine's `checkEndIf` —
+so they stay unit-testable and reusable by the headless simulator, and a threshold win is detected
+at move granularity with no event bus. Core-resource collapse (Famine/Revolt/…) stays a *universal*
+failure in the engine, independent of any mission.
 
 ### Illustrative missions 🔧 (show the variety the system buys us)
 

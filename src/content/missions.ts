@@ -1,8 +1,6 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
-
-/** Number of Barbarian event cards seeded into the deck by Barbarian Tide. */
-const BARBARIANS = 4;
+import { BARBARIANS } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -27,12 +25,12 @@ export interface MissionDef {
   setup?: (G: GameState) => void;
   /** Applied every round during upkeep (extra food drain, resource decay, ...). */
   onUpkeep?: (G: GameState) => void;
-  /** Win condition. */
-  objective: (G: GameState) => boolean;
-  /** Mission-specific lose condition (core resource floors are handled universally elsewhere). */
-  failure: (G: GameState) => boolean;
-  /** Short human-readable progress line for the UI. */
-  progress: (G: GameState) => string;
+  /** The mission's win/lose condition, made into a card. Names a real `content/cards.ts` id of kind
+   *  `'objective'` (pinned by a coherence test); `run/setup.ts` seeds it into `GameState.objective`
+   *  and the card owns the win (`objective.met`) / mission-specific defeat (`objective.failed`) logic
+   *  plus its live progress readout — so it's the objective card, not the mission, that holds those
+   *  predicates (they used to live here as `objective`/`failure`/`progress`). */
+  objectiveCardId: string;
   /** One-liner describing the victory condition shown in the mission tooltip. */
   victoryHint: string;
   /** One-liner describing the mission-specific defeat condition; null if famine is the only loss. */
@@ -66,9 +64,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     description: 'Reach 30 Science by the end of round 12.',
     // Test DAG: gated behind The Long Winter.
     prereqs: ['long_winter'],
-    objective: (G) => G.resources.science >= 30,
-    failure: (G) => G.round > 12 && G.resources.science < 30,
-    progress: (G) => `Science ${G.resources.science}/30`,
+    objectiveCardId: 'enlightenment_goal',
     victoryHint: 'Accumulate 30 Science before round 12 ends.',
     failureHint: 'Failing to reach 30 Science by round 12.',
     kind: 'standard',
@@ -93,10 +89,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     setup: (G) => {
       addThreat(G, 'harsh_winter');
     },
-    objective: (G) => G.round > 15,
-    // No mission-specific failure: the universal core resource floor handles defeat here.
-    failure: () => false,
-    progress: (G) => `Endured ${Math.min(G.round, 15)}/15 · Food ${G.resources.food}`,
+    objectiveCardId: 'long_winter_goal',
     victoryHint: 'Endure 15 rounds of brutal winter without starving.',
     failureHint: null,
     kind: 'standard',
@@ -123,12 +116,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       G.rngState = rngState;
       G.resources.military += 4; // capital garrison — layer on top of the starting baseline
     },
-    objective: (G) =>
-      G.removed.filter((c) => c.cardId === 'barbarian').length >= BARBARIANS && G.resources.military >= 0,
-    // No mission-specific failure: the universal core resource floor handles defeat (Military < 0).
-    failure: () => false,
-    progress: (G) =>
-      `Barbarians beaten ${G.removed.filter((c) => c.cardId === 'barbarian').length}/${BARBARIANS} · Military ${G.resources.military}`,
+    objectiveCardId: 'barbarian_tide_goal',
     victoryHint: `Survive all ${BARBARIANS} Barbarian waves without your Military falling below zero.`,
     failureHint: 'Your Military falling below zero — the barbarians overrun you.',
     kind: 'standard',
@@ -152,11 +140,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     setup: (G) => {
       addThreat(G, 'creeping_decay');
     },
-    // Never wins on its own — an 'infinite' mission has no fixed win state. The only ending is
-    // the universal core-resource-floor collapse, forced eventually by the threat's own escalation.
-    objective: () => false,
-    failure: () => false,
-    progress: (G) => `Round ${G.round} · Production ${G.resources.production}`,
+    // Never wins on its own — an 'infinite' mission has no fixed win state (its objective card's
+    // `met` is always false). The only ending is the universal core-resource-floor collapse, forced
+    // eventually by the threat's own escalation.
+    objectiveCardId: 'the_long_decline_goal',
     victoryHint: 'There is no victory — only rounds survived.',
     failureHint: 'Your Production falling below zero as the decay outpaces your economy.',
     kind: 'infinite',

@@ -1,4 +1,4 @@
-import { CARDS } from '../content/cards';
+import { CARDS, isDeckable } from '../content/cards';
 import type { DeckDef, DeckSeed } from '../content/decks';
 import { findInstance, hasSticker, instancesOf, unstickeredInstancesOf, type OwnedCards } from './collection';
 
@@ -24,8 +24,8 @@ export const MAX_DECKS = 6;
  *  mutate `deck`. */
 export function addCard(deck: string[], cardId: string, collection: OwnedCards): string[] | 'invalid' {
   if (!(cardId in CARDS)) return 'invalid';
-  // Event and threat cards are mission-injected only — never player-editable into a deck.
-  if (CARDS[cardId].kind === 'event' || CARDS[cardId].kind === 'threat') return 'invalid';
+  // Event/threat/objective cards are mission-injected only — never player-editable into a deck.
+  if (!isDeckable(CARDS[cardId])) return 'invalid';
   const inDeck = new Set(deck);
   const free = unstickeredInstancesOf(collection, cardId).find((inst) => !inDeck.has(inst.id));
   if (!free) return 'invalid';
