@@ -22,8 +22,8 @@ export interface BoardStickerDef {
   id: string;
   name: string;
   description: string;
-  /** A distinct glyph identifying this sticker wherever an attached board shows a badge (the Shop's
-   *  Boards section, the launch popup's board picker) — mirrors `StickerDef.icon`. */
+  /** A distinct glyph identifying this sticker wherever an attached board shows a badge (the Board
+   *  menu, the launch popup's board picker) — mirrors `StickerDef.icon`. */
   icon: string;
   /** Influence price to attach one copy. */
   cost: number;

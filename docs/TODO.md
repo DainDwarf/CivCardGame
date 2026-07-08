@@ -106,10 +106,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tray on the right; drag-and-drop a sticker from the tray onto a card face buys and
     applies it in one gesture (replacing Step 7.5's separate attach-mode panel). Depends on
     9.1 landing first (this *is* the fused detail view). `[size: M]` `[?]` `[phase: 3]`
-  - **Step 9.3 — Board UI rework** — TBD; the board-select/launch UI equivalent now that Step 8's
+  - **Step 9.3 — Board UI rework** — the board-select/launch UI equivalent now that Step 8's
     board stickers exist. Replaces Step 8's interim `Shop.tsx` Boards section with an in-place board
     menu (buy/attach a board's modifiers where you view it, mirroring 9.1's fused card detail view).
-    `[?]` `[phase: 3]`
+    Cut into three substeps. `[?]` `[phase: 3]`
+    1. **Move boards to their own tab** ✅ done — a new **Board** nav tab (`meta/BoardMenu.tsx`) that
+       lifts the interim, still button-based Boards buy surface verbatim out of `Shop.tsx`; no game
+       logic or buy behaviour changed. Groundwork for the visual rework in 9.3.2/9.3.3.
+    2. **Mini-boards** — render each board as a small visual board (not a text profile line), the
+       board counterpart to 9.2's real `CardFace`s.
+    3. **Drag-drop sticker tray** — available board stickers sit in a tray; drag one onto a board to
+       buy+apply in one gesture, mirroring 9.2's card sticker tray.
   - **Step 9.4 — Mission lore and select rework** — includes the now-folded-in "Barbarian
     Tide's lore should show the Barbarian card" ticket: `MissionDetailPanel` only shows the
     mission's *reward* card face today; its lore column should also preview the mission's
@@ -257,13 +264,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   reshape) — never re-looked-up in the core `run/setup.ts` (which seeds off `effectiveBoard`), so a
   sticker bought mid-campaign can't retroactively alter an in-progress/restarted run; `reshuffle
   RunConfig`'s `...config` spread carries the snapshot for free. Provisional cap of 2 per board
-  (`MAX_BOARD_STICKERS`; DESIGN defers stacking as balance). UI: a **minimal interim Boards section**
-  in `Shop.tsx` (each board's `effectiveBoard` profile + one-click board-sticker buys, no
-  `CardInstancePanel` since a board is singular) — the "separate board-shop section" DESIGN Step 9.1
-  flags for replacement by the future in-place board menu; the launch popup's board picker
+  (`MAX_BOARD_STICKERS`; DESIGN defers stacking as balance). UI: a **minimal interim buy surface**
+  (each board's `effectiveBoard` profile + one-click board-sticker buys, no `CardInstancePanel` since
+  a board is singular) — the "separate board-shop section" DESIGN Step 9.1 flags for replacement by
+  the future in-place board menu. Shipped inside `Shop.tsx`, then moved to its own **Board** nav tab
+  (`meta/BoardMenu.tsx`) in Step 9.3.1; the launch popup's board picker
   (`CampaignMap.tsx`) shows the effective profile + attached icons too. The board-profile formatter
   (`describeBoard`/`RESOURCE_ICON`/`BOARD_IDS`) was extracted to a shared `meta/boardDisplay.ts`
-  (Shop + CampaignMap both need it). Board *unlocking* stays out of scope — boards remain
+  (BoardMenu + CampaignMap both need it). Board *unlocking* stays out of scope — boards remain
   all-available. Covered by `rules/boardStickers.test.ts` (fold, eligibility, purchase edge cases)
   and a `contract.test.ts` snapshot case.
 - **Bug fix: white flash between mission lore panel and board/deck popup** — root cause matched

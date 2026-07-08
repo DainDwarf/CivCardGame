@@ -1,6 +1,7 @@
-/* Mirrors Collection.module.css's screen/grid treatment (both are grouped grids of owned
-   cards); adds the per-tile buy control the Shop needs. All color via theme tokens. */
-.shop {
+/* The Board screen: a grid of board tiles with one-click board-sticker buys. Mirrors the
+   Shop's screen chrome (title/subtitle/balance) and the interim Boards section it was lifted
+   from. All color via theme tokens. */
+.boardMenu {
   font-family: system-ui, -apple-system, sans-serif;
   max-width: 1000px;
   color: var(--text);
@@ -30,35 +31,50 @@
   font-size: 0.95rem;
 }
 
-.empty {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.sectionTitle {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0 0 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-}
-
-.sectionTitle:not(:first-of-type) {
-  margin-top: 1.25rem;
-}
-
-.grid {
+.boardGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 118px);
-  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.8rem;
 }
 
-/* Each cell stacks the card face over its buy button. */
-.tileWrap {
+.boardTile {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.5rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.boardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.boardName {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.boardStickers {
+  display: inline-flex;
+  gap: 0.15rem;
+  font-size: 1rem;
+}
+
+.boardProfile {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.boardBuys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: auto;
 }
 
 .buyBtn {
