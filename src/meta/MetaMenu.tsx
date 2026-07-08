@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { CampaignMap } from './CampaignMap';
 import { Collection } from './Collection';
-import { Shop } from './Shop';
 import { BoardMenu } from './BoardMenu';
 import { Decks } from './Decks';
 import { DeckEditor } from './DeckEditor';
@@ -13,12 +12,11 @@ import type { BoardStickers } from '../rules/boardStickers';
 import type { BoardId } from '../content/boards';
 import styles from './MetaMenu.module.css';
 
-type Screen = 'mission' | 'collection' | 'shop' | 'board' | 'decks' | 'stats' | 'deckEditor';
+type Screen = 'mission' | 'collection' | 'board' | 'decks' | 'stats' | 'deckEditor';
 
 const NAV: { screen: Screen; icon: string; label: string }[] = [
   { screen: 'mission', icon: '🗺️', label: 'Mission' },
   { screen: 'collection', icon: '📚', label: 'Collection' },
-  { screen: 'shop', icon: '🛒', label: 'Shop' },
   { screen: 'board', icon: '🎴', label: 'Board' },
   { screen: 'decks', icon: '🃏', label: 'Decks' },
   { screen: 'stats', icon: '📊', label: 'Stats' },
@@ -27,8 +25,9 @@ const NAV: { screen: Screen; icon: string; label: string }[] = [
 /**
  * The meta menu's shell: a left column of big nav buttons switches between the meta screens.
  * Mission is the campaign map — the DAG of missions, each node opening a board/deck launch popup
- * (`CampaignMap.tsx`); Collection is a read-only shell; Shop spends Influence on copy-tier upgrades
- * (`Shop.tsx`); Board spends Influence on board stickers (`BoardMenu.tsx`); Decks is fully editable;
+ * (`CampaignMap.tsx`); Collection lists owned cards and is also the card shop — buy copy-tier upgrades
+ * and attach stickers in its per-card detail panel (`Collection.tsx`); Board spends Influence on board
+ * stickers (`BoardMenu.tsx`); Decks is fully editable;
  * Stats is the run history, split out so the map stays focused
  * on launching. `deckEditor` isn't in `NAV` — it's only reachable via an action on the Decks screen
  * (New/Edit), never a bare tab with no deck loaded. `App.tsx` mounts this in place of the run view
@@ -52,10 +51,10 @@ export function MetaMenu({
   runHistory: RunResult[];
   decks: DeckDef[];
   /** The player's card ownership — forwarded to `Collection`/`DeckEditor` (omit not-yet-unlocked
-   *  cards) and to `Shop` (list upgradeable cards). */
+   *  cards); `Collection` also lists upgradeable cards for the fused-in shop. */
   collection: OwnedCards;
   /** The meta-currency (docs/DESIGN.md, "Economy & progression") — shown at the top of the nav
-   *  column, and forwarded to `Shop` where it gates and is spent on copy-tier upgrades. */
+   *  column, and forwarded to `Collection`/`BoardMenu` where it gates and is spent. */
   influence: number;
   /** Completed mission ids — forwarded to `CampaignMap` so it can gate the DAG's node
    *  states (`rules/campaign.ts`). */
@@ -126,9 +125,8 @@ export function MetaMenu({
             onLaunch={onLaunch}
           />
         )}
-        {screen === 'collection' && <Collection collection={collection} decks={decks} />}
-        {screen === 'shop' && (
-          <Shop
+        {screen === 'collection' && (
+          <Collection
             collection={collection}
             decks={decks}
             influence={influence}

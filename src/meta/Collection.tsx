@@ -7,17 +7,29 @@ import { CardInstancePanel } from './CardInstancePanel';
 import styles from './Collection.module.css';
 
 /**
- * The Collection screen: every card the player *owns*, read-only.
- * A card with no entry in `collection` is not yet unlocked and is omitted entirely
- * (not shown locked/greyed) — unlocking it via a mission is meant to be a surprise,
- * so nothing here should hint at what's still out there, including a total count.
- * Cards render as the same `CardFace` tiles as the deck editor's picker grid, grouped
- * by kind; clicking one opens `CardInstancePanel` — the per-copy detail view (Farm 1/2,
- * Farm 2/2) with each instance's deck usage, the anti-surprise mechanism a sticker needs
- * before it can single out one copy. Each tile still carries its own `countBadge` (copies
- * owned — ×2/×4/×8), the same badge the deck banner/pile viewer use for deck-count.
+ * The Collection screen: every card the player *owns*. As of Step 9.1 it's also the card *shop* —
+ * clicking a card opens `CardInstancePanel`, the per-copy detail view (Farm 1/2, Farm 2/2) that now
+ * also buys the next copy tier and attaches stickers in place (there's no separate Shop tab).
+ * A card with no entry in `collection` is not yet unlocked and is omitted entirely (not shown
+ * locked/greyed) — unlocking it via a mission is meant to be a surprise, so nothing here should hint
+ * at what's still out there, including a total count. Cards render as the same `CardFace` tiles as the
+ * deck editor's picker grid, grouped by kind; each tile carries its own `countBadge` (copies owned —
+ * ×2/×4/×8), the same badge the deck banner/pile viewer use for deck-count.
  */
-export function Collection({ collection, decks }: { collection: OwnedCards; decks: DeckDef[] }) {
+export function Collection({
+  collection,
+  decks,
+  influence,
+  onBuyTier,
+  onAttachSticker,
+}: {
+  collection: OwnedCards;
+  decks: DeckDef[];
+  /** Spendable Influence — forwarded into the detail panel's buy/attach controls (Step 9.1). */
+  influence: number;
+  onBuyTier: (cardId: string) => void;
+  onAttachSticker: (instanceId: string, stickerId: string) => void;
+}) {
   const [detail, setDetail] = useState<string | null>(null);
 
   // Event and threat cards are mission-injected and never part of the player's collection.
@@ -85,7 +97,13 @@ export function Collection({ collection, decks }: { collection: OwnedCards; deck
       )}
 
       {detail && (
-        <CardInstancePanel cardId={detail} collection={collection} decks={decks} onClose={() => setDetail(null)} />
+        <CardInstancePanel
+          cardId={detail}
+          collection={collection}
+          decks={decks}
+          shop={{ influence, onBuyTier, onAttachSticker }}
+          onClose={() => setDetail(null)}
+        />
       )}
     </div>
   );

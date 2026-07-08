@@ -91,13 +91,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   economy (Steps 1–8) is in place; cut into substeps. Only ordering constraint is **9.1 → 9.2**
   (9.2 reworks the detail view 9.1 fuses into); 9.3/9.4/9.5 are independent of each other and of
   9.1/9.2. `[phase: 3]`
-  - **Step 9.1 — Fuse Shop into Collection** — `Shop.tsx` and `Collection.tsx` are largely
-    redundant today: both list the same owned cards grouped the same way. Instead of a
-    separate nav tab, clicking a card in Collection should open a detail view already able
-    to do everything Shop does for that cardId — buy the next copy tier, attach a sticker
-    to a chosen instance — rather than bouncing to a different screen. Same idea applies to
-    boards once Step 8's board stickers land (a future board menu should let you buy/attach
-    a board's modifiers in place, not a separate board-shop screen). `[?]` `[phase: 3]`
+  - **Step 9.1 — Fuse Shop into Collection** — ✅ done — see *Done / shipped* below.
+    `[phase: 3]`
   - **Step 9.2 — Collection UI rework + card upgrades** — the collection grid keeps
     grouping by cardId regardless of stickers applied (a stickered instance still needs its
     own addressable identity in the grid, per Step 7's per-instance model). Clicking a card
@@ -240,6 +235,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 9.1 — Fuse Shop into Collection** — the standalone card **Shop** tab is gone; its
+  two abilities (buy the next copy tier · attach a sticker to a chosen instance) now live in
+  Collection's per-card detail view, `meta/CardInstancePanel.tsx`. Collection gains an optional `shop`
+  bundle (`influence`/`onBuyTier`/`onAttachSticker`, already flowing from `App.tsx` via `MetaMenu`)
+  that it forwards to the panel; the panel shows the Influence balance, a buy-next-tier button
+  (`nextTier`), and one sticker-offer button per `stickerAppliesTo` sticker (gated on some copy still
+  having room). Picking a sticker drops into an *attach sub-mode* that reuses the panel's existing
+  per-copy attach rows (the old external `attach` prop, whose only caller was Shop, folded into an
+  internal `pickingStickerId`); "← Back" or a successful attach returns to browse. `rules/shop.ts`
+  stays (the copy-tier economy); only `meta/Shop.tsx` + `Shop.module.css` and the Shop nav entry were
+  deleted — the meta shell is now five tabs. No rule logic changed (existing suite green). Deferred to
+  Step 9.2 (the full detail-view rework into real `CardFace`s + a drag-drop sticker tray, the Board
+  tab's model): a per-tile "upgrade available" affordance so the player needn't open each card to
+  discover it's buyable.
 
 - **Phase 3 Step 9.3 — Board UI rework** — the board-select/launch UI equivalent now that Step 8's
   board stickers exist; replaces Step 8's interim `Shop.tsx` Boards section with an in-place Board

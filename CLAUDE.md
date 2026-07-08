@@ -23,7 +23,7 @@ shop, mission selection — the *only* place decks are edited). See
   operate; the population eats food each round), and mission-driven win/lose conditions.
 - **Phase 2 — contract + meta shell**: `src/contract.ts` (`RunConfig`/`RunResult`) is
   the spine between the loops; `src/app/App.tsx` switches between the meta menu
-  (`src/meta/MetaMenu.tsx`, a left-nav shell over the Mission/Collection/Shop/Decks/Stats
+  (`src/meta/MetaMenu.tsx`, a left-nav shell over the Mission/Collection/Board/Decks/Stats
   screens) and a run. Deck construction (`src/meta/DeckEditor.tsx`) and `localStorage`
   persistence (`src/meta/store.ts`'s `PlayerStore`) are built.
 - **Phase 3 — economy & progression** (in progress). The systems that now exist:
@@ -33,8 +33,10 @@ shop, mission selection — the *only* place decks are edited). See
     `STARTING_COLLECTION` and `content/decks.ts`. Not-yet-unlocked cards are hidden
     entirely (an unlock is meant to be a surprise); the deck editor caps each card at
     the copies owned.
-  - **Copy-tier shop** — `rules/shop.ts` (`TIER_LADDER` ×1→×2→×4→×8; `buyTier`) +
-    `meta/Shop.tsx`: spend Influence to buy extra copies of owned cards.
+  - **Copy-tier shop** — `rules/shop.ts` (`TIER_LADDER` ×1→×2→×4→×8; `buyTier`): spend
+    Influence to buy extra copies of owned cards. Bought in place from the Collection
+    screen's per-card detail panel (`meta/CardInstancePanel.tsx`), fused there in Step 9.1
+    (there's no separate Shop tab).
   - **Campaign-map DAG** — `content/missions.ts` missions form a prereq-gated DAG
     (`rules/campaign.ts`), rendered as a horizontally-scrollable branching tech tree
     (`meta/CampaignMap.tsx`); each `'standard'` mission grants a fixed Influence reward
@@ -218,15 +220,17 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `ThreatZone` renders `G.threats` as `CardFace`s, reading only `GameState`, never the
     mission. The `.groundBackdrop` is tinted per government board via a `data-board`
     attribute matched in `Board.module.css` — a CSS-only edit per board, no component change.
-- `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left nav switches six screens:
+- `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left nav switches five screens:
   - `CampaignMap.tsx` (Mission tab) — the mission DAG as a horizontally-scrollable tech
     tree (drag-to-pan); a node opens `MissionDetailPanel` (lore + reward preview) whose
     "Continue" hands off to a board/deck launch popup that assembles a `RunConfig` via
     `buildRunConfig`. `'infinite'` missions render in a bottom banner, not as nodes.
-  - `Collection.tsx` — read-only catalogue of owned cards (omits not-yet-unlocked ones); a
-    tile opens `CardInstancePanel.tsx`, a per-owned-instance drill-down.
-  - `Shop.tsx` — the copy-tier + sticker shop; lists only cards with a tier or sticker slot
-    left, each buy button calling back into `App.tsx` (`onBuyTier`/`onAttachSticker`).
+  - `Collection.tsx` — catalogue of owned cards (omits not-yet-unlocked ones); a tile opens
+    `CardInstancePanel.tsx`, a per-owned-instance drill-down that is *also* the card shop
+    (Step 9.1 fused the standalone Shop tab in here): given its `shop` bundle the panel shows
+    the Influence balance, a buy-next-tier button, and one sticker-offer button per applicable
+    sticker (picking one drops into an attach sub-mode over the per-copy rows), calling back
+    into `App.tsx` (`onBuyTier`/`onAttachSticker`).
   - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: a grid of every board as a `BoardMini`
     (Step 9.3.2's mini-board) beside a right-side sticky tray of sticker boxes (each a draggable sticker
     badge over its name/effect/price); dragging a badge onto a board calls `onBuyBoardSticker` to
