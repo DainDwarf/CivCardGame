@@ -122,8 +122,8 @@ that files the card:
 - **Objective (win/lose goal):** the mission's victory/defeat condition made into a card,
   the positive counterpart to `threat`. A mission names one `objectiveCardId`; it's seeded
   into the `GameState.objective` zone at setup and owns its mission's win/lose *logic* via a
-  pure-read `objective` hook (`{ met, failed? }`, polled by the engine's `checkEndIf`) plus a
-  live progress readout. Never in a hand/pile/deck and excluded everywhere `event`/`threat`
+  pure-read `objective` predicate (bus-driven into `G.pendingVictory`, read by the engine's
+  `checkEndIf`) plus a live progress readout. Never in a hand/pile/deck and excluded everywhere `event`/`threat`
   are (`isDeckable`). → the mission's *goal*.
 
 ### Turn structure 🔧
@@ -177,11 +177,11 @@ MissionDef
   tier/difficulty
 
 CardDef (kind: 'objective')
-  objective: { met: (G, self) => boolean }   // WIN condition (defeat is a threat's job)
+  objective: (G, self) => boolean            // WIN condition (defeat is a threat's job)
   dynamicText: (G, self) => string           // live progress line
 ```
 
-The `objective.met` hook is a **pure read function** (it never mutates `G`), living on the catalogue
+The `objective` hook is a **pure read function** (it never mutates `G`), living on the catalogue
 in `src/content/`. It's **bus-driven**: `rules/objective.ts`'s `evaluateObjective` re-derives it into
 `G.pendingVictory` at every event-bus flush boundary, and the engine's `checkEndIf` reads that flag
 (the win counterpart to a threat writing `G.pendingDefeat`) — so it stays unit-testable and reusable

@@ -27,7 +27,7 @@ export interface MissionDef {
   onUpkeep?: (G: GameState) => void;
   /** The mission's win condition, made into a card. Names a real `content/cards.ts` id of kind
    *  `'objective'` (pinned by a coherence test); `run/setup.ts` seeds it into `GameState.objective`
-   *  and the card owns the win (`objective.met`) logic plus its live progress readout — so it's the
+   *  and the card owns the win (the `objective` predicate) logic plus its live progress readout — so it's the
    *  objective card, not the mission, that holds the predicate (it used to live here as
    *  `objective`/`progress`). A mission-specific *defeat* is a threat's job (`G.pendingDefeat`). */
   objectiveCardId: string;

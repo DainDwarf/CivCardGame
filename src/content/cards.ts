@@ -96,8 +96,8 @@ export interface CardDef {
   on?: Partial<Record<GameEventType, Resolver>>;
   /**
    * `objective` cards only: the mission's win condition, owned by the card the way every other card
-   * owns its logic. A single **pure-read predicate** over the live run state — `met`, the win
-   * condition. Read-only by contract: unlike `resolve`/`produce` it never mutates `G`. It's
+   * owns its logic. A single **pure-read predicate** over the live run state returning whether the
+   * win is met. Read-only by contract: unlike `resolve`/`produce` it never mutates `G`. It's
    * **bus-driven**: `rules/objective.ts`'s `evaluateObjective` re-derives it into `G.pendingVictory`
    * at every `flushEvents` boundary, and `run/engine.ts`'s `checkEndIf` reads that flag — so a
    * threshold like "30 science" registers at the flush where it's crossed. A *defeat* belongs
@@ -107,9 +107,7 @@ export interface CardDef {
    * `self` is the seeded objective instance, so a future objective can read its own `counters`. Pair
    * with `dynamicText` for the progress readout.
    */
-  objective?: {
-    met: (G: GameState, self: CardInstance) => boolean;
-  };
+  objective?: (G: GameState, self: CardInstance) => boolean;
   /** Hand-authored effect text for the card face, used when the declarative `effect` bag can't
    *  describe the card (a `resolve`-driven card). Takes precedence over the auto-generated
    *  `describeCard` text. */
@@ -367,14 +365,14 @@ export const CARDS: Record<string, CardDef> = {
   // --- Objective cards: a mission's win condition made into a card (see the `objective` kind doc
   //     above). `rules/objective.ts`'s `seedObjective` seeds one into `GameState.objective` from the
   //     mission's `objectiveCardId`; never in hand/deck/collection/deck editor. Each owns its
-  //     mission's win (`objective.met`) as a pure read over `G` — moved off `MissionDef` so objective
+  //     mission's win (the `objective` predicate) as a pure read over `G` — moved off `MissionDef` so objective
   //     cards own their logic like every other card — plus a live progress line (`dynamicText`). A
   //     mission-specific *defeat* lives on a threat's `G.pendingDefeat`, not here. No `effect`/
   //     `resolve`: they never mutate G.
   long_winter_goal: {
     id: 'long_winter_goal', name: 'The Long Winter', kind: 'objective', cost: {},
     description: 'Endure 15 rounds of brutal winter without starving.',
-    objective: { met: (G) => G.round > 15 },
+    objective: (G) => G.round > 15,
     dynamicText: (G) => `${Math.min(G.round, 15)}/15 Round`,
   },
   enlightenment_goal: {
@@ -382,23 +380,21 @@ export const CARDS: Record<string, CardDef> = {
     description: 'Reach 30 Science before round 12 ends.',
     // The round-12 deadline (and the loss it causes) is owned by the Stagnation *threat* the mission
     // seeds (`on.endTurn` → `G.pendingDefeat`) — the objective card only owns the win.
-    objective: { met: (G) => G.resources.science >= 30 },
+    objective: (G) => G.resources.science >= 30,
     dynamicText: (G) => `${G.resources.science}/30🔬`,
   },
   barbarian_tide_goal: {
     id: 'barbarian_tide_goal', name: 'Barbarian Tide', kind: 'objective', cost: {},
     description: `Survive all ${BARBARIANS} Barbarian waves without your Military falling below zero.`,
-    objective: {
-      met: (G) =>
-        G.removed.filter((c) => c.cardId === 'barbarian').length >= BARBARIANS && G.resources.military >= 0,
-    },
+    objective: (G) =>
+      G.removed.filter((c) => c.cardId === 'barbarian').length >= BARBARIANS && G.resources.military >= 0,
     dynamicText: (G) =>
       `${G.removed.filter((c) => c.cardId === 'barbarian').length}/${BARBARIANS} Barbarian`,
   },
   the_long_decline_goal: {
     id: 'the_long_decline_goal', name: 'The Long Decline', kind: 'objective', cost: {},
     description: 'There is no victory — only how many rounds you can outlast the decay.',
-    objective: { met: () => false },
+    objective: () => false,
     dynamicText: (G) => `Round ${G.round}`,
   },
 };

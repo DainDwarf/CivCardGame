@@ -14,7 +14,7 @@ import {
 } from '../rules';
 
 // Win now lives on each mission's objective *card* (`GameState.objective`): `objectiveMet` reads the
-// card's `objective.met` hook off `G`, and the bus re-derives it into `G.pendingVictory` at every
+// card's `objective` predicate off `G`, and the bus re-derives it into `G.pendingVictory` at every
 // `flushEvents` boundary (`evaluateObjective`) — the flag `run/engine.ts`'s `checkEndIf` reads. Defeat
 // is a threat's job: threat drains and deadline losses run through the per-round `endTurn` broadcast
 // (`dispatchEvent` → `resolveEndTurn`), the same path upkeep uses. These drive both directly.
@@ -160,7 +160,7 @@ describe('mission: the_long_decline', () => {
 
 describe('objective win flag is bus-driven', () => {
   // The win no longer polls per-move: `evaluateObjective` re-derives `G.pendingVictory` from the
-  // card's `met` predicate, and `flushEvents` calls it at every step boundary — so the flag is fresh
+  // card's `objective` predicate, and `flushEvents` calls it at every step boundary — so the flag is fresh
   // before every `checkEndIf`, even on a flush that dispatched no events.
   it('flushEvents re-derives G.pendingVictory from the objective card, on an eventless flush', () => {
     const G = blankState('enlightenment');
@@ -198,7 +198,7 @@ describe('mission objective cards', () => {
       const card = CARDS[m.objectiveCardId];
       expect(card, `${m.id} → ${m.objectiveCardId}`).toBeDefined();
       expect(card.kind).toBe('objective');
-      expect(typeof card.objective?.met).toBe('function');
+      expect(typeof card.objective).toBe('function');
     }
   });
 });
