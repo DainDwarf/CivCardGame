@@ -3,29 +3,48 @@
    importable); mirrors that file's structure (tinted ground · top banner · territory slot grid)
    at small size. All color via theme tokens; only the allowed white/black scrims are literals. */
 
-/* The outer frame: positioning context for the local ground layer (see .ground) and a clipping
-   rounded box, so the tinted dirt stays inside the widget instead of the run board's full-viewport
-   fixed backdrop. */
+/* The outer frame: positioning context for the local ground layer (see .ground) and the anchor for
+   the bottom-left sticker badges (which overhang the corner like a CardFace's, so this box is NOT
+   overflow-clipped — the ground rounds its own corners instead, see .ground). */
 .mini {
   position: relative;
-  overflow: hidden;
   border-radius: 8px;
   border: 1px solid var(--border);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  padding: 0.5rem;
+  /* Extra bottom padding leaves room beneath the territory grid for the bottom-left sticker badges
+     (anchored to this box's bottom edge), so the slots never sit on top of them. */
+  padding: 0.5rem 0.5rem 1.4rem;
 }
 
 /* Local dirt layer, tinted per government board (BoardMini stamps `data-board`) — the miniature
    counterpart to Board.module.css's `.groundBackdrop`, but positioned inside the widget (absolute,
-   not fixed) so it fills only this box. `--ground` is the fallback for an unrecognized board id. */
+   not fixed) so it fills only this box. `border-radius: inherit` keeps its corners rounded to the
+   frame now that .mini no longer clips. `--ground` is the fallback for an unrecognized board id. */
 .ground {
   position: absolute;
   inset: 0;
   z-index: 0;
+  border-radius: inherit;
   background: var(--ground);
+}
+
+/* The board name, a small pill label in the bottom-right corner (mirroring the bottom-left sticker
+   badges), sitting in the box's bottom padding strip over the tinted ground. */
+.nameLabel {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  z-index: 1;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--text);
 }
 
 .ground[data-board='tribe'] {
@@ -47,16 +66,20 @@
   z-index: 1;
 }
 
-/* Top banner: population tray (left) · core resources (right column) · culture (full-width row),
-   echoing the run board's grid-areas at miniature size. */
+/* Top banner: population tray (top-left) · culture (bottom-left, beneath the tray) · core resources
+   (right column spanning the full height, so the resources fill the banner rather than stopping at
+   the culture line). */
 .banner {
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
+  /* 3:1 rows over a definite min-height, so the population tray fills ~3/4 of the banner height and
+     culture the bottom quarter (the core column spans both rows and stretches the full height). */
+  grid-template-rows: 3fr 1fr;
   grid-template-areas:
     'population core'
-    'culture    culture';
+    'culture    core';
   align-items: stretch;
+  min-height: 5rem;
   gap: 0.3rem 0.4rem;
   padding: 0.4rem 0.45rem;
   border-radius: 6px;
@@ -93,13 +116,14 @@
   white-space: nowrap;
 }
 
-/* Right column: the 5 core resources, stacked (all shown, including zeros, like the run board). */
+/* Right column: the 5 core resources, stacked (all shown, including zeros, like the run board),
+   spread over the full banner height. */
 .coreGroup {
   grid-area: core;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: space-between;
   gap: 0.1rem;
   padding-left: 0.4rem;
   border-left: 1px solid var(--border-divider);
@@ -109,8 +133,8 @@
   white-space: nowrap;
 }
 
-/* Full-width culture row beneath the tray and resource column — a plain starting counter, no
-   level/progress bar (that's run-progression state; every board starts at culture 0). */
+/* Culture, beneath the population tray — a plain starting counter, no level/progress bar (that's
+   run-progression state; every board starts at culture 0). */
 .culture {
   grid-area: culture;
   text-align: center;

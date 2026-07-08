@@ -41,13 +41,17 @@ export const artFor = (id: string) => CARD_ART[id] ?? '🏛️';
  *  `BuildingBox`/`WorkBox`, which own their own custom markup rather than rendering a `CardFace`)
  *  imports the component rather than reaching into this module's CSS classes directly — keeping
  *  the sticker row's one visual definition here, not duplicated at each call site. */
-export function StickerRow({ stickers }: { stickers?: string[] }) {
-  if (!stickers || stickers.length === 0) return null;
+export function StickerRow({ stickers, items }: { stickers?: string[]; items?: { icon: string; name?: string }[] }) {
+  // Card stickers resolve through the card `STICKERS` catalogue; a caller from a different catalogue
+  // (e.g. board stickers, `BoardMini`) passes already-resolved `items` so the one visual definition
+  // is shared without this module knowing about every sticker catalogue.
+  const chips = items ?? stickers?.map((id) => ({ icon: STICKERS[id]?.icon ?? '🏷️', name: STICKERS[id]?.name }));
+  if (!chips || chips.length === 0) return null;
   return (
     <span className={styles.stickerRow} aria-hidden="true">
-      {stickers.map((id, i) => (
-        <span key={i} className={styles.sticker} title={STICKERS[id]?.name}>
-          {STICKERS[id]?.icon ?? '🏷️'}
+      {chips.map((c, i) => (
+        <span key={i} className={styles.sticker} title={c.name}>
+          {c.icon}
         </span>
       ))}
     </span>

@@ -35,18 +35,6 @@ export function BoardMenu({
     const applicable = Object.values(BOARD_STICKERS).filter((s) => boardStickerAppliesTo(s, board));
     return (
       <div key={boardId} className={styles.boardTile}>
-        <div className={styles.boardHead}>
-          <span className={styles.boardName}>{board.name}</span>
-          {attached.length > 0 && (
-            <span className={styles.boardStickers}>
-              {attached.map((sid, i) => (
-                <span key={i} title={BOARD_STICKERS[sid]?.name}>
-                  {BOARD_STICKERS[sid]?.icon}
-                </span>
-              ))}
-            </span>
-          )}
-        </div>
         <BoardMini boardId={boardId} stickerIds={attached} />
         <div className={styles.boardBuys}>
           {applicable.map((s) => (

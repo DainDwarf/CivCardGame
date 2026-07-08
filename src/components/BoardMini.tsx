@@ -1,6 +1,8 @@
 import { BOARDS, type BoardId } from '../content/boards';
+import { BOARD_STICKERS } from '../content/boardStickers';
 import { effectiveBoard } from '../rules/boardStickers';
 import { RESOURCE_ICON } from '../meta/boardDisplay';
+import { StickerRow } from './CardFace';
 import type { Resources } from '../rules/resources';
 import styles from './BoardMini.module.css';
 
@@ -31,9 +33,13 @@ export function BoardMini({
   // sticker could raise population well past a legible token row).
   const POP_TOKEN_LIMIT = 6;
 
+  const board = BOARDS[boardId];
+
   return (
     <div className={`${styles.mini}${className ? ` ${className}` : ''}`}>
       <div className={styles.ground} data-board={boardId} />
+
+      <div className={styles.nameLabel}>{board.name}</div>
 
       <div className={styles.banner}>
         <div className={styles.populationTray}>
@@ -66,6 +72,13 @@ export function BoardMini({
           <div key={i} className={styles.slotEmpty} />
         ))}
       </div>
+
+      <StickerRow
+        items={(stickerIds ?? []).map((id) => ({
+          icon: BOARD_STICKERS[id]?.icon ?? '🏷️',
+          name: BOARD_STICKERS[id]?.name,
+        }))}
+      />
     </div>
   );
 }
