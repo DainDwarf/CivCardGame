@@ -16,6 +16,7 @@ import { isCompleted } from '../rules/campaign';
 import { computeRewards } from '../rules/rewards';
 import { isOwned, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
+import { sortDeckEntries } from '../rules/deckBuilder';
 import { CardFace, COST_ICON, StickerRow, artFor, describeBuilding } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
@@ -188,13 +189,13 @@ function BoardLeftColumn({
  *  so a shared count would either hide that or force picking one copy's value to speak for the
  *  stack. Each stays its own single-count entry, keyed by its stable instance id, carrying the
  *  instance so the caller can compute its current `dynamicText`/`effectiveCard`. */
-function groupCards(insts: CardInstance[]): { key: number | string; cardId: string; inst: CardInstance; count: number }[] {
+function groupCards(insts: CardInstance[]): { key: number | string; cardId: string; inst: CardInstance; count: number; instanceId?: number }[] {
   const order: string[] = [];
   const groups = new Map<string, { inst: CardInstance; count: number }>();
-  const singles: { key: number; cardId: string; inst: CardInstance; count: number }[] = [];
+  const singles: { key: number; cardId: string; inst: CardInstance; count: number; instanceId: number }[] = [];
   for (const inst of insts) {
     if (CARDS[inst.cardId].dynamicText || inst.stickers?.length) {
-      singles.push({ key: inst.id, cardId: inst.cardId, inst, count: 1 });
+      singles.push({ key: inst.id, cardId: inst.cardId, inst, count: 1, instanceId: inst.id });
       continue;
     }
     const g = groups.get(inst.cardId);
@@ -208,7 +209,7 @@ function groupCards(insts: CardInstance[]): { key: number | string; cardId: stri
     const g = groups.get(cardId)!;
     return { key: cardId, cardId, inst: g.inst, count: g.count };
   });
-  return [...grouped, ...singles];
+  return sortDeckEntries([...grouped, ...singles]);
 }
 
 /** A pile token flanking the hand (deck / discard / removed). Clickable when `onView` is given. */

@@ -151,11 +151,14 @@ describe('addInstance / removeInstance', () => {
 });
 
 describe('groupCounts', () => {
-  it('preserves first-seen order', () => {
-    expect(groupCounts([libraryId(0), farmId(0), libraryId(1)], GENEROUS)).toEqual([
-      { cardId: 'library', count: 2 },
+  it('orders entries by kind then name, independent of deck-array order', () => {
+    // Same cards, opposite input order → identical output (Farm sorts before Library by name).
+    const expected = [
       { cardId: 'farm', count: 1 },
-    ]);
+      { cardId: 'library', count: 2 },
+    ];
+    expect(groupCounts([libraryId(0), farmId(0), libraryId(1)], GENEROUS)).toEqual(expected);
+    expect(groupCounts([farmId(0), libraryId(1), libraryId(0)], GENEROUS)).toEqual(expected);
   });
 
   it('counts duplicates correctly', () => {
@@ -178,11 +181,11 @@ describe('groupCounts', () => {
     ]);
   });
 
-  it('appends stickered entries after every fungible group', () => {
+  it("sorts a stickered break-out into its card's slot, not globally after the fungibles", () => {
     const stickered = withSticker(farmId(0));
     expect(groupCounts([farmId(0), libraryId(0)], stickered)).toEqual([
-      { cardId: 'library', count: 1 },
       { cardId: 'farm', count: 1, instanceId: farmId(0), stickers: ['reinforced'] },
+      { cardId: 'library', count: 1 },
     ]);
   });
 });

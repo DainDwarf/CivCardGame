@@ -158,6 +158,33 @@ export function isDeckable(card: CardDef): boolean {
   return card.kind === 'building' || card.kind === 'action' || card.kind === 'work';
 }
 
+/** The stable display order of card kinds — the primary key of `compareCards`. Deckable kinds
+ *  come first in play-relevance order (building → work → action); the mission-only kinds trail
+ *  (only the pile viewer ever lists one, e.g. a Barbarian `event` filed to `removed`). */
+const KIND_RANK: Record<CardKind, number> = {
+  building: 0,
+  work: 1,
+  action: 2,
+  event: 3,
+  threat: 4,
+  objective: 5,
+};
+
+/** Sort key for a card's display name: a leading "The " is dropped so "The Colossus" sorts under
+ *  C, not clustered under T with every other "The …". */
+function sortName(card: CardDef): string {
+  return card.name.replace(/^the\s+/i, '');
+}
+
+/** The one stable comparator for every card listing (deck banner/fans, pile viewers, the
+ *  Collection/DeckEditor pickers): group by kind, then alphabetical by name within a kind. Keeps
+ *  a view's order dependent only on card identity — never on copy count, deck membership, or
+ *  discard/draw sequence. Callers add their own instance-id tiebreak to keep a card's copies
+ *  contiguous. */
+export function compareCards(a: CardDef, b: CardDef): number {
+  return KIND_RANK[a.kind] - KIND_RANK[b.kind] || sortName(a).localeCompare(sortName(b));
+}
+
 /** Number of Barbarian waves in the Barbarian Tide mission. Lives here (not in `content/missions.ts`)
  *  so the single source is shared by the `barbarian_tide` mission (how many events it seeds) and the
  *  `barbarian_tide_goal` objective card (how many must be beaten to win / the "N/4" progress line). */

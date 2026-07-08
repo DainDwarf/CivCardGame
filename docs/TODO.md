@@ -157,7 +157,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
-- **Stable card ordering across views** — cards currently "move around" when adding/removing in the deck editor (and potentially other card grids); pick a sensible, stable sort order (by kind? cost? catalogue order?) and apply it consistently everywhere cards are listed — collection, deck editor picker/banner, pile viewers. `[size: S] [?] ` `[phase: 3]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 
 ## Game design & balance
@@ -190,6 +189,20 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Stable card ordering across views** — every card listing now orders through one shared comparator,
+  `content/cards.ts`'s `compareCards` (kind rank `building → work → action → event → threat → objective`,
+  then alphabetical by name with a leading "The " ignored), so views depend only on card identity, never
+  on copy count / deck membership / discard sequence. The churn source was `groupCounts`
+  (`rules/deckBuilder.ts`) and `groupCards` (`components/Board.tsx`), both first-seen-order; both now sort
+  through the new `sortDeckEntries` (comparator + a copies-contiguous tiebreak: a card's fungible group
+  before its stickered break-outs, those by ascending instance id) — fixing the deck banner/fans, launch
+  popup, and discard/removed pile viewers. The already-stable Collection/DeckEditor pickers were routed
+  through the comparator too (their kind sections reordered building → work → action), and
+  `CardInstancePanel`'s per-copy list sorts by numeric instance id. The run-loop **hand** stays in draw
+  order (deliberately out of scope — player-meaningful). No `CARDS`-literal reorder, no rule-logic change.
+  New `content/cards.test.ts` (kind precedence, "The" normalization, alphabetical); `deckBuilder.test.ts`
+  groupCounts tests updated from first-seen to the stable order + order-independence. `[size: S]` `[phase: 3]`
 
 - **Objective cards moved onto the event bus** — win/lose is now entirely **bus-written flag-reads**,
   the last reactive concern that was still polled. The objective card still owns its win via the

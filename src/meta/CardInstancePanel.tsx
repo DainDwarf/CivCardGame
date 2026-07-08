@@ -90,7 +90,9 @@ export function CardInstancePanel({
   const card = CARDS[cardId];
   // Derived from props every render, never snapshotted into state: a buy-tier appends a copy and an
   // attach mutates one, both arriving as a fresh `collection` prop, so the panel updates live.
-  const instances = instancesOf(collection, cardId);
+  // Ordered by ascending instance id so the "1/2, 2/2" numbering is stable and matches the
+  // deck banner's stickered break-out order (ids are stringified sequential integers).
+  const instances = instancesOf(collection, cardId).sort((a, b) => Number(a.id) - Number(b.id));
   const zoomed = instances.find((i) => i.id === zoomInstance);
 
   const influence = shop?.influence ?? 0;

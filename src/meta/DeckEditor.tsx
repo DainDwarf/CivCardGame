@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CARDS, isDeckable, type CardDef } from '../content/cards';
+import { CARDS, compareCards, isDeckable, type CardDef } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { addCard, removeCard, addInstance, removeInstance, groupCounts } from '../rules/deckBuilder';
 import {
@@ -80,9 +80,9 @@ export function DeckEditor({
   // Mission-injected cards (event/threat/objective) can never be added to a deck; the picker
   // only offers deckable cards the player has actually unlocked.
   const cards = Object.values(CARDS).filter((c) => isDeckable(c) && isOwned(collection, c.id));
-  const buildings = cards.filter((c) => c.kind === 'building');
-  const actions = cards.filter((c) => c.kind === 'action');
-  const works = cards.filter((c) => c.kind === 'work');
+  const buildings = cards.filter((c) => c.kind === 'building').sort(compareCards);
+  const works = cards.filter((c) => c.kind === 'work').sort(compareCards);
+  const actions = cards.filter((c) => c.kind === 'action').sort(compareCards);
 
   // Unstickered copies of `cardId` still available to add — owned (unstickered pool only:
   // a stickered instance is never part of this fungible tile) minus what's already in the deck.
@@ -283,16 +283,16 @@ export function DeckEditor({
             <div className={styles.grid}>{buildings.flatMap(pickerTiles)}</div>
           </>
         )}
-        {actions.length > 0 && (
-          <>
-            <h2 className={styles.sectionTitle}>Actions</h2>
-            <div className={styles.grid}>{actions.flatMap(pickerTiles)}</div>
-          </>
-        )}
         {works.length > 0 && (
           <>
             <h2 className={styles.sectionTitle}>Work</h2>
             <div className={styles.grid}>{works.flatMap(pickerTiles)}</div>
+          </>
+        )}
+        {actions.length > 0 && (
+          <>
+            <h2 className={styles.sectionTitle}>Actions</h2>
+            <div className={styles.grid}>{actions.flatMap(pickerTiles)}</div>
           </>
         )}
       </div>

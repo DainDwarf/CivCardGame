@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CARDS, isDeckable } from '../content/cards';
+import { CARDS, compareCards, isDeckable } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { CardFace } from '../components/CardFace';
 import { copiesOwned, isOwned, type OwnedCards } from '../rules/collection';
@@ -37,9 +37,9 @@ export function Collection({
 
   // Mission-injected cards (event/threat/objective) are never part of the player's collection.
   const cards = Object.values(CARDS).filter((c) => isDeckable(c) && isOwned(collection, c.id));
-  const buildings = cards.filter((c) => c.kind === 'building');
-  const actions = cards.filter((c) => c.kind === 'action');
-  const works = cards.filter((c) => c.kind === 'work');
+  const buildings = cards.filter((c) => c.kind === 'building').sort(compareCards);
+  const works = cards.filter((c) => c.kind === 'work').sort(compareCards);
+  const actions = cards.filter((c) => c.kind === 'action').sort(compareCards);
 
   return (
     <div className={styles.collection}>
@@ -62,11 +62,11 @@ export function Collection({
         </>
       )}
 
-      {actions.length > 0 && (
+      {works.length > 0 && (
         <>
-          <h2 className={styles.sectionTitle}>Actions</h2>
+          <h2 className={styles.sectionTitle}>Work</h2>
           <div className={styles.grid}>
-            {actions.map((c) => (
+            {works.map((c) => (
               <CardFace
                 key={c.id}
                 card={c}
@@ -79,11 +79,11 @@ export function Collection({
         </>
       )}
 
-      {works.length > 0 && (
+      {actions.length > 0 && (
         <>
-          <h2 className={styles.sectionTitle}>Work</h2>
+          <h2 className={styles.sectionTitle}>Actions</h2>
           <div className={styles.grid}>
-            {works.map((c) => (
+            {actions.map((c) => (
               <CardFace
                 key={c.id}
                 card={c}

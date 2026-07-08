@@ -1,4 +1,4 @@
-import { CARDS, isDeckable } from '../content/cards';
+import { CARDS, compareCards, isDeckable } from '../content/cards';
 import type { DeckDef, DeckSeed } from '../content/decks';
 import { findInstance, hasSticker, instancesOf, unstickeredInstancesOf, type OwnedCards } from './collection';
 
@@ -64,9 +64,11 @@ export function removeInstance(deck: string[], instanceId: string): string[] | '
 /** One display entry per group of same-looking deck cards: a fungible cardId gets a single
  *  ×N-counted entry (first-seen order). A **stickered** instance breaks out into its own entry
  *  (`count: 1`, `instanceId` set, `stickers` carried) since it's no longer interchangeable and must
- *  be addressable by identity, not folded into the stack. Stickered entries are appended after the
- *  fungible ones, in deck order. An instance id the collection no longer recognizes is silently
- *  skipped rather than throwing. */
+ *  be addressable by identity, not folded into the stack. Entries are returned in the stable
+ *  `compareCards` order (by kind, then name) rather than deck-array order, so the banner/fans don't
+ *  churn as the deck is edited; a card's copies stay contiguous — its fungible group first, then its
+ *  stickered break-outs by ascending instance id. An instance id the collection no longer recognizes
+ *  is silently skipped rather than throwing. */
 export interface DeckGroupEntry {
   cardId: string;
   count: number;
@@ -89,7 +91,20 @@ export function groupCounts(instanceIds: string[], collection: OwnedCards): Deck
     counts.set(inst.cardId, (counts.get(inst.cardId) ?? 0) + 1);
   }
   const fungible = order.map((cardId) => ({ cardId, count: counts.get(cardId)! }));
-  return [...fungible, ...stickered];
+  return sortDeckEntries([...fungible, ...stickered]);
+}
+
+/** Stable order for `groupCounts`/`groupCards`-style entries: `compareCards` first, then keep a
+ *  card's copies contiguous — its fungible group (no `instanceId`) before its stickered break-outs,
+ *  those by ascending numeric instance id. */
+export function sortDeckEntries<T extends { cardId: string; instanceId?: string | number }>(entries: T[]): T[] {
+  return entries.sort((a, b) => {
+    const byCard = compareCards(CARDS[a.cardId], CARDS[b.cardId]) || a.cardId.localeCompare(b.cardId);
+    if (byCard) return byCard;
+    if (!a.instanceId) return b.instanceId ? -1 : 0;
+    if (!b.instanceId) return 1;
+    return Number(a.instanceId) - Number(b.instanceId);
+  });
 }
 
 /** A resolved run-bound card: its cardId plus any permanent stickers its owning meta instance
