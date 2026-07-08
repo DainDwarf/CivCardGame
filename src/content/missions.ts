@@ -64,6 +64,12 @@ export const MISSIONS: Record<string, MissionDef> = {
     description: 'Reach 30 Science by the end of round 12.',
     // Test DAG: gated behind The Long Winter.
     prereqs: ['long_winter'],
+    // The round-12 deadline is a real threat card (Stagnation) seeded here — it renders the visible
+    // countdown and owns the loss itself via `G.pendingDefeat` (its `on.endTurn`), rather than the
+    // objective card carrying a `failed` predicate.
+    setup: (G) => {
+      addThreat(G, 'enlightenment_deadline');
+    },
     objectiveCardId: 'enlightenment_goal',
     victoryHint: 'Accumulate 30 Science before round 12 ends.',
     failureHint: 'Failing to reach 30 Science by round 12.',

@@ -97,8 +97,10 @@ export interface CardDef {
   /**
    * `objective` cards only: the mission's win/lose condition, owned by the card the way every other
    * card owns its logic. Two **pure-read predicates** over the live run state — `met` (the win
-   * condition) and optional `failed` (a mission-specific defeat, e.g. a deadline; core-resource
-   * collapse stays universal in `run/engine.ts`). Read-only by contract: unlike `resolve`/`produce`
+   * condition) and optional `failed` (a mission-specific defeat that's a pure *read* of `G`;
+   * core-resource collapse stays universal in `run/engine.ts`). A defeat that a card must *drive*
+   * — a deadline passing, a counter escalating — belongs on a threat owning `G.pendingDefeat`
+   * instead (e.g. Stagnation), not here. Read-only by contract: unlike `resolve`/`produce`
    * they never mutate `G`. `run/engine.ts`'s `checkEndIf` (via `rules/objective.ts`) currently
    * *polls* them after every move/upkeep step, so a threshold like "30 science" fires the instant
    * it's crossed; they're slated to move onto the event bus (the `endTurn` broadcast enables it).
@@ -343,6 +345,26 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // Stagnation: the Enlightenment mission's visible round-12 deadline as a threat that owns its own
+  // defeat (no resource drain). Its whole responsibility is the *deadline* — the round count — and
+  // nothing else: once round 12 ends it declares the loss via `G.pendingDefeat` (the bus's
+  // declare-defeat capability, see rules/state.ts). It deliberately does NOT read Science: reaching
+  // 30 is the *objective card's* win condition, which `run/engine.ts`'s `checkEndIf` polls *before*
+  // `pendingDefeat` — so a player who hit the goal (even via round-12 production, since threats
+  // dispatch last) has already won and the run has ended before this defeat is ever read. Win and
+  // lose stay cleanly split across the two cards, reconciled only by that poll order. `on.endTurn`
+  // = the round passing; the deadline is a round event, not a resource crossing.
+  enlightenment_deadline: {
+    id: 'enlightenment_deadline', name: 'Stagnation', kind: 'threat', cost: {},
+    description: 'If round 12 ends before the Enlightenment is achieved, stagnation ends your run.',
+    dynamicText: (G) => `Round ${Math.min(G.round, 12)}/12`,
+    on: {
+      endTurn: ({ G }) => {
+        if (G.round >= 12) G.pendingDefeat = { reason: 'stagnation' };
+      },
+    },
+  },
+
   // --- Objective cards: a mission's win/lose condition made into a card (see the `objective` kind
   //     doc above). `rules/objective.ts`'s `seedObjective` seeds one into `GameState.objective` from
   //     the mission's `objectiveCardId`; never in hand/deck/collection/deck editor. Each owns its
@@ -358,10 +380,10 @@ export const CARDS: Record<string, CardDef> = {
   enlightenment_goal: {
     id: 'enlightenment_goal', name: 'The Enlightenment', kind: 'objective', cost: {},
     description: 'Reach 30 Science before round 12 ends.',
-    objective: {
-      met: (G) => G.resources.science >= 30,
-      failed: (G) => G.round > 12 && G.resources.science < 30,
-    },
+    // The round-12 deadline (and the loss it causes) is owned by the Stagnation *threat* the mission
+    // seeds (`on.endTurn` → `G.pendingDefeat`), not by an `objective.failed` here — the objective only
+    // owns the win.
+    objective: { met: (G) => G.resources.science >= 30 },
     dynamicText: (G) => `${G.resources.science}/30🔬`,
   },
   barbarian_tide_goal: {

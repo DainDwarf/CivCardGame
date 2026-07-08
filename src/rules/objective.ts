@@ -28,9 +28,11 @@ export function objectiveMet(G: GameState): boolean {
   return !!o && (CARDS[o.cardId].objective?.met(G, o) ?? false);
 }
 
-/** Whether the seeded objective's mission-specific defeat condition is met right now (e.g. a
- *  deadline) — a pure poll today, slated to move onto the bus like `objectiveMet`. Core-resource
- *  collapse stays a universal check in `run/engine.ts`; an objective with no `failed` hook (most)
+/** Whether the seeded objective's mission-specific defeat condition is met right now — a pure poll
+ *  today, slated to move onto the bus like `objectiveMet`. Only for a defeat that's a pure *read* of
+ *  `G`; a defeat a card must *drive* (a deadline passing, a counter escalating) lives on a threat
+ *  owning `G.pendingDefeat` instead (e.g. Stagnation), read by `checkEndIf`. Core-resource collapse
+ *  stays a universal check in `run/engine.ts`; an objective with no `failed` hook (all of them today)
  *  never defeats on its own. */
 export function objectiveFailed(G: GameState): boolean {
   const o = G.objective;

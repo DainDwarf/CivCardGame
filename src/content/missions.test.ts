@@ -20,7 +20,14 @@ import {
 describe('mission: enlightenment', () => {
   const m = MISSIONS.enlightenment;
 
-  it('objective is met at 30 science', () => {
+  it('setup seeds the Stagnation deadline threat', () => {
+    const G = blankState('enlightenment');
+    m.setup!(G);
+    expect(G.threats).toEqual([{ id: 1, cardId: 'enlightenment_deadline' }]);
+  });
+
+  // The objective owns the *win* only (30 Science); it never fails on its own.
+  it('objective is met at 30 science, and never fails on its own (the threat owns the defeat)', () => {
     const G = blankState('enlightenment');
     seedObjective(G, m.objectiveCardId);
     G.resources.science = 30;
@@ -28,12 +35,24 @@ describe('mission: enlightenment', () => {
     expect(objectiveFailed(G)).toBe(false);
   });
 
-  it('fails once round passes 12 short of the goal', () => {
+  // The threat owns the *lose* only — a pure deadline. It reads no Science: reaching 30 is the
+  // objective's job, which `run/engine.ts`'s `checkEndIf` polls before `pendingDefeat`, so a won run
+  // has already ended before this defeat could be read (the reconciliation lives in `checkEndIf`, not
+  // in either card). These drive the threat directly via `dispatchEvent`, independent of Science.
+  it('the deadline threat declares defeat once round 12 ends — regardless of Science', () => {
     const G = blankState('enlightenment');
-    seedObjective(G, m.objectiveCardId);
-    G.round = 13;
-    G.resources.science = 20;
-    expect(objectiveFailed(G)).toBe(true);
+    m.setup!(G);
+    G.round = 12;
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.pendingDefeat).toEqual({ reason: 'stagnation' });
+  });
+
+  it('the deadline threat stays silent before round 12', () => {
+    const G = blankState('enlightenment');
+    m.setup!(G);
+    G.round = 11;
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.pendingDefeat).toBeNull();
   });
 });
 

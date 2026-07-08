@@ -174,16 +174,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Tech debt / architecture
 
-- **Enlightenment deadline as a threat that owns its own defeat** — surface Enlightenment's
-  currently-invisible round-12 deadline (today `enlightenment_goal.objective.failed`'s
-  `G.round > 12 && science < 30`) as a visible countdown threat card, seeded via mission `setup`
-  like Long Winter's Harsh Winter. **Hard constraint: the threat itself must own the gameover**,
-  not the objective. Now **unblocked** — the event bus (shipped, below) added the declare-defeat
-  capability: a card's `on` handler may set `G.pendingDefeat` (its own reason), which
-  `run/engine.ts`'s `checkEndIf` polls as a defeat. So the countdown threat can be a real card
-  with an `on.resourceChange`/tick hook that sets `pendingDefeat` when the deadline passes without
-  30 science, rather than the engine polling a mission/objective predicate. Do *not* implement the
-  pure-display-countdown stopgap; make the threat authoritative. `[size: M]` `[?]` `[phase: 3]`
+_(none open)_
 
 ---
 
@@ -200,6 +191,26 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Enlightenment deadline as a threat that owns its own defeat** — the mission's
+  currently-invisible round-12 deadline is now a real, visible **threat card, Stagnation**
+  (`content/cards.ts`, `kind: 'threat'`), seeded via the `enlightenment` mission's new `setup`
+  (`addThreat`) like Long Winter's Harsh Winter. It renders the live countdown in the board threat
+  zone (`dynamicText`: `Round n/12` — the deadline is its concern; the science tally stays on the
+  Enlightenment objective card) and **owns the gameover itself**: its `on.endTurn`
+  handler sets `G.pendingDefeat = { reason: 'stagnation' }` once round 12 ends short of 30 Science,
+  which `run/engine.ts`'s `checkEndIf` already polls as a defeat — no engine/objective predicate.
+  The old `enlightenment_goal.objective.failed` predicate was removed (the objective now owns only
+  the win); `Board.tsx`'s `COLLAPSE_MESSAGES` gained a `stagnation` line for the gameover overlay.
+  Timing hinges on threats dispatching **last** in `dispatchEvent` (after production), so hitting 30
+  via round-12 upkeep still wins (`objectiveMet` is polled before `pendingDefeat`). `on.endTurn` (a
+  round passing) is the trigger, not `resourceChange`. Since this left `objective.failed` with zero
+  users, its "e.g. a deadline" example (in `cards.ts` + `rules/objective.ts`) was re-pointed to the
+  threat/`pendingDefeat` pattern; the hook stays as a documented, still-polled seam (tested via
+  `barbarian_tide`). Covered by the rewritten `content/missions.test.ts` enlightenment block
+  (`dispatchEvent`-driven, mirroring the Long Winter / Long Decline threat tests); the
+  `pendingDefeat` → defeat wiring was already proven at `run/engine.test.ts`. Followed the approved
+  plan `.claude/plans/now-that-the-event-polished-crescent.md`. `[size: M]` `[phase: 3]`
 
 - **Event-bus / trigger layer for card effects** — the general trigger layer so a card can react
   to an event whose *timing it doesn't own* (on-draw, on-discard, on-resource-threshold), via a

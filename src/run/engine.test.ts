@@ -52,6 +52,29 @@ describe('event bus through the turn loop', () => {
   });
 });
 
+describe('enlightenment deadline: win (objective) and lose (threat) reconciled by checkEndIf order', () => {
+  // The Stagnation threat (seeded by the mission) owns the lose condition — a pure round-12 deadline,
+  // reading no Science; the objective card owns the win (30 Science). `checkEndIf` polls the win
+  // *before* the threat's `pendingDefeat`, so these two cards need no knowledge of each other.
+  it('round 12 ending short of the goal is a stagnation defeat, owned by the threat', () => {
+    let state = run('enlightenment');
+    state.G.resources.food = 50; // keep famine out of it
+    state.G.resources.science = 20; // short of the 30 goal
+    state.G.round = 12;
+    state = endTurn(state);
+    expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'stagnation' });
+  });
+
+  it('reaching 30 science on the round-12 deadline still wins — the objective is polled first', () => {
+    let state = run('enlightenment');
+    state.G.resources.food = 50;
+    state.G.resources.science = 30; // goal met exactly as the deadline lands
+    state.G.round = 12;
+    state = endTurn(state);
+    expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'enlightenment' });
+  });
+});
+
 describe('endTurn event resolution', () => {
   it('auto-resolves an event left in hand and destroys it (removed, not discarded)', () => {
     let state = run('enlightenment');

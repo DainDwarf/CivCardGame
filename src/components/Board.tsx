@@ -1148,6 +1148,8 @@ export function Board({
     bankruptcy: 'bankruptcy struck — your treasury ran dry.',
     dark_age:   'a dark age descended — knowledge was lost.',
     revolt:     'revolt erupted — your people rose against you.',
+    // card-declared defeats (G.pendingDefeat) reuse this shell map too, not just core collapses:
+    stagnation: 'stagnation set in — the Enlightenment passed you by.',
   };
 
   const proj = projectedDelta(G, mission.onUpkeep);
