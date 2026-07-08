@@ -33,10 +33,12 @@ interface DragState {
  * board's *starting* profile (`rules/boardStickers.ts`), attached per board on the store's
  * `boardStickers`. A board is singular (no per-copy identity), so — unlike a card sticker — the buy
  * attaches directly, no instance picker. Each board renders as a `BoardMini` (Step 9.3.2's
- * mini-board); the available stickers sit in a right-side **tray** of draggable chips. Dragging a
- * chip onto a board buys+attaches it in one gesture (mirroring the card sticker tray) — a
- * hand-rolled pointer-drag like `DeckEditor.tsx` (no DnD library). During a drag only the *valid*
- * target boards for that chip highlight; an invalid/missed drop no-ops (the clone snaps back).
+ * mini-board); the available stickers sit in a right-side **tray** pinned beside the boards, each a
+ * box (a sticker badge + name on top, effect + price below). The badge is styled like the on-board
+ * sticker but larger, and *it* is the draggable: dragging it onto a board buys+attaches it in one
+ * gesture (mirroring the card sticker tray) — a hand-rolled pointer-drag like `DeckEditor.tsx` (no
+ * DnD library). During a drag only the *valid* target boards for that sticker highlight; an
+ * invalid/missed drop no-ops (the clone just disappears).
  */
 export function BoardMenu({
   boardStickers,
@@ -149,20 +151,6 @@ export function BoardMenu({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drag?.pointerId]);
 
-  // The chip visual — icon · name · cost — reused by both the tray and the floating clone.
-  function chipInner(s: BoardStickerDef) {
-    return (
-      <>
-        <span className={styles.chipIcon} aria-hidden="true">{s.icon}</span>
-        <span className={styles.chipName}>{s.name}</span>
-        <span className={styles.chipCost}>
-          <span aria-hidden="true">⭐</span>
-          {s.cost}
-        </span>
-      </>
-    );
-  }
-
   // The dragged chip's sticker (for the highlight predicate + the clone), null when idle.
   const dragSticker = drag?.active ? BOARD_STICKERS[drag.stickerId] : undefined;
 
@@ -188,14 +176,6 @@ export function BoardMenu({
     <>
       <div className={styles.boardMenu}>
         <h1 className={styles.title}>Board</h1>
-        <p className={styles.subtitle}>
-          Drag a sticker from the tray onto a board to attach it — a permanent modifier to that
-          board's starting profile.
-        </p>
-        <div className={styles.balance}>
-          <span aria-hidden="true">⭐</span>
-          {influence} to spend
-        </div>
 
         <div className={styles.layout}>
           <div className={styles.boardGrid}>{BOARD_IDS.map(boardTile)}</div>
@@ -212,12 +192,30 @@ export function BoardMenu({
                     className={`${styles.chip}${affordable ? '' : ` ${styles.chipDisabled}`}`}
                     title={
                       affordable
-                        ? `${s.name} — ${s.description}. Drag onto a board (${s.cost} Influence).`
+                        ? `${s.name} — ${s.description}. Drag the sticker onto a board (${s.cost} Influence).`
                         : `${s.name} — ${s.description}. Not enough Influence (${s.cost}).`
                     }
-                    onPointerDown={affordable ? (e) => onChipPointerDown(e, s.id) : undefined}
                   >
-                    {chipInner(s)}
+                    <div className={styles.chipTop}>
+                      {/* The sticker itself — the draggable, styled like the on-board badge (same
+                          tokens) but larger, so the player recognizes it as the very thing that
+                          lands on the board. Only this element starts a drag. */}
+                      <span
+                        className={styles.stickerDraggable}
+                        aria-hidden="true"
+                        onPointerDown={affordable ? (e) => onChipPointerDown(e, s.id) : undefined}
+                      >
+                        {s.icon}
+                      </span>
+                      <span className={styles.chipName}>{s.name}</span>
+                    </div>
+                    <div className={styles.chipBottom}>
+                      <span className={styles.chipEffect}>{s.description}</span>
+                      <span className={styles.chipCost}>
+                        <span aria-hidden="true">⭐</span>
+                        {s.cost}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
@@ -226,14 +224,15 @@ export function BoardMenu({
         </div>
       </div>
 
-      {/* The chip clone following the cursor while it's dragged onto a board. */}
+      {/* The sticker clone following the cursor while it's dragged onto a board — the same round
+          badge (bigger than the on-board one) picked up from the tray. */}
       {drag?.active && dragSticker && (
         <div className={styles.dragLayer} aria-hidden="true">
           <div
-            className={`${styles.chip} ${styles.dragClone}`}
+            className={styles.dragClone}
             style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
           >
-            {chipInner(dragSticker)}
+            {dragSticker.icon}
           </div>
         </div>
       )}

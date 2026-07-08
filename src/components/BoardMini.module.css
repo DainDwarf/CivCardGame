@@ -15,8 +15,9 @@
   flex-direction: column;
   gap: 0.4rem;
   /* Extra bottom padding leaves room beneath the territory grid for the bottom-left sticker badges
-     (anchored to this box's bottom edge), so the slots never sit on top of them. */
-  padding: 0.5rem 0.5rem 1.4rem;
+     and the bottom-right name pill (both anchored to this box's bottom edge), so the slots never
+     sit on top of them. */
+  padding: 0.5rem 0.5rem 2rem;
 }
 
 /* Local dirt layer, tinted per government board (BoardMini stamps `data-board`) — the miniature

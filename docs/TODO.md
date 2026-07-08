@@ -106,25 +106,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tray on the right; drag-and-drop a sticker from the tray onto a card face buys and
     applies it in one gesture (replacing Step 7.5's separate attach-mode panel). Depends on
     9.1 landing first (this *is* the fused detail view). `[size: M]` `[?]` `[phase: 3]`
-  - **Step 9.3 — Board UI rework** ✅ done — the board-select/launch UI equivalent now that Step 8's
-    board stickers exist. Replaces Step 8's interim `Shop.tsx` Boards section with an in-place board
-    menu (buy/attach a board's modifiers where you view it, mirroring 9.1's fused card detail view).
-    Cut into three substeps, all shipped. `[?]` `[phase: 3]`
-    1. **Move boards to their own tab** ✅ done — a new **Board** nav tab (`meta/BoardMenu.tsx`) that
-       lifts the interim, still button-based Boards buy surface verbatim out of `Shop.tsx`; no game
-       logic or buy behaviour changed. Groundwork for the visual rework in 9.3.2/9.3.3.
-    2. **Mini-boards** ✅ done — `components/BoardMini.tsx` (+ `.module.css`) is a reusable, read-only,
-       board-agnostic miniature of the run board (tinted ground · a top banner of starting counters ·
-       the territory slot grid), driven off `effectiveBoard` so its numbers match a launched run.
-       `BoardMenu.tsx` now renders each board as a `BoardMini` in place of the `describeBoard` text
-       profile; the buy `<button>`s still sit beneath it (replaced in 9.3.3). Presentational only (no
-       `GameContext`/logic), so mission-select can reuse it later.
-    3. **Drag-drop sticker tray** ✅ done — available board stickers sit in a right-side tray of
-       draggable chips; drag one onto a board to buy+apply in one gesture, mirroring 9.2's card
-       sticker tray (a hand-rolled pointer-drag like `DeckEditor.tsx`, no DnD library). Only *valid*
-       target boards highlight mid-drag (`isValidTarget` = applies · under the cap · affordable —
-       the single predicate gating both the highlight and the drop); an invalid/missed drop no-ops.
-       Replaced the interim per-board buy `<button>`s.
+  - **Step 9.3 — Board UI rework** ✅ done — see *Done / shipped* below.
   - **Step 9.4 — Mission lore and select rework** — includes the now-folded-in "Barbarian
     Tide's lore should show the Barbarian card" ticket: `MissionDetailPanel` only shows the
     mission's *reward* card face today; its lore column should also preview the mission's
@@ -173,6 +155,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **Stable card ordering across views** — cards currently "move around" when adding/removing in the deck editor (and potentially other card grids); pick a sensible, stable sort order (by kind? cost? catalogue order?) and apply it consistently everywhere cards are listed — collection, deck editor picker/banner, pile viewers. `[size: S] [?] ` `[phase: 3]`
 - **Bug: worker-drag start looks disabled when no idle population is free** — dragging a worker off a building/Work box onto another building's staffing area, when there's no idle population available to complete the move, shows the OS "unavailable" cursor because the staff-toggle `<button>` is `disabled`. That reads as "you can't drag this" rather than "there's nowhere for it to go yet," which will confuse the player. `[size: S]` `[?]` `[phase: 3]`
+- **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 
 ## Game design & balance
 
@@ -257,6 +240,27 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 9.3 — Board UI rework** — the board-select/launch UI equivalent now that Step 8's
+  board stickers exist; replaces Step 8's interim `Shop.tsx` Boards section with an in-place Board
+  menu. Shipped in three substeps:
+  1. **Move boards to their own tab** — a new **Board** nav tab (`meta/BoardMenu.tsx`) lifting the
+     interim, button-based Boards buy surface out of `Shop.tsx`; no game logic changed. The single
+     navbar Influence badge (`MetaMenu.tsx`) covers every screen, so per-screen Influence counts
+     were dropped (Shop's, then the Board page's).
+  2. **Mini-boards** — `components/BoardMini.tsx` (+ `.module.css`) is a reusable, read-only,
+     board-agnostic miniature of the run board (tinted ground · a top banner of starting counters ·
+     the territory slot grid · bottom-left sticker badges · a bottom-right name pill), driven off
+     `effectiveBoard` so its numbers match a launched run. Presentational only (no `GameContext`/
+     logic), so mission-select can reuse it later.
+  3. **Drag-drop sticker tray** — available board stickers sit in a right-side tray pinned beside
+     the boards (sticky within the meta scroll area, not `position: fixed` — UI-scaling invariant),
+     each a box: a draggable sticker badge (styled like the on-board one via the shared StickerRow
+     tokens, just larger) + name on top, effect + price below. Dragging a badge onto a board
+     buys+attaches in one gesture (a hand-rolled pointer-drag like `DeckEditor.tsx`, no DnD
+     library). A single `isValidTarget` predicate (applies · under the cap · affordable) gates both
+     the mid-drag highlight and the drop; an invalid/missed drop no-ops. Replaced the interim
+     per-board buy `<button>`s.
 
 - **Phase 3 Step 8 — Board stickers** — the board counterpart to card stickers, and the *easy*
   half (a board is singular, so no per-instance identity question — entirely independent of Step 7's
