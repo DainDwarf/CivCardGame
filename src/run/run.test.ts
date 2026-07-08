@@ -23,6 +23,7 @@ function start(missionId: string, board: RunConfig['board'] = 'tribe') {
   const config: RunConfig = {
     deck: FIXTURE_DECK.map((cardId) => ({ cardId })),
     board,
+    boardStickers: [],
     missionId,
     deckId: 'fixture',
     seed: 'test-seed',

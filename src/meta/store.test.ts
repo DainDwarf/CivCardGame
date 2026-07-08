@@ -36,6 +36,7 @@ function sampleStore(): PlayerStore {
     influence: 3,
     collection,
     mapProgress: { enlightenment: true },
+    boardStickers: {},
   };
 }
 

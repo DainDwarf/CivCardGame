@@ -87,3 +87,50 @@
   cursor: default;
   box-shadow: none;
 }
+
+/* --- Boards section (interim: DESIGN.md Step 9.3 reworks this into an in-place board menu) --- */
+.boardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+
+.boardTile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.boardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.boardName {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.boardStickers {
+  display: inline-flex;
+  gap: 0.15rem;
+  font-size: 1rem;
+}
+
+.boardProfile {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.boardBuys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: auto;
+}

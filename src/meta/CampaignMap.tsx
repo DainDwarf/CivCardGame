@@ -2,26 +2,18 @@ import { useRef, useState } from 'react';
 import { MISSIONS, type MissionDef } from '../content/missions';
 import { AGES } from '../content/ages';
 import { BOARDS, type BoardId } from '../content/boards';
+import { BOARD_STICKERS } from '../content/boardStickers';
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
-import type { Resources } from '../rules/resources';
 import type { OwnedCards } from '../rules/collection';
+import { effectiveBoard, type BoardStickers } from '../rules/boardStickers';
 import { buildRunConfig, type RunConfig } from '../contract';
 import { isCompleted, isAvailable } from '../rules/campaign';
+import { BOARD_IDS, describeBoard } from './boardDisplay';
 import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
 import { CardFace } from '../components/CardFace';
 import { CardZoomOverlay } from '../components/CardZoomOverlay';
 import styles from './CampaignMap.module.css';
-
-const BOARD_IDS = Object.keys(BOARDS) as BoardId[];
-
-const RESOURCE_ICON: Record<keyof Resources, string> = {
-  food: '🌾',
-  production: '🔨',
-  science: '🔬',
-  military: '⚔️',
-  money: '🪙',
-};
 
 // --- Map geometry (px, pre-scale — the whole app is scaled by the UI-size wrapper) ---
 const NODE_W = 200;
@@ -33,16 +25,6 @@ const PAD_Y = 36;
 
 const nodeLeft = (col: number) => PAD_X + col * COL_W;
 const nodeTop = (row: number) => PAD_Y + row * ROW_H;
-
-/** Presentation-only summary of a board's starting profile — all 8 starting values. */
-function describeBoard(board: (typeof BOARDS)[BoardId]): string {
-  const parts = (Object.entries(board.resources) as [keyof Resources, number][])
-    .filter(([, v]) => v)
-    .map(([k, v]) => `${v}${RESOURCE_ICON[k]}`);
-  parts.push(`${board.population}🧍`, `${board.territory} territory`);
-  if (board.culture) parts.push(`${board.culture}🎭`);
-  return parts.join(' · ');
-}
 
 /**
  * The Campaign Map. The campaign is humanity's history as a branching tech tree (docs/DESIGN.md): a
@@ -67,6 +49,7 @@ export function CampaignMap({
   decks,
   collection,
   mapProgress,
+  boardStickers,
   uiScale,
   onLaunch,
 }: {
@@ -75,6 +58,9 @@ export function CampaignMap({
    *  chosen deck into a run's cardId deck via `buildRunConfig`. */
   collection: OwnedCards;
   mapProgress: Record<string, true>;
+  /** Board stickers attached per board — the launch popup's board picker shows the *effective*
+   *  profile, and `buildRunConfig` snapshots the chosen board's stickers into the `RunConfig`. */
+  boardStickers: BoardStickers;
   /** Whole-UI scale (settings) — converts pointer-drag deltas (visual px) to scroll px. */
   uiScale: number;
   onLaunch: (config: RunConfig) => void;
@@ -229,6 +215,7 @@ export function CampaignMap({
           alreadyCleared={isCompleted(mapProgress, flow.mission.id)}
           decks={decks}
           collection={collection}
+          boardStickers={boardStickers}
           onCancel={() => setFlow(null)}
           onContinue={() => setFlow({ mission: flow.mission, step: 'launch' })}
           onLaunch={onLaunch}
@@ -264,6 +251,7 @@ function MissionFlowPopup({
   alreadyCleared,
   decks,
   collection,
+  boardStickers,
   onCancel,
   onContinue,
   onLaunch,
@@ -273,6 +261,7 @@ function MissionFlowPopup({
   alreadyCleared: boolean;
   decks: DeckDef[];
   collection: OwnedCards;
+  boardStickers: BoardStickers;
   onCancel: () => void;
   onContinue: () => void;
   onLaunch: (config: RunConfig) => void;
@@ -288,12 +277,15 @@ function MissionFlowPopup({
   // card has nothing to reveal).
   const [zoomCardId, setZoomCardId] = useState<string | null>(null);
 
-  const board = boardId ? BOARDS[boardId] : null;
+  // The picked board's *effective* profile (its attached stickers folded in) — what the run will
+  // actually start with, so the picker shows the true numbers the player bought.
+  const board = boardId ? effectiveBoard(BOARDS[boardId], boardStickers[boardId]) : null;
+  const boardStickerIds = boardId ? boardStickers[boardId] ?? [] : [];
   const canStart = boardId !== null && deckId !== null;
 
   function start() {
     if (!boardId || !deckId) return;
-    onLaunch(buildRunConfig({ missionId: mission.id, boardId, deckId }, crypto.randomUUID(), decks, collection));
+    onLaunch(buildRunConfig({ missionId: mission.id, boardId, deckId }, crypto.randomUUID(), decks, collection, boardStickers));
   }
 
   return (
@@ -363,7 +355,20 @@ function MissionFlowPopup({
                     </button>
                   ))}
                 </div>
-                {board && <p className={styles.detail}>{describeBoard(board)}</p>}
+                {board && (
+                  <p className={styles.detail}>
+                    {describeBoard(board)}
+                    {boardStickerIds.length > 0 && (
+                      <span className={styles.boardStickers}>
+                        {boardStickerIds.map((sid, i) => (
+                          <span key={i} title={BOARD_STICKERS[sid]?.name}>
+                            {BOARD_STICKERS[sid]?.icon}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </p>
+                )}
               </section>
 
               <section className={styles.picker}>

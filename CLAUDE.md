@@ -50,6 +50,18 @@ shop, mission selection — the *only* place decks are edited). See
     hooks); `effectiveGain`/`effectiveCost`/`effectiveCard` are the only places a sticker
     touches run *or* display values, so resolution and every render site (run + meta)
     agree. Current stickers: Reinforced, Efficient, Irrigation.
+  - **Board stickers** — the *board* counterpart to card stickers: permanent modifiers bought
+    with Influence that tweak a board's *starting* profile (`content/boardStickers.ts`,
+    `rules/boardStickers.ts`), attached per board on `PlayerStore.boardStickers` (a board is
+    singular — no per-copy identity). A separate catalogue from card stickers, not an extension:
+    a `BoardStickerDef` owns its logic via one `applyToBoard(board)` hook applied *once at setup*,
+    may touch any of the 8 starting values, and `effectiveBoard` is the single fold that applies
+    them — `run/setup.ts` seeds off it and the board pickers display it. The applied stickers are
+    **snapshotted into `RunConfig.boardStickers` at launch** (never re-looked-up in the core
+    `setup.ts`), so buying one mid-campaign can't retroactively change an in-progress/restarted
+    run. Provisional cap of 2 per board (balance is Phase 4). The Shop's Boards section is a
+    minimal interim buy surface (Step 9.3 reworks it into an in-place board menu). Current board
+    stickers: Fertile Land, Garrison, Frontier.
 
 ## Commands
 
@@ -116,6 +128,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `stickers.ts` — sticker logic: `buySticker` (meta purchase) and
     `effectiveGain`/`effectiveCost`/`effectiveCard`, the only places a sticker touches run
     or display values (each a generic fold over the `StickerDef` hooks; see the convention).
+  - `boardStickers.ts` — the board counterpart: `buyBoardSticker` (meta purchase),
+    `boardStickerAppliesTo`, and `effectiveBoard` — the single fold that applies a board's
+    stickers to its starting profile (`run/setup.ts` seeds off it; the board pickers display
+    it). `MAX_BOARD_STICKERS` is the provisional per-board cap.
 - `src/content/` — the typed game catalogues (cards, decks, boards, missions, stickers).
   A card or sticker def carries its own behaviour (a card's `resolve` closure, a sticker's
   hooks — see the *own their own logic* convention), so these are data *and* the per-entry
@@ -134,6 +150,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     real instance-bearing `OwnedCards` by `collectionFromCounts` at seed time).
   - `stickers.ts` — `STICKERS`; each `StickerDef` carries its own
     `appliesTo`/`applyGain`/`applyCost` logic and an `icon`.
+  - `boardStickers.ts` — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
+    `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
   - `boards.ts` — `BOARDS` (government boards; each sets all 8 starting resources: the 5
     core plus population/territory/culture).
   - `missions.ts` — `MISSIONS`; each supplies `objective`/`failure` as pure predicates over
@@ -196,7 +214,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `Collection.tsx` — read-only catalogue of owned cards (omits not-yet-unlocked ones); a
     tile opens `CardInstancePanel.tsx`, a per-owned-instance drill-down.
   - `Shop.tsx` — the copy-tier + sticker shop; lists only cards with a tier or sticker slot
-    left, each buy button calling back into `App.tsx` (`onBuyTier`/`onAttachSticker`).
+    left, each buy button calling back into `App.tsx` (`onBuyTier`/`onAttachSticker`). Its
+    Boards section (interim, per Step 9.3) lists every board with its `effectiveBoard` profile +
+    one-click board-sticker buys (`onBuyBoardSticker`); the shared board formatter lives in
+    `meta/boardDisplay.ts`.
   - `Decks.tsx` — every deck as a tile (a hover-revealed card fan grouped ×N via
     `groupCounts`); the tile + its list-view overlay are the shared `DeckTile`/
     `DeckListOverlay` (`components/DeckDisplay.tsx`, also used by the launch popup), with
@@ -241,9 +262,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   the `body` margin/background/overflow resets — lives in those files' own comments.
 
 See `src/contract.ts` for the `RunConfig`/`RunResult` types, `buildRunConfig` (takes the
-player's `decks` and `collection` as required arguments — there's no static deck registry
-to fall back on, and a deck's cards are meta instance ids that need the
-collection to resolve to cardIds), and `reshuffleRunConfig` (re-shuffles an existing
+player's `decks`, `collection`, and `boardStickers` as required arguments — there's no static deck
+registry to fall back on, a deck's cards are meta instance ids that need the
+collection to resolve to cardIds, and the chosen board's stickers are snapshotted onto
+`RunConfig.boardStickers`), and `reshuffleRunConfig` (re-shuffles an existing
 `RunConfig.deck` directly, used by `GameContext.tsx`'s restart) — the spine between the two loops
 (docs/DESIGN.md, "The contract").
 

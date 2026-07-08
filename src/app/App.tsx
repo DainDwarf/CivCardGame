@@ -8,6 +8,8 @@ import { applyRunResult, loadStore, saveStore, type PlayerStore } from '../meta/
 import { MAX_DECKS } from '../rules/deckBuilder';
 import { buyTier } from '../rules/shop';
 import { buySticker } from '../rules/stickers';
+import { buyBoardSticker } from '../rules/boardStickers';
+import type { BoardId } from '../content/boards';
 import { MISSIONS } from '../content/missions';
 import { applyTheme, loadSettings, saveSettings, type Settings } from '../meta/settings';
 import type { DeckDef } from '../content/decks';
@@ -171,6 +173,15 @@ export function App() {
     persist({ ...store, influence: result.influence, collection: result.collection });
   }
 
+  // The board-sticker shop's write path: spend Influence to attach a permanent modifier to a board.
+  // `buyBoardSticker` is the pure rule (rules/boardStickers.ts) and returns null for an unaffordable /
+  // full / inapplicable board, so a rejected buy is a silent no-op here — same backstop as above.
+  function buyBoardStickerAt(boardId: BoardId, stickerId: string) {
+    const result = buyBoardSticker(store.boardStickers, store.influence, boardId, stickerId);
+    if (!result) return;
+    persist({ ...store, influence: result.influence, boardStickers: result.boardStickers });
+  }
+
   return (
     // Whole-UI scale wrapper — a transform:scale() container so `position: fixed` children
     // (hand bar, burger, deck-editor banner, drag clones) reparent to it and scale as one.
@@ -214,12 +225,14 @@ export function App() {
             collection={store.collection}
             influence={store.influence}
             mapProgress={store.mapProgress}
+            boardStickers={store.boardStickers}
             uiScale={settings.uiScale}
             onLaunch={(config) => transition(() => setView({ screen: 'run', config }))}
             onSaveDeck={saveDeck}
             onDeleteDeck={deleteDeck}
             onBuyTier={buyCardTier}
             onAttachSticker={attachSticker}
+            onBuyBoardSticker={buyBoardStickerAt}
           />
         </>
       )}

@@ -3,6 +3,7 @@ import type { DeckDef } from './content/decks';
 import type { Resources } from './rules/resources';
 import { resolveDeckCards, type DeckCard } from './rules/deckBuilder';
 import type { OwnedCards } from './rules/collection';
+import type { BoardStickers } from './rules/boardStickers';
 import { shuffle } from './rules/rng';
 
 /**
@@ -29,6 +30,11 @@ export interface RunConfig {
    *  and any permanent stickers from its owning meta instance. */
   deck: DeckCard[];
   board: BoardId;
+  /** The board stickers applied to `board`, **snapshotted at launch** — not re-looked-up in
+   *  `run/setup.ts` (core can't reach `PlayerStore`), so a sticker bought mid-campaign never
+   *  retroactively alters an in-progress or restarted run. `run/setup.ts` folds these onto the
+   *  board baseline via `effectiveBoard`. */
+  boardStickers: string[];
   missionId: string;
   /** The deck this run was launched with — kept for display/record-keeping. Reshuffling
    *  (e.g. on restart) operates on `deck` directly via `reshuffleRunConfig`, not a
@@ -56,17 +62,26 @@ export interface RunResult {
 }
 
 /**
- * Assemble a `RunConfig` from the player's meta-loop selection, a run seed, their deck list, and
- * their collection — a deck's `cards` are meta instance ids, so resolving it to a run's cardId deck
- * needs the collection to translate. There's no static deck registry to fall back on. An unresolvable
+ * Assemble a `RunConfig` from the player's meta-loop selection, a run seed, their deck list, their
+ * collection, and their board-sticker map — a deck's `cards` are meta instance ids, so resolving it
+ * to a run's cardId deck needs the collection to translate; the chosen board's stickers are
+ * snapshotted off `boardStickers` (see `RunConfig.boardStickers`). There's no static deck registry to
+ * fall back on. An unresolvable
  * `deckId` (e.g. the source deck was deleted) yields an empty `deck: []` rather than throwing (the
  * codebase's fall-back-don't-throw style). The player's deck is never mutated, only copied.
  */
-export function buildRunConfig(selection: RunSelection, seed: string, decks: DeckDef[], collection: OwnedCards): RunConfig {
+export function buildRunConfig(
+  selection: RunSelection,
+  seed: string,
+  decks: DeckDef[],
+  collection: OwnedCards,
+  boardStickers: BoardStickers,
+): RunConfig {
   const cards = resolveDeckCards(selection.deckId, decks, collection) ?? [];
   return {
     deck: shuffle(cards, seed),
     board: selection.boardId,
+    boardStickers: boardStickers[selection.boardId] ?? [],
     missionId: selection.missionId,
     deckId: selection.deckId,
     seed,

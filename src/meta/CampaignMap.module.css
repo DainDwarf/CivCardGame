@@ -382,6 +382,13 @@
   color: var(--text-muted);
 }
 
+/* Attached board-sticker glyphs, shown after the effective-profile summary. */
+.boardStickers {
+  display: inline-flex;
+  gap: 0.15rem;
+  margin-left: 0.4rem;
+}
+
 .popupFooter {
   display: flex;
   justify-content: flex-end;

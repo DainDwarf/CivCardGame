@@ -8,6 +8,8 @@ import { Stats } from './Stats';
 import type { DeckDef } from '../content/decks';
 import type { RunConfig, RunResult } from '../contract';
 import type { OwnedCards } from '../rules/collection';
+import type { BoardStickers } from '../rules/boardStickers';
+import type { BoardId } from '../content/boards';
 import styles from './MetaMenu.module.css';
 
 type Screen = 'mission' | 'collection' | 'shop' | 'decks' | 'stats' | 'deckEditor';
@@ -35,12 +37,14 @@ export function MetaMenu({
   collection,
   influence,
   mapProgress,
+  boardStickers,
   uiScale,
   onLaunch,
   onSaveDeck,
   onDeleteDeck,
   onBuyTier,
   onAttachSticker,
+  onBuyBoardSticker,
 }: {
   runHistory: RunResult[];
   decks: DeckDef[];
@@ -53,6 +57,9 @@ export function MetaMenu({
   /** Completed mission ids — forwarded to `CampaignMap` so it can gate the DAG's node
    *  states (`rules/campaign.ts`). */
   mapProgress: Record<string, true>;
+  /** Board stickers attached per board — forwarded to `Shop` (buy/list) and `CampaignMap` (the
+   *  launch popup's board picker shows the *effective* profile). */
+  boardStickers: BoardStickers;
   /** Whole-UI scale (settings) — forwarded to `DeckEditor` (drag-clone coordinate math) and
    *  `CampaignMap` (pointer-drag pan). */
   uiScale: number;
@@ -65,6 +72,9 @@ export function MetaMenu({
   /** Attach a sticker to one chosen owned instance — spends Influence and
    *  mutates that instance in the store (`App.tsx`'s `attachSticker`). */
   onAttachSticker: (instanceId: string, stickerId: string) => void;
+  /** Attach a board sticker to a board — spends Influence and mutates the store's
+   *  `boardStickers` (`App.tsx`'s `buyBoardStickerAt`). */
+  onBuyBoardSticker: (boardId: BoardId, stickerId: string) => void;
 }) {
   const [screen, setScreen] = useState<Screen>('mission');
   const [editingDeck, setEditingDeck] = useState<DeckDef | null>(null);
@@ -106,7 +116,14 @@ export function MetaMenu({
       </nav>
       <div className={styles.content}>
         {screen === 'mission' && (
-          <CampaignMap decks={decks} collection={collection} mapProgress={mapProgress} uiScale={uiScale} onLaunch={onLaunch} />
+          <CampaignMap
+            decks={decks}
+            collection={collection}
+            mapProgress={mapProgress}
+            boardStickers={boardStickers}
+            uiScale={uiScale}
+            onLaunch={onLaunch}
+          />
         )}
         {screen === 'collection' && <Collection collection={collection} decks={decks} />}
         {screen === 'shop' && (
@@ -114,8 +131,10 @@ export function MetaMenu({
             collection={collection}
             decks={decks}
             influence={influence}
+            boardStickers={boardStickers}
             onBuyTier={onBuyTier}
             onAttachSticker={onAttachSticker}
+            onBuyBoardSticker={onBuyBoardSticker}
           />
         )}
         {screen === 'decks' && (

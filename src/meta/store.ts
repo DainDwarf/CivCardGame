@@ -4,6 +4,7 @@ import { STARTING_COLLECTION } from '../content/collection';
 import type { MissionDef } from '../content/missions';
 import { buildSeedDecks } from '../rules/deckBuilder';
 import { collectionFromCounts, type OwnedCards } from '../rules/collection';
+import type { BoardStickers } from '../rules/boardStickers';
 import { computeRewards } from '../rules/rewards';
 import { isCompleted } from '../rules/campaign';
 
@@ -20,6 +21,9 @@ export interface PlayerStore {
   influence: number;
   collection: OwnedCards;
   mapProgress: Record<string, true>;
+  /** Board stickers attached per board (`rules/boardStickers.ts`) — permanent modifiers bought with
+   *  Influence, snapshotted into `RunConfig.boardStickers` at launch. A board with none is absent. */
+  boardStickers: BoardStickers;
 }
 
 const STORAGE_KEY = 'civcardgame:player-store';
@@ -36,6 +40,7 @@ export function emptyStore(): PlayerStore {
     influence: 0,
     collection,
     mapProgress: {},
+    boardStickers: {},
   };
 }
 
@@ -46,7 +51,7 @@ export function emptyStore(): PlayerStore {
  * is *not* fatal — it just means this store predates the deck-editor feature, so it's
  * seeded with the starting decks a fresh install would have had (resolved against this
  * store's own `collection`), without losing runHistory. `influence`/`collection`/
- * `mapProgress` are new fields with no such precedent (pre-alpha: no save migration, see
+ * `mapProgress`/`boardStickers` are new fields with no such precedent (pre-alpha: no save migration, see
  * docs/TODO.md), so a store missing any of them is simply unrecognized — this includes a
  * pre-Step-7.2 `collection` (a bare `{ cardId: count }` map, not `{ instances, nextId }`):
  * without this check it would pass the loose `typeof === 'object'` test and only fail much
@@ -61,6 +66,7 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
   const collectionObj = obj.collection as Record<string, unknown>;
   if (!Array.isArray(collectionObj.instances) || typeof collectionObj.nextId !== 'number') return null;
   if (!obj.mapProgress || typeof obj.mapProgress !== 'object') return null;
+  if (!obj.boardStickers || typeof obj.boardStickers !== 'object') return null;
   const collection = obj.collection as OwnedCards;
   const decks = Array.isArray(obj.decks) ? (obj.decks as DeckDef[]) : buildSeedDecks(DEFAULT_DECKS, collection);
   return {
@@ -69,6 +75,7 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
     influence: obj.influence,
     collection,
     mapProgress: obj.mapProgress as Record<string, true>,
+    boardStickers: obj.boardStickers as BoardStickers,
   };
 }
 

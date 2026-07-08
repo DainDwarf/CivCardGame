@@ -86,12 +86,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     2. **Bottom-left placement** ✅ done — see *Done / shipped* below.
     3. **Meta screens show effective values too** ✅ done — see *Done / shipped* below.
     4. **Loop cards stay visibly stickered** ✅ done — see *Done / shipped* below.
-- **Step 8 — Board stickers** — permanent board modifiers bought with Influence (DESIGN.md: board
-  stickers *are* the "board modifiers" — one concept, not two). The *easy* half of stickers: a board
-  isn't multi-copy, so a board sticker just lives on the board entry in the meta and `setup.ts` layers it
-  onto the run's starting resource profile (like a mission's `setup` modifiers) — no per-instance identity
-  question, so entirely independent of Step 7's collection rework. Whether several stack on one board is a
-  deferred balance detail (DESIGN.md open question). `[size: M]` `[phase: 3]`
+- **Step 8 — Board stickers** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
 - **Step 9 — Meta UI rework** — a multi-part pass over the meta screens now that the
   economy (Steps 1–8) is in place; cut into substeps. Only ordering constraint is **9.1 → 9.2**
   (9.2 reworks the detail view 9.1 fuses into); 9.3/9.4/9.5 are independent of each other and of
@@ -111,8 +106,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tray on the right; drag-and-drop a sticker from the tray onto a card face buys and
     applies it in one gesture (replacing Step 7.5's separate attach-mode panel). Depends on
     9.1 landing first (this *is* the fused detail view). `[size: M]` `[?]` `[phase: 3]`
-  - **Step 9.3 — Board UI rework** — TBD; the board-select/launch UI equivalent once Step 8's
-    board stickers exist. `[?]` `[blocked]` `[phase: 3]`
+  - **Step 9.3 — Board UI rework** — TBD; the board-select/launch UI equivalent now that Step 8's
+    board stickers exist. Replaces Step 8's interim `Shop.tsx` Boards section with an in-place board
+    menu (buy/attach a board's modifiers where you view it, mirroring 9.1's fused card detail view).
+    `[?]` `[phase: 3]`
   - **Step 9.4 — Mission lore and select rework** — includes the now-folded-in "Barbarian
     Tide's lore should show the Barbarian card" ticket: `MissionDetailPanel` only shows the
     mission's *reward* card face today; its lore column should also preview the mission's
@@ -246,6 +243,29 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Phase 3 Step 8 — Board stickers** — the board counterpart to card stickers, and the *easy*
+  half (a board is singular, so no per-instance identity question — entirely independent of Step 7's
+  collection rework). A **separate catalogue** from card stickers, not an extension: `content/
+  boardStickers.ts`'s `BoardStickerDef` owns its logic via a single one-time `applyToBoard(board)`
+  hook (may touch any of the 8 starting values, including the strategic gauges that aren't in
+  `Resources`) plus an optional `appliesTo(board)`; `rules/boardStickers.ts` is the generic
+  dispatcher — `boardStickerAppliesTo`, the `effectiveBoard` fold (the board counterpart to
+  `effectiveCard`, stacking/composing fall out for free), and the immutable `buyBoardSticker`
+  (mirrors `buyTier`/`buySticker`). Starter set: Fertile Land / Garrison / Frontier. Attached per
+  board on `PlayerStore.boardStickers` (`Record<BoardId, string[]>`, absent = none; pre-alpha reset,
+  no migration). **Snapshotted into `RunConfig.boardStickers` at launch** (sibling of `board`, not a
+  reshape) — never re-looked-up in the core `run/setup.ts` (which seeds off `effectiveBoard`), so a
+  sticker bought mid-campaign can't retroactively alter an in-progress/restarted run; `reshuffle
+  RunConfig`'s `...config` spread carries the snapshot for free. Provisional cap of 2 per board
+  (`MAX_BOARD_STICKERS`; DESIGN defers stacking as balance). UI: a **minimal interim Boards section**
+  in `Shop.tsx` (each board's `effectiveBoard` profile + one-click board-sticker buys, no
+  `CardInstancePanel` since a board is singular) — the "separate board-shop section" DESIGN Step 9.1
+  flags for replacement by the future in-place board menu; the launch popup's board picker
+  (`CampaignMap.tsx`) shows the effective profile + attached icons too. The board-profile formatter
+  (`describeBoard`/`RESOURCE_ICON`/`BOARD_IDS`) was extracted to a shared `meta/boardDisplay.ts`
+  (Shop + CampaignMap both need it). Board *unlocking* stays out of scope — boards remain
+  all-available. Covered by `rules/boardStickers.test.ts` (fold, eligibility, purchase edge cases)
+  and a `contract.test.ts` snapshot case.
 - **Bug fix: white flash between mission lore panel and board/deck popup** — root cause matched
   the TODO's hypothesis: `MissionDetailPanel` and `LaunchPopup` (`meta/CampaignMap.tsx`) were two
   separate components, each mounting its own `.popupBackdrop` (which carries a mount-time `fadeIn`

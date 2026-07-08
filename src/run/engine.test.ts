@@ -5,7 +5,7 @@ import type { RunConfig } from '../contract';
 
 /** A run with an empty draw pile, so the hand can be set explicitly and stays stable across turns. */
 function run(missionId: string): RunState {
-  const config: RunConfig = { deck: [], board: 'tribe', missionId, deckId: 'd', seed: 's' };
+  const config: RunConfig = { deck: [], board: 'tribe', boardStickers: [], missionId, deckId: 'd', seed: 's' };
   return createRun(config);
 }
 

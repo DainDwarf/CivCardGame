@@ -1,15 +1,16 @@
 import { blankState, instancesFromDeckCards, seededRng, type GameState } from '../rules';
+import { effectiveBoard } from '../rules/boardStickers';
 import { MISSIONS } from '../content/missions';
 import { BOARDS } from '../content/boards';
 import type { RunConfig } from '../contract';
 
 /**
- * Build the initial run state from an assembled `RunConfig`. The board sets the
- * baseline (all 8 starting resources); the mission's `setup` then layers its own
- * modifiers on top (see docs/DESIGN.md, "Government boards").
+ * Build the initial run state from an assembled `RunConfig`. The board (with its snapshotted
+ * stickers folded in via `effectiveBoard`) sets the baseline (all 8 starting resources); the
+ * mission's `setup` then layers its own modifiers on top (see docs/DESIGN.md, "Government boards").
  */
 export function createInitialState(config: RunConfig): GameState {
-  const board = BOARDS[config.board];
+  const board = effectiveBoard(BOARDS[config.board], config.boardStickers);
   const G = blankState(config.missionId);
   G.resources = { ...board.resources };
   G.population = board.population;
