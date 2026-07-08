@@ -71,6 +71,26 @@ export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
   flushEvents(G, before);
 }
 
+/**
+ * Settle the end-of-turn sequence after `applyUpkeep`: resolve any events left in hand, recycle
+ * the rest of the hand to discard (emitting an `endOfTurn` discard per card), file the work zone,
+ * then flush everything those emitted. The single choke point for this sequence, shared by the run
+ * loop's `endTurn` and the HUD's `projectedDelta` below, so they can't drift the way they used to.
+ */
+export function settleEndOfTurn(G: GameState): void {
+  const before = snapshot(G);
+  resolveHandEvents(G);
+  // The recycled hand files as end-of-turn discards — a distinct reason from a sacrifice, so an
+  // `on.discard` handler can ignore the routine recycle.
+  for (const c of G.hand) emitEvent(G, { type: 'discard', instanceId: c.id, cardId: c.cardId, reason: 'endOfTurn' });
+  G.discard.push(...G.hand);
+  G.hand = [];
+  // Work cards played this turn have now had their staffed production collected by upkeep; file
+  // them to the discard and clear the board's work zone for the next turn.
+  discardWorkZone(G);
+  flushEvents(G, before);
+}
+
 /** The net change the player would see if they ended the round right now. */
 export interface ProjectedDelta {
   resources: Resources;
@@ -81,12 +101,9 @@ export function projectedDelta(G: GameState, missionUpkeep?: MissionUpkeep): Pro
   const clone = structuredClone(G);
   applyUpkeep(clone, missionUpkeep);
   // Events in hand auto-resolve at end of turn too, so fold their impact into the delta the
-  // player sees (e.g. a Barbarian's Military drain + its collapse warning).
-  const beforeEvents = snapshot(clone);
-  resolveHandEvents(clone);
-  // Mirror `endTurn`: flush what the hand events emitted (their discards, any resourceChange) so the
-  // preview matches the real turn end, not a pre-dispatch snapshot of it.
-  flushEvents(clone, beforeEvents);
+  // player sees (e.g. a Barbarian's Military drain + its collapse warning) — same sequence
+  // `endTurn` runs for real, via the shared `settleEndOfTurn`.
+  settleEndOfTurn(clone);
   return {
     resources: {
       food: clone.resources.food - G.resources.food,

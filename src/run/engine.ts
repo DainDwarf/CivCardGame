@@ -1,5 +1,5 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, coreCollapse, discardWorkZone, drawUpTo, emitEvent, flushEvents, resolveHandEvents, snapshot, type CollapseReason, type GameState } from '../rules';
+import { applyUpkeep, coreCollapse, drawUpTo, flushEvents, settleEndOfTurn, snapshot, type CollapseReason, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
 import type { RunConfig, RunResult } from '../contract';
 
@@ -64,19 +64,8 @@ export function endTurn(state: RunState): RunState {
   const afterUpkeep = checkEndIf({ ...state, G });
   if (afterUpkeep.gameover) return afterUpkeep;
   // Events left in hand auto-resolve (applying their effect) and are destroyed to the removed
-  // pile; the rest of the hand recycles to discard.
-  const beforeEvents = snapshot(G);
-  resolveHandEvents(G);
-  // The recycled hand files as end-of-turn discards — a distinct reason from a sacrifice, so an
-  // `on.discard` handler can ignore the routine recycle.
-  for (const c of G.hand) emitEvent(G, { type: 'discard', instanceId: c.id, cardId: c.cardId, reason: 'endOfTurn' });
-  G.discard.push(...G.hand);
-  G.hand = [];
-  // Work cards played this turn have now had their staffed production collected by upkeep; file
-  // them to the discard and clear the board's work zone for the next turn.
-  discardWorkZone(G);
-  // Dispatch everything the hand-events / recycle / work-filing emitted before the next turn begins.
-  flushEvents(G, beforeEvents);
+  // pile; the rest of the hand recycles to discard, and the work zone files — see `settleEndOfTurn`.
+  settleEndOfTurn(G);
   // An event may have tripped collapse (a resource going negative) or the objective (e.g. the
   // last barbarian beaten), so re-check before the next turn begins.
   const afterEvents = checkEndIf({ ...afterUpkeep, G });

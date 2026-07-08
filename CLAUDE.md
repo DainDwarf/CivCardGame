@@ -166,8 +166,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     the engine asks each instance to produce and never reads its `produces` itself. Production is
     driven by the `endTurn` broadcast; there is no standalone production module.)
   - `upkeep.ts` — `applyUpkeep` (the `endTurn` broadcast — production + threat drains — → mission
-    tick → food eaten → flush), plus `discardWorkZone` (end-of-turn work filing) and `projectedDelta`
-    (the UI preview).
+    tick → food eaten → flush), plus `resolveHandEvents` (auto-resolves any `event` cards left in
+    hand) and `discardWorkZone` (end-of-turn work filing). `settleEndOfTurn` is the single choke
+    point that chains resolve-hand-events → recycle-hand → file-work-zone → flush, called by both
+    `run/engine.ts`'s `endTurn` and this file's `projectedDelta` (the UI preview) so the two can
+    never drift the way open-coded copies once did.
   - `tableau.ts` — derived stats, including the `territory` cap gating tableau size.
   - `deckBuilder.ts` — deck *construction*: a `DeckDef.cards` entry is a meta instance id,
     so `addCard`/`removeCard` resolve through the player's `OwnedCards` (returning
@@ -227,10 +230,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   already shuffled (deterministically from `config.seed` — see the determinism convention).
 - `src/run/engine.ts` — the turn state machine. `RunState = { G, gameover }`.
   `createRun(config: RunConfig)` bootstraps a run by calling `setup.ts`'s
-  `createInitialState`, then running the first `beginTurn`. `endTurn(state)` runs `applyUpkeep`, checks win/loss, resolves any `event`
-  cards still in hand (`resolveHandEvents` — apply effect, exile to `removed`), recycles the
-  hand and files the turn's played `work` cards to `discard` (`discardWorkZone`), re-checks
-  win/loss, then starts the next turn. `applyMove(state, moveFn, ...args)` clones `G` with `structuredClone`,
+  `createInitialState`, then running the first `beginTurn`. `endTurn(state)` runs `applyUpkeep`, checks
+  win/loss, then hands off to `upkeep.ts`'s `settleEndOfTurn` — resolves any `event` cards still in
+  hand (apply effect, exile to `removed`), recycles the hand and files the turn's played `work` cards
+  to `discard` — re-checks win/loss, then starts the next turn. `applyMove(state, moveFn, ...args)` clones `G` with `structuredClone`,
   runs the move, and checks win/loss. All three return a new `RunState` — the caller
   (React context) owns the mutable reference. `toRunResult(G, gameover)` promotes a
   finished run into the `RunResult` handed back to the meta loop.
