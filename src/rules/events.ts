@@ -61,14 +61,29 @@ function valueChanged(G: GameState, before: ValueSnapshot): boolean {
   );
 }
 
-/** The subject instance a discrete event names (`draw`/`discard`), reconstructed bare (`{id, cardId}`)
- *  like `resolveInteraction` does — the card may have moved zones since, so we don't chase its live
- *  copy or its counters (see the review's #2 finding: a bare subject's stickers/counters are still
- *  lost). `undefined` for a value (`resourceChange`) or broadcast (`endTurn`) event, which name no
- *  subject. */
+/** The bare `{id, cardId}` a discrete event (`draw`/`discard`) names — just enough to look the
+ *  subject up. `undefined` for a value (`resourceChange`) or broadcast (`endTurn`) event, which name
+ *  no subject. */
 function subjectOf(event: GameEvent): CardInstance | undefined {
   if (event.type === 'resourceChange' || event.type === 'endTurn') return undefined;
   return { id: event.instanceId, cardId: event.cardId };
+}
+
+/** Find the live instance for an id across every zone a card can currently sit in — the card may
+ *  have moved since the event was emitted (a discard site files it to `discard`/`removed` before
+ *  emitting), so a self-triggered handler must see *this* copy's real `stickers`/`counters`, not a
+ *  bare reconstruction. `undefined` only if the id genuinely isn't live anywhere (defensive; every
+ *  emit site above resolves before its event flushes). */
+function findLiveInstance(G: GameState, id: number): CardInstance | undefined {
+  return (
+    G.hand.find((c) => c.id === id) ??
+    G.deck.find((c) => c.id === id) ??
+    G.discard.find((c) => c.id === id) ??
+    G.removed.find((c) => c.id === id) ??
+    G.tableau.find((c) => c.id === id) ??
+    G.workZone.find((c) => c.id === id) ??
+    G.threats.find((c) => c.id === id)
+  );
 }
 
 /**
@@ -91,9 +106,11 @@ function subjectOf(event: GameEvent): CardInstance | undefined {
  * `isOperating` gate rather than firing unconditionally (e.g. Scriptorium drawn into hand is not
  * an operating copy and must not pay out on its own draw). That only makes sense once the subject
  * is resolved to its *live* zone instance (a bare `{id, cardId}` has no `workers` to gate on), so a
- * building/work subject is looked up via `findStaffable` instead of dispatched bare; a subject of any
- * other kind (action/event/threat/objective — never staffable) keeps firing unconditionally, since it
- * never had a staffing contract to begin with.
+ * building/work subject is looked up via `findStaffable` instead of dispatched bare. A subject of any
+ * other kind (action/event/threat/objective — never staffable) fires unconditionally, but is still
+ * resolved to its live zone instance (via `findLiveInstance`) rather than the bare reconstruction, so
+ * its handler sees this copy's real `stickers`/`counters` (e.g. a purchased Reinforced still applies
+ * when a sacrificed action reacts to its own discard).
  */
 export function dispatchEvent(G: GameState, event: GameEvent): void {
   const seen = new Set<number>();
@@ -112,7 +129,7 @@ export function dispatchEvent(G: GameState, event: GameEvent): void {
       const live = findStaffable(G, subject.id);
       if (live && isOperating(live)) run(live);
     } else {
-      run(subject);
+      run(findLiveInstance(G, subject.id) ?? subject);
     }
   }
   // Snapshot the observer zones first: a handler may add/remove from them, but this event's

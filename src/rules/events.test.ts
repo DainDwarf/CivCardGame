@@ -165,6 +165,15 @@ describe('dispatchEvent — subject scope (self-triggered) + reason', () => {
     dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'scriptorium', source: 'effect' });
     expect(G.resources.money).toBe(0);
   });
+
+  it('folds a purchased sticker through a self-triggered (subject) handler, not just the observer walk', () => {
+    // The card is filed to discard (as a real leaf site does) carrying its sticker before the
+    // event dispatches — the subject path must resolve to that live copy, not a bare {id, cardId}.
+    const G = blankState('enlightenment');
+    G.discard = [{ id: 5, cardId: 'salvage', stickers: ['reinforced'] }];
+    dispatchEvent(G, { type: 'discard', instanceId: 5, cardId: 'salvage', reason: 'sacrifice' });
+    expect(G.resources.production).toBe(3); // base +2, Reinforced +1
+  });
 });
 
 describe('dispatchEvent — endTurn broadcast (production + threat drains)', () => {
