@@ -89,21 +89,60 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 8 — Board stickers** — ✅ done — see *Done / shipped* below. `[size: M]` `[phase: 3]`
 - **Step 9 — Meta UI rework** — a multi-part pass over the meta screens now that the
   economy (Steps 1–8) is in place; cut into substeps. Only ordering constraint is **9.1 → 9.2**
-  (9.2 reworks the detail view 9.1 fuses into); 9.3/9.4/9.5 are independent of each other and of
-  9.1/9.2. `[phase: 3]`
+  (9.2 reworks the detail view 9.1 fuses into); 9.3, 9.4, 9.5, and 9.6 are independent of each
+  other and of 9.1/9.2 (9.4 touches the mission-flow *detail* step, 9.5 its *launch* step —
+  disjoint). `[phase: 3]`
   - **Step 9.1 — Fuse Shop into Collection** — ✅ done — see *Done / shipped* below.
     `[phase: 3]`
   - **Step 9.2 — Collection UI rework + card upgrades** — ✅ done — see *Done / shipped* below.
     `[phase: 3]`
   - **Step 9.3 — Board UI rework** ✅ done — see *Done / shipped* below.
-  - **Step 9.4 — Mission lore and select rework** — includes the now-folded-in "Barbarian
-    Tide's lore should show the Barbarian card" ticket: `MissionDetailPanel` only shows the
-    mission's *reward* card face today; its lore column should also preview the mission's
-    own threat/event card (Barbarian Tide's Barbarian, Long Winter/Long Decline's threats),
-    since that's the card the mission is actually about. `[size: S]` `[?]` `[phase: 3]`
-  - **Step 9.5 — Stats UI rework** — `Stats.tsx` is currently a plain list of run-result rows
-    (shell-only, shipped with Phase 2 step 6); revisit its look once there's more to show
-    (rewards, trends across runs). `[?]` `[phase: 3]`
+  - **Step 9.4 — Mission lore page: show the cards the mission is about** — the mission-flow
+    popup's **'detail' step** (`meta/CampaignMap.tsx`'s `MissionFlowPopup`, *not* an old
+    `MissionDetailPanel` — that name is stale) today renders, in its lore column, `lore` +
+    `description` + the `🏆/💀` hint line, and in a separate column only the mission's *reward*
+    card face. This step appends, below the lore text, the actual **card faces the mission is
+    about**: its **objective** card (always exactly one) plus any **threat/event** cards it
+    seeds. Folds in the standing "Barbarian Tide's lore should show the Barbarian card" ticket
+    as the worked example (Barbarian Tide's Barbarian event; Long Winter's Harsh Winter, the
+    Enlightenment's Stagnation, and The Long Decline's Creeping Decay threats). The objective is
+    already *described* by `victoryHint`/`description`; showing its **card** is the new bit.
+    **How to know which threat/event cards a mission has (decided):** add declarative `threats`/
+    `events` card-id lists to `MissionDef`, and make `setup` **consume those lists** to do the
+    injection (`addThreat` over `threats`; deck-inject over `events`) instead of naming card ids
+    imperatively. That keeps *one* source of truth — the detail panel reads the same lists `setup`
+    injects from, so they can't drift the way a parallel declarative field bolted onto an
+    unchanged imperative `setup` could. A migration of the current missions falls out of this:
+    `long_winter`/`enlightenment`/`the_long_decline` move their `addThreat(G, …)` id into
+    `threats`, and `barbarian_tide` moves its `Array(BARBARIANS).fill('barbarian')` deck-push into
+    `events` (its `+4 Military` starting tweak stays bespoke in `setup` — not every setup step is a
+    card injection). The objective stays separate: it's `mission.objectiveCardId`, seeded by
+    `run/setup.ts`'s `seedObjective`, not by `mission.setup`. `[size: S]` `[phase: 3]`
+  - **Step 9.5 — Mission select page: boards as `BoardMini`** — the mission-flow popup's **'launch'
+    step** board picker currently lists each government as a text `optionCard` (name + description)
+    with the `effectiveBoard` profile rendered as a `describeBoard` string below the selected one.
+    Rework it to render each board as a `components/BoardMini.tsx` (Step 9.3.2's mini-board), so the
+    select page and the run show the same board widget. **Note:** `BoardMini` is currently read-only
+    presentational (board id + attached sticker ids, no `GameContext`); the picker needs a
+    *selection* affordance (selected state + click → `setBoardId`), so this is "wrap/extend BoardMini
+    with a selectable frame," not a drop-in. `[size: S]` `[phase: 3]`
+  - **Step 9.6 — Stats UI rework** — `Stats.tsx` is currently a plain list of run-result rows
+    (shell-only, shipped with Phase 2 step 6). Rework it into two sections:
+    - **Left — campaign progress** — an at-a-glance summary: one-time (`'standard'`) missions
+      cleared, cards unlocked, etc. Two different disclosure rules apply here:
+      - *Missions cleared* can be `X / Y` — the campaign map already renders locked missions as
+        silhouettes, so the total node count is already visible; a denominator leaks nothing.
+      - *Cards unlocked* must be a **bare count** ("12 cards unlocked"), never `X / N` — per
+        [[collection-hides-locked-cards]], not-yet-unlocked cards are hidden entirely and there's
+        no total-count hint (an unlock is a surprise); a denominator would leak the catalogue size.
+    - **Right — infinite-mission best scores** — a best-score list, one row per `'infinite'`
+      mission, showing the highest rounds survived. This is a **pure derivation over existing
+      data**: `RunResult` already carries `missionId` + `stats.turnsTaken` (rounds), and `Stats`
+      already receives the full `runHistory` — the list is `max(turnsTaken)` grouped by `missionId`
+      over the infinite-mission rows. No new plumbing (contract/store) needed for the score itself.
+    - **Plumbing note:** the campaign-progress section needs data `Stats` doesn't get today —
+      `mapProgress` (missions cleared) and `collection` (cards unlocked) — threaded from `App.tsx`
+      via `MetaMenu`. `[?]` `[phase: 3]`
 
 ## Phase 4 — planned steps (content & balance)
 
