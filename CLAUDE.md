@@ -227,10 +227,16 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `buildRunConfig`. `'infinite'` missions render in a bottom banner, not as nodes.
   - `Collection.tsx` — catalogue of owned cards (omits not-yet-unlocked ones); a tile opens
     `CardInstancePanel.tsx`, a per-owned-instance drill-down that is *also* the card shop
-    (Step 9.1 fused the standalone Shop tab in here): given its `shop` bundle the panel shows
-    the Influence balance, a buy-next-tier button, and one sticker-offer button per applicable
-    sticker (picking one drops into an attach sub-mode over the per-copy rows), calling back
-    into `App.tsx` (`onBuyTier`/`onAttachSticker`).
+    (Step 9.1 fused the standalone Shop tab in here). Reworked in Step 9.2 to the Board tab's
+    model: each owned copy renders as a real `CardFace` (`effectiveCard` numbers + sticker badge)
+    with a caption naming the deck(s) it sits in (the Step 7.3 anti-surprise info), in a grid
+    beside a right-side sticky **tray**. The tray's pinned top holds the Influence balance + the
+    buy-next-copy-tier button; below it, one draggable sticker badge per sticker that applies to
+    the card. Dragging a badge onto a copy buys+attaches it in one gesture (a hand-rolled
+    pointer-drag like `BoardMenu.tsx`, no DnD library — only *valid* targets, `under the cap ·
+    affordable`, highlight mid-drag via the single `isValidTarget` predicate; an invalid/missed
+    drop no-ops), replacing Step 7.5's separate attach sub-mode. Clicking a copy (not dragging
+    onto it) zooms it. Calls back into `App.tsx` (`onBuyTier`/`onAttachSticker`).
   - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: a grid of every board as a `BoardMini`
     (Step 9.3.2's mini-board) beside a right-side sticky tray of sticker boxes (each a draggable sticker
     badge over its name/effect/price); dragging a badge onto a board calls `onBuyBoardSticker` to

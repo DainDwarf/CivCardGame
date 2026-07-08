@@ -93,14 +93,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   9.1/9.2. `[phase: 3]`
   - **Step 9.1 — Fuse Shop into Collection** — ✅ done — see *Done / shipped* below.
     `[phase: 3]`
-  - **Step 9.2 — Collection UI rework + card upgrades** — the collection grid keeps
-    grouping by cardId regardless of stickers applied (a stickered instance still needs its
-    own addressable identity in the grid, per Step 7's per-instance model). Clicking a card
-    group opens a detailed view for that card — real `CardFace`s, not text — where you can
-    buy the next copy tier and buy/apply stickers. Available stickers for that card sit in a
-    tray on the right; drag-and-drop a sticker from the tray onto a card face buys and
-    applies it in one gesture (replacing Step 7.5's separate attach-mode panel). Depends on
-    9.1 landing first (this *is* the fused detail view). `[size: M]` `[?]` `[phase: 3]`
+  - **Step 9.2 — Collection UI rework + card upgrades** — ✅ done — see *Done / shipped* below.
+    `[phase: 3]`
   - **Step 9.3 — Board UI rework** ✅ done — see *Done / shipped* below.
   - **Step 9.4 — Mission lore and select rework** — includes the now-folded-in "Barbarian
     Tide's lore should show the Barbarian card" ticket: `MissionDetailPanel` only shows the
@@ -128,9 +122,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Meta loop (`src/meta/`)
 
 - **End-of-Phase-3 cleanup: simplify save parsing, not remove it** — `meta/store.ts`'s `SCHEMA_VERSION`/`exportSave`/`importSave` plumbing stays (still the real save/load-file mechanism); what should go is `parsePlayerStore`'s per-field *leniency* (the decks-missing fallback, the field-by-field shape checks written to tolerate a store that predates some Phase 3 field). Once Phase 3 ships, assume every save in the world is already Phase-3-shaped — pre-alpha players are told to clear their save regularly — so `parsePlayerStore` can go back to a plain "does this parse as a `PlayerStore`" check instead of carrying per-field pre-Phase-3 fallbacks. `[phase: 3]`
-- **Visual hint for available card upgrades** — a card's Collection tile/group should hint when it has
-  an available upgrade (a tier buy or an unstickered instance) so the player doesn't have to open every
-  card to find out. Folds into **Step 9.2**'s detail-view rework. `[?]` `[phase: 3]`
+- **Available-upgrade hints (cards · nav tabs · boards)** — surface, *without* the player opening
+  every detail view, where Influence can still be usefully spent. Deferred out of **Step 9.2** (which
+  shipped the card detail view but no at-a-glance affordability hints); split into three layers that
+  should share one "is an upgrade available here, and can I afford it?" predicate rather than three
+  bespoke checks:
+  - **Card tiles** — a card's Collection grid tile/group hints when it has an available upgrade (a
+    buyable copy tier, or a copy with a free sticker slot for an *applicable + affordable* sticker),
+    so the player needn't open each card.
+  - **Board tiles** — the Board-tab equivalent: a `BoardMini` hints when the board can still take an
+    *applicable + under-cap + affordable* board sticker (mirrors the card-tile hint; the same
+    `isValidTarget` shape the `BoardMenu` drag already computes).
+  - **Nav-tab badges** — a small marker on the `MetaMenu` nav tabs (Collection, Board) when *anything*
+    inside is upgradeable-and-affordable, so a fresh Influence balance advertises where it can go
+    without visiting every screen. Roll up the per-tile predicate above.
+
+  Open design question: should a hint mean "an upgrade *exists*" or the stricter "upgrade exists *and*
+  you can afford it right now"? Affordable-only avoids nagging with buys the player can't make, but
+  flickers as Influence crosses a price; decide when picking this up. `[size: M]` `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
 
@@ -235,6 +244,30 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 9.2 — Collection UI rework + card upgrades** — reworked `meta/CardInstancePanel.tsx`
+  (the fused detail view Step 9.1 created) from a text row-list into the **Board tab's model**: each
+  owned copy now renders as a real `CardFace` (its `effectiveCard` sticker-adjusted numbers + bottom-left
+  sticker badge) in a grid, beside a right-side **sticky tray**. The tray's pinned top carries the
+  Influence balance + the **buy-next-copy-tier button** (pinned at top per request); below it, one
+  draggable sticker badge per sticker that `stickerAppliesTo` the card (badge styled like the on-card
+  `StickerRow` one, just larger — the same shared tokens `BoardMenu`'s tray uses). Stickers are now
+  bought+applied by **drag-and-drop** — dragging a badge out of the tray onto a copy buys and attaches
+  it in one gesture, replacing Step 7.5's separate attach sub-mode (`pickingStickerId` and the per-copy
+  Attach buttons are gone). A hand-rolled pointer-drag mirroring `BoardMenu.tsx` (no DnD library) with a
+  single `isValidTarget(inst, sticker)` predicate (`!isStickerFull · affordable`) gating both the
+  mid-drag highlight and the drop; stacking the same sticker twice (1→2) stays a valid target, and an
+  invalid/missed drop no-ops. The Step 7.3 **anti-surprise** info survives the visual change: each face
+  keeps a caption naming the deck(s) that copy sits in ("1/2 · in Aggro" / "1/2 · unused") via
+  `decksContaining`, so a sticker still lands on a *known* copy. Clicking a copy (not dragging onto it)
+  still zooms it (`CardZoomOverlay` with the copy's `effectiveCard`/stickers). The drag clone's layer is
+  `z-index: 90` — **above** the modal backdrop (75), unlike `BoardMenu`'s non-modal 60, so it renders
+  over the panel. `uiScale` is now threaded `MetaMenu → Collection → CardInstancePanel` for the clone's
+  visual→local px conversion (the transform:scale() invariant). No rule logic changed — existing suite
+  green (310 tests). **Deferred out of this step** into its own backlog item (*Meta loop* →
+  "Available-upgrade hints"): the at-a-glance "upgrade available" affordances — on Collection card
+  tiles, on Board-tab boards, and as nav-tab badges — so the player needn't open each detail view to
+  find where Influence can go.
 
 - **Phase 3 Step 9.1 — Fuse Shop into Collection** — the standalone card **Shop** tab is gone; its
   two abilities (buy the next copy tier · attach a sticker to a chosen instance) now live in

@@ -75,7 +75,7 @@ export const STICKERS: Record<string, StickerDef> = {
   irrigation: {
     id: 'irrigation',
     name: 'Irrigation',
-    description: '+1 food (food buildings only)',
+    description: '+1 🌾',
     icon: '💧',
     cost: 3,
     // Attaches only to a building that already produces food; bumps *only* that food output.

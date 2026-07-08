@@ -1,6 +1,8 @@
-/* Per-instance detail panel (Phase 3 Step 7.3) — mirrors components/DeckDisplay.module.css's
-   list-view overlay (same backdrop/panel/header shell), but lists card *copies* as rows
-   instead of a grid of card tiles. */
+/* Per-card detail panel (Phase 3 Step 7.3, reworked in Step 9.2). A modal whose body is two columns:
+   a grid of real `CardFace`s (one per owned copy) on the left, a sticker tray pinned on the right.
+   Dragging a sticker badge out of the tray onto a face buys+attaches it (mirrors BoardMenu's tray +
+   hand-rolled pointer-drag). All color via theme tokens; only the allowed white/black scrims are
+   literals. */
 
 .backdrop {
   position: fixed;
@@ -25,55 +27,103 @@
   }
 }
 
+/* Wider than the old vertical row list (a two-column card-grid + tray); still capped against the
+   viewport with the /var(--ui-scale) divide (UI-scaling invariant #3) and scrolling *inside* itself
+   (invariant #1 — never grows the body). */
+/* Wide enough for a 4-column face grid: 4×128px tracks + 3×0.6rem gaps ≈ 541px, plus the 210px tray,
+   the 1rem body gap, and the panel's own 1.1rem side padding ≈ 840px. Still capped against the
+   viewport with the /var(--ui-scale) divide so a small screen shrinks it instead of overflowing. */
 .panel {
-  width: min(420px, calc(92vw / var(--ui-scale, 1)));
-  max-height: calc(82vh / var(--ui-scale, 1));
+  width: min(840px, calc(94vw / var(--ui-scale, 1)));
+  max-height: calc(86vh / var(--ui-scale, 1));
   overflow-y: auto;
-  padding: 0 1.1rem 1rem;
+  padding: 1.1rem;
   border-radius: 12px;
   background: var(--surface-raised);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
   cursor: default;
 }
 
-.panelHeader {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+/* Faces left, sticker tray right. The tray keeps a fixed width; the face grid takes the rest and may
+   shrink (min-width: 0) so a narrow viewport squeezes the faces rather than forcing body scroll
+   (invariant #1). No wrap — the tray stays on the right. */
+.body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
+
+.cardGrid {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  /* 128px track = the 118px CardFace + the wrapper's 3px padding + 2px border on each side; the
+     wrapper is box-sizing: border-box so its content area stays exactly 118px and the face fits its
+     track cleanly (CardFace sets its own border-box but that isn't global — see .faceWrap). */
+  grid-template-columns: repeat(auto-fill, 128px);
+  gap: 0.9rem 0.6rem;
+}
+
+/* Wraps one CardFace + its deck-usage caption; also the drop target's positioning/highlight anchor.
+   box-sizing: border-box so the padding + highlight border don't push the fixed-width face past its
+   grid track. */
+.faceWrap {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  margin: 0 0 0.5rem;
-  padding: 1rem 0 0.5rem;
-  background: var(--surface-raised);
-  border-bottom: 1px solid var(--border-divider);
-}
-
-.panelTitle {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.panelCount {
-  font-weight: 400;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-}
-
-.panelHint {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-}
-
-/* Step 9.1 — the fused-in Shop bar: the Influence balance plus the buy-tier / sticker-offer buttons
-   (browse-idle) or the "← Back" out of attach sub-mode. Sits between the sticky header and the list. */
-.shopBar {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 0.75rem;
-  margin: 0 0 0.6rem;
+  /* Clears the sticker badge, which straddles the face's bottom edge at bottom: -8px (CardFace's
+     .stickerRow), so the deck-usage caption doesn't collide with an applied sticker. */
+  gap: 0.8rem;
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  /* Smooth the highlight in/out as copies become valid targets during a drag. */
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* A valid drop target for the sticker being dragged — accent outline + soft glow, so the player sees
+   exactly which copies will accept it (matches BoardMenu's .boardTileValid). */
+.faceWrapValid {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 30%);
+}
+
+/* Which deck(s) this copy sits in — the Step 7.3 anti-surprise info, kept as a caption now that the
+   copy renders as a face rather than a text row. */
+.faceCaption {
+  max-width: 118px;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* The sticker tray — a bordered panel pinned beside the faces (sticky within the scrolling panel, not
+   position: fixed, which wouldn't pin inside the transform:scale() wrapper — invariant #1). Sticky
+   keeps the buy-tier button at its top visible while the face grid scrolls. */
+.tray {
+  flex: 0 0 210px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.7rem;
+  border: 1px solid var(--border-divider);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+/* The tray's pinned top: the Influence balance + the buy-next-copy-tier button (or a "max" note). */
+.trayHead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border-divider);
 }
 
 .balance {
@@ -85,18 +135,13 @@
   color: var(--text-secondary);
 }
 
-.offers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-/* Mirrors .attachBtn (and the old Shop.module.css .buyBtn): same accent one-click purchase. */
+/* The buy-next-tier button — accent one-click purchase (mirrors the sticker attach's old .buyBtn). */
 .buyBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
-  padding: 0.35rem 0.6rem;
+  padding: 0.4rem 0.6rem;
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 0.8rem;
   font-weight: 800;
@@ -116,87 +161,133 @@
   cursor: default;
 }
 
-.backBtn {
-  padding: 0.35rem 0.6rem;
-  font-family: system-ui, -apple-system, sans-serif;
+.maxTier {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-secondary);
-  background: var(--surface);
-  border: 1px solid var(--border-divider);
-  border-radius: 8px;
-  cursor: pointer;
+  color: var(--text-muted);
 }
 
-.backBtn:hover {
-  background: rgb(var(--accent-rgb) / 12%);
+.trayTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin: 0;
 }
 
-.list {
+.trayEmpty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.trayChips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* A sticker box: the draggable badge + name on top, effect + price below. The box itself is not
+   draggable — only the badge inside it is (see .stickerDraggable). Mirrors BoardMenu's .chip. */
+.chip {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid var(--border-divider);
+  border-radius: 10px;
+  background: var(--surface-card);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.55rem 0.7rem;
-  border-radius: 8px;
-  background: var(--surface);
-  cursor: pointer;
-  transition: background 0.12s ease;
-}
-
-.row:hover {
-  background: rgb(var(--accent-rgb) / 12%);
-}
-
-/* Sticker-attach mode (Step 7.5) — the row itself no longer opens the zoom, only its own
-   Attach button does, so it shouldn't read as clickable. */
-.rowStatic {
-  cursor: default;
-}
-
-.rowStatic:hover {
-  background: var(--surface);
-}
-
-.rowLabel {
-  font-weight: 600;
-}
-
-.rowUsage {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  text-align: right;
-}
-
-/* Step 7.5's sticker-attach mode — mirrors Shop.module.css's .buyBtn (same accent, same
-   disabled treatment) since it's the same kind of one-click Influence purchase. */
-.attachBtn {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.35rem 0.6rem;
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: var(--text-on-accent);
-  background: var(--accent);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.attachBtn:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-.attachBtn:disabled {
+/* Can't drop anywhere (unaffordable, or every copy full) — dimmed, and its badge won't start a drag. */
+.chipDisabled {
   opacity: 0.4;
+}
+
+.chipTop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chipName {
+  flex: 1 1 auto;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.chipBottom {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.chipEffect {
+  font-size: 0.72rem;
+  line-height: 1.25;
+  color: var(--text-secondary);
+}
+
+.chipCost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  color: var(--text-secondary);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* The draggable sticker badge — styled with the *same* tokens the on-card StickerRow badge uses
+   (CardFace.module.css's `.sticker`: --card-face-top fill, --border-card ring, round) so it reads as
+   the very object that lands on the card — just larger (40px) for an easy grab target. Only this
+   element carries the pointerdown that starts a drag. Matches BoardMenu's .stickerDraggable. */
+.stickerDraggable {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--card-face-top);
+  border: 1px solid var(--border-card);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.chipDisabled .stickerDraggable {
   cursor: default;
+}
+
+/* The overlay the dragged badge clone lives in — fixed and pointer-transparent so it never eats the
+   pointerup that ends the drag. ABOVE the modal backdrop (z-index 75), unlike BoardMenu's non-modal
+   60, so the clone renders over the panel instead of behind it. */
+.dragLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+
+/* The badge following the cursor mid-drag — the same round sticker (sized inline from the picked-up
+   badge, px-converted in the component), lifted with a bigger shadow + slight scale. */
+.dragClone {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--card-face-top);
+  border: 1px solid var(--border-card);
+  font-size: 1.35rem;
+  line-height: 1;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+  transform: scale(1.12);
+  transform-origin: center;
+  cursor: grabbing;
 }

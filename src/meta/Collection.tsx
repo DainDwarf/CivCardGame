@@ -20,6 +20,7 @@ export function Collection({
   collection,
   decks,
   influence,
+  uiScale,
   onBuyTier,
   onAttachSticker,
 }: {
@@ -27,6 +28,8 @@ export function Collection({
   decks: DeckDef[];
   /** Spendable Influence — forwarded into the detail panel's buy/attach controls (Step 9.1). */
   influence: number;
+  /** Whole-UI scale (settings) — forwarded to the detail panel for its sticker drag-clone math (Step 9.2). */
+  uiScale: number;
   onBuyTier: (cardId: string) => void;
   onAttachSticker: (instanceId: string, stickerId: string) => void;
 }) {
@@ -43,7 +46,6 @@ export function Collection({
   return (
     <div className={styles.collection}>
       <h1 className={styles.title}>Collection</h1>
-      <p className={styles.subtitle}>Cards you've unlocked so far.</p>
 
       {buildings.length > 0 && (
         <>
@@ -102,6 +104,7 @@ export function Collection({
           collection={collection}
           decks={decks}
           shop={{ influence, onBuyTier, onAttachSticker }}
+          uiScale={uiScale}
           onClose={() => setDetail(null)}
         />
       )}
