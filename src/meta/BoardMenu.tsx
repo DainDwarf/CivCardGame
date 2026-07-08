@@ -1,16 +1,18 @@
 import { BOARDS, type BoardId } from '../content/boards';
 import { BOARD_STICKERS } from '../content/boardStickers';
-import { boardStickerAppliesTo, effectiveBoard, isBoardStickerFull, type BoardStickers } from '../rules/boardStickers';
-import { BOARD_IDS, describeBoard } from './boardDisplay';
+import { boardStickerAppliesTo, isBoardStickerFull, type BoardStickers } from '../rules/boardStickers';
+import { BoardMini } from '../components/BoardMini';
+import { BOARD_IDS } from './boardDisplay';
 import styles from './BoardMenu.module.css';
 
 /**
  * The Board screen: spend Influence (⭐) on permanent board stickers — modifiers that tweak a
  * board's *starting* profile (`rules/boardStickers.ts`), attached per board on the store's
  * `boardStickers`. A board is singular (no per-copy identity), so — unlike a card sticker — the buy
- * attaches directly (one click), no instance picker. This is a deliberately minimal interim buy
- * surface: DESIGN.md Step 9.3 reworks it into mini-boards with a drag-drop sticker tray (later
- * substeps) — for now it's the same button-based grid that lived in the Shop.
+ * attaches directly (one click), no instance picker. Each board now renders as a `BoardMini`
+ * (Step 9.3.2's mini-board, the board counterpart to Collection's real `CardFace`s); the one-click
+ * buy `<button>`s remain beneath it as the interim buy surface until Step 9.3.3 replaces them with
+ * a drag-drop sticker tray.
  */
 export function BoardMenu({
   boardStickers,
@@ -29,7 +31,6 @@ export function BoardMenu({
   function boardTile(boardId: BoardId) {
     const board = BOARDS[boardId];
     const attached = boardStickers[boardId] ?? [];
-    const eff = effectiveBoard(board, attached);
     const full = isBoardStickerFull(attached);
     const applicable = Object.values(BOARD_STICKERS).filter((s) => boardStickerAppliesTo(s, board));
     return (
@@ -46,7 +47,7 @@ export function BoardMenu({
             </span>
           )}
         </div>
-        <div className={styles.boardProfile}>{describeBoard(eff)}</div>
+        <BoardMini boardId={boardId} stickerIds={attached} />
         <div className={styles.boardBuys}>
           {applicable.map((s) => (
             <button

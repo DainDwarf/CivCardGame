@@ -113,8 +113,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     1. **Move boards to their own tab** ✅ done — a new **Board** nav tab (`meta/BoardMenu.tsx`) that
        lifts the interim, still button-based Boards buy surface verbatim out of `Shop.tsx`; no game
        logic or buy behaviour changed. Groundwork for the visual rework in 9.3.2/9.3.3.
-    2. **Mini-boards** — render each board as a small visual board (not a text profile line), the
-       board counterpart to 9.2's real `CardFace`s.
+    2. **Mini-boards** ✅ done — `components/BoardMini.tsx` (+ `.module.css`) is a reusable, read-only,
+       board-agnostic miniature of the run board (tinted ground · a top banner of starting counters ·
+       the territory slot grid), driven off `effectiveBoard` so its numbers match a launched run.
+       `BoardMenu.tsx` now renders each board as a `BoardMini` in place of the `describeBoard` text
+       profile; the buy `<button>`s still sit beneath it (replaced in 9.3.3). Presentational only (no
+       `GameContext`/logic), so mission-select can reuse it later.
     3. **Drag-drop sticker tray** — available board stickers sit in a tray; drag one onto a board to
        buy+apply in one gesture, mirroring 9.2's card sticker tray.
   - **Step 9.4 — Mission lore and select rework** — includes the now-folded-in "Barbarian

@@ -1,0 +1,136 @@
+/* The miniature board widget — a scaled-down echo of the run board's look (Board.module.css),
+   read-only and board-agnostic. Its own module (Board.module.css is component-scoped and not
+   importable); mirrors that file's structure (tinted ground · top banner · territory slot grid)
+   at small size. All color via theme tokens; only the allowed white/black scrims are literals. */
+
+/* The outer frame: positioning context for the local ground layer (see .ground) and a clipping
+   rounded box, so the tinted dirt stays inside the widget instead of the run board's full-viewport
+   fixed backdrop. */
+.mini {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+}
+
+/* Local dirt layer, tinted per government board (BoardMini stamps `data-board`) — the miniature
+   counterpart to Board.module.css's `.groundBackdrop`, but positioned inside the widget (absolute,
+   not fixed) so it fills only this box. `--ground` is the fallback for an unrecognized board id. */
+.ground {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--ground);
+}
+
+.ground[data-board='tribe'] {
+  background: var(--board-tribe-ground);
+}
+
+.ground[data-board='monarchy'] {
+  background: var(--board-monarchy-ground);
+}
+
+.ground[data-board='republic'] {
+  background: var(--board-republic-ground);
+}
+
+/* The banner and slot grid sit above the ground layer. */
+.banner,
+.slotGrid {
+  position: relative;
+  z-index: 1;
+}
+
+/* Top banner: population tray (left) · core resources (right column) · culture (full-width row),
+   echoing the run board's grid-areas at miniature size. */
+.banner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    'population core'
+    'culture    culture';
+  align-items: stretch;
+  gap: 0.3rem 0.4rem;
+  padding: 0.4rem 0.45rem;
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  font-size: 0.75rem;
+}
+
+/* The population tray — a bordered container of worker tokens, left side. */
+.populationTray {
+  grid-area: population;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.4rem;
+  border: 2px solid var(--border-tray);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* A row of static worker tokens, one 🧍 per population (compacted to "🧍 ×N" past a threshold). */
+.popTokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  justify-content: center;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.popCompact {
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* Right column: the 5 core resources, stacked (all shown, including zeros, like the run board). */
+.coreGroup {
+  grid-area: core;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.1rem;
+  padding-left: 0.4rem;
+  border-left: 1px solid var(--border-divider);
+}
+
+.stat {
+  white-space: nowrap;
+}
+
+/* Full-width culture row beneath the tray and resource column — a plain starting counter, no
+   level/progress bar (that's run-progression state; every board starts at culture 0). */
+.culture {
+  grid-area: culture;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* The territory grid: one dashed empty slot per territory, wrapping left-to-right — the board's
+   starting capacity, scaled down from the run board's 200×110 slots. */
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 42px);
+  gap: 5px;
+  justify-content: center;
+  padding: 2px;
+}
+
+.slotEmpty {
+  height: 26px;
+  border-radius: 4px;
+  border: 2px dashed rgb(var(--slot-border-rgb) / 0.35);
+  background: rgba(255, 255, 255, 0.08);
+}

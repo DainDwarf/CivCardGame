@@ -33,7 +33,7 @@
 
 .boardGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 0.8rem;
 }
 
@@ -63,11 +63,6 @@
   display: inline-flex;
   gap: 0.15rem;
   font-size: 1rem;
-}
-
-.boardProfile {
-  font-size: 0.85rem;
-  color: var(--text-muted);
 }
 
 .boardBuys {

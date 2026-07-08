@@ -60,9 +60,9 @@ shop, mission selection — the *only* place decks are edited). See
     **snapshotted into `RunConfig.boardStickers` at launch** (never re-looked-up in the core
     `setup.ts`), so buying one mid-campaign can't retroactively change an in-progress/restarted
     run. Provisional cap of 2 per board (balance is Phase 4). Board stickers have their own **Board**
-    nav tab (`meta/BoardMenu.tsx`) — a minimal, still button-based interim buy surface moved out of the
-    Shop (Step 9.3.1); later 9.3 substeps rework it into mini-boards with a drag-drop sticker tray.
-    Current board stickers: Fertile Land, Garrison, Frontier.
+    nav tab (`meta/BoardMenu.tsx`), where each board renders as a `BoardMini` (Step 9.3.2's mini-board)
+    with interim, still button-based buys beneath it (Step 9.3.3 replaces them with a drag-drop sticker
+    tray). Current board stickers: Fertile Land, Garrison, Frontier.
 
 ## Commands
 
@@ -204,6 +204,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `StickerRow`) and its `effectiveCard` (sticker-adjusted) numbers.
   - `CardZoomOverlay.tsx` — a full-screen click-to-close enlargement of one `CardFace`,
     reused by Collection.
+  - `BoardMini.tsx` — a read-only, board-agnostic miniature of the run board (tinted ground ·
+    a top banner of starting counters · the territory slot grid), driven off `effectiveBoard` so
+    its numbers match a launched run. Purely presentational (a board id + attached sticker ids, no
+    `GameContext`, no logic), so it's reused across meta screens (the Board menu now, mission-select
+    later) — the board counterpart to Collection's real `CardFace`s.
   - `ThreatZone` renders `G.threats` as `CardFace`s, reading only `GameState`, never the
     mission. The `.groundBackdrop` is tinted per government board via a `data-board`
     attribute matched in `Board.module.css` — a CSS-only edit per board, no component change.
@@ -216,10 +221,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     tile opens `CardInstancePanel.tsx`, a per-owned-instance drill-down.
   - `Shop.tsx` — the copy-tier + sticker shop; lists only cards with a tier or sticker slot
     left, each buy button calling back into `App.tsx` (`onBuyTier`/`onAttachSticker`).
-  - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: lists every board with its
-    `effectiveBoard` profile + one-click board-sticker buys (`onBuyBoardSticker`); the shared board
-    formatter lives in `meta/boardDisplay.ts`. Interim and still button-based (moved out of the Shop
-    in Step 9.3.1); later 9.3 substeps rework it into mini-boards with a drag-drop sticker tray.
+  - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: lists every board as a `BoardMini`
+    (Step 9.3.2's mini-board) with one-click board-sticker buys (`onBuyBoardSticker`) beneath it.
+    The buy `<button>`s are still the interim surface (Step 9.3.3 replaces them with a drag-drop
+    sticker tray); `describeBoard`/`RESOURCE_ICON`/`BOARD_IDS` live in the shared `meta/boardDisplay.ts`.
   - `Decks.tsx` — every deck as a tile (a hover-revealed card fan grouped ×N via
     `groupCounts`); the tile + its list-view overlay are the shared `DeckTile`/
     `DeckListOverlay` (`components/DeckDisplay.tsx`, also used by the launch popup), with
