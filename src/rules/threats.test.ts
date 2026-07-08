@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { addThreat } from './threats';
+import { addThreat, defeatMet, evaluateDefeat } from './threats';
 import { dispatchEvent } from './events';
 import { nextInstanceId } from './population';
 import { blankState } from './state';
@@ -63,5 +63,36 @@ describe('threat drains on the endTurn broadcast', () => {
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.production).toBe(7); // -2 more, scaleResources({production:1}, 1+1)
     expect(G.threats[0].counters).toEqual({ level: 2 });
+  });
+});
+
+// A threat's driven defeat (Stagnation's round-12 deadline) is a pure `defeat` predicate, read by
+// `defeatMet`/`evaluateDefeat` — the loss counterpart to `objective.ts`'s `objectiveMet`/
+// `evaluateObjective`. See also `content/missions.test.ts` (the deadline threat's own predicate) and
+// `rules/events.test.ts` (`flushEvents` re-deriving it, including the set-OR-CLEAR regression).
+describe('defeatMet / evaluateDefeat', () => {
+  it('is null with no seeded threats', () => {
+    const G = blankState('enlightenment');
+    expect(defeatMet(G)).toBeNull();
+  });
+
+  it('reads Stagnation\'s own defeat predicate off the seeded threat', () => {
+    const G = blankState('enlightenment');
+    G.threats = [{ id: 1, cardId: 'enlightenment_deadline' }];
+    G.round = 12;
+    expect(defeatMet(G)).toBeNull(); // round 12 itself is still fully playable
+    G.round = 13;
+    expect(defeatMet(G)).toEqual({ reason: 'stagnation' });
+  });
+
+  it('evaluateDefeat writes the derived verdict onto G.pendingDefeat, set-or-clear', () => {
+    const G = blankState('enlightenment');
+    G.threats = [{ id: 1, cardId: 'enlightenment_deadline' }];
+    G.round = 13;
+    evaluateDefeat(G);
+    expect(G.pendingDefeat).toEqual({ reason: 'stagnation' });
+    G.round = 12; // not reachable via real play (round only advances), but proves it isn't sticky
+    evaluateDefeat(G);
+    expect(G.pendingDefeat).toBeNull();
   });
 });

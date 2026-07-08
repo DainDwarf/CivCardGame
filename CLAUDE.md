@@ -136,27 +136,32 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     directly at the upkeep boundary by `applyUpkeep` (not queued), so it runs at the exact slot
     production always did, before the `resourceChange` synthesis. **`G.events` is always drained to
     `[]` in any committed/undo-visible state** (see `state.ts`), so structuredClone/undo/determinism
-    are untouched. A handler may set `G.pendingDefeat` to *declare a loss itself* (`engine.ts`'s
-    `checkEndIf` polls it) — the counterpart to a threat that can only drain a resource into collapse.
-    Handlers must be pure over `G` (the projection clone re-runs upkeep every render) and must not open
-    a `pendingInteraction`. The objective's win is the victory counterpart: `flushEvents` re-derives
-    `G.pendingVictory` from the objective card's `objective` predicate at every step boundary
-    (`objective.ts`'s `evaluateObjective`), and `checkEndIf` reads that flag — so win/lose is entirely
-    bus-driven flag-reads (`pendingVictory` / `pendingDefeat`), never a poll of card logic.
+    are untouched. Handlers must be pure over `G` (the projection clone re-runs upkeep every render)
+    and must not open a `pendingInteraction`. Win and driven-loss are both pull, not push: `flushEvents`
+    re-derives `G.pendingVictory` from the objective card's `objective` predicate (`objective.ts`'s
+    `evaluateObjective`) *and* `G.pendingDefeat` from every seeded threat's own `defeat` predicate
+    (`threats.ts`'s `evaluateDefeat`) at every step boundary, and `checkEndIf` (`engine.ts`) reads both
+    flags — so win/lose is entirely bus-driven flag-reads, never a poll of card logic, and never a
+    handler mutating `G.pendingDefeat` directly (a stale push could outlive the condition that set it;
+    see `threats.ts`).
   - `population.ts` — worker staffing over buildings *and* work cards through one `Staffable`
     layer (`requiredWorkersOf`/`isOperating`/`freePopulation`/`findStaffable`,
     `addBuilding`/`addWork`, the shared `nextInstanceId` allocator, `foodUpkeep`).
   - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup. A seeded threat
     ticks every round through the `endTurn` broadcast (`events.ts`'s `dispatchEvent` → `effects.ts`'s
     `resolveEndTurn` → the threat's own `resolveCard` drain), so the threat card computes its own
-    behaviour — the engine never reads or scales its data.
+    behaviour — the engine never reads or scales its data. A threat's *driven* defeat (a deadline, not
+    a resource drain) is a separate pure-read `defeat` hook, the loss counterpart to `objective.ts`'s
+    `objective`; `defeatMet`/`evaluateDefeat` re-derive it into `G.pendingDefeat` at every `flushEvents`
+    boundary, set-or-clear like the win flag — never a handler mutating `G.pendingDefeat` mid-dispatch,
+    which could leave a stale flag if the condition recovers later in the same broadcast.
   - `objective.ts` — the win counterpart to `threats.ts`: `seedObjective` seeds the mission's
     objective card into `G.objective` at setup; `objectiveMet` reads that card's own pure
     `objective` predicate. It's bus-driven, not polled: `evaluateObjective` re-derives the verdict into
-    `G.pendingVictory` at every `flushEvents` boundary (`events.ts`), the way a threat writes
-    `G.pendingDefeat`, and `engine.ts`'s `checkEndIf` reads that flag — never a card predicate or a
-    mission predicate. A mission-specific *defeat* is a threat's job (`pendingDefeat`), not the
-    objective's; the hook never mutates `G`.
+    `G.pendingVictory` at every `flushEvents` boundary (`events.ts`), the way `threats.ts`'s
+    `evaluateDefeat` re-derives `G.pendingDefeat`, and `engine.ts`'s `checkEndIf` reads both flags —
+    never a card predicate or a mission predicate. A mission-specific *defeat* is a threat's job
+    (its own `defeat` hook), not the objective's; neither hook ever mutates `G`.
   - (`resolveProduction` lives in `effects.ts`: per *operating* (staffed) tableau/workZone instance,
     the engine asks each instance to produce and never reads its `produces` itself. Production is
     driven by the `endTurn` broadcast; there is no standalone production module.)

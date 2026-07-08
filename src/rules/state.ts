@@ -162,10 +162,12 @@ export interface GameState {
    * like `pendingInteraction`, but nothing lasting is ever stored in it. */
   events: GameEvent[];
   /**
-   * A card-declared defeat, or `null`/absent when none. A card's `on` handler may set this (with its
-   * own reason) to *end the run itself* — `run/engine.ts`'s `checkEndIf` polls it as a defeat, the
-   * counterpart to a threat that can only drain a resource into collapse. The bus capability behind
-   * the "threat owns its own defeat" pattern; the engine never writes it. */
+   * A threat-declared defeat, or `null`/absent when none. Re-derived from every seeded threat's own
+   * `defeat` predicate at every `flushEvents` boundary (`rules/threats.ts`'s `evaluateDefeat`), the
+   * loss counterpart to `pendingVictory` below — `run/engine.ts`'s `checkEndIf` only *reads* it, never
+   * writes it. Set-or-clear (never sticky), same as `pendingVictory`: a threat's condition can dip and
+   * recover within one broadcast, so the flag must not survive that. The counterpart to a threat that
+   * can only drain a resource into core collapse instead. */
   pendingDefeat?: { reason: string } | null;
   /**
    * The bus-written win flag — the victory counterpart to `pendingDefeat`. Re-derived from the

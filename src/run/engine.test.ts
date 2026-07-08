@@ -42,14 +42,6 @@ describe('event bus through the turn loop', () => {
     expect(state.G.resources.money).toBe(6);
     expect(state.G.events).toEqual([]);
   });
-
-  it('a card-declared defeat (G.pendingDefeat) is read by checkEndIf with its own reason', () => {
-    let state = run('enlightenment');
-    state.G.resources.food = 20;
-    state.G.pendingDefeat = { reason: 'the doom clock struck' };
-    state = endTurn(state);
-    expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'the doom clock struck' });
-  });
 });
 
 describe('enlightenment deadline: win (objective) and lose (threat) reconciled by checkEndIf order', () => {

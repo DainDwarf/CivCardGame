@@ -11,10 +11,11 @@ import type { GameState } from './state';
  * That predicate is a **pure read** over `G` (never mutates it). It's now **bus-driven**, not polled:
  * `evaluateObjective` re-derives it into `G.pendingVictory` at every `flushEvents` boundary
  * (`rules/events.ts`), and `run/engine.ts`'s `checkEndIf` reads that flag — the win counterpart to a
- * threat writing `G.pendingDefeat`. A threshold win ("30 science") is thus caught at the same flush
- * where the resource crosses, exactly where the old per-move poll caught it. A defeat a card must
- * *drive* (a deadline passing, a counter escalating) lives on a threat owning `G.pendingDefeat`
- * instead (e.g. Stagnation); core-resource collapse stays a universal check in `run/engine.ts`.
+ * threat's own `defeat` predicate feeding `G.pendingDefeat` (`rules/threats.ts`'s `evaluateDefeat`,
+ * the same re-derive-at-every-flush shape). A threshold win ("30 science") is thus caught at the same
+ * flush where the resource crosses, exactly where the old per-move poll caught it. A defeat a card
+ * must *drive* (a deadline passing, a counter escalating) lives on a threat's `defeat` hook instead
+ * (e.g. Stagnation); core-resource collapse stays a universal check in `run/engine.ts`.
  */
 
 /** Seed the mission's objective card into `G.objective`, bare (no counters yet). Called once by
@@ -30,11 +31,12 @@ export function objectiveMet(G: GameState): boolean {
   return !!o && (CARDS[o.cardId].objective?.(G, o) ?? false);
 }
 
-/** Re-derive the win flag from the objective card's own `objective` predicate — the bus's counterpart to a
- *  threat writing `G.pendingDefeat`. Called at every `flushEvents` boundary (`rules/events.ts`), so
- *  `G.pendingVictory` is fresh before every `checkEndIf`. Set-OR-CLEAR every call (never sticky): a
- *  verdict can flip back to false within one flush (barbarian_tide's 4th wave files to `removed` AND
- *  drains Military in one resolve). Victory-only — never touches `G.pendingDefeat`, which threats own. */
+/** Re-derive the win flag from the objective card's own `objective` predicate — the bus's counterpart
+ *  to `rules/threats.ts`'s `evaluateDefeat`. Called at every `flushEvents` boundary
+ *  (`rules/events.ts`), so `G.pendingVictory` is fresh before every `checkEndIf`. Set-OR-CLEAR every
+ *  call (never sticky): a verdict can flip back to false within one flush (barbarian_tide's 4th wave
+ *  files to `removed` AND drains Military in one resolve). Victory-only — never touches
+ *  `G.pendingDefeat`, which threats own. */
 export function evaluateObjective(G: GameState): void {
   G.pendingVictory = objectiveMet(G);
 }

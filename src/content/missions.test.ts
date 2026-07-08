@@ -4,6 +4,7 @@ import { CARDS } from './cards';
 import {
   blankState,
   coreCollapse,
+  defeatMet,
   dispatchEvent,
   evaluateObjective,
   flushEvents,
@@ -36,24 +37,25 @@ describe('mission: enlightenment', () => {
     expect(objectiveMet(G)).toBe(true);
   });
 
-  // The threat owns the *lose* only — a pure deadline. It reads no Science: reaching 30 is the
-  // objective's job, which `run/engine.ts`'s `checkEndIf` polls before `pendingDefeat`, so a won run
-  // has already ended before this defeat could be read (the reconciliation lives in `checkEndIf`, not
-  // in either card). These drive the threat directly via `dispatchEvent`, independent of Science.
-  it('the deadline threat declares defeat once round 12 ends — regardless of Science', () => {
+  // The threat owns the *lose* only — a pure deadline read via its own `defeat` predicate. It reads no
+  // Science: reaching 30 is the objective's job, which `run/engine.ts`'s `checkEndIf` polls before
+  // `pendingDefeat`, so a won run has already ended before this defeat could be read (the
+  // reconciliation lives in `checkEndIf`, not in either card). `round > 12` (not `>= 12`), mirroring
+  // `long_winter_goal`'s own round check, so the flag only fires once round 12 has fully elapsed —
+  // `evaluateDefeat` (this predicate's bus caller) runs at every flush, including the one right after
+  // `beginTurn` sets `G.round` to 12, before the player has played that round at all.
+  it('the deadline threat declares defeat once round 12 fully elapses — regardless of Science', () => {
+    const G = blankState('enlightenment');
+    m.setup!(G);
+    G.round = 13;
+    expect(defeatMet(G)).toEqual({ reason: 'stagnation' });
+  });
+
+  it('the deadline threat stays silent through round 12 itself', () => {
     const G = blankState('enlightenment');
     m.setup!(G);
     G.round = 12;
-    dispatchEvent(G, { type: 'endTurn' });
-    expect(G.pendingDefeat).toEqual({ reason: 'stagnation' });
-  });
-
-  it('the deadline threat stays silent before round 12', () => {
-    const G = blankState('enlightenment');
-    m.setup!(G);
-    G.round = 11;
-    dispatchEvent(G, { type: 'endTurn' });
-    expect(G.pendingDefeat).toBeNull();
+    expect(defeatMet(G)).toBeNull();
   });
 });
 

@@ -48,14 +48,12 @@ const FIXTURES: Record<string, CardDef> = {
       draw: ({ G }) => emitEvent(G, { type: 'draw', instanceId: 1, cardId: 'test_infinite', source: 'effect' }),
     },
   },
-  // Declares defeat itself once money hits 30 — the bus capability behind "a threat owns its loss".
+  // A threat that declares defeat once money hits 30 — the pure-predicate capability behind "a threat
+  // owns its own driven loss" (`CardDef.defeat`, re-derived by `evaluateDefeat`, never a handler
+  // mutating `G.pendingDefeat` directly).
   test_declare_defeat: {
     id: 'test_declare_defeat', name: 'Doom', kind: 'threat', cost: {},
-    on: {
-      resourceChange: ({ G }) => {
-        if (G.resources.money >= 30) G.pendingDefeat = { reason: 'the doom clock struck' };
-      },
-    },
+    defeat: (G) => G.resources.money >= 30 && 'the doom clock struck',
   },
   // A self-sufficient Work card producing on the endTurn broadcast — proves the workZone is in the
   // observer walk (its output is the declarative `effect.gain`, like any staffed Work card).
@@ -231,20 +229,38 @@ describe('dispatchEvent — endTurn broadcast (production + threat drains)', () 
   });
 });
 
-describe('flushEvents — resourceChange synthesis', () => {
-  it('synthesizes a resourceChange only when a value field actually moved', () => {
+describe('flushEvents — defeat re-derivation (evaluateDefeat)', () => {
+  // `defeat` is a pure predicate (`CardDef.defeat`), re-derived from scratch by `evaluateDefeat` at
+  // every flush — never a handler pushing `G.pendingDefeat` mid-dispatch off a transient snapshot.
+  it('sets G.pendingDefeat once a threat\'s own defeat predicate is met', () => {
     const G = blankState('enlightenment');
     G.threats = [{ id: 1, cardId: 'test_declare_defeat' }];
-    const before = snapshot(G); // money 0
-    // No change → no resourceChange → handler never sees the threshold.
-    flushEvents(G, before);
+    G.resources.money = 29;
+    flushEvents(G, snapshot(G));
     expect(G.pendingDefeat).toBeFalsy();
-    // Now cross the threshold and flush against the old snapshot.
     G.resources.money = 30;
-    flushEvents(G, before);
+    flushEvents(G, snapshot(G));
     expect(G.pendingDefeat).toEqual({ reason: 'the doom clock struck' });
   });
 
+  // Bug #3 regression: a set-only `pendingDefeat` (a handler writing it directly) would survive the
+  // condition recovering, since nothing ever cleared it — the false-defeat trap `checkEndIf` could
+  // then wrongly act on. `evaluateDefeat` re-derives the flag from live state every flush instead, the
+  // same set-OR-CLEAR shape `evaluateObjective` already uses for `pendingVictory`, so a dip that
+  // recovers before the next flush can't leave a stale flag behind.
+  it('clears G.pendingDefeat once the condition that set it recovers — never sticky', () => {
+    const G = blankState('enlightenment');
+    G.threats = [{ id: 1, cardId: 'test_declare_defeat' }];
+    G.resources.money = 30;
+    flushEvents(G, snapshot(G));
+    expect(G.pendingDefeat).toEqual({ reason: 'the doom clock struck' });
+    G.resources.money = 29; // the dip recovers before the next flush
+    flushEvents(G, snapshot(G));
+    expect(G.pendingDefeat).toBeFalsy();
+  });
+});
+
+describe('flushEvents — resourceChange synthesis', () => {
   it('Treasury fires on the exact 10-crossing, once per copy, using the before-snapshot', () => {
     const G = blankState('enlightenment');
     G.tableau = [{ id: 1, cardId: 'treasury', workers: 1 }];

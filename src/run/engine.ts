@@ -14,9 +14,10 @@ function checkEndIf(state: RunState): RunState {
   const { G } = state;
   // Win/lose reads bus-written flags — never re-evaluates card logic here. The objective card's win
   // is re-derived into `G.pendingVictory` at every `flushEvents` boundary (`rules/objective.ts`'s
-  // `evaluateObjective`); a threat may declare its own defeat via `G.pendingDefeat`. Core-resource
-  // collapse stays a universal defeat between the two. Precedence is load-bearing: victory wins over
-  // `pendingDefeat`, so a player who hits the goal on the same upkeep a deadline threat fires still wins.
+  // `evaluateObjective`); a threat's own `defeat` predicate is re-derived into `G.pendingDefeat` the
+  // same way (`rules/threats.ts`'s `evaluateDefeat`). Core-resource collapse stays a universal defeat
+  // between the two. Precedence is load-bearing: victory wins over `pendingDefeat`, so a player who
+  // hits the goal on the same upkeep a deadline threat fires still wins.
   if (G.pendingVictory) return { ...state, gameover: { outcome: 'victory', missionId: G.missionId } };
   const collapse = coreCollapse(G.resources);
   if (collapse) return { ...state, gameover: { outcome: 'defeat', reason: collapse, missionId: G.missionId } };

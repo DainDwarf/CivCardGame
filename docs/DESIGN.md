@@ -184,9 +184,10 @@ CardDef (kind: 'objective')
 The `objective` hook is a **pure read function** (it never mutates `G`), living on the catalogue
 in `src/content/`. It's **bus-driven**: `rules/objective.ts`'s `evaluateObjective` re-derives it into
 `G.pendingVictory` at every event-bus flush boundary, and the engine's `checkEndIf` reads that flag
-(the win counterpart to a threat writing `G.pendingDefeat`) — so it stays unit-testable and reusable
-by the headless simulator, and a threshold win registers at the flush where it's crossed. A
-mission-specific *defeat* belongs on a threat (`G.pendingDefeat`), and core-resource collapse
+(the win counterpart to a threat's own `defeat` predicate feeding `G.pendingDefeat`, re-derived the
+same set-or-clear way by `rules/threats.ts`'s `evaluateDefeat`) — so it stays unit-testable and
+reusable by the headless simulator, and a threshold win registers at the flush where it's crossed. A
+mission-specific *defeat* belongs on a threat's `defeat` hook, and core-resource collapse
 (Famine/Revolt/…) stays a *universal* failure in the engine, independent of any mission.
 
 ### Illustrative missions 🔧 (show the variety the system buys us)

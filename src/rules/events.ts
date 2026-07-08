@@ -1,6 +1,7 @@
 import { findStaffable, isOperating } from './population';
 import { runEventHandler, resolveEndTurn } from './effects';
 import { evaluateObjective } from './objective';
+import { evaluateDefeat } from './threats';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, ValueSnapshot } from './state';
 
@@ -151,10 +152,13 @@ export function dispatchEvent(G: GameState, event: GameEvent): void {
  * building pushing money past 30 while a Treasury watches) won't fire until the next step — chain a
  * threshold off a *step*'s change (an action, upkeep production), not another handler's output.
  *
- * The objective card is re-evaluated here (`evaluateObjective`) — this is *its* bus hook. Every step
- * boundary flushes unconditionally, so the win flag (`G.pendingVictory`) is always fresh before the
- * `checkEndIf` that follows, even when the flush dispatched no events (e.g. a round-based win at
- * `beginTurn`). It runs after the drain so it sees the fully-settled post-flush state.
+ * The objective card is re-evaluated here (`evaluateObjective`), and every seeded threat's `defeat`
+ * predicate alongside it (`evaluateDefeat`) — this is *their* bus hook, the win flag's and the loss
+ * flag's alike. Every step boundary flushes unconditionally, so `G.pendingVictory`/`G.pendingDefeat`
+ * are always fresh before the `checkEndIf` that follows, even when the flush dispatched no events
+ * (e.g. a round-based win/deadline at `beginTurn`). Both run after the drain so they see the
+ * fully-settled post-flush state — a threat's dip-then-recover within one broadcast can't leave a
+ * stale `pendingDefeat` for `checkEndIf` to misread.
  */
 export function flushEvents(G: GameState, before: ValueSnapshot): void {
   if (valueChanged(G, before)) emitEvent(G, { type: 'resourceChange', before });
@@ -167,4 +171,5 @@ export function flushEvents(G: GameState, before: ValueSnapshot): void {
   // Drop any remainder (only reachable if the cascade cap tripped) so the queue is always empty.
   G.events = [];
   evaluateObjective(G);
+  evaluateDefeat(G);
 }

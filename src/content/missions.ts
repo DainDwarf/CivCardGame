@@ -29,7 +29,8 @@ export interface MissionDef {
    *  `'objective'` (pinned by a coherence test); `run/setup.ts` seeds it into `GameState.objective`
    *  and the card owns the win (the `objective` predicate) logic plus its live progress readout — so it's the
    *  objective card, not the mission, that holds the predicate (it used to live here as
-   *  `objective`/`progress`). A mission-specific *defeat* is a threat's job (`G.pendingDefeat`). */
+   *  `objective`/`progress`). A mission-specific *defeat* is a threat's job (its own `defeat` hook,
+   *  `rules/threats.ts`'s `evaluateDefeat` into `G.pendingDefeat`). */
   objectiveCardId: string;
   /** One-liner describing the victory condition shown in the mission tooltip. */
   victoryHint: string;
@@ -65,8 +66,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Test DAG: gated behind The Long Winter.
     prereqs: ['long_winter'],
     // The round-12 deadline is a real threat card (Stagnation) seeded here — it renders the visible
-    // countdown and owns the loss itself via `G.pendingDefeat` (its `on.endTurn`), rather than the
-    // objective card carrying a `failed` predicate.
+    // countdown and owns the loss itself via its own `defeat` predicate, rather than the objective
+    // card carrying a `failed` predicate.
     setup: (G) => {
       addThreat(G, 'enlightenment_deadline');
     },

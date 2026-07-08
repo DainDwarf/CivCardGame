@@ -90,8 +90,8 @@ export interface CardDef {
    * IO); **never open a `pendingInteraction`** (the bus can fire at upkeep with no player, like
    * `resolveHandEvents`); and **`filter`, never `splice`**, to self-remove from a zone (the
    * dispatcher iterates a zone snapshot, so a splice wouldn't corrupt the dispatch, but `filter`
-   * keeps the array-identity discipline uniform). A handler may set `G.pendingDefeat` to declare a
-   * loss itself.
+   * keeps the array-identity discipline uniform). A `threat`'s own driven defeat does NOT go through
+   * `on` — see the `defeat` hook below, the pure-predicate counterpart to `objective`.
    */
   on?: Partial<Record<GameEventType, Resolver>>;
   /**
@@ -102,12 +102,27 @@ export interface CardDef {
    * at every `flushEvents` boundary, and `run/engine.ts`'s `checkEndIf` reads that flag — so a
    * threshold like "30 science" registers at the flush where it's crossed. A *defeat* belongs
    * elsewhere: a mission-specific loss that a card must *drive* (a deadline passing, a counter
-   * escalating) lives on a threat owning `G.pendingDefeat` (e.g. Stagnation), and core-resource
-   * collapse stays universal in `run/engine.ts` — an objective card never declares its own defeat.
+   * escalating) lives on a threat's `defeat` hook (e.g. Stagnation), and core-resource collapse
+   * stays universal in `run/engine.ts` — an objective card never declares its own defeat.
    * `self` is the seeded objective instance, so a future objective can read its own `counters`. Pair
    * with `dynamicText` for the progress readout.
    */
   objective?: (G: GameState, self: CardInstance) => boolean;
+  /**
+   * `threat` cards only: a driven (non-collapse) defeat this threat owns — the threat counterpart to
+   * `objective` above. A **pure-read predicate**: returns the defeat reason string the instant the
+   * condition is met, or a falsy value otherwise. Read-only by contract — never mutates `G` (a threat
+   * that also *drains* resources still does that through `resolve`/`produce`; `defeat` only reports).
+   * It's **bus-driven**, the same way `objective` is: `rules/threats.ts`'s `evaluateDefeat` re-derives
+   * it into `G.pendingDefeat` at every `flushEvents` boundary, set-OR-CLEAR like `pendingVictory` —
+   * never sticky, so a condition that dips and recovers within one broadcast (e.g. a threshold a later
+   * subscriber's production tops back up) can't leave a stale flag for `checkEndIf` to misread. A
+   * round-based deadline should mirror an `objective`'s own round check (`G.round > N`, not `>= N`) —
+   * see `long_winter_goal`'s `round > 15` and Stagnation below — since `evaluateDefeat` runs at every
+   * flush, including the one right after `beginTurn` increments the round, before the player has acted
+   * that round.
+   */
+  defeat?: (G: GameState, self: CardInstance) => string | false | undefined;
   /** Hand-authored effect text for the card face, used when the declarative `effect` bag can't
    *  describe the card (a `resolve`-driven card). Takes precedence over the auto-generated
    *  `describeCard` text. */
@@ -344,22 +359,21 @@ export const CARDS: Record<string, CardDef> = {
 
   // Stagnation: the Enlightenment mission's visible round-12 deadline as a threat that owns its own
   // defeat (no resource drain). Its whole responsibility is the *deadline* — the round count — and
-  // nothing else: once round 12 ends it declares the loss via `G.pendingDefeat` (the bus's
-  // declare-defeat capability, see rules/state.ts). It deliberately does NOT read Science: reaching
-  // 30 is the *objective card's* win condition, which `run/engine.ts`'s `checkEndIf` polls *before*
-  // `pendingDefeat` — so a player who hit the goal (even via round-12 production, since threats
-  // dispatch last) has already won and the run has ended before this defeat is ever read. Win and
-  // lose stay cleanly split across the two cards, reconciled only by that poll order. `on.endTurn`
-  // = the round passing; the deadline is a round event, not a resource crossing.
+  // nothing else: a pure `defeat` predicate, re-derived by `rules/threats.ts`'s `evaluateDefeat` at
+  // every flush (the threat counterpart to `objective`). It deliberately does NOT read Science:
+  // reaching 30 is the *objective card's* win condition, which `run/engine.ts`'s `checkEndIf` polls
+  // *before* `pendingDefeat` — so a player who hit the goal (even via round-12 production) has
+  // already won and the run has ended before this defeat is ever read. Win and lose stay cleanly
+  // split across the two cards, reconciled only by that poll order. `round > 12` (not `>= 12`)
+  // mirrors `long_winter_goal`'s own round check: `evaluateDefeat` runs at every flush, including the
+  // one right after `beginTurn` sets `G.round` to 12 — `>= 12` would end the run before round 12 is
+  // ever played. `> 12` instead lands at the *next* `beginTurn` (round 13), by which point round 12
+  // (and its own upkeep) has fully played out — the player never gets to act in round 13 either way.
   enlightenment_deadline: {
     id: 'enlightenment_deadline', name: 'Stagnation', kind: 'threat', cost: {},
     description: 'If round 12 ends before the Enlightenment is achieved, stagnation ends your run.',
     dynamicText: (G) => `Round ${Math.min(G.round, 12)}/12`,
-    on: {
-      endTurn: ({ G }) => {
-        if (G.round >= 12) G.pendingDefeat = { reason: 'stagnation' };
-      },
-    },
+    defeat: (G) => G.round > 12 && 'stagnation',
   },
 
   // --- Objective cards: a mission's win condition made into a card (see the `objective` kind doc
@@ -367,7 +381,7 @@ export const CARDS: Record<string, CardDef> = {
   //     mission's `objectiveCardId`; never in hand/deck/collection/deck editor. Each owns its
   //     mission's win (the `objective` predicate) as a pure read over `G` — moved off `MissionDef` so objective
   //     cards own their logic like every other card — plus a live progress line (`dynamicText`). A
-  //     mission-specific *defeat* lives on a threat's `G.pendingDefeat`, not here. No `effect`/
+  //     mission-specific *defeat* lives on a threat's own `defeat` predicate, not here. No `effect`/
   //     `resolve`: they never mutate G.
   long_winter_goal: {
     id: 'long_winter_goal', name: 'The Long Winter', kind: 'objective', cost: {},
@@ -379,7 +393,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'enlightenment_goal', name: 'The Enlightenment', kind: 'objective', cost: {},
     description: 'Reach 30 Science before round 12 ends.',
     // The round-12 deadline (and the loss it causes) is owned by the Stagnation *threat* the mission
-    // seeds (`on.endTurn` → `G.pendingDefeat`) — the objective card only owns the win.
+    // seeds (its own `defeat` predicate) — the objective card only owns the win.
     objective: (G) => G.resources.science >= 30,
     dynamicText: (G) => `${G.resources.science}/30🔬`,
   },
