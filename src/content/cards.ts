@@ -274,7 +274,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'long_winter_goal', name: 'The Long Winter', kind: 'objective', cost: {},
     description: 'Endure 15 rounds of brutal winter without starving.',
     objective: { met: (G) => G.round > 15 },
-    dynamicText: (G) => `Endured ${Math.min(G.round, 15)}/15`,
+    dynamicText: (G) => `${Math.min(G.round, 15)}/15 Round`,
   },
   enlightenment_goal: {
     id: 'enlightenment_goal', name: 'The Enlightenment', kind: 'objective', cost: {},
@@ -293,7 +293,7 @@ export const CARDS: Record<string, CardDef> = {
         G.removed.filter((c) => c.cardId === 'barbarian').length >= BARBARIANS && G.resources.military >= 0,
     },
     dynamicText: (G) =>
-      `Beaten ${G.removed.filter((c) => c.cardId === 'barbarian').length}/${BARBARIANS}`,
+      `${G.removed.filter((c) => c.cardId === 'barbarian').length}/${BARBARIANS} Barbarian`,
   },
   the_long_decline_goal: {
     id: 'the_long_decline_goal', name: 'The Long Decline', kind: 'objective', cost: {},

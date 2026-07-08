@@ -34,7 +34,8 @@ const CARD_ART: Record<string, string> = {
   barbarian: '🪓',
   harsh_winter: '❄️',
 };
-export const artFor = (id: string) => CARD_ART[id] ?? '🏛️';
+export const artFor = (id: string, kind?: string) =>
+  CARD_ART[id] ?? (kind === 'objective' ? '🏆' : '🏛️');
 
 /** Bottom-left row of per-sticker badges — `CardFace`'s own `stickerBadge` prop
  *  renders this, and a non-`CardFace` board box that needs the identical treatment (`Board.tsx`'s
@@ -297,7 +298,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
           </span>
         )}
         <div className={styles.cardArt} aria-hidden="true">
-          {artFor(card.id)}
+          {artFor(card.id, card.kind)}
         </div>
       </div>
       {conditions && <div className={styles.cardConditions}>{conditions}</div>}
