@@ -164,3 +164,25 @@ export function runEventHandler(ctx: EffectContext): void {
   if (!ctx.event) return;
   CARDS[ctx.self.cardId]?.on?.[ctx.event.type]?.(ctx);
 }
+
+/**
+ * Resolve one subscriber's reaction to the per-round `endTurn` broadcast — the *default* per-round
+ * behaviour a card runs at the upkeep boundary: an explicit `on.endTurn` handler wins; otherwise a
+ * producer (a `building`/`work` card, from the tableau/workZone) produces via `resolveProduction`,
+ * and anything else the dispatcher hands us — a threats-zone entry — ticks its own drain via
+ * `resolveCard`. The **zone the dispatcher walked**, not the card's kind, decides which spine runs
+ * (exactly as the retired `tickThreats` ran `resolveCard` over `G.threats` kind-agnostically). The
+ * dispatcher (`rules/events.ts`) already gates which subscribers reach here (operating tableau/work,
+ * all threats), so this never re-checks staffing. Mirrors the codebase's existing dual spine —
+ * `resolveCard` (play) vs `resolveProduction` (production).
+ *
+ * NOTE: this forwards the `endTurn` `ctx.event` into `resolveProduction`/`resolveCard`, which today
+ * ignore it. Harmless *only* while no bespoke `produce`/`resolve` reads `ctx.event`; a future one
+ * must not start branching on it (it fires on play/production too, where the field is absent).
+ */
+export function resolveEndTurn(ctx: EffectContext): void {
+  const card = CARDS[ctx.self.cardId];
+  if (card.on?.endTurn) return void card.on.endTurn(ctx);
+  if (card.kind === 'building' || card.kind === 'work') resolveProduction(ctx);
+  else resolveCard(ctx);
+}

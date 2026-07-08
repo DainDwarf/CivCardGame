@@ -84,8 +84,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     // DAG root: always available, unlocks enlightenment/barbarian_tide.
     prereqs: [],
     // The 2-extra-Food-per-round drain is now a real threat card (Harsh Winter), seeded once here
-    // rather than a mission-onUpkeep special case — it ticks via the same tickThreats→resolveCard
-    // spine every other threat uses.
+    // rather than a mission-onUpkeep special case — it ticks via the same `endTurn`-broadcast →
+    // `resolveCard` spine every other threat uses.
     setup: (G) => {
       addThreat(G, 'harsh_winter');
     },

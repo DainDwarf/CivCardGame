@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { addThreat, tickThreats } from './threats';
+import { addThreat } from './threats';
+import { dispatchEvent } from './events';
 import { nextInstanceId } from './population';
 import { blankState } from './state';
 
@@ -19,56 +20,47 @@ describe('addThreat', () => {
   });
 });
 
-describe('tickThreats', () => {
-  it('resolves each threat through the same resolver spine every card uses', () => {
+// Threats tick through the `endTurn` broadcast: dispatchEvent → resolveEndTurn runs each threat's
+// own `resolveCard` drain (escalation included), the same resolver spine every card uses. With an
+// empty tableau/workZone an `endTurn` dispatch resolves exactly the board's threats.
+describe('threat drains on the endTurn broadcast', () => {
+  it('resolves each threat through its own resolver spine', () => {
     // barbarian has no bespoke resolve, so its declarative default (a flat -4 military) applies
-    // unscaled on every tick — tickThreats itself has no opinion on escalation, only the card does.
+    // unscaled on every tick — the drain has no opinion on escalation, only the card does.
     const G = blankState('enlightenment');
     G.resources.military = 10;
     G.threats = [{ id: 1, cardId: 'barbarian' }];
-    tickThreats(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.military).toBe(6);
-    tickThreats(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.military).toBe(2);
   });
 
-  it("a card that scales itself off its own counter (Cornucopia's growth resolver) escalates across ticks", () => {
-    // Reuses Cornucopia purely to exercise the generic tick-through-resolveCard wiring against a
-    // counter-scaling resolver — not real threat content (that's Step 6.3c's Creeping Decay).
-    const G = blankState('enlightenment');
-    G.threats = [{ id: 1, cardId: 'cornucopia' }];
-    tickThreats(G);
-    expect(G.resources.food).toBe(1); // scaleResources({food:1}, 0+1)
-    tickThreats(G);
-    expect(G.resources.food).toBe(3); // +2, scaleResources({food:1}, 1+1)
-    expect(G.threats[0].counters).toEqual({ plays: 2 });
-  });
-
-  it('is a no-op when there are no threats', () => {
+  it('is a no-op when there are no threats (or anything else in play)', () => {
     const G = blankState('enlightenment');
     G.resources.military = 5;
-    tickThreats(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.military).toBe(5);
     expect(G.threats).toEqual([]);
   });
 
-  it('resolves Harsh Winter — the first real threat card (Step 6.3b) — as a flat, non-escalating Food drain', () => {
+  it('resolves Harsh Winter — a flat, non-escalating Food drain', () => {
     const G = blankState('long_winter');
     G.resources.food = 5;
     G.threats = [{ id: 1, cardId: 'harsh_winter' }];
-    tickThreats(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.food).toBe(3);
-    tickThreats(G);
-    expect(G.resources.food).toBe(1); // unscaled — no counter, unlike Cornucopia's growth above
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.food).toBe(1); // unscaled — no counter
   });
 
-  it('resolves Creeping Decay (Step 6.3c) as an escalating Production drain via its own counter', () => {
+  it('resolves Creeping Decay as an escalating Production drain via its own counter', () => {
     const G = blankState('the_long_decline');
     G.resources.production = 10;
     G.threats = [{ id: 1, cardId: 'creeping_decay' }];
-    tickThreats(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.production).toBe(9); // -1, scaleResources({production:1}, 0+1)
-    tickThreats(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.production).toBe(7); // -2 more, scaleResources({production:1}, 1+1)
     expect(G.threats[0].counters).toEqual({ level: 2 });
   });

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { dispatchEvent, emitEvent, flushEvents, snapshot, MAX_EVENT_CASCADE } from './events';
+import { applyUpkeep } from './upkeep';
 import { gainResources } from './effects';
 import { blankState, type GameState } from './state';
 import { CARDS, type CardDef } from '../content/cards';
@@ -55,6 +56,19 @@ const FIXTURES: Record<string, CardDef> = {
         if (G.resources.money >= 30) G.pendingDefeat = { reason: 'the doom clock struck' };
       },
     },
+  },
+  // A self-sufficient Work card producing on the endTurn broadcast — proves the workZone is in the
+  // observer walk (its output is the declarative `effect.gain`, like any staffed Work card).
+  test_endturn_work: {
+    id: 'test_endturn_work', name: 'Dig', kind: 'work', cost: {}, workers: 0,
+    effect: { gain: { production: 1 } },
+  },
+  // Carries BOTH a passive `produces` and an explicit `on.endTurn`: the handler must win, proving
+  // `resolveEndTurn` prefers an authored handler over the default production.
+  test_endturn_override: {
+    id: 'test_endturn_override', name: 'Override', kind: 'building', cost: {}, workers: 0,
+    produces: { food: 9 },
+    on: { endTurn: (ctx) => gainResources(ctx, { science: 7 }) },
   },
 };
 
@@ -135,6 +149,61 @@ describe('dispatchEvent — subject scope (self-triggered) + reason', () => {
     const G = withScriptorium();
     dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'scriptorium', source: 'effect' });
     expect(G.resources.money).toBe(1);
+  });
+});
+
+describe('dispatchEvent — endTurn broadcast (production + threat drains)', () => {
+  it('a staffed building produces on endTurn', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }];
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.food).toBe(2);
+  });
+
+  it('an idle (unstaffed) building produces nothing on endTurn', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [{ id: 1, cardId: 'farm', workers: 0 }]; // farm needs 1
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.food).toBe(0);
+  });
+
+  it('a threat drains on endTurn through its own resolveCard spine', () => {
+    const G = blankState('long_winter');
+    G.resources.food = 5;
+    G.threats = [{ id: 1, cardId: 'harsh_winter' }];
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.food).toBe(3);
+  });
+
+  it('an operating Work card produces on endTurn (the workZone is in the observer walk)', () => {
+    const G = blankState('enlightenment');
+    G.workZone = [{ id: 1, cardId: 'test_endturn_work', workers: 0 }]; // self-sufficient → operating
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.production).toBe(1);
+  });
+
+  it('an explicit on.endTurn handler overrides the default production', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [{ id: 1, cardId: 'test_endturn_override', workers: 0 }];
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.science).toBe(7); // the authored handler ran
+    expect(G.resources.food).toBe(0); // ...instead of the passive `produces: { food: 9 }`
+  });
+
+  it('Treasury pays out once off endTurn-driven production in a full upkeep', () => {
+    // The load-bearing case: production runs via the endTurn broadcast, then flushEvents synthesizes
+    // the round's resourceChange — so a staffed Market pushing money past 10 must still trip Treasury.
+    const G = blankState('enlightenment');
+    G.resources.money = 8;
+    G.tableau = [
+      { id: 1, cardId: 'market', workers: 1 }, // +2 money on endTurn → crosses 10
+      { id: 2, cardId: 'treasury', workers: 1 },
+    ];
+    applyUpkeep(G);
+    expect(G.resources.money).toBe(10);
+    expect(G.resources.science).toBe(5); // Treasury's one-time payout
+    expect(G.tableau[1].counters).toEqual({ fired: 1 });
+    expect(G.events).toEqual([]); // drained
   });
 });
 

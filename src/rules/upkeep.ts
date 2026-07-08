@@ -1,9 +1,7 @@
 import { type Resources } from './resources';
-import { applyTableauProduction, applyWorkZoneProduction } from './production';
 import { foodUpkeep } from './population';
 import { resolveCard } from './effects';
-import { emitEvent, flushEvents, snapshot } from './events';
-import { tickThreats } from './threats';
+import { dispatchEvent, emitEvent, flushEvents, snapshot } from './events';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameState } from './state';
 
@@ -53,22 +51,23 @@ export function resolveHandEvents(G: GameState): void {
 }
 
 /**
- * Resolve the resource side of end-of-round upkeep: operating (staffed) buildings and Work
- * cards produce, any board threats tick (each resolving its own card's effect, escalation
- * included — see `rules/threats.ts`), the mission ticks, then the population eats food. Single
- * source of truth shared by the run loop's `onEnd` and the UI projection below, so they never
- * drift.
+ * Resolve the resource side of end-of-round upkeep: the `endTurn` broadcast fires per-round behaviour
+ * on every operating (staffed) building and Work card (production) and every threat (its drain,
+ * escalation included) through the bus's observer walk (`dispatchEvent` → `resolveEndTurn`), the
+ * mission ticks, then the population eats food. Single source of truth shared by the run loop's `onEnd`
+ * and the UI projection below, so they never drift.
+ *
+ * `endTurn` is dispatched *directly* here (not queued) so production runs at exactly the slot it
+ * always has — before `flushEvents` synthesizes the round's net `resourceChange` — leaving the flush /
+ * resourceChange / projection machinery byte-for-byte unchanged (a threshold like Treasury's still
+ * sees the round's production). The draws/discards those handlers emit queue on `G.events` and drain
+ * in the `flushEvents` below, reachable from `projectedDelta`'s clone so they show in the HUD preview.
  */
 export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
   const before = snapshot(G);
-  applyTableauProduction(G);
-  applyWorkZoneProduction(G);
-  tickThreats(G);
+  dispatchEvent(G, { type: 'endTurn' });
   missionUpkeep?.(G);
   G.resources.food -= foodUpkeep(G);
-  // Dispatch everything upkeep emitted (production draws, threat/work discards) plus the round's net
-  // resourceChange. Reachable from `projectedDelta`'s clone below, so handler effects show in the HUD
-  // preview too — the whole point of flushing *inside* upkeep, not only in `engine.ts`.
   flushEvents(G, before);
 }
 

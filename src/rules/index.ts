@@ -9,7 +9,6 @@ export * from './effects';
 export * from './events';
 export * from './playability';
 export * from './population';
-export * from './production';
 export * from './rng';
 export * from './tableau';
 export * from './threats';

@@ -30,10 +30,11 @@ export interface CardDef {
    *   Barbarian), which sends it to **removed** instead. Not an inherent trait of `event` itself.
    * - `threat`: a persistent board hazard, never in hand/deck/collection/deck editor — a mission's
    *   `setup` seeds it directly into `GameState.threats` (`rules/threats.ts`'s `addThreat`), not a
-   *   pile. Unlike `event` (resolves once from hand, then files away), a threat ticks *every*
-   *   upkeep via `tickThreats`→`resolveCard` and stays on the board indefinitely — the card's own
-   *   `effect`/`resolve` computes and applies its drain (and, for one that escalates, bumps its own
-   *   counter), the same resolver spine every other card resolves through.
+   *   pile. Unlike `event` (resolves once from hand, then files away), a threat ticks *every* upkeep
+   *   via the `endTurn` broadcast (`rules/events.ts`'s `dispatchEvent` → `resolveEndTurn` →
+   *   `resolveCard`) and stays on the board indefinitely — the card's own `effect`/`resolve` computes
+   *   and applies its drain (and, for one that escalates, bumps its own counter), the same resolver
+   *   spine every other card resolves through.
    * - `objective`: a mission's win/lose condition made into a card — the positive counterpart to
    *   `threat`. Seeded once at setup into `GameState.objective` (`rules/objective.ts`'s
    *   `seedObjective`) from the mission's `objectiveCardId`, never in hand/deck/collection/deck
@@ -77,16 +78,20 @@ export interface CardDef {
   /**
    * Event-bus reactions (`rules/events.ts`): a map from a game-event type to a handler that runs when
    * that event fires — the way a card reacts to something whose *timing it doesn't own* (a draw, a
-   * discard elsewhere, a resource crossing a threshold), without a bespoke branch in the engine. Each
-   * handler is an ordinary `Resolver`, run through the same `EffectContext` spine (with `ctx.event`
-   * set to the trigger), so it mutates `ctx.G` and adds output through `gainResources` (sticker-folded)
-   * exactly like `resolve`. Dispatch scope per event: the event's *subject* (the drawn/discarded card
-   * itself) plus every *operating* tableau building and every threat — see `dispatchEvent`. Rules a
-   * handler must respect: be **pure over `G`** (the projection clone re-runs it every HUD render, so no
-   * logging/animation/IO); **never open a `pendingInteraction`** (the bus can fire at upkeep with no
-   * player, like `resolveHandEvents`); and **`filter`, never `splice`**, to self-remove from a zone
-   * (the `for...of` footgun `tickThreats`/production share). A handler may set `G.pendingDefeat` to
-   * declare a loss itself.
+   * discard elsewhere, a resource crossing a threshold, or a round passing via the broadcast
+   * `endTurn`), without a bespoke branch in the engine. Each handler is an ordinary `Resolver`, run
+   * through the same `EffectContext` spine (with `ctx.event` set to the trigger), so it mutates
+   * `ctx.G` and adds output through `gainResources` (sticker-folded) exactly like `resolve`. Dispatch
+   * scope per event: the event's *subject* (the drawn/discarded card itself) plus every *operating*
+   * tableau building, operating Work card, and threat — see `dispatchEvent`; the subject-less
+   * `endTurn` reaches all of those (it's what drives production/threat drains — an `on.endTurn`
+   * *replaces* the default per-round behaviour, see `resolveEndTurn`). Rules a handler must respect:
+   * be **pure over `G`** (the projection clone re-runs it every HUD render, so no logging/animation/
+   * IO); **never open a `pendingInteraction`** (the bus can fire at upkeep with no player, like
+   * `resolveHandEvents`); and **`filter`, never `splice`**, to self-remove from a zone (the
+   * dispatcher iterates a zone snapshot, so a splice wouldn't corrupt the dispatch, but `filter`
+   * keeps the array-identity discipline uniform). A handler may set `G.pendingDefeat` to declare a
+   * loss itself.
    */
   on?: Partial<Record<GameEventType, Resolver>>;
   /**
@@ -94,10 +99,11 @@ export interface CardDef {
    * card owns its logic. Two **pure-read predicates** over the live run state — `met` (the win
    * condition) and optional `failed` (a mission-specific defeat, e.g. a deadline; core-resource
    * collapse stays universal in `run/engine.ts`). Read-only by contract: unlike `resolve`/`produce`
-   * they never mutate `G`, so they need no resolver spine and no event bus — `run/engine.ts`'s
-   * `checkEndIf` (via `rules/objective.ts`) polls them after every move/upkeep step, so a threshold
-   * like "30 science" fires the instant it's crossed. `self` is the seeded objective instance, so a
-   * future objective can read its own `counters`. Pair with `dynamicText` for the progress readout.
+   * they never mutate `G`. `run/engine.ts`'s `checkEndIf` (via `rules/objective.ts`) currently
+   * *polls* them after every move/upkeep step, so a threshold like "30 science" fires the instant
+   * it's crossed; they're slated to move onto the event bus (the `endTurn` broadcast enables it).
+   * `self` is the seeded objective instance, so a future objective can read its own `counters`. Pair
+   * with `dynamicText` for the progress readout.
    */
   objective?: {
     met: (G: GameState, self: CardInstance) => boolean;

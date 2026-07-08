@@ -115,38 +115,47 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     An interactive effect suspends into `pendingInteraction` and re-enters via
     `moves.resolveInteraction` — all plain data, so undo/clone survive.
   - `events.ts` — the **event bus**: the general trigger layer letting a card react to an event
-    whose *timing it doesn't own* (a draw, a discard elsewhere, a resource crossing a threshold)
-    via a `CardDef.on?: { draw?/discard?/resourceChange? }` handler — run through the *same*
-    `resolveCard`/`EffectContext` spine (extended with `ctx.event`), so a handler is authored like
-    any bespoke `resolve` and its gains still fold through stickers. Two verbs, split so the bus
-    never dispatches mid-mutation: **emit** (`emitEvent` → push to `G.events`, done at a semantic
-    site as a step runs — a `draw` in `deck.ts`, a `discard` with its *reason* at each discard
-    site) and **flush** (`flushEvents(G, before)` at a *step boundary* — `applyMove`/`beginTurn`/
-    `endTurn`/`applyUpkeep` — which synthesizes a `resourceChange` from a before-snapshot, then
-    drains `G.events` to `dispatchEvent`, cascade-capped by `MAX_EVENT_CASCADE`). `dispatchEvent`
-    runs `on[type]` on the event's *subject* (self-triggered) plus every operating tableau building
-    and threat (observer, reusing production's `isOperating` gate), in fixed order for determinism.
-    **`G.events` is always drained to `[]` in any committed/undo-visible state** (see `state.ts`),
-    so structuredClone/undo/determinism are untouched. A handler may set `G.pendingDefeat` to
-    *declare a loss itself* (`engine.ts`'s `checkEndIf` polls it) — the counterpart to a threat
-    that can only drain a resource into collapse. Handlers must be pure over `G` (the projection
-    clone re-runs upkeep every render) and must not open a `pendingInteraction`. This *replaces*
-    the old "no event bus" property once documented on `objective.ts`/`state.ts`; the objective
-    readers still stay off it (pure polls, never firing).
+    whose *timing it doesn't own* (a draw, a discard elsewhere, a resource crossing a threshold, or
+    a round passing) via a `CardDef.on?: { draw?/discard?/resourceChange?/endTurn? }` handler — run
+    through the *same* `resolveCard`/`EffectContext` spine (extended with `ctx.event`), so a handler
+    is authored like any bespoke `resolve` and its gains still fold through stickers. Two verbs,
+    split so the bus never dispatches mid-mutation: **emit** (`emitEvent` → push to `G.events`, done
+    at a semantic site as a step runs — a `draw` in `deck.ts`, a `discard` with its *reason* at each
+    discard site) and **flush** (`flushEvents(G, before)` at a *step boundary* — `applyMove`/
+    `beginTurn`/`endTurn`/`applyUpkeep` — which synthesizes a `resourceChange` from a before-snapshot,
+    then drains `G.events` to `dispatchEvent`, cascade-capped by `MAX_EVENT_CASCADE`). `dispatchEvent`
+    runs `on[type]` on the event's *subject* (self-triggered) plus every operating tableau building,
+    operating Work card, and threat (observer, reusing production's `isOperating` gate), in fixed
+    order for determinism. The **broadcast `endTurn`** event is the exception: it names no subject and
+    every operating in-play subscriber runs `resolveEndTurn` (its `on.endTurn`, else the default
+    production/threat-drain) — it's *what drives per-round production and threat drains*, dispatched
+    directly at the upkeep boundary by `applyUpkeep` (not queued), so it runs at the exact slot
+    production always did, before the `resourceChange` synthesis. **`G.events` is always drained to
+    `[]` in any committed/undo-visible state** (see `state.ts`), so structuredClone/undo/determinism
+    are untouched. A handler may set `G.pendingDefeat` to *declare a loss itself* (`engine.ts`'s
+    `checkEndIf` polls it) — the counterpart to a threat that can only drain a resource into collapse.
+    Handlers must be pure over `G` (the projection clone re-runs upkeep every render) and must not open
+    a `pendingInteraction`. The objective readers (`objective.ts`) are the one reactive-ish concern
+    still *polled* by `checkEndIf` rather than bus-driven — slated to move onto the bus (`endTurn`
+    enables it), not off it by design.
   - `population.ts` — worker staffing over buildings *and* work cards through one `Staffable`
     layer (`requiredWorkersOf`/`isOperating`/`freePopulation`/`findStaffable`,
     `addBuilding`/`addWork`, the shared `nextInstanceId` allocator, `foodUpkeep`).
-  - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup;
-    `tickThreats` just calls `resolveCard` per threat, so the threat card computes its own
+  - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup. A seeded threat
+    ticks every round through the `endTurn` broadcast (`events.ts`'s `dispatchEvent` → `effects.ts`'s
+    `resolveEndTurn` → the threat's own `resolveCard` drain), so the threat card computes its own
     behaviour — the engine never reads or scales its data.
   - `objective.ts` — the win/lose counterpart to `threats.ts`: `seedObjective` seeds the mission's
     objective card into `G.objective` at setup; `objectiveMet`/`objectiveFailed` read that card's
     own pure `objective.met`/`.failed` hook, so `engine.ts`'s `checkEndIf` polls the *card*, never a
-    mission predicate. Read-only (never mutates `G`), so no resolver spine / event bus is involved.
-  - `production.ts` — `resolveProduction` per *operating* (staffed) tableau/workZone
-    instance; the engine asks each instance to produce, never reads its `produces` itself.
-  - `upkeep.ts` — `applyUpkeep` (production → threats tick → mission tick → food eaten),
-    plus `discardWorkZone` (end-of-turn work filing) and `projectedDelta` (the UI preview).
+    mission predicate. Currently read-only *polls* (never mutate `G`) run by `checkEndIf` at
+    move granularity; slated to move onto the bus (the `endTurn` broadcast enables it).
+  - (`resolveProduction` lives in `effects.ts`: per *operating* (staffed) tableau/workZone instance,
+    the engine asks each instance to produce and never reads its `produces` itself. Production is
+    driven by the `endTurn` broadcast; there is no standalone production module.)
+  - `upkeep.ts` — `applyUpkeep` (the `endTurn` broadcast — production + threat drains — → mission
+    tick → food eaten → flush), plus `discardWorkZone` (end-of-turn work filing) and `projectedDelta`
+    (the UI preview).
   - `tableau.ts` — derived stats, including the `territory` cap gating tableau size.
   - `deckBuilder.ts` — deck *construction*: a `DeckDef.cards` entry is a meta instance id,
     so `addCard`/`removeCard` resolve through the player's `OwnedCards` (returning

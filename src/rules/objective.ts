@@ -9,9 +9,10 @@ import type { GameState } from './state';
  * `objective` hook through the two readers here — so the card owns its logic like every other card,
  * and the engine never reads a mission predicate directly.
  *
- * The hooks are **pure reads** over `G` (never mutate it), so — unlike a threat's per-upkeep drain —
- * there is no resolver spine and no event bus involved: `checkEndIf` already runs after every move
- * and upkeep sub-step, so a threshold win ("30 science") is detected the instant it's crossed.
+ * The hooks are **pure reads** over `G` (never mutate it). `checkEndIf` currently *polls* them after
+ * every move and upkeep sub-step, so a threshold win ("30 science") is detected the instant it's
+ * crossed. They are slated to move onto the event bus — the `endTurn` broadcast (`rules/events.ts`)
+ * is the enabling piece — rather than staying poll-only.
  */
 
 /** Seed the mission's objective card into `G.objective`, bare (no counters yet). Called once by
@@ -28,8 +29,9 @@ export function objectiveMet(G: GameState): boolean {
 }
 
 /** Whether the seeded objective's mission-specific defeat condition is met right now (e.g. a
- *  deadline). Core-resource collapse stays a universal check in `run/engine.ts`; an objective with
- *  no `failed` hook (most) never defeats on its own. */
+ *  deadline) — a pure poll today, slated to move onto the bus like `objectiveMet`. Core-resource
+ *  collapse stays a universal check in `run/engine.ts`; an objective with no `failed` hook (most)
+ *  never defeats on its own. */
 export function objectiveFailed(G: GameState): boolean {
   const o = G.objective;
   return !!o && (CARDS[o.cardId].objective?.failed?.(G, o) ?? false);

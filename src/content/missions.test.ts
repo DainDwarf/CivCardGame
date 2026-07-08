@@ -4,16 +4,18 @@ import { CARDS } from './cards';
 import {
   blankState,
   coreCollapse,
+  dispatchEvent,
   instancesFromCardIds,
   objectiveFailed,
   objectiveMet,
   seedObjective,
-  tickThreats,
 } from '../rules';
 
 // Win/lose now lives on each mission's objective *card* (`GameState.objective`), so these drive it
 // through the same production path `run/engine.ts` uses: `seedObjective` then `objectiveMet`/
-// `objectiveFailed` (which read the card's `objective.met`/`.failed` hook off `G`).
+// `objectiveFailed` (which read the card's `objective.met`/`.failed` hook off `G`). Threat drains
+// run through the per-round `endTurn` broadcast (`dispatchEvent` → `resolveEndTurn`), the same path
+// upkeep uses.
 
 describe('mission: enlightenment', () => {
   const m = MISSIONS.enlightenment;
@@ -53,7 +55,7 @@ describe('mission: long_winter', () => {
     m.setup!(G);
     seedObjective(G, m.objectiveCardId);
     G.resources.food = 5;
-    tickThreats(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.food).toBe(3);
     expect(objectiveFailed(G)).toBe(false);
   });
@@ -131,9 +133,9 @@ describe('mission: the_long_decline', () => {
     m.setup!(G);
     seedObjective(G, m.objectiveCardId);
     G.resources.production = 10;
-    tickThreats(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.production).toBe(9);
-    tickThreats(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.production).toBe(7);
     expect(objectiveFailed(G)).toBe(false); // the objective owns no failure — core collapse ends it
   });

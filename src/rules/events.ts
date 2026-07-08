@@ -1,5 +1,5 @@
 import { isOperating } from './population';
-import { runEventHandler } from './effects';
+import { runEventHandler, resolveEndTurn } from './effects';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, ValueSnapshot } from './state';
 
@@ -12,8 +12,13 @@ import type { CardInstance, GameEvent, GameState, ValueSnapshot } from './state'
  *  - **emit** (`emitEvent`) — a cheap append to `G.events`, done at a semantic site *as a step runs*
  *    (even inside a leaf like `drawCard`). Safe mid-mutation because it runs no handler.
  *  - **flush** (`flushEvents`) — at a *step boundary* (after a move, after upkeep, after a draw
- *    batch), drain the queue and run each event's handlers. This is the only place handlers fire, so
- *    a handler that changes state can't re-enter a mutation site.
+ *    batch), drain the queue and run each queued event's handlers.
+ *
+ * `flushEvents` drains the *leaf-emitted* events (draws, discards, the synthesized `resourceChange`);
+ * the per-round `endTurn` broadcast is `dispatchEvent`'d directly at the upkeep boundary by
+ * `rules/upkeep.ts` (it's what runs production + threat drains). Both are step boundaries, not leaf
+ * mutations, so neither re-enters a mutation site: an `endTurn` handler only *emits* (its draws/
+ * discards queue for the following flush), it never re-dispatches.
  *
  * Everything is plain data on `G`; the bus adds no object to `GameState`. See the `G.events`
  * invariant in `state.ts` (always drained to `[]` before a state is committed).
@@ -57,9 +62,10 @@ function valueChanged(G: GameState, before: ValueSnapshot): boolean {
 
 /** The subject instance a discrete event names (`draw`/`discard`), reconstructed bare (`{id, cardId}`)
  *  like `resolveInteraction` does — the card may have moved zones since, so we don't chase its live
- *  copy or its counters. `undefined` for a value event, which names no subject. */
+ *  copy or its counters. `undefined` for a value (`resourceChange`) or broadcast (`endTurn`) event,
+ *  which name no subject. */
 function subjectOf(event: GameEvent): CardInstance | undefined {
-  if (event.type === 'resourceChange') return undefined;
+  if (event.type === 'resourceChange' || event.type === 'endTurn') return undefined;
   return { id: event.instanceId, cardId: event.cardId };
 }
 
@@ -67,18 +73,23 @@ function subjectOf(event: GameEvent): CardInstance | undefined {
  * Dispatch one event to every subscribed card, in a fixed, deterministic order so replays match:
  *  1. the event's **subject** (the discarded/drawn card reacting to itself — the *self-triggered*
  *     flavour), then
- *  2. every **operating** (staffed) tableau building, then every threat — the *observer* flavour,
- *     reusing the exact `isOperating` gate production applies, so an idle building never reacts.
- * A card only appears once (dedup by instance id: the subject may also sit on the board). Only cards
- * that actually declare `on[event.type]` are run. Handlers mutate `G` directly; they must not open a
- * `pendingInteraction` (the bus can fire at upkeep with no player) and must `filter`, never `splice`,
- * to self-remove (the zone loops here iterate a snapshot, but `tickThreats`/production use `for...of`).
+ *  2. every **operating** (staffed) tableau building, then every operating Work card, then every
+ *     threat — the *observer* flavour, reusing the exact `isOperating` gate production applies, so an
+ *     idle building/work box never reacts.
+ * A card only appears once (dedup by instance id: the subject may also sit on the board). The
+ * per-subscriber action depends on the event: for the `endTurn` broadcast every subscriber runs
+ * `resolveEndTurn` (production/threat drain by default, or its own `on.endTurn`); for every other
+ * event only cards that actually declare `on[event.type]` are run. Handlers mutate `G` directly; they
+ * must not open a `pendingInteraction` (the bus can fire at upkeep with no player) and should `filter`,
+ * never `splice`, to self-remove — the zone loops here iterate a snapshot (`[...G.tableau]`), so a
+ * splice wouldn't corrupt *this* dispatch, but `filter` keeps the array-identity discipline uniform.
  */
 export function dispatchEvent(G: GameState, event: GameEvent): void {
   const seen = new Set<number>();
   const run = (self: CardInstance) => {
     if (seen.has(self.id)) return;
     seen.add(self.id);
+    if (event.type === 'endTurn') return void resolveEndTurn({ G, self, event });
     if (!CARDS[self.cardId]?.on?.[event.type]) return;
     runEventHandler({ G, self, event });
   };
@@ -88,6 +99,7 @@ export function dispatchEvent(G: GameState, event: GameEvent): void {
   // Snapshot the observer zones first: a handler may add/remove from them, but this event's
   // subscriber set is fixed at dispatch time.
   for (const b of [...G.tableau]) if (isOperating(b)) run(b);
+  for (const w of [...G.workZone]) if (isOperating(w)) run(w);
   for (const t of [...G.threats]) run(t);
 }
 

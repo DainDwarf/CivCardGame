@@ -50,9 +50,10 @@ export type BuildingInstance = PlacedCard;
 export type WorkInstance = PlacedCard;
 
 /** A persistent board hazard, mission-seeded and never in a pile or player-playable, but otherwise a
- *  plain `CardInstance`: its escalation lives in its own `counters`, and each upkeep tick resolves it
- *  through the shared resolver spine (`rules/threats.ts`'s `tickThreats` just calls `resolveCard`, so
- *  the threat card computes its own drain). Shares the run-wide instance-id space. */
+ *  plain `CardInstance`: its escalation lives in its own `counters`, and each upkeep the `endTurn`
+ *  broadcast resolves it through the shared resolver spine (`rules/events.ts`'s `dispatchEvent` →
+ *  `resolveEndTurn` → `resolveCard`, so the threat card computes its own drain). Shares the run-wide
+ *  instance-id space. */
 export type ThreatInstance = CardInstance;
 
 /** Why a card was filed to a pile — rides on a `discard` event so a card's `on.discard` handler can
@@ -77,16 +78,19 @@ export interface ValueSnapshot {
 
 /**
  * A game event dispatched to card `on` handlers (`rules/events.ts`). Plain data so it rides on `G`
- * and survives structuredClone/undo. Two flavours ride the same union: **discrete** events name a
+ * and survives structuredClone/undo. Three flavours ride the same union: **discrete** events name a
  * subject instance (`draw`/`discard`) and are *emitted* at their semantic site as a step runs;
  * **value** events (`resourceChange`) carry a before-snapshot and are *synthesized* by the flush
- * boundary via diff (resource writes have no single choke point). See `rules/events.ts` for how each
- * is dispatched to subscribers.
+ * boundary via diff (resource writes have no single choke point); the **broadcast** `endTurn` names
+ * no subject and is dispatched once per round at the upkeep boundary to every operating in-play
+ * subscriber (it's what drives production and threat drains — see `rules/effects.ts`'s `resolveEndTurn`
+ * and `rules/upkeep.ts`). See `rules/events.ts` for how each is dispatched to subscribers.
  */
 export type GameEvent =
   | { type: 'draw'; instanceId: number; cardId: string; source: DrawSource }
   | { type: 'discard'; instanceId: number; cardId: string; reason: DiscardReason }
-  | { type: 'resourceChange'; before: ValueSnapshot };
+  | { type: 'resourceChange'; before: ValueSnapshot }
+  | { type: 'endTurn' };
 
 /** The discriminant keys of `GameEvent` — the set of triggers a `CardDef.on` map may key on. */
 export type GameEventType = GameEvent['type'];

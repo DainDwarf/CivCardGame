@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyEffect } from './effects';
-import { applyTableauProduction } from './production';
+import { dispatchEvent } from './events';
 import { applyUpkeep } from './upkeep';
 import { cultureLevel, cultureProgress, effectiveHandSize } from './culture';
 import { blankState, instancesFromCardIds } from './state';
@@ -29,21 +29,21 @@ describe('culture: per-round output from operating buildings', () => {
   it('counts culture from a staffed theater', () => {
     const G = blankState('enlightenment');
     G.tableau = [b('theater', 1)];
-    applyTableauProduction(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.culture).toBe(2);
   });
 
   it('ignores culture from an unstaffed theater', () => {
     const G = blankState('enlightenment');
     G.tableau = [b('theater', 0)];
-    applyTableauProduction(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.culture).toBe(0);
   });
 
   it('ignores buildings with no cultureOutput', () => {
     const G = blankState('enlightenment');
     G.tableau = [b('farm', 1), b('library', 1)];
-    applyTableauProduction(G);
+    dispatchEvent(G, { type: 'endTurn' });
     expect(G.culture).toBe(0);
   });
 
