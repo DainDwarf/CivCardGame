@@ -5,7 +5,6 @@
    literals. */
 .boardMenu {
   font-family: system-ui, -apple-system, sans-serif;
-  max-width: 1100px;
   color: var(--text);
 }
 
