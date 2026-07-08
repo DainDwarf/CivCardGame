@@ -10,7 +10,7 @@ import {
   unplayableReason,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
-import { MISSIONS, type MissionDef } from '../content/missions';
+import { MISSIONS } from '../content/missions';
 import type { GameState } from '../rules';
 import { isCompleted } from '../rules/campaign';
 import { computeRewards } from '../rules/rewards';
@@ -127,42 +127,35 @@ function CultureBar({ culture, projected }: { culture: number; projected: number
   );
 }
 
-/** Fixed widget in the top-left corner: shows mission name, live progress, and a tooltip.
- *  INTERIM (Step 1): still reads the progress line off the mission's now-seeded objective card
- *  (`G.objective`'s `dynamicText`), which replaced the removed `mission.progress`. Step 2 replaces
- *  this whole widget with the objective card rendered as a `CardFace` above the threat zone. */
-function MissionWidget({ mission, G }: { mission: MissionDef; G: GameState }) {
-  const progress = G.objective ? CARDS[G.objective.cardId].dynamicText?.(G, G.objective) ?? '' : '';
-  return (
-    <div className={styles.missionWidget} tabIndex={0}>
-      <div className={styles.missionName}>{mission.name}</div>
-      <div className={styles.missionProgress}>🎯 {progress}</div>
-      <div className={`${styles.tooltip} ${styles.tooltipLeft} ${styles.tooltipWide}`} role="tooltip">
-        <strong>{mission.name}</strong>
-        <span className={styles.ttBody}>{mission.description}</span>
-        <span className={styles.ttRule}>🏆 {mission.victoryHint}</span>
-        {mission.failureHint && <span className={styles.ttRule}>💀 {mission.failureHint}</span>}
-      </div>
-    </div>
-  );
-}
-
-/** The board's threat zone: persistent hazards (`G.threats`) rendered as real `CardFace`s down a
- *  dedicated in-flow left column of `.gamearea` (`.threatColumn`) — click to zoom, same as any
- *  other card. A real layout column, not a floating overlay: the slot grid reflows beside it via
- *  the sibling `.gameContent`, so a tall threat stack never creeps in front of the tableau. Reads
- *  only `GameState`, never the mission, so it renders identically no matter which mission seeded
- *  these. Renders nothing when no threats are seeded. */
-function ThreatZone({
+/** The board's left column: the mission's **objective** card (`G.objective`, the goal — pinned at
+ *  top) above its persistent **hazards** (`G.threats`), each rendered as a real `CardFace` — click
+ *  to zoom, same as any other card. Both live on `GameState`, so this reads *only* `GameState`,
+ *  never the mission: the objective card's own `dynamicText` supplies its live progress and its
+ *  `Objective` banner/violet identity sets it apart from the red threat cards below. A real layout
+ *  column, not a floating overlay: the slot grid reflows beside it via the sibling `.gameContent`,
+ *  so a tall stack never creeps in front of the tableau. Renders nothing when neither exists. */
+function BoardLeftColumn({
   G,
   onZoom,
 }: {
   G: GameState;
   onZoom: (cardId: string, overrideText?: string, stickerBadge?: string[]) => void;
 }) {
-  if (G.threats.length === 0) return null;
+  const objective = G.objective;
+  if (!objective && G.threats.length === 0) return null;
+  const objectiveCard = objective ? CARDS[objective.cardId] : undefined;
+  const objectiveText = objective && objectiveCard ? objectiveCard.dynamicText?.(G, objective) : undefined;
   return (
-    <div className={styles.threatColumn}>
+    <div className={styles.boardLeft}>
+      {objective && objectiveCard && (
+        <CardFace
+          card={objectiveCard}
+          overrideText={objectiveText}
+          stickerBadge={objective.stickers}
+          className={styles.staticCard}
+          onClick={() => onZoom(objective.cardId, objectiveText, objective.stickers)}
+        />
+      )}
       {G.threats.map((t) => {
         const card = CARDS[t.cardId];
         const overrideText = card.dynamicText?.(G, t);
@@ -1158,7 +1151,6 @@ export function Board({
     <>
     <div className={styles.app}>
       <div className={styles.groundBackdrop} data-board={board} />
-      <MissionWidget mission={mission} G={G} />
       <header className={styles.topBanner} ref={bannerRef}>
         <div
           ref={popTrayRef}
@@ -1218,7 +1210,7 @@ export function Board({
         ref={gameareaRef}
         style={{ top: 0, bottom: insets.bottom, paddingTop: insets.top }}
       >
-        <ThreatZone
+        <BoardLeftColumn
           G={G}
           onZoom={(cardId, overrideText, stickerBadge) => setZoom({ cardId, overrideText, stickerBadge })}
         />

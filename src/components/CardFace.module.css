@@ -70,9 +70,18 @@
   background: var(--card-work-banner);
 }
 
+.bannerObjective {
+  background: var(--card-objective-banner);
+}
+
 /* Event cards are a threat — a red border sets them apart from the player's own cards. */
 .event {
   border-color: var(--card-event-border);
+}
+
+/* Objective cards — the mission goal, set apart from the player's own cards by a violet border. */
+.objective {
+  border-color: var(--card-objective-border);
 }
 
 /* Colour the title band by card kind (blue = building, orange = action, red = event). */
@@ -90,6 +99,10 @@
 
 .work .cardTop {
   background: var(--card-work-band);
+}
+
+.objective .cardTop {
+  background: var(--card-objective-band);
 }
 
 .cardName {
@@ -167,6 +180,10 @@
   background: var(--card-work-condition);
 }
 
+.objective .cardConditions {
+  background: var(--card-objective-condition);
+}
+
 .cardText {
   display: flex;
   align-items: center;
@@ -196,6 +213,10 @@
 
 .work .cardText {
   background: var(--card-work-band);
+}
+
+.objective .cardText {
+  background: var(--card-objective-band);
 }
 
 /* Face-down back (`faceDown` prop) — grey stand-in for a still-secret card, same box and band

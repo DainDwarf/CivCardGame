@@ -34,47 +34,6 @@
   min-height: 6.5rem;
 }
 
-/* Standalone widget pinned to the top-left corner of the viewport: mission name + progress + tooltip */
-.missionWidget {
-  position: fixed;
-  top: 0.8rem;
-  left: 0.8rem;
-  z-index: 6;
-  cursor: help;
-  outline: none;
-  background: var(--surface);
-  padding: 0.4rem 0.7rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.missionWidget:hover .tooltip,
-.missionWidget:focus-within .tooltip {
-  visibility: visible;
-  opacity: 1;
-}
-
-.missionWidget:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-.missionName {
-  font-weight: 700;
-  font-size: 0.85rem;
-  line-height: 1.2;
-}
-
-.missionProgress {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 0.15rem;
-}
-
 /* Left, large: the population tray — a visual "slot" where worker pips live and can be dragged
    from once the idle-worker-pool UI (see docs/TODO.md) lands. Sized to read as a container, not
    just another stat chip. */
@@ -372,11 +331,11 @@
   flex-direction: row;
 }
 
-/* Persistent board hazards (G.threats) — a real, in-flow left column (not a floating overlay,
-   which used to creep in front of the slot grid once more than one threat was seeded) so the
-   slot grid reflows beside it instead of underneath it. Reads only GameState, never the
-   mission (see Board.tsx's ThreatZone); empty (width 0) when no threats are seeded. */
-.threatColumn {
+/* The board's left column: the mission's objective card (G.objective) atop its persistent hazards
+   (G.threats) — a real, in-flow column (not a floating overlay, which used to creep in front of the
+   slot grid) so the slot grid reflows beside it instead of underneath it. Reads only GameState,
+   never the mission (see Board.tsx's BoardLeftColumn); not rendered at all when neither exists. */
+.boardLeft {
   flex: 0 0 auto;
   width: 150px;
   overflow-y: auto;
@@ -388,8 +347,8 @@
   box-sizing: border-box;
 }
 
-/* The main play column (slot grid + work strip), filling whatever width the threat column
-   (if any) doesn't take. */
+/* The main play column (slot grid + work strip), filling whatever width the left column
+   (objective + threats, if any) doesn't take. */
 .gameContent {
   flex: 1;
   min-width: 0;

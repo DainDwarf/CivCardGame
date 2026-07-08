@@ -85,6 +85,10 @@
   --card-work-band: #e2f4f1;
   --card-work-condition: #6fb8ae;
   --card-wonder-banner: #b8860b;
+  --card-objective-banner: #6d4bb8;  /* Objective card — violet, the untaken kind hue (goal) */
+  --card-objective-band: #ece4f9;
+  --card-objective-condition: #a488d4;
+  --card-objective-border: #6d4bb8;
 
   /* ── Action / CTA (orange) ────────────────────────── */
   --action: #c9772f;             /* idle hint, discard-cost outline */
@@ -249,6 +253,10 @@
   --card-work-band: #17302c;
   --card-work-condition: #4a7f78;
   --card-wonder-banner: #b8860b;
+  --card-objective-banner: #6d4bb8;
+  --card-objective-band: #241a38;
+  --card-objective-condition: #6b5595;
+  --card-objective-border: #6d4bb8;
 
   /* ── Action / CTA (orange) ── */
   --action: #dd914f;
@@ -379,6 +387,10 @@
   --card-work-band: #d9f2ea;
   --card-work-condition: #5cb89e;
   --card-wonder-banner: #b8860b;
+  /* Objective pulled toward orchid so it holds a gap from Building/Work under CVD sim
+     (see the deuteranopia/protanopia/tritanopia overrides — kept uniform across all three). */
+  --card-objective-banner: #a34bb8;
+  --card-objective-border: #a34bb8;
 
   /* ── Action / CTA (orange) ── */
   --action: #e69f00;
@@ -454,6 +466,9 @@
   --card-work-band: #d9f2ea;
   --card-work-condition: #5cc0a6;
   --card-wonder-banner: #c99312;
+  /* Objective → orchid: the inherited violet collapsed into Work's blue-purple here (CVD sim). */
+  --card-objective-banner: #a34bb8;
+  --card-objective-border: #a34bb8;
 
   /* ── Action / CTA (orange) ── */
   --action: #f0a800;
@@ -529,6 +544,9 @@
      rescue orange-vs-gold the way it rescues red-vs-green), so Wonder is pulled brighter
      and more yellow to hold a real lightness/saturation gap from Action. */
   --card-wonder-banner: #e0b400;
+  /* Objective → orchid: the inherited violet drifted into Building's indigo/teal here (CVD sim). */
+  --card-objective-banner: #a34bb8;
+  --card-objective-border: #a34bb8;
 
   /* ── Action / CTA ── */
   --work-border: #3f9142;

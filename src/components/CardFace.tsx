@@ -138,17 +138,19 @@ export function describeCard(c: CardDef): string {
 function cardBanner(c: CardDef): { label: string; variant: string } {
   if (c.kind === 'threat') return { label: 'Threat', variant: styles.bannerEvent };
   if (c.kind === 'event') return { label: 'Event', variant: styles.bannerEvent };
+  if (c.kind === 'objective') return { label: 'Objective', variant: styles.bannerObjective };
   if (c.kind === 'work') return { label: 'Work', variant: styles.bannerWork };
   if (c.tags?.includes('wonder')) return { label: 'Wonder', variant: styles.bannerWonder };
   if (c.kind === 'action') return { label: 'Action', variant: styles.bannerAction };
   return { label: 'Building', variant: styles.bannerBuilding };
 }
 
-/** The colour variant a card face uses, by kind (event/threat = danger, work = work, else
- *  building). A threat reuses the event's already-CVD-vetted red identity — same hazard color,
- *  distinguished only by its banner label (see `cardBanner` above), not a new palette. */
+/** The colour variant a card face uses, by kind (event/threat = danger, objective = violet goal,
+ *  work = work, else building). A threat reuses the event's already-CVD-vetted red identity — same
+ *  hazard color, distinguished only by its banner label (see `cardBanner` above), not a new palette. */
 export function kindClass(kind: CardDef['kind']): string {
   if (kind === 'event' || kind === 'threat') return styles.event;
+  if (kind === 'objective') return styles.objective;
   if (kind === 'action') return styles.action;
   if (kind === 'work') return styles.work;
   return styles.building;
