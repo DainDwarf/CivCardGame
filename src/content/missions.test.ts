@@ -5,17 +5,19 @@ import {
   blankState,
   coreCollapse,
   dispatchEvent,
+  evaluateObjective,
+  flushEvents,
   instancesFromCardIds,
-  objectiveFailed,
   objectiveMet,
   seedObjective,
+  snapshot,
 } from '../rules';
 
-// Win/lose now lives on each mission's objective *card* (`GameState.objective`), so these drive it
-// through the same production path `run/engine.ts` uses: `seedObjective` then `objectiveMet`/
-// `objectiveFailed` (which read the card's `objective.met`/`.failed` hook off `G`). Threat drains
-// run through the per-round `endTurn` broadcast (`dispatchEvent` → `resolveEndTurn`), the same path
-// upkeep uses.
+// Win now lives on each mission's objective *card* (`GameState.objective`): `objectiveMet` reads the
+// card's `objective.met` hook off `G`, and the bus re-derives it into `G.pendingVictory` at every
+// `flushEvents` boundary (`evaluateObjective`) — the flag `run/engine.ts`'s `checkEndIf` reads. Defeat
+// is a threat's job: threat drains and deadline losses run through the per-round `endTurn` broadcast
+// (`dispatchEvent` → `resolveEndTurn`), the same path upkeep uses. These drive both directly.
 
 describe('mission: enlightenment', () => {
   const m = MISSIONS.enlightenment;
@@ -26,13 +28,12 @@ describe('mission: enlightenment', () => {
     expect(G.threats).toEqual([{ id: 1, cardId: 'enlightenment_deadline' }]);
   });
 
-  // The objective owns the *win* only (30 Science); it never fails on its own.
-  it('objective is met at 30 science, and never fails on its own (the threat owns the defeat)', () => {
+  // The objective owns the *win* only (30 Science); defeat is the threat's job.
+  it('objective is met at 30 science', () => {
     const G = blankState('enlightenment');
     seedObjective(G, m.objectiveCardId);
     G.resources.science = 30;
     expect(objectiveMet(G)).toBe(true);
-    expect(objectiveFailed(G)).toBe(false);
   });
 
   // The threat owns the *lose* only — a pure deadline. It reads no Science: reaching 30 is the
@@ -76,7 +77,6 @@ describe('mission: long_winter', () => {
     G.resources.food = 5;
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.food).toBe(3);
-    expect(objectiveFailed(G)).toBe(false);
   });
 
   it('objective is met after surviving 15 rounds', () => {
@@ -118,7 +118,6 @@ describe('mission: barbarian_tide', () => {
     G.removed = instancesFromCardIds(['barbarian', 'barbarian', 'barbarian', 'barbarian']);
     G.resources.military = -1;
     expect(objectiveMet(G)).toBe(false); // the fatal blow doesn't count as survival
-    expect(objectiveFailed(G)).toBe(false); // the objective owns no failure
     expect(coreCollapse(G.resources)).toBe('revolt'); // defeat comes from the universal core floor
   });
 });
@@ -138,13 +137,12 @@ describe('mission: the_long_decline', () => {
     expect(G.threats).toEqual([{ id: 1, cardId: 'creeping_decay' }]);
   });
 
-  it('never wins on its own — objective and failure are both always false', () => {
+  it('never wins on its own — the objective is always unmet', () => {
     const G = blankState('the_long_decline');
     seedObjective(G, m.objectiveCardId);
     G.round = 999;
     G.resources.production = 999;
     expect(objectiveMet(G)).toBe(false);
-    expect(objectiveFailed(G)).toBe(false);
   });
 
   it('the seeded threat escalates production loss round over round via the shared tick', () => {
@@ -156,7 +154,41 @@ describe('mission: the_long_decline', () => {
     expect(G.resources.production).toBe(9);
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.production).toBe(7);
-    expect(objectiveFailed(G)).toBe(false); // the objective owns no failure — core collapse ends it
+    expect(objectiveMet(G)).toBe(false); // the objective never wins — core collapse ends this mission
+  });
+});
+
+describe('objective win flag is bus-driven', () => {
+  // The win no longer polls per-move: `evaluateObjective` re-derives `G.pendingVictory` from the
+  // card's `met` predicate, and `flushEvents` calls it at every step boundary — so the flag is fresh
+  // before every `checkEndIf`, even on a flush that dispatched no events.
+  it('flushEvents re-derives G.pendingVictory from the objective card, on an eventless flush', () => {
+    const G = blankState('enlightenment');
+    seedObjective(G, MISSIONS.enlightenment.objectiveCardId);
+    G.resources.science = 29;
+    flushEvents(G, snapshot(G)); // no value moved since the snapshot → no events, but still re-derives
+    expect(G.pendingVictory).toBe(false); // short of 30
+    G.resources.science = 30;
+    flushEvents(G, snapshot(G));
+    expect(G.pendingVictory).toBe(true); // threshold crossed → flag set at the flush
+  });
+
+  it('set-or-clear (never sticky): the flag reverts when the verdict does', () => {
+    const G = blankState('barbarian_tide');
+    seedObjective(G, MISSIONS.barbarian_tide.objectiveCardId);
+    G.removed = instancesFromCardIds(['barbarian', 'barbarian', 'barbarian', 'barbarian']);
+    G.resources.military = 5;
+    evaluateObjective(G);
+    expect(G.pendingVictory).toBe(true); // four beaten, military intact
+    G.resources.military = -1; // the same resolve's fatal blow drives military negative
+    evaluateObjective(G);
+    expect(G.pendingVictory).toBe(false); // reverted — core collapse ends it, not a win
+  });
+
+  it('leaves pendingVictory false when no objective is seeded', () => {
+    const G = blankState('enlightenment');
+    flushEvents(G, snapshot(G));
+    expect(G.pendingVictory).toBe(false);
   });
 });
 

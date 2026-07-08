@@ -3,16 +3,18 @@ import { nextInstanceId } from './population';
 import type { GameState } from './state';
 
 /**
- * The objective-card layer: a mission's win/lose condition made into a card, the positive
- * counterpart to `rules/threats.ts`. A mission declares an `objectiveCardId`; `run/setup.ts` seeds
- * that card into `GameState.objective`, and `run/engine.ts`'s `checkEndIf` polls the card's own
- * `objective` hook through the two readers here — so the card owns its logic like every other card,
- * and the engine never reads a mission predicate directly.
+ * The objective-card layer: a mission's win condition made into a card, the positive counterpart to
+ * `rules/threats.ts`. A mission declares an `objectiveCardId`; `run/setup.ts` seeds that card into
+ * `GameState.objective`, and the card owns its win *logic* through the pure-read `objective.met` hook
+ * — so the card owns its logic like every other card, and the engine never reads a mission predicate.
  *
- * The hooks are **pure reads** over `G` (never mutate it). `checkEndIf` currently *polls* them after
- * every move and upkeep sub-step, so a threshold win ("30 science") is detected the instant it's
- * crossed. They are slated to move onto the event bus — the `endTurn` broadcast (`rules/events.ts`)
- * is the enabling piece — rather than staying poll-only.
+ * `met` is a **pure read** over `G` (never mutates it). It's now **bus-driven**, not polled:
+ * `evaluateObjective` re-derives it into `G.pendingVictory` at every `flushEvents` boundary
+ * (`rules/events.ts`), and `run/engine.ts`'s `checkEndIf` reads that flag — the win counterpart to a
+ * threat writing `G.pendingDefeat`. A threshold win ("30 science") is thus caught at the same flush
+ * where the resource crosses, exactly where the old per-move poll caught it. A defeat a card must
+ * *drive* (a deadline passing, a counter escalating) lives on a threat owning `G.pendingDefeat`
+ * instead (e.g. Stagnation); core-resource collapse stays a universal check in `run/engine.ts`.
  */
 
 /** Seed the mission's objective card into `G.objective`, bare (no counters yet). Called once by
@@ -28,13 +30,11 @@ export function objectiveMet(G: GameState): boolean {
   return !!o && (CARDS[o.cardId].objective?.met(G, o) ?? false);
 }
 
-/** Whether the seeded objective's mission-specific defeat condition is met right now — a pure poll
- *  today, slated to move onto the bus like `objectiveMet`. Only for a defeat that's a pure *read* of
- *  `G`; a defeat a card must *drive* (a deadline passing, a counter escalating) lives on a threat
- *  owning `G.pendingDefeat` instead (e.g. Stagnation), read by `checkEndIf`. Core-resource collapse
- *  stays a universal check in `run/engine.ts`; an objective with no `failed` hook (all of them today)
- *  never defeats on its own. */
-export function objectiveFailed(G: GameState): boolean {
-  const o = G.objective;
-  return !!o && (CARDS[o.cardId].objective?.failed?.(G, o) ?? false);
+/** Re-derive the win flag from the objective card's own `met` predicate — the bus's counterpart to a
+ *  threat writing `G.pendingDefeat`. Called at every `flushEvents` boundary (`rules/events.ts`), so
+ *  `G.pendingVictory` is fresh before every `checkEndIf`. Set-OR-CLEAR every call (never sticky): a
+ *  verdict can flip back to false within one flush (barbarian_tide's 4th wave files to `removed` AND
+ *  drains Military in one resolve). Victory-only — never touches `G.pendingDefeat`, which threats own. */
+export function evaluateObjective(G: GameState): void {
+  G.pendingVictory = objectiveMet(G);
 }

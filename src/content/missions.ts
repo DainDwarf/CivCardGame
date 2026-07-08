@@ -25,11 +25,11 @@ export interface MissionDef {
   setup?: (G: GameState) => void;
   /** Applied every round during upkeep (extra food drain, resource decay, ...). */
   onUpkeep?: (G: GameState) => void;
-  /** The mission's win/lose condition, made into a card. Names a real `content/cards.ts` id of kind
+  /** The mission's win condition, made into a card. Names a real `content/cards.ts` id of kind
    *  `'objective'` (pinned by a coherence test); `run/setup.ts` seeds it into `GameState.objective`
-   *  and the card owns the win (`objective.met`) / mission-specific defeat (`objective.failed`) logic
-   *  plus its live progress readout — so it's the objective card, not the mission, that holds those
-   *  predicates (they used to live here as `objective`/`failure`/`progress`). */
+   *  and the card owns the win (`objective.met`) logic plus its live progress readout — so it's the
+   *  objective card, not the mission, that holds the predicate (it used to live here as
+   *  `objective`/`progress`). A mission-specific *defeat* is a threat's job (`G.pendingDefeat`). */
   objectiveCardId: string;
   /** One-liner describing the victory condition shown in the mission tooltip. */
   victoryHint: string;

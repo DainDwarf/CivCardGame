@@ -95,21 +95,20 @@ export interface CardDef {
    */
   on?: Partial<Record<GameEventType, Resolver>>;
   /**
-   * `objective` cards only: the mission's win/lose condition, owned by the card the way every other
-   * card owns its logic. Two **pure-read predicates** over the live run state — `met` (the win
-   * condition) and optional `failed` (a mission-specific defeat that's a pure *read* of `G`;
-   * core-resource collapse stays universal in `run/engine.ts`). A defeat that a card must *drive*
-   * — a deadline passing, a counter escalating — belongs on a threat owning `G.pendingDefeat`
-   * instead (e.g. Stagnation), not here. Read-only by contract: unlike `resolve`/`produce`
-   * they never mutate `G`. `run/engine.ts`'s `checkEndIf` (via `rules/objective.ts`) currently
-   * *polls* them after every move/upkeep step, so a threshold like "30 science" fires the instant
-   * it's crossed; they're slated to move onto the event bus (the `endTurn` broadcast enables it).
+   * `objective` cards only: the mission's win condition, owned by the card the way every other card
+   * owns its logic. A single **pure-read predicate** over the live run state — `met`, the win
+   * condition. Read-only by contract: unlike `resolve`/`produce` it never mutates `G`. It's
+   * **bus-driven**: `rules/objective.ts`'s `evaluateObjective` re-derives it into `G.pendingVictory`
+   * at every `flushEvents` boundary, and `run/engine.ts`'s `checkEndIf` reads that flag — so a
+   * threshold like "30 science" registers at the flush where it's crossed. A *defeat* belongs
+   * elsewhere: a mission-specific loss that a card must *drive* (a deadline passing, a counter
+   * escalating) lives on a threat owning `G.pendingDefeat` (e.g. Stagnation), and core-resource
+   * collapse stays universal in `run/engine.ts` — an objective card never declares its own defeat.
    * `self` is the seeded objective instance, so a future objective can read its own `counters`. Pair
    * with `dynamicText` for the progress readout.
    */
   objective?: {
     met: (G: GameState, self: CardInstance) => boolean;
-    failed?: (G: GameState, self: CardInstance) => boolean;
   };
   /** Hand-authored effect text for the card face, used when the declarative `effect` bag can't
    *  describe the card (a `resolve`-driven card). Takes precedence over the auto-generated
@@ -365,12 +364,13 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // --- Objective cards: a mission's win/lose condition made into a card (see the `objective` kind
-  //     doc above). `rules/objective.ts`'s `seedObjective` seeds one into `GameState.objective` from
-  //     the mission's `objectiveCardId`; never in hand/deck/collection/deck editor. Each owns its
-  //     mission's win (`objective.met`) and any mission-specific defeat (`objective.failed`) as pure
-  //     reads over `G` — moved off `MissionDef` so objective cards own their logic like every other
-  //     card — plus a live progress line (`dynamicText`). No `effect`/`resolve`: they never mutate G.
+  // --- Objective cards: a mission's win condition made into a card (see the `objective` kind doc
+  //     above). `rules/objective.ts`'s `seedObjective` seeds one into `GameState.objective` from the
+  //     mission's `objectiveCardId`; never in hand/deck/collection/deck editor. Each owns its
+  //     mission's win (`objective.met`) as a pure read over `G` — moved off `MissionDef` so objective
+  //     cards own their logic like every other card — plus a live progress line (`dynamicText`). A
+  //     mission-specific *defeat* lives on a threat's `G.pendingDefeat`, not here. No `effect`/
+  //     `resolve`: they never mutate G.
   long_winter_goal: {
     id: 'long_winter_goal', name: 'The Long Winter', kind: 'objective', cost: {},
     description: 'Endure 15 rounds of brutal winter without starving.',
@@ -381,8 +381,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'enlightenment_goal', name: 'The Enlightenment', kind: 'objective', cost: {},
     description: 'Reach 30 Science before round 12 ends.',
     // The round-12 deadline (and the loss it causes) is owned by the Stagnation *threat* the mission
-    // seeds (`on.endTurn` → `G.pendingDefeat`), not by an `objective.failed` here — the objective only
-    // owns the win.
+    // seeds (`on.endTurn` → `G.pendingDefeat`) — the objective card only owns the win.
     objective: { met: (G) => G.resources.science >= 30 },
     dynamicText: (G) => `${G.resources.science}/30🔬`,
   },

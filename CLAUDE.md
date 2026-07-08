@@ -135,9 +135,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     are untouched. A handler may set `G.pendingDefeat` to *declare a loss itself* (`engine.ts`'s
     `checkEndIf` polls it) — the counterpart to a threat that can only drain a resource into collapse.
     Handlers must be pure over `G` (the projection clone re-runs upkeep every render) and must not open
-    a `pendingInteraction`. The objective readers (`objective.ts`) are the one reactive-ish concern
-    still *polled* by `checkEndIf` rather than bus-driven — slated to move onto the bus (`endTurn`
-    enables it), not off it by design.
+    a `pendingInteraction`. The objective's win is the victory counterpart: `flushEvents` re-derives
+    `G.pendingVictory` from the objective card's `met` predicate at every step boundary
+    (`objective.ts`'s `evaluateObjective`), and `checkEndIf` reads that flag — so win/lose is entirely
+    bus-driven flag-reads (`pendingVictory` / `pendingDefeat`), never a poll of card logic.
   - `population.ts` — worker staffing over buildings *and* work cards through one `Staffable`
     layer (`requiredWorkersOf`/`isOperating`/`freePopulation`/`findStaffable`,
     `addBuilding`/`addWork`, the shared `nextInstanceId` allocator, `foodUpkeep`).
@@ -145,11 +146,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     ticks every round through the `endTurn` broadcast (`events.ts`'s `dispatchEvent` → `effects.ts`'s
     `resolveEndTurn` → the threat's own `resolveCard` drain), so the threat card computes its own
     behaviour — the engine never reads or scales its data.
-  - `objective.ts` — the win/lose counterpart to `threats.ts`: `seedObjective` seeds the mission's
-    objective card into `G.objective` at setup; `objectiveMet`/`objectiveFailed` read that card's
-    own pure `objective.met`/`.failed` hook, so `engine.ts`'s `checkEndIf` polls the *card*, never a
-    mission predicate. Currently read-only *polls* (never mutate `G`) run by `checkEndIf` at
-    move granularity; slated to move onto the bus (the `endTurn` broadcast enables it).
+  - `objective.ts` — the win counterpart to `threats.ts`: `seedObjective` seeds the mission's
+    objective card into `G.objective` at setup; `objectiveMet` reads that card's own pure
+    `objective.met` hook. It's bus-driven, not polled: `evaluateObjective` re-derives the verdict into
+    `G.pendingVictory` at every `flushEvents` boundary (`events.ts`), the way a threat writes
+    `G.pendingDefeat`, and `engine.ts`'s `checkEndIf` reads that flag — never a card predicate or a
+    mission predicate. A mission-specific *defeat* is a threat's job (`pendingDefeat`), not the
+    objective's; the hook never mutates `G`.
   - (`resolveProduction` lives in `effects.ts`: per *operating* (staffed) tableau/workZone instance,
     the engine asks each instance to produce and never reads its `produces` itself. Production is
     driven by the `endTurn` broadcast; there is no standalone production module.)
@@ -185,7 +188,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     (`produces`/`cultureOutput`/`workers`/`tags`) right on the `CardDef`. Whether a card
     files to `discard` vs `removed` is a property of the *effect* that files it, never the
     kind (e.g. Destroy's `effect.destroy`, an event's `effect.remove`). An `objective` card owns
-    its mission's win/lose logic via a pure-read `objective` hook (`{ met, failed? }`), the way a
+    its mission's win logic via a pure-read `objective` hook (`{ met }`), the way a
     `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
     for "a card the player builds decks with" (excludes event/threat/objective), used by the
     deck-add reject and the Collection/DeckEditor pickers.
@@ -200,9 +203,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
   - `boards.ts` — `BOARDS` (government boards; each sets all 8 starting resources: the 5
     core plus population/territory/culture).
-  - `missions.ts` — `MISSIONS`; each names an `objectiveCardId` (its win/lose condition, made into
-    an `objective` card that owns the predicates — `run/setup.ts` seeds it into `GameState.objective`
-    and `run/engine.ts`'s `checkEndIf` polls it via `rules/objective.ts`), plus optional
+  - `missions.ts` — `MISSIONS`; each names an `objectiveCardId` (its win condition, made into
+    an `objective` card that owns the `met` predicate — `run/setup.ts` seeds it into
+    `GameState.objective`, the bus re-derives `G.pendingVictory` from it, and `run/engine.ts`'s
+    `checkEndIf` reads that flag; see `rules/objective.ts`), plus optional
     `setup`/`onUpkeep`/`kind`/`prereqs`/`map`/`reward`/`lore`.
 
 **Shell — the run loop (`src/run/`) + React:**

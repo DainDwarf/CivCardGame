@@ -130,10 +130,11 @@ export interface GameState {
    *  empty on every run that doesn't use one. */
   threats: ThreatInstance[];
   /** The mission's win/lose condition as a card — seeded once at setup from the mission's
-   *  `objectiveCardId` (`rules/objective.ts`'s `seedObjective`). Its card owns the win/lose *logic*
-   *  (the `objective` hook, polled by `run/engine.ts`'s `checkEndIf`) and its progress readout;
-   *  unlike a threat it never mutates `G`. Absent only on a bare `blankState` (tests/simulator) or a
-   *  mission without one. */
+   *  `objectiveCardId` (`rules/objective.ts`'s `seedObjective`). Its card owns the win *logic*
+   *  (the pure-read `objective.met` hook); the bus re-derives it into `G.pendingVictory` at every
+   *  `flushEvents` boundary (`rules/objective.ts`'s `evaluateObjective`), which `run/engine.ts`'s
+   *  `checkEndIf` then reads — so unlike a threat the card never mutates `G`. Absent only on a bare
+   *  `blankState` (tests/simulator) or a mission without one. */
   objective?: CardInstance;
   /** Territory available — the tableau may hold at most this many buildings (one slot each);
    *  building cards become unplayable when full. Expanded by territory cards (Conquest, Develop). */
@@ -166,6 +167,13 @@ export interface GameState {
    * counterpart to a threat that can only drain a resource into collapse. The bus capability behind
    * the "threat owns its own defeat" pattern; the engine never writes it. */
   pendingDefeat?: { reason: string } | null;
+  /**
+   * The bus-written win flag — the victory counterpart to `pendingDefeat`. Re-derived from the
+   * objective card's own `objective.met` predicate at every `flushEvents` boundary
+   * (`rules/objective.ts`'s `evaluateObjective`), so it's fresh before every `checkEndIf`; the engine
+   * only *reads* it (`run/engine.ts`), never writes it. Set-or-clear (never sticky) — a verdict can
+   * flip back to false within one flush. `false`/absent when the objective is unmet or unseeded. */
+  pendingVictory?: boolean;
 }
 
 /**
@@ -213,6 +221,7 @@ export function blankState(missionId: string): GameState {
     pendingInteraction: null,
     events: [],
     pendingDefeat: null,
+    pendingVictory: false,
   };
 }
 

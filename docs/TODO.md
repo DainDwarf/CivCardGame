@@ -192,6 +192,23 @@ _(none open)_
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Objective cards moved onto the event bus** — win/lose is now entirely **bus-written flag-reads**,
+  the last reactive concern that was still polled. The objective card still owns its win via the
+  pure-read `objective.met` hook, but `rules/objective.ts`'s new `evaluateObjective` re-derives it into
+  `G.pendingVictory` (the victory counterpart to a threat's `G.pendingDefeat`) at the **tail of every
+  `flushEvents`** — so the flag is fresh before every `checkEndIf`, even on a flush that dispatched no
+  events (e.g. a round-based win at `beginTurn`). `checkEndIf` collapsed to reads only
+  (`pendingVictory` → `coreCollapse` → `pendingDefeat`; precedence preserved so a round-12 goal still
+  beats the Stagnation deadline). Chose `flushEvents`-tail over `dispatchEvent`-tail (runs
+  unconditionally, once per flush) and behavior-preservation over `endTurn`-only (which would delay
+  mid-turn threshold wins and structurally break `barbarian_tide`, whose 4th wave files to `removed`
+  *after* the upkeep broadcast). The unused `objective.failed` hook was **dropped** (a driven defeat is
+  a threat's job) — removed from the hook type, `objectiveFailed`, and its ~5 dead test assertions.
+  Docs synced (`CLAUDE.md`, `DESIGN.md`, `state.ts`/`cards.ts`/`missions.ts` inline). New bus-path unit
+  tests in `missions.test.ts`; the `engine.test.ts` win/defeat integration tests carried over unchanged
+  (they now exercise the flag path). Followed
+  `.claude/plans/refactor-the-objective-cards-fizzy-dijkstra.md`. `[size: M]` `[phase: 3]`
+
 - **Enlightenment deadline as a threat that owns its own defeat** — the mission's
   currently-invisible round-12 deadline is now a real, visible **threat card, Stagnation**
   (`content/cards.ts`, `kind: 'threat'`), seeded via the `enlightenment` mission's new `setup`

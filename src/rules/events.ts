@@ -1,5 +1,6 @@
 import { isOperating } from './population';
 import { runEventHandler, resolveEndTurn } from './effects';
+import { evaluateObjective } from './objective';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, ValueSnapshot } from './state';
 
@@ -114,6 +115,11 @@ export function dispatchEvent(G: GameState, event: GameEvent): void {
  * Corollary for card authors: a threshold a *handler's own gain* crosses mid-flush (e.g. an on-draw
  * building pushing money past 30 while a Treasury watches) won't fire until the next step — chain a
  * threshold off a *step*'s change (an action, upkeep production), not another handler's output.
+ *
+ * The objective card is re-evaluated here (`evaluateObjective`) — this is *its* bus hook. Every step
+ * boundary flushes unconditionally, so the win flag (`G.pendingVictory`) is always fresh before the
+ * `checkEndIf` that follows, even when the flush dispatched no events (e.g. a round-based win at
+ * `beginTurn`). It runs after the drain so it sees the fully-settled post-flush state.
  */
 export function flushEvents(G: GameState, before: ValueSnapshot): void {
   if (valueChanged(G, before)) emitEvent(G, { type: 'resourceChange', before });
@@ -125,4 +131,5 @@ export function flushEvents(G: GameState, before: ValueSnapshot): void {
   }
   // Drop any remainder (only reachable if the cascade cap tripped) so the queue is always empty.
   G.events = [];
+  evaluateObjective(G);
 }

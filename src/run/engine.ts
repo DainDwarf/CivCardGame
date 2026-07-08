@@ -1,5 +1,5 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, coreCollapse, discardWorkZone, drawUpTo, emitEvent, flushEvents, objectiveFailed, objectiveMet, resolveHandEvents, snapshot, type CollapseReason, type GameState } from '../rules';
+import { applyUpkeep, coreCollapse, discardWorkZone, drawUpTo, emitEvent, flushEvents, resolveHandEvents, snapshot, type CollapseReason, type GameState } from '../rules';
 import { MISSIONS } from '../content/missions';
 import type { RunConfig, RunResult } from '../contract';
 
@@ -12,15 +12,15 @@ export interface RunState {
 
 function checkEndIf(state: RunState): RunState {
   const { G } = state;
-  // Win/lose is owned by the mission's objective *card* (`G.objective`), polled here through
-  // `rules/objective.ts`. Core-resource collapse stays a universal defeat between the two.
-  if (objectiveMet(G)) return { ...state, gameover: { outcome: 'victory', missionId: G.missionId } };
+  // Win/lose reads bus-written flags — never re-evaluates card logic here. The objective card's win
+  // is re-derived into `G.pendingVictory` at every `flushEvents` boundary (`rules/objective.ts`'s
+  // `evaluateObjective`); a threat may declare its own defeat via `G.pendingDefeat`. Core-resource
+  // collapse stays a universal defeat between the two. Precedence is load-bearing: victory wins over
+  // `pendingDefeat`, so a player who hits the goal on the same upkeep a deadline threat fires still wins.
+  if (G.pendingVictory) return { ...state, gameover: { outcome: 'victory', missionId: G.missionId } };
   const collapse = coreCollapse(G.resources);
   if (collapse) return { ...state, gameover: { outcome: 'defeat', reason: collapse, missionId: G.missionId } };
-  // A card's `on` handler may declare defeat itself (with its own reason) via `G.pendingDefeat` — the
-  // bus capability that lets a threat *own* its loss rather than draining a resource into collapse.
   if (G.pendingDefeat) return { ...state, gameover: { outcome: 'defeat', reason: G.pendingDefeat.reason, missionId: G.missionId } };
-  if (objectiveFailed(G)) return { ...state, gameover: { outcome: 'defeat', missionId: G.missionId } };
   return state;
 }
 

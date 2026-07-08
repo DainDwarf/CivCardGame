@@ -177,15 +177,17 @@ MissionDef
   tier/difficulty
 
 CardDef (kind: 'objective')
-  objective: { met: (G, self) => boolean; failed?: (G, self) => boolean }  // WIN / mission LOSE
-  dynamicText: (G, self) => string                                          // live progress line
+  objective: { met: (G, self) => boolean }   // WIN condition (defeat is a threat's job)
+  dynamicText: (G, self) => string           // live progress line
 ```
 
-The `objective.met`/`.failed` hooks are **pure read functions** (they never mutate `G`), living
-on the catalogue in `src/content/`, polled by `rules/objective.ts` from the engine's `checkEndIf` —
-so they stay unit-testable and reusable by the headless simulator, and a threshold win is detected
-at move granularity with no event bus. Core-resource collapse (Famine/Revolt/…) stays a *universal*
-failure in the engine, independent of any mission.
+The `objective.met` hook is a **pure read function** (it never mutates `G`), living on the catalogue
+in `src/content/`. It's **bus-driven**: `rules/objective.ts`'s `evaluateObjective` re-derives it into
+`G.pendingVictory` at every event-bus flush boundary, and the engine's `checkEndIf` reads that flag
+(the win counterpart to a threat writing `G.pendingDefeat`) — so it stays unit-testable and reusable
+by the headless simulator, and a threshold win registers at the flush where it's crossed. A
+mission-specific *defeat* belongs on a threat (`G.pendingDefeat`), and core-resource collapse
+(Famine/Revolt/…) stays a *universal* failure in the engine, independent of any mission.
 
 ### Illustrative missions 🔧 (show the variety the system buys us)
 

@@ -54,8 +54,9 @@ describe('event bus through the turn loop', () => {
 
 describe('enlightenment deadline: win (objective) and lose (threat) reconciled by checkEndIf order', () => {
   // The Stagnation threat (seeded by the mission) owns the lose condition — a pure round-12 deadline,
-  // reading no Science; the objective card owns the win (30 Science). `checkEndIf` polls the win
-  // *before* the threat's `pendingDefeat`, so these two cards need no knowledge of each other.
+  // reading no Science; the objective card owns the win (30 Science). `checkEndIf` reads the bus-written
+  // win flag (`G.pendingVictory`) *before* the threat's `pendingDefeat`, so these two cards need no
+  // knowledge of each other.
   it('round 12 ending short of the goal is a stagnation defeat, owned by the threat', () => {
     let state = run('enlightenment');
     state.G.resources.food = 50; // keep famine out of it
@@ -65,7 +66,7 @@ describe('enlightenment deadline: win (objective) and lose (threat) reconciled b
     expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'stagnation' });
   });
 
-  it('reaching 30 science on the round-12 deadline still wins — the objective is polled first', () => {
+  it('reaching 30 science on the round-12 deadline still wins — the win flag is read first', () => {
     let state = run('enlightenment');
     state.G.resources.food = 50;
     state.G.resources.science = 30; // goal met exactly as the deadline lands
@@ -107,5 +108,21 @@ describe('endTurn event resolution', () => {
     state.G.hand = instancesFromCardIds(['barbarian'], 100);
     state = endTurn(state);
     expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'revolt' });
+  });
+});
+
+describe('objective win timing through the real turn loop', () => {
+  // The subtlest case: a round-based win (long_winter, `round > 15`). Round increments in `beginTurn`,
+  // so the win must register there — off the `flushEvents` that follows the refill draw, even though
+  // beginTurn queues no other event. This is exactly what `flushEvents`-tail (not `dispatchEvent`-tail)
+  // guarantees, so it gets an end-to-end assertion, not just the direct `objectiveMet` unit test.
+  it('long_winter: the round-16 rollover wins at beginTurn', () => {
+    let state = run('long_winter');
+    state.G.resources.food = 500; // Harsh Winter drains 2/round — keep famine out of it
+    state.G.population = 0; // and no population food upkeep
+    // Drive the real loop; round starts at 1 and advances one per endTurn via beginTurn.
+    for (let i = 0; i < 20 && !state.gameover; i++) state = endTurn(state);
+    expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'long_winter' });
+    expect(state.G.round).toBe(16); // won the instant round crossed 15, not a round later
   });
 });
