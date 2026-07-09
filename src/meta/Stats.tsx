@@ -53,7 +53,6 @@ export function Stats({
   return (
     <div className={styles.stats}>
       <h1 className={styles.title}>Stats</h1>
-      <p className={styles.subtitle}>Your civilization so far.</p>
 
       <div className={styles.hero}>
         <Tile label="Missions cleared" value={`${missionProgress.cleared}`} denom={`/ ${missionProgress.total}`} />
