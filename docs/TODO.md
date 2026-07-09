@@ -99,14 +99,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Step 9.3 — Board UI rework** ✅ done — see *Done / shipped* below.
   - **Step 9.4 — Mission lore page: show the cards the mission is about** — ✅ done — see
     *Done / shipped* below. `[size: S]` `[phase: 3]`
-  - **Step 9.5 — Mission select page: boards as `BoardMini`** — the mission-flow popup's **'launch'
-    step** board picker currently lists each government as a text `optionCard` (name + description)
-    with the `effectiveBoard` profile rendered as a `describeBoard` string below the selected one.
-    Rework it to render each board as a `components/BoardMini.tsx` (Step 9.3.2's mini-board), so the
-    select page and the run show the same board widget. **Note:** `BoardMini` is currently read-only
-    presentational (board id + attached sticker ids, no `GameContext`); the picker needs a
-    *selection* affordance (selected state + click → `setBoardId`), so this is "wrap/extend BoardMini
-    with a selectable frame," not a drop-in. `[size: S]` `[phase: 3]`
+  - **Step 9.5 — Mission select page: boards as `BoardMini`** — ✅ done — see *Done / shipped* below.
+    `[size: S]` `[phase: 3]`
   - **Step 9.6 — Stats UI rework** — `Stats.tsx` is currently a plain list of run-result rows
     (shell-only, shipped with Phase 2 step 6). Rework it into two sections:
     - **Left — campaign progress** — an at-a-glance summary: one-time (`'standard'`) missions
@@ -223,6 +217,20 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 9.5 — Mission select page: boards as `BoardMini`** — the mission-flow popup's
+  **'launch' step** board picker no longer lists each government as a text row (name + description +
+  a `describeBoard` summary string); each board now renders as the real `components/BoardMini.tsx`
+  (Step 9.3.2's mini-board), the same widget the Board menu uses — so the select page and a launched
+  run show identical numbers/sticker badges, no separate text formatter to keep in sync.
+  `BoardMini` stayed read-only/presentational (no new props): a plain `<button>` wraps each one,
+  contributing only the selectable frame (accent border + glow when `boardId === id`, mirroring
+  `BoardMenu.tsx`'s drag-valid-target outline) — "wrap with a selectable frame," not a `BoardMini`
+  change. This left `describeBoard` (`meta/boardDisplay.ts`) with no remaining callers (the mini
+  widget shows the profile directly), so it was deleted along with the now-dead `.optionName`/
+  `.optionDesc`/`.optionDetail`/`.boardStickers` CSS classes; `.optionCard`/`.selected` stayed but
+  were restyled from a text-row card to a plain button frame around the widget. No rule-logic
+  change; existing suite green (355 tests).
 
 - **Phase 3 Step 9.4 — Mission lore page: show the cards the mission is about** — the mission-flow
   popup's 'detail' step (`meta/CampaignMap.tsx`'s `MissionFlowPopup`) now renders, below the lore

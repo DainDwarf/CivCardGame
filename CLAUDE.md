@@ -277,8 +277,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `BoardMini.tsx` — a read-only, board-agnostic miniature of the run board (tinted ground ·
     a top banner of starting counters · the territory slot grid), driven off `effectiveBoard` so
     its numbers match a launched run. Purely presentational (a board id + attached sticker ids, no
-    `GameContext`, no logic), so it's reused across meta screens (the Board menu now, mission-select
-    later) — the board counterpart to Collection's real `CardFace`s.
+    `GameContext`, no logic), so it's reused across meta screens (the Board menu, the mission-select
+    launch popup's board picker) — the board counterpart to Collection's real `CardFace`s.
   - `BoardLeftColumn` renders the board's left strip — the mission's `G.objective` card (the goal,
     an "Objective" violet-banner `CardFace`) pinned as its own distinct plaque flush in the top-left
     **corner** (`.objectiveCorner`, a violet-framed nook — always exactly one card), above a separate
@@ -307,8 +307,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: a grid of every board as a `BoardMini`
     (Step 9.3.2's mini-board) beside a right-side sticky tray of sticker boxes (each a draggable sticker
     badge over its name/effect/price); dragging a badge onto a board calls `onBuyBoardSticker` to
-    buy+attach in one gesture (only *valid* targets highlight mid-drag). `describeBoard`/`RESOURCE_ICON`/
-    `BOARD_IDS` live in the shared `meta/boardDisplay.ts`.
+    buy+attach in one gesture (only *valid* targets highlight mid-drag). `RESOURCE_ICON`/`BOARD_IDS`
+    live in the shared `meta/boardDisplay.ts`.
   - `Decks.tsx` — every deck as a tile (a hover-revealed card fan grouped ×N via
     `groupCounts`); the tile + its list-view overlay are the shared `DeckTile`/
     `DeckListOverlay` (`components/DeckDisplay.tsx`, also used by the launch popup), with

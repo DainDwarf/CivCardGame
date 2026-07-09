@@ -195,9 +195,12 @@
   inset: 0;
   z-index: 60; /* below DeckListOverlay (75) so re-clicking a selected deck stacks on top */
   display: flex;
-  align-items: center;
+  /* Top-anchored, not centered: the detail (lore) and launch (pickers) steps differ in
+     height, and centering would move the popup's top edge between them — a visual jump as
+     the player clicks Continue. Pinning to the top keeps both steps' top position identical. */
+  align-items: flex-start;
   justify-content: center;
-  padding: 1.5rem;
+  padding: calc(4vh / var(--ui-scale, 1)) 1.5rem 1.5rem;
   background: rgb(var(--scrim-rgb) / 0.6);
   animation: fadeIn 0.15s ease;
 }
@@ -212,25 +215,94 @@
 }
 
 .popup {
-  /* Divide viewport caps by --ui-scale (the transform wrapper re-scales raw vh/vw). */
+  /* Divide viewport caps by --ui-scale (the transform wrapper re-scales raw vh/vw). A flex
+     column with the header as a non-scrolling flex item and .popupBody as the sole scroller
+     (rather than a sticky header inside one scrolling box) — a sticky header shares a
+     stacking context with the scrolled content, so hovered/fanned cards with their own
+     z-index (see DeckDisplay's fan-out) could paint over or under it inconsistently. Keeping
+     the header fully outside the scrolling box removes that overlap entirely. Mirrors the
+     shell's own fixed-nav/scrolling-content split (MetaMenu.module.css's `.content`). */
   width: min(960px, calc(94vw / var(--ui-scale, 1)));
   max-height: calc(88vh / var(--ui-scale, 1));
-  overflow-y: auto;
-  padding: 1.5rem 1.75rem 1.75rem;
+  display: flex;
+  flex-direction: column;
   border-radius: 14px;
   background: var(--surface-raised);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
   cursor: default;
+  overflow: hidden;
 }
 
 .popupHeader {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
+  /* Clears the launch step's stacked slot tokens (box + label), so the shorter detail-step
+     header (title + button only) grows to the same height — the two steps must not jump. */
+  min-height: 3.5rem;
+  padding: 1.5rem 1.75rem 1rem;
   border-bottom: 1px solid var(--border-divider);
+}
+
+.popupBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem 1.75rem 1.75rem;
+}
+
+/* Board/Deck selection status, shown between the title and the Start button during the
+   launch step — the reason the button is disabled is otherwise invisible once the picker
+   scrolls out of view under the sticky header. Rendered as two "slots" (a dashed box that
+   fills once picked, with the chosen board/deck's name below), speaking the game's own
+   card/board vocabulary rather than reading as a form field. */
+.headerIndicators {
+  display: flex;
+  gap: 1.75rem;
+  flex: none;
+}
+
+.token {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.tokenBox {
+  width: 42px;
+  height: 30px;
+  border-radius: 6px;
+  border: 2px dashed var(--border-divider);
+  background: var(--surface-sunken);
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.tokenLabel {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+
+.tokenDone .tokenBox {
+  border: 2px solid var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.tokenDone .tokenLabel {
+  color: var(--accent);
 }
 
 .popupTitle {
@@ -343,20 +415,20 @@
   gap: 1rem;
 }
 
-/* Board option card — the same look as the old MissionSelect option rows. */
+/* Board option — a BoardMini wrapped in a plain, unstyled button so the mini-board itself is the
+   whole clickable surface; the button only contributes the selectable frame around it (mirrors
+   BoardMenu's `.boardTile`/`.boardTileValid`, but for a click-selection instead of a drag target). */
 .optionCard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  text-align: left;
-  padding: 0.8rem 0.9rem;
-  background: var(--surface);
+  display: block;
+  width: 100%;
+  padding: 0.4rem;
   border: 2px solid transparent;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  background: none;
   cursor: pointer;
   font: inherit;
   color: inherit;
+  text-align: left;
 }
 
 .optionCard:hover {
@@ -365,34 +437,13 @@
 
 .optionCard.selected {
   border-color: var(--accent);
-  background: var(--accent-bg);
-}
-
-.optionName {
-  font-weight: 700;
-}
-
-.optionDesc {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.optionDetail {
-  font-size: 0.8rem;
-  color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 30%);
 }
 
 .detail {
   margin: 0.6rem 0 0;
   font-size: 0.85rem;
   color: var(--text-muted);
-}
-
-/* Attached board-sticker glyphs, shown after the effective-profile summary. */
-.boardStickers {
-  display: inline-flex;
-  gap: 0.15rem;
-  margin-left: 0.4rem;
 }
 
 .startBtn {

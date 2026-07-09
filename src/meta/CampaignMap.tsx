@@ -2,15 +2,15 @@ import { useRef, useState } from 'react';
 import { MISSIONS, type MissionDef } from '../content/missions';
 import { AGES } from '../content/ages';
 import { BOARDS, type BoardId } from '../content/boards';
-import { BOARD_STICKERS } from '../content/boardStickers';
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import type { OwnedCards } from '../rules/collection';
-import { effectiveBoard, type BoardStickers } from '../rules/boardStickers';
+import { type BoardStickers } from '../rules/boardStickers';
 import { buildRunConfig, type RunConfig } from '../contract';
 import { isCompleted, isAvailable } from '../rules/campaign';
-import { BOARD_IDS, describeBoard } from './boardDisplay';
+import { BOARD_IDS } from './boardDisplay';
 import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
+import { BoardMini } from '../components/BoardMini';
 import { CardFace } from '../components/CardFace';
 import { CardZoomOverlay } from '../components/CardZoomOverlay';
 import styles from './CampaignMap.module.css';
@@ -284,11 +284,9 @@ function MissionFlowPopup({
   // nothing to reveal) or one of the objective/threat/event cards below the lore text.
   const [zoomCardId, setZoomCardId] = useState<string | null>(null);
 
-  // The picked board's *effective* profile (its attached stickers folded in) — what the run will
-  // actually start with, so the picker shows the true numbers the player bought.
-  const board = boardId ? effectiveBoard(BOARDS[boardId], boardStickers[boardId]) : null;
-  const boardStickerIds = boardId ? boardStickers[boardId] ?? [] : [];
   const canStart = boardId !== null && deckId !== null;
+  const boardName = boardId ? BOARDS[boardId].name : null;
+  const deckName = deckId ? (decks.find((d) => d.id === deckId)?.name ?? null) : null;
 
   function start() {
     if (!boardId || !deckId) return;
@@ -301,6 +299,22 @@ function MissionFlowPopup({
         <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
           <div className={styles.popupHeader}>
             <h2 className={styles.popupTitle}>{mission.name}</h2>
+            {step === 'launch' && (
+              <div className={styles.headerIndicators}>
+                <span className={`${styles.token}${boardId ? ` ${styles.tokenDone}` : ''}`}>
+                  <span className={styles.tokenBox} aria-hidden="true">▦</span>
+                  <span className={styles.tokenLabel} title={boardName ?? undefined}>
+                    {boardName ?? 'Government'}
+                  </span>
+                </span>
+                <span className={`${styles.token}${deckId ? ` ${styles.tokenDone}` : ''}`}>
+                  <span className={styles.tokenBox} aria-hidden="true">🂠</span>
+                  <span className={styles.tokenLabel} title={deckName ?? undefined}>
+                    {deckName ?? 'Deck'}
+                  </span>
+                </span>
+              </div>
+            )}
             {step === 'detail' ? (
               <button type="button" className={styles.startBtn} onClick={onContinue}>
                 Continue
@@ -312,121 +326,108 @@ function MissionFlowPopup({
             )}
           </div>
 
-          {step === 'detail' ? (
-            <div className={styles.detailBody}>
-              <div className={styles.loreColumn}>
-                <p className={styles.loreText}>{mission.lore}</p>
-                <p className={styles.popupHints}>
-                  🏆 {mission.victoryHint}
-                  {mission.failureHint && (
-                    <>
-                      <br />
-                      💀 {mission.failureHint}
-                    </>
-                  )}
-                </p>
-                <div className={styles.loreCards}>
-                  <CardFace
-                    card={CARDS[mission.objectiveCardId]}
-                    className={styles.zoomableCard}
-                    onClick={() => setZoomCardId(mission.objectiveCardId)}
-                  />
-                  {seededCardIds.map((cardId) => (
-                    <CardFace
-                      key={cardId}
-                      card={CARDS[cardId]}
-                      className={styles.zoomableCard}
-                      onClick={() => setZoomCardId(cardId)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className={styles.rewardColumn}>
-                <h3 className={styles.pickerTitle}>Reward</h3>
-                {infinite ? (
-                  <>
-                    <p className={styles.rewardInfluence}>⭐ Influence</p>
-                    <span className={styles.rewardSubtitle}>No Unlock</span>
-                  </>
-                ) : (
-                  <>
-                    <p className={`${styles.rewardInfluence}${alreadyCleared ? ` ${styles.struckOut}` : ''}`}>
-                      +{mission.reward!.influence} ⭐ Influence
-                    </p>
-                    <span className={styles.rewardSubtitle}>
-                      {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
-                    </span>
-                    <div className={styles.rewardCards}>
-                      {alreadyCleared ? (
-                        <CardFace
-                          card={unlockCard!}
-                          className={styles.zoomableCard}
-                          onClick={() => setZoomCardId(unlockCard!.id)}
-                        />
-                      ) : (
-                        <CardFace card={unlockCard!} missionLocked />
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className={styles.pickers}>
-              <section className={styles.picker}>
-                <h3 className={styles.pickerTitle}>Government</h3>
-                <div className={styles.boardList}>
-                  {BOARD_IDS.map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className={`${styles.optionCard}${boardId === id ? ` ${styles.selected}` : ''}`}
-                      aria-pressed={boardId === id}
-                      onClick={() => setBoardId(id)}
-                    >
-                      <span className={styles.optionName}>{BOARDS[id].name}</span>
-                      <span className={styles.optionDesc}>{BOARDS[id].description}</span>
-                    </button>
-                  ))}
-                </div>
-                {board && (
-                  <p className={styles.detail}>
-                    {describeBoard(board)}
-                    {boardStickerIds.length > 0 && (
-                      <span className={styles.boardStickers}>
-                        {boardStickerIds.map((sid, i) => (
-                          <span key={i} title={BOARD_STICKERS[sid]?.name}>
-                            {BOARD_STICKERS[sid]?.icon}
-                          </span>
-                        ))}
-                      </span>
+          <div className={styles.popupBody}>
+            {step === 'detail' ? (
+              <div className={styles.detailBody}>
+                <div className={styles.loreColumn}>
+                  <p className={styles.loreText}>{mission.lore}</p>
+                  <p className={styles.popupHints}>
+                    🏆 {mission.victoryHint}
+                    {mission.failureHint && (
+                      <>
+                        <br />
+                        💀 {mission.failureHint}
+                      </>
                     )}
                   </p>
-                )}
-              </section>
-
-              <section className={styles.picker}>
-                <h3 className={styles.pickerTitle}>Deck</h3>
-                {decks.length === 0 ? (
-                  <p className={styles.detail}>No decks yet — build one in the Decks tab.</p>
-                ) : (
-                  <div className={styles.deckList}>
-                    {decks.map((d) => (
-                      <DeckTile
-                        key={d.id}
-                        deck={d}
-                        collection={collection}
-                        selected={deckId === d.id}
-                        title={deckId === d.id ? "Click to view this deck's cards" : 'Click to select this deck'}
-                        onClick={() => (deckId === d.id ? setViewing(d) : setDeckId(d.id))}
+                  <div className={styles.loreCards}>
+                    <CardFace
+                      card={CARDS[mission.objectiveCardId]}
+                      className={styles.zoomableCard}
+                      onClick={() => setZoomCardId(mission.objectiveCardId)}
+                    />
+                    {seededCardIds.map((cardId) => (
+                      <CardFace
+                        key={cardId}
+                        card={CARDS[cardId]}
+                        className={styles.zoomableCard}
+                        onClick={() => setZoomCardId(cardId)}
                       />
                     ))}
                   </div>
-                )}
-              </section>
-            </div>
-          )}
+                </div>
+
+                <div className={styles.rewardColumn}>
+                  <h3 className={styles.pickerTitle}>Reward</h3>
+                  {infinite ? (
+                    <>
+                      <p className={styles.rewardInfluence}>⭐ Influence</p>
+                      <span className={styles.rewardSubtitle}>No Unlock</span>
+                    </>
+                  ) : (
+                    <>
+                      <p className={`${styles.rewardInfluence}${alreadyCleared ? ` ${styles.struckOut}` : ''}`}>
+                        +{mission.reward!.influence} ⭐ Influence
+                      </p>
+                      <span className={styles.rewardSubtitle}>
+                        {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
+                      </span>
+                      <div className={styles.rewardCards}>
+                        {alreadyCleared ? (
+                          <CardFace
+                            card={unlockCard!}
+                            className={styles.zoomableCard}
+                            onClick={() => setZoomCardId(unlockCard!.id)}
+                          />
+                        ) : (
+                          <CardFace card={unlockCard!} missionLocked />
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className={styles.pickers}>
+                <section className={styles.picker}>
+                  <h3 className={styles.pickerTitle}>Government</h3>
+                  <div className={styles.boardList}>
+                    {BOARD_IDS.map((id) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`${styles.optionCard}${boardId === id ? ` ${styles.selected}` : ''}`}
+                        aria-pressed={boardId === id}
+                        onClick={() => setBoardId(id)}
+                      >
+                        <BoardMini boardId={id} stickerIds={boardStickers[id]} />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className={styles.picker}>
+                  <h3 className={styles.pickerTitle}>Deck</h3>
+                  {decks.length === 0 ? (
+                    <p className={styles.detail}>No decks yet — build one in the Decks tab.</p>
+                  ) : (
+                    <div className={styles.deckList}>
+                      {decks.map((d) => (
+                        <DeckTile
+                          key={d.id}
+                          deck={d}
+                          collection={collection}
+                          selected={deckId === d.id}
+                          title={deckId === d.id ? "Click to view this deck's cards" : 'Click to select this deck'}
+                          onClick={() => (deckId === d.id ? setViewing(d) : setDeckId(d.id))}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

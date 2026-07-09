@@ -1,10 +1,12 @@
-import { BOARDS, type BoardDef, type BoardId } from '../content/boards';
+import { BOARDS, type BoardId } from '../content/boards';
 import type { Resources } from '../rules/resources';
 
 /** All starting boards, in catalogue order — the board pickers (launch popup, the Board menu)
  *  iterate this. Boards are all-available today; unlocking is future work. */
 export const BOARD_IDS = Object.keys(BOARDS) as BoardId[];
 
+/** Icons for the 5 core resources — shared by every board-profile display (`BoardMini`, the run
+ *  board banner). */
 export const RESOURCE_ICON: Record<keyof Resources, string> = {
   food: '🌾',
   production: '🔨',
@@ -12,15 +14,3 @@ export const RESOURCE_ICON: Record<keyof Resources, string> = {
   military: '⚔️',
   money: '🪙',
 };
-
-/** Presentation-only summary of a board's starting profile — all 8 starting values. Shared by the
- *  launch popup's board picker (`CampaignMap.tsx`) and the Board menu (`BoardMenu.tsx`); pass an
- *  `effectiveBoard(...)` to show the sticker-adjusted profile. */
-export function describeBoard(board: BoardDef): string {
-  const parts = (Object.entries(board.resources) as [keyof Resources, number][])
-    .filter(([, v]) => v)
-    .map(([k, v]) => `${v}${RESOURCE_ICON[k]}`);
-  parts.push(`${board.population}🧍`, `${board.territory} territory`);
-  if (board.culture) parts.push(`${board.culture}🎭`);
-  return parts.join(' · ');
-}
