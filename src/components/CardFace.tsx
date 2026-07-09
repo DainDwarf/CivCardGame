@@ -42,18 +42,34 @@ export const artFor = (id: string, kind?: string) =>
  *  `BuildingBox`/`WorkBox`, which own their own custom markup rather than rendering a `CardFace`)
  *  imports the component rather than reaching into this module's CSS classes directly — keeping
  *  the sticker row's one visual definition here, not duplicated at each call site. */
-export function StickerRow({ stickers, items }: { stickers?: string[]; items?: { icon: string; name?: string }[] }) {
+export function StickerRow({
+  stickers,
+  items,
+  openSlots = 0,
+}: {
+  stickers?: string[];
+  items?: { icon: string; name?: string }[];
+  /** Empty gold-outlined placeholder slots appended after the attached badges — the buyable-hint
+   *  "you have room for a sticker here" affordance (the Board menu passes a board's remaining
+   *  capacity). Defaults to 0 so every other caller (a plain card face, the launch-popup BoardMini)
+   *  renders no hint slots. */
+  openSlots?: number;
+}) {
   // Card stickers resolve through the card `STICKERS` catalogue; a caller from a different catalogue
   // (e.g. board stickers, `BoardMini`) passes already-resolved `items` so the one visual definition
   // is shared without this module knowing about every sticker catalogue.
-  const chips = items ?? stickers?.map((id) => ({ icon: STICKERS[id]?.icon ?? '🏷️', name: STICKERS[id]?.name }));
-  if (!chips || chips.length === 0) return null;
+  const chips = items ?? stickers?.map((id) => ({ icon: STICKERS[id]?.icon ?? '🏷️', name: STICKERS[id]?.name })) ?? [];
+  const slots = Math.max(0, openSlots);
+  if (chips.length === 0 && slots === 0) return null;
   return (
     <span className={styles.stickerRow} aria-hidden="true">
       {chips.map((c, i) => (
         <span key={i} className={styles.sticker} title={c.name}>
           {c.icon}
         </span>
+      ))}
+      {Array.from({ length: slots }, (_, i) => (
+        <span key={`slot-${i}`} className={styles.stickerSlot} />
       ))}
     </span>
   );
@@ -206,6 +222,11 @@ export interface CardFaceProps extends CardFaceCommonProps {
    *  `CardInstancePanel`) for anything beyond this hover title. Absent/empty for a plain
    *  copy. */
   stickerBadge?: string[];
+  /** Tints the whole face's border/ring gold to mark that this card has an affordable upgrade
+   *  available (a buyable copy tier or an applicable, affordable sticker with room) — the Collection
+   *  grid's at-a-glance hint so the player needn't open each card. Pure display; the predicate
+   *  lives in `rules/upgrades.ts`. See `.upgradeAvailable`. */
+  upgradeHint?: boolean;
 }
 
 /**
@@ -271,14 +292,18 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
     );
   }
 
-  const { countBadge, alwaysShowBadge, badgeClassName, stickerBadge } = props;
+  const { countBadge, alwaysShowBadge, badgeClassName, stickerBadge, upgradeHint } = props;
   const text = overrideText ?? describeCard(card);
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
   // Worker-space meeples: building and work cards show their `workers` capacity (default 1,
   // `0` = self-sufficient/always operating so no meeple shown); other kinds show none.
   const workers = card.kind === 'building' || card.kind === 'work' ? card.workers ?? 1 : 0;
-  const rootClassName = `${styles.card} ${kindClass(card.kind)}${className ? ` ${className}` : ''}`;
+  // An available upgrade tints the whole face's border/ring gold (the buyable-hint accent) rather
+  // than dropping a corner dot — see `.upgradeAvailable`.
+  const rootClassName = `${styles.card} ${kindClass(card.kind)}${upgradeHint ? ` ${styles.upgradeAvailable}` : ''}${
+    className ? ` ${className}` : ''
+  }`;
 
   const inner = (
     <>

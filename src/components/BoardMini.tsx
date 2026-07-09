@@ -18,11 +18,15 @@ import styles from './BoardMini.module.css';
 export function BoardMini({
   boardId,
   stickerIds,
+  openSlots = 0,
   className,
 }: {
   boardId: BoardId;
   /** The board's attached sticker ids — folded into the displayed profile via `effectiveBoard`. */
   stickerIds?: string[];
+  /** Empty gold-outlined placeholder slots shown after the attached sticker badges — the Board
+   *  menu's buyable-hint affordance (a board's remaining capacity). Defaults to 0 elsewhere. */
+  openSlots?: number;
   className?: string;
 }) {
   const b = effectiveBoard(BOARDS[boardId], stickerIds);
@@ -78,6 +82,7 @@ export function BoardMini({
           icon: BOARD_STICKERS[id]?.icon ?? '🏷️',
           name: BOARD_STICKERS[id]?.name,
         }))}
+        openSlots={openSlots}
       />
     </div>
   );

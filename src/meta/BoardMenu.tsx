@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { BOARDS, type BoardId } from '../content/boards';
+import type { BoardId } from '../content/boards';
 import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
-import { boardStickerAppliesTo, isBoardStickerFull, type BoardStickers } from '../rules/boardStickers';
+import { canAttachBoardSticker, MAX_BOARD_STICKERS, type BoardStickers } from '../rules/boardStickers';
+import { boardUpgradeAvailable } from '../rules/upgrades';
 import { BoardMini } from '../components/BoardMini';
 import { BOARD_IDS } from './boardDisplay';
 import styles from './BoardMenu.module.css';
@@ -80,12 +81,7 @@ export function BoardMenu({
    *  from props each render. `buyBoardSticker` re-checks this (returns null otherwise), so it's a
    *  backstop, not the gate. */
   function isValidTarget(boardId: BoardId, sticker: BoardStickerDef): boolean {
-    const attached = boardStickers[boardId] ?? [];
-    return (
-      boardStickerAppliesTo(sticker, BOARDS[boardId]) &&
-      !isBoardStickerFull(attached) &&
-      influence >= sticker.cost
-    );
+    return canAttachBoardSticker(boardStickers, influence, boardId, sticker);
   }
 
   function onChipPointerDown(e: React.PointerEvent<HTMLElement>, stickerId: string) {
@@ -158,6 +154,10 @@ export function BoardMenu({
     const attached = boardStickers[boardId] ?? [];
     // Highlight only valid targets for the chip currently being dragged.
     const highlight = dragSticker ? isValidTarget(boardId, dragSticker) : false;
+    // At-a-glance hint: this board can still take an affordable, under-cap sticker (idle only —
+    // during a drag the highlight carries the same information, per-chip). Rendered as gold open
+    // slots in the board's sticker row (its remaining capacity) rather than a corner dot.
+    const hint = !dragSticker && boardUpgradeAvailable(boardStickers, influence, boardId);
     return (
       <div
         key={boardId}
@@ -167,7 +167,11 @@ export function BoardMenu({
         }}
         className={`${styles.boardTile}${highlight ? ` ${styles.boardTileValid}` : ''}`}
       >
-        <BoardMini boardId={boardId} stickerIds={attached} />
+        <BoardMini
+          boardId={boardId}
+          stickerIds={attached}
+          openSlots={hint ? MAX_BOARD_STICKERS - attached.length : 0}
+        />
       </div>
     );
   }

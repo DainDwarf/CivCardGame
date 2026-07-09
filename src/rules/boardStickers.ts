@@ -38,6 +38,22 @@ export function effectiveBoard(board: BoardDef, stickerIds: string[] | undefined
   return out;
 }
 
+/** Whether `sticker` can attach to `boardId` *right now* — applies · under the cap · affordable.
+ *  The single leaf every site routes through: `BoardMenu.tsx`'s drag `isValidTarget` (highlight +
+ *  drop), and the upgrade-hint roll-up (`rules/upgrades.ts`). Mirrors `buyBoardSticker`'s reject. */
+export function canAttachBoardSticker(
+  boardStickers: BoardStickers,
+  influence: number,
+  boardId: BoardId,
+  sticker: BoardStickerDef,
+): boolean {
+  return (
+    boardStickerAppliesTo(sticker, BOARDS[boardId]) &&
+    !isBoardStickerFull(boardStickers[boardId] ?? []) &&
+    influence >= sticker.cost
+  );
+}
+
 /** Result of a board-sticker purchase — the updated Influence + board-sticker map. Mirrors
  *  `rules/shop.ts`'s `buyTier` / `rules/stickers.ts`'s `buySticker`. */
 export interface BoardStickerPurchase {

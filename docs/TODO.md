@@ -134,24 +134,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Meta loop (`src/meta/`)
 
 - **End-of-Phase-3 cleanup: simplify save parsing, not remove it** — `meta/store.ts`'s `SCHEMA_VERSION`/`exportSave`/`importSave` plumbing stays (still the real save/load-file mechanism); what should go is `parsePlayerStore`'s per-field *leniency* (the decks-missing fallback, the field-by-field shape checks written to tolerate a store that predates some Phase 3 field). Once Phase 3 ships, assume every save in the world is already Phase-3-shaped — pre-alpha players are told to clear their save regularly — so `parsePlayerStore` can go back to a plain "does this parse as a `PlayerStore`" check instead of carrying per-field pre-Phase-3 fallbacks. `[phase: 3]`
-- **Available-upgrade hints (cards · nav tabs · boards)** — surface, *without* the player opening
-  every detail view, where Influence can still be usefully spent. Deferred out of **Step 9.2** (which
-  shipped the card detail view but no at-a-glance affordability hints); split into three layers that
-  should share one "is an upgrade available here, and can I afford it?" predicate rather than three
-  bespoke checks:
-  - **Card tiles** — a card's Collection grid tile/group hints when it has an available upgrade (a
-    buyable copy tier, or a copy with a free sticker slot for an *applicable + affordable* sticker),
-    so the player needn't open each card.
-  - **Board tiles** — the Board-tab equivalent: a `BoardMini` hints when the board can still take an
-    *applicable + under-cap + affordable* board sticker (mirrors the card-tile hint; the same
-    `isValidTarget` shape the `BoardMenu` drag already computes).
-  - **Nav-tab badges** — a small marker on the `MetaMenu` nav tabs (Collection, Board) when *anything*
-    inside is upgradeable-and-affordable, so a fresh Influence balance advertises where it can go
-    without visiting every screen. Roll up the per-tile predicate above.
-
-  Open design question: should a hint mean "an upgrade *exists*" or the stricter "upgrade exists *and*
-  you can afford it right now"? Affordable-only avoids nagging with buys the player can't make, but
-  flickers as Influence crosses a price; decide when picking this up. `[size: M]` `[?]` `[phase: 3]`
 
 ## Cards & content (`src/content/`)
 
@@ -204,6 +186,30 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Available-upgrade hints (cards · nav tabs · boards)** — at-a-glance markers showing where
+  Influence can still be usefully spent, without opening every detail view (deferred out of Step 9.2).
+  The open design question (does a hint mean an upgrade *exists*, or *exists + affordable*?) was decided
+  **strict**: a hint is on **⟺ some real purchase would succeed right now** — affordable · applicable ·
+  under the caps. The affordable-only flicker as Influence crosses a price is inherent and correct
+  (left as-is). New `rules/upgrades.ts` holds the shared predicates: `cardUpgradeAvailable` (buyable
+  copy tier *or* a copy with room for an applicable+affordable sticker) and `boardUpgradeAvailable`
+  (an applicable · under-cap · affordable board sticker), plus the `any…Available` nav roll-ups —
+  each *composing* the authoritative buy-reject leaves rather than re-deriving affordability, so a
+  hint can never disagree with what a drop accepts. Two leaves were extracted for that: `shop.ts`'s
+  `canBuyTier` and `boardStickers.ts`'s `canAttachBoardSticker` (the latter replacing `BoardMenu`'s
+  hand-inlined `isValidTarget` body — a unify-don't-duplicate win). Cards and boards take different
+  inputs, so this is **two per-domain roll-ups, not one contorted predicate**. UI (all in one **gold
+  buyable-hint accent**, `--hint-gold`, echoing the ⭐ Influence glyph): a gold border/ring on an
+  upgradeable Collection card face (`CardFace`'s `upgradeHint` prop), gold open-slot markers in a
+  board's sticker row showing its remaining capacity (`BoardMenu` via `BoardMini`/`StickerRow`'s
+  `openSlots`, `BoardMini` kept pure), and a gold dot on the Collection/Board nav tabs (`MetaMenu`,
+  the only two shop-bearing tabs); the tray buy controls (copy-tier button · sticker badges) share
+  the same gold accent. The board hint is idle-only (a live drag's valid-target highlight already
+  carries the same information). Correctness pinned by `upgrades.test.ts` — every predicate asserted
+  equal to a brute-force oracle over the real `buyTier`/`buySticker`/`buyBoardSticker`, so a future
+  buy-reject change trips the hint test. No game-rule/store/contract change; suite green (376 tests).
+  `[size: M]` `[phase: 3]`
 
 - **Phase 3 Step 9.6 — Stats UI rework** — reworked `Stats.tsx` from a flat run-result list into a
   **player-profile** (the "Profile hero" layout of the three options): a hero row of four lifetime

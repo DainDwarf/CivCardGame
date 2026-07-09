@@ -9,7 +9,7 @@ describe('buySticker', () => {
   it('attaches the sticker and deducts its cost', () => {
     const collection = collectionFromCounts({ farm: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    const result = buySticker(collection, 5, a, 'reinforced');
+    const result = buySticker(collection, STICKERS.reinforced.cost + 2, a, 'reinforced');
     expect(result).not.toBeNull();
     expect(result!.influence).toBe(2);
     expect(result!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['reinforced']);
@@ -18,7 +18,7 @@ describe('buySticker', () => {
   it('does not mutate the input collection', () => {
     const collection = collectionFromCounts({ farm: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    buySticker(collection, 5, a, 'reinforced');
+    buySticker(collection, STICKERS.reinforced.cost, a, 'reinforced');
     expect(collection.instances.find((i) => i.id === a)?.stickers).toBeUndefined();
   });
 
@@ -36,7 +36,7 @@ describe('buySticker', () => {
   it('appends a second, different sticker to a once-stickered instance', () => {
     const collection = collectionFromCounts({ farm: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    const first = buySticker(collection, 10, a, 'reinforced')!;
+    const first = buySticker(collection, STICKERS.reinforced.cost + STICKERS.efficient.cost, a, 'reinforced')!;
     const second = buySticker(first.collection, first.influence, a, 'efficient');
     expect(second).not.toBeNull();
     expect(second!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['reinforced', 'efficient']);
@@ -45,7 +45,9 @@ describe('buySticker', () => {
   it('rejects a third sticker once the instance is full', () => {
     const collection = collectionFromCounts({ farm: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    const first = buySticker(collection, 10, a, 'reinforced')!;
+    // Budget affords all three, so the third's rejection is by fullness, not affordability.
+    const budget = STICKERS.reinforced.cost * 2 + STICKERS.efficient.cost;
+    const first = buySticker(collection, budget, a, 'reinforced')!;
     const second = buySticker(first.collection, first.influence, a, 'efficient')!;
     expect(buySticker(second.collection, second.influence, a, 'reinforced')).toBeNull();
   });
@@ -53,7 +55,7 @@ describe('buySticker', () => {
   it('allows attaching the same sticker twice — it stacks', () => {
     const collection = collectionFromCounts({ farm: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    const first = buySticker(collection, 10, a, 'reinforced')!;
+    const first = buySticker(collection, STICKERS.reinforced.cost * 2, a, 'reinforced')!;
     const second = buySticker(first.collection, first.influence, a, 'reinforced');
     expect(second).not.toBeNull();
     expect(second!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['reinforced', 'reinforced']);

@@ -135,7 +135,9 @@
   color: var(--text-secondary);
 }
 
-/* The buy-next-tier button — accent one-click purchase (mirrors the sticker attach's old .buyBtn). */
+/* The buy-next-tier button — a blank neutral pill; when a tier is *available* (affordable, i.e. not
+   disabled) its border/ring go gold, the buyable-hint accent that matches the tray badges and card
+   borders. Disabled (unaffordable) keeps the plain neutral border and dims. */
 .buyBtn {
   display: flex;
   align-items: center;
@@ -145,15 +147,20 @@
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 0.8rem;
   font-weight: 800;
-  color: var(--text-on-accent);
-  background: var(--accent);
-  border: none;
+  color: var(--text);
+  background: var(--chip-bg);
+  border: 2px solid var(--border-divider);
   border-radius: 8px;
   cursor: pointer;
 }
 
+.buyBtn:not(:disabled) {
+  border-color: var(--hint-gold);
+  box-shadow: 0 0 0 4px rgb(var(--hint-gold-rgb) / 25%);
+}
+
 .buyBtn:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--chip-bg-hover);
 }
 
 .buyBtn:disabled {
@@ -258,6 +265,14 @@
   cursor: grab;
   user-select: none;
   touch-action: none;
+}
+
+/* An available (affordable + some copy has room) tray sticker gets a golden border + soft ring — the
+   buyable-hint accent, matching BoardMenu's tray. A disabled chip keeps the plain ring below. */
+.chip:not(.chipDisabled) .stickerDraggable {
+  border-color: var(--hint-gold);
+  border-width: 2px;
+  box-shadow: 0 0 0 4px rgb(var(--hint-gold-rgb) / 30%), 0 2px 5px rgba(0, 0, 0, 0.35);
 }
 
 .chipDisabled .stickerDraggable {

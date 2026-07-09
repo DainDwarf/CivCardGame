@@ -81,7 +81,7 @@ describe('buyBoardSticker', () => {
   });
 
   it('appends a second sticker to a board that already has one', () => {
-    const first = buyBoardSticker({}, 10, 'tribe', 'fertileLand')!;
+    const first = buyBoardSticker({}, BOARD_STICKERS.fertileLand.cost + BOARD_STICKERS.frontier.cost, 'tribe', 'fertileLand')!;
     const second = buyBoardSticker(first.boardStickers, first.influence, 'tribe', 'frontier');
     expect(second).not.toBeNull();
     expect(second!.boardStickers.tribe).toEqual(['fertileLand', 'frontier']);

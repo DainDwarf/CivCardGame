@@ -70,6 +70,16 @@
   --accent-bg: #e7f0fc;          /* selected nav / option background */
   --focus-ring: #3b7dd8;         /* focus outlines (shares the accent value) */
 
+  /* ── Buyable-hint (gold) ──────────────────────────────
+     The at-a-glance "Influence can still be usefully spent here" signal across the meta buy
+     surfaces (Collection card border, Board open-slots, tray-badge borders, buy-tier button
+     border, nav badges — all `rules/upgrades.ts`-driven). A goldenrod that echoes the ⭐
+     Influence glyph without vanishing as a border on the white Light card faces (a bright
+     ⭐-yellow would); visibility is carried by the box-shadow *ring* the modules compose from
+     `--hint-gold-rgb`, so the 1px border need not do it alone. */
+  --hint-gold: #cf9a12;
+  --hint-gold-rgb: 207 154 18;
+
   /* ── Card kinds ───────────────────────────────────── */
   --card-building-banner: #3b7dd8;
   --card-building-band: #e7f0fb;
@@ -235,6 +245,10 @@
   --accent-soft: #35506f;
   --accent-bg: #1e3350;
   --focus-ring: #5b9bea;
+
+  /* ── Buyable-hint (gold) — brighter on dark surfaces ── */
+  --hint-gold: #f0c236;
+  --hint-gold-rgb: 240 194 54;
 
   /* ── Card kinds ──
      Banners keep their saturated hue (white text sits on them); the light title/text bands

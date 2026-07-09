@@ -69,6 +69,18 @@
   font-size: 1.3rem;
 }
 
+/* Available-upgrade nav badge: a small gold dot pushed to the button's right edge when this tab's
+   buy surface (Collection · Board) has an affordable upgrade available (`rules/upgrades.ts`) — the
+   nav-level roll-up of the per-tile card/board hint, same gold buyable-hint accent as those tiles. */
+.navBadge {
+  margin-left: auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--hint-gold);
+  box-shadow: 0 0 0 3px rgb(var(--hint-gold-rgb) / 25%);
+}
+
 .influenceBadge {
   align-self: center;
   display: flex;

@@ -292,3 +292,27 @@
   justify-content: center;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
+
+/* Empty gold-outlined placeholder slot appended to the sticker row (StickerRow's `openSlots`) — the
+   buyable-hint "you have room for a sticker here" affordance (the Board menu shows a board's remaining
+   capacity). Same footprint as an attached `.sticker` badge so the row reads as filled + open slots,
+   toned with the gold hint token. */
+.stickerSlot {
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  border: 3px dashed var(--hint-gold);
+  background: rgb(var(--hint-gold-rgb) / 12%);
+  box-shadow: 0 0 0 3px rgb(var(--hint-gold-rgb) / 18%);
+}
+
+/* Available-upgrade hint (`rules/upgrades.ts`): a gold border + soft gold ring around the whole face
+   when the card has an affordable upgrade available (a buyable copy tier or an applicable, affordable
+   sticker with room) — the buyable-hint gold accent, echoing the ⭐ Influence glyph. Defined after the
+   kind border rules (`.event`/`.objective`) so its border-color wins; the ring carries the visibility
+   on the white Light face where a 1px gold border alone would be faint. */
+.upgradeAvailable {
+  border-color: var(--hint-gold);
+  border-width: 2px;
+  box-shadow: 0 0 0 4px rgb(var(--hint-gold-rgb) / 55%), 0 3px 8px rgba(0, 0, 0, 0.18);
+}

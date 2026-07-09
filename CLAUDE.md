@@ -185,14 +185,27 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `MetaCardInstance` is `{ id, cardId, stickers? }`). `nextId` is append-only, so
     `grantCopies` never renumbers and a deck's instance-id references never go stale;
     `copiesOwned`/`isOwned` filter instances (an absent cardId = not yet unlocked).
-  - `shop.ts` — the copy-tier economy: `TIER_LADDER`, `nextTier`, the immutable `buyTier`.
+  - `shop.ts` — the copy-tier economy: `TIER_LADDER`, `nextTier`, the immutable `buyTier`,
+    and `canBuyTier` (mirrors `buyTier`'s reject — the leaf the upgrade hints fold over).
   - `stickers.ts` — sticker logic: `buySticker` (meta purchase) and
     `effectiveGain`/`effectiveCost`/`effectiveCard`, the only places a sticker touches run
     or display values (each a generic fold over the `StickerDef` hooks; see the convention).
   - `boardStickers.ts` — the board counterpart: `buyBoardSticker` (meta purchase),
-    `boardStickerAppliesTo`, and `effectiveBoard` — the single fold that applies a board's
-    stickers to its starting profile (`run/setup.ts` seeds off it; the board pickers display
-    it). `MAX_BOARD_STICKERS` is the provisional per-board cap.
+    `boardStickerAppliesTo`, `canAttachBoardSticker` (applies · under cap · affordable — the leaf
+    both `BoardMenu`'s drag `isValidTarget` and the upgrade hints share), and `effectiveBoard` — the
+    single fold that applies a board's stickers to its starting profile (`run/setup.ts` seeds off it;
+    the board pickers display it). `MAX_BOARD_STICKERS` is the provisional per-board cap.
+  - `upgrades.ts` — the **available-upgrade hints**: `cardUpgradeAvailable`/`boardUpgradeAvailable`
+    (per-tile) + `anyCardUpgradeAvailable`/`anyBoardUpgradeAvailable` (nav-badge roll-ups), each
+    **on ⟺ some real purchase would succeed right now** (affordable · applicable · under the caps).
+    Composes the authoritative buy-reject leaves (`canBuyTier`, `stickerableInstancesOf` +
+    `stickerAppliesTo`, `canAttachBoardSticker`) so a hint can never disagree with a drop — the
+    invariant `upgrades.test.ts` pins against the real `buy*` functions. All the hints render in one
+    **gold buyable-hint accent** (`--hint-gold`, echoing the ⭐ Influence glyph): consumed by
+    `Collection.tsx` (a gold border/ring on the card face), `BoardMenu.tsx` (gold open-slot markers in
+    the board's sticker row — a board's remaining capacity, via `BoardMini`/`StickerRow`'s `openSlots`),
+    and `MetaMenu.tsx` (Collection/Board nav badges). The tray buy controls share the same accent (a
+    gold border on an available copy-tier button / sticker badge).
 - `src/content/` — the typed game catalogues (cards, decks, boards, missions, stickers).
   A card or sticker def carries its own behaviour (a card's `resolve` closure, a sticker's
   hooks — see the *own their own logic* convention), so these are data *and* the per-entry

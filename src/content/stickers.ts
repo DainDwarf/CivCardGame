@@ -50,7 +50,7 @@ export const STICKERS: Record<string, StickerDef> = {
     name: 'Reinforced',
     description: "+1 to this copy's output",
     icon: '💪',
-    cost: 3,
+    cost: 10,
     // +1 to every resource key the card actually produces (a multi-output building bumps each).
     applyGain: (base) => {
       if (!base) return base;

@@ -11,6 +11,7 @@ import type { OwnedCards } from '../rules/collection';
 import type { LifetimeStats } from './store';
 import type { BoardStickers } from '../rules/boardStickers';
 import type { BoardId } from '../content/boards';
+import { anyCardUpgradeAvailable, anyBoardUpgradeAvailable } from '../rules/upgrades';
 import styles from './MetaMenu.module.css';
 
 type Screen = 'mission' | 'collection' | 'board' | 'decks' | 'stats' | 'deckEditor';
@@ -98,6 +99,15 @@ export function MetaMenu({
     setScreen('decks');
   }
 
+  // At-a-glance nav badges: mark the tabs whose buy surface has an affordable upgrade available, so
+  // a fresh Influence balance advertises where it can go without visiting every screen. Only the two
+  // shop-bearing tabs (Collection · Board) can have one. Rolls up the same per-tile predicates the
+  // grids use (`rules/upgrades.ts`), so a badge can never disagree with a tile's own hint.
+  const navHints: Partial<Record<Screen, boolean>> = {
+    collection: anyCardUpgradeAvailable(collection, influence),
+    board: anyBoardUpgradeAvailable(boardStickers, influence),
+  };
+
   return (
     <div className={styles.shell}>
       <nav className={styles.nav}>
@@ -118,6 +128,7 @@ export function MetaMenu({
               {n.icon}
             </span>
             <span className={styles.navLabel}>{n.label}</span>
+            {navHints[n.screen] && <span className={styles.navBadge} aria-hidden="true" />}
           </button>
         ))}
       </nav>

@@ -3,6 +3,7 @@ import { CARDS, compareCards, isDeckable } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { CardFace } from '../components/CardFace';
 import { copiesOwned, isOwned, type OwnedCards } from '../rules/collection';
+import { cardUpgradeAvailable } from '../rules/upgrades';
 import { CardInstancePanel } from './CardInstancePanel';
 import styles from './Collection.module.css';
 
@@ -55,6 +56,7 @@ export function Collection({
                 card={c}
                 className={styles.tile}
                 countBadge={copiesOwned(collection, c.id)}
+                upgradeHint={cardUpgradeAvailable(collection, influence, c.id)}
                 onClick={() => setDetail(c.id)}
               />
             ))}
@@ -72,6 +74,7 @@ export function Collection({
                 card={c}
                 className={styles.tile}
                 countBadge={copiesOwned(collection, c.id)}
+                upgradeHint={cardUpgradeAvailable(collection, influence, c.id)}
                 onClick={() => setDetail(c.id)}
               />
             ))}
@@ -89,6 +92,7 @@ export function Collection({
                 card={c}
                 className={styles.tile}
                 countBadge={copiesOwned(collection, c.id)}
+                upgradeHint={cardUpgradeAvailable(collection, influence, c.id)}
                 onClick={() => setDetail(c.id)}
               />
             ))}

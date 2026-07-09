@@ -34,6 +34,7 @@
 }
 
 .boardTile {
+  position: relative;
   padding: 0.4rem;
   border: 2px solid transparent;
   border-radius: 12px;
@@ -153,6 +154,15 @@
   cursor: grab;
   user-select: none;
   touch-action: none;
+}
+
+/* An available (affordable) tray sticker gets a golden border + soft ring — the buyable-hint accent,
+   so the badge itself signals "you can buy this now". A disabled (unaffordable) chip keeps the plain
+   ring below. */
+.chip:not(.chipDisabled) .stickerDraggable {
+  border-color: var(--hint-gold);
+  border-width: 2px;
+  box-shadow: 0 0 0 4px rgb(var(--hint-gold-rgb) / 30%), 0 2px 5px rgba(0, 0, 0, 0.35);
 }
 
 .chipDisabled .stickerDraggable {

@@ -30,6 +30,15 @@ export function nextTier(current: number): TierUpgrade | null {
   return rung ? { to: rung.to, cost: rung.cost } : null;
 }
 
+/** Whether the next copy tier for `cardId` is buyable *right now* — owned, still
+ *  upgradeable (not terminal ×8), and affordable. Mirrors `buyTier`'s reject exactly (it's
+ *  `buyTier(...) !== null` without minting the copies), the leaf the upgrade-hint roll-ups
+ *  (`rules/upgrades.ts`) fold over. */
+export function canBuyTier(collection: OwnedCards, influence: number, cardId: string): boolean {
+  const up = nextTier(copiesOwned(collection, cardId));
+  return up !== null && influence >= up.cost;
+}
+
 export interface PurchaseResult {
   influence: number;
   collection: OwnedCards;

@@ -60,7 +60,7 @@ export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
     name: 'Frontier',
     description: '+1 starting Territory',
     icon: '🗺️',
-    cost: 3,
+    cost: 10,
     applyToBoard: (b) => ({ ...b, territory: b.territory + 1 }),
   },
 };
