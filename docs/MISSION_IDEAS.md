@@ -62,3 +62,15 @@ Centralized, elite-controlled, trade-dependent palace civilizations.
 
 More decentralized, broader-based societies with cheaper metal, wider literacy
 (alphabet), citizen armies, and new political forms — often emerging *after* a collapse.
+
+## Post-classical/medieval/Paper Age? Steel Age? (*crucible* steel, is rare, but was around that period. Paper is a more defining tech, this period widespread the use of paper)
+
+## Colonization/Globalization/**Gunpowder Age**
+
+## Steam Age
+
+## Electric Age
+
+## Computer Age
+
+## Space Age?
