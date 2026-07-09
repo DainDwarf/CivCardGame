@@ -5,8 +5,6 @@ import { dispatchEvent, emitEvent, flushEvents, snapshot } from './events';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameState } from './state';
 
-export type MissionUpkeep = (G: GameState) => void;
-
 /**
  * File every Work card played this turn to the discard pile and clear the workZone. Called by
  * `endTurn` *after* `applyUpkeep` has collected staffed-Work production — the whole point of the
@@ -53,9 +51,9 @@ export function resolveHandEvents(G: GameState): void {
 /**
  * Resolve the resource side of end-of-round upkeep: the `endTurn` broadcast fires per-round behaviour
  * on every operating (staffed) building and Work card (production) and every threat (its drain,
- * escalation included) through the bus's observer walk (`dispatchEvent` → `resolveEndTurn`), the
- * mission ticks, then the population eats food. Single source of truth shared by the run loop's `onEnd`
- * and the UI projection below, so they never drift.
+ * escalation included) through the bus's observer walk (`dispatchEvent` → `resolveEndTurn`), then the
+ * population eats food. Single source of truth shared by the run loop's `onEnd` and the UI projection
+ * below, so they never drift.
  *
  * `endTurn` is dispatched *directly* here (not queued) so production runs at exactly the slot it
  * always has — before `flushEvents` synthesizes the round's net `resourceChange` — leaving the flush /
@@ -63,10 +61,9 @@ export function resolveHandEvents(G: GameState): void {
  * sees the round's production). The draws/discards those handlers emit queue on `G.events` and drain
  * in the `flushEvents` below, reachable from `projectedDelta`'s clone so they show in the HUD preview.
  */
-export function applyUpkeep(G: GameState, missionUpkeep?: MissionUpkeep): void {
+export function applyUpkeep(G: GameState): void {
   const before = snapshot(G);
   dispatchEvent(G, { type: 'endTurn' });
-  missionUpkeep?.(G);
   G.resources.food -= foodUpkeep(G);
   flushEvents(G, before);
 }
@@ -97,9 +94,9 @@ export interface ProjectedDelta {
   culture: number;
 }
 
-export function projectedDelta(G: GameState, missionUpkeep?: MissionUpkeep): ProjectedDelta {
+export function projectedDelta(G: GameState): ProjectedDelta {
   const clone = structuredClone(G);
-  applyUpkeep(clone, missionUpkeep);
+  applyUpkeep(clone);
   // Events in hand auto-resolve at end of turn too, so fold their impact into the delta the
   // player sees (e.g. a Barbarian's Military drain + its collapse warning) — same sequence
   // `endTurn` runs for real, via the shared `settleEndOfTurn`.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MISSIONS } from './missions';
+import { MISSIONS, seedMissionCards } from './missions';
 import { CARDS } from './cards';
 import {
   blankState,
@@ -25,7 +25,7 @@ describe('mission: enlightenment', () => {
 
   it('setup seeds the Stagnation deadline threat', () => {
     const G = blankState('enlightenment');
-    m.setup!(G);
+    seedMissionCards(m, G);
     expect(G.threats).toEqual([{ id: 1, cardId: 'enlightenment_deadline' }]);
   });
 
@@ -46,14 +46,14 @@ describe('mission: enlightenment', () => {
   // `beginTurn` sets `G.round` to 12, before the player has played that round at all.
   it('the deadline threat declares defeat once round 12 fully elapses — regardless of Science', () => {
     const G = blankState('enlightenment');
-    m.setup!(G);
+    seedMissionCards(m, G);
     G.round = 13;
     expect(defeatMet(G)).toEqual({ reason: 'stagnation' });
   });
 
   it('the deadline threat stays silent through round 12 itself', () => {
     const G = blankState('enlightenment');
-    m.setup!(G);
+    seedMissionCards(m, G);
     G.round = 12;
     expect(defeatMet(G)).toBeNull();
   });
@@ -64,17 +64,13 @@ describe('mission: long_winter', () => {
 
   it('setup seeds the Harsh Winter threat', () => {
     const G = blankState('long_winter');
-    m.setup!(G);
+    seedMissionCards(m, G);
     expect(G.threats).toEqual([{ id: 1, cardId: 'harsh_winter' }]);
-  });
-
-  it('has no per-round mission upkeep — the threat card itself drains', () => {
-    expect(m.onUpkeep).toBeUndefined();
   });
 
   it('drains 2 food each upkeep tick via the seeded threat (famine itself is enforced globally, not by the mission)', () => {
     const G = blankState('long_winter');
-    m.setup!(G);
+    seedMissionCards(m, G);
     seedObjective(G, m.objectiveCardId);
     G.resources.food = 5;
     dispatchEvent(G, { type: 'endTurn' });
@@ -94,12 +90,8 @@ describe('mission: barbarian_tide', () => {
 
   it('setup seeds four barbarian events into the deck', () => {
     const G = blankState('barbarian_tide');
-    m.setup!(G);
+    seedMissionCards(m, G);
     expect(G.deck.filter((c) => c.cardId === 'barbarian').length).toBe(4);
-  });
-
-  it('has no per-round upkeep — the barbarian cards themselves are the threat', () => {
-    expect(m.onUpkeep).toBeUndefined();
   });
 
   it('objective needs all four barbarians beaten with military still standing', () => {
@@ -133,7 +125,7 @@ describe('mission: the_long_decline', () => {
 
   it('setup seeds the Creeping Decay threat', () => {
     const G = blankState('the_long_decline');
-    m.setup!(G);
+    seedMissionCards(m, G);
     expect(G.threats).toEqual([{ id: 1, cardId: 'creeping_decay' }]);
   });
 
@@ -147,7 +139,7 @@ describe('mission: the_long_decline', () => {
 
   it('the seeded threat escalates production loss round over round via the shared tick', () => {
     const G = blankState('the_long_decline');
-    m.setup!(G);
+    seedMissionCards(m, G);
     seedObjective(G, m.objectiveCardId);
     G.resources.production = 10;
     dispatchEvent(G, { type: 'endTurn' });

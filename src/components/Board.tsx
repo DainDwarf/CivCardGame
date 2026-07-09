@@ -1164,7 +1164,7 @@ export function Board({
     stagnation: 'stagnation set in — the Enlightenment passed you by.',
   };
 
-  const proj = projectedDelta(G, mission.onUpkeep);
+  const proj = projectedDelta(G);
   const collapseRisk = (key: keyof typeof G.resources) => G.resources[key] + proj.resources[key] < 0;
   const canEndRound = !pending && !pendingDestroy && !drag;
 

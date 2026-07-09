@@ -1,6 +1,5 @@
 import { createInitialState } from './setup';
 import { applyUpkeep, coreCollapse, drawUpTo, flushEvents, settleEndOfTurn, snapshot, type CollapseReason, type GameState } from '../rules';
-import { MISSIONS } from '../content/missions';
 import type { RunConfig, RunResult } from '../contract';
 
 export type Gameover = { outcome: 'victory' | 'defeat'; reason?: CollapseReason | string; missionId: string };
@@ -59,7 +58,7 @@ export function endTurn(state: RunState): RunState {
   // parked (revealed) cards would be stranded and the choice would leak across the turn boundary.
   if (state.G.pendingInteraction) return state;
   const G = structuredClone(state.G);
-  applyUpkeep(G, MISSIONS[G.missionId]?.onUpkeep);
+  applyUpkeep(G);
   // Check for collapse/victory before clearing the hand so that the hand is visible for inspection.
   const afterUpkeep = checkEndIf({ ...state, G });
   if (afterUpkeep.gameover) return afterUpkeep;

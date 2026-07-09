@@ -243,6 +243,16 @@ _(none open)_
   New `missions.test.ts` coherence test asserting every `threats`/`events` id names a real
   card of the matching kind (mirrors the existing objective-card coherence test).
 
+- **Removed `MissionDef.setup`/`onUpkeep`** — with all four missions migrated onto declarative
+  `threats`/`events` (Step 9.4, above), no mission had a bespoke `setup` body or an `onUpkeep` hook
+  left; both authoring surfaces are gone, along with the ad-hoc plumbing that carried them
+  (`content/missions.ts`'s per-mission `setup`-wrapping loop replaced by a plain exported
+  `seedMissionCards(mission, G)`, called once from `run/setup.ts`; `rules/upkeep.ts`'s
+  `applyUpkeep`/`projectedDelta` dropped their `missionUpkeep`/`MissionUpkeep` parameter, and their
+  callers in `run/engine.ts`/`components/Board.tsx` stopped passing `mission.onUpkeep`). A mission's
+  only behaviour now flows through the threat/event *cards* it seeds — there is no other hook left
+  for a mission to reach into `GameState` directly.
+
 - **Stable card ordering across views** — every card listing now orders through one shared comparator,
   `content/cards.ts`'s `compareCards` (kind rank `building → work → action → event → threat → objective`,
   then alphabetical by name with a leading "The " ignored), so views depend only on card identity, never

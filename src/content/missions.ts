@@ -30,12 +30,6 @@ export interface MissionDef {
    *  N times for N copies (e.g. four `'barbarian'` entries for Barbarian Tide's four waves). Same
    *  single-source-of-truth reasoning as `threats`. */
   events?: string[];
-  /** One-time setup tweaks that aren't a declarative `threats`/`events` injection (resource
-   *  modifiers, and the like) — the injection itself is applied automatically, see the bottom of
-   *  this file. */
-  setup?: (G: GameState) => void;
-  /** Applied every round during upkeep (extra food drain, resource decay, ...). */
-  onUpkeep?: (G: GameState) => void;
   /** The mission's win condition, made into a card. Names a real `content/cards.ts` id of kind
    *  `'objective'` (pinned by a coherence test); `run/setup.ts` seeds it into `GameState.objective`
    *  and the card owns the win (the `objective` predicate) logic plus its live progress readout — so it's the
@@ -99,9 +93,8 @@ export const MISSIONS: Record<string, MissionDef> = {
       'Endure 15 rounds of brutal winters. Each round drains 2 extra Food on top of your population — keep famine at bay.',
     // DAG root: always available, unlocks enlightenment/barbarian_tide.
     prereqs: [],
-    // The 2-extra-Food-per-round drain is a real threat card (Harsh Winter) rather than a
-    // mission-onUpkeep special case — it ticks via the same `endTurn`-broadcast → `resolveCard`
-    // spine every other threat uses.
+    // The 2-extra-Food-per-round drain is a real threat card (Harsh Winter) — it ticks via the
+    // same `endTurn`-broadcast → `resolveCard` spine every other threat uses.
     threats: ['harsh_winter'],
     objectiveCardId: 'long_winter_goal',
     victoryHint: 'Endure 15 rounds of brutal winter without starving.',
@@ -154,23 +147,19 @@ export const MISSIONS: Record<string, MissionDef> = {
   },
 };
 
-// Wrap each mission's `setup` so its declarative `threats`/`events` lists are actually injected —
-// keeps the injection itself in one place instead of a copy-pasted `addThreat`/deck-push at every
-// mission that needs it, and means the mission-detail panel's card-face list and the real injection
-// can never drift apart the way a parallel hardcoded list next to it could.
-for (const mission of Object.values(MISSIONS)) {
-  if (!mission.threats && !mission.events && !mission.setup) continue;
-  const bespoke = mission.setup;
-  mission.setup = (G) => {
-    mission.threats?.forEach((cardId) => addThreat(G, cardId));
-    if (mission.events?.length) {
-      // Mint the event cards as card instances continuing past the deck's existing ids, then
-      // shuffle them into the deck deterministically from the run's RNG stream.
-      G.deck.push(...instancesFromCardIds(mission.events, nextInstanceId(G)));
-      const { result, rngState } = shuffleFromState(G.deck, G.rngState);
-      G.deck = result;
-      G.rngState = rngState;
-    }
-    bespoke?.(G);
-  };
+/**
+ * Inject a mission's declarative `threats`/`events` lists into a fresh run's state — the single
+ * place this happens, so the mission-detail panel's card-face list (which reads the same lists)
+ * can never drift from what a launched run actually sees. Called once by `run/setup.ts` at setup.
+ */
+export function seedMissionCards(mission: MissionDef, G: GameState): void {
+  mission.threats?.forEach((cardId) => addThreat(G, cardId));
+  if (mission.events?.length) {
+    // Mint the event cards as card instances continuing past the deck's existing ids, then
+    // shuffle them into the deck deterministically from the run's RNG stream.
+    G.deck.push(...instancesFromCardIds(mission.events, nextInstanceId(G)));
+    const { result, rngState } = shuffleFromState(G.deck, G.rngState);
+    G.deck = result;
+    G.rngState = rngState;
+  }
 }

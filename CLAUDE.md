@@ -220,18 +220,20 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `GameState.objective`, the bus re-derives `G.pendingVictory` from it, and `run/engine.ts`'s
     `checkEndIf` reads that flag; see `rules/objective.ts`), plus optional declarative
     `threats`/`events` card-id lists (a threat seeded via `addThreat`, an event minted and shuffled
-    into the deck — a trailing loop in this file wraps every mission's `setup` to inject them
-    automatically, ahead of any bespoke `setup` body) and `setup`/`onUpkeep`/`kind`/`prereqs`/
-    `map`/`reward`/`lore`. The mission-detail panel (`meta/CampaignMap.tsx`'s `MissionFlowPopup`)
-    reads the same `threats`/`events` lists to show the card faces a mission is about, so the
-    display can't drift from what `setup` actually injects.
+    into the deck — via this file's `seedMissionCards`, the single place the injection happens, called
+    once by `run/setup.ts`) and `kind`/`prereqs`/`map`/`reward`/`lore`. There is no bespoke per-mission
+    setup/upkeep hook — a mission's only per-round or one-time behaviour is whatever its seeded
+    threat/event *cards* do through the normal resolver spine. The mission-detail panel
+    (`meta/CampaignMap.tsx`'s `MissionFlowPopup`) reads the same `threats`/`events` lists to show the
+    card faces a mission is about, so the display can't drift from what a run actually seeds.
 
 **Shell — the run loop (`src/run/`) + React:**
 
 - `src/run/setup.ts` — `createInitialState(config: RunConfig)`: **constructs the initial
   `GameState`** — the pre-play snapshot, before any turn or draw (`engine.ts` then drives
-  the turns). The board (`config.board`) sets the baseline for all 8 starting resources;
-  the mission's `setup` then layers its own modifiers on top. `config.deck` arrives
+  the turns). The board (`config.board`) sets the baseline for all 8 starting resources; the
+  mission's declarative `threats`/`events` are then seeded on top via `content/missions.ts`'s
+  `seedMissionCards`. `config.deck` arrives
   already shuffled (deterministically from `config.seed` — see the determinism convention).
 - `src/run/engine.ts` — the turn state machine. `RunState = { G, gameover }`.
   `createRun(config: RunConfig)` bootstraps a run by calling `setup.ts`'s

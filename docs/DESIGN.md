@@ -288,11 +288,10 @@ opening economy: a martial board might open with Military and a lean Population;
 mercantile one with Money and extra Territory. This is the seed `createInitialState`
 currently hard-codes — it becomes the board's job.
 
-**Board vs. mission `setup`.** The two compose cleanly and keep their existing roles:
-the **board is the baseline** starting state, and the **mission's `setup` applies
-modifiers on top** (it is already documented as "modifiers to the starting state"). In
-`setup.ts`: seed from the board, *then* run `mission.setup`. Missions stay a
-*lens/modifier*; boards own the *baseline*.
+**Board vs. mission setup.** The two compose cleanly and keep their existing roles:
+the **board is the baseline** starting state, and the **mission seeds its threat/event
+cards on top**. In `setup.ts`: seed from the board, *then* seed the mission's cards.
+Missions stay a *lens/modifier*; boards own the *baseline*.
 
 **Visual identity.** A board reskins the run loop, not just its numbers — a distinct
 palette/backdrop (and, later, framing) so a run *looks* like the government you are
