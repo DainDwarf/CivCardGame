@@ -53,3 +53,12 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
 
 > Keep copper/metallurgy and the wheel **out** of this age — both are really
 > Chalcolithic/Bronze. Good "graduated the Neolithic" unlocks to bridge to the next age.
+
+## Bronze Age
+
+Centralized, elite-controlled, trade-dependent palace civilizations.
+
+## Iron Age
+
+More decentralized, broader-based societies with cheaper metal, wider literacy
+(alphabet), citizen armies, and new political forms — often emerging *after* a collapse.
