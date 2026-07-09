@@ -272,9 +272,13 @@ function MissionFlowPopup({
   // The cards this mission is actually about: its objective (always exactly one) plus whichever
   // threat/event cards it seeds — read straight off the same declarative `threats`/`events` lists
   // `setup` injects from (see `content/missions.ts`), so this can't drift from what a launched run
-  // actually sees. Deduped since `events` may repeat an id for multiple copies (e.g. four
-  // 'barbarian' entries for Barbarian Tide's four waves) — one card face is enough to explain it.
-  const seededCardIds = Array.from(new Set([...(mission.threats ?? []), ...(mission.events ?? [])]));
+  // actually sees. Grouped by cardId since `events`/`threats` may repeat an id for multiple copies
+  // (e.g. four 'barbarian' entries for Barbarian Tide's four waves) — one face per distinct card,
+  // with a ×N badge standing in for the repeats instead of silently collapsing them.
+  const seededCardCounts = new Map<string, number>();
+  for (const cardId of [...(mission.threats ?? []), ...(mission.events ?? [])]) {
+    seededCardCounts.set(cardId, (seededCardCounts.get(cardId) ?? 0) + 1);
+  }
 
   const [boardId, setBoardId] = useState<BoardId | null>(null);
   const [deckId, setDeckId] = useState<string | null>(null);
@@ -346,11 +350,12 @@ function MissionFlowPopup({
                       className={styles.zoomableCard}
                       onClick={() => setZoomCardId(mission.objectiveCardId)}
                     />
-                    {seededCardIds.map((cardId) => (
+                    {Array.from(seededCardCounts, ([cardId, count]) => (
                       <CardFace
                         key={cardId}
                         card={CARDS[cardId]}
                         className={styles.zoomableCard}
+                        countBadge={count}
                         onClick={() => setZoomCardId(cardId)}
                       />
                     ))}
