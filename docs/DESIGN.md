@@ -216,8 +216,8 @@ the meta loop to the mission they pick.
   unlocked/upgraded through mission rewards. See *Government boards* below.
 - **Currency & shop** — completing a mission grants **Influence** (⭐), the meta-currency;
   spend it in the shop on *depth* — extra copies of cards you already own, and permanent
-  **stickers** (card/board modifiers). New cards, boards, and wonders come from missions,
-  not the shop. See *Economy & progression* below. ✅
+  **stickers** (card/board modifiers). New cards, boards, wonders — and, from Phase 4, newly
+  unlocked stickers — come from missions, not the shop. See *Economy & progression* below. ✅
 - **Campaign map** — a branching tech tree of human history; each node is a
   mission/advancement. You pick your next node along the tree; each shows its
   objective, failure, difficulty, and reward so you can tailor your deck. See
@@ -251,6 +251,11 @@ profile (board stickers *are* the "board modifiers" — one concept, not two). C
 needed per-copy identity — decks reference owned copies by instance id, not bare `CardId[]`
 (Phase 3 Step 7.2) — which is why they shipped last, as the deepest piece.
 
+From **Phase 4** a sticker must first be **unlocked** via a mission reward (the breadth
+channel — `rules/rewards.ts` extends beyond card unlocks to card/board stickers) before the
+shop can sell it: new stickers arrive as you progress the ages, rather than all being buyable
+from the start. 🔧
+
 ### Campaign map — humanity's tech tree ✅ / 🔧
 
 The mission map is a **branching, authored DAG of historical advancements** — e.g.
@@ -272,6 +277,11 @@ procedurally generated map.
 - **Infinite nodes** are a distinct kind: an endlessly escalating threat with no win state —
   you survive for a score, which pays Influence *per attempt* (the only performance-scaled
   currency source) and tracks a best. 🔧
+- **Ages partition the tree** 🔧 — the DAG is grouped into historical **ages**,
+  **Neolithic → Bronze Age → Iron Age** to start (`content/ages.ts`), rendered as bands
+  across the map. **Neolithic is the tutorial age**, carrying every core mechanic (buildings,
+  territory, conquest, culture); later ages add content, not mechanics. Phase 4 promotes ages
+  from the `era` placeholder on `MissionDef.setup` to a real model + campaign-map band layout.
 - Procedural variation (which nodes are offered, per-node modifiers/seeds) can layer
   on later; v1 is authored. 🔧
 
@@ -361,8 +371,15 @@ src/
   (binary missions, prereq gating), reward/unlock wiring, and infinite missions — plus the
   card-effect **resolver spine** and **event bus** underneath. See *Economy & progression*. The
   per-card deck-copy cap arrives here; broader deck constraints stay Phase 4.
-- **Phase 4 — Content & balance:** expand cards/missions/resources; use the headless
-  simulator to tune.
+- **Phase 4 — Content & balance** (next): reset all content and rebuild it as the **first
+  three ages — Neolithic, Bronze Age, Iron Age**. **Neolithic is the tutorial age** and
+  introduces every core mechanic (buildings, territory, conquest, culture); Bronze Age +
+  Iron Age add content, not mechanics (their flavor is undecided beyond the historical
+  period). Also lands the deferred **deck-construction constraints** (min deck size, hand
+  limit) and the **headless simulator** (`src/sim/`) used to tune. Boards + card/board
+  stickers are reset alongside the cards; **new stickers now unlock through mission rewards**
+  (breadth), not only the shop. No new resources this phase. See TODO.md for the step
+  breakdown.
 
 ## Deferred decisions
 
@@ -372,7 +389,9 @@ branching tech tree of human history) — see *Theme & framing* and *Campaign ma
 Still open, deferred until the phase that needs them:
 
 - **Resource set** ✅ — resolved in Phase 1: Food / Production / Money / Science / Military. See *Resources* section above.
-- **Deck construction constraints** ❓ (deck size, rarity limits, a "civilization"
-  identity that gates combos) — revisit during **Phase 4**, during content expansion and
-  balance. *Exception:* the **per-card copy cap = copies owned** lands in **Phase 3** (see
-  *Economy & progression*), since ownership makes it meaningful; the rest stays Phase 4.
+- **Deck construction constraints** 🔧 — resolved for Phase 4: a **minimum deck size**
+  (provisional 20) and a **default hand limit** lowered 5→4, both enforced at the deck writer
+  (the `MAX_DECKS` precedent — a core rule, not a UI gate). The **per-card copy cap = copies
+  owned** already shipped in **Phase 3** (see *Economy & progression*). Still open ❓:
+  **rarity limits** and a **"civilization" identity** that gates combos — deferred past the
+  initial Phase 4 content.

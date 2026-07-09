@@ -21,18 +21,47 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Phase 4 — planned steps (content & balance)
 
 > Phase 4 is content expansion + balance tuning with the headless simulator (see
-> [`DESIGN.md`](DESIGN.md) *Build roadmap*). It kicks off with tutorial onboarding, since new
-> content is what a new player meets first.
+> [`DESIGN.md`](DESIGN.md) *Build roadmap*). The content target is the **first three ages —
+> Neolithic, Bronze Age, Iron Age**. **Neolithic is the whole tutorial age** and introduces
+> *all* core gameplay (buildings, territory, conquest, culture); Bronze Age + Iron Age add
+> **no new mechanics** — they are content expansion, and their flavor is not yet decided
+> (only the historical period is fixed). Steps are loosely independent; hard dependencies are
+> noted inline.
 
-- **Step 1 — Tutorial missions** — the first few meta missions double as tutorials,
-  introducing mechanics progressively; tutorial entry-node missions on the map. Covers
-  designing several missions, onboarding indicators/popups, and careful pacing so new
-  mechanics aren't dumped on the player all at once. Rough pacing: the starting deck holds
-  only `work`/`action` cards, no buildings — mission 1 unlocks the first buildings (House,
-  Farm, Workshop); mission 2 introduces territory limitation (and maybe conquest?) alongside
-  them. Goal is to reach a certain population. Unlocks culture stuff. Mission 3 explains culture, goal to reach culture lvl2. `[size: L]` `[?]` `[phase: 4]`
+- **Step 0 — Reset ALL content + decouple tests** — set aside every content catalogue:
+  cards, starting collection, decks, missions, **card stickers, board stickers, and the
+  boards themselves** (`content/cards.ts`, `collection.ts`, `decks.ts`, `missions.ts`,
+  `stickers.ts`, `boardStickers.ts`, `boards.ts`). Make the test reset deliberate, not
+  incidental: decouple `run/` + `rules/` tests from specific content ids onto **synthetic
+  local fixtures** (mint via the real functions from local card defs — see
+  [[feedback-test-fixtures-share-prod-code-path]] — so future content churn stops breaking
+  them); earmark the content-coherence tests (`content/missions.test.ts`,
+  `content/cards.test.ts`, `contract.test.ts`) for rewrite as new content lands. **Save
+  wipe:** swapping ids leaves existing `localStorage`/`.civsave` referencing dead ids and the
+  store *shape* is unchanged so the reset path may miss it — pre-alpha, so document "wipe
+  local save" and confirm `parsePlayerStore` doesn't crash on dangling ids
+  ([[prealpha-no-save-migration]]). `[size: L]` `[phase: 4]`
 
-- **Step 2 — Headless simulator (balance tooling)** — a code-driven, no-browser/no-React
+- **Step 1 — Deck-construction constraints** (the deferred marquee Phase 4 item) — decide +
+  enforce at the deck writer (a core rule at `deckBuilder`/`saveDeck`, not a UI gate — mirrors
+  the `MAX_DECKS` precedent, [[deck-limit-is-committed]]): **minimum deck size** (provisional
+  20; also bumps the Founding deck up to satisfy it), **default hand limit 5→4**, per-card
+  copy cap (already exists). Civilization-identity gating stays an open `[?]` for now. Gates
+  Step 2 (the base deck must satisfy the floor). `[size: M]` `[phase: 4]`
+
+- **Step 2 — Base set + Founding deck + a new board + sandbox mission** — author the
+  always-owned base card set (Neolithic-tier), the new `STARTING_COLLECTION`, and a Founding
+  deck that satisfies the Step 1 floor; **at least one new board** (boards were reset in
+  Step 0 and a `RunConfig` needs one); and a baseline **infinite "sandbox" mission** to
+  establish resource baselines for the simulator — a **never-win objective** (`() => false`,
+  like the old `the_long_decline_goal`; the run loop always seeds `G.objective` and pins
+  exactly one objective card, so it can't be truly objective-less) **plus a single no-drain
+  deadline threat that ends the run at ~round 50** (a pure `defeat` predicate like the old
+  `enlightenment_deadline`/Stagnation — *no* resource drain, so it bounds run length without
+  skewing the economy baseline; the `50` is one tunable constant for simulation length).
+  Depends on Step 1. `[size: L]` `[phase: 4]`
+
+- **Step 3 — Headless simulator (balance tooling)** — a code-driven, no-browser/no-React
   runner over the pure core, for statistical balance answers no human can play enough games
   to reach (is a mission winnable? is a sticker overpowered? is a card ever played? is the
   food economy too tight?). Feasible because the core is already framework-free, deterministic
@@ -41,38 +70,68 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   sim consumes the genuine behaviour with no duplicated branch; the bus's fixed dispatch order +
   `MAX_EVENT_CASCADE` cap guarantee determinism and termination even under a fuzzing policy. Only
   new consideration is throughput (millions of `endTurn`s), not viability. **First deliverable:** a
-  tiny `simulateRun(config, policy)` helper beside `run/engine.ts` + a **random-legal-move policy**
-  (doubles as a crash/illegal-state fuzzer), before any smarter policy or result aggregation.
-  Later: heuristic policies, batch runs across seeds/decks/missions, aggregation/reporting.
-  `[size: M]` `[?]` `[phase: 4]`
+  tiny `simulateRun(config, policy)` helper in **`src/sim/`** (the architecture diagram's reserved
+  home) + a **random-legal-move policy** (doubles as a crash/illegal-state fuzzer), before any
+  smarter policy or result aggregation. Runs against Step 2's sandbox — the ~50-turn deadline
+  guarantees bounded, terminating runs. Later: heuristic policies, batch runs across
+  seeds/decks/missions, aggregation/reporting. `[size: M]` `[phase: 4]`
 
-## Cards & content (`src/content/`)
+- **Step 4 — Ages map infrastructure** — promote ages from the undefined `era` placeholder to
+  a real system: the `content/ages.ts` age→node/column model + the `CampaignMap.tsx` band
+  layout that positions each age over its slice of the DAG (genuinely unbuilt today —
+  `ages.ts` is a single `testing` placeholder and `CampaignMap.tsx` has no band layout). Own
+  step, immediately before the first age's missions. Optionally folds in **age tag on cards**
+  (tag each card with the age it unlocks in, for Collection sort/filter). `[size: M]`
+  `[phase: 4]`
 
-- **Remove Settlers, replace with a Hut building** `[?]` `[phase: 4]`
-- **Disasters — expand** — the `event` card mechanic shipped (see `CHANGELOG.md`); grow it out with more disaster types beyond the Barbarian and missions that inject them (details TBD) `[?]` `[phase: 4]`
-- New mission type: "Metropolis" `[?]` `[phase: 4]`
-- New mission: "Build the Wonder" `[?]` `[phase: 4]`
-- Culture-based missions (depend on the Culture resource) `[?]` `[phase: 4]`
-- Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
-- Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
-- **Age tag on cards** — tag each card with the age it unlocks in, so the player can sort/filter by age `[?]` `[phase: 4]`
+- **Step 5 — Neolithic arc** (the full tutorial content, mechanics-only, no onboarding UI) —
+  the meat of Phase 4 gameplay: several missions introducing **all** core mechanics
+  progressively — buildings (House/Farm/Workshop), then **territory limitation, conquest, and
+  culture** (population targets, then culture-level goals). Author their unlock cards, reward
+  amounts, prereqs, and DAG shape. **First place sticker unlocks happen:** extend
+  `rules/rewards.ts` so a mission reward can unlock a **card or board sticker** (and gate which
+  stickers are buyable) — not just a card. Balance via the Step 3 simulator. `[size: L]`
+  `[?]` `[phase: 4]`
+
+- **Step 6 — Bronze Age arc** (content expansion; flavor TBD) — new cards + missions themed
+  to the Bronze Age, **no new mechanics**. Continues unlocking cards/stickers through mission
+  rewards. Specific flavor/content **not yet decided** — placeholder until designed. If any
+  building here needs 2–3 workers, the `[blocked]` multi-pip staffing UI + bulk-worker-transfer
+  items (below) unblock. Balance via simulator. `[size: L]` `[?]` `[phase: 4]`
+
+- **Step 7 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 6, Iron Age
+  period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
+  `[size: L]` `[?]` `[phase: 4]`
+
+- **Step 8 — Tutorial onboarding UI** — the scripted popups/indicators layer over the
+  **Neolithic** arc (the sole tutorial age), so new mechanics aren't dumped on the player at
+  once. "Tutorial seen" state belongs in device-local `Settings` (`meta/settings.ts`), **not**
+  `PlayerStore` (not game progress). Mild tension with the anti-surprise unlock convention
+  (tutorials reveal; unlocks surprise). `[size: L]` `[?]` `[phase: 4]`
+
+> **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
+> tuned to the *old* content and must be re-tuned as new content lands, running *through*
+> Steps 5–7, simulator-informed, not as a one-shot.
+
+## Cards & content ideas — Phase 4 idea pool (unslotted)
+
+> A pool to draw from while authoring the age arcs (Steps 5–7); each will land in whichever
+> age's mechanics fit. All `[phase: 4]`.
+
+- **Disasters — expand** — the `event` card mechanic shipped (see `CHANGELOG.md`); grow it out with more disaster types and missions that inject them (details TBD) `[?]`
+- New mission type: "Metropolis" `[?]`
+- New mission: "Build the Wonder" `[?]`
+- Culture-based missions (depend on the Culture resource) `[?]`
+- Building that changes hand size (e.g. +1 card drawn per round) `[?]`
+- Resources transformation? Like a building that transforms production into science for example
+- Card that gives a draw when expanding territory `[?]`
+- Card effects that trigger on discard / on draw, to enable combos `[?]`
 
 ## UI (`src/components/`)
 
-- **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
+- **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]) — Step 6 may unblock it. `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
-
-## Game design & balance
-
-- Card that gives a draw when expanding territory `[?]` `[phase: 4]`
-- Card effects that trigger on discard / on draw, to enable combos `[?]` `[phase: 4]`
-- **Minimum deck size — 20 cards** — enforce a floor on deck size (mirrors the existing
-  `MAX_DECKS` cap precedent — a core rule enforced at the deck writer, not just a UI gate);
-  also means adjusting `content/decks.ts`'s starter deck up to 20 cards to satisfy it.
-  `[phase: 4]`
-- **Default hand limit — 4 instead of 5** — lower the base starting hand size from 5 to 4.
-  `[phase: 4]`
 
 ## Tech debt / architecture
 
