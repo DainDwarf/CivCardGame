@@ -227,7 +227,7 @@ the meta loop to the mission they pick.
   *Economy & progression* below. ✅
 - **Persistence** — all of the above saved to localStorage/IndexedDB (one profile).
 
-### Economy & progression 🔧 (Phase 3)
+### Economy & progression ✅ (Phase 3)
 
 **Influence (⭐)** is the single meta-currency. Completing a mission for the first time pays
 a fixed, authored amount (*not* scaled by how you played); infinite missions pay by score,
@@ -356,10 +356,11 @@ src/
   `RunResult`; a **game menu** (save export/import, device-local config, a Codex rules
   reference) is the shell's global-action surface. Everything persists to `localStorage`.
   Deck construction *constraints* (size, copy/rarity limits) stay deferred to Phase 4.
-- **Phase 3 — Economy & progression:** the **Influence** currency, the shop (copy tiers +
-  stickers), the campaign-map DAG (binary missions, prereq gating), reward/unlock wiring, and
-  infinite missions. See *Economy & progression*. The per-card deck-copy cap arrives here;
-  broader deck constraints stay Phase 4.
+- **Phase 3 — Economy & progression** ✅ done, tagged [`v0.0.3`](../CHANGELOG.md): the
+  **Influence** currency, the shop (copy tiers + card *and* board stickers), the campaign-map DAG
+  (binary missions, prereq gating), reward/unlock wiring, and infinite missions — plus the
+  card-effect **resolver spine** and **event bus** underneath. See *Economy & progression*. The
+  per-card deck-copy cap arrives here; broader deck constraints stay Phase 4.
 - **Phase 4 — Content & balance:** expand cards/missions/resources; use the headless
   simulator to tune.
 

@@ -16,7 +16,7 @@ pre-built deck against a mission) and a **meta loop** (persistent deck construct
 shop, mission selection — the *only* place decks are edited). See
 [`docs/DESIGN.md`](docs/DESIGN.md) for the full game design and roadmap.
 
-**Progress.** Phases 1–2 are done; Phase 3 (economy & progression) is in progress.
+**Progress.** Phases 1–3 are done; Phase 4 (content & balance) is next.
 
 - **Phase 1 — run loop** (`src/run/`): hybrid cards (building vs. action), the turn
   lifecycle, a **population/worker-staffing** layer (buildings must be staffed to
@@ -26,7 +26,7 @@ shop, mission selection — the *only* place decks are edited). See
   (`src/meta/MetaMenu.tsx`, a left-nav shell over the Mission/Collection/Board/Decks/Stats
   screens) and a run. Deck construction (`src/meta/DeckEditor.tsx`) and `localStorage`
   persistence (`src/meta/store.ts`'s `PlayerStore`) are built.
-- **Phase 3 — economy & progression** (in progress). The systems that now exist:
+- **Phase 3 — economy & progression** (done). The systems that now exist:
   - **Ownership + Influence currency** — `rules/collection.ts`'s `OwnedCards` tracks
     ownership as identified per-copy meta instances; `PlayerStore` carries
     `collection`/`influence`/`mapProgress`, seeded from `content/collection.ts`'s

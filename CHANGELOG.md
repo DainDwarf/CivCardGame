@@ -4,6 +4,39 @@ All notable changes to CivCardGame are documented here. Loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions before 1.0 track
 development phases, not stable public releases.
 
+## [0.0.3] — 2026-07-09 — End of Phase 3: Economy & Progression
+
+Phase 3 builds the economy and progression layer on top of the two loops: card
+ownership as identified per-copy instances, an Influence currency, a copy-tier
+shop, a branching campaign-map DAG with per-mission rewards and unlocks, infinite
+missions, persistent board threats, and per-copy card stickers plus board
+stickers. Under the hood a card-effect **resolver spine** and an **event bus** now
+carry all real game behaviour behind card-owned hooks. This release captures
+everything shipped during that phase.
+
+- **Ownership & Influence currency** — the collection tracks ownership as identified per-copy instances; `PlayerStore` gains Influence, collection, and map progress, seeded from a starting collection.
+- **Deck-editor copy caps** — decks cap each card at the copies owned; not-yet-unlocked cards are hidden entirely (an unlock is meant to be a surprise).
+- **Copy-tier shop** — spend Influence to buy extra copies of owned cards up the ×1→×2→×4→×8 ladder.
+- **Mission model + campaign-map DAG** — missions form a prereq-gated tech tree; each standard mission grants a fixed Influence reward plus one card unlock on first clear.
+- **Campaign Map screen** — the mission DAG as a horizontally-scrollable, drag-to-pan branching tech tree with an age band and per-node cleared/available/locked state.
+- **Mission detail panel** — a lore + reward-preview panel opens before the board/deck launch popup; it also renders the objective and threat/event card faces a mission is about.
+- **Infinite missions** — endless, replayable missions that never win and pay Influence = rounds survived on every attempt.
+- **Board threats** — persistent, mission-seeded hazards that escalate and drain resources each upkeep; first threats: Harsh Winter, Stagnation, Creeping Decay.
+- **Card-effect resolver spine** — every card resolves through one `resolveCard` path (its own closure or the declarative default); per-copy `CardInstance` identity with per-card `counters` replaces the old effect switch.
+- **Dynamic (non-fixed) card effects** — a card can scale its effect off its own per-copy counter (Cornucopia grows +1 per play) and shows the live value at every render site.
+- **Interaction layer** — a card effect can suspend into a player choice (Foresight's peek) as plain data that survives undo/clone; card-facing peek/draw/return primitives let a card touch the deck through the spine, not raw state.
+- **Event bus / trigger layer** — a card can react to an event whose timing it doesn't own (draw, discard, resource threshold, round pass) via `CardDef.on` handlers run through the same spine.
+- **Win/lose is bus-driven** — the objective card and each threat own their own win/defeat predicate; the bus re-derives victory/defeat flags at every step boundary and the engine only reads them.
+- **Card stickers** — permanent per-copy buffs bought with Influence, up to 2 per copy, each owning its logic on its `StickerDef`; Reinforced, Efficient, Irrigation.
+- **Board stickers** — the board counterpart: permanent modifiers that tweak a board's starting profile, snapshotted into the run config at launch; Fertile Land, Garrison, Frontier.
+- **Meta UI rework** — the standalone Shop tab folds into Collection; Collection and the new Board tab share a drag-a-badge-from-the-tray-to-buy+attach gesture, driven by real card faces and reusable mini-boards.
+- **Available-upgrade hints** — a gold accent on card faces, board sticker slots, and nav badges marks where Influence can still be usefully spent right now.
+- **Stats reworked into a player profile** — lifetime headline tiles, an infinite-mission best-scores board, and a collapsed run-history log, backed by persistent lifetime counters rather than the trimmed history.
+- **Stable card ordering** — every card listing orders through one shared comparator, independent of copy count, deck membership, or discard sequence.
+- **Run-start, shuffle & staffing animations** — mission-injected cards swipe into place at run start, the deck riffles on shuffle/reshuffle, and workers fly between the population tray and staffing boxes.
+- **Removed `MissionDef.setup`/`onUpkeep`** — a mission's only behaviour now flows through the threat/event cards it seeds.
+- **Assorted bug fixes** — count-badge clipping in card grids, a white flash between the mission lore panel and the launch popup, and a save-parsing cleanup.
+
 ## [0.0.2] — 2026-07-04 — End of Phase 2: Contract + Meta Shell
 
 Phase 2 closes the loop between the run and the meta game: `contract.ts`'s
