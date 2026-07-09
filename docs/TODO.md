@@ -101,23 +101,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     *Done / shipped* below. `[size: S]` `[phase: 3]`
   - **Step 9.5 — Mission select page: boards as `BoardMini`** — ✅ done — see *Done / shipped* below.
     `[size: S]` `[phase: 3]`
-  - **Step 9.6 — Stats UI rework** — `Stats.tsx` is currently a plain list of run-result rows
-    (shell-only, shipped with Phase 2 step 6). Rework it into two sections:
-    - **Left — campaign progress** — an at-a-glance summary: one-time (`'standard'`) missions
-      cleared, cards unlocked, etc. Two different disclosure rules apply here:
-      - *Missions cleared* can be `X / Y` — the campaign map already renders locked missions as
-        silhouettes, so the total node count is already visible; a denominator leaks nothing.
-      - *Cards unlocked* must be a **bare count** ("12 cards unlocked"), never `X / N` — per
-        [[collection-hides-locked-cards]], not-yet-unlocked cards are hidden entirely and there's
-        no total-count hint (an unlock is a surprise); a denominator would leak the catalogue size.
-    - **Right — infinite-mission best scores** — a best-score list, one row per `'infinite'`
-      mission, showing the highest rounds survived. This is a **pure derivation over existing
-      data**: `RunResult` already carries `missionId` + `stats.turnsTaken` (rounds), and `Stats`
-      already receives the full `runHistory` — the list is `max(turnsTaken)` grouped by `missionId`
-      over the infinite-mission rows. No new plumbing (contract/store) needed for the score itself.
-    - **Plumbing note:** the campaign-progress section needs data `Stats` doesn't get today —
-      `mapProgress` (missions cleared) and `collection` (cards unlocked) — threaded from `App.tsx`
-      via `MetaMenu`. `[?]` `[phase: 3]`
+  - **Step 9.6 — Stats UI rework** — ✅ done — see *Done / shipped* below. `[phase: 3]`
 
 ## Phase 4 — planned steps (content & balance)
 
@@ -217,6 +201,27 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 9.6 — Stats UI rework** — reworked `Stats.tsx` from a flat run-result list into a
+  **player-profile** (the "Profile hero" layout of the three options): a hero row of four lifetime
+  headline tiles — **missions cleared `X/Y`** (standard clears / standard-mission count), **cards
+  unlocked `X/N`** (distinct `isDeckable` cardIds owned / total deckable catalogue), **Influence
+  earned** (⭐, gross-of-spending), **win rate `%`** over N runs — then the **infinite-mission
+  best-scores** board (one row per `'infinite'` mission, bar-scaled, "not attempted" until played),
+  then the run-history log collapsed under a `<details>`. **Disclosure override:** per the user,
+  `cards X/N` *does* show a denominator — disclosing the catalogue *size* (not the hidden cards'
+  identities) is a deliberate collectathon hook, so this supersedes the old "bare count" note and
+  [[collection-hides-locked-cards]]'s no-total-hint clause (identities stay hidden). **The TODO's
+  "pure derivation, no new plumbing" premise was wrong under `HISTORY_LIMIT = 10`:** every lifetime
+  aggregate — Influence earned, runs/win-rate, *and* the infinite best scores — would silently
+  undercount or *decay* once `runHistory` trims (a record set >10 runs ago drops off and the
+  displayed best decreases). So they're now **persistent counters** on `PlayerStore` —
+  `lifetime: { runsPlayed, victories, influenceEarned }` + `bestInfinite: Record<missionId, number>`
+  — folded in `store.ts`'s `applyRunResult` (the single tested pure fold; `applyRunResult` is the
+  only place Influence is *gained*, shop paths only spend). Pre-alpha: the new store shape just
+  resets saves (no migration). Threaded `App → MetaMenu → Stats` (`lifetime`/`bestInfinite`, plus the
+  already-present `mapProgress`/`collection`). New `store.test.ts` coverage (counter accumulation,
+  sticky-max `bestInfinite`); suite green (359 tests).
 
 - **Phase 3 Step 9.5 — Mission select page: boards as `BoardMini`** — the mission-flow popup's
   **'launch' step** board picker no longer lists each government as a text row (name + description +

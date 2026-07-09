@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isCompleted, isAvailable, availableMissions } from './campaign';
+import { isCompleted, isAvailable, availableMissions, standardMissionProgress } from './campaign';
 import type { MissionDef } from '../content/missions';
 
 function mission(id: string, prereqs: string[]): MissionDef {
@@ -54,5 +54,15 @@ describe('campaign', () => {
         .map((m) => m.id)
         .sort(),
     ).toEqual(['child', 'grandchild', 'root']);
+  });
+
+  it('standardMissionProgress counts cleared standard missions over the standard total, ignoring infinite ones', () => {
+    const endless: MissionDef = { ...mission('endless', []), kind: 'infinite', reward: undefined };
+    const registry = { root, child, grandchild, endless };
+    // 3 standard missions; endless is excluded from both numerator and denominator.
+    expect(standardMissionProgress(registry, {})).toEqual({ cleared: 0, total: 3 });
+    expect(standardMissionProgress(registry, { root: true, child: true })).toEqual({ cleared: 2, total: 3 });
+    // An infinite mission id in mapProgress (shouldn't happen, but be robust) never counts.
+    expect(standardMissionProgress(registry, { endless: true } as Record<string, true>)).toEqual({ cleared: 0, total: 3 });
   });
 });

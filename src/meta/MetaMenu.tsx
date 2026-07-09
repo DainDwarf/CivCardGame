@@ -8,6 +8,7 @@ import { Stats } from './Stats';
 import type { DeckDef } from '../content/decks';
 import type { RunConfig, RunResult } from '../contract';
 import type { OwnedCards } from '../rules/collection';
+import type { LifetimeStats } from './store';
 import type { BoardStickers } from '../rules/boardStickers';
 import type { BoardId } from '../content/boards';
 import styles from './MetaMenu.module.css';
@@ -40,6 +41,8 @@ export function MetaMenu({
   influence,
   mapProgress,
   boardStickers,
+  lifetime,
+  bestInfinite,
   uiScale,
   onLaunch,
   onSaveDeck,
@@ -62,6 +65,10 @@ export function MetaMenu({
   /** Board stickers attached per board — forwarded to `BoardMenu` (buy/list) and `CampaignMap` (the
    *  launch popup's board picker shows the *effective* profile). */
   boardStickers: BoardStickers;
+  /** Lifetime cumulative counters — forwarded to `Stats` for its campaign-progress summary. */
+  lifetime: LifetimeStats;
+  /** Best rounds survived per infinite mission — forwarded to `Stats` for the best-scores board. */
+  bestInfinite: Record<string, number>;
   /** Whole-UI scale (settings) — forwarded to `DeckEditor`, `BoardMenu`, and `Collection`'s detail
    *  panel (drag-clone coordinate math) and `CampaignMap` (pointer-drag pan). */
   uiScale: number;
@@ -153,7 +160,15 @@ export function MetaMenu({
             onDelete={onDeleteDeck}
           />
         )}
-        {screen === 'stats' && <Stats runHistory={runHistory} />}
+        {screen === 'stats' && (
+          <Stats
+            runHistory={runHistory}
+            collection={collection}
+            mapProgress={mapProgress}
+            lifetime={lifetime}
+            bestInfinite={bestInfinite}
+          />
+        )}
         {screen === 'deckEditor' && editingDeck && (
           <DeckEditor
             initialDeck={editingDeck}

@@ -76,6 +76,13 @@ export function stickerableInstancesOf(collection: OwnedCards, cardId: string): 
   return instancesOf(collection, cardId).filter((i) => !isStickerFull(i));
 }
 
+/** The distinct card *types* owned — one entry per unlocked `cardId`, regardless of how many copies
+ *  or stickered variants exist. The "cards unlocked" numerator the Stats screen shows (filtered to
+ *  deckable cards by its caller, since that's a content concern the core doesn't import). */
+export function distinctCardIdsOwned(collection: OwnedCards): string[] {
+  return [...new Set(collection.instances.map((i) => i.cardId))];
+}
+
 /** Resolve an instance by its id — `undefined` if not owned (e.g. a stale deck reference). */
 export function findInstance(collection: OwnedCards, instanceId: string): MetaCardInstance | undefined {
   return collection.instances.find((i) => i.id === instanceId);

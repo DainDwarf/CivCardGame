@@ -226,6 +226,8 @@ export function App() {
             influence={store.influence}
             mapProgress={store.mapProgress}
             boardStickers={store.boardStickers}
+            lifetime={store.lifetime}
+            bestInfinite={store.bestInfinite}
             uiScale={settings.uiScale}
             onLaunch={(config) => transition(() => setView({ screen: 'run', config }))}
             onSaveDeck={saveDeck}

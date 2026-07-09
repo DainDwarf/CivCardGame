@@ -81,6 +81,10 @@ shop, mission selection — the *only* place decks are edited). See
 - `npm run test:watch` — Vitest in watch mode.
 - Single test file: `npx vitest run src/rules/scoring.test.ts`
 - Tests matching a name: `npx vitest run -t "victory points"`
+- `npm run seed-save` — dev tool (`scripts/seed-save.ts`, run via `tsx`): folds a list of finished
+  runs through the real `applyRunResult` to write a populated `.civsave` (default `./seed.civsave`,
+  gitignored) for testing the meta screens without grinding. Edit `SEED_RUNS` to change its contents;
+  import it in-game via the Save menu.
 
 ## Architecture
 
@@ -314,7 +318,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `DeckListOverlay` (`components/DeckDisplay.tsx`, also used by the launch popup), with
     Edit/Copy/Delete in its `actions` slots. "New Deck" is the grid's own next slot,
     disabled once `MAX_DECKS` is hit.
-  - `Stats.tsx` — the run-history list.
+  - `Stats.tsx` — the player-profile screen: a hero row of lifetime headline tiles (missions
+    cleared `X/Y` · cards unlocked `X/N` · Influence earned · win rate), the infinite-mission
+    best-scores board, and the run-history log collapsed below. `missions X/Y` and `cards X/N`
+    both show a denominator deliberately (the catalogue *size* is a collectathon hook, not a
+    hidden-card leak). Its lifetime numbers come from persistent `PlayerStore` counters
+    (`lifetime`, `bestInfinite`), folded in `store.ts`'s `applyRunResult` — **never** derived from
+    `runHistory`, which is capped at `HISTORY_LIMIT` and would undercount/decay once trimmed.
 
   `DeckEditor.tsx` (opened from `Decks.tsx`, not a nav tab) edits one `DeckDef` in place — a
   picker grid (grouped by kind) above a deck banner; cards move by click or the same

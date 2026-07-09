@@ -37,6 +37,8 @@ function sampleStore(): PlayerStore {
     collection,
     mapProgress: { enlightenment: true },
     boardStickers: {},
+    lifetime: { runsPlayed: 1, victories: 1, influenceEarned: 3 },
+    bestInfinite: {},
   };
 }
 
@@ -183,5 +185,37 @@ describe('applyRunResult', () => {
     store = applyRunResult(store, runResult('toto', 'defeat', 8), infiniteMission());
     expect(store.mapProgress.toto).toBeUndefined();
     expect(store.influence).toBe(3 + 5 + 8);
+  });
+
+  it('accumulates lifetime counters — every run counts, only victories bump victories, influenceEarned tracks gross gains', () => {
+    let store = sampleStore(); // starts at runsPlayed 1, victories 1, influenceEarned 3
+    store = applyRunResult(store, runResult('std', 'victory', 12), standardMission()); // +1 run, +1 win, +2 influence
+    store = applyRunResult(store, runResult('std', 'defeat', 3), standardMission()); // +1 run, already cleared → +0 influence
+    store = applyRunResult(store, runResult('toto', 'defeat', 9), infiniteMission()); // +1 run, +9 influence
+    expect(store.lifetime.runsPlayed).toBe(4);
+    expect(store.lifetime.victories).toBe(2);
+    expect(store.lifetime.influenceEarned).toBe(3 + 2 + 0 + 9);
+  });
+
+  it('influenceEarned counts gross gains even though spending is not modeled here — it only ever grows', () => {
+    const store = sampleStore();
+    const next = applyRunResult(store, runResult('toto', 'defeat', 7), infiniteMission());
+    expect(next.lifetime.influenceEarned).toBe(store.lifetime.influenceEarned + 7);
+  });
+
+  it('bestInfinite keeps the per-mission max and never decreases when a later attempt scores lower', () => {
+    let store = sampleStore();
+    store = applyRunResult(store, runResult('toto', 'defeat', 8), infiniteMission());
+    expect(store.bestInfinite.toto).toBe(8);
+    store = applyRunResult(store, runResult('toto', 'victory', 15), infiniteMission());
+    expect(store.bestInfinite.toto).toBe(15);
+    store = applyRunResult(store, runResult('toto', 'defeat', 4), infiniteMission()); // worse attempt
+    expect(store.bestInfinite.toto).toBe(15); // best is sticky — this is the whole point vs. a runHistory scan
+  });
+
+  it('a standard mission never records a bestInfinite entry', () => {
+    const store = sampleStore();
+    const next = applyRunResult(store, runResult('std', 'victory', 12), standardMission());
+    expect(next.bestInfinite.std).toBeUndefined();
   });
 });

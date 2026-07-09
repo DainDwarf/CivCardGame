@@ -8,6 +8,7 @@ import {
   findInstance,
   isStickerFull,
   stickerableInstancesOf,
+  distinctCardIdsOwned,
 } from './collection';
 import { STARTING_COLLECTION } from '../content/collection';
 import { DEFAULT_DECKS } from '../content/decks';
@@ -47,6 +48,17 @@ describe('grantCopies', () => {
     const collection = emptyCollection();
     grantCopies(collection, 'farm', 2);
     expect(collection.instances).toEqual([]);
+  });
+});
+
+describe('distinctCardIdsOwned', () => {
+  it('collapses multiple copies of a card to a single id (counts card types, not copies)', () => {
+    const collection = collectionFromCounts({ farm: 3, house: 1 });
+    expect(distinctCardIdsOwned(collection).sort()).toEqual(['farm', 'house']);
+  });
+
+  it('is empty for a fresh collection', () => {
+    expect(distinctCardIdsOwned(emptyCollection())).toEqual([]);
   });
 });
 

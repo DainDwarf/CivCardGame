@@ -24,7 +24,20 @@ export interface PlayerStore {
   /** Board stickers attached per board (`rules/boardStickers.ts`) — permanent modifiers bought with
    *  Influence, snapshotted into `RunConfig.boardStickers` at launch. A board with none is absent. */
   boardStickers: BoardStickers;
+  /** Lifetime cumulative counters kept as running totals — deliberately *not* derived from
+   *  `runHistory`, which is capped at `HISTORY_LIMIT` and would silently undercount once trimmed.
+   *  `influenceEarned` is gross Influence *gained* (the sum of every `applyRunResult` payout),
+   *  ignoring shop spending — so it only ever grows. Feeds the Stats screen's profile summary. */
+  lifetime: { runsPlayed: number; victories: number; influenceEarned: number };
+  /** Best rounds survived per `'infinite'` mission — a persistent per-mission max folded in
+   *  `applyRunResult`. Persistent for the same reason as `lifetime`: a record set more than
+   *  `HISTORY_LIMIT` runs ago must not fall off the capped `runHistory` and make the displayed
+   *  best *decrease*. A mission never yet played is absent. */
+  bestInfinite: Record<string, number>;
 }
+
+/** The lifetime-counter bundle, shared with the Stats screen that renders it. */
+export type LifetimeStats = PlayerStore['lifetime'];
 
 const STORAGE_KEY = 'civcardgame:player-store';
 
@@ -41,6 +54,8 @@ export function emptyStore(): PlayerStore {
     collection,
     mapProgress: {},
     boardStickers: {},
+    lifetime: { runsPlayed: 0, victories: 0, influenceEarned: 0 },
+    bestInfinite: {},
   };
 }
 
@@ -67,6 +82,16 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
   if (!Array.isArray(collectionObj.instances) || typeof collectionObj.nextId !== 'number') return null;
   if (!obj.mapProgress || typeof obj.mapProgress !== 'object') return null;
   if (!obj.boardStickers || typeof obj.boardStickers !== 'object') return null;
+  if (!obj.lifetime || typeof obj.lifetime !== 'object') return null;
+  const lifetime = obj.lifetime as Record<string, unknown>;
+  if (
+    typeof lifetime.runsPlayed !== 'number' ||
+    typeof lifetime.victories !== 'number' ||
+    typeof lifetime.influenceEarned !== 'number'
+  ) {
+    return null;
+  }
+  if (!obj.bestInfinite || typeof obj.bestInfinite !== 'object') return null;
   const collection = obj.collection as OwnedCards;
   const decks = Array.isArray(obj.decks) ? (obj.decks as DeckDef[]) : buildSeedDecks(DEFAULT_DECKS, collection);
   return {
@@ -76,6 +101,8 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
     collection,
     mapProgress: obj.mapProgress as Record<string, true>,
     boardStickers: obj.boardStickers as BoardStickers,
+    lifetime: obj.lifetime as PlayerStore['lifetime'],
+    bestInfinite: obj.bestInfinite as Record<string, number>,
   };
 }
 
@@ -112,6 +139,13 @@ export const HISTORY_LIMIT = 10;
  * = rounds survived on *every* attempt, win or lose. `alreadyCompleted` is read from
  * `store.mapProgress` as it stood before this result, so a first clear is never masked by
  * its own just-applied update.
+ *
+ * Also folds the persistent lifetime aggregates the Stats screen reads (`lifetime`,
+ * `bestInfinite`) — running totals rather than derivations, since `runHistory` is capped at
+ * `HISTORY_LIMIT`. Every run increments `lifetime.runsPlayed`, a victory bumps `victories`, and
+ * whatever Influence this run paid is added to `influenceEarned` (gross-of-spending). An infinite
+ * mission additionally raises its `bestInfinite[missionId]` to the max of the old best and this
+ * attempt's rounds survived.
  */
 export function applyRunResult(store: PlayerStore, result: RunResult, mission: MissionDef): PlayerStore {
   const infinite = mission.kind === 'infinite';
@@ -125,12 +159,25 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
     : result.outcome === 'victory'
       ? computeRewards(mission, alreadyCompleted, store.collection)
       : { influence: 0, collection: store.collection };
+  const lifetime = {
+    runsPlayed: store.lifetime.runsPlayed + 1,
+    victories: store.lifetime.victories + (result.outcome === 'victory' ? 1 : 0),
+    influenceEarned: store.lifetime.influenceEarned + influence,
+  };
+  const bestInfinite = infinite
+    ? {
+        ...store.bestInfinite,
+        [result.missionId]: Math.max(store.bestInfinite[result.missionId] ?? 0, result.stats.turnsTaken),
+      }
+    : store.bestInfinite;
   return {
     ...store,
     runHistory: [result, ...store.runHistory].slice(0, HISTORY_LIMIT),
     mapProgress,
     influence: store.influence + influence,
     collection,
+    lifetime,
+    bestInfinite,
   };
 }
 

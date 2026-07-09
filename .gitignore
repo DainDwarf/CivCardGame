@@ -4,6 +4,9 @@ dist-ssr
 *.local
 .vite
 
+# Generated dev saves (npm run seed-save)
+*.civsave
+
 # Editor / OS
 .DS_Store
 .idea
