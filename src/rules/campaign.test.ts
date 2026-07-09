@@ -7,7 +7,6 @@ function mission(id: string, prereqs: string[]): MissionDef {
     id,
     name: id,
     lore: '',
-    description: '',
     prereqs,
     objectiveCardId: 'long_winter_goal',
     victoryHint: '',

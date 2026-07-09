@@ -14,10 +14,8 @@ export interface MissionDef {
   id: string;
   name: string;
   /** Narrative flavour text — the bulk of the mission detail panel
-   *  (`meta/CampaignMap.tsx`'s `MissionFlowPopup`, 'detail' step). Distinct from `description`, which
-   *  states the mechanical objective. */
+   *  (`meta/CampaignMap.tsx`'s `MissionFlowPopup`, 'detail' step). */
   lore: string;
-  description: string;
   /** Mission ids that must be completed (see `rules/campaign.ts`) before this one is
    *  available. Empty = a DAG root, always available. */
   prereqs: string[];
@@ -67,7 +65,6 @@ export const MISSIONS: Record<string, MissionDef> = {
       'Salons and printing presses spread new ideas faster than any army could march. ' +
       'Scholars who once worked in isolation now trade letters across borders, and a citizenry ' +
       'that can read starts asking its rulers harder questions.',
-    description: 'Reach 30 Science by the end of round 12.',
     // Test DAG: gated behind The Long Winter.
     prereqs: ['long_winter'],
     // The round-12 deadline is a real threat card (Stagnation) — it renders the visible countdown
@@ -89,8 +86,6 @@ export const MISSIONS: Record<string, MissionDef> = {
       'The sky has not cleared in months. Rivers freeze over, game vanishes from the woods, ' +
       'and every granary in the settlement is being watched a little too closely. Your people ' +
       'do not need conquest or invention right now — they need to survive until spring.',
-    description:
-      'Endure 15 rounds of brutal winters. Each round drains 2 extra Food on top of your population — keep famine at bay.',
     // DAG root: always available, unlocks enlightenment/barbarian_tide.
     prereqs: [],
     // The 2-extra-Food-per-round drain is a real threat card (Harsh Winter) — it ticks via the
@@ -111,8 +106,6 @@ export const MISSIONS: Record<string, MissionDef> = {
       'Riders have been seen on the horizon — first scouts, then whole warbands, drawn by ' +
       'rumors of your granaries and gold. They do not come all at once; they come in waves, ' +
       'testing your walls each time before falling back to gather strength for the next.',
-    description:
-      `Four waves of Barbarians are hidden in your deck. Each one you draw strikes at the end of the round — draining 4 Military — then is gone. Build up your Military and survive all ${BARBARIANS} to win; let it fall below zero and your civilization is overrun.`,
     prereqs: ['long_winter'],
     events: Array(BARBARIANS).fill('barbarian'),
     objectiveCardId: 'barbarian_tide_goal',
@@ -131,10 +124,6 @@ export const MISSIONS: Record<string, MissionDef> = {
       'imperceptibly, to crumble — a beam here, a bridge there — and no council session ever ' +
       'votes to let it happen. It simply does. There is no enemy at the gate; the rot is already ' +
       'inside the walls, and it never stops getting worse.',
-    description:
-      'There is no victory here — only how long you can outlast it. Creeping Decay drains a ' +
-      'little more Production every round, forever. Survive as many rounds as you can before ' +
-      'your economy collapses into ruin.',
     prereqs: [],
     threats: ['creeping_decay'],
     // Never wins on its own — an 'infinite' mission has no fixed win state (its objective card's

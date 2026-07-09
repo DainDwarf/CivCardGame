@@ -434,7 +434,7 @@ export const CARDS: Record<string, CardDef> = {
   },
   the_long_decline_goal: {
     id: 'the_long_decline_goal', name: 'The Long Decline', kind: 'objective', cost: {},
-    description: 'There is no victory — only how many rounds you can outlast the decay.',
+    description: 'Each turn survived rewards you one more Influence.',
     objective: () => false,
     dynamicText: (G) => `Round ${G.round}`,
   },

@@ -176,39 +176,37 @@ interface CardFaceCommonProps {
   onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
-export type CardFaceProps =
-  | (CardFaceCommonProps & {
-      card: CardDef;
-      faceDown?: false;
-      /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile
-       *  viewer, Collection / deck editor picker showing copies owned). Suppressed at
-       *  exactly 1 unless `alwaysShowBadge` opts in — a lone card in a stack doesn't need
-       *  a "×1", but the deck editor picker's *remaining-copies* badge does (1 left to add
-       *  is still worth stating), so it sets that flag explicitly. */
-      countBadge?: number;
-      /** Shows `countBadge` even when it's exactly `1` (or `0`) instead of only `> 1`. See
-       *  `countBadge`'s doc for why the deck editor picker needs this and stack-count badges
-       *  elsewhere don't. */
-      alwaysShowBadge?: boolean;
-      /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
-       *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
-      badgeClassName?: string;
-      /** A bottom-left row of small circular badges for a *stickered* meta card instance —
-       *  the attached sticker id(s), one circle per entry, each showing
-       *  that sticker's own icon glyph and its name as a hover title; a duplicate id
-       *  (a stacked sticker) renders as two circles, so the row itself hints at the stack.
-       *  Sticker name/effect text still lives in the caller's own row/panel (e.g.
-       *  `CardInstancePanel`) for anything beyond this hover title. Absent/empty for a plain
-       *  copy. */
-      stickerBadge?: string[];
-    })
-  | (CardFaceCommonProps & {
-      /** Renders a grey face-down back instead of a real card — the same header/banner/
-       *  description band layout as a real face, all blank, plus a "?" glyph — the pre-clear
-       *  stand-in for a mission's still-secret unlock (`CampaignMap.tsx`'s `MissionFlowPopup`),
-       *  since there's no `CardDef` to show yet. No `card`/badge props apply in this mode. */
-      faceDown: true;
-    });
+export interface CardFaceProps extends CardFaceCommonProps {
+  card: CardDef;
+  /** Renders the same header/banner/description band layout as a real face, but blank except
+   *  the name — the pre-clear stand-in for a mission's still-secret unlock
+   *  (`CampaignMap.tsx`'s `MissionFlowPopup`). The card is real (`card.name` is the actual
+   *  unlock), so this is a display mode, not a missing-data placeholder: a deliberate sliver
+   *  of information (the name), everything else (cost/kind/effect) genuinely withheld. Badge/
+   *  sticker props are ignored in this mode. */
+  missionLocked?: boolean;
+  /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile
+   *  viewer, Collection / deck editor picker showing copies owned). Suppressed at
+   *  exactly 1 unless `alwaysShowBadge` opts in — a lone card in a stack doesn't need
+   *  a "×1", but the deck editor picker's *remaining-copies* badge does (1 left to add
+   *  is still worth stating), so it sets that flag explicitly. */
+  countBadge?: number;
+  /** Shows `countBadge` even when it's exactly `1` (or `0`) instead of only `> 1`. See
+   *  `countBadge`'s doc for why the deck editor picker needs this and stack-count badges
+   *  elsewhere don't. */
+  alwaysShowBadge?: boolean;
+  /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
+   *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
+  badgeClassName?: string;
+  /** A bottom-left row of small circular badges for a *stickered* meta card instance —
+   *  the attached sticker id(s), one circle per entry, each showing
+   *  that sticker's own icon glyph and its name as a hover title; a duplicate id
+   *  (a stacked sticker) renders as two circles, so the row itself hints at the stack.
+   *  Sticker name/effect text still lives in the caller's own row/panel (e.g.
+   *  `CardInstancePanel`) for anything beyond this hover title. Absent/empty for a plain
+   *  copy. */
+  stickerBadge?: string[];
+}
 
 /**
  * The visual face of a card — the single shared component behind every card rendering in the
@@ -216,25 +214,25 @@ export type CardFaceProps =
  * preview (all in `Board.tsx`), and the deck editor's picker/banner tiles. Owns its *complete*
  * visual — outer box, kind-coloured border/bands, and inner content — in one CSS module, so
  * kind-coloring (which relies on descendant selectors reaching from the root into inner spans)
- * never depends on some other component supplying the right ancestor class. `faceDown` renders
- * the same outer box grey with a bare "?" instead, for when there's no `CardDef` to show yet
+ * never depends on some other component supplying the right ancestor class. `missionLocked`
+ * renders the same outer box grey with a bare "?" instead, showing only the real card's name
  * (a mission's still-secret unlock).
  */
 export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceProps>(function CardFace(
   props,
   ref,
 ) {
-  const { className, style, as = 'div', title, overrideText, onPointerDown, onClick } = props;
+  const { className, style, as = 'div', title, overrideText, onPointerDown, onClick, card, missionLocked } = props;
 
-  if (props.faceDown) {
+  if (missionLocked) {
     const rootClassName = `${styles.card} ${styles.faceDown}${className ? ` ${className}` : ''}`;
     // Same band layout as a real face (name/cost header, type banner, description footer) so
-    // the silhouette reads as "a card" — just blank grey, since there's no CardDef yet to
-    // supply real text for any of them.
+    // the silhouette reads as "a card" — just blank grey but for the real name, everything else
+    // (cost/kind/effect) genuinely withheld.
     const inner = (
       <>
         <div className={styles.cardTop}>
-          <span className={styles.cardName}>&nbsp;</span>
+          <span className={styles.cardName}>{card.name}</span>
           <span className={styles.cardCost}>&nbsp;</span>
         </div>
         <div className={styles.cardBanner}>&nbsp;</div>
@@ -273,7 +271,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
     );
   }
 
-  const { card, countBadge, alwaysShowBadge, badgeClassName, stickerBadge } = props;
+  const { countBadge, alwaysShowBadge, badgeClassName, stickerBadge } = props;
   const text = overrideText ?? describeCard(card);
   const conditions = describeConditions(card);
   const banner = cardBanner(card);

@@ -224,6 +224,10 @@
 }
 
 .popupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.25rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border-divider);
@@ -232,19 +236,13 @@
 .popupTitle {
   font-size: 1.5rem;
   font-weight: 800;
-  margin: 0 0 0.4rem;
-}
-
-.popupDesc {
-  margin: 0 0 0.5rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
+  margin: 0;
 }
 
 .popupHints {
   margin: 0 0 0.3rem;
-  font-size: 0.9rem;
-  color: var(--text-muted);
+  line-height: 1.6;
+  color: var(--text);
 }
 
 .pickers {
@@ -269,8 +267,9 @@
 
 .loreText {
   margin: 0 0 0.9rem;
-  line-height: 1.6;
-  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-muted);
 }
 
 .loreCards {
@@ -289,7 +288,7 @@
 }
 
 .rewardInfluence {
-  margin: 0;
+  margin: 0 0 0.6rem;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--accent);
@@ -396,29 +395,8 @@
   margin-left: 0.4rem;
 }
 
-.popupFooter {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.8rem;
-  margin-top: 1.75rem;
-}
-
-.cancelBtn {
-  padding: 0.8rem 1.6rem;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text);
-  background: var(--chip-bg);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.cancelBtn:hover {
-  background: var(--nav-item-hover);
-}
-
 .startBtn {
+  flex: none;
   padding: 0.8rem 2.2rem;
   font-size: 1rem;
   font-weight: 700;

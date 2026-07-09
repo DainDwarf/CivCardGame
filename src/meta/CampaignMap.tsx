@@ -235,10 +235,11 @@ export function CampaignMap({
  * **Detail step** — lore, the mechanical explanation (objective/failure hints), and a reward
  * preview. A `'standard'` mission shows Influence (struck through once already claimed) and the
  * unlock — the real card face once cleared (under a "Cards already unlocked" subtitle), or
- * `CardFace`'s `faceDown` mode beforehand, since which card a mission grants stays a surprise until
- * it's actually cleared (see `rules/rewards.ts`). An `'infinite'` mission has neither a fixed
- * Influence amount nor an unlock — it scores rounds survived every attempt — so it gets its own
- * reward line instead.
+ * `CardFace`'s `missionLocked` mode beforehand (the real `unlockCard` passed in, but rendered
+ * blank but for its name — a deliberate sliver of information, since which card a mission grants
+ * otherwise stays a surprise until it's actually cleared; see `rules/rewards.ts`). An `'infinite'`
+ * mission has neither a fixed Influence amount nor an unlock — it scores rounds survived every
+ * attempt — so it gets its own short "Influence" / "No Unlock" reward line instead.
  *
  * **Launch step** — a board picker on the left, a deck picker on the right (lore/reward already
  * shown in the detail step). Nothing is pre-selected; "Start Mission" stays disabled until the
@@ -300,16 +301,29 @@ function MissionFlowPopup({
         <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
           <div className={styles.popupHeader}>
             <h2 className={styles.popupTitle}>{mission.name}</h2>
+            {step === 'detail' ? (
+              <button type="button" className={styles.startBtn} onClick={onContinue}>
+                Continue
+              </button>
+            ) : (
+              <button type="button" className={styles.startBtn} onClick={start} disabled={!canStart}>
+                Start Mission
+              </button>
+            )}
           </div>
 
           {step === 'detail' ? (
             <div className={styles.detailBody}>
               <div className={styles.loreColumn}>
                 <p className={styles.loreText}>{mission.lore}</p>
-                <p className={styles.popupDesc}>{mission.description}</p>
                 <p className={styles.popupHints}>
                   🏆 {mission.victoryHint}
-                  {mission.failureHint && <> · 💀 {mission.failureHint}</>}
+                  {mission.failureHint && (
+                    <>
+                      <br />
+                      💀 {mission.failureHint}
+                    </>
+                  )}
                 </p>
                 <div className={styles.loreCards}>
                   <CardFace
@@ -332,8 +346,8 @@ function MissionFlowPopup({
                 <h3 className={styles.pickerTitle}>Reward</h3>
                 {infinite ? (
                   <>
-                    <p className={styles.rewardInfluence}>⭐ Influence = rounds survived</p>
-                    <span className={styles.rewardSubtitle}>No unlock — paid every attempt</span>
+                    <p className={styles.rewardInfluence}>⭐ Influence</p>
+                    <span className={styles.rewardSubtitle}>No Unlock</span>
                   </>
                 ) : (
                   <>
@@ -351,7 +365,7 @@ function MissionFlowPopup({
                           onClick={() => setZoomCardId(unlockCard!.id)}
                         />
                       ) : (
-                        <CardFace faceDown />
+                        <CardFace card={unlockCard!} missionLocked />
                       )}
                     </div>
                   </>
@@ -413,21 +427,6 @@ function MissionFlowPopup({
               </section>
             </div>
           )}
-
-          <div className={styles.popupFooter}>
-            <button type="button" className={styles.cancelBtn} onClick={onCancel}>
-              Cancel
-            </button>
-            {step === 'detail' ? (
-              <button type="button" className={styles.startBtn} onClick={onContinue}>
-                Continue
-              </button>
-            ) : (
-              <button type="button" className={styles.startBtn} onClick={start} disabled={!canStart}>
-                Start Mission
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
