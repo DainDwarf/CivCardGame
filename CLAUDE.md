@@ -110,14 +110,23 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `blankState()` builds an empty one. Instance ids are unique across *all* zones.
   - `resources.ts` — the `Resources` bundle and its arithmetic (`add`/`subtract`/`scaleResources`).
   - `deck.ts` — draw + discard-pile reshuffle, both off the seeded RNG stream (`G.rngState`).
+    Also the **card-facing deck primitives** a peek/draw-manipulation card resolves *through* instead
+    of touching `G.deck`/`G.hand`/`G.rngState` itself (the deck counterpart to `gainResources`):
+    `peekTop` (lift up to N off the top, reshuffling the discard in as the deck empties, emitting no
+    `draw`), `drawInstance` (draw one *specific* card — the verb `drawCard`'s top-of-deck-only can't
+    express — emitting the `draw` event), and `returnToDeck` (shuffle cards back). Each takes the
+    `EffectContext` so the family reads uniformly; only Foresight uses them today.
   - `effects.ts` — the **resolver spine**: `resolveCard(ctx)` is the single path a card's
     effect runs through (its own `CardDef.resolve`, else the declarative default from the
     `CardEffect` bag). The `EffectContext` (`{ G, self, target?, answer? }`) tells an effect
     which copy is resolving and what it targets (a Destroy demolition is just `ctx.target`).
     `resolveProduction(ctx)` is production's narrower counterpart — recurring per-round, so
     it deliberately omits the one-shot play fields.
-    An interactive effect suspends into `pendingInteraction` and re-enters via
-    `moves.resolveInteraction` — all plain data, so undo/clone survive.
+    An interactive effect suspends into `pendingInteraction` — via `suspendChoice(ctx, …)`, the one
+    place a resolver opens one (built from `ctx.self`) — and re-enters via `moves.resolveInteraction`;
+    all plain data, so undo/clone survive. Together with the `deck.ts` primitives this makes the spine
+    a **two-way street**: it dispatches a card *and* lends it the vocabulary to affect `G`, so no
+    resolver hand-rolls raw state surgery (the boundary Foresight used to break).
   - `events.ts` — the **event bus**: the general trigger layer letting a card react to an event
     whose *timing it doesn't own* (a draw, a discard elsewhere, a resource crossing a threshold, or
     a round passing) via a `CardDef.on?: { draw?/discard?/resourceChange?/endTurn? }` handler — run

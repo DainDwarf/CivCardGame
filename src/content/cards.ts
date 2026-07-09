@@ -1,8 +1,7 @@
 import { scaleResources, subtractResources, type Resources } from '../rules/resources';
 import { bumpCounter, getCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
-import { shuffleFromState } from '../rules/rng';
-import { emitEvent } from '../rules/events';
-import { gainResources, type CardEffect, type Resolver } from '../rules/effects';
+import { drawInstance, peekTop, returnToDeck } from '../rules/deck';
+import { gainResources, suspendChoice, type CardEffect, type Resolver } from '../rules/effects';
 import { effectiveGain } from '../rules/stickers';
 
 export type CardKind = 'building' | 'action' | 'work' | 'event' | 'threat' | 'objective';
@@ -65,6 +64,14 @@ export interface CardDef {
    *  face, since there's no data bag to auto-render. Lives on the static catalogue, never in
    *  `GameState` — see `rules/effects.ts`'s `EffectContext`. */
   resolve?: Resolver;
+  /**
+   * How many cards this card reveals off the draw pile when played (a peek card — e.g. Foresight's 3).
+   * A declarative descriptor that drives *two* things so they can't drift: the resolver reads it for
+   * its `peekTop` count, and `rules/playability.ts`'s `unplayableReason` gates the card as
+   * `emptyDrawPile` when both draw and discard piles are empty (nothing to reveal) — the same
+   * dual-purpose pattern as `effect.destroy` (which both demolishes and drives `noBuildingsToDestroy`).
+   */
+  revealsFromDeck?: number;
   /**
    * Bespoke per-round production behavior for a `building`/`work` card whose output isn't fully
    * described by `produces`/`cultureOutput`/`effect.gain` (e.g. a future scaling building reading
@@ -243,47 +250,41 @@ export const CARDS: Record<string, CardDef> = {
   // Foresight: the first *interactive* card — its effect suspends mid-resolution for a player choice.
   // Reveals the top 3 of the draw pile, you draw 1, the rest shuffle back. The two-branch resolver
   // (keyed on `answer === undefined`) parks the revealed cards in G.pendingInteraction on the first
-  // pass and completes on resume; see rules/state.ts's PendingInteraction.
-  foresight: {
-    id: 'foresight', name: 'Foresight', kind: 'action', cost: { science: 1 },
-    description: 'Peek the top 3 cards; draw 1, shuffle the rest back',
-    resolve: (ctx) => {
-      const { G } = ctx;
-      if (ctx.answer === undefined) {
-        // Reveal: lift up to 3 off the top of the draw pile into a choice tray. Removing them (not
-        // merely reading) makes GameContext's !sameDeck reveal-boundary fire, clearing the undo
-        // stack so the peek can't be un-seen. An empty draw pile fizzles (no discard reshuffle here).
-        const options = G.deck.slice(0, 3);
-        if (options.length === 0) return;
-        G.deck = G.deck.slice(options.length);
-        G.pendingInteraction = {
-          cardId: ctx.self.cardId,
-          instanceId: ctx.self.id,
-          kind: 'chooseCard',
-          prompt: 'Draw one — the rest shuffle back',
-          options,
-          pick: 1,
-        };
-        return;
-      }
-      // Resume: `answer` is the chosen index (0 is valid — hence `=== undefined` above). Draw it; the
-      // rest return to the deck, which then reshuffles deterministically from the run's RNG stream.
-      const pending = G.pendingInteraction;
-      if (!pending) return;
-      const chosen = pending.options[ctx.answer];
-      if (chosen !== undefined) {
-        G.hand.push(chosen);
-        // Foresight draws a *chosen* card, not the top of the deck, so it can't route through
-        // `drawCard` — emit the `draw` event itself (an effect-caused draw, so on-draw observers fire).
-        emitEvent(G, { type: 'draw', instanceId: chosen.id, cardId: chosen.cardId, source: 'effect' });
-      }
-      const rest = pending.options.filter((_, i) => i !== ctx.answer);
-      const { result, rngState } = shuffleFromState([...rest, ...G.deck], G.rngState);
-      G.deck = result;
-      G.rngState = rngState;
-      G.pendingInteraction = null;
-    },
-  },
+  // pass and completes on resume; see rules/state.ts's PendingInteraction. The whole thing is pure
+  // *intent*: it touches no `G.deck`/`G.hand`/`G.rngState`/`pendingInteraction` directly, only the
+  // card-facing spine primitives (peekTop/suspendChoice/drawInstance/returnToDeck) — the reveal
+  // count `reveals` (shared with `revealsFromDeck`, an IIFE-captured single source like Cornucopia's
+  // `base`) gates the card as unplayable when both piles are empty, so `peekTop` always sees >= 1 card.
+  foresight: ((): CardDef => {
+    const reveals = 3;
+    return {
+      id: 'foresight', name: 'Foresight', kind: 'action', cost: { science: 1 },
+      revealsFromDeck: reveals,
+      description: 'Peek the top 3 cards; draw 1, shuffle the rest back',
+      resolve: (ctx) => {
+        if (ctx.answer === undefined) {
+          // Reveal: lift up to `reveals` off the top into a choice tray (peekTop reshuffles the
+          // discard in as needed and its removal fires GameContext's reveal-boundary, clearing undo).
+          suspendChoice(ctx, {
+            kind: 'chooseCard',
+            prompt: 'Draw one — the rest shuffle back',
+            options: peekTop(ctx, reveals),
+            pick: 1,
+          });
+          return;
+        }
+        // Resume: `answer` is the chosen index (0 is valid — hence `=== undefined` above). Draw it; the
+        // rest shuffle back deterministically from the run's RNG stream.
+        const pending = ctx.G.pendingInteraction;
+        if (!pending) return;
+        const chosen = pending.options[ctx.answer];
+        const rest = pending.options.filter((_, i) => i !== ctx.answer);
+        if (chosen !== undefined) drawInstance(ctx, chosen);
+        returnToDeck(ctx, rest);
+        ctx.G.pendingInteraction = null; // resolver still owns clearing the interaction on resume
+      },
+    };
+  })(),
 
   // --- Work cards: stick onto the board as a staffable box; produce only while staffed,
   //     then recycle to the discard at end of turn. ---

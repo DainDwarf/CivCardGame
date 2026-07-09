@@ -16,6 +16,7 @@ export type UnplayableReason =
   | { kind: 'cultureLevel'; required: number }
   | { kind: 'territory' }
   | { kind: 'noBuildingsToDestroy' }
+  | { kind: 'emptyDrawPile' }
   | { kind: 'event' };
 
 /** Why `card` cannot be played right now, or null if it can. `self` is the exact hand instance
@@ -37,5 +38,8 @@ export function unplayableReason(G: GameState, card: CardDef, self: CardInstance
     return { kind: 'cultureLevel', required: card.cultureLevelReq };
   if (card.kind === 'building' && freeTerritory(G) <= 0) return { kind: 'territory' };
   if (card.effect?.destroy && G.tableau.length === 0) return { kind: 'noBuildingsToDestroy' };
+  // A peek card (revealsFromDeck) has nothing to reveal when both draw and discard piles are empty —
+  // gate it rather than let it fizzle for its cost (mirrors the noBuildingsToDestroy precedent above).
+  if (card.revealsFromDeck && G.deck.length + G.discard.length === 0) return { kind: 'emptyDrawPile' };
   return null;
 }

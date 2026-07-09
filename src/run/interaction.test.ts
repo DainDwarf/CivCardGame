@@ -79,12 +79,24 @@ describe('Foresight (interactive peek) — suspend/resume', () => {
     expect(clone.pendingInteraction).toBeNull();
   });
 
-  it('fizzles (no interaction) on an empty draw pile, still paying and discarding', () => {
+  it('is unplayable when both draw and discard piles are empty — no cards to reveal', () => {
     const G = freshWithForesight();
     G.deck = [];
-    playCard(G, 0);
+    G.discard = [];
+    // The emptyDrawPile gate rejects the play outright instead of letting it fizzle for its cost.
+    expect(playCard(G, 0)).toBe('invalid');
+    expect(G.hand.map((c) => c.cardId)).toEqual(['foresight']); // still in hand, untouched
+    expect(G.resources.science).toBe(1); // cost not paid
     expect(G.pendingInteraction).toBeNull();
-    expect(G.discard.map((c) => c.cardId)).toEqual(['foresight']);
-    expect(G.resources.science).toBe(0);
+  });
+
+  it('reshuffles the discard in to still reveal up to 3 when the deck is short', () => {
+    const G = freshWithForesight();
+    G.deck = instancesFromCardIds(['a'], 10);
+    G.discard = instancesFromCardIds(['b', 'c'], 20); // filed before Foresight itself files
+    playCard(G, 0);
+    // peekTop lifted 'a', then reshuffled ['b','c'] in to fill the tray to 3.
+    expect(G.pendingInteraction?.options).toHaveLength(3);
+    expect(G.pendingInteraction?.options.map((c) => c.cardId).sort()).toEqual(['a', 'b', 'c']);
   });
 });

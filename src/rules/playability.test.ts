@@ -45,6 +45,22 @@ describe('unplayableReason', () => {
     expect(unplayableReason(G, card, self)).toEqual({ kind: 'noBuildingsToDestroy' });
   });
 
+  it('gates a peek card (revealsFromDeck) when both draw and discard piles are empty', () => {
+    const G = blankState('enlightenment');
+    G.deck = [];
+    G.discard = [];
+    const card: CardDef = { ...baseCard, revealsFromDeck: 3 };
+    expect(unplayableReason(G, card, self)).toEqual({ kind: 'emptyDrawPile' });
+  });
+
+  it('leaves a peek card playable while any card remains in either pile', () => {
+    const G = blankState('enlightenment');
+    G.deck = [];
+    G.discard = [{ id: 1, cardId: 'farm' }]; // one card left to reshuffle in and reveal
+    const card: CardDef = { ...baseCard, revealsFromDeck: 3 };
+    expect(unplayableReason(G, card, self)).toBeNull();
+  });
+
   it('never lets an event card be played — it auto-resolves at end of turn instead', () => {
     const G = blankState('barbarian_tide');
     // Affordable and otherwise unconstrained, but the event gate takes precedence.

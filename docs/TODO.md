@@ -145,7 +145,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]` `[phase: 4]`
 - Resources transformation? Like a building that transforms production into science for example `[phase: 4]`
 - **Age tag on cards** — tag each card with the age it unlocks in, so the player can sort/filter by age `[?]` `[phase: 4]`
-- **Foresight corner case: empty draw pile silently wastes the card** — `content/cards.ts`'s Foresight resolver does `G.deck.slice(0, 3)` and bails on `length === 0` without reshuffling, so playing it with an empty deck (but a full discard) pays its 1🌾science, files to discard, and does *nothing* — no peek, no feedback — contradicting its own "Peek the top 3" text. `unplayableReason` (`rules/playability.ts`) has no draw-pile gate, so nothing stops the play. Fix depends on the eager-reshuffle item above (once `G.deck` is empty only when the discard is too, Foresight's `slice` sees the real pile); then **also handle the deck-AND-discard-both-empty case** — either gate the card as unplayable then (add an `UnplayableReason` kind, mirroring `noBuildingsToDestroy`) so it can't be wasted, or let it peek/draw fewer than 3 gracefully. Decide which; a hard gate matches the existing "don't let a play fizzle for nothing" precedent. `[size: S]` `[phase: 3]`
 
 ## UI (`src/components/`)
 
@@ -187,6 +186,17 @@ _(none open)_
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Card-facing deck/interaction primitives (resolver spine as a two-way street) + Foresight bug** —
+  `content/cards.ts`'s Foresight was the *only* card whose `resolve` reached into raw run state
+  (`G.deck`/`G.hand`/`G.rngState`/`pendingInteraction`), because the core exposed no primitive for its
+  verbs. Added a small card-facing family so a resolver declares intent instead: `peekTop`/
+  `drawInstance`/`returnToDeck` (`rules/deck.ts`, beside `drawCard`) + `suspendChoice` (`rules/effects.ts`,
+  the interaction seam) — each taking the `EffectContext` like `gainResources`, so they read as one API
+  and touch only `ctx.G`. Foresight is now pure intent, zero raw `G` access. The empty-draw-pile bug is
+  fixed **by construction**: `peekTop` owns the discard→deck reshuffle Foresight used to skip (so a
+  short deck still reveals up to 3), and a new `emptyDrawPile` `UnplayableReason` — gated off a
+  declarative `CardDef.revealsFromDeck` (dual-purpose like `effect.destroy`: it also feeds the peek
+  count) — hard-stops the play when both piles are empty rather than fizzling for its cost. `[phase: 3]`
 - **Available-upgrade hints (cards · nav tabs · boards)** — at-a-glance markers showing where
   Influence can still be usefully spent, without opening every detail view (deferred out of Step 9.2).
   The open design question (does a hint mean an upgrade *exists*, or *exists + affordable*?) was decided

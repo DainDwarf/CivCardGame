@@ -2,7 +2,7 @@ import { addResources, subtractResources, type Resources } from './resources';
 import { drawCard } from './deck';
 import { CARDS } from '../content/cards';
 import type { CardDef } from '../content/cards';
-import type { CardInstance, GameEvent, GameState } from './state';
+import type { CardInstance, GameEvent, GameState, PendingInteraction } from './state';
 import { emitEvent } from './events';
 import { effectiveGain } from './stickers';
 
@@ -86,6 +86,21 @@ export type Resolver = (ctx: EffectContext) => void;
 export function gainResources(ctx: EffectContext, base: Partial<Resources> | undefined): void {
   const g = effectiveGain(base, ctx.self);
   if (g) addResources(ctx.G.resources, g);
+}
+
+/**
+ * Suspend the resolving card into a player choice — the one place a resolver opens a
+ * `pendingInteraction` (the interaction seam of the resolver spine's "two-way street"). Builds it from
+ * `ctx.self` (the suspended card's id/cardId, so `moves.ts`'s `resolveInteraction` can reconstruct
+ * `self` and re-enter this resolver) plus the passed choice shape. The resolver returns right after;
+ * it re-runs with `ctx.answer` set to the chosen index. See `PendingInteraction` — non-cancelable, so
+ * a resolver must only call this once the reveal has committed (e.g. after `peekTop` lifted the cards).
+ */
+export function suspendChoice(
+  ctx: EffectContext,
+  choice: Omit<PendingInteraction, 'cardId' | 'instanceId'>,
+): void {
+  ctx.G.pendingInteraction = { cardId: ctx.self.cardId, instanceId: ctx.self.id, ...choice };
 }
 
 /** Demolish a tableau building by instance id, filing its card to `removed` (frees the slot and its
