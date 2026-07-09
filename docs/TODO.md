@@ -151,7 +151,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]). `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
-- **Worker-deployment animation (non-drag path)** — when a worker is staffed via a click/toggle (not dragged), animate it moving into the box, so the non-drag path has the same visible motion the drag gives. `[?]` `[phase: 3]`
 
 ## Game design & balance
 
@@ -184,6 +183,22 @@ _(none open)_
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
 
+- **Worker-deployment animation (non-drag path)** — the non-drag staffing paths now show the same
+  visible motion a drag already gives: a 🧍 token flies between the population tray and a box's staffing
+  toggle. `Board.tsx`'s `flyWorkers(boxId, count, recall?)` is the shared choke point (a two-phase
+  `from → to` transition in local px, like the intro card); the flight layer is purely presentational,
+  no rule reads it. Three cases feed it: (1) **click/toggle staff** an empty box — deploy tray → box;
+  (2) **click/toggle unstaff** a staffed box — `recall: true`, box → tray; (3) **auto-staff on
+  placement**, when the core staffs a building/work card as it's placed — deploy tray → box. Cases 1
+  and 2 call it explicitly at the one toggle onUp site (a diff can't tell a toggle-staff from a
+  drag-assign — both just change an existing box, and the drag already animated), gated on the same
+  "what will `toggleStaffing` actually do" condition. Case 3 is a diff — a `useLayoutEffect` notices a
+  *newly-appeared* staffable id with `workers > 0` and reads the count straight off the instance (the
+  core's decision — the shell never re-runs `autoStaffCount`); a new box can only come from a play,
+  never a drag, so the diff is unambiguous. A building's box only becomes measurable one render after
+  its tableau entry (gated behind the layout-reconcile effect), so an un-measurable target is queued
+  and retried; a work box registers its toggle the same render and fires at once. Drag paths stay as
+  they were (the cursor-tracked clone already gives their motion). Suite green (386 tests). `[phase: 3]`
 - **Beginning-of-run injection animation** — at run start the board greys under a scrim and each
   mission-injected card swipes from center-stage into its place one at a time (objective → its
   corner, threats → the column, events → the deck); only once that finishes does the deck riffle

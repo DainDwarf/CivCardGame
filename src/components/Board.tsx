@@ -320,6 +320,7 @@ function BuildingBox({
   onStaffPointerDown,
   onDestroy,
   onZoomClick,
+  staffRef,
 }: {
   inst: BuildingInstance;
   gameover: boolean;
@@ -337,6 +338,8 @@ function BuildingBox({
   /** Gameover inspect mode only — normal-mode zoom is handled by the slot-drag click/drag split
    *  instead, since `onPointerDown` never fires there (view-only board). */
   onZoomClick?: () => void;
+  /** Registers the staffing toggle so a worker-deployment token knows where to land. */
+  staffRef?: (el: HTMLButtonElement | null) => void;
 }) {
   const bld = effectiveCard(CARDS[inst.cardId], inst);
   const req = requiredWorkersOf(inst);
@@ -361,6 +364,7 @@ function BuildingBox({
       {!pendingDestroy && !selfSufficient && (
         <button
           type="button"
+          ref={staffRef}
           className={`${styles.staffToggle} ${staffed ? styles.staffFull : styles.staffEmpty}${
             workerDragSource ? ` ${styles.staffDragSource}` : ''
           }`}
@@ -411,6 +415,7 @@ function WorkBox({
   dropTarget,
   boxRef,
   onStaffPointerDown,
+  staffRef,
 }: {
   inst: WorkInstance;
   gameover: boolean;
@@ -421,6 +426,8 @@ function WorkBox({
   dropTarget?: boolean;
   boxRef?: (el: HTMLDivElement | null) => void;
   onStaffPointerDown?: (e: React.PointerEvent, inst: WorkInstance) => void;
+  /** Registers the staffing toggle so a worker-deployment token knows where to land. */
+  staffRef?: (el: HTMLButtonElement | null) => void;
 }) {
   const card = effectiveCard(CARDS[inst.cardId], inst);
   const req = requiredWorkersOf(inst);
@@ -443,6 +450,7 @@ function WorkBox({
       {!selfSufficient && (
         <button
           type="button"
+          ref={staffRef}
           className={`${styles.staffToggle} ${staffed ? styles.staffFull : styles.staffEmpty}${
             workerDragSource ? ` ${styles.staffDragSource}` : ''
           }`}
@@ -518,6 +526,18 @@ interface IntroGhost {
   from: Rect;
   to: Rect;
   /** false = resting at center (the readable pause); true = transitioning into `to`. */
+  moving: boolean;
+}
+
+/** A single 🧍 token flying from the population tray into a box's staffing toggle, giving the
+ *  **non-drag** deployment paths (a click/toggle staff, or the auto-staff when a building/work card
+ *  is placed) the same visible motion a drag already gives. Purely presentational — no rule reads it.
+ *  `from`/`to` are in *local* (pre-scale) px (via `px()`); `moving` flips false→true one tick after
+ *  spawn so the CSS transition swipes it from `from` to `to`. */
+interface WorkerFlight {
+  id: number;
+  from: Rect;
+  to: Rect;
   moving: boolean;
 }
 
@@ -725,6 +745,9 @@ export function Board({
   // Work-box instance id → its DOM element. Work boxes aren't in the slot grid, so worker drops
   // hit-test them separately (see workBoxAt / staffableUnder).
   const workBoxEls = useRef<Map<number, HTMLDivElement>>(new Map());
+  // Staffable instance id → its staffing-toggle button, the fly target for a worker-deployment
+  // token (see flyWorkers). A self-sufficient box renders no toggle, but it never deploys either.
+  const staffEls = useRef<Map<number, HTMLButtonElement>>(new Map());
   // Slot a just-played build card should drop into; consumed by the layout-reconcile effect.
   const pendingBuildSlotRef = useRef<number | null>(null);
   const gameareaRef = useRef<HTMLDivElement>(null);
@@ -737,6 +760,15 @@ export function Board({
   const shakeSeq = useRef(0);
   const shuffleSeq = useRef(0);
   const rejectMsgSeq = useRef(0);
+  // Worker-deployment tokens in flight (tray → box), for the non-drag staffing paths.
+  const [workerFlights, setWorkerFlights] = useState<WorkerFlight[]>([]);
+  const workerFlightSeq = useRef(0);
+  // Diff bookkeeping for the placement-deploy animation (see the layout effect below):
+  // the staffable ids seen last render (null until the first, so mount fires nothing), and a
+  // retry queue for newly-placed boxes whose toggle isn't measurable yet (a building appears one
+  // reconcile-render after its tableau entry; a work box is measurable the same render).
+  const prevStaffIdsRef = useRef<Set<number> | null>(null);
+  const pendingDeployRef = useRef<{ toId: number; count: number; tries: number }[]>([]);
   // Hold the hand back during the run-start injection animation — feeding an empty hand means every
   // real card reads as freshly drawn (`isNew`) when `handHeld` clears, so the deal-in fires on reveal.
   const hand = useAnimatedHand(handHeld ? [] : G.hand);
@@ -900,6 +932,43 @@ export function Board({
       y: e.clientY,
       active: false,
     });
+  }
+
+  /** Fly `count` 🧍 tokens between the population tray and the staffing toggle of box `boxId`,
+   *  giving the non-drag staffing paths the visible motion a drag already has: `recall: false`
+   *  (deploy) flies tray → box (a click/toggle staff, or auto-staff on placing a card); `recall:
+   *  true` flies box → tray (a click/toggle *un*staff). No-op if the tray or the toggle isn't
+   *  measurable (e.g. a self-sufficient box, which never deploys). Rects are converted visual→local
+   *  (`px`) since the flight layer lives inside the scaled app wrapper. */
+  function flyWorkers(boxId: number, count: number, recall = false) {
+    if (count <= 0) return;
+    const trayEl = popTrayRef.current;
+    const boxEl = staffEls.current.get(boxId);
+    if (!trayEl || !boxEl) return;
+    const fr = trayEl.getBoundingClientRect();
+    const br = boxEl.getBoundingClientRect();
+    for (let i = 0; i < count; i++) {
+      const id = workerFlightSeq.current++;
+      // A token-sized spot centered in the tray (nudged per token so several don't stack exactly),
+      // and the box's staffing toggle where a worker rests. Deploy flies tray→box; recall, box→tray.
+      const nudge = (i - (count - 1) / 2) * br.width * 0.8;
+      const trayPoint: Rect = {
+        left: px(fr.left + fr.width / 2 - br.width / 2 + nudge),
+        top: px(fr.top + fr.height / 2 - br.height / 2),
+        width: px(br.width),
+        height: px(br.height),
+      };
+      const boxPoint: Rect = { left: px(br.left), top: px(br.top), width: px(br.width), height: px(br.height) };
+      const from = recall ? boxPoint : trayPoint;
+      const to = recall ? trayPoint : boxPoint;
+      setWorkerFlights((f) => [...f, { id, from, to, moving: false }]);
+      const delay = i * 90; // stagger multiple tokens
+      window.setTimeout(
+        () => setWorkerFlights((f) => f.map((x) => (x.id === id ? { ...x, moving: true } : x))),
+        20 + delay,
+      );
+      window.setTimeout(() => setWorkerFlights((f) => f.filter((x) => x.id !== id)), 480 + delay);
+    }
   }
 
   /** Spawn a transient clone that animates a card out, then clean it up. */
@@ -1092,7 +1161,19 @@ export function Board({
       if (!d || e.pointerId !== d.pointerId) return;
       if (!d.active) {
         // No real movement — a plain click on the staffing toggle (tray tokens have no click behavior).
-        if (d.fromBuildingId != null) moves.toggleStaffing(d.fromBuildingId);
+        if (d.fromBuildingId != null) {
+          // Animate the tokens this toggle actually moves (mirroring toggleStaffing's own gate),
+          // measured now — staffing doesn't move the box so the pre-move toggle rect is right: a
+          // staffed box empties (recall its workers → tray), an empty box fills if there's enough
+          // idle (deploy req from the tray → box), otherwise the toggle no-ops and nothing flies.
+          const s = buildingById.get(d.fromBuildingId) ?? workById.get(d.fromBuildingId);
+          const req = s ? requiredWorkersOf(s) : 0;
+          const staffedWorkers = s?.workers ?? 0;
+          const willStaff = !!s && staffedWorkers === 0 && req > 0 && idle >= req;
+          moves.toggleStaffing(d.fromBuildingId);
+          if (willStaff) flyWorkers(d.fromBuildingId, req);
+          else if (staffedWorkers > 0) flyWorkers(d.fromBuildingId, staffedWorkers, true);
+        }
       } else if (d.fromBuildingId == null) {
         // Dropped an idle token — staff whichever building or Work box is under the cursor, if it
         // can still accept a worker.
@@ -1167,6 +1248,42 @@ export function Board({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableauSig, G.territory]);
+
+  // Worker-deployment animation for the non-drag *placement* path: when a building/work card is
+  // played, the core auto-staffs it (population.ts's autoStaffCount) and the new box appears already
+  // carrying workers. A newly-appeared staffable id can only come from a play (never a drag, which
+  // only shuffles workers between existing boxes), so any new id with workers > 0 is an auto-staff
+  // to animate — the count is read straight off the instance (the core's decision), never re-derived
+  // here. Detection is a plain diff of the staffable id set against last render. A building's box
+  // only becomes measurable one render *after* its tableau entry (it's gated behind the layout
+  // reconcile effect above), so an un-measurable target is queued and retried next render; a work
+  // box registers its toggle the same render and fires at once. Placed after the reconcile effect so
+  // render-1 ordering is deterministic. Purely presentational — no rule reads it.
+  useLayoutEffect(() => {
+    const current = new Map<number, number>();
+    for (const b of G.tableau) current.set(b.id, b.workers);
+    for (const w of G.workZone) current.set(w.id, w.workers);
+
+    const prev = prevStaffIdsRef.current;
+    if (prev && !intro) {
+      for (const [id, workers] of current) {
+        if (!prev.has(id) && workers > 0) pendingDeployRef.current.push({ toId: id, count: workers, tries: 0 });
+      }
+    }
+    prevStaffIdsRef.current = new Set(current.keys());
+
+    // Flush the queue: fly a box's tokens once its toggle is measurable, else retry a few renders.
+    // The `tries` cap is pure safety — an enqueued id has workers > 0 ⟹ a toggle is rendered ⟹ it
+    // registers — so it should never actually expire (if it does, something else is wrong).
+    if (pendingDeployRef.current.length > 0) {
+      const still: typeof pendingDeployRef.current = [];
+      for (const d of pendingDeployRef.current) {
+        if (staffEls.current.has(d.toId)) flyWorkers(d.toId, d.count);
+        else if (d.tries < 4) still.push({ ...d, tries: d.tries + 1 });
+      }
+      pendingDeployRef.current = still;
+    }
+  });
 
   // The canvas fills the gap between the banner and the hand bar; track their heights so it
   // stays flush as they reflow (e.g. the hand bar grows when a discard/destroy prompt shows).
@@ -1515,6 +1632,10 @@ export function Board({
                       pendingDestroy={!!pendingDestroy}
                       onPointerDown={(e) => onBoxPointerDown(e, inst, slotIdx)}
                       onStaffPointerDown={onStaffPointerDown}
+                      staffRef={(el) => {
+                        if (el) staffEls.current.set(inst.id, el);
+                        else staffEls.current.delete(inst.id);
+                      }}
                       onDestroy={() => handleDestroyTarget(inst.id)}
                       onZoomClick={
                         gameover && overlayMinimized
@@ -1554,6 +1675,10 @@ export function Board({
                     boxRef={(el) => {
                       if (el) workBoxEls.current.set(inst.id, el);
                       else workBoxEls.current.delete(inst.id);
+                    }}
+                    staffRef={(el) => {
+                      if (el) staffEls.current.set(inst.id, el);
+                      else staffEls.current.delete(inst.id);
                     }}
                     onStaffPointerDown={onStaffPointerDown}
                   />
@@ -1808,6 +1933,25 @@ export function Board({
           >
             🧍
           </div>
+        </div>
+      )}
+
+      {/* Worker-deployment tokens flying tray → box for the non-drag staffing paths (click-toggle
+          staff, auto-staff on placing a card) — the motion a drag already gives for free. */}
+      {workerFlights.length > 0 && (
+        <div className={styles.workerFlightLayer} aria-hidden="true">
+          {workerFlights.map((f) => {
+            const at = f.moving ? f.to : f.from;
+            return (
+              <div
+                key={f.id}
+                className={`${styles.workerFlight} ${f.moving ? styles.workerFlightMoving : ''}`}
+                style={{ left: at.left, top: at.top, width: at.width, height: at.height }}
+              >
+                🧍
+              </div>
+            );
+          })}
         </div>
       )}
 
