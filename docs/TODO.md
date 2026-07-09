@@ -131,10 +131,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   Later: heuristic policies, batch runs across seeds/decks/missions, aggregation/reporting.
   `[size: M]` `[?]` `[phase: 4]`
 
-## Meta loop (`src/meta/`)
-
-- **End-of-Phase-3 cleanup: simplify save parsing, not remove it** — `meta/store.ts`'s `SCHEMA_VERSION`/`exportSave`/`importSave` plumbing stays (still the real save/load-file mechanism); what should go is `parsePlayerStore`'s per-field *leniency* (the decks-missing fallback, the field-by-field shape checks written to tolerate a store that predates some Phase 3 field). Once Phase 3 ships, assume every save in the world is already Phase-3-shaped — pre-alpha players are told to clear their save regularly — so `parsePlayerStore` can go back to a plain "does this parse as a `PlayerStore`" check instead of carrying per-field pre-Phase-3 fallbacks. `[phase: 3]`
-
 ## Cards & content (`src/content/`)
 
 - **Remove Settlers, replace with a Hut building** `[?]` `[phase: 4]`
@@ -182,6 +178,18 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **End-of-Phase-3 cleanup: simplify save parsing** — `meta/store.ts`'s `parsePlayerStore` no
+  longer carries the per-field leniency written to tolerate a store predating some Phase 3 field:
+  the `decks`-missing fallback (which silently seeded starter decks for a pre-deck-editor save) is
+  gone — a missing `decks` now just makes the store unrecognized, like every other required field.
+  Confirmed first, since it mattered: the fallback was never on the new-player path — `loadStore()`
+  short-circuits to `emptyStore()` (which always sets `decks`) before ever calling
+  `parsePlayerStore` when no `localStorage` key exists yet, so only an *existing* stored/imported
+  object missing `decks` was affected, never a fresh install. The `SCHEMA_VERSION`/`exportSave`/
+  `importSave` plumbing is untouched (still the real save/load-file mechanism); `store.test.ts`'s
+  "seeds missing decks with the defaults" case became "rejects a save missing decks — no fallback,
+  no migration path". Suite green (386 tests). `[phase: 3]`
 
 - **Worker-deployment animation (non-drag path)** — the non-drag staffing paths now show the same
   visible motion a drag already gives: a 🧍 token flies between the population tray and a box's staffing

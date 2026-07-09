@@ -60,22 +60,19 @@ export function emptyStore(): PlayerStore {
 }
 
 /**
- * Lenient shape-check shared by `loadStore` (reading the live localStorage key, which
- * may predate a field) and `importSave` (reading a pasted/uploaded save file). Returns
- * `null` if `raw` isn't recognizable as a store at all; a missing/invalid `decks` key
- * is *not* fatal — it just means this store predates the deck-editor feature, so it's
- * seeded with the starting decks a fresh install would have had (resolved against this
- * store's own `collection`), without losing runHistory. `influence`/`collection`/
- * `mapProgress`/`boardStickers` are new fields with no such precedent (pre-alpha: no save migration, see
- * docs/TODO.md), so a store missing any of them is simply unrecognized — this includes a
- * pre-Step-7.2 `collection` (a bare `{ cardId: count }` map, not `{ instances, nextId }`):
- * without this check it would pass the loose `typeof === 'object'` test and only fail much
- * later, deep inside `copiesOwned`, so it's checked by shape here instead.
+ * Shape-check shared by `loadStore` (reading the live localStorage key) and `importSave`
+ * (reading a pasted/uploaded save file). Returns `null` if `raw` doesn't parse as a
+ * `PlayerStore` — every field is required, with no fallback for a missing/old-shaped one
+ * (pre-alpha: no save migration, see docs/TODO.md). This also catches a pre-Step-7.2
+ * `collection` (a bare `{ cardId: count }` map, not `{ instances, nextId }`): without the
+ * nested check it would pass the loose `typeof === 'object'` test and only fail much later,
+ * deep inside `copiesOwned`.
  */
 function parsePlayerStore(raw: unknown): PlayerStore | null {
   if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
   if (!Array.isArray(obj.runHistory)) return null;
+  if (!Array.isArray(obj.decks)) return null;
   if (typeof obj.influence !== 'number') return null;
   if (!obj.collection || typeof obj.collection !== 'object') return null;
   const collectionObj = obj.collection as Record<string, unknown>;
@@ -92,13 +89,11 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
     return null;
   }
   if (!obj.bestInfinite || typeof obj.bestInfinite !== 'object') return null;
-  const collection = obj.collection as OwnedCards;
-  const decks = Array.isArray(obj.decks) ? (obj.decks as DeckDef[]) : buildSeedDecks(DEFAULT_DECKS, collection);
   return {
     runHistory: obj.runHistory as RunResult[],
-    decks,
+    decks: obj.decks as DeckDef[],
     influence: obj.influence,
-    collection,
+    collection: obj.collection as OwnedCards,
     mapProgress: obj.mapProgress as Record<string, true>,
     boardStickers: obj.boardStickers as BoardStickers,
     lifetime: obj.lifetime as PlayerStore['lifetime'],

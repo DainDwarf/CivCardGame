@@ -84,12 +84,12 @@ describe('exportSave / importSave', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('seeds missing decks with the defaults, like loadStore does', () => {
+  it('rejects a save missing decks — no fallback, no migration path', () => {
     const store = sampleStore();
     const { decks: _decks, ...withoutDecks } = store;
     const bogus = toBase64(JSON.stringify({ schemaVersion: 1, store: withoutDecks }));
     const result = importSave(bogus);
-    expect(result).toEqual({ ok: true, store: { ...withoutDecks, decks: buildSeedDecks(DEFAULT_DECKS, withoutDecks.collection) } });
+    expect(result.ok).toBe(false);
   });
 
   it('rejects a save missing influence/collection/mapProgress — no migration path for these newer fields', () => {
