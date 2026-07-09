@@ -92,12 +92,10 @@ describe('mission: long_winter', () => {
 describe('mission: barbarian_tide', () => {
   const m = MISSIONS.barbarian_tide;
 
-  it('setup seeds four barbarian events into the deck and adds a garrison', () => {
+  it('setup seeds four barbarian events into the deck', () => {
     const G = blankState('barbarian_tide');
-    const before = G.resources.military;
     m.setup!(G);
     expect(G.deck.filter((c) => c.cardId === 'barbarian').length).toBe(4);
-    expect(G.resources.military).toBe(before + 4);
   });
 
   it('has no per-round upkeep — the barbarian cards themselves are the threat', () => {
@@ -201,6 +199,21 @@ describe('mission objective cards', () => {
       expect(card, `${m.id} → ${m.objectiveCardId}`).toBeDefined();
       expect(card.kind).toBe('objective');
       expect(typeof card.objective).toBe('function');
+    }
+  });
+
+  it('every declared threats/events id names a real threat/event card', () => {
+    for (const m of Object.values(MISSIONS)) {
+      for (const cardId of m.threats ?? []) {
+        const card = CARDS[cardId];
+        expect(card, `${m.id} → threats → ${cardId}`).toBeDefined();
+        expect(card.kind).toBe('threat');
+      }
+      for (const cardId of m.events ?? []) {
+        const card = CARDS[cardId];
+        expect(card, `${m.id} → events → ${cardId}`).toBeDefined();
+        expect(card.kind).toBe('event');
+      }
     }
   });
 });

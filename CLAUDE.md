@@ -218,8 +218,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `missions.ts` — `MISSIONS`; each names an `objectiveCardId` (its win condition, made into
     an `objective` card that owns the win predicate — `run/setup.ts` seeds it into
     `GameState.objective`, the bus re-derives `G.pendingVictory` from it, and `run/engine.ts`'s
-    `checkEndIf` reads that flag; see `rules/objective.ts`), plus optional
-    `setup`/`onUpkeep`/`kind`/`prereqs`/`map`/`reward`/`lore`.
+    `checkEndIf` reads that flag; see `rules/objective.ts`), plus optional declarative
+    `threats`/`events` card-id lists (a threat seeded via `addThreat`, an event minted and shuffled
+    into the deck — a trailing loop in this file wraps every mission's `setup` to inject them
+    automatically, ahead of any bespoke `setup` body) and `setup`/`onUpkeep`/`kind`/`prereqs`/
+    `map`/`reward`/`lore`. The mission-detail panel (`meta/CampaignMap.tsx`'s `MissionFlowPopup`)
+    reads the same `threats`/`events` lists to show the card faces a mission is about, so the
+    display can't drift from what `setup` actually injects.
 
 **Shell — the run loop (`src/run/`) + React:**
 

@@ -268,13 +268,19 @@ function MissionFlowPopup({
 }) {
   const infinite = mission.kind === 'infinite';
   const unlockCard = mission.reward ? CARDS[mission.reward.unlockCardId] : null;
+  // The cards this mission is actually about: its objective (always exactly one) plus whichever
+  // threat/event cards it seeds — read straight off the same declarative `threats`/`events` lists
+  // `setup` injects from (see `content/missions.ts`), so this can't drift from what a launched run
+  // actually sees. Deduped since `events` may repeat an id for multiple copies (e.g. four
+  // 'barbarian' entries for Barbarian Tide's four waves) — one card face is enough to explain it.
+  const seededCardIds = Array.from(new Set([...(mission.threats ?? []), ...(mission.events ?? [])]));
 
   const [boardId, setBoardId] = useState<BoardId | null>(null);
   const [deckId, setDeckId] = useState<string | null>(null);
   // The deck whose list-view overlay is open (opened by re-clicking the selected deck).
   const [viewing, setViewing] = useState<DeckDef | null>(null);
-  // The reward card zoomed via click (only ever the already-unlocked reward — a face-down
-  // card has nothing to reveal).
+  // The card zoomed via click — the reward (only once already unlocked; a face-down card has
+  // nothing to reveal) or one of the objective/threat/event cards below the lore text.
   const [zoomCardId, setZoomCardId] = useState<string | null>(null);
 
   // The picked board's *effective* profile (its attached stickers folded in) — what the run will
@@ -305,6 +311,21 @@ function MissionFlowPopup({
                   🏆 {mission.victoryHint}
                   {mission.failureHint && <> · 💀 {mission.failureHint}</>}
                 </p>
+                <div className={styles.loreCards}>
+                  <CardFace
+                    card={CARDS[mission.objectiveCardId]}
+                    className={styles.zoomableCard}
+                    onClick={() => setZoomCardId(mission.objectiveCardId)}
+                  />
+                  {seededCardIds.map((cardId) => (
+                    <CardFace
+                      key={cardId}
+                      card={CARDS[cardId]}
+                      className={styles.zoomableCard}
+                      onClick={() => setZoomCardId(cardId)}
+                    />
+                  ))}
+                </div>
               </div>
 
               <div className={styles.rewardColumn}>

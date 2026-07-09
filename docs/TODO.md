@@ -97,27 +97,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Step 9.2 — Collection UI rework + card upgrades** — ✅ done — see *Done / shipped* below.
     `[phase: 3]`
   - **Step 9.3 — Board UI rework** ✅ done — see *Done / shipped* below.
-  - **Step 9.4 — Mission lore page: show the cards the mission is about** — the mission-flow
-    popup's **'detail' step** (`meta/CampaignMap.tsx`'s `MissionFlowPopup`, *not* an old
-    `MissionDetailPanel` — that name is stale) today renders, in its lore column, `lore` +
-    `description` + the `🏆/💀` hint line, and in a separate column only the mission's *reward*
-    card face. This step appends, below the lore text, the actual **card faces the mission is
-    about**: its **objective** card (always exactly one) plus any **threat/event** cards it
-    seeds. Folds in the standing "Barbarian Tide's lore should show the Barbarian card" ticket
-    as the worked example (Barbarian Tide's Barbarian event; Long Winter's Harsh Winter, the
-    Enlightenment's Stagnation, and The Long Decline's Creeping Decay threats). The objective is
-    already *described* by `victoryHint`/`description`; showing its **card** is the new bit.
-    **How to know which threat/event cards a mission has (decided):** add declarative `threats`/
-    `events` card-id lists to `MissionDef`, and make `setup` **consume those lists** to do the
-    injection (`addThreat` over `threats`; deck-inject over `events`) instead of naming card ids
-    imperatively. That keeps *one* source of truth — the detail panel reads the same lists `setup`
-    injects from, so they can't drift the way a parallel declarative field bolted onto an
-    unchanged imperative `setup` could. A migration of the current missions falls out of this:
-    `long_winter`/`enlightenment`/`the_long_decline` move their `addThreat(G, …)` id into
-    `threats`, and `barbarian_tide` moves its `Array(BARBARIANS).fill('barbarian')` deck-push into
-    `events` (its `+4 Military` starting tweak stays bespoke in `setup` — not every setup step is a
-    card injection). The objective stays separate: it's `mission.objectiveCardId`, seeded by
-    `run/setup.ts`'s `seedObjective`, not by `mission.setup`. `[size: S]` `[phase: 3]`
+  - **Step 9.4 — Mission lore page: show the cards the mission is about** — ✅ done — see
+    *Done / shipped* below. `[size: S]` `[phase: 3]`
   - **Step 9.5 — Mission select page: boards as `BoardMini`** — the mission-flow popup's **'launch'
     step** board picker currently lists each government as a text `optionCard` (name + description)
     with the `effectiveBoard` profile rendered as a `describeBoard` string below the selected one.
@@ -157,6 +138,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   only `work`/`action` cards, no buildings — mission 1 unlocks the first buildings (House,
   Farm, Workshop); mission 2 introduces territory limitation (and maybe conquest?) alongside
   them. Goal is to reach a certain population. Unlocks culture stuff. Mission 3 explains culture, goal to reach culture lvl2. `[size: L]` `[?]` `[phase: 4]`
+
+- **Step 2 — Headless simulator (balance tooling)** — a code-driven, no-browser/no-React
+  runner over the pure core, for statistical balance answers no human can play enough games
+  to reach (is a mission winnable? is a sticker overpowered? is a card ever played? is the
+  food economy too tight?). Feasible because the core is already framework-free, deterministic
+  (seeded RNG), and — post the "cards/stickers own their logic" + event-bus refactors — holds
+  *all* real game behaviour behind `resolveCard`/`StickerDef` hooks/the always-drained bus, so a
+  sim consumes the genuine behaviour with no duplicated branch; the bus's fixed dispatch order +
+  `MAX_EVENT_CASCADE` cap guarantee determinism and termination even under a fuzzing policy. Only
+  new consideration is throughput (millions of `endTurn`s), not viability. **First deliverable:** a
+  tiny `simulateRun(config, policy)` helper beside `run/engine.ts` + a **random-legal-move policy**
+  (doubles as a crash/illegal-state fuzzer), before any smarter policy or result aggregation.
+  Later: heuristic policies, batch runs across seeds/decks/missions, aggregation/reporting.
+  `[size: M]` `[?]` `[phase: 4]`
 
 ## Meta loop (`src/meta/`)
 
@@ -228,6 +223,25 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Phase 3 Step 9.4 — Mission lore page: show the cards the mission is about** — the mission-flow
+  popup's 'detail' step (`meta/CampaignMap.tsx`'s `MissionFlowPopup`) now renders, below the lore
+  text, the actual card faces the mission is about: its **objective** card (always exactly one)
+  plus any **threat/event** cards it seeds (deduped — Barbarian Tide's four `'barbarian'` event
+  entries render as one Barbarian face), each clickable to zoom via the same `CardZoomOverlay`/
+  `zoomCardId` the reward-card face already used. Folds in the standing "Barbarian Tide's lore
+  should show the Barbarian card" ticket as the worked example. **How the panel knows which
+  threat/event cards a mission has:** `content/missions.ts`'s `MissionDef` gained declarative
+  `threats?`/`events?: string[]` fields; a loop at the bottom of the file wraps every mission's
+  `setup` to inject them generically (`addThreat` over `threats`, a mint-and-shuffle deck-push over
+  `events`) ahead of any bespoke setup body — so the imperative `addThreat(G, …)` / deck-push calls
+  that used to live inside each mission's `setup` are gone, replaced by the declarative lists, and
+  the detail panel reads the *same* lists `setup` actually injects from (can't drift). Migrated all
+  four current missions (`long_winter`/`enlightenment`/`the_long_decline` → `threats`,
+  `barbarian_tide` → `events`). The objective stayed separate, as planned — it's
+  `mission.objectiveCardId`, seeded by `run/setup.ts`'s `seedObjective`, not by `mission.setup`.
+  New `missions.test.ts` coherence test asserting every `threats`/`events` id names a real
+  card of the matching kind (mirrors the existing objective-card coherence test).
 
 - **Stable card ordering across views** — every card listing now orders through one shared comparator,
   `content/cards.ts`'s `compareCards` (kind rank `building → work → action → event → threat → objective`,

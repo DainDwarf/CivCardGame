@@ -21,7 +21,18 @@ export interface MissionDef {
   /** Mission ids that must be completed (see `rules/campaign.ts`) before this one is
    *  available. Empty = a DAG root, always available. */
   prereqs: string[];
-  /** One-time setup tweaks to the initial state (resource modifiers, extra cards). */
+  /** Threat cards this mission seeds at setup, one instance each (`rules/threats.ts`'s `addThreat`).
+   *  Declarative rather than an imperative `addThreat` call inside `setup` so the mission-detail
+   *  panel (`meta/CampaignMap.tsx`'s `MissionFlowPopup`) can read the *same* list `setup` injects
+   *  from, instead of a parallel hardcoded list that could drift. */
+  threats?: string[];
+  /** Event cards this mission shuffles into the deck at setup, one instance per entry — repeat an id
+   *  N times for N copies (e.g. four `'barbarian'` entries for Barbarian Tide's four waves). Same
+   *  single-source-of-truth reasoning as `threats`. */
+  events?: string[];
+  /** One-time setup tweaks that aren't a declarative `threats`/`events` injection (resource
+   *  modifiers, and the like) — the injection itself is applied automatically, see the bottom of
+   *  this file. */
   setup?: (G: GameState) => void;
   /** Applied every round during upkeep (extra food drain, resource decay, ...). */
   onUpkeep?: (G: GameState) => void;
@@ -65,12 +76,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     description: 'Reach 30 Science by the end of round 12.',
     // Test DAG: gated behind The Long Winter.
     prereqs: ['long_winter'],
-    // The round-12 deadline is a real threat card (Stagnation) seeded here — it renders the visible
-    // countdown and owns the loss itself via its own `defeat` predicate, rather than the objective
-    // card carrying a `failed` predicate.
-    setup: (G) => {
-      addThreat(G, 'enlightenment_deadline');
-    },
+    // The round-12 deadline is a real threat card (Stagnation) — it renders the visible countdown
+    // and owns the loss itself via its own `defeat` predicate, rather than the objective card
+    // carrying a `failed` predicate.
+    threats: ['enlightenment_deadline'],
     objectiveCardId: 'enlightenment_goal',
     victoryHint: 'Accumulate 30 Science before round 12 ends.',
     failureHint: 'Failing to reach 30 Science by round 12.',
@@ -90,12 +99,10 @@ export const MISSIONS: Record<string, MissionDef> = {
       'Endure 15 rounds of brutal winters. Each round drains 2 extra Food on top of your population — keep famine at bay.',
     // DAG root: always available, unlocks enlightenment/barbarian_tide.
     prereqs: [],
-    // The 2-extra-Food-per-round drain is now a real threat card (Harsh Winter), seeded once here
-    // rather than a mission-onUpkeep special case — it ticks via the same `endTurn`-broadcast →
-    // `resolveCard` spine every other threat uses.
-    setup: (G) => {
-      addThreat(G, 'harsh_winter');
-    },
+    // The 2-extra-Food-per-round drain is a real threat card (Harsh Winter) rather than a
+    // mission-onUpkeep special case — it ticks via the same `endTurn`-broadcast → `resolveCard`
+    // spine every other threat uses.
+    threats: ['harsh_winter'],
     objectiveCardId: 'long_winter_goal',
     victoryHint: 'Endure 15 rounds of brutal winter without starving.',
     failureHint: null,
@@ -114,15 +121,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     description:
       `Four waves of Barbarians are hidden in your deck. Each one you draw strikes at the end of the round — draining 4 Military — then is gone. Build up your Military and survive all ${BARBARIANS} to win; let it fall below zero and your civilization is overrun.`,
     prereqs: ['long_winter'],
-    setup: (G) => {
-      // Mint the barbarian events as card instances continuing past the deck's existing ids, then
-      // shuffle them into the deck deterministically from the run's RNG stream.
-      G.deck.push(...instancesFromCardIds(Array(BARBARIANS).fill('barbarian'), nextInstanceId(G)));
-      const { result, rngState } = shuffleFromState(G.deck, G.rngState);
-      G.deck = result;
-      G.rngState = rngState;
-      G.resources.military += 4; // capital garrison — layer on top of the starting baseline
-    },
+    events: Array(BARBARIANS).fill('barbarian'),
     objectiveCardId: 'barbarian_tide_goal',
     victoryHint: `Survive all ${BARBARIANS} Barbarian waves without your Military falling below zero.`,
     failureHint: 'Your Military falling below zero — the barbarians overrun you.',
@@ -144,9 +143,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'little more Production every round, forever. Survive as many rounds as you can before ' +
       'your economy collapses into ruin.',
     prereqs: [],
-    setup: (G) => {
-      addThreat(G, 'creeping_decay');
-    },
+    threats: ['creeping_decay'],
     // Never wins on its own — an 'infinite' mission has no fixed win state (its objective card's
     // `met` is always false). The only ending is the universal core-resource-floor collapse, forced
     // eventually by the threat's own escalation.
@@ -156,3 +153,24 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'infinite',
   },
 };
+
+// Wrap each mission's `setup` so its declarative `threats`/`events` lists are actually injected —
+// keeps the injection itself in one place instead of a copy-pasted `addThreat`/deck-push at every
+// mission that needs it, and means the mission-detail panel's card-face list and the real injection
+// can never drift apart the way a parallel hardcoded list next to it could.
+for (const mission of Object.values(MISSIONS)) {
+  if (!mission.threats && !mission.events && !mission.setup) continue;
+  const bespoke = mission.setup;
+  mission.setup = (G) => {
+    mission.threats?.forEach((cardId) => addThreat(G, cardId));
+    if (mission.events?.length) {
+      // Mint the event cards as card instances continuing past the deck's existing ids, then
+      // shuffle them into the deck deterministically from the run's RNG stream.
+      G.deck.push(...instancesFromCardIds(mission.events, nextInstanceId(G)));
+      const { result, rngState } = shuffleFromState(G.deck, G.rngState);
+      G.deck = result;
+      G.rngState = rngState;
+    }
+    bespoke?.(G);
+  };
+}
