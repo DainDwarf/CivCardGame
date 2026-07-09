@@ -176,6 +176,14 @@ export interface GameState {
    * only *reads* it (`run/engine.ts`), never writes it. Set-or-clear (never sticky) — a verdict can
    * flip back to false within one flush. `false`/absent when the objective is unmet or unseeded. */
   pendingVictory?: boolean;
+  /**
+   * How many times the discard pile has folded back into an empty draw pile this run — bumped once
+   * per reshuffle by `rules/deck.ts`'s shared `reshuffleIntoDeck` (used by both `drawCard` and
+   * `peekTop`). Pure UI cue: no rule reads it. `run/GameContext.tsx`'s Board diffs it against its
+   * last-seen value to fire the deck's shuffle animation, since a length-diff can't tell a reshuffle
+   * apart from a card effect that only grows/shrinks the deck (e.g. `returnToDeck`/`peekTop`).
+   */
+  reshuffleCount: number;
 }
 
 /**
@@ -224,6 +232,7 @@ export function blankState(missionId: string): GameState {
     events: [],
     pendingDefeat: null,
     pendingVictory: false,
+    reshuffleCount: 0,
   };
 }
 

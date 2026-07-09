@@ -5,20 +5,29 @@ import type { CardInstance, DrawSource, GameState } from './state';
 import type { EffectContext } from './effects';
 
 /**
+ * Fold the discard pile back into the draw pile, deterministically from the run's RNG stream
+ * (`G.rngState`, advanced here so the next reshuffle continues the same stream) — shared by every
+ * spot that draws/peeks off an empty deck (`drawCard`, `peekTop`), so the shuffle-in-progress logic
+ * lives once. Bumps `reshuffleCount`, a pure UI cue (`components/Board.tsx` diffs it to fire the
+ * deck's shuffle animation) — no rule reads it.
+ */
+function reshuffleIntoDeck(G: GameState): void {
+  const { result, rngState } = shuffleFromState(G.discard, G.rngState);
+  G.deck = result;
+  G.discard = [];
+  G.rngState = rngState;
+  G.reshuffleCount += 1;
+}
+
+/**
  * Draw one card. When the deck is empty, the discard pile reshuffles into the new
- * deck, deterministically from the run's RNG stream (`G.rngState`, advanced here so
- * the next reshuffle continues the same stream). Mutates `G` in place (the engine
- * clones it before each move). `source` tags the emitted `draw` event so an on-draw
- * handler can distinguish a round-start refill from an effect-caused draw; it defaults
- * to `'effect'` (every caller *except* `drawUpTo` is an action/effect drawing).
+ * deck (see `reshuffleIntoDeck`). Mutates `G` in place (the engine clones it before each move).
+ * `source` tags the emitted `draw` event so an on-draw handler can distinguish a round-start
+ * refill from an effect-caused draw; it defaults to `'effect'` (every caller *except* `drawUpTo`
+ * is an action/effect drawing).
  */
 export function drawCard(G: GameState, source: DrawSource = 'effect'): void {
-  if (G.deck.length === 0) {
-    const { result, rngState } = shuffleFromState(G.discard, G.rngState);
-    G.deck = result;
-    G.discard = [];
-    G.rngState = rngState;
-  }
+  if (G.deck.length === 0) reshuffleIntoDeck(G);
   const card = G.deck.shift();
   if (card !== undefined) {
     G.hand.push(card);
@@ -60,10 +69,7 @@ export function peekTop(ctx: EffectContext, n: number): CardInstance[] {
   for (let i = 0; i < n; i++) {
     if (G.deck.length === 0) {
       if (G.discard.length === 0) break; // both piles exhausted — return what we have
-      const { result, rngState } = shuffleFromState(G.discard, G.rngState);
-      G.deck = result;
-      G.discard = [];
-      G.rngState = rngState;
+      reshuffleIntoDeck(G);
     }
     const card = G.deck.shift();
     if (card !== undefined) out.push(card);

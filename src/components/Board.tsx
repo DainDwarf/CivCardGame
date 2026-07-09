@@ -612,6 +612,7 @@ export function Board({
   const [pileView, setPileView] = useState<{ title: string; cards: CardInstance[] } | null>(null);
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
+  const [deckShuffling, setDeckShuffling] = useState(false);
   const [rejectMsg, setRejectMsg] = useState<string | null>(null);
   const [warnEndRound, setWarnEndRound] = useState(false);
   const [overlayMinimized, setOverlayMinimized] = useState(false);
@@ -648,6 +649,7 @@ export function Board({
   const handBarRef = useRef<HTMLDivElement>(null);
   const ghostSeq = useRef(0);
   const shakeSeq = useRef(0);
+  const shuffleSeq = useRef(0);
   const rejectMsgSeq = useRef(0);
   const hand = useAnimatedHand(G.hand);
   // Each building's stable id keys both its slot in `layout` and this lookup.
@@ -1110,6 +1112,18 @@ export function Board({
     setWarnEndRound(false);
   }, [G.round]);
 
+  // Briefly riffle the deck pile whenever `reshuffleCount` changes — which fires once on mount
+  // (a fresh run's initial deck arriving counts as "at run start") and again on every later
+  // reshuffle, so one effect covers both cues from the TODO with no separate mount-trigger.
+  useEffect(() => {
+    const n = ++shuffleSeq.current;
+    setDeckShuffling(true);
+    window.setTimeout(() => {
+      if (shuffleSeq.current === n) setDeckShuffling(false);
+    }, 500);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [G.reshuffleCount]);
+
   // warnEndRound is only meaningful while shouldWarn or confirmEndTurn is true; reset it
   // if the player staffs all buildings after triggering the dialog (so it can't
   // ghost-trigger later) — confirmEndTurn doesn't depend on staffing, so it can't go stale.
@@ -1335,7 +1349,11 @@ export function Board({
       <div className={styles.handBar} ref={handBarRef}>
         <div className={styles.handBarInner}>
           <div className={styles.deckColumn}>
-            <Pile variant={styles.pileDeck} label="deck" count={G.deck.length} />
+            <Pile
+              variant={`${styles.pileDeck} ${deckShuffling ? styles.pileShuffling : ''}`}
+              label="deck"
+              count={G.deck.length}
+            />
             <button
               className={styles.undoBtn}
               disabled={!canUndo || !!pending || !!pendingDestroy || drag?.active === true}

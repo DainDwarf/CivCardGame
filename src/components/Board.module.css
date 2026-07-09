@@ -996,6 +996,30 @@
   box-shadow: 0 0 0 2px rgb(var(--danger-rgb) / 0.35), 0 3px 8px rgba(0, 0, 0, 0.18);
 }
 
+/* The deck riffles at run start and whenever the discard reshuffles back into it. */
+@keyframes shuffle {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  15% {
+    transform: translateY(-3px) rotate(-6deg);
+  }
+  35% {
+    transform: translateY(-5px) rotate(5deg);
+  }
+  55% {
+    transform: translateY(-3px) rotate(-4deg);
+  }
+  75% {
+    transform: translateY(-1px) rotate(3deg);
+  }
+}
+
+.pileShuffling {
+  animation: shuffle 0.5s ease-in-out;
+}
+
 /* A played card's clone flies up and fades — covers the card vanishing from the hand. */
 .ghostLayer {
   position: fixed;

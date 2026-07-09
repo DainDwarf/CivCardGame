@@ -109,7 +109,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `endTurn` no-ops and undo is blocked). `instancesFromCardIds` is the shared mint path;
     `blankState()` builds an empty one. Instance ids are unique across *all* zones.
   - `resources.ts` — the `Resources` bundle and its arithmetic (`add`/`subtract`/`scaleResources`).
-  - `deck.ts` — draw + discard-pile reshuffle, both off the seeded RNG stream (`G.rngState`).
+  - `deck.ts` — draw + discard-pile reshuffle (the shared `reshuffleIntoDeck`, used by both
+    `drawCard` and `peekTop`), both off the seeded RNG stream (`G.rngState`). Each reshuffle bumps
+    `GameState.reshuffleCount`, a pure UI cue no rule reads — `components/Board.tsx` diffs it to
+    fire the deck pile's shuffle animation (a length-diff can't tell a reshuffle apart from a card
+    effect that only grows/shrinks the deck, e.g. `returnToDeck`/`peekTop`).
     Also the **card-facing deck primitives** a peek/draw-manipulation card resolves *through* instead
     of touching `G.deck`/`G.hand`/`G.rngState` itself (the deck counterpart to `gainResources`):
     `peekTop` (lift up to N off the top, reshuffling the discard in as the deck empties, emitting no

@@ -152,7 +152,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 - **Beginning-of-run injection animation** — a short animation at run start showing the mission's objective/threat/event cards being injected onto the board (objective into its corner nook, threats into the threat zone, events shuffled into the deck), so the player sees what the mission set up rather than finding it already in place. `[?]` `[phase: 3]`
-- **Deck-shuffling animation** — a brief shuffle animation on the deck (at run start and on reshuffle) for feedback. `[?]` `[phase: 3]`
 - **Worker-deployment animation (non-drag path)** — when a worker is staffed via a click/toggle (not dragged), animate it moving into the box, so the non-drag path has the same visible motion the drag gives. `[?]` `[phase: 3]`
 
 ## Game design & balance
@@ -185,6 +184,20 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.2 (end of Phase 2)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 3 onward.
+
+- **Deck-shuffling animation** — the deck pile now briefly riffles (a rotate/translateY wiggle,
+  `Board.module.css`'s `shuffle` keyframe on a new `.pileShuffling` class) both at run start and on
+  every later reshuffle. The reliable signal turned out to need a real state field, not a length
+  diff: `GameState` gained `reshuffleCount` (`rules/state.ts`), a pure UI cue bumped once per
+  discard→deck fold by a new shared `reshuffleIntoDeck` helper (`rules/deck.ts`) — extracted from
+  the previously copy-pasted reshuffle block in both `drawCard` and `peekTop`, so it's a
+  dedup as well as a feature. `Board.tsx` diffs `G.reshuffleCount` against its last-seen value in
+  one `useEffect`; since the ref starts at `undefined`, the *first* render already counts as a
+  change, so a fresh run's initial deck fires the same trigger as a later reshuffle — one mechanism,
+  no separate mount-only special case. A length-diff was considered and rejected: `returnToDeck`
+  grows the deck without reshuffling and `peekTop` can shrink it while reshuffling, so deck-length
+  deltas alone can't tell the two apart. No rule reads the counter; suite green (386 tests).
+  `[phase: 3]`
 
 - **Card-facing deck/interaction primitives (resolver spine as a two-way street) + Foresight bug** —
   `content/cards.ts`'s Foresight was the *only* card whose `resolve` reached into raw run state
