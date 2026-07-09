@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { BuildingInstance, CardInstance, Resources, WorkInstance } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
@@ -139,14 +139,24 @@ function CultureBar({ culture, projected }: { culture: number; projected: number
 function BoardLeftColumn({
   G,
   onZoom,
+  hiddenIds,
+  registerEl,
 }: {
   G: GameState;
   onZoom: (cardId: string, overrideText?: string, stickerBadge?: string[]) => void;
+  /** During the run-start injection animation, instance ids not yet landed — rendered
+   *  `visibility: hidden` so they hold their layout (and stay measurable) but don't show until the
+   *  flying card lands on them. Absent outside the intro (everything visible). */
+  hiddenIds?: Set<number>;
+  /** Collects each card's root element, keyed by instance id, so the intro can measure where to
+   *  fly a card. Absent outside the intro. */
+  registerEl?: (id: number, el: HTMLElement | null) => void;
 }) {
   const objective = G.objective;
   if (!objective && G.threats.length === 0) return null;
   const objectiveCard = objective ? CARDS[objective.cardId] : undefined;
   const objectiveText = objective && objectiveCard ? objectiveCard.dynamicText?.(G, objective) : undefined;
+  const hiddenStyle = (id: number) => (hiddenIds?.has(id) ? { visibility: 'hidden' as const } : undefined);
   return (
     <div className={styles.boardLeft}>
       {objective && objectiveCard && (
@@ -156,6 +166,8 @@ function BoardLeftColumn({
             overrideText={objectiveText}
             stickerBadge={objective.stickers}
             className={styles.staticCard}
+            style={hiddenStyle(objective.id)}
+            ref={(el) => registerEl?.(objective.id, el)}
             onClick={() => onZoom(objective.cardId, objectiveText, objective.stickers)}
           />
         </div>
@@ -172,6 +184,8 @@ function BoardLeftColumn({
                 overrideText={overrideText}
                 stickerBadge={t.stickers}
                 className={styles.staticCard}
+                style={hiddenStyle(t.id)}
+                ref={(el) => registerEl?.(t.id, el)}
                 onClick={() => onZoom(t.cardId, overrideText, t.stickers)}
               />
             );
@@ -218,15 +232,19 @@ function Pile({
   label,
   variant,
   onView,
+  elRef,
 }: {
   count: number;
   label: string;
   variant: string;
   onView?: () => void;
+  /** Exposes the pile button so the run-start intro can measure the deck pile as a fly target. */
+  elRef?: React.Ref<HTMLButtonElement>;
 }) {
   return (
     <button
       type="button"
+      ref={elRef}
       className={`${styles.pile} ${variant}`}
       onClick={onView}
       disabled={!onView || count === 0}
@@ -485,6 +503,24 @@ interface Ghost {
   stickers?: string[];
 }
 
+/** One mission-injected card flying from center-stage into its place during the run-start
+ *  animation (objective → corner, threat → column, event → deck). `from`/`to` are in *local*
+ *  (pre-scale) px — computed via `px()` — and rendered raw (not re-converted like the play ghost). */
+interface IntroGhost {
+  /** Stable key for this group (target + cardId) — also the React key, so each card remounts
+   *  (re-plays its pop-in). */
+  key: string;
+  card: CardDef;
+  overrideText?: string;
+  stickers?: string[];
+  /** How many copies fly as this one swipe — shown as a ×N badge (like any grouped card face). */
+  count: number;
+  from: Rect;
+  to: Rect;
+  /** false = resting at center (the readable pause); true = transitioning into `to`. */
+  moving: boolean;
+}
+
 /** A card being dragged from the hand toward the board. */
 interface DragState {
   key: number;
@@ -577,6 +613,40 @@ function whyUnplayable(card: CardDef, G: GameState, self: CardInstance): string 
   }
 }
 
+/** One group in the run-start injection animation: all copies of the same card heading for the same
+ *  target fly as a single swipe (duplicate threats / event copies don't each get their own beat). */
+interface IntroGroup {
+  /** Stable animation key (`target:cardId`) — also the flying card's React key. */
+  key: string;
+  card: CardDef;
+  target: 'objective' | 'threat' | 'deck';
+  /** Every instance in the group. `[0]` is the representative (its slot is the fly target, its
+   *  per-copy state drives the flying face); all of them are revealed together when the group lands. */
+  insts: CardInstance[];
+}
+
+/** The mission's run-start injection set, grouped by card and in the order the intro animation places
+ *  them: the objective (into its corner), then each threat (into the column), then the mission's event
+ *  cards (which get shuffled into the deck). Copies of the same card in the same target collapse into
+ *  one group so duplicates fly together. Read purely from GameState — event cards are identifiable
+ *  because the player never builds decks with event-kind cards (`isDeckable`), so at run start the
+ *  only event-kind cards in the deck are the mission-injected ones. */
+function introInjections(G: GameState): IntroGroup[] {
+  const groups: IntroGroup[] = [];
+  const push = (target: IntroGroup['target'], inst: CardInstance) => {
+    const existing = groups.find((g) => g.target === target && g.card.id === inst.cardId);
+    if (existing) existing.insts.push(inst);
+    else groups.push({ key: `${target}:${inst.cardId}`, card: CARDS[inst.cardId], target, insts: [inst] });
+  };
+  if (G.objective) push('objective', G.objective);
+  for (const t of G.threats) push('threat', t);
+  // Events are shuffled into the deck, but the opening hand is already drawn by the time the intro
+  // runs — so a mission event copy can sit in the hand, not the deck. Count both zones (the only
+  // places a card can be at setup) so the ×N reflects every injected event, not just the undrawn ones.
+  for (const c of [...G.deck, ...G.hand]) if (CARDS[c.cardId].kind === 'event') push('deck', c);
+  return groups;
+}
+
 export function Board({
   confirmEndTurn,
   uiScale,
@@ -596,7 +666,7 @@ export function Board({
   mapProgress: Record<string, true>;
   collection: OwnedCards;
 }) {
-  const { G, gameover, board, moves, endTurn, undo, canUndo, restart, endRun } = useGame();
+  const { G, gameover, board, moves, endTurn, undo, canUndo, restart, endRun, runGen } = useGame();
   // The whole board renders inside a `transform: scale(uiScale)` wrapper (App.tsx). Pointer
   // coordinates and getBoundingClientRect() are in *visual* (post-scale) px; when written into
   // an inline left/top/width/height on a drag/ghost clone — which lives inside that scaled
@@ -613,6 +683,22 @@ export function Board({
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
   const [deckShuffling, setDeckShuffling] = useState(false);
+  // Run-start injection animation (see the layout effect below): `intro` greys the board + holds the
+  // hand back while cards swipe into place; `introIds` is every objective/threat instance being
+  // placed and `introLanded` the ones already landed (a card stays hidden until it lands);
+  // `introGhost` is the single card currently flying.
+  const [intro, setIntro] = useState(false);
+  // Held slightly past `intro`: the scrim lifts and the deck riffles first, *then* the hand deals in
+  // (the requested run-start order). See the intro layout effect.
+  const [handHeld, setHandHeld] = useState(false);
+  const [introIds, setIntroIds] = useState<Set<number>>(() => new Set());
+  const [introLanded, setIntroLanded] = useState<Set<number>>(() => new Set());
+  const [introGhost, setIntroGhost] = useState<IntroGhost | null>(null);
+  const introTimers = useRef<number[]>([]);
+  // Objective + threat card roots, keyed by instance id, so the intro can measure where to fly each.
+  const introEls = useRef<Map<number, HTMLElement>>(new Map());
+  const deckPileRef = useRef<HTMLButtonElement | null>(null);
+  const lastReshuffleRef = useRef(G.reshuffleCount);
   const [rejectMsg, setRejectMsg] = useState<string | null>(null);
   const [warnEndRound, setWarnEndRound] = useState(false);
   const [overlayMinimized, setOverlayMinimized] = useState(false);
@@ -651,7 +737,9 @@ export function Board({
   const shakeSeq = useRef(0);
   const shuffleSeq = useRef(0);
   const rejectMsgSeq = useRef(0);
-  const hand = useAnimatedHand(G.hand);
+  // Hold the hand back during the run-start injection animation — feeding an empty hand means every
+  // real card reads as freshly drawn (`isNew`) when `handHeld` clears, so the deal-in fires on reveal.
+  const hand = useAnimatedHand(handHeld ? [] : G.hand);
   // Each building's stable id keys both its slot in `layout` and this lookup.
   const buildingById = new Map(G.tableau.map((b) => [b.id, b]));
   // Work boxes share the instance-id space with buildings, keyed here for worker-drop resolution.
@@ -1112,17 +1200,138 @@ export function Board({
     setWarnEndRound(false);
   }, [G.round]);
 
-  // Briefly riffle the deck pile whenever `reshuffleCount` changes — which fires once on mount
-  // (a fresh run's initial deck arriving counts as "at run start") and again on every later
-  // reshuffle, so one effect covers both cues from the TODO with no separate mount-trigger.
-  useEffect(() => {
+  /** Briefly riffle the deck pile (the `shuffle` keyframe). Shared by the run-start intro and every
+   *  mid-run reshuffle; the `shuffleSeq` guard drops a stale timer if another riffle starts first. */
+  function fireRiffle() {
     const n = ++shuffleSeq.current;
     setDeckShuffling(true);
     window.setTimeout(() => {
       if (shuffleSeq.current === n) setDeckShuffling(false);
     }, 500);
+  }
+
+  function clearIntroTimers() {
+    introTimers.current.forEach((id) => window.clearTimeout(id));
+    introTimers.current = [];
+  }
+
+  // Mid-run reshuffles riffle the pile. The run-start riffle is owned by the intro sequence below
+  // (which pre-syncs `lastReshuffleRef` so the fresh/restart-reset count reads as already-seen),
+  // so this fires only on a genuine later change — never on mount or on a restart.
+  useEffect(() => {
+    if (G.reshuffleCount === lastReshuffleRef.current) return;
+    lastReshuffleRef.current = G.reshuffleCount;
+    fireRiffle();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [G.reshuffleCount]);
+
+  // The run-start injection animation: greys the board and swipes each mission-injected card into
+  // place one at a time (objective → corner, threats → column, events → deck); only once it finishes
+  // does the deck riffle and the first hand deal in. Purely presentational — like `reshuffleCount`,
+  // no rule reads it. Keyed on `runGen` so it replays on restart (which reuses this Board without a
+  // remount). A *layout* effect so the board is greyed / the hand hidden before the first paint (no
+  // flash) and so it runs before the passive reshuffle effect above — letting it pre-claim ownership
+  // of the run-start riffle. Cleanup clears every pending timer, so StrictMode's double-invoke (and a
+  // restart mid-intro) just restart the sequence cleanly.
+  useLayoutEffect(() => {
+    clearIntroTimers();
+    lastReshuffleRef.current = G.reshuffleCount;
+    const items = introInjections(G);
+    setIntroGhost(null);
+    setIntroLanded(new Set());
+    setIntroIds(new Set(items.flatMap((g) => (g.target !== 'deck' ? g.insts.map((i) => i.id) : []))));
+
+    if (items.length === 0) {
+      setIntro(false);
+      setHandHeld(false);
+      fireRiffle();
+      return clearIntroTimers;
+    }
+
+    setIntro(true);
+    setHandHeld(true);
+    const schedule = (delay: number, fn: () => void) => {
+      introTimers.current.push(window.setTimeout(fn, delay));
+    };
+    const HOLD = 550; // readable pause center-stage
+    const MOVE = 550; // swipe into place
+    const GAP = 180; // beat between cards
+    const centerRect = (): Rect => {
+      const w = 168;
+      const h = 232; // enlarged, readable local px
+      return { left: px(window.innerWidth / 2) - w / 2, top: px(window.innerHeight / 2) - h / 2, width: w, height: h };
+    };
+    const targetRect = (target: 'objective' | 'threat' | 'deck', id: number): Rect | null => {
+      if (target === 'deck') {
+        // An event card doesn't shrink into the pile — it flies full-size and lands centered over the
+        // deck (then vanishes). So keep the center-stage card dims, just re-position onto the pile.
+        const el = deckPileRef.current;
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        const c = centerRect();
+        return {
+          left: px(r.left + r.width / 2) - c.width / 2,
+          top: px(r.top + r.height / 2) - c.height / 2,
+          width: c.width,
+          height: c.height,
+        };
+      }
+      const el = introEls.current.get(id);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { left: px(r.left), top: px(r.top), width: px(r.width), height: px(r.height) };
+    };
+
+    // Reveal every real copy in a group at once (they all animated as one swipe).
+    const revealGroup = (g: IntroGroup) =>
+      setIntroLanded((s) => {
+        const n = new Set(s);
+        for (const inst of g.insts) n.add(inst.id);
+        return n;
+      });
+
+    let t = 300; // let the board layout settle before the first card
+    items.forEach((item) => {
+      const rep = item.insts[0];
+      const at = t;
+      schedule(at, () => {
+        const to = targetRect(item.target, rep.id);
+        if (!to) {
+          // Target not measurable (shouldn't happen — the real cards render hidden in place) —
+          // just reveal it without the fly rather than stall the sequence.
+          if (item.target !== 'deck') revealGroup(item);
+          return;
+        }
+        setIntroGhost({
+          key: item.key,
+          card: item.card,
+          overrideText: item.card.dynamicText?.(G, rep),
+          stickers: rep.stickers,
+          count: item.insts.length,
+          from: centerRect(),
+          to,
+          moving: false,
+        });
+      });
+      schedule(at + HOLD, () => setIntroGhost((g) => (g ? { ...g, moving: true } : g)));
+      schedule(at + HOLD + MOVE, () => {
+        // An event just vanishes into the deck; an objective/threat is revealed where it landed.
+        if (item.target !== 'deck') revealGroup(item);
+        setIntroGhost(null);
+      });
+      t = at + HOLD + MOVE + GAP;
+    });
+
+    // All cards placed: lift the grey and riffle the (now visible) deck, then a beat later deal the
+    // first hand — the requested order of scrim-lift → shuffle → hand.
+    schedule(t, () => {
+      setIntro(false);
+      fireRiffle();
+    });
+    schedule(t + 480, () => setHandHeld(false));
+    return clearIntroTimers;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runGen]);
 
   // warnEndRound is only meaningful while shouldWarn or confirmEndTurn is true; reset it
   // if the player staffs all buildings after triggering the dialog (so it can't
@@ -1250,6 +1459,15 @@ export function Board({
         <BoardLeftColumn
           G={G}
           onZoom={(cardId, overrideText, stickerBadge) => setZoom({ cardId, overrideText, stickerBadge })}
+          hiddenIds={intro ? new Set([...introIds].filter((id) => !introLanded.has(id))) : undefined}
+          registerEl={
+            intro
+              ? (id, el) => {
+                  if (el) introEls.current.set(id, el);
+                  else introEls.current.delete(id);
+                }
+              : undefined
+          }
         />
         {/* The banner is centered/narrow, so only the full-width play column needs to clear it —
             the left strip sits at the far edge where the banner isn't, letting the objective rise
@@ -1353,6 +1571,7 @@ export function Board({
               variant={`${styles.pileDeck} ${deckShuffling ? styles.pileShuffling : ''}`}
               label="deck"
               count={G.deck.length}
+              elRef={deckPileRef}
             />
             <button
               className={styles.undoBtn}
@@ -1484,7 +1703,7 @@ export function Board({
           ) : (
             <button
               className={styles.endRound}
-              disabled={!!gameover || !canEndRound}
+              disabled={!!gameover || !canEndRound || handHeld}
               onClick={() => { if (shouldWarn || confirmEndTurn) setWarnEndRound(true); else endTurn(); }}
             >
               <span className={styles.endRoundLabel}>End Round</span>
@@ -1493,6 +1712,27 @@ export function Board({
           )}
         </div>
       </div>
+
+      {/* Run-start injection: a grey scrim over the board while each mission card swipes into place. */}
+      {intro && <div className={styles.introScrim} aria-hidden="true" />}
+      {introGhost && (
+        <div className={styles.introLayer} aria-hidden="true">
+          <CardFace
+            key={introGhost.key}
+            card={introGhost.card}
+            overrideText={introGhost.overrideText}
+            stickerBadge={introGhost.stickers}
+            countBadge={introGhost.count}
+            className={`${styles.introCard} ${introGhost.moving ? styles.introMoving : ''}`}
+            style={{
+              left: (introGhost.moving ? introGhost.to : introGhost.from).left,
+              top: (introGhost.moving ? introGhost.to : introGhost.from).top,
+              width: (introGhost.moving ? introGhost.to : introGhost.from).width,
+              height: (introGhost.moving ? introGhost.to : introGhost.from).height,
+            }}
+          />
+        </div>
+      )}
 
       {ghosts.length > 0 && (
         <div className={styles.ghostLayer} aria-hidden="true">

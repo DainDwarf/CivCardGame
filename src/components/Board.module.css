@@ -1070,6 +1070,50 @@
   }
 }
 
+/* --- Run-start injection animation (Board.tsx's intro layout effect) --- */
+
+/* Greys the whole board while the mission's cards swipe into place. A plain darkening scrim (a
+   black scrim reads fine in either theme — see the theming convention's literal-scrim carve-out);
+   pointer-events block any stray click on the dimmed board underneath. Sits above the board (banner
+   z-index 5) but below the flying card + the standard overlays (menus/zoom at z-index 60+). */
+.introScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: rgba(0, 0, 0, 0.55);
+  animation: introFade 0.28s ease both;
+}
+
+@keyframes introFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* The single card currently flying from center-stage to its destination — above the scrim. */
+.introLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+}
+
+/* Positioned by inline left/top/width/height (in local px). At rest (center-stage) it pops in;
+   `.introMoving` then transitions those four properties to swipe/shrink it into place. */
+.introCard {
+  position: fixed;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  animation: introPop 0.24s ease both;
+}
+
+.introMoving {
+  transition: left 0.55s ease, top 0.55s ease, width 0.55s ease, height 0.55s ease;
+}
+
+@keyframes introPop {
+  from { opacity: 0; transform: scale(0.86); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 /* --- Drag to play --- */
 
 .dragLayer {

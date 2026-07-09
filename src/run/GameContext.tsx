@@ -27,6 +27,10 @@ interface GameContextValue {
   restart: () => void;
   /** Ends the run and hands the result back to `onRunEnd`. No-op while the run is still live. */
   endRun: () => void;
+  /** Bumps once per fresh run (initial mount = 0, +1 on every restart). A run-start UI cue —
+   *  e.g. `Board.tsx`'s injection animation keys on it to replay on restart, which reuses the
+   *  same mounted Board rather than remounting. No rule reads it. */
+  runGen: number;
 }
 
 /** Turns a finished `RunState` into the `RunResult` handed to `onRunEnd`/`onRestart`, or
@@ -45,6 +49,9 @@ const GameContext = createContext<GameContextValue | null>(null);
 interface Session {
   present: RunState;
   past: RunState[];
+  /** Increments on restart so run-start UI cues (the injection animation) can replay without a
+   *  Board remount. See `GameContextValue.runGen`. */
+  gen: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,20 +82,20 @@ function reducer(s: Session, action: Action): Session {
       // reveals cards without removing them won't be detected here — that move must set its
       // own explicit "revealed" flag for the reducer to treat as a boundary.
       const revealed = !sameDeck(s.present.G.deck, next.G.deck);
-      return { present: next, past: revealed ? [] : [...s.past, s.present] };
+      return { present: next, past: revealed ? [] : [...s.past, s.present], gen: s.gen };
     }
     case 'endTurn': {
       const next = endTurn(s.present);
       if (next === s.present) return s;
       // Ending a round draws a fresh hand and crosses into the next turn — a clean break.
-      return { present: next, past: [] };
+      return { present: next, past: [], gen: s.gen };
     }
     case 'undo': {
       if (s.past.length === 0) return s;
-      return { present: s.past[s.past.length - 1], past: s.past.slice(0, -1) };
+      return { present: s.past[s.past.length - 1], past: s.past.slice(0, -1), gen: s.gen };
     }
     case 'restart':
-      return { present: createRun(action.config), past: [] };
+      return { present: createRun(action.config), past: [], gen: s.gen + 1 };
   }
 }
 
@@ -106,8 +113,8 @@ export function GameProvider({
   onRestart?: (result: RunResult) => void;
   children: React.ReactNode;
 }) {
-  const [session, dispatch] = useReducer(reducer, config, (c) => ({ present: createRun(c), past: [] }));
-  const { present, past } = session;
+  const [session, dispatch] = useReducer(reducer, config, (c) => ({ present: createRun(c), past: [], gen: 0 }));
+  const { present, past, gen } = session;
 
   const moves = useMemo(() => ({
     playCard: (handIdx: number, discardHandIdxs: number[] = [], destroyInstanceId?: number) =>
@@ -148,7 +155,7 @@ export function GameProvider({
   }
 
   return (
-    <GameContext.Provider value={{ G: present.G, gameover: present.gameover, board: config.board, moves, canUndo, endRun, ...handlers }}>
+    <GameContext.Provider value={{ G: present.G, gameover: present.gameover, board: config.board, moves, canUndo, endRun, runGen: gen, ...handlers }}>
       {children}
     </GameContext.Provider>
   );
