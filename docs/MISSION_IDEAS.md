@@ -7,15 +7,16 @@
 > we might build missions around, before any of it is real.
 
 ## Starting cards
+ - **Harvesting** and **Gathering** of course (food/prod)
  - **Dogs**: domesticated by Paleolithic hunter-gatherers
-  millennia *before* farming, (hunting/guarding flavor) Early military?
+  millennia *before* farming, (hunting/guarding flavor) Early military? food->military?
  - **Fire**: the ur-technology (cooking/warmth/protection). Starting **science** giver.
  - **Spear** / **Bow**: possibilities for early **military**.
  - **Cave art**: earliest symbolic behavior; starting **culture** source.
- - **Clothing**: bone-needle hide sewing; unknown use TBD.
+ - **Clothing**: bone-needle hide sewing; production -> culture
  - **Jewelry**: shell beads/ornaments, ~100,000+ years — the earliest valuables. Starting
    **treasury** giver.
- - **Storytelling**: spends Science to draw an extra card.
+ - **Storytelling**: TBD (previously use to draw a card, but a card to draw another card is useless, don't do that)
  - **Bartering**: spends money to gain food.
 
 ## Neolithic
@@ -50,6 +51,7 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
 - **Beer** — fermentation converts food into culture (feasting/ritual; arguably helped
   drive cereal domestication).
 - **Early trade** — obsidian-style long-distance exchange; feeds the treasury.
+- **Göbekli Tepe** - First world wonder?
 
 > Keep copper/metallurgy and the wheel **out** of this age — both are really
 > Chalcolithic/Bronze. Good "graduated the Neolithic" unlocks to bridge to the next age.

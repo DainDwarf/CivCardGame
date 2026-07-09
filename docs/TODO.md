@@ -28,7 +28,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (only the historical period is fixed). Steps are loosely independent; hard dependencies are
 > noted inline.
 
-- **Step 0 — Reset ALL content + decouple tests** — set aside every content catalogue:
+- **Step 0 — Deck-construction constraints** (the deferred marquee Phase 4 item) — decide +
+  enforce at the deck writer (a core rule at `deckBuilder`/`saveDeck`, not a UI gate — mirrors
+  the `MAX_DECKS` precedent, [[deck-limit-is-committed]]): **minimum deck size** (provisional
+  20; also bumps the Founding deck up to satisfy it), **default hand limit 5→4**, per-card
+  copy cap (already exists). Civilization-identity gating stays an open `[?]` for now. Gates
+  Step 2 (the base deck must satisfy the floor). `[size: M]` `[phase: 4]`
+
+- **Step 1 — Reset ALL content + decouple tests** — set aside every content catalogue:
   cards, starting collection, decks, missions, **card stickers, board stickers, and the
   boards themselves** (`content/cards.ts`, `collection.ts`, `decks.ts`, `missions.ts`,
   `stickers.ts`, `boardStickers.ts`, `boards.ts`). Make the test reset deliberate, not
@@ -41,13 +48,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   store *shape* is unchanged so the reset path may miss it — pre-alpha, so document "wipe
   local save" and confirm `parsePlayerStore` doesn't crash on dangling ids
   ([[prealpha-no-save-migration]]). `[size: L]` `[phase: 4]`
-
-- **Step 1 — Deck-construction constraints** (the deferred marquee Phase 4 item) — decide +
-  enforce at the deck writer (a core rule at `deckBuilder`/`saveDeck`, not a UI gate — mirrors
-  the `MAX_DECKS` precedent, [[deck-limit-is-committed]]): **minimum deck size** (provisional
-  20; also bumps the Founding deck up to satisfy it), **default hand limit 5→4**, per-card
-  copy cap (already exists). Civilization-identity gating stays an open `[?]` for now. Gates
-  Step 2 (the base deck must satisfy the floor). `[size: M]` `[phase: 4]`
 
 - **Step 2 — Base set + Founding deck + a new board + sandbox mission** — author the
   always-owned base card set (Neolithic-tier), the new `STARTING_COLLECTION`, and a Founding
