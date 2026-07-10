@@ -28,14 +28,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (only the historical period is fixed). Steps are loosely independent; hard dependencies are
 > noted inline.
 
-- **Step 0 — Deck-construction constraints** (the deferred marquee Phase 4 item) — decide +
+- **Step 1 — Deck-construction constraints** (the deferred marquee Phase 4 item) — decide +
   enforce at the deck writer (a core rule at `deckBuilder`/`saveDeck`, not a UI gate — mirrors
   the `MAX_DECKS` precedent, [[deck-limit-is-committed]]): **minimum deck size** (provisional
   20; also bumps the Founding deck up to satisfy it), **default hand limit 5→4**, per-card
-  copy cap (already exists). Civilization-identity gating stays an open `[?]` for now. Gates
-  Step 2 (the base deck must satisfy the floor). `[size: M]` `[phase: 4]`
+  copy cap (already exists). Gates
+  Step 3 (the base deck must satisfy the floor). `[size: M]` `[phase: 4]`
 
-- **Step 1 — Reset ALL content + decouple tests** — set aside every content catalogue:
+- **Step 2 — Reset ALL content + decouple tests** — set aside every content catalogue:
   cards, starting collection, decks, missions, **card stickers, board stickers, and the
   boards themselves** (`content/cards.ts`, `collection.ts`, `decks.ts`, `missions.ts`,
   `stickers.ts`, `boardStickers.ts`, `boards.ts`). Make the test reset deliberate, not
@@ -49,19 +49,19 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   local save" and confirm `parsePlayerStore` doesn't crash on dangling ids
   ([[prealpha-no-save-migration]]). `[size: L]` `[phase: 4]`
 
-- **Step 2 — Base set + Founding deck + a new board + sandbox mission** — author the
+- **Step 3 — Base set + Founding deck + a new board + sandbox mission** — author the
   always-owned base card set (Neolithic-tier), the new `STARTING_COLLECTION`, and a Founding
   deck that satisfies the Step 1 floor; **at least one new board** (boards were reset in
-  Step 0 and a `RunConfig` needs one); and a baseline **infinite "sandbox" mission** to
+  Step 2 and a `RunConfig` needs one); and a baseline **infinite "sandbox" mission** to
   establish resource baselines for the simulator — a **never-win objective** (`() => false`,
   like the old `the_long_decline_goal`; the run loop always seeds `G.objective` and pins
   exactly one objective card, so it can't be truly objective-less) **plus a single no-drain
   deadline threat that ends the run at ~round 50** (a pure `defeat` predicate like the old
   `enlightenment_deadline`/Stagnation — *no* resource drain, so it bounds run length without
   skewing the economy baseline; the `50` is one tunable constant for simulation length).
-  Depends on Step 1. `[size: L]` `[phase: 4]`
+  Depends on Step 2. `[size: L]` `[phase: 4]`
 
-- **Step 3 — Headless simulator (balance tooling)** — a code-driven, no-browser/no-React
+- **Step 4 — Headless simulator (balance tooling)** — a code-driven, no-browser/no-React
   runner over the pure core, for statistical balance answers no human can play enough games
   to reach (is a mission winnable? is a sticker overpowered? is a card ever played? is the
   food economy too tight?). Feasible because the core is already framework-free, deterministic
@@ -72,11 +72,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   new consideration is throughput (millions of `endTurn`s), not viability. **First deliverable:** a
   tiny `simulateRun(config, policy)` helper in **`src/sim/`** (the architecture diagram's reserved
   home) + a **random-legal-move policy** (doubles as a crash/illegal-state fuzzer), before any
-  smarter policy or result aggregation. Runs against Step 2's sandbox — the ~50-turn deadline
+  smarter policy or result aggregation. Runs against Step 3's sandbox — the ~50-turn deadline
   guarantees bounded, terminating runs. Later: heuristic policies, batch runs across
   seeds/decks/missions, aggregation/reporting. `[size: M]` `[phase: 4]`
 
-- **Step 4 — Ages map infrastructure** — promote ages from the undefined `era` placeholder to
+- **Step 5 — Ages map infrastructure** — promote ages from the undefined `era` placeholder to
   a real system: the `content/ages.ts` age→node/column model + the `CampaignMap.tsx` band
   layout that positions each age over its slice of the DAG (genuinely unbuilt today —
   `ages.ts` is a single `testing` placeholder and `CampaignMap.tsx` has no band layout). Own
@@ -84,26 +84,26 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   (tag each card with the age it unlocks in, for Collection sort/filter). `[size: M]`
   `[phase: 4]`
 
-- **Step 5 — Neolithic arc** (the full tutorial content, mechanics-only, no onboarding UI) —
+- **Step 6 — Neolithic arc** (the full tutorial content, mechanics-only, no onboarding UI) —
   the meat of Phase 4 gameplay: several missions introducing **all** core mechanics
   progressively — buildings (House/Farm/Workshop), then **territory limitation, conquest, and
   culture** (population targets, then culture-level goals). Author their unlock cards, reward
   amounts, prereqs, and DAG shape. **First place sticker unlocks happen:** extend
   `rules/rewards.ts` so a mission reward can unlock a **card or board sticker** (and gate which
-  stickers are buyable) — not just a card. Balance via the Step 3 simulator. `[size: L]`
+  stickers are buyable) — not just a card. Balance via the Step 4 simulator. `[size: L]`
   `[?]` `[phase: 4]`
 
-- **Step 6 — Bronze Age arc** (content expansion; flavor TBD) — new cards + missions themed
+- **Step 7 — Bronze Age arc** (content expansion; flavor TBD) — new cards + missions themed
   to the Bronze Age, **no new mechanics**. Continues unlocking cards/stickers through mission
   rewards. Specific flavor/content **not yet decided** — placeholder until designed. If any
   building here needs 2–3 workers, the `[blocked]` multi-pip staffing UI + bulk-worker-transfer
   items (below) unblock. Balance via simulator. `[size: L]` `[?]` `[phase: 4]`
 
-- **Step 7 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 6, Iron Age
+- **Step 8 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 7, Iron Age
   period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
   `[size: L]` `[?]` `[phase: 4]`
 
-- **Step 8 — Tutorial onboarding UI** — the scripted popups/indicators layer over the
+- **Step 9 — Tutorial onboarding UI** — the scripted popups/indicators layer over the
   **Neolithic** arc (the sole tutorial age), so new mechanics aren't dumped on the player at
   once. "Tutorial seen" state belongs in device-local `Settings` (`meta/settings.ts`), **not**
   `PlayerStore` (not game progress). Mild tension with the anti-surprise unlock convention
@@ -129,7 +129,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]) — Step 6 may unblock it. `[size: M] [?] [blocked]` `[phase: 4]`
+- **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]) — Step 7 may unblock it. `[size: M] [?] [blocked]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 
