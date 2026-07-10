@@ -67,6 +67,12 @@ seeds across policies:
   never played across many *random* walks, it's genuinely hard/impossible to play.
 - `greedy` + `heuristic` = a competent **ceiling**. The gap between the random floor
   and this ceiling is how much skill the scenario rewards.
+- `greedy2` = greedy with a bounded staffing lookahead (values a work/building play by
+  the best worker it could then move into the box). It exists as a **diagnostic pair with
+  `greedy`**: the `greedy`↔`greedy2` win-rate gap measures how much *worker reassignment*
+  is a lever in a scenario (large on missions where surviving a long build hinges on
+  re-staffing food boxes). It grinds long games, so it's the slow policy in a full sweep —
+  name it explicitly (`greedy,greedy2`) when that's the question you're asking.
 
 **2. `unplayed cards` means different things per policy.** Under **random** it's
 authoritative: the card is genuinely unplayable. Under **greedy/heuristic** it means

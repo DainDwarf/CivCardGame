@@ -460,7 +460,12 @@ non-`endTurn` action (argmax of `sim/value.ts`'s pure, survival-first `scoreStat
 state), ending the turn only when nothing improves (splitting off the `endTurn` decision so an infinite
 mission's rounds-survived reward can't make advancing always look best); `createHeuristicPolicy(seed?)`
 (`sim/heuristicPolicy.ts`) is a cheaper hand-written priority ladder (it clones only for its one
-objective rung, not for the whole action set). Both policies are **goal-directed**: they steer toward the
+objective rung, not for the whole action set); `createGreedy2Policy(seed)` (`sim/greedy2Policy.ts`) is
+`greedy` plus a **bounded 2-ply staffing lookahead** — it values a `work`/`building` play by the best
+worker it could then relocate into the new box, so it sees the play→staff combo one-ply greedy misses when
+population is saturated. It's kept as a deliberate diagnostic *pair* with `greedy`: the `greedy`↔`greedy2`
+win-rate gap measures how much **worker reassignment** is a skill lever in a scenario (decisive on Growing
+Numbers — ~41% greedy → ~93% greedy2). These policies are **goal-directed**: they steer toward the
 *mission's* objective via `sim/objective.ts`'s `objectiveProgress` — a sim-local `[0,1]` progress
 gradient the run engine doesn't expose (an objective is only a win/lose boolean). It lives strictly in
 `sim/` (never a hook on a card/mission — see DESIGN.md's *`sim/` is a consumer*), keyed by objective card
@@ -471,7 +476,8 @@ fallback. Without it a survival-first policy would drift at an equilibrium and n
 threshold win (and, with no deadline, never terminate — why a `'standard'` mission can now be swept).
 `runPolicies(scenarios, names, { seeds })` sweeps a scenario under several named policies (`POLICY_FACTORIES`)
 with *paired* seeds. The `npm run sim [seeds] [policies]` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`)
-prints the report across all policies by default. A synthetic-fixture move-surface fuzz test
+prints the report across all policies by default (`greedy2` grinds long survival games, so it's the slow
+one in that default sweep — name a subset like `greedy,greedy2` to skip it). A synthetic-fixture move-surface fuzz test
 (building/destroy/`discardCost`) is deferred until building content exists.
 
 ## Conventions

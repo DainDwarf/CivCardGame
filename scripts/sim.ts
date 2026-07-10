@@ -10,7 +10,9 @@
  *
  * Each scenario is swept under several move policies (`POLICY_FACTORIES`) with *identical* seed streams,
  * so the comparison is paired: the random fuzzer is the difficulty *floor*, the greedy / heuristic
- * policies the competent *ceiling*, and the gap tells you how much skill a scenario rewards.
+ * policies the competent *ceiling*, and the gap tells you how much skill a scenario rewards. `greedy2`
+ * (greedy + a staffing lookahead) is a diagnostic pair with `greedy` — their gap measures how much worker
+ * reassignment matters in a scenario; it grinds long games, so it's the slow policy in the default sweep.
  *
  * Usage:
  *   npm run sim                       # default 200 seeds per scenario, all policies

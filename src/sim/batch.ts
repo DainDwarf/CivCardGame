@@ -2,14 +2,18 @@ import type { BoardId } from '../content/boards';
 import { simConfig, simulateRun, type Policy, type SimOptions, type SimOutcome } from './simulate';
 import { createRandomPolicy } from './randomPolicy';
 import { createGreedyPolicy } from './greedyPolicy';
+import { createGreedy2Policy } from './greedy2Policy';
 import { createHeuristicPolicy } from './heuristicPolicy';
 
 /** The built-in move policies a sweep can run under, by name — the random fuzzer (floor), the greedy
- *  optimizer, and the cheap heuristic baseline (ceiling). The CLI sweeps a scenario under several to
- *  bracket its difficulty. */
+ *  optimizer, the cheap heuristic baseline (ceiling), and `greedy2` (greedy + a bounded staffing
+ *  lookahead). The CLI sweeps a scenario under several to bracket its difficulty; the `greedy`↔`greedy2`
+ *  gap is a standing readout of how much worker reassignment matters in a scenario (see `greedy2Policy`).
+ *  `greedy2` grinds long survival games, so it's the slow one in a default (all-policy) sweep. */
 export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = {
   random: createRandomPolicy,
   greedy: createGreedyPolicy,
+  greedy2: createGreedy2Policy,
   heuristic: createHeuristicPolicy,
 };
 

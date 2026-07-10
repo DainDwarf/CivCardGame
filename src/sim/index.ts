@@ -3,6 +3,7 @@ export * from './objective';
 export * from './actions';
 export * from './randomPolicy';
 export * from './greedyPolicy';
+export * from './greedy2Policy';
 export * from './heuristicPolicy';
 export * from './value';
 export * from './invariants';
