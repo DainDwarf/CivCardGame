@@ -40,10 +40,13 @@ export const DEFAULT_DECKS: DeckSeed[] = [
     cards: [
       'settlers', 'settlers', 'corvee', 'corvee', 'harvest', 'harvest',
       'farm', 'workshop', 'farm', 'workshop', 'library', 'theater',
-      // Two Cornucopias so the run-scoped growing gain is visible in a single playthrough, a
-      // Foresight to exercise the interactive peek/choose, and a Destroy to exercise the
+      // Two Cornucopias so the run-scoped growing gain is visible in a single playthrough, two
+      // Foresights to exercise the interactive peek/choose, and two Destroys to exercise the
       // targeted demolish (there are buildings above for it to target).
-      'cornucopia', 'cornucopia', 'foresight', 'destroy',
+      'cornucopia', 'cornucopia', 'foresight', 'foresight', 'destroy', 'destroy',
+      // Padding to reach the MIN_DECK_SIZE floor; this whole deck is placeholder content
+      // reset in Phase 4 Step 2, so the exact filler cards don't matter.
+      'market', 'walls',
     ],
   },
 ];

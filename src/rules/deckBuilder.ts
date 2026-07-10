@@ -14,6 +14,13 @@ import { findInstance, hasSticker, instancesOf, unstickeredInstancesOf, type Own
  *  as its reflection. */
 export const MAX_DECKS = 6;
 
+/** The committed *minimum* size a deck must reach before it can be saved. The number is
+ *  provisional (balance-tunable, Phase 4), but the *existence* of the floor is a core rule —
+ *  enforced at the deck writer (`App.tsx`'s `saveDeck`), with the deck editor's disabled "Save"
+ *  button as its reflection. Mirrors the `MAX_DECKS` precedent. The per-card copy cap (a deck may
+ *  hold at most the copies owned) lives on the collection and is enforced by `addCard` above. */
+export const MIN_DECK_SIZE = 20;
+
 /** Appends one copy of `cardId` — picks the *lowest-index* owned, **unstickered** instance of that
  *  cardId not already in `deck` (`unstickeredInstancesOf` is granted order, so the first Farm added →
  *  1/2, second → 2/2, etc.). Copies are fungible only until stickered; a stickered instance is never

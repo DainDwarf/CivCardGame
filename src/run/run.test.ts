@@ -59,7 +59,7 @@ describe('run loop (headless integration)', () => {
     const { G } = client.getState();
     expect(G.round).toBe(1);
     expect(G.population).toBe(2);
-    expect(G.hand.map((c) => c.cardId)).toEqual(['farm', 'workshop', 'corvee', 'library', 'harvest']);
+    expect(G.hand.map((c) => c.cardId)).toEqual(['farm', 'workshop', 'corvee', 'library']);
     expect(G.resources.production).toBe(5);
     client.stop();
   });
@@ -105,12 +105,12 @@ describe('run loop (headless integration)', () => {
   });
 
   it('a work card sticks onto the board, defers its output to upkeep, and discards at end of turn', () => {
-    const client = start('enlightenment'); // hand: farm, workshop, corvee, library, harvest; pop 2
+    const client = start('enlightenment'); // hand: farm, workshop, corvee, library; pop 2
     playByName(client, 'corvee'); // work box auto-staffs 1 worker; +3 production deferred
     const { G } = client.getState();
     expect(G.workZone).toEqual([{ id: expect.any(Number), cardId: 'corvee', workers: 1 }]);
     expect(G.resources.production).toBe(5); // output not yet applied
-    expect(G.hand.map((c) => c.cardId)).toEqual(['farm', 'workshop', 'library', 'harvest']);
+    expect(G.hand.map((c) => c.cardId)).toEqual(['farm', 'workshop', 'library']);
     expect(G.discard).toEqual([]); // work card stays on the board, not discarded on play
     client.events.endTurn();
     const after = client.getState().G;

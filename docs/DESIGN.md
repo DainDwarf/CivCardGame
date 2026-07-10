@@ -389,9 +389,9 @@ branching tech tree of human history) — see *Theme & framing* and *Campaign ma
 Still open, deferred until the phase that needs them:
 
 - **Resource set** ✅ — resolved in Phase 1: Food / Production / Money / Science / Military. See *Resources* section above.
-- **Deck construction constraints** 🔧 — resolved for Phase 4: a **minimum deck size**
-  (provisional 20) and a **default hand limit** lowered 5→4, both enforced at the deck writer
-  (the `MAX_DECKS` precedent — a core rule, not a UI gate). The **per-card copy cap = copies
-  owned** already shipped in **Phase 3** (see *Economy & progression*). Still open ❓:
-  **rarity limits** and a **"civilization" identity** that gates combos — deferred past the
-  initial Phase 4 content.
+- **Deck construction constraints** — shipped in **Phase 4 (Step 1)** ✅: a **minimum deck size**
+  (`MIN_DECK_SIZE`, provisional 20) and a **default hand limit** lowered 5→4, both enforced at the
+  deck writer (`rules/deckBuilder.ts` + `App.saveDeck`, the `MAX_DECKS` precedent — a core rule, not
+  a UI gate). The **per-card copy cap = copies owned** already shipped in **Phase 3** (see
+  *Economy & progression*). Still open ❓: **rarity limits** and a **"civilization" identity** that
+  gates combos — deferred past the initial Phase 4 content.

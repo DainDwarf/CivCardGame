@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CARDS, compareCards, isDeckable, type CardDef } from '../content/cards';
 import type { DeckDef } from '../content/decks';
-import { addCard, removeCard, addInstance, removeInstance, groupCounts } from '../rules/deckBuilder';
+import { addCard, removeCard, addInstance, removeInstance, groupCounts, MIN_DECK_SIZE } from '../rules/deckBuilder';
 import {
   findInstance,
   hasSticker,
@@ -309,7 +309,7 @@ export function DeckEditor({
           onChange={(e) => setDeck((d) => ({ ...d, name: e.target.value }))}
           placeholder="Deck name"
         />
-        <span className={styles.count}>{deck.cards.length} cards</span>
+        <span className={styles.count}>{deck.cards.length} cards (min {MIN_DECK_SIZE})</span>
         <div className={styles.bannerActions}>
           <button type="button" className={styles.cancelBtn} onClick={onCancel}>
             Cancel
@@ -317,7 +317,8 @@ export function DeckEditor({
           <button
             type="button"
             className={styles.saveBtn}
-            disabled={deck.cards.length === 0}
+            disabled={deck.cards.length < MIN_DECK_SIZE}
+            title={deck.cards.length < MIN_DECK_SIZE ? `A deck needs at least ${MIN_DECK_SIZE} cards to save.` : 'Save this deck'}
             onClick={() => onSave(deck)}
           >
             Save

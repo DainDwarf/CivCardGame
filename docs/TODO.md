@@ -28,12 +28,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (only the historical period is fixed). Steps are loosely independent; hard dependencies are
 > noted inline.
 
-- **Step 1 — Deck-construction constraints** (the deferred marquee Phase 4 item) — decide +
-  enforce at the deck writer (a core rule at `deckBuilder`/`saveDeck`, not a UI gate — mirrors
-  the `MAX_DECKS` precedent, [[deck-limit-is-committed]]): **minimum deck size** (provisional
-  20; also bumps the Founding deck up to satisfy it), **default hand limit 5→4**, per-card
-  copy cap (already exists). Gates
-  Step 3 (the base deck must satisfy the floor). `[size: M]` `[phase: 4]`
+- **Step 1 — Deck-construction constraints** DONE ✅
 
 - **Step 2 — Reset ALL content + decouple tests** — set aside every content catalogue:
   cards, starting collection, decks, missions, **card stickers, board stickers, and the
@@ -144,3 +139,8 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 1 — Deck-construction constraints** ✅ — `MIN_DECK_SIZE` floor (provisional 20, enforced at
+  `rules/deckBuilder.ts` + `App.saveDeck`, reflected by the deck editor's disabled Save + `X / 20`
+  readout), default hand limit lowered 5→4 (`blankState`), per-card copy cap already existed. Founding
+  deck padded to 20 (placeholder — reset in Step 2).

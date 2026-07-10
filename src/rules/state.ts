@@ -225,7 +225,7 @@ export function blankState(missionId: string): GameState {
     threats: [],
     territory: 6,
     culture: 0,
-    handSize: 5,
+    handSize: 4,
     missionId,
     rngState: seededRng('blank').getState(),
     pendingInteraction: null,
