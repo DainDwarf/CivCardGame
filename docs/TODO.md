@@ -134,7 +134,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 3 — Starting content (Paleolithic)** ✅ — refilled the minimum coherent slice so the game is
   launchable again, scoped to a **Paleolithic hunter-gatherer** start with **no buildings** in the deck
   or collection (buildings arrive with the Neolithic arc in Step 6). Authored: 10 base cards in `CARDS`
-  (Foraging/Toolmaking work + Fire/Bow/Cave Art/Clothing/Jewelry/Bartering/Dogs/Kinship actions);
+  (Foraging/Toolmaking work + Fire/Bow/Cave Art/Clothing/Jewelry/Bartering/Dogs/Storytelling actions);
   a 20-card buildingless **Founding** deck (`DEFAULT_DECKS`); the **Tribe** board (`BOARDS`: food 5,
   pop 2, everything else 0 incl. territory); and the baseline **`sandbox`** infinite mission — a
   never-win `sandbox_goal` objective (`() => false`) plus a no-drain `sands_of_time` deadline threat

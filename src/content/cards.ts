@@ -230,7 +230,6 @@ export const CARDS: Record<string, CardDef> = {
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, effect: { gain: { money: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, effect: { gain: { food: 2 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, effect: { gain: { military: 2 } } },
-  kinship: { id: 'kinship', name: 'Kinship', kind: 'action', cost: { food: 2 }, effect: { population: 1 } },
 
   // Storytelling: the first *interactive* Paleolithic card — suspends mid-resolution for a choice
   //   from the discard, then recovers the picked card to hand (the discard→hand counterpart to
