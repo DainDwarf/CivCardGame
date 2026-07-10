@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
 import { CARDS } from './cards';
+import { AGES, ageColSpans } from './ages';
 
 // The mission *spine* mechanism (seedMissionCards, objectiveMet/defeatMet, the bus-driven win/loss
 // flags) is asserted on synthetic fixtures in `rules/missionSpine.test.ts` (relocated in Step 2.2).
@@ -39,6 +40,48 @@ describe('mission catalogue coherence', () => {
     for (const m of Object.values(MISSIONS)) {
       if (m.kind !== 'standard') continue;
       expect(CARDS[m.reward!.unlockCardId], `${m.id} → reward → ${m.reward!.unlockCardId}`).toBeDefined();
+    }
+  });
+
+  // Each age covers a slice of the DAG (`ages.ts`'s `ageColSpans`), so a standard mission must be
+  // placed (`map`) and tagged with a real age; and ages must not interleave across columns — the
+  // derived slices must tile the timeline gap-free and non-overlapping. Vacuous today (no standard
+  // missions), re-arms with the Step 6 arc.
+  it('every standard mission has a map and a valid age', () => {
+    const ageIds = new Set(AGES.map((a) => a.id));
+    for (const m of Object.values(MISSIONS)) {
+      if (m.kind !== 'standard') continue;
+      expect(m.map, `${m.id} → map`).toBeDefined();
+      expect(m.age, `${m.id} → age`).toBeDefined();
+      expect(ageIds.has(m.age!), `${m.id} → age → ${m.age}`).toBe(true);
+    }
+  });
+
+  it('age slices tile the DAG gap-free and non-overlapping', () => {
+    const spans = ageColSpans(Object.values(MISSIONS));
+    spans.forEach((s, i) => {
+      expect(s.startCol, `${s.age.id} slice must be non-empty`).toBeLessThan(s.endCol);
+      if (i > 0) {
+        expect(s.startCol, `${s.age.id} slice must start where ${spans[i - 1].age.id}'s ends`).toBe(
+          spans[i - 1].endCol,
+        );
+      }
+    });
+  });
+
+  // The derivation tiles by construction, so contiguity alone can't catch *interleaving* — an age
+  // whose mission sits past the next age's first column. This is the guard that actually pins the
+  // "ages don't interleave" invariant: every standard mission's column must fall inside its own
+  // age's derived slice (so its node sits under its own band, not a neighbour's).
+  it('every standard mission sits inside its own age slice', () => {
+    const spans = ageColSpans(Object.values(MISSIONS));
+    const byAge = new Map(spans.map((s) => [s.age.id, s]));
+    for (const m of Object.values(MISSIONS)) {
+      if (m.kind !== 'standard') continue;
+      const s = byAge.get(m.age!);
+      expect(s, `${m.id} → age ${m.age} has no slice`).toBeDefined();
+      expect(m.map!.col, `${m.id} col ${m.map!.col} in ${m.age} slice [${s!.startCol},${s!.endCol})`).toBeGreaterThanOrEqual(s!.startCol);
+      expect(m.map!.col, `${m.id} col ${m.map!.col} in ${m.age} slice [${s!.startCol},${s!.endCol})`).toBeLessThan(s!.endCol);
     }
   });
 });

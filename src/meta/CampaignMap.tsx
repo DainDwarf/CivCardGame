@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { MISSIONS, type MissionDef } from '../content/missions';
-import { AGES } from '../content/ages';
+import { ageColSpans } from '../content/ages';
 import { BOARDS, type BoardId } from '../content/boards';
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
@@ -45,9 +45,10 @@ const nodeTop = (row: number) => PAD_Y + row * ROW_H;
  *
  * Ages (`content/ages.ts`) label ranges of the timeline as themed right-arrow bands across the top
  * (Neolithic / Bronze Age / Iron Age), each tinted via a `data-age` attribute matched in the CSS
- * module (the `data-board` precedent); per-age column positioning lands with the Step 6 missions.
- * The node area beneath echoes those same age colors as a smooth horizontal gradient wash
- * (`ageBackdrop`, generated from `AGES`) that blends from one age into the next.
+ * module (the `data-board` precedent). Each age *covers its slice of the DAG*: its band + the
+ * gradient wash beneath echo the same age colors and span exactly the columns its missions occupy,
+ * derived from those missions' `map.col` (`ageColSpans`). With no standard missions placed yet the
+ * derivation is dormant — no bands render until the first age's missions land (Step 6).
  * Clicking a cleared/available node opens
  * `MissionFlowPopup` on its 'detail' step — lore, explanation, and a reward preview; its "Continue"
  * advances the same popup to its 'launch' step (board picker left, deck picker right), which
@@ -82,20 +83,31 @@ export function CampaignMap({
   const timelineWidth = PAD_X * 2 + maxCol * COL_W + NODE_W;
   const nodeAreaHeight = PAD_Y * 2 + maxRow * ROW_H + NODE_H;
 
+  // Each age covers its slice of the DAG: its band + wash span exactly the columns its missions
+  // occupy, derived from those missions' `map.col` (`content/ages.ts`'s `ageColSpans`). With no
+  // standard missions placed yet, this is `[]` — the map renders no bands (the dormant state).
+  const spans = ageColSpans(missions);
+  // px left edge of a column on the same grid the nodes use, so bands align over their columns.
+  const colX = (col: number) => PAD_X + col * COL_W;
+
   // The node area echoes the age bands' colors as a horizontal wash: each age holds its pure color
-  // solid across its (equal) share of the width and blends into the next only over a short strip
-  // around each boundary (`AGE_BLEND` = the transition half-width, %). Built from AGES off the same
-  // `--map-age-*-bg` tokens the bands use, so it stays in step with them and a fourth age needs
-  // only its token — no new code.
-  const n = AGES.length;
-  const stops = [`var(--map-age-${AGES[0].id}-bg) 0%`];
-  for (let i = 1; i < n; i++) {
-    const boundary = (i / n) * 100;
-    stops.push(`var(--map-age-${AGES[i - 1].id}-bg) ${(boundary - AGE_BLEND).toFixed(2)}%`);
-    stops.push(`var(--map-age-${AGES[i].id}-bg) ${(boundary + AGE_BLEND).toFixed(2)}%`);
+  // solid across its slice of the width and blends into the next only over a short strip around each
+  // boundary (`AGE_BLEND` = the transition half-width, %). Boundaries sit at each slice's real column
+  // position (as a % of the timeline width), so the wash lines up under the bands. Built off the same
+  // `--map-age-*-bg` tokens the bands use, so it stays in step and a fourth age needs only its token.
+  // Empty (no missions placed) → a flat fallback tint, since there are no slices to wash.
+  let ageBackdrop = 'var(--map-age-bg)';
+  if (spans.length > 0) {
+    const pct = (col: number) => (100 * colX(col)) / timelineWidth;
+    const stops = [`var(--map-age-${spans[0].age.id}-bg) 0%`];
+    for (let i = 1; i < spans.length; i++) {
+      const boundary = pct(spans[i].startCol);
+      stops.push(`var(--map-age-${spans[i - 1].age.id}-bg) ${(boundary - AGE_BLEND).toFixed(2)}%`);
+      stops.push(`var(--map-age-${spans[i].age.id}-bg) ${(boundary + AGE_BLEND).toFixed(2)}%`);
+    }
+    stops.push(`var(--map-age-${spans[spans.length - 1].age.id}-bg) 100%`);
+    ageBackdrop = `linear-gradient(to right, ${stops.join(', ')})`;
   }
-  stops.push(`var(--map-age-${AGES[n - 1].id}-bg) 100%`);
-  const ageBackdrop = `linear-gradient(to right, ${stops.join(', ')})`;
 
   // Two-step launch flow: a node click opens the detail panel (lore, explanation,
   // reward); its "Continue" advances to the board/deck picker. Both steps render inside one
@@ -146,9 +158,20 @@ export function CampaignMap({
         onPointerCancel={endPan}
       >
         <div className={styles.timeline} style={{ width: `${timelineWidth}px` }}>
+          {/* One arrow band per age, positioned over its own column slice (`ageColSpans`) rather
+              than an equal share — empty until the first age's missions land. */}
           <div className={styles.ageRow}>
-            {AGES.map((age) => (
-              <div key={age.id} className={styles.ageBand} data-age={age.id}>
+            {spans.map(({ age, startCol, endCol }) => (
+              <div
+                key={age.id}
+                className={styles.ageBand}
+                data-age={age.id}
+                style={{
+                  left: `${colX(startCol)}px`,
+                  // Clamp the last slice's right edge to the timeline (COL_W > NODE_W overruns it slightly).
+                  width: `${Math.min((endCol - startCol) * COL_W, timelineWidth - colX(startCol))}px`,
+                }}
+              >
                 <span className={styles.ageName}>{age.name}</span>
               </div>
             ))}

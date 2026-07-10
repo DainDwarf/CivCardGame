@@ -36,13 +36,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Step 4 — Headless simulator (balance tooling)** ✅
 
-- **Step 5 — Ages map infrastructure** — promote ages from the undefined `era` placeholder to
-  a real system: the `content/ages.ts` age→node/column model + the `CampaignMap.tsx` band
-  layout that positions each age over its slice of the DAG (genuinely unbuilt today —
-  `ages.ts` is a single `testing` placeholder and `CampaignMap.tsx` has no band layout). Own
-  step, immediately before the first age's missions. Optionally folds in **age tag on cards**
-  (tag each card with the age it unlocks in, for Collection sort/filter). `[size: M]`
-  `[phase: 4]`
+- **Step 5 — Ages map infrastructure** DONE ✅
 
 - **Step 6 — Neolithic arc** (the full tutorial content, mechanics-only, no onboarding UI) —
   the meat of Phase 4 gameplay: several missions introducing **all** core mechanics
@@ -114,6 +108,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 5 — Ages map infrastructure** ✅ — each age *covers its slice of the DAG*. A mission
+  declares its age (`MissionDef.age`), and `content/ages.ts`'s new `ageColSpans` derives each
+  present age's contiguous, gap-free column slice from its missions' `map.col` (ordered by `AGES`;
+  first age fills from col 0, each later age from its own earliest column, tiling to the next age's
+  start). `CampaignMap.tsx` positions each age's arrow band + gradient wash over that slice
+  (absolute px on the node grid, replacing the old equal `flex` split), with a flat-tint fallback
+  when empty — so with **no `'standard'` missions placed yet the derivation is dormant (`[]` → no
+  bands)** and lights up automatically when Step 6's Neolithic missions land. Guards: unit tests over
+  synthetic missions (`ages.test.ts`) + catalogue coherence (`missions.test.ts` — every standard
+  mission has a valid `map`+`age`, slices tile gap-free, and each mission's col sits inside its own
+  age slice, catching interleaving the tiling would otherwise smooth away). Verified live with
+  throwaway stub missions (bands tile edge-to-edge over their nodes, wash tracks the boundaries),
+  then reverted. The optional **age tag on cards** (Collection sort/filter) is deferred to Step 6,
+  where a card's age can derive from its unlocking mission's `age`.
 
 - **Step 4 — Headless simulator (balance tooling)** ✅ — a code-driven, no-browser/no-React
   runner over the pure core, for statistical balance answers no human can play enough games to reach

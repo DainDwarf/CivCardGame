@@ -48,18 +48,21 @@
 
 /* --- Age bands (chronology labels) across the top --- */
 
+/* A positioned strip (not a flex row): each band is absolutely placed over its own column slice
+   of the DAG, its `left`/`width` set inline from `ageColSpans` (`CampaignMap.tsx`). Height fits a
+   band plus its top gap. */
 .ageRow {
-  display: flex;
-  gap: 6px;
-  padding: 12px 12px 0;
+  position: relative;
+  height: 68px;
 }
 
-/* A large right-pointing arrow band, one per age. Each is tinted by its `data-age` attribute
-   matched below (the `Board.module.css` `data-board` precedent — a CSS-only edit per age); the
-   base rule keeps `--map-age-bg`/`--map-age-text` as the fallback for an unmatched age. The bands
-   share the map width for now; positioning each over its own DAG column slice lands in Step 6. */
+/* A large right-pointing arrow band, one per age, spanning exactly its slice of the timeline
+   (positioned inline over its columns). Each is tinted by its `data-age` attribute matched below
+   (the `Board.module.css` `data-board` precedent — a CSS-only edit per age); the base rule keeps
+   `--map-age-bg`/`--map-age-text` as the fallback for an unmatched age. */
 .ageBand {
-  flex: 1 1 auto;
+  position: absolute;
+  top: 12px;
   display: flex;
   align-items: center;
   justify-content: center;

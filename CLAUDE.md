@@ -265,11 +265,17 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `checkEndIf` reads that flag; see `rules/objective.ts`), plus optional declarative
     `threats`/`events` card-id lists (a threat seeded via `addThreat`, an event minted and shuffled
     into the deck — via this file's `seedMissionCards`, the single place the injection happens, called
-    once by `run/setup.ts`) and `kind`/`prereqs`/`map`/`reward`/`lore`. There is no bespoke per-mission
+    once by `run/setup.ts`) and `kind`/`prereqs`/`map`/`age`/`reward`/`lore` (`age` names the
+    `content/ages.ts` band a `'standard'` mission sits under). There is no bespoke per-mission
     setup/upkeep hook — a mission's only per-round or one-time behaviour is whatever its seeded
     threat/event *cards* do through the normal resolver spine. The mission-detail panel
     (`meta/CampaignMap.tsx`'s `MissionFlowPopup`) reads the same `threats`/`events` lists to show the
     card faces a mission is about, so the display can't drift from what a run actually seeds.
+  - `ages.ts` — `AGES` (the historical bands of the campaign map — Neolithic → Bronze → Iron) plus
+    `ageColSpans`, which derives each age's contiguous DAG **column slice** from its missions'
+    `map.col` (a mission declares its age via `MissionDef.age`). `meta/CampaignMap.tsx` positions
+    each age's arrow band + gradient wash over that slice, so *each age covers exactly its stretch of
+    the DAG*; with no `'standard'` missions placed yet the derivation is dormant (`[]` → no bands).
 
 **Shell — the run loop (`src/run/`) + React:**
 
@@ -333,9 +339,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     attribute matched in `Board.module.css` — a CSS-only edit per board, no component change.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left nav switches five screens:
   - `CampaignMap.tsx` (Mission tab) — the mission DAG as a horizontally-scrollable tech
-    tree (drag-to-pan); a node opens `MissionDetailPanel` (lore + reward preview) whose
-    "Continue" hands off to a board/deck launch popup that assembles a `RunConfig` via
-    `buildRunConfig`. `'infinite'` missions render in a bottom banner, not as nodes.
+    tree (drag-to-pan) under themed age bands (`content/ages.ts`, each band + wash covering its
+    own DAG column slice via `ageColSpans`); a node opens `MissionDetailPanel` (lore + reward
+    preview) whose "Continue" hands off to a board/deck launch popup that assembles a `RunConfig`
+    via `buildRunConfig`. `'infinite'` missions render in a bottom banner, not as nodes.
   - `Collection.tsx` — catalogue of owned cards (omits not-yet-unlocked ones); a tile opens
     `CardInstancePanel.tsx`, a per-owned-instance drill-down that is *also* the card shop
     (Step 9.1 fused the standalone Shop tab in here). Reworked in Step 9.2 to the Board tab's

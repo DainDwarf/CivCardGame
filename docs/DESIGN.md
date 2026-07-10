@@ -280,8 +280,10 @@ procedurally generated map.
 - **Ages partition the tree** 🔧 — the DAG is grouped into historical **ages**,
   **Neolithic → Bronze Age → Iron Age** to start (`content/ages.ts`), rendered as bands
   across the map. **Neolithic is the tutorial age**, carrying every core mechanic (buildings,
-  territory, conquest, culture); later ages add content, not mechanics. Phase 4 promotes ages
-  from the `era` placeholder on `MissionDef.setup` to a real model + campaign-map band layout.
+  territory, conquest, culture); later ages add content, not mechanics. A mission declares its age
+  (`MissionDef.age`) and each age *covers its slice of the DAG* — its band + gradient wash span
+  exactly the columns its missions occupy, derived from their `map.col` (`content/ages.ts`'s
+  `ageColSpans`).
   The **Paleolithic** sits *before* this tree, not as a band on it: it's the always-owned
   pre-game baseline — a small hunter-gatherer starting collection (buildingless actions + work
   cards) and the **Tribe** board — that a fresh player begins with, out of which the Neolithic

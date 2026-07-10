@@ -54,6 +54,14 @@ export interface MissionDef {
    *  `'infinite'` missions have none — they never appear as a timeline node, only in the
    *  campaign map's always-available bottom banner. */
   map?: { col: number; row: number };
+  /** The historical age (`content/ages.ts`'s `AGES`) this mission lives under — the campaign
+   *  map band it sits beneath. Each age *covers a slice of the DAG*: its band + gradient wash
+   *  span exactly the columns its missions occupy, derived from the `map.col`s of same-age
+   *  missions (`ages.ts`'s `ageColSpans`). Required for `'standard'` missions and must name a
+   *  real `AGES` id in chronological order relative to siblings (pinned by a coherence test);
+   *  `'infinite'` missions sit outside the tree and carry none, like `map`. (This tag is also
+   *  what a later "age tag on cards" would derive from: a card's age = its unlocking mission's.) */
+  age?: string;
 }
 
 /**
