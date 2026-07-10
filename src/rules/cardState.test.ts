@@ -1,7 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { blankState, getCounter, bumpCounter, instancesFromDeckCards, type CardInstance } from './state';
 import { scaleResources } from './resources';
 import { resolveCard } from './effects';
+import { installFixtures, uninstallFixtures } from './testFixtures';
+
+beforeAll(installFixtures);
+afterAll(uninstallFixtures);
 
 describe('scaleResources', () => {
   it('multiplies each present key by the factor, leaving absent keys out', () => {
@@ -53,10 +57,10 @@ describe('per-instance counter accessors', () => {
   });
 });
 
-describe('Cornucopia (growing per-instance gain)', () => {
+describe('test_growing (growing per-instance gain)', () => {
   it('gains +1🌾 the first play of a copy and +1 more each subsequent play of that same copy', () => {
-    const G = blankState('enlightenment');
-    const copy: CardInstance = { id: 1, cardId: 'cornucopia' };
+    const G = blankState('test');
+    const copy: CardInstance = { id: 1, cardId: 'test_growing' };
     resolveCard({ G, self: copy });
     expect(G.resources.food).toBe(1); // +1
     expect(copy.counters?.plays).toBe(1);
@@ -68,9 +72,9 @@ describe('Cornucopia (growing per-instance gain)', () => {
   });
 
   it('grows each copy independently — playing one never buffs another', () => {
-    const G = blankState('enlightenment');
-    const a: CardInstance = { id: 1, cardId: 'cornucopia' };
-    const b: CardInstance = { id: 2, cardId: 'cornucopia' };
+    const G = blankState('test');
+    const a: CardInstance = { id: 1, cardId: 'test_growing' };
+    const b: CardInstance = { id: 2, cardId: 'test_growing' };
     resolveCard({ G, self: a }); // a: +1 (food 1)
     resolveCard({ G, self: a }); // a: +2 (food 3)
     resolveCard({ G, self: b }); // b's first play — still +1, not buffed by a's plays (food 4)

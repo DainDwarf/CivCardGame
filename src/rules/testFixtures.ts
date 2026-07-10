@@ -26,7 +26,8 @@ import { STICKERS, type StickerDef } from '../content/stickers';
 import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
 import { scaleResources, subtractResources } from './resources';
 import { getCounter, bumpCounter } from './state';
-import { gainResources } from './effects';
+import { gainResources, suspendChoice } from './effects';
+import { peekTop, drawInstance, returnToDeck } from './deck';
 import { effectiveGain } from './stickers';
 
 // --- Synthetic board -------------------------------------------------------------------------------
@@ -149,6 +150,33 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     id: 'test_destroy', name: 'Test Destroy', kind: 'action',
     cost: { production: 1 }, effect: { destroy: true },
   },
+  // Interactive peek action (Foresight-like): reveals the top 3 of the draw pile into a choice tray,
+  // you draw 1, the rest shuffle back. Its resolver suspends into a `pendingInteraction` and resumes
+  // on the chosen index — the canonical interactive/`suspendChoice` fixture. `revealsFromDeck` both
+  // drives the peek count and gates the card as unplayable when both piles are empty.
+  test_peek: {
+    id: 'test_peek', name: 'Test Peek', kind: 'action', cost: { science: 1 },
+    revealsFromDeck: 3,
+    description: 'Peek the top 3 cards; draw 1, shuffle the rest back',
+    resolve: (ctx) => {
+      if (ctx.answer === undefined) {
+        suspendChoice(ctx, {
+          kind: 'chooseCard',
+          prompt: 'Draw one — the rest shuffle back',
+          options: peekTop(ctx, 3),
+          pick: 1,
+        });
+        return;
+      }
+      const pending = ctx.G.pendingInteraction;
+      if (!pending) return;
+      const chosen = pending.options[ctx.answer];
+      const rest = pending.options.filter((_, i) => i !== ctx.answer);
+      if (chosen !== undefined) drawInstance(ctx, chosen);
+      returnToDeck(ctx, rest);
+      ctx.G.pendingInteraction = null;
+    },
+  },
   // Bespoke-`resolve` action with no declarative `effect`: adds its gain through `gainResources`, so a
   // sticker's `effectiveGain` still folds over it (the gap Cornucopia's bespoke resolver closed).
   test_bespoke: {
@@ -163,6 +191,19 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     description: '+2🌾',
     dynamicText: (_G, self) => `+${effectiveGain(DYNAMIC_BASE, self)!.food}🌾`,
     resolve: (ctx) => gainResources(ctx, DYNAMIC_BASE),
+  },
+  // Growing per-instance gain, like Cornucopia: +1🌾 the first play of a copy, +1 more per prior play
+  // *of that same copy* (the count lives in the instance's own `counters`, riding with the card). The
+  // canonical per-copy-state fixture.
+  test_growing: {
+    id: 'test_growing', name: 'Test Growing', kind: 'action', cost: {},
+    description: '+1🌾',
+    dynamicRule: '+1 each time played',
+    dynamicText: (_G, self) => `+${effectiveGain(scaleResources({ food: 1 }, getCounter(self, 'plays') + 1), self)!.food}🌾`,
+    resolve: (ctx) => {
+      gainResources(ctx, scaleResources({ food: 1 }, getCounter(ctx.self, 'plays') + 1));
+      bumpCounter(ctx.self, 'plays');
+    },
   },
 
   // --- The one reused `on`-handler observer (events.test.ts + upkeep.test.ts both need it). ---

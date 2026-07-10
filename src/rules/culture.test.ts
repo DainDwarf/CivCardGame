@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { applyEffect } from './effects';
 import { dispatchEvent } from './events';
 import { applyUpkeep } from './upkeep';
@@ -6,19 +6,23 @@ import { cultureLevel, cultureProgress, effectiveHandSize } from './culture';
 import { blankState, instancesFromCardIds } from './state';
 import { playCard } from '../run/moves';
 import type { BuildingInstance } from './state';
+import { installFixtures, uninstallFixtures } from './testFixtures';
 
 let nextId = 1;
 const b = (cardId: string, workers: number): BuildingInstance => ({ id: nextId++, cardId, workers });
 
+beforeAll(installFixtures);
+afterAll(uninstallFixtures);
+
 describe('culture: immediate gain via card effect', () => {
-  it('cultural_festival effect raises G.culture', () => {
-    const G = blankState('enlightenment');
+  it('effect.culture raises G.culture', () => {
+    const G = blankState('test');
     applyEffect(G, { culture: 3 });
     expect(G.culture).toBe(3);
   });
 
   it('culture stacks across multiple gains', () => {
-    const G = blankState('enlightenment');
+    const G = blankState('test');
     applyEffect(G, { culture: 3 });
     applyEffect(G, { culture: 2 });
     expect(G.culture).toBe(5);
@@ -26,33 +30,33 @@ describe('culture: immediate gain via card effect', () => {
 });
 
 describe('culture: per-round output from operating buildings', () => {
-  it('counts culture from a staffed theater', () => {
-    const G = blankState('enlightenment');
-    G.tableau = [b('theater', 1)];
+  it('counts culture from a staffed culture building', () => {
+    const G = blankState('test');
+    G.tableau = [b('test_culture', 1)];
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.culture).toBe(2);
   });
 
-  it('ignores culture from an unstaffed theater', () => {
-    const G = blankState('enlightenment');
-    G.tableau = [b('theater', 0)];
+  it('ignores culture from an unstaffed culture building', () => {
+    const G = blankState('test');
+    G.tableau = [b('test_culture', 0)];
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.culture).toBe(0);
   });
 
   it('ignores buildings with no cultureOutput', () => {
-    const G = blankState('enlightenment');
-    G.tableau = [b('farm', 1), b('library', 1)];
+    const G = blankState('test');
+    G.tableau = [b('test_food', 1), b('test_sci', 1)];
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.culture).toBe(0);
   });
 
-  it('applyUpkeep accumulates culture from operating theaters', () => {
-    const G = blankState('enlightenment');
-    G.tableau = [b('theater', 1), b('theater', 0)]; // one operating, one idle
+  it('applyUpkeep accumulates culture from operating culture buildings', () => {
+    const G = blankState('test');
+    G.tableau = [b('test_culture', 1), b('test_culture', 0)]; // one operating, one idle
     G.resources.food = 10;
     applyUpkeep(G);
-    expect(G.culture).toBe(2); // only the staffed theater contributes
+    expect(G.culture).toBe(2); // only the staffed one contributes
   });
 });
 
@@ -78,7 +82,7 @@ describe('culture: level thresholds', () => {
 
 describe('culture: hand-size bonus', () => {
   it('adds one card to the hand size per culture level', () => {
-    const G = blankState('enlightenment');
+    const G = blankState('test');
     G.handSize = 5;
     expect(effectiveHandSize(G)).toBe(5); // level 0
     G.culture = 10;
@@ -90,18 +94,18 @@ describe('culture: hand-size bonus', () => {
 
 describe('culture: level gate on playCard', () => {
   it('blocks play below the required culture level', () => {
-    const G = blankState('enlightenment');
-    G.hand = instancesFromCardIds(['philosopher']);
+    const G = blankState('test');
+    G.hand = instancesFromCardIds(['test_cultreq']);
     G.resources.science = 10;
-    G.culture = 9; // still level 0; philosopher needs level 1
+    G.culture = 9; // still level 0; test_cultreq needs level 1
     const result = playCard(G, 0);
     expect(result).toBe('invalid');
-    expect(G.hand.map((c) => c.cardId)).toEqual(['philosopher']); // card stays in hand
+    expect(G.hand.map((c) => c.cardId)).toEqual(['test_cultreq']); // card stays in hand
   });
 
   it('allows play once the culture level is reached', () => {
-    const G = blankState('enlightenment');
-    G.hand = instancesFromCardIds(['philosopher']);
+    const G = blankState('test');
+    G.hand = instancesFromCardIds(['test_cultreq']);
     G.resources.science = 10;
     G.culture = 10; // exactly level 1
     const result = playCard(G, 0);
@@ -110,8 +114,8 @@ describe('culture: level gate on playCard', () => {
   });
 
   it('does not consume culture when a gated card is played', () => {
-    const G = blankState('enlightenment');
-    G.hand = instancesFromCardIds(['philosopher']);
+    const G = blankState('test');
+    G.hand = instancesFromCardIds(['test_cultreq']);
     G.resources.science = 10;
     G.culture = 15;
     playCard(G, 0);
