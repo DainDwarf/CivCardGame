@@ -23,6 +23,7 @@
 import { CARDS, type CardDef } from '../content/cards';
 import { BOARDS, type BoardDef, type BoardId } from '../content/boards';
 import { STICKERS, type StickerDef } from '../content/stickers';
+import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
 import { scaleResources, subtractResources } from './resources';
 import { getCounter, bumpCounter } from './state';
 import { gainResources } from './effects';
@@ -42,6 +43,19 @@ export const TEST_BOARD: BoardDef = {
   resources: { food: 5, production: 4, science: 3, military: 2, money: 1 },
   population: 2,
   territory: 7,
+  culture: 0,
+};
+
+/** A second synthetic board, for the few tests that need to prove two boards stay independent (e.g.
+ *  a board-sticker purchase touching only its target board). Distinct values from `TEST_BOARD`. */
+export const TEST_BOARD_2_ID = 'test_board_2' as BoardId;
+export const TEST_BOARD_2: BoardDef = {
+  id: TEST_BOARD_2_ID,
+  name: 'Test Board 2',
+  description: 'A second synthetic board for board-independence tests.',
+  resources: { food: 2, production: 6, science: 1, military: 4, money: 3 },
+  population: 1,
+  territory: 5,
   culture: 0,
 };
 
@@ -247,6 +261,27 @@ export const FIXTURE_STICKERS: Record<string, StickerDef> = {
   },
 };
 
+// --- Synthetic board stickers ----------------------------------------------------------------------
+
+/** Board stickers are a *separate* catalogue from card stickers (`content/boardStickers.ts`): each
+ *  tweaks a board's starting profile via one `applyToBoard` fold. Three distinct shapes/ids so a test
+ *  can exercise a core-resource bump, a strategic-gauge bump, stacking, composing two, and rejecting a
+ *  third at the cap. All unrestricted (attach to any board). */
+export const FIXTURE_BOARD_STICKERS: Record<string, BoardStickerDef> = {
+  test_bs_food: {
+    id: 'test_bs_food', name: 'Test BS Food', description: '+2 starting Food', icon: '🌾', cost: 3,
+    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, food: b.resources.food + 2 } }),
+  },
+  test_bs_territory: {
+    id: 'test_bs_territory', name: 'Test BS Territory', description: '+1 starting Territory', icon: '🗺️', cost: 10,
+    applyToBoard: (b) => ({ ...b, territory: b.territory + 1 }),
+  },
+  test_bs_military: {
+    id: 'test_bs_military', name: 'Test BS Military', description: '+1 starting Military', icon: '⚔️', cost: 3,
+    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, military: b.resources.military + 1 } }),
+  },
+};
+
 // --- Install / uninstall ---------------------------------------------------------------------------
 
 /** Splice an arbitrary card record into the live `CARDS` for a test's duration — the generic primitive
@@ -267,12 +302,16 @@ export function uninstallCards(cards: Record<string, CardDef>): void {
 export function installFixtures(): void {
   installCards(FIXTURE_CARDS);
   for (const [id, def] of Object.entries(FIXTURE_STICKERS)) STICKERS[id] = def;
+  for (const [id, def] of Object.entries(FIXTURE_BOARD_STICKERS)) BOARD_STICKERS[id] = def;
   BOARDS[TEST_BOARD_ID] = TEST_BOARD;
+  BOARDS[TEST_BOARD_2_ID] = TEST_BOARD_2;
 }
 
 /** Remove every shared fixture from the live catalogues, restoring them to their pre-install contents. */
 export function uninstallFixtures(): void {
   uninstallCards(FIXTURE_CARDS);
   for (const id of Object.keys(FIXTURE_STICKERS)) delete STICKERS[id];
+  for (const id of Object.keys(FIXTURE_BOARD_STICKERS)) delete BOARD_STICKERS[id];
   delete BOARDS[TEST_BOARD_ID];
+  delete BOARDS[TEST_BOARD_2_ID];
 }
