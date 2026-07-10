@@ -14,7 +14,6 @@ const CARD_ART: Record<string, string> = {
   toolmaking: '🪨',
   // Actions
   fire: '🔥',
-  spear: '🔱',
   bow: '🏹',
   cave_art: '🖐️',
   clothing: '🧥',

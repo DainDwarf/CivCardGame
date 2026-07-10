@@ -224,7 +224,6 @@ export const CARDS: Record<string, CardDef> = {
 
   // — Actions: resolve once, then recycle to discard.
   fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, effect: { gain: { science: 2 } } },
-  spear: { id: 'spear', name: 'Spear', kind: 'action', cost: { production: 1 }, effect: { gain: { military: 2 } } },
   bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, effect: { gain: { military: 3 } } },
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'action', cost: { food: 1 }, effect: { culture: 2 } },
   clothing: { id: 'clothing', name: 'Clothing', kind: 'action', cost: { production: 1 }, effect: { culture: 2 } },
