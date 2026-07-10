@@ -28,7 +28,11 @@ const PAD_Y = 36;
 const AGE_BLEND = 2;
 
 const nodeLeft = (col: number) => PAD_X + col * COL_W;
-const nodeTop = (row: number) => PAD_Y + row * ROW_H;
+// `row` is a signed offset from the center axis (0 = middle, fanning ±). Positioning is symmetric
+// around row 0: given the tree's `rowExtent` (the largest |row|), the node layer is sized to hold
+// rows [-rowExtent, +rowExtent], so its vertical midpoint is exactly row 0. Centering that layer in
+// the node area (below) then lands row 0 at the center — see `nodeLayerHeight`.
+const nodeTop = (row: number, rowExtent: number) => PAD_Y + (row + rowExtent) * ROW_H;
 
 /**
  * The Campaign Map. The campaign is humanity's history as a branching tech tree (docs/DESIGN.md): a
@@ -79,9 +83,11 @@ export function CampaignMap({
   const missions = Object.values(MISSIONS).filter((m) => m.kind !== 'infinite');
   const infiniteMissions = Object.values(MISSIONS).filter((m) => m.kind === 'infinite');
   const maxCol = missions.reduce((m, x) => Math.max(m, x.map!.col), 0);
-  const maxRow = missions.reduce((m, x) => Math.max(m, x.map!.row), 0);
+  // Rows are signed offsets from the center axis (0 = middle). The node layer holds the symmetric
+  // span [-rowExtent, +rowExtent] so its midpoint is row 0; centering the layer (CSS) centers row 0.
+  const rowExtent = missions.reduce((m, x) => Math.max(m, Math.abs(x.map!.row)), 0);
   const timelineWidth = PAD_X * 2 + maxCol * COL_W + NODE_W;
-  const nodeAreaHeight = PAD_Y * 2 + maxRow * ROW_H + NODE_H;
+  const nodeLayerHeight = PAD_Y * 2 + rowExtent * 2 * ROW_H + NODE_H;
 
   // Each age covers its slice of the DAG: its band + wash span exactly the columns its missions
   // occupy, derived from those missions' `map.col` (`content/ages.ts`'s `ageColSpans`). With no
@@ -177,54 +183,59 @@ export function CampaignMap({
             ))}
           </div>
 
-          <div className={styles.nodeArea} style={{ minHeight: `${nodeAreaHeight}px`, background: ageBackdrop }}>
-            {/* Edges behind the nodes: a line from each mission to each of its prereqs. */}
-            <svg className={styles.edges} width={timelineWidth} height={nodeAreaHeight} aria-hidden="true">
-              {missions.flatMap((m) =>
-                m.prereqs
-                  .filter((pid) => MISSIONS[pid])
-                  .map((pid) => {
-                    const from = MISSIONS[pid];
-                    return (
-                      <line
-                        key={`${pid}->${m.id}`}
-                        className={styles.edge}
-                        x1={nodeLeft(from.map!.col) + NODE_W / 2}
-                        y1={nodeTop(from.map!.row) + NODE_H / 2}
-                        x2={nodeLeft(m.map!.col) + NODE_W / 2}
-                        y2={nodeTop(m.map!.row) + NODE_H / 2}
-                      />
-                    );
-                  }),
-              )}
-            </svg>
+          <div className={styles.nodeArea} style={{ minHeight: `${nodeLayerHeight}px`, background: ageBackdrop }}>
+            {/* The node layer holds the edges + nodes at a fixed height sized to the symmetric row
+                span, vertically centered within the (flex-grown) node area — so row 0 lands at the
+                center axis. Edges and nodes share this one pixel coordinate space. */}
+            <div className={styles.nodeLayer} style={{ height: `${nodeLayerHeight}px` }}>
+              {/* Edges behind the nodes: a line from each mission to each of its prereqs. */}
+              <svg className={styles.edges} width={timelineWidth} height={nodeLayerHeight} aria-hidden="true">
+                {missions.flatMap((m) =>
+                  m.prereqs
+                    .filter((pid) => MISSIONS[pid])
+                    .map((pid) => {
+                      const from = MISSIONS[pid];
+                      return (
+                        <line
+                          key={`${pid}->${m.id}`}
+                          className={styles.edge}
+                          x1={nodeLeft(from.map!.col) + NODE_W / 2}
+                          y1={nodeTop(from.map!.row, rowExtent) + NODE_H / 2}
+                          x2={nodeLeft(m.map!.col) + NODE_W / 2}
+                          y2={nodeTop(m.map!.row, rowExtent) + NODE_H / 2}
+                        />
+                      );
+                    }),
+                )}
+              </svg>
 
-            {missions.map((m) => {
-              const cleared = isCompleted(mapProgress, m.id);
-              const available = isAvailable(m, mapProgress);
-              const locked = !available;
-              const state = cleared ? 'cleared' : available ? 'available' : 'locked';
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  className={`${styles.node} ${styles[state]}`}
-                  style={{ left: `${nodeLeft(m.map!.col)}px`, top: `${nodeTop(m.map!.row)}px`, width: `${NODE_W}px` }}
-                  disabled={locked}
-                  title={locked ? 'Complete its prerequisite to reveal this.' : undefined}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => !locked && setFlow({ mission: m, step: 'detail' })}
-                >
-                  <span className={styles.nodeGlyph} aria-hidden="true">
-                    {cleared ? '✓' : locked ? '🔒' : '▶'}
-                  </span>
-                  <span className={styles.nodeName}>{locked ? '???' : m.name}</span>
-                  <span className={styles.nodeState}>
-                    {cleared ? 'Cleared' : locked ? 'Locked' : 'Available'}
-                  </span>
-                </button>
-              );
-            })}
+              {missions.map((m) => {
+                const cleared = isCompleted(mapProgress, m.id);
+                const available = isAvailable(m, mapProgress);
+                const locked = !available;
+                const state = cleared ? 'cleared' : available ? 'available' : 'locked';
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`${styles.node} ${styles[state]}`}
+                    style={{ left: `${nodeLeft(m.map!.col)}px`, top: `${nodeTop(m.map!.row, rowExtent)}px`, width: `${NODE_W}px` }}
+                    disabled={locked}
+                    title={locked ? 'Complete its prerequisite to reveal this.' : undefined}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => !locked && setFlow({ mission: m, step: 'detail' })}
+                  >
+                    <span className={styles.nodeGlyph} aria-hidden="true">
+                      {cleared ? '✓' : locked ? '🔒' : '▶'}
+                    </span>
+                    <span className={styles.nodeName}>{locked ? '???' : m.name}</span>
+                    <span className={styles.nodeState}>
+                      {cleared ? 'Cleared' : locked ? 'Locked' : 'Available'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

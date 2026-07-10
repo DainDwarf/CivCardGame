@@ -49,9 +49,11 @@ export interface MissionDef {
    *  Influence = rounds survived instead. */
   reward?: { influence: number; unlockCardIds: string[] };
   /** Authored position on the campaign map's DAG grid (`meta/CampaignMap.tsx`): `col` is
-   *  the horizontal chronology slot (later = further along history), `row` the vertical
-   *  branch offset among siblings. Authored rather than auto-computed — matches the
-   *  "authored DAG" in docs/DESIGN.md and keeps control over the narrow tree's shape.
+   *  the horizontal chronology slot (later = further along history), `row` a *signed* vertical
+   *  branch offset from the center axis — `0` sits on the middle line, positive fans downward and
+   *  negative upward, so a single-row chain stays vertically centered. Authored rather than
+   *  auto-computed — matches the "authored DAG" in docs/DESIGN.md and keeps control over the
+   *  narrow tree's shape.
    *  `'infinite'` missions have none — they never appear as a timeline node, only in the
    *  campaign map's always-available bottom banner. */
   map?: { col: number; row: number };

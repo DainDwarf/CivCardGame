@@ -36,8 +36,8 @@
 }
 
 /* The wide inner content — width is set inline from the DAG's column span. A flex column at
-   least as tall as the canvas so the node area (flex: 1) can stretch to fill the canvas to its
-   bottom edge even when the DAG itself is short. */
+   least as tall as the canvas so the node area (flex: 1) can stretch to fill the canvas, letting
+   it vertically center its node layer even when the DAG itself is short. */
 .timeline {
   position: relative;
   min-width: 100%;
@@ -99,13 +99,27 @@
 /* --- Node area (the DAG) --- */
 
 /* The `background` is set inline (`ageBackdrop` in CampaignMap.tsx): a left→right gradient wash
-   echoing the age bands' colors, blending smoothly between ages across the DAG's width. The inline
-   `minHeight` fits the DAG; `flex: 1` grows it to fill the canvas to the bottom. The top margin
+   echoing the age bands' colors, blending smoothly between ages across the DAG's width. `flex: 1`
+   grows it to fill the canvas to the bottom; the inline `minHeight` (= the node layer's height)
+   keeps it at least as tall as the DAG so a tall tree scrolls rather than clipping. It centers its
+   `.nodeLayer` child vertically, which is what lands row 0 on the center axis. The top margin
    separates the wash from the age bands above. */
 .nodeArea {
   position: relative;
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   margin-top: 12px;
+}
+
+/* A fixed-height, full-width band holding the edges + nodes, sized inline to the symmetric row span
+   so its vertical midpoint is row 0. Its `position: relative` anchors the absolutely-placed edges
+   and nodes; `.nodeArea` centering it is what puts row 0 at the center axis. */
+.nodeLayer {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: stretch;
 }
 
 .edges {
