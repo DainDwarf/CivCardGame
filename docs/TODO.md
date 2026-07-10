@@ -32,17 +32,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Step 2 — Reset ALL content + decouple tests** DONE ✅
 
-- **Step 3 — Base set + Founding deck + a new board + sandbox mission** — author the
-  always-owned base card set (Neolithic-tier), the new `STARTING_COLLECTION`, and a Founding
-  deck that satisfies the Step 1 floor; **at least one new board** (boards were reset in
-  Step 2 and a `RunConfig` needs one); and a baseline **infinite "sandbox" mission** to
-  establish resource baselines for the simulator — a **never-win objective** (`() => false`,
-  like the old `the_long_decline_goal`; the run loop always seeds `G.objective` and pins
-  exactly one objective card, so it can't be truly objective-less) **plus a single no-drain
-  deadline threat that ends the run at ~round 50** (a pure `defeat` predicate like the old
-  `enlightenment_deadline`/Stagnation — *no* resource drain, so it bounds run length without
-  skewing the economy baseline; the `50` is one tunable constant for simulation length).
-  Depends on Step 2. `[size: L]` `[phase: 4]`
+- **Step 3 — Starting content: Paleolithic set + Founding deck + Tribe board + sandbox mission** DONE ✅
 
 - **Step 4 — Headless simulator (balance tooling)** — a code-driven, no-browser/no-React
   runner over the pure core, for statistical balance answers no human can play enough games
@@ -127,6 +117,19 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 3 — Starting content (Paleolithic)** ✅ — refilled the minimum coherent slice so the game is
+  launchable again, scoped to a **Paleolithic hunter-gatherer** start with **no buildings** in the deck
+  or collection (buildings arrive with the Neolithic arc in Step 6). Authored: 11 base cards in `CARDS`
+  (Foraging/Toolmaking work + Fire/Spear/Bow/Cave Art/Clothing/Jewelry/Bartering/Dogs/Kinship actions);
+  a 20-card buildingless **Founding** deck (`DEFAULT_DECKS`); the **Tribe** board (`BOARDS`: food 5,
+  pop 2, everything else 0 incl. territory); and the baseline **`sandbox`** infinite mission — a
+  never-win `sandbox_goal` objective (`() => false`) plus a no-drain `sands_of_time` deadline threat
+  ending the run once `SANDBOX_DEADLINE` (50) elapses, so it bounds the Step 4 simulator without
+  skewing the economy. `STARTING_COLLECTION` counts are copy-tier-attainable (1/2/4/8, never 3);
+  `rules/collection.test.ts` re-armed to pin that it covers the deck, and a new `cards.test.ts` pins
+  catalogue coherence. Numbers are first-pass, to be tuned by the Step 4 sim. Pre-alpha: **wipe local
+  save** (new card/board/mission ids) — [[prealpha-no-save-migration]].
 
 - **Step 2 — Reset ALL content + decouple tests** ✅ — every content catalogue emptied to an empty
   export (files + types kept, never deleted): `CARDS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`/`MISSIONS`/

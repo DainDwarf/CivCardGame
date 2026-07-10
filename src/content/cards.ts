@@ -190,15 +190,53 @@ export function compareCards(a: CardDef, b: CardDef): number {
   return KIND_RANK[a.kind] - KIND_RANK[b.kind] || sortName(a).localeCompare(sortName(b));
 }
 
+/** Rounds a run of the sandbox mission lasts before the `sands_of_time` deadline threat ends it —
+ *  one tunable knob that bounds simulation length (Step 4) without touching the economy baseline. */
+export const SANDBOX_DEADLINE = 50;
+
 /**
  * The card catalogue. A `building` card *is* the building it becomes in the tableau (its stats
  * live right here); action cards resolve their effect and recycle through the discard; work
  * cards stick onto the board for one turn.
  *
- * **Reset to empty for the Phase 4 content pass** (Step 2.5) — the real Neolithic-tier base set is
- * authored in Step 3. Emptied, not deleted: the types (`CardDef`/`CardKind`) and the mechanism
- * functions (`isDeckable`/`compareCards`) stay, so the app keeps typechecking and the engine keeps
- * resolving through the live map — there just aren't any cards in it yet. Tests install synthetic
- * `test_*` cards via `rules/testFixtures.ts` for the duration of a run.
+ * **Phase 4 Step 3 — the Paleolithic starting set.** The always-owned base cards a fresh player
+ * begins with (`content/collection.ts`'s `STARTING_COLLECTION` + the `content/decks.ts` Founding
+ * deck): hunter-gatherer *actions* and staffable *work*, deliberately **no buildings** — buildings
+ * arrive with the Neolithic arc (unlocked through missions). Numbers here are a first pass, tuned by
+ * the Step 4 simulator. Also holds the sandbox mission's own cards (`sandbox_goal` + `sands_of_time`),
+ * which are mission-only (never deckable). Tests install synthetic `test_*` cards via
+ * `rules/testFixtures.ts` on top of this map for the duration of a run.
  */
-export const CARDS: Record<string, CardDef> = {};
+export const CARDS: Record<string, CardDef> = {
+  // — Work: staffable board boxes producing only while a worker is assigned, filed to discard at
+  //   end of turn. Cost nothing to play and need no idle population to place.
+  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, effect: { gain: { food: 3 } } },
+  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, effect: { gain: { production: 2 } } },
+
+  // — Actions: resolve once, then recycle to discard.
+  fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, effect: { gain: { science: 2 } } },
+  spear: { id: 'spear', name: 'Spear', kind: 'action', cost: { production: 1 }, effect: { gain: { military: 2 } } },
+  bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, effect: { gain: { military: 3 } } },
+  cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'action', cost: { food: 1 }, effect: { culture: 2 } },
+  clothing: { id: 'clothing', name: 'Clothing', kind: 'action', cost: { production: 1 }, effect: { culture: 2 } },
+  jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, effect: { gain: { money: 2 } } },
+  bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, effect: { gain: { food: 2 } } },
+  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, effect: { gain: { military: 2 } } },
+  kinship: { id: 'kinship', name: 'Kinship', kind: 'action', cost: { food: 2 }, effect: { population: 1 } },
+
+  // — Sandbox mission cards (mission-only; excluded from decks/collection by `isDeckable`).
+  //   The objective never wins (an infinite mission scores rounds survived instead), so the run is
+  //   bounded purely by the no-drain deadline threat below.
+  sandbox_goal: {
+    id: 'sandbox_goal', name: 'The Long Wander', kind: 'objective', cost: {},
+    description: 'There is no goal but to endure. Survive as long as the band can.',
+    objective: () => false,
+    dynamicText: (G) => `Round ${G.round}`,
+  },
+  sands_of_time: {
+    id: 'sands_of_time', name: 'The Sands of Time', kind: 'threat', cost: {},
+    description: `The age turns. When round ${SANDBOX_DEADLINE} elapses, the wandering ends.`,
+    dynamicText: (G) => `Round ${Math.min(G.round, SANDBOX_DEADLINE)}/${SANDBOX_DEADLINE}`,
+    defeat: (G) => G.round > SANDBOX_DEADLINE && 'the sands of time',
+  },
+};

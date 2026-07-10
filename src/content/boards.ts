@@ -21,7 +21,21 @@ export interface BoardDef {
   culture: number;
 }
 
-// Reset to empty for the Phase 4 content pass (docs/TODO.md Step 2.6) — the catalogue and its types
-// are kept so the app keeps typechecking; the game is knowingly non-launchable (a `RunConfig` needs a
-// board) until Step 3 authors at least one real board here.
-export const BOARDS: Record<BoardId, BoardDef> = {};
+/**
+ * The government boards a run can be launched on. **Phase 4 Step 3** authors the first one — `tribe`,
+ * the Paleolithic starting configuration matching the buildingless starting deck: a small band
+ * (population 2) with a modest food store and nothing else, no fixed territory yet (buildings — and
+ * the territory that gates them — arrive with the Neolithic arc). More boards land through mission
+ * rewards in later steps.
+ */
+export const BOARDS: Record<BoardId, BoardDef> = {
+  tribe: {
+    id: 'tribe',
+    name: 'Tribe',
+    description: 'A wandering band of hunter-gatherers: a little food, a few hands, and the whole age ahead.',
+    resources: { food: 5, production: 0, science: 0, military: 0, money: 0 },
+    population: 2,
+    territory: 0,
+    culture: 0,
+  },
+};

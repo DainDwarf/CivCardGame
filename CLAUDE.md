@@ -235,24 +235,27 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     its mission's win logic via a single pure-read `objective` predicate, the way a
     `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
     for "a card the player builds decks with" (excludes event/threat/objective), used by the
-    deck-add reject and the Collection/DeckEditor pickers. Catalogue reset to empty for the Phase 4
-    content pass (`CARDS = {}`); Step 3 authors the real Neolithic-tier base set.
+    deck-add reject and the Collection/DeckEditor pickers. Step 3 authored the **Paleolithic starting
+    set** — buildingless hunter-gatherer actions + work cards (no buildings yet; those arrive with the
+    Neolithic arc, unlocked via missions) — plus the sandbox mission's own `objective`/`threat` cards.
   - `decks.ts` — `DeckDef` (a player deck; `cards` is meta instance ids) plus `DeckSeed`/
     `DEFAULT_DECKS` (content authored in plain cardIds, resolved by `buildSeedDecks`). A
     fresh player is meant to start with one editable deck; there's no read-only "built-in" tier.
-    Seed reset to empty for the Phase 4 content pass (`DEFAULT_DECKS = []`); Step 3 authors the real
-    Founding deck alongside the base card set.
+    Step 3 authored the real **Founding deck** (one 20-card buildingless seed) alongside the base
+    card set.
   - `collection.ts` — `STARTING_COLLECTION` (a plain `Record<cardId, count>`, turned into a
-    real instance-bearing `OwnedCards` by `collectionFromCounts` at seed time). Reset to empty for the
-    Phase 4 content pass (`STARTING_COLLECTION = {}`); Step 3 authors the real starting collection.
+    real instance-bearing `OwnedCards` by `collectionFromCounts` at seed time). Step 3 authored the
+    real starting collection; counts are **copy-tier-attainable** (the shop's ×1→×2→×4→×8 ladder — so
+    1/2/4/8, never 3), and a `rules/collection.test.ts` coherence check pins that it covers the
+    Founding deck.
   - `stickers.ts` — `STICKERS`; each `StickerDef` carries its own
     `appliesTo`/`applyGain`/`applyCost` logic and an `icon`.
   - `boardStickers.ts` — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
     `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
   - `boards.ts` — `BOARDS` (government boards; each sets all 8 starting resources: the 5
-    core plus population/territory/culture). Catalogue reset to empty for the Phase 4 content pass
-    (`BOARDS = {}`, `BoardId` widened to `string`); the game is non-launchable until Step 3 authors
-    at least one real board.
+    core plus population/territory/culture; `BoardId` is a plain `string`). Step 3 authored the first
+    board — **Tribe** (the Paleolithic start: food 5, population 2, everything else 0, no territory
+    yet); more boards land via mission rewards in later steps.
   - `missions.ts` — `MISSIONS`; each names an `objectiveCardId` (its win condition, made into
     an `objective` card that owns the win predicate — `run/setup.ts` seeds it into
     `GameState.objective`, the bus re-derives `G.pendingVictory` from it, and `run/engine.ts`'s

@@ -56,10 +56,31 @@ export interface MissionDef {
   map?: { col: number; row: number };
 }
 
-// Reset to empty for the Phase 4 content pass (Step 2.4). Step 3+ authors the real missions
-// (a sandbox infinite mission first, then the Neolithic arc). The type + `seedMissionCards`
-// spine stay; the game is knowingly non-launchable until Step 3 refills this.
-export const MISSIONS: Record<string, MissionDef> = {};
+/**
+ * The mission catalogue. **Phase 4 Step 3** authors the baseline `sandbox` mission — the Neolithic
+ * arc's standard missions land in Step 6.
+ *
+ * `sandbox` is an `'infinite'` mission (no win state — it scores Influence = rounds survived and
+ * renders in the campaign map's bottom banner, not as a DAG node). Its `sandbox_goal` objective
+ * never wins by design; run length is bounded purely by the `sands_of_time` deadline threat, a
+ * no-drain `defeat` predicate that ends the run once round `SANDBOX_DEADLINE` elapses — so the
+ * sandbox measures the economy baseline for the Step 4 simulator without any drain skewing it.
+ */
+export const MISSIONS: Record<string, MissionDef> = {
+  sandbox: {
+    id: 'sandbox',
+    name: 'The Long Wander',
+    lore:
+      'Before cities, before harvests — only the band, the seasons, and the long walk between them. ' +
+      'There is nothing here to win. Wander well, and see how long the age carries you.',
+    prereqs: [],
+    threats: ['sands_of_time'],
+    objectiveCardId: 'sandbox_goal',
+    victoryHint: 'There is no victory — only rounds survived.',
+    failureHint: 'The run ends once the age turns (round 50), or if a core resource collapses.',
+    kind: 'infinite',
+  },
+};
 
 /**
  * Inject a mission's declarative `threats`/`events` lists into a fresh run's state — the single

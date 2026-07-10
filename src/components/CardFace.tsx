@@ -6,33 +6,25 @@ import styles from './CardFace.module.css';
 
 export const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
 
-/** Presentation-only "art" glyph shown on each card face and building box. */
+/** Presentation-only "art" glyph shown on each card face and building box. Keyed by card id;
+ *  the Paleolithic starting set (Phase 4 Step 3) plus the sandbox mission's own cards. */
 const CARD_ART: Record<string, string> = {
-  farm: '🌾',
-  granary: '🌽',
-  workshop: '⚒️',
-  library: '📚',
-  university: '🎓',
-  theater: '🎭',
-  market: '🏪',
-  trading_post: '⛵',
-  walls: '🧱',
-  barracks: '⚔️',
-  pyramids: '🔺',
-  great_library: '📜',
-  colossus: '🗿',
-  settlers: '⛺',
-  corvee: '⛓️',
-  eureka: '💡',
-  harvest: '🧺',
-  inspiration: '✨',
-  cultural_festival: '🎉',
-  philosopher: '🏛️',
-  conquest: '🗡️',
-  develop: '🏗️',
-  destroy: '💥',
-  barbarian: '🪓',
-  harsh_winter: '❄️',
+  // Work
+  foraging: '🌿',
+  toolmaking: '🪨',
+  // Actions
+  fire: '🔥',
+  spear: '🔱',
+  bow: '🏹',
+  cave_art: '🖐️',
+  clothing: '🧥',
+  jewelry: '📿',
+  bartering: '🤝',
+  dogs: '🐕',
+  kinship: '👪',
+  // Sandbox mission cards
+  sandbox_goal: '👣',
+  sands_of_time: '⏳',
 };
 export const artFor = (id: string, kind?: string) =>
   CARD_ART[id] ?? (kind === 'objective' ? '🏆' : '🏛️');
