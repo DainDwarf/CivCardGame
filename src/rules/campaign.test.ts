@@ -12,7 +12,7 @@ function mission(id: string, prereqs: string[]): MissionDef {
     victoryHint: '',
     failureHint: null,
     kind: 'standard',
-    reward: { influence: 0, unlockCardId: 'farm' },
+    reward: { influence: 0, unlockCardIds: ['farm'] },
     map: { col: 0, row: 0 },
   };
 }

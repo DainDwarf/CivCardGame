@@ -26,6 +26,11 @@ import { DEFAULT_DECKS } from '../src/content/decks';
 
 const SCENARIOS: Scenario[] = [
   { label: 'founding/tribe/sandbox', deckCardIds: DEFAULT_DECKS[0].cards, board: 'tribe', missionId: 'sandbox' },
+  // NOTE: a `'standard'` threshold mission with no deadline (e.g. `first_settlement`) is deliberately
+  // NOT swept here. The current policies are survival-first, not goal-directed, so they reach a stable
+  // survival equilibrium and never accumulate to the objective — the run never terminates and blows
+  // `simulateRun`'s action cap (it throws). Measuring these needs a goal-directed policy or an
+  // "unfinished at turn cap" outcome instead of a throw; until then, don't add them here.
 ];
 
 const seeds = Number(process.argv[2] ?? 200);

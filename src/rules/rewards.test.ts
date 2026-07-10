@@ -37,21 +37,21 @@ function infiniteMission(): MissionDef {
 
 describe('computeRewards', () => {
   it('grants Influence and the unlock on a first clear', () => {
-    const m = mission({ influence: 2, unlockCardId: 'granary' });
+    const m = mission({ influence: 2, unlockCardIds: ['granary'] });
     const result = computeRewards(m, false, emptyCollection());
     expect(result.influence).toBe(2);
     expect(copiesOwned(result.collection, 'granary')).toBe(1);
   });
 
   it('grants nothing on a replay of an already-completed mission', () => {
-    const m = mission({ influence: 2, unlockCardId: 'granary' });
+    const m = mission({ influence: 2, unlockCardIds: ['granary'] });
     const result = computeRewards(m, true, emptyCollection());
     expect(result.influence).toBe(0);
     expect(result.collection.instances).toEqual([]);
   });
 
   it('clearing the same mission twice only grants once (first-clear semantics)', () => {
-    const m = mission({ influence: 1, unlockCardId: 'granary' });
+    const m = mission({ influence: 1, unlockCardIds: ['granary'] });
     const first = computeRewards(m, false, emptyCollection());
     const second = computeRewards(m, true, first.collection);
     expect(first.influence).toBe(1);
@@ -60,9 +60,26 @@ describe('computeRewards', () => {
   });
 
   it('does not grant a second copy if the unlock card is already owned', () => {
-    const m = mission({ influence: 1, unlockCardId: 'granary' });
+    const m = mission({ influence: 1, unlockCardIds: ['granary'] });
     const result = computeRewards(m, false, collectionFromCounts({ granary: 2 }));
     expect(copiesOwned(result.collection, 'granary')).toBe(2);
+  });
+
+  it('grants every card of a multi-unlock reward on a first clear', () => {
+    const m = mission({ influence: 0, unlockCardIds: ['farm', 'toolmaker', 'hut'] });
+    const result = computeRewards(m, false, emptyCollection());
+    expect(result.influence).toBe(0);
+    expect(copiesOwned(result.collection, 'farm')).toBe(1);
+    expect(copiesOwned(result.collection, 'toolmaker')).toBe(1);
+    expect(copiesOwned(result.collection, 'hut')).toBe(1);
+  });
+
+  it('grants only the not-yet-owned cards of a multi-unlock reward', () => {
+    const m = mission({ influence: 0, unlockCardIds: ['farm', 'toolmaker'] });
+    // Already owns `farm` (×2) — that count is untouched; the new `toolmaker` is granted once.
+    const result = computeRewards(m, false, collectionFromCounts({ farm: 2 }));
+    expect(copiesOwned(result.collection, 'farm')).toBe(2);
+    expect(copiesOwned(result.collection, 'toolmaker')).toBe(1);
   });
 });
 

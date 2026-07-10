@@ -2056,10 +2056,12 @@ export function Board({
           : won
             ? computeRewards(mission, alreadyCompleted, collection)
             : null;
-      const unlockedCard =
-        reward && mission.reward && !isOwned(collection, mission.reward.unlockCardId)
-          ? CARDS[mission.reward.unlockCardId]
-          : null;
+      // The names of every card this clear actually unlocks — each reward card not already owned
+      // (a mission may open several at once, e.g. the Neolithic set).
+      const unlockedNames =
+        reward && mission.reward
+          ? mission.reward.unlockCardIds.filter((id) => !isOwned(collection, id)).map((id) => CARDS[id].name)
+          : [];
       return (
         <div className={styles.gameoverOverlay}>
           <div className={styles.gameoverPanel}>
@@ -2071,7 +2073,12 @@ export function Board({
               <p className={styles.gameoverReward}>
                 {alreadyCompleted
                   ? 'Already cleared — no reward for a replay.'
-                  : `+${reward.influence} ⭐ Influence${unlockedCard ? ` · Unlocked ${unlockedCard.name}` : ''}`}
+                  : [
+                      reward.influence > 0 ? `+${reward.influence} ⭐ Influence` : null,
+                      unlockedNames.length ? `Unlocked ${unlockedNames.join(', ')}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
               </p>
             )}
             <div className={styles.gameoverBtns}>

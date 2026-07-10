@@ -42,7 +42,7 @@ built; the game is now in its content-and-balance pass — see
   - **Campaign-map DAG** — `content/missions.ts` missions form a prereq-gated DAG
     (`rules/campaign.ts`), rendered as a horizontally-scrollable branching tech tree
     (`meta/CampaignMap.tsx`); each `'standard'` mission grants a fixed Influence reward
-    plus one card unlock on first clear (`rules/rewards.ts`), previewed on the
+    plus one or more card unlocks on first clear (`rules/rewards.ts`), previewed on the
     `MissionDetailPanel` and paid out in `App.tsx`'s `recordResult`.
   - **Infinite missions + threats** — `'infinite'`-kind missions never win and pay
     Influence = rounds survived on every attempt. `GameState.threats`

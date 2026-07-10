@@ -54,7 +54,13 @@ export function playCard(
   // while staffed (at upkeep); everything else resolves its effect immediately through the single
   // resolver path (which also performs a Destroy card's demolition, via `target`).
   if (card.kind === 'building') {
+    // Place the building (auto-staffing from existing idle pop), then resolve its one-shot
+    // *placement* effect on the played instance (e.g. the Hut's +1 population). A no-op for the
+    // usual produces-only building; a building's per-round output is `produces`, never resolved
+    // here — see `CardDef.effect`. Population/territory a placement grants are global, so
+    // resolving on `played` (not the new tableau instance) is fine.
     addBuilding(G, cardId, played.stickers);
+    resolveCard({ G, self: played });
   } else if (card.kind === 'work') {
     addWork(G, cardId, played.stickers);
   } else {

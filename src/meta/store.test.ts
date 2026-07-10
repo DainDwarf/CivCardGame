@@ -127,7 +127,7 @@ function standardMission(): MissionDef {
     victoryHint: '',
     failureHint: null,
     kind: 'standard',
-    reward: { influence: 2, unlockCardId: 'granary' },
+    reward: { influence: 2, unlockCardIds: ['granary'] },
     map: { col: 0, row: 0 },
   };
 }

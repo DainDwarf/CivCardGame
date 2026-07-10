@@ -171,7 +171,7 @@ MissionDef
   prereqs:          mission ids gating availability (the DAG edges)
   threats?/events?: cards seeded onto the board / shuffled into the deck at setup
   objectiveCardId:  the mission's win card, seeded into GameState.objective at setup
-  reward?:          granted once on first clear (Influence + one card unlock)
+  reward?:          granted once on first clear (Influence + one or more card unlocks)
   kind:             'standard' | 'infinite'
 
 CardDef (kind: 'objective')
@@ -222,7 +222,7 @@ the meta loop to the mission they pick.
   objective, failure, difficulty, and reward so you can tailor your deck. See
   *Campaign map* below.
 - **Progression / unlocks** — missions are **binary** (complete / not); completing one
-  grants a fixed Influence reward and **one unlock** (a card, a board, or a wonder). See
+  grants a fixed Influence reward and **one or more unlocks** (cards, a board, or a wonder). See
   *Economy & progression* below. ✅
 - **Persistence** — all of the above saved to localStorage/IndexedDB (one profile).
 

@@ -1,10 +1,20 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { assignWorker, playCard, toggleStaffing, transferWorker } from './moves';
 import { blankState, drawCard, instancesFromCardIds, type GameState } from '../rules';
-import { installFixtures, uninstallFixtures } from '../rules/testFixtures';
+import { installCards, installFixtures, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);
+
+// A building carrying a one-shot *placement* effect (the shared fixtures are all produces-only, so
+// this local one exercises the placement-resolve path — the Hut's mechanism). No `produces`, no
+// worker: on placement it grants +1 population, and nothing recurs per round.
+const PLACEMENT_BUILDING = {
+  hut_fixture: {
+    id: 'hut_fixture', name: 'Hut Fixture', kind: 'building' as const,
+    cost: { production: 4 }, workers: 0, effect: { population: 1 }, tags: ['building'],
+  },
+};
 
 /** Invoke the move directly with a minimal context (it only reads `G`). Hand cards are now
  *  identity-bearing instances, so look a card up by its `cardId` (first match, like the old
@@ -31,6 +41,33 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.removed).toEqual([]); // the card *is* the building — not removed on play
     expect(G.discard).toEqual([]);
     expect(G.hand).toEqual([]);
+  });
+
+  it("resolves a building's one-shot placement effect once when placed (the Hut's +1 population)", () => {
+    installCards(PLACEMENT_BUILDING);
+    try {
+      const G = blankState('test');
+      G.hand = instancesFromCardIds(['hut_fixture']);
+      G.resources.production = 4;
+      G.population = 3;
+      play(G, 'hut_fixture');
+      // Placed (self-sufficient, 0 workers) AND its placement effect ran exactly once: +1 pop.
+      expect(G.tableau).toEqual([{ id: 1, cardId: 'hut_fixture', workers: 0 }]);
+      expect(G.population).toBe(4);
+    } finally {
+      uninstallCards(PLACEMENT_BUILDING);
+    }
+  });
+
+  it('a produces-only building resolves no placement effect (population/resources untouched)', () => {
+    const G = blankState('test');
+    G.hand = instancesFromCardIds(['test_food']);
+    G.resources.production = 5;
+    G.population = 2;
+    play(G, 'test_food');
+    // The placement-resolve is a no-op for an effect-less building — only the cost was paid.
+    expect(G.population).toBe(2);
+    expect(G.resources.production).toBe(3);
   });
 
   it('rejects a building when the tableau is at its territory cap', () => {

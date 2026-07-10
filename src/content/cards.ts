@@ -12,12 +12,16 @@ export interface CardDef {
    * What the card *is* and where it goes after play:
    * - `building`: the card *is* a building — playing it places it in the **tableau** (one
    *   territory slot), auto-staffed from idle population, where it produces `produces`/
-   *   `cultureOutput` each round while staffed. It stays in play, filed nowhere, until
-   *   something removes it from the tableau — where its card goes *then* isn't an inherent
-   *   trait of `building`, it's whatever the removing effect specifies. Today that's only
-   *   the Destroy action card, whose `effect.destroy` sends it to **removed**; a future card
-   *   could just as well discard a building instead (e.g. to reclaim territory) and file it
-   *   to **discard** like anything else.
+   *   `cultureOutput` each round while staffed. It may *also* carry a one-shot `effect`
+   *   resolved **once at placement** (e.g. the Hut's `+1 population`), applied by `playCard`
+   *   right after the building is placed — distinct from `produces`, which recurs each round.
+   *   A building's per-round output is therefore always `produces`, never `effect.gain` (the
+   *   latter would fire on placement *and* every round — see the `effect` field's note). It stays
+   *   in play, filed nowhere, until something removes it from the tableau — where its card goes
+   *   *then* isn't an inherent trait of `building`, it's whatever the removing effect specifies.
+   *   Today that's only the Destroy action card, whose `effect.destroy` sends it to **removed**;
+   *   a future card could just as well discard a building instead (e.g. to reclaim territory) and
+   *   file it to **discard** like anything else.
    * - `action`: resolves its `effect`, then recycles to the **discard** pile.
    * - `work`: the card sticks onto the board as a staffable work box (see `workers`); it
    *   produces its `effect.gain` only while staffed, then recycles to the **discard** pile at
@@ -52,8 +56,12 @@ export interface CardDef {
   /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
   cultureLevelReq?: number;
   /** Immediate one-shot effect when played (resource gain/loss, draw, population, territory,
-   *  culture, or demolish). `building` cards have none — their output is the passive `produces`
-   *  below; `work` cards defer their `effect.gain` until staffed at upkeep. This declarative bag
+   *  culture, or demolish). For a `building` this is a **placement** one-shot, resolved once when
+   *  the card is placed (e.g. the Hut's `+1 population`); the building's recurring output is the
+   *  passive `produces` below, so a building must express per-round output there and **never** as
+   *  `effect.gain` (which would fire on placement *and* every round, since `defaultProduce` falls
+   *  back to `effect.gain` when `produces` is absent). `work` cards defer their `effect.gain` until
+   *  staffed at upkeep. This declarative bag
    *  drives both the default resolver (`specToResolver`) and the card's auto-generated text
    *  (`describeCard`) / play gates (`unplayableReason`), so most cards need only this. */
   effect?: CardEffect;
@@ -222,6 +230,19 @@ export const CARDS: Record<string, CardDef> = {
   foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, effect: { gain: { food: 3 } } },
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, effect: { gain: { production: 2 } } },
 
+  // — Neolithic buildings: the first permanent structures, unlocked by "The First Settlement". A
+  //   building *is* the building — it sits in the tableau and produces each round while staffed.
+  //   Farm/Toolmaker are ordinary single-worker producers; the Hut is the first building carrying a
+  //   one-shot *placement* effect (no per-round output, no worker — just a one-time +1 population when
+  //   built), which resolves through `playCard`'s post-placement `resolveCard`.
+  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { food: 1 }, workers: 1, tags: ['building'] },
+  toolmaker: { id: 'toolmaker', name: 'Toolmaker', kind: 'building', cost: { production: 2 }, produces: { production: 1 }, workers: 1, tags: ['building'] },
+  hut: {
+    id: 'hut', name: 'Hut', kind: 'building', cost: { production: 4 }, workers: 0, tags: ['building'],
+    effect: { population: 1 },
+    description: 'When built: +1 🧍 population. (No worker, no upkeep output.)',
+  },
+
   // — Actions: resolve once, then recycle to discard.
   fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, effect: { gain: { science: 2 } } },
   bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, effect: { gain: { military: 3 } } },
@@ -230,6 +251,7 @@ export const CARDS: Record<string, CardDef> = {
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, effect: { gain: { money: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, effect: { gain: { food: 2 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, effect: { gain: { military: 2 } } },
+  conquest: { id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 5 }, effect: { territory: 1 } },
 
   // Storytelling: the first *interactive* Paleolithic card — suspends mid-resolution for a choice
   //   from the discard, then recovers the picked card to hand (the discard→hand counterpart to
@@ -261,6 +283,15 @@ export const CARDS: Record<string, CardDef> = {
       if (chosen) recoverFromDiscard(ctx, chosen);
       ctx.G.pendingInteraction = null; // resolver owns clearing the interaction on resume
     },
+  },
+
+  // — "The First Settlement" objective (mission-only): stockpile 10🔨 and 10⚔️. Owns its own win
+  //   predicate the way every objective does; no defeat of its own (famine/collapse is universal).
+  first_settlement_goal: {
+    id: 'first_settlement_goal', name: 'The First Settlement', kind: 'objective', cost: {},
+    description: 'Stockpile 10 🔨 production and 10 ⚔️ military at once to settle down.',
+    objective: (G) => G.resources.production >= 10 && G.resources.military >= 10,
+    dynamicText: (G) => `🔨 ${G.resources.production}/10 · ⚔️ ${G.resources.military}/10`,
   },
 
   // — Sandbox mission cards (mission-only; excluded from decks/collection by `isDeckable`).

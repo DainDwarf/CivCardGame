@@ -36,10 +36,13 @@ describe('mission catalogue coherence', () => {
 
   // Relocated from `rewards.test.ts` (Step 2.4): it's a mission↔card coherence check, not a reward
   // mechanism test, so it lives with the other mission coherence iterators.
-  it('every standard mission reward names a real card id', () => {
+  it('every standard mission reward names at least one real card id', () => {
     for (const m of Object.values(MISSIONS)) {
       if (m.kind !== 'standard') continue;
-      expect(CARDS[m.reward!.unlockCardId], `${m.id} → reward → ${m.reward!.unlockCardId}`).toBeDefined();
+      expect(m.reward!.unlockCardIds.length, `${m.id} → reward has no unlock cards`).toBeGreaterThan(0);
+      for (const cardId of m.reward!.unlockCardIds) {
+        expect(CARDS[cardId], `${m.id} → reward → ${cardId}`).toBeDefined();
+      }
     }
   });
 

@@ -42,11 +42,12 @@ export interface MissionDef {
    *  scores an attempt instead. */
   kind: 'standard' | 'infinite';
   /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
-   *  `computeRewards`) — replays pay nothing. `unlockCardId` must name a real
-   *  `content/cards.ts` id (pinned by a coherence test). Every `'standard'` mission grants
-   *  exactly one unlock by design (docs/DESIGN.md, "Economy & progression"); `'infinite'`
-   *  missions have none — they score Influence = rounds survived instead. */
-  reward?: { influence: number; unlockCardId: string };
+   *  `computeRewards`) — replays pay nothing. Each id in `unlockCardIds` must name a real
+   *  `content/cards.ts` id (pinned by a coherence test). A `'standard'` mission grants **one or
+   *  more** card unlocks (docs/DESIGN.md, "Economy & progression" — e.g. "The First Settlement"
+   *  opens the whole Neolithic building set at once); `'infinite'` missions have none — they score
+   *  Influence = rounds survived instead. */
+  reward?: { influence: number; unlockCardIds: string[] };
   /** Authored position on the campaign map's DAG grid (`meta/CampaignMap.tsx`): `col` is
    *  the horizontal chronology slot (later = further along history), `row` the vertical
    *  branch offset among siblings. Authored rather than auto-computed — matches the
@@ -65,16 +66,37 @@ export interface MissionDef {
 }
 
 /**
- * The mission catalogue. **Phase 4 Step 3** authors the baseline `sandbox` mission — the Neolithic
- * arc's standard missions land in Step 6.
+ * The mission catalogue. Holds the baseline `sandbox` infinite mission plus the opening of the
+ * Neolithic arc.
  *
  * `sandbox` is an `'infinite'` mission (no win state — it scores Influence = rounds survived and
  * renders in the campaign map's bottom banner, not as a DAG node). Its `sandbox_goal` objective
  * never wins by design; run length is bounded purely by the `sands_of_time` deadline threat, a
  * no-drain `defeat` predicate that ends the run once round `SANDBOX_DEADLINE` elapses — so the
  * sandbox measures the economy baseline for the Step 4 simulator without any drain skewing it.
+ *
+ * `first_settlement` is the first `'standard'` mission: a DAG root (no prereqs) at the start of the
+ * Neolithic band. It seeds no threat and no event — a pure stockpile race against nothing but
+ * famine — and its first clear unlocks the whole Neolithic building set at once (Farm, Toolmaker,
+ * Hut) plus Conquest. It carries no Influence (the cards are the prize).
  */
 export const MISSIONS: Record<string, MissionDef> = {
+  first_settlement: {
+    id: 'first_settlement',
+    name: 'The First Settlement',
+    lore:
+      'The band has wandered long enough. The valley is fertile, the water clean — here, at last, is a ' +
+      'place worth staying. Gather the stores and raise the spears to defend them, and the first roofs ' +
+      'of a settled people can rise.',
+    prereqs: [],
+    objectiveCardId: 'first_settlement_goal',
+    victoryHint: 'Stockpile 10 🔨 production and 10 ⚔️ military at once.',
+    failureHint: null,
+    kind: 'standard',
+    reward: { influence: 0, unlockCardIds: ['farm', 'toolmaker', 'hut', 'conquest'] },
+    map: { col: 0, row: 0 },
+    age: 'neolithic',
+  },
   sandbox: {
     id: 'sandbox',
     name: 'The Long Wander',

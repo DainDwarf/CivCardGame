@@ -279,7 +279,8 @@ export function CampaignMap({
  * from `opacity: 0` on that remount caused a visible white flash between steps.)
  *
  * **Detail step** — lore, the mechanical explanation (objective/failure hints), and a reward
- * preview. A `'standard'` mission shows Influence (struck through once already claimed) and the
+ * preview. A `'standard'` mission shows its Influence (struck through once already claimed; hidden
+ * entirely when the mission grants none) and the
  * unlock — the real card face once cleared (under a "Cards already unlocked" subtitle), or
  * `CardFace`'s `missionLocked` mode beforehand (the real `unlockCard` passed in, but rendered
  * blank but for its name — a deliberate sliver of information, since which card a mission grants
@@ -314,7 +315,7 @@ function MissionFlowPopup({
   onLaunch: (config: RunConfig) => void;
 }) {
   const infinite = mission.kind === 'infinite';
-  const unlockCard = mission.reward ? CARDS[mission.reward.unlockCardId] : null;
+  const unlockCards = mission.reward ? mission.reward.unlockCardIds.map((id) => CARDS[id]) : [];
   // The cards this mission is actually about: its objective (always exactly one) plus whichever
   // threat/event cards it seeds — read straight off the same declarative `threats`/`events` lists
   // `setup` injects from (see `content/missions.ts`), so this can't drift from what a launched run
@@ -417,21 +418,28 @@ function MissionFlowPopup({
                     </>
                   ) : (
                     <>
-                      <p className={`${styles.rewardInfluence}${alreadyCleared ? ` ${styles.struckOut}` : ''}`}>
-                        +{mission.reward!.influence} ⭐ Influence
-                      </p>
+                      {mission.reward!.influence > 0 && (
+                        <p className={`${styles.rewardInfluence}${alreadyCleared ? ` ${styles.struckOut}` : ''}`}>
+                          +{mission.reward!.influence} ⭐ Influence
+                        </p>
+                      )}
                       <span className={styles.rewardSubtitle}>
-                        {alreadyCleared ? 'Cards already unlocked' : '1 new card'}
+                        {alreadyCleared
+                          ? 'Cards already unlocked'
+                          : `${unlockCards.length} new card${unlockCards.length === 1 ? '' : 's'}`}
                       </span>
                       <div className={styles.rewardCards}>
-                        {alreadyCleared ? (
-                          <CardFace
-                            card={unlockCard!}
-                            className={styles.zoomableCard}
-                            onClick={() => setZoomCardId(unlockCard!.id)}
-                          />
-                        ) : (
-                          <CardFace card={unlockCard!} missionLocked />
+                        {unlockCards.map((card) =>
+                          alreadyCleared ? (
+                            <CardFace
+                              key={card.id}
+                              card={card}
+                              className={styles.zoomableCard}
+                              onClick={() => setZoomCardId(card.id)}
+                            />
+                          ) : (
+                            <CardFace key={card.id} card={card} missionLocked />
+                          ),
                         )}
                       </div>
                     </>
