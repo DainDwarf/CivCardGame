@@ -33,16 +33,58 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 2 — Reset ALL content + decouple tests** — set aside every content catalogue:
   cards, starting collection, decks, missions, **card stickers, board stickers, and the
   boards themselves** (`content/cards.ts`, `collection.ts`, `decks.ts`, `missions.ts`,
-  `stickers.ts`, `boardStickers.ts`, `boards.ts`). Make the test reset deliberate, not
-  incidental: decouple `run/` + `rules/` tests from specific content ids onto **synthetic
-  local fixtures** (mint via the real functions from local card defs — see
-  [[feedback-test-fixtures-share-prod-code-path]] — so future content churn stops breaking
-  them); earmark the content-coherence tests (`content/missions.test.ts`,
-  `content/cards.test.ts`, `contract.test.ts`) for rewrite as new content lands. **Save
-  wipe:** swapping ids leaves existing `localStorage`/`.civsave` referencing dead ids and the
-  store *shape* is unchanged so the reset path may miss it — pre-alpha, so document "wipe
-  local save" and confirm `parsePlayerStore` doesn't crash on dangling ids
-  ([[prealpha-no-save-migration]]). `[size: L]` `[phase: 4]`
+  `stickers.ts`, `boardStickers.ts`, `boards.ts`). `[size: L]` `[phase: 4]`
+
+  Cut into six shippable substeps. **Invariant at every substep boundary (each = one commit):**
+  `npm run typecheck` **and** `npm test` are green. Catalogues are **emptied to empty exports,
+  files + types kept** (`export const CARDS = {}`), never deleted — the app keeps typechecking.
+  **Two accepted costs:** (a) the game is knowingly *non-launchable* from the cards/boards reset
+  (2.5–2.6) until Step 3 refills it — only a live run can't be built, tests/typecheck stay green;
+  (b) **save wipe** — swapping ids leaves `localStorage`/`.civsave` referencing dead ids and the
+  store *shape* is unchanged so the reset path may miss it; pre-alpha, so document "wipe local save"
+  and confirm `parsePlayerStore` doesn't crash on dangling ids ([[prealpha-no-save-migration]]).
+
+  *Why test work fully precedes content removal:* the engine resolves through the global maps at
+  runtime (`effects.ts` `CARDS[ctx.self.cardId]`, `setup.ts` `BOARDS[config.board]`, sticker
+  lookups), so the instant a catalogue empties every spine test breaks unless its fixtures are
+  **installed into the live map** for the test's duration.
+
+  - **2.1 — Delete content-behaviour tests** — remove the `describe`/`it` blocks asserting a
+    *specific* shipped card's/sticker's inner values (Reinforced/Efficient/Irrigation deltas, a
+    named card's bespoke `resolve`). **Triage is per-block, not per-file** — mixed files
+    (`stickers.test.ts`, `boardStickers.test.ts`, `rewards.test.ts`, likely `effects.test.ts`/
+    `moves.test.ts`) keep their *mechanism* blocks, lose only their *content-value* blocks.
+
+  - **2.2 — Decouple surviving `rules/`+`run/` tests onto synthetic fixtures** — build a small shared
+    `src/rules/testFixtures.ts`: synthetic `test_*` `CardDef`s (building/work/action/event/threat +
+    staffing/production/destroy shapes), one `test_board`, one/two `StickerDef`s, **plus
+    `installFixtures()`/`uninstallFixtures()`** that splice into the live `CARDS`/`BOARDS`/`STICKERS`
+    (generalizing `events.test.ts`'s local `FIXTURES` + `beforeAll`/`afterAll`). Mint run state via
+    the **real prod functions** (`instancesFromCardIds`, `collectionFromCounts`, `buildSeedDecks`,
+    `blankState`), never re-implemented ([[feedback-test-fixtures-share-prod-code-path]]). **Exit
+    condition:** no `rules/`/`run/` test imports `content/{cards,boards,decks,missions,stickers,
+    boardStickers,collection}`. (2.1 before 2.2 so the migration doesn't port soon-deleted blocks.)
+
+    *Teardown order for 2.3–2.6: remove dependents before dependencies. Stickers hard-reference no
+    ids; missions/decks/collection reference card ids; cards are referenced by all; boards thread
+    through `setup`/`buildRunConfig`/`blankState` deepest → last.*
+
+  - **2.3 — Reset sticker catalogues** (`content/stickers.ts`, `content/boardStickers.ts` → empty) —
+    skeleton the coherence parts of `boardStickers.test.ts` + the sticker-content blocks in
+    `upgrades.test.ts`. Leaf layer.
+
+  - **2.4 — Reset missions** (`content/missions.ts` → empty `MISSIONS`) — skeleton
+    `content/missions.test.ts`; strip mission-content from `rewards.test.ts`/`campaign.test.ts`,
+    keeping the reward/DAG *mechanism* on a synthetic `MissionDef`. Earmark for rewrite.
+
+  - **2.5 — Reset the card layer together** (`content/cards.ts`, `decks.ts`, `collection.ts` → empty
+    `CARDS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`) — decks + collection ride *with* cards (splitting
+    leaves dangling instance-id refs between commits). Skeleton `content/cards.test.ts`,
+    `decks.test.ts`, and the content-dependent parts of `contract.test.ts`. Earmark for rewrite.
+
+  - **2.6 — Reset boards** (`content/boards.ts` → empty `BOARDS`) — last, most deeply wired. Skeleton
+    `content/boards.test.ts` + board-content parts of `setup.test.ts`; then close the save-wipe
+    clause above (confirm `parsePlayerStore` survives a dead-id save; document "wipe local save").
 
 - **Step 3 — Base set + Founding deck + a new board + sandbox mission** — author the
   always-owned base card set (Neolithic-tier), the new `STARTING_COLLECTION`, and a Founding
