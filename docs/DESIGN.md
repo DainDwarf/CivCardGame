@@ -349,6 +349,15 @@ src/
   sim/          # headless run simulator for balancing (simulateRun + policies)
 ```
 
+**`sim/` is a consumer, never a hook into the game.** Just as the core never imports the shell,
+the game data model (`content/` cards/missions/boards, `rules/`) never carries a field that exists
+only to serve the simulator. Anything that is a property of *how the simulator plays* — for
+instance the objective **progress gradient** the goal-directed policies steer by (`sim/objective.ts`)
+— lives strictly in `sim/`, computed from what the game already exposes (an objective's win predicate
+is a boolean; the sim derives its own gradient). The policies stay mission-agnostic by keying that
+gradient off the objective card id in one sim-local registry, so a new mission adds an entry there,
+not a hook on the card.
+
 ## Build roadmap 🔧
 
 - **Phase 0 — Skeleton** ✅: a runnable turn-based run with a tiny card set.

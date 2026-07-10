@@ -60,3 +60,37 @@ describe('greedy & heuristic policies — competence over the random floor', () 
     expect(totalResources(greedy.meanResources)).toBeGreaterThan(totalResources(random.meanResources) + 10);
   });
 });
+
+describe('goal-directed steering — a threshold mission the policies must actually pursue', () => {
+  // "The First Settlement" wins at 10🔨 + 10⚔️ *at once* with the buildingless Founding deck. Unlike the
+  // sandbox it has a real win, and reaching it needs a policy that *stockpiles toward the goal* rather
+  // than drifting at a survival equilibrium — the whole point of the objective-progress gradient
+  // (`sim/objective.ts`) feeding the greedy's `scoreState` and the heuristic's objective rung. A
+  // survival-only policy would never accumulate to it (and, with no deadline, never terminate).
+  //
+  // This block also implicitly asserts **termination**: `simulateRun` throws if a run never reaches
+  // gameover, so a green run means every goal-directed run finished (won, or starved trying) well under
+  // the action cap — the property that lets a no-deadline mission be swept at all.
+  const FS: Scenario = {
+    label: 'founding/tribe/first-settlement',
+    deckCardIds: DEFAULT_DECKS[0].cards,
+    board: 'tribe',
+    missionId: 'first_settlement',
+  };
+  const runs = runPolicies([FS], ['random', 'greedy', 'heuristic'], { seeds: 25 });
+  const rate = (name: string): number => {
+    const found = runs.find((r) => r.policyName === name);
+    if (!found) throw new Error(`no runs for policy ${name}`);
+    return summarize(found).winRate;
+  };
+
+  it('greedy and heuristic win most of the time; the random floor almost never does', () => {
+    // Observed ≈ 0.95 for both competent policies; the threshold is slack for seed variance but well
+    // clear of the random floor (a random walk stumbles into 10/10 essentially never).
+    expect(rate('greedy')).toBeGreaterThan(0.6);
+    expect(rate('heuristic')).toBeGreaterThan(0.6);
+    expect(rate('greedy')).toBeGreaterThan(rate('random'));
+    expect(rate('heuristic')).toBeGreaterThan(rate('random'));
+    expect(rate('random')).toBeLessThan(0.2);
+  });
+});

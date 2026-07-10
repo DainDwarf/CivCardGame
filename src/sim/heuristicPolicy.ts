@@ -2,15 +2,18 @@ import {
   freePopulation,
   freeTerritory,
   isOperating,
+  objectiveMet,
   projectedDelta,
   requiredWorkersOf,
   unplayableReason,
   type GameState,
   type Resources,
 } from '../rules';
+import type { RunState } from '../run/engine';
 import { CARDS, type CardDef } from '../content/cards';
 import { canonicalPlay, enumerateActions } from './actions';
-import type { Policy, SimAction } from './simulate';
+import { hasObjectiveGradient, objectiveProgress } from './objective';
+import { applyAction, type Policy, type SimAction } from './simulate';
 
 /** Projected next-round food below this ⇒ starvation is near, prioritize food over everything. */
 const FOOD_SAFETY = 3;
@@ -25,22 +28,34 @@ const VW: Resources = { food: 1, production: 1, science: 1, military: 0.8, money
 
 /**
  * A **heuristic** policy: a hand-written priority ladder encoding a sensible-player strategy, evaluated
- * top-down. Unlike the greedy it never clones per-candidate — it reads *one* `projectedDelta` for the
- * food outlook, then ranks cards by static metadata — so it's the cheap "competent baseline" for large
- * sweeps where the greedy's per-action cloning is the bottleneck. Its ladder: answer a parked
- * interaction → staff idle capacity → if food is tight, play the best net-food card → build on free
- * territory → if food is comfortable, grow population → otherwise play the best-value affordable card →
- * else end the turn. Deliberately no per-`cardId` branches: cards are classified by their declarative
- * `effect`/`produces`/`cost`, per the *cards own their own logic* convention, so new content is ranked
- * without touching this file.
+ * top-down. It reads *one* `projectedDelta` for the food outlook, then ranks cards by static metadata,
+ * so it's the cheap "competent baseline" for large sweeps where the greedy's per-action cloning is the
+ * bottleneck. Its ladder: answer a parked interaction → staff idle capacity → if food is tight, play the
+ * best net-food card → **advance the mission objective** → build on free territory → if food is
+ * comfortable, grow population → otherwise play the best-value affordable card → else end the turn.
+ * Deliberately no per-`cardId` branches: cards are classified by their declarative `effect`/`produces`/
+ * `cost`, per the *cards own their own logic* convention, so new content is ranked without touching this
+ * file.
+ *
+ * The **objective steering** is the only place it clones per candidate, and only to measure a mission's
+ * goal gradient (`sim/objective.ts`'s `objectiveProgress`) — which can't be read off a card's static
+ * metadata since it's a property of the *resulting* state. Two spots use it: the objective rung plays
+ * the card that most advances progress, and the fallback best-value rung filters out plays that would
+ * *regress* progress (so it never spends a goal resource on a card the goal no longer needs). That's a
+ * bounded relaxation of the never-clone property — only the playable hand (a handful of cards), still an
+ * order of magnitude under the greedy's whole-action-set cloning — and it stays below the food rungs so
+ * survival keeps priority. Both spots are gated on `hasObjectiveGradient`, so on a mission with no
+ * authored gradient (the sandbox) the steering is skipped **entirely** and the policy stays fully
+ * clone-free — the cheap baseline it exists to be.
  */
 export function createHeuristicPolicy(policySeed?: string): Policy {
-  const policy: Policy = (state) => decide(state.G);
+  const policy: Policy = (state) => decide(state);
   policy.seed = policySeed;
   return policy;
 }
 
-function decide(G: GameState): SimAction {
+function decide(state: RunState): SimAction {
+  const G = state.G;
   // A parked interaction is exclusive — answer it (see `enumerateActions`); a fixed pick is fine.
   if (G.pendingInteraction) return enumerateActions(G)[0];
 
@@ -67,6 +82,17 @@ function decide(G: GameState): SimAction {
     if (best) return best;
   }
 
+  // 2b. Advance the mission objective — play the card that most raises objective progress (clone-measured;
+  //     see the header). Gated on a real gradient existing (`hasObjectiveGradient`) so a gradient-less
+  //     mission like the sandbox stays clone-free, and skipped once the objective is met (a won state
+  //     ends the run). Guards against a play that would starve: a candidate driving *projected* food below
+  //     0 is rejected, so goal-chasing can't override survival on a mission whose goal needs a food card.
+  const steering = hasObjectiveGradient(G) && !objectiveMet(G);
+  if (steering) {
+    const best = bestObjectivePlay(state, playable);
+    if (best) return best;
+  }
+
   // 3. Build on free territory (economy growth) — cheapest first. (No buildings in current content.)
   if (freeTerritory(G) > 0) {
     const buildings = playable.filter((p) => p.card.kind === 'building');
@@ -81,8 +107,13 @@ function decide(G: GameState): SimAction {
     if (best) return best;
   }
 
-  // 5. Play the best-value affordable card — but skip a net food-spender while food isn't comfortable.
-  const safe = projFood >= FOOD_COMFORT ? playable : playable.filter((p) => staticFoodDelta(p.card) >= 0);
+  // 5. Play the best-value affordable card — but skip a net food-spender while food isn't comfortable,
+  //    and (while the objective is unmet) any play that would *regress* objective progress. Without that
+  //    second filter the policy keeps buying a resource the goal no longer needs at the cost of one it
+  //    still lacks (observed: piling up thousands of ⚔️ by spending the 🔨 it needed for the goal), so
+  //    the run limps to the win over hundreds of turns instead of a handful.
+  let safe = projFood >= FOOD_COMFORT ? playable : playable.filter((p) => staticFoodDelta(p.card) >= 0);
+  if (steering) safe = safe.filter((p) => !regressesObjective(state, p));
   const best = bestPlay(G, safe, (c) => staticValue(c), 0);
   if (best) return best;
 
@@ -126,6 +157,41 @@ function bestPlay(
     }
   }
   return best ? canonicalPlay(G, best.idx, best.card) : null;
+}
+
+/**
+ * The playable card whose play most increases objective progress (`sim/objective.ts`), as a canonical
+ * `playCard`; null if none strictly advances it. The one clone-per-candidate spot in this policy: it
+ * dispatches each play onto a *clone* of the real state (`applyAction`, exactly the greedy's measurement
+ * path) and reads the resulting `objectiveProgress` — a gradient no static card metadata can express.
+ * A candidate that drives *projected* next-round food below 0 is rejected, so pursuing the goal can
+ * never trade the run's survival away.
+ */
+function bestObjectivePlay(state: RunState, cards: PlayableCard[]): SimAction | null {
+  const base = objectiveProgress(state.G);
+  let best: SimAction | null = null;
+  let bestProg = base;
+  for (const p of cards) {
+    const action = canonicalPlay(state.G, p.idx, p.card);
+    const next = applyAction(state, action);
+    if (next === state) continue; // engine rejected it (shouldn't happen for a vetted play) — skip
+    if (projectedFood(next.G) < 0) continue; // would court starvation — survival stays first
+    const prog = objectiveProgress(next.G);
+    if (prog > bestProg) {
+      best = action;
+      bestProg = prog;
+    }
+  }
+  return best;
+}
+
+/** Whether playing `p` would *lower* objective progress from where it stands now — the guard that keeps
+ *  a fallback rung from spending a goal resource on a card the goal no longer needs. Clone-measured on
+ *  the real state, like `bestObjectivePlay`. */
+function regressesObjective(state: RunState, p: PlayableCard): boolean {
+  const next = applyAction(state, canonicalPlay(state.G, p.idx, p.card));
+  if (next === state) return false; // engine rejected it — treat as no regression (bestPlay will skip it)
+  return objectiveProgress(next.G) < objectiveProgress(state.G);
 }
 
 /** The element of `xs` maximizing `metric` (first on ties); `xs` must be non-empty. */

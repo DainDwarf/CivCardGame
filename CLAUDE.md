@@ -450,7 +450,16 @@ unplayed-cards list). **Competent policies** bracket the random floor: `createGr
 non-`endTurn` action (argmax of `sim/value.ts`'s pure, survival-first `scoreState` over the resulting
 state), ending the turn only when nothing improves (splitting off the `endTurn` decision so an infinite
 mission's rounds-survived reward can't make advancing always look best); `createHeuristicPolicy(seed?)`
-(`sim/heuristicPolicy.ts`) is a cheaper hand-written priority ladder that never clones per-candidate.
+(`sim/heuristicPolicy.ts`) is a cheaper hand-written priority ladder (it clones only for its one
+objective rung, not for the whole action set). Both policies are **goal-directed**: they steer toward the
+*mission's* objective via `sim/objective.ts`'s `objectiveProgress` — a sim-local `[0,1]` progress
+gradient the run engine doesn't expose (an objective is only a win/lose boolean). It lives strictly in
+`sim/` (never a hook on a card/mission — see DESIGN.md's *`sim/` is a consumer*), keyed by objective card
+id in one registry so the policies stay mission-agnostic; the greedy folds it into `scoreState`
+(capability-tier, kept under the starvation cliff so it never chases progress into famine), the heuristic
+adds a rung that plays the most progress-advancing card and filters progress-*regressing* plays out of its
+fallback. Without it a survival-first policy would drift at an equilibrium and never accumulate to a
+threshold win (and, with no deadline, never terminate — why a `'standard'` mission can now be swept).
 `runPolicies(scenarios, names, { seeds })` sweeps a scenario under several named policies (`POLICY_FACTORIES`)
 with *paired* seeds. The `npm run sim [seeds] [policies]` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`)
 prints the report across all policies by default. A synthetic-fixture move-surface fuzz test

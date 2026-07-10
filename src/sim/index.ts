@@ -1,4 +1,5 @@
 export * from './simulate';
+export * from './objective';
 export * from './actions';
 export * from './randomPolicy';
 export * from './greedyPolicy';

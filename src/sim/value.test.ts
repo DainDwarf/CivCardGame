@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { scoreState } from './value';
-import { blankState, type GameState } from '../rules';
+import { blankState, seedObjective, type GameState } from '../rules';
 
 /** A zeroed sandbox state to tweak per case. `scoreState` reads `projectedDelta`, which runs a full
  *  upkeep on a clone — harmless on a bare state (no threats/objective/hand). */
@@ -47,6 +47,44 @@ describe('scoreState', () => {
       G.culture = 30; // level 2 (bands at 10, 30)
     });
     expect(scoreState(cultured)).toBeGreaterThan(scoreState(noCulture));
+  });
+
+  it('rewards a state closer to the mission objective, all else equal', () => {
+    // Two states with identical resources except one is *nearer* the seeded objective ("The First
+    // Settlement" wants 10🔨 + 10⚔️). The nearer one must score higher — the goal-directed pull that
+    // makes the greedy stockpile toward the win rather than drift at a survival equilibrium.
+    const near = state((G) => {
+      seedObjective(G, 'first_settlement_goal');
+      G.resources.food = 5;
+      G.resources.production = 9;
+      G.resources.military = 9;
+    });
+    const far = state((G) => {
+      seedObjective(G, 'first_settlement_goal');
+      G.resources.food = 5;
+      G.resources.production = 9;
+      G.resources.military = 1;
+    });
+    expect(scoreState(near)).toBeGreaterThan(scoreState(far));
+  });
+
+  it('the objective pull never overrides survival — a near-win but starving state scores below a fed one', () => {
+    // Progress is capability-tier, not victory-tier: a state one step from the objective but about to
+    // starve must still score below a safely-fed state that is further from the goal. (Contrast the
+    // `pendingVictory` case below, where an *already-won* run dominates outright.)
+    const starvingNearWin = state((G) => {
+      seedObjective(G, 'first_settlement_goal');
+      G.resources.food = 0;
+      G.population = 5; // eats 5 into the red next round
+      G.resources.production = 9;
+      G.resources.military = 9;
+    });
+    const fedFarFromGoal = state((G) => {
+      seedObjective(G, 'first_settlement_goal');
+      G.resources.food = 10;
+      G.population = 0;
+    });
+    expect(scoreState(starvingNearWin)).toBeLessThan(scoreState(fedFarFromGoal));
   });
 
   it('lets a met objective dominate any non-winning state', () => {
