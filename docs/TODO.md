@@ -34,20 +34,19 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Step 3 — Starting content: Paleolithic set + Founding deck + Tribe board + sandbox mission** DONE ✅
 
-- **Step 4 — Headless simulator (balance tooling)** — a code-driven, no-browser/no-React
-  runner over the pure core, for statistical balance answers no human can play enough games
-  to reach (is a mission winnable? is a sticker overpowered? is a card ever played? is the
-  food economy too tight?). Feasible because the core is already framework-free, deterministic
-  (seeded RNG), and — post the "cards/stickers own their logic" + event-bus refactors — holds
-  *all* real game behaviour behind `resolveCard`/`StickerDef` hooks/the always-drained bus, so a
-  sim consumes the genuine behaviour with no duplicated branch; the bus's fixed dispatch order +
-  `MAX_EVENT_CASCADE` cap guarantee determinism and termination even under a fuzzing policy. Only
-  new consideration is throughput (millions of `endTurn`s), not viability. **First deliverable:** a
-  tiny `simulateRun(config, policy)` helper in **`src/sim/`** (the architecture diagram's reserved
-  home) + a **random-legal-move policy** (doubles as a crash/illegal-state fuzzer), before any
-  smarter policy or result aggregation. Runs against Step 3's sandbox — the ~50-turn deadline
-  guarantees bounded, terminating runs. Later: heuristic policies, batch runs across
-  seeds/decks/missions, aggregation/reporting. `[size: M]` `[phase: 4]`
+- **Step 4 — Headless simulator (balance tooling)** — first deliverable DONE ✅; follow-on open.
+  A code-driven, no-browser/no-React runner over the pure core, for statistical balance answers no
+  human can play enough games to reach (is a mission winnable? is a sticker overpowered? is a card
+  ever played? is the food economy too tight?).
+  - **Shipped:** `src/sim/` — `simulateRun(config, policy)` + a seeded **random-legal-move policy**
+    (`createRandomPolicy`, doubling as a crash/illegal-state fuzzer via `assertRunInvariants` after
+    every action) + a content-agnostic `simConfig` builder. Legality reuses the prod
+    `unplayableReason`; randomness runs through `rules/rng.ts`'s new `randInt` (the one seam). Smoke
+    test (`sim/sim.test.ts`) runs the Founding deck / Tribe board / sandbox across 50 seeds.
+  - **Still open:** heuristic/greedy policies; batch runs across seeds/decks/missions;
+    aggregation/reporting; `transferWorker` enumeration in the policy; a **full move-surface fuzz test
+    over synthetic fixtures** (building/destroy/`discardCost` — deferred until real content exists in
+    Step 6, or an explicit later fuzz pass). `[size: M]` `[phase: 4]`
 
 - **Step 5 — Ages map infrastructure** — promote ages from the undefined `era` placeholder to
   a real system: the `content/ages.ts` age→node/column model + the `CampaignMap.tsx` band

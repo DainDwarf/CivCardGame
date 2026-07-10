@@ -20,6 +20,14 @@ export function shuffle<T>(arr: readonly T[], seed: string): T[] {
   return shuffleWithRng(arr, seededRng(seed)).result;
 }
 
+/** A uniform integer in `[min, max]` (both inclusive), advancing `rng` in place. The one place
+ *  outside `shuffleWithRng` that draws from a live generator — kept here so `pure-rand` stays
+ *  confined to this single randomness seam (the headless simulator's `sim/randomPolicy.ts` picks
+ *  moves through this, never a fresh import). */
+export function randInt(rng: RandomGenerator, min: number, max: number): number {
+  return uniformInt(rng, min, max);
+}
+
 /**
  * Fisher–Yates shuffle resuming from a persisted RNG state (see `GameState.rngState`).
  * Returns both the shuffled copy and the advanced state, so the caller can store the

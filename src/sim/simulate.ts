@@ -1,0 +1,148 @@
+import type { RunConfig, RunResult } from '../contract';
+import type { BoardId } from '../content/boards';
+import type { DeckCard } from '../rules/deckBuilder';
+import type { GameState } from '../rules';
+import { shuffle } from '../rules';
+import {
+  applyMove,
+  createRun,
+  endTurn,
+  toRunResult,
+  type Gameover,
+  type RunState,
+} from '../run/engine';
+import {
+  assignWorker,
+  playCard,
+  resolveInteraction,
+  toggleStaffing,
+  transferWorker,
+  unassignWorker,
+} from '../run/moves';
+import { assertRunInvariants } from './invariants';
+
+/**
+ * One decision a policy hands the driver — a serializable mirror of the run moves plus `endTurn`, so
+ * a run can be recorded/replayed as a flat action list later. `simulate.ts`'s `applyAction` is the
+ * single place these map back onto the real engine moves (`run/moves.ts`); nothing here re-implements
+ * game logic.
+ */
+export type SimAction =
+  | { kind: 'endTurn' }
+  | { kind: 'playCard'; playHandIdx: number; discardHandIdxs?: number[]; destroyInstanceId?: number }
+  | { kind: 'assignWorker'; id: number }
+  | { kind: 'unassignWorker'; id: number }
+  | { kind: 'transferWorker'; fromId: number; toId: number }
+  | { kind: 'toggleStaffing'; id: number }
+  | { kind: 'resolveInteraction'; answer: number };
+
+/**
+ * A move-selection strategy: given the live run, pick the next action. A callable with an optional
+ * `seed` tag so the driver can fold the policy's seed into an invariant-violation reproduction key
+ * (`createRandomPolicy` sets it). The random-legal-move policy lives in `sim/randomPolicy.ts`;
+ * heuristic policies come later (see `docs/TODO.md` Step 4).
+ */
+export interface Policy {
+  (state: RunState): SimAction;
+  seed?: string;
+}
+
+/** The result of a headless run: the meta-loop `RunResult` plus enough raw state for aggregation. */
+export interface SimOutcome {
+  result: RunResult;
+  gameover: Gameover;
+  finalState: GameState;
+  /** Total actions dispatched (moves + `endTurn`s), incl. ones the engine rejected as invalid. */
+  actionsApplied: number;
+}
+
+/** Options for {@link simulateRun}. */
+export interface SimOptions {
+  /** Assert structural invariants after every action (the fuzzer teeth). Default `true`. */
+  check?: boolean;
+  /** Hard backstop against a non-terminating run — a run that never reaches gameover is itself a bug,
+   *  so exceeding this **throws**. Default 100_000; the sandbox's round-50 deadline bounds runs far
+   *  below it. */
+  maxActions?: number;
+}
+
+/** Dispatch one {@link SimAction} onto the real engine — the only bridge from a policy's decision to
+ *  a state transition. Invalid moves return the state unchanged (per `applyMove`), so a policy that
+ *  mis-enumerates simply wastes an action rather than corrupting state. */
+export function applyAction(state: RunState, action: SimAction): RunState {
+  switch (action.kind) {
+    case 'endTurn':
+      return endTurn(state);
+    case 'playCard':
+      return applyMove(state, playCard, action.playHandIdx, action.discardHandIdxs ?? [], action.destroyInstanceId);
+    case 'assignWorker':
+      return applyMove(state, assignWorker, action.id);
+    case 'unassignWorker':
+      return applyMove(state, unassignWorker, action.id);
+    case 'transferWorker':
+      return applyMove(state, transferWorker, action.fromId, action.toId);
+    case 'toggleStaffing':
+      return applyMove(state, toggleStaffing, action.id);
+    case 'resolveInteraction':
+      return applyMove(state, resolveInteraction, action.answer);
+  }
+}
+
+/**
+ * Play one headless run of `config` to completion under `policy`, returning its {@link SimOutcome}.
+ * The whole balance tool: a thin loop over the real engine (`createRun` → drive actions → `toRunResult`)
+ * that re-implements no game logic. Terminates because every finished run sets `gameover`; the
+ * `maxActions` backstop throws if one never does.
+ */
+export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions = {}): SimOutcome {
+  const check = opts.check ?? true;
+  const maxActions = opts.maxActions ?? 100_000;
+  const ctx = { configSeed: config.seed, policySeed: policy.seed };
+
+  let state = createRun(config);
+  if (check) assertRunInvariants(state.G, { ...ctx, round: state.G.round, actionsApplied: 0 });
+
+  let actionsApplied = 0;
+  while (!state.gameover) {
+    if (actionsApplied >= maxActions) {
+      throw new Error(
+        `simulateRun exceeded ${maxActions} actions without reaching gameover ` +
+          `[configSeed=${config.seed} policySeed=${policy.seed ?? '?'} round=${state.G.round}]`,
+      );
+    }
+    state = applyAction(state, policy(state));
+    actionsApplied += 1;
+    if (check) assertRunInvariants(state.G, { ...ctx, round: state.G.round, actionsApplied });
+  }
+
+  return {
+    result: toRunResult(state.G, state.gameover),
+    gameover: state.gameover,
+    finalState: state.G,
+    actionsApplied,
+  };
+}
+
+/**
+ * Assemble a `RunConfig` straight from plain card ids — the content-agnostic counterpart to
+ * `contract.ts`'s `buildRunConfig`, which needs a player `OwnedCards` to resolve deck instance ids.
+ * A simulator sweep works from a raw cardId deck (no meta collection), so this shuffles those into a
+ * `DeckCard[]` the same deterministic way `buildRunConfig` does. Board stickers default to none.
+ */
+export function simConfig(opts: {
+  deckCardIds: readonly string[];
+  board: BoardId;
+  missionId: string;
+  seed: string;
+  boardStickers?: string[];
+}): RunConfig {
+  const cards: DeckCard[] = opts.deckCardIds.map((cardId) => ({ cardId }));
+  return {
+    deck: shuffle(cards, opts.seed),
+    board: opts.board,
+    boardStickers: opts.boardStickers ?? [],
+    missionId: opts.missionId,
+    deckId: 'sim',
+    seed: opts.seed,
+  };
+}

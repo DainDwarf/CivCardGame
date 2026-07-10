@@ -407,6 +407,22 @@ collection to resolve to cardIds, and the chosen board's stickers are snapshotte
 `RunConfig.deck` directly, used by `GameContext.tsx`'s restart) — the spine between the two loops
 (docs/DESIGN.md, "The contract").
 
+**Balance tooling — the headless simulator (`src/sim/`):** a code-driven, no-browser/no-React runner
+over the pure core + turn engine, for statistical balance answers no human can play enough games to
+reach. It re-implements **no** game logic — `simulateRun(config, policy)` (`sim/simulate.ts`) just
+drives the real engine (`createRun` → dispatch actions via `applyAction` → `toRunResult`) under a
+`Policy` that returns one `SimAction` per step (a serializable mirror of the moves + `endTurn`).
+`createRandomPolicy(seed)` (`sim/randomPolicy.ts`) is the **random-legal-move policy** — it enumerates
+the legal actions (reusing the prod gate `rules/playability.ts`'s `unplayableReason`, never a re-derived
+copy) and picks one from its own seeded stream (distinct from the run's shuffle seed). It doubles as a
+**crash / illegal-state fuzzer**: `assertRunInvariants` (`sim/invariants.ts`) runs after every action
+(bus drained · unique instance ids · staffing/population bounds — deliberately **not** resource
+non-negativity, since a collapse ending legitimately leaves a negative pool), throwing with both seeds
+as the reproduction key. `simConfig(...)` is a content-agnostic `RunConfig` builder from plain cardIds
+(the sim counterpart to `buildRunConfig`, no meta collection needed). All randomness routes through
+`rules/rng.ts`'s `randInt` — the one seam. Only the first Step 4 deliverable ships here; heuristic
+policies, batch runs/aggregation, and a synthetic-fixture fuzz test are later work.
+
 ## Conventions
 
 - **React version** — on React 18; nothing external pins it (boardgame.io, the

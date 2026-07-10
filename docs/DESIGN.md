@@ -350,7 +350,7 @@ src/
   meta/         # React + store + persistence — the workshop
   contract.ts   # RunConfig / RunResult
   app/          # top-level shell: routes Meta UI <-> Run, owns the save
-  sim/          # (later) headless run simulator for balancing
+  sim/          # headless run simulator for balancing (simulateRun + policies)
 ```
 
 ## Build roadmap 🔧
