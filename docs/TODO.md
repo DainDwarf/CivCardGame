@@ -137,15 +137,19 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     set-or-clear case to `missionSpine.test.ts` (its backup died with the deleted content block).
     **Earmarked for rewrite:** the gutted `content/missions.test.ts` coherence skeleton.
 
-  - **2.5 — Reset the card layer together** (`content/cards.ts`, `decks.ts`, `collection.ts` → empty
-    `CARDS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`) — decks + collection ride *with* cards (splitting
-    leaves dangling instance-id refs between commits). `content/cards.test.ts`'s only block
-    (`compareCards`) is already relocated to synthetic in 2.2, so it empties cleanly; `decks.test.ts`'s
-    coherence iterators (deck cardIds resolve · size ≥ `MIN_DECK_SIZE` · unique ids) pass vacuously on
-    empty `DEFAULT_DECKS`. Skeleton those plus the content-dependent parts of `contract.test.ts` and
-    `meta/store.test.ts` (both value-import `DEFAULT_DECKS`/`STARTING_COLLECTION`), and
-    `rules/collection.test.ts`'s one `STARTING_COLLECTION` coherence block (deferred from 2.2).
-    Earmark for rewrite.
+  - **2.5 — Reset the card layer together** ✅ DONE (`content/cards.ts`, `decks.ts`, `collection.ts` →
+    empty `CARDS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`) — decks + collection rode *with* cards
+    (splitting leaves dangling instance-id refs between commits). `content/cards.test.ts` was **deleted**
+    (its only block, `compareCards`, was already relocated to synthetic in 2.2 — nothing coherence to
+    preserve); `decks.test.ts`'s coherence iterators (deck cardIds resolve · size ≥ `MIN_DECK_SIZE` ·
+    unique ids) pass **vacuously** on empty `DEFAULT_DECKS` (kept as-is, re-arm in Step 3). Removed
+    `rules/collection.test.ts`'s `STARTING_COLLECTION` coherence block (a cross-catalogue check, not a
+    mechanism — it *crashed* on empty, didn't pass vacuously). **`contract.test.ts` + `meta/store.test.ts`
+    were decoupled, not skeletoned:** their `buildRunConfig`/`reshuffleRunConfig`/`applyRunResult`/save
+    round-trip tests are pure mechanism (never touch `CARDS`), so they now run on synthetic collections +
+    inline `DeckSeed`s (arbitrary cardIds), keeping full coverage — no rewrite owed, Step 3 adds at most
+    an *integration* test. **Earmarked for rewrite:** the removed coherence blocks
+    (`STARTING_COLLECTION` owns-enough-for-`DEFAULT_DECKS`) — re-author in Step 3.
 
   - **2.6 — Reset boards** (`content/boards.ts` → empty `BOARDS`) — last, most deeply wired. Skeleton
     `content/boards.test.ts` + board-content parts of `setup.test.ts`; then close the save-wipe

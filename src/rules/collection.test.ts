@@ -10,9 +10,6 @@ import {
   stickerableInstancesOf,
   distinctCardIdsOwned,
 } from './collection';
-import { STARTING_COLLECTION } from '../content/collection';
-import { DEFAULT_DECKS } from '../content/decks';
-import { groupCounts, buildSeedDecks } from './deckBuilder';
 
 describe('copiesOwned', () => {
   it('returns the raw count for an owned card', () => {
@@ -104,14 +101,7 @@ describe('stickerableInstancesOf', () => {
     expect(stickerableInstancesOf(collection, 'farm')).toEqual([]);
   });
 });
-
-describe('STARTING_COLLECTION', () => {
-  it('owns enough copies of every card in the starting deck', () => {
-    const collection = collectionFromCounts(STARTING_COLLECTION);
-    const startingDeck = buildSeedDecks(DEFAULT_DECKS, collection).find((d) => d.id === 'starter')!.cards;
-    for (const { cardId, count } of groupCounts(startingDeck, collection)) {
-      const owned = copiesOwned(collection, cardId);
-      expect(owned >= count, `${cardId}: owns ${owned}, deck needs ${count}`).toBe(true);
-    }
-  });
-});
+// The `STARTING_COLLECTION` coherence block (owns enough copies of every card in `DEFAULT_DECKS`) was
+// removed in Phase 4 Step 2.5 when both catalogues were reset to empty — it's a *coherence* check
+// between two content catalogues, not a mechanism test, so it can't survive the reset. Earmarked for
+// rewrite in Step 3 once the real starting collection + Founding deck are authored.

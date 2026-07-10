@@ -1,11 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { applyRunResult, exportSave, importSave, type PlayerStore } from './store';
-import { DEFAULT_DECKS } from '../content/decks';
-import { STARTING_COLLECTION } from '../content/collection';
+import type { DeckSeed } from '../content/decks';
 import { buildSeedDecks } from '../rules/deckBuilder';
 import { collectionFromCounts, copiesOwned } from '../rules/collection';
 import type { RunResult } from '../contract';
 import type { MissionDef } from '../content/missions';
+
+// `applyRunResult` and the save round-trip are pure mechanism — they never validate a cardId against
+// `CARDS` — so this suite runs on a *synthetic* collection + deck seed rather than the (now empty,
+// Phase 4 Step 2.5) `STARTING_COLLECTION`/`DEFAULT_DECKS` catalogues. The cardIds are arbitrary; the
+// `standardMission` below unlocks `granary`, granted straight onto this collection.
+const SEED_COUNTS: Record<string, number> = { farm: 2, workshop: 2, library: 1 };
+const SEED_DECKS: DeckSeed[] = [
+  { id: 'starter', name: 'Test Deck', cards: ['farm', 'farm', 'workshop', 'workshop', 'library'] },
+];
 
 /** Unicode-safe base64 for constructing bogus save payloads below, mirroring the
  *  encoding `exportSave` itself uses internally (plain `btoa` throws on non-Latin1 text). */
@@ -29,10 +37,10 @@ function sampleRunResult(): RunResult {
 }
 
 function sampleStore(): PlayerStore {
-  const collection = collectionFromCounts(STARTING_COLLECTION);
+  const collection = collectionFromCounts(SEED_COUNTS);
   return {
     runHistory: [sampleRunResult()],
-    decks: buildSeedDecks(DEFAULT_DECKS, collection),
+    decks: buildSeedDecks(SEED_DECKS, collection),
     influence: 3,
     collection,
     mapProgress: { enlightenment: true },

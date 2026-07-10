@@ -235,12 +235,16 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     its mission's win logic via a single pure-read `objective` predicate, the way a
     `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
     for "a card the player builds decks with" (excludes event/threat/objective), used by the
-    deck-add reject and the Collection/DeckEditor pickers.
+    deck-add reject and the Collection/DeckEditor pickers. Catalogue reset to empty for the Phase 4
+    content pass (`CARDS = {}`); Step 3 authors the real Neolithic-tier base set.
   - `decks.ts` — `DeckDef` (a player deck; `cards` is meta instance ids) plus `DeckSeed`/
     `DEFAULT_DECKS` (content authored in plain cardIds, resolved by `buildSeedDecks`). A
-    fresh player starts with one editable deck; there's no read-only "built-in" tier.
+    fresh player is meant to start with one editable deck; there's no read-only "built-in" tier.
+    Seed reset to empty for the Phase 4 content pass (`DEFAULT_DECKS = []`); Step 3 authors the real
+    Founding deck alongside the base card set.
   - `collection.ts` — `STARTING_COLLECTION` (a plain `Record<cardId, count>`, turned into a
-    real instance-bearing `OwnedCards` by `collectionFromCounts` at seed time).
+    real instance-bearing `OwnedCards` by `collectionFromCounts` at seed time). Reset to empty for the
+    Phase 4 content pass (`STARTING_COLLECTION = {}`); Step 3 authors the real starting collection.
   - `stickers.ts` — `STICKERS`; each `StickerDef` carries its own
     `appliesTo`/`applyGain`/`applyCost` logic and an `icon`.
   - `boardStickers.ts` — `BOARD_STICKERS`; each `BoardStickerDef` carries its own

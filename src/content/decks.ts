@@ -26,27 +26,12 @@ export interface DeckSeed {
 
 /**
  * Seed data for a new player's store (see `meta/store.ts`'s `emptyStore`) — a fresh player's
- * one starting, fully-editable deck. Never read directly by the run loop or the meta screens;
+ * starting, fully-editable deck(s). Never read directly by the run loop or the meta screens;
  * `buildSeedDecks` turns this into the real `DeckDef`(s) a fresh store's `decks` holds.
  *
- * Deliberately a single narrow deck, built entirely from cards `content/collection.ts`'s
- * `STARTING_COLLECTION` actually owns — every other deck a player has is unlocked/built from
- * scratch as their collection grows.
+ * **Reset to empty for the Phase 4 content pass** (Step 2.5), riding with the card catalogue it
+ * references (a deck seed's cardIds only make sense against `content/collection.ts`'s
+ * `STARTING_COLLECTION`). The real Founding deck is authored in Step 3, once the base card set
+ * exists to build it from. Emptied, not deleted: the `DeckSeed`/`DeckDef` types stay.
  */
-export const DEFAULT_DECKS: DeckSeed[] = [
-  {
-    id: 'starter',
-    name: 'Founding Deck',
-    cards: [
-      'settlers', 'settlers', 'corvee', 'corvee', 'harvest', 'harvest',
-      'farm', 'workshop', 'farm', 'workshop', 'library', 'theater',
-      // Two Cornucopias so the run-scoped growing gain is visible in a single playthrough, two
-      // Foresights to exercise the interactive peek/choose, and two Destroys to exercise the
-      // targeted demolish (there are buildings above for it to target).
-      'cornucopia', 'cornucopia', 'foresight', 'foresight', 'destroy', 'destroy',
-      // Padding to reach the MIN_DECK_SIZE floor; this whole deck is placeholder content
-      // reset in Phase 4 Step 2, so the exact filler cards don't matter.
-      'market', 'walls',
-    ],
-  },
-];
+export const DEFAULT_DECKS: DeckSeed[] = [];
