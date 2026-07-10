@@ -24,7 +24,7 @@ export interface MissionDef {
    *  from, instead of a parallel hardcoded list that could drift. */
   threats?: string[];
   /** Event cards this mission shuffles into the deck at setup, one instance per entry — repeat an id
-   *  N times for N copies (e.g. four `'barbarian'` entries for Barbarian Tide's four waves). Same
+   *  N times for N copies (e.g. several event entries for a mission's successive waves). Same
    *  single-source-of-truth reasoning as `threats`. */
   events?: string[];
   /** The mission's win condition, made into a card. Names a real `content/cards.ts` id of kind

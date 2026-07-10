@@ -58,7 +58,7 @@ export function buySticker(
  * stacking (two Reinforced → +2) and composing (Reinforced + Efficient) fall out for free, and a
  * sticker whose def lacks the relevant hook is skipped via `?? out`.
  *
- * `effectiveGain` is also the fold a card's own bespoke `resolve`/`produce` (e.g. Cornucopia) goes
+ * `effectiveGain` is also the fold a card's own bespoke `resolve`/`produce` goes
  * through — `effects.ts`'s `gainResources` is the single write path for any card's resource output
  * and calls `effectiveGain` itself, so a bespoke resolver's gain is sticker-adjusted exactly like
  * the declarative default (see `state.ts`'s `CardInstance.stickers`).

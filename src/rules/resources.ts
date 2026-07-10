@@ -33,7 +33,7 @@ export function subtractResources(target: Resources, delta: Partial<Resources>):
 
 /**
  * Scale a resource bundle by an integer factor — the reusable "scale an effect's magnitude by a
- * counter" primitive. A card whose output grows with a run-scoped counter (Cornucopia: `factor =
+ * counter" primitive. A card whose output grows with a run-scoped counter (e.g. `factor =
  * plays + 1`) or a per-turn escalation (a future threat's drain: `factor = level`) both build their
  * effective bundle this way. Returns a fresh `Partial<Resources>` (does not mutate its input),
  * carrying only the keys present in `r`.

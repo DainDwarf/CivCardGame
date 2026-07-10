@@ -98,7 +98,7 @@ export function projectedDelta(G: GameState): ProjectedDelta {
   const clone = structuredClone(G);
   applyUpkeep(clone);
   // Events in hand auto-resolve at end of turn too, so fold their impact into the delta the
-  // player sees (e.g. a Barbarian's Military drain + its collapse warning) — same sequence
+  // player sees (e.g. a threat's resource drain + its collapse warning) — same sequence
   // `endTurn` runs for real, via the shared `settleEndOfTurn`.
   settleEndOfTurn(clone);
   return {

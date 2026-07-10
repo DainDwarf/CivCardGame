@@ -4,7 +4,7 @@ import { endTurn } from './engine';
 import { blankState, instancesFromCardIds, type GameState } from '../rules';
 import { installFixtures, uninstallFixtures } from '../rules/testFixtures';
 
-// `test_peek` is the interactive Foresight-like fixture: reveal the top 3, draw 1, shuffle the rest
+// `test_peek` is the interactive peek fixture: reveal the top 3, draw 1, shuffle the rest
 // back (cost 1🔬, revealsFromDeck 3, prompt 'Draw one — the rest shuffle back').
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);

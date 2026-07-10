@@ -177,7 +177,7 @@ describe('playCard: cards vs. buildings', () => {
   });
 });
 
-describe('playCard: per-instance card state (Cornucopia)', () => {
+describe('playCard: per-instance card state (a self-scaling card)', () => {
   it('grows each physical copy independently — playing one never buffs the other', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_growing', 'test_growing']); // two distinct copies (ids 1, 2)

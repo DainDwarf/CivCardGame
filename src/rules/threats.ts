@@ -13,7 +13,7 @@ export function addThreat(G: GameState, cardId: string): void {
 
 /** Whether any seeded threat's own `defeat` predicate is met right now — the threat counterpart to
  *  `rules/objective.ts`'s `objectiveMet`. Fixed threat order, first match wins (today only one card,
- *  Stagnation, ever defines `defeat`, so ordering is moot). `null` when none applies. */
+ *  `sands_of_time`, ever defines `defeat`, so ordering is moot). `null` when none applies. */
 export function defeatMet(G: GameState): { reason: string } | null {
   for (const t of G.threats) {
     const reason = CARDS[t.cardId]?.defeat?.(G, t);

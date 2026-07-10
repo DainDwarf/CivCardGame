@@ -12,7 +12,7 @@ export const FOOD_PER_POP = 1;
 export type Staffable = PlacedCard;
 
 /** Worker requirement of any staffable, read from its card. `workers: 0` = self-sufficient
- *  (always operating, e.g. City Walls); absent defaults to 1. */
+ *  (always operating, e.g. a self-sufficient defensive structure); absent defaults to 1. */
 export function requiredWorkersOf(s: Staffable): number {
   return CARDS[s.cardId].workers ?? 1;
 }
@@ -56,7 +56,7 @@ export function autoStaffCount(G: GameState, cardId: string): number {
  *  pending interaction — all of which carry instance ids. Deterministic (no RNG). Scanning every
  *  zone is what keeps ids unique run-wide, so a building or Work box minted at play never collides
  *  with a card already sitting in the deck. `pendingInteraction.options` are cards lifted out of the
- *  deck awaiting a choice (e.g. Foresight's peek); no move mints while an interaction is pending
+ *  deck awaiting a choice (e.g. Storytelling's discard choice); no move mints while an interaction is pending
  *  today, but scanning them keeps the invariant robust if a future interactive card ever does. Also
  *  scans `G.threats` (`rules/threats.ts`), which shares this same instance-id space. Ids
  *  of a card that has left every zone may be reused, which is harmless since nothing references them. */

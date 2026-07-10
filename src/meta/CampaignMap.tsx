@@ -319,7 +319,7 @@ function MissionFlowPopup({
   // threat/event cards it seeds — read straight off the same declarative `threats`/`events` lists
   // `setup` injects from (see `content/missions.ts`), so this can't drift from what a launched run
   // actually sees. Grouped by cardId since `events`/`threats` may repeat an id for multiple copies
-  // (e.g. four 'barbarian' entries for Barbarian Tide's four waves) — one face per distinct card,
+  // (e.g. repeated event entries for a mission's several waves) — one face per distinct card,
   // with a ×N badge standing in for the repeats instead of silently collapsing them.
   const seededCardCounts = new Map<string, number>();
   for (const cardId of [...(mission.threats ?? []), ...(mission.events ?? [])]) {

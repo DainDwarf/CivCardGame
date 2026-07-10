@@ -10,7 +10,7 @@ import { effectiveGain } from './stickers';
 export interface CardEffect {
   /** Resources gained immediately. */
   gain?: Partial<Resources>;
-  /** Resources removed immediately (e.g. a Barbarian event draining Military). No clamp — may go negative. */
+  /** Resources removed immediately (e.g. an event draining a resource). No clamp — may go negative. */
   loss?: Partial<Resources>;
   /** Cards drawn immediately. */
   draw?: number;
@@ -54,7 +54,7 @@ export interface EffectContext {
   G: GameState;
   /** The exact card instance doing the resolving (`{ id, cardId, counters? }`). A resolver reads
    *  `self.cardId` for its identity and reads/writes `self.counters` (via `getCounter`/`bumpCounter`)
-   *  for per-copy state that rides with this physical card — e.g. Cornucopia's growing gain. On a
+   *  for per-copy state that rides with this physical card — e.g. a self-scaling card's growing gain. On a
    *  resume pass (`resolveInteraction`) this is reconstructed from the parked `PendingInteraction`. */
   self: CardInstance;
   /** A pre-selected target instance id chosen by the UI before the move fired (e.g. the building a

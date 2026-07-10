@@ -24,8 +24,8 @@ export interface CardDef {
    *   *end of turn* (not on play). No population is locked and no idle pop is required to play it.
    * - `event`: not player-playable and never in the deck editor/collection — missions inject it.
    *   An event left in hand at end of turn auto-resolves its effect, then files by the same
-   *   default as any other card: **discard**, unless its effect specifies `remove: true` (e.g.
-   *   Barbarian), which sends it to **removed** instead. Not an inherent trait of `event` itself.
+   *   default as any other card: **discard**, unless its effect specifies `remove: true`, which
+   *   sends it to **removed** instead. Not an inherent trait of `event` itself.
    * - `threat`: a persistent board hazard, never in hand/deck/collection/deck editor — a mission's
    *   `setup` seeds it directly into `GameState.threats` (`rules/threats.ts`'s `addThreat`), not a
    *   pile. Unlike `event` (resolves once from hand, then files away), a threat ticks *every* upkeep
@@ -45,7 +45,7 @@ export interface CardDef {
   /** Resources required to play. Absent keys are free (e.g. {} = no cost). */
   cost: Partial<Resources>;
   /** `building` and `work` cards: worker spaces to operate. Defaults to 1; `0` = self-sufficient
-   *  (always operating, e.g. City Walls). */
+   *  (always operating, e.g. a defensive structure that needs no staffing). */
   workers?: number;
   /** Extra cost: number of other cards you must discard from hand to play this. */
   discardCost?: number;
@@ -64,7 +64,7 @@ export interface CardDef {
    *  `GameState` — see `rules/effects.ts`'s `EffectContext`. */
   resolve?: Resolver;
   /**
-   * How many cards this card reveals off the draw pile when played (a peek card — e.g. Foresight's 3).
+   * How many cards this card reveals off the draw pile when played (a peek card — e.g. reveal 3).
    * A declarative descriptor that drives *two* things so they can't drift: the resolver reads it for
    * its `peekTop` count, and `rules/playability.ts`'s `unplayableReason` gates the card as
    * `emptyDrawPile` when both draw and discard piles are empty (nothing to reveal) — the same
@@ -82,7 +82,7 @@ export interface CardDef {
   /**
    * Bespoke per-round production behavior for a `building`/`work` card whose output isn't fully
    * described by `produces`/`cultureOutput`/`effect.gain` (e.g. a future scaling building reading
-   * its own `self.counters`, mirroring Cornucopia's per-play `resolve`). When present it *replaces*
+   * its own `self.counters`, the production counterpart to a per-play `resolve`). When present it *replaces*
    * the declarative default built from those fields. Separate from `resolve`: a building/work card's
    * production ticks every upkeep while staffed, never at play, so it can't share the play-time
    * resolver without risking a one-shot play field (draw, population, destroy) firing every round —
@@ -116,7 +116,7 @@ export interface CardDef {
    * at every `flushEvents` boundary, and `run/engine.ts`'s `checkEndIf` reads that flag — so a
    * threshold like "30 science" registers at the flush where it's crossed. A *defeat* belongs
    * elsewhere: a mission-specific loss that a card must *drive* (a deadline passing, a counter
-   * escalating) lives on a threat's `defeat` hook (e.g. Stagnation), and core-resource collapse
+   * escalating) lives on a threat's `defeat` hook (e.g. `sands_of_time`), and core-resource collapse
    * stays universal in `run/engine.ts` — an objective card never declares its own defeat.
    * `self` is the seeded objective instance, so a future objective can read its own `counters`. Pair
    * with `dynamicText` for the progress readout.
@@ -132,7 +132,7 @@ export interface CardDef {
    * never sticky, so a condition that dips and recovers within one broadcast (e.g. a threshold a later
    * subscriber's production tops back up) can't leave a stale flag for `checkEndIf` to misread. A
    * round-based deadline should mirror an `objective`'s own round check (`G.round > N`, not `>= N`) —
-   * see `long_winter_goal`'s `round > 15` and Stagnation below — since `evaluateDefeat` runs at every
+   * see `sands_of_time`'s `round > SANDBOX_DEADLINE` below — since `evaluateDefeat` runs at every
    * flush, including the one right after `beginTurn` increments the round, before the player has acted
    * that round.
    */
@@ -142,8 +142,8 @@ export interface CardDef {
    *  `describeCard` text. */
   description?: string;
   /** Run-aware effect text: given the live `GameState` and the specific card instance being
-   *  rendered, returns that copy's *current* effect summary (e.g. Cornucopia's growing "+N🌾", which
-   *  depends on how often *this* copy has been played). Rendered in the card's bottom-most text
+   *  rendered, returns that copy's *current* effect summary (e.g. a self-scaling card's growing gain,
+   *  which depends on how often *this* copy has been played). Rendered in the card's bottom-most text
    *  band, everywhere a real instance exists in the run (hand, drag/ghost clones, zoom, pile
    *  viewers); static contexts (Collection, deck editor) have no instance to read, so they fall
    *  back to `description`/`describeCard`, which should read as the card's *base* value — the
@@ -174,7 +174,7 @@ export function isDeckable(card: CardDef): boolean {
 
 /** The stable display order of card kinds — the primary key of `compareCards`. Deckable kinds
  *  come first in play-relevance order (building → work → action); the mission-only kinds trail
- *  (only the pile viewer ever lists one, e.g. a Barbarian `event` filed to `removed`). */
+ *  (only the pile viewer ever lists one, e.g. an `event` filed to `removed`). */
 const KIND_RANK: Record<CardKind, number> = {
   building: 0,
   work: 1,
@@ -234,7 +234,7 @@ export const CARDS: Record<string, CardDef> = {
 
   // Storytelling: the first *interactive* Paleolithic card — suspends mid-resolution for a choice
   //   from the discard, then recovers the picked card to hand (the discard→hand counterpart to
-  //   Foresight's peek). Two-branch resolver keyed on `ctx.answer === undefined` (0 is a valid answer).
+  //   a deck peek). Two-branch resolver keyed on `ctx.answer === undefined` (0 is a valid answer).
   storytelling: {
     id: 'storytelling', name: 'Storytelling', kind: 'action', cost: { science: 2 },
     recoversFromDiscard: true,

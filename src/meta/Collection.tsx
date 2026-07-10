@@ -8,8 +8,8 @@ import { CardInstancePanel } from './CardInstancePanel';
 import styles from './Collection.module.css';
 
 /**
- * The Collection screen: every card the player *owns*. As of Step 9.1 it's also the card *shop* —
- * clicking a card opens `CardInstancePanel`, the per-copy detail view (Farm 1/2, Farm 2/2) that now
+ * The Collection screen: every card the player *owns*. It's also the card *shop* —
+ * clicking a card opens `CardInstancePanel`, the per-copy detail view (e.g. copy 1/2, 2/2) that
  * also buys the next copy tier and attaches stickers in place (there's no separate Shop tab).
  * A card with no entry in `collection` is not yet unlocked and is omitted entirely (not shown
  * locked/greyed) — unlocking it via a mission is meant to be a surprise, so nothing here should hint

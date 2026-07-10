@@ -63,7 +63,7 @@ export const TEST_BOARD_2: BoardDef = {
 // --- Synthetic cards -------------------------------------------------------------------------------
 
 /** Base gain of the dynamic-text fixture — the single source both its `resolve` and its `dynamicText`
- *  read (like Cornucopia's `base`), so the two can't disagree once a sticker folds over it. */
+ *  read (like a self-scaling card's `base`), so the two can't disagree once a sticker folds over it. */
 const DYNAMIC_BASE = { food: 2 } as const;
 
 /** Every shared `test_*` card, keyed by id. Covers each `CardKind`, one canonical producer per
@@ -150,7 +150,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     id: 'test_destroy', name: 'Test Destroy', kind: 'action',
     cost: { production: 1 }, effect: { destroy: true },
   },
-  // Interactive peek action (Foresight-like): reveals the top 3 of the draw pile into a choice tray,
+  // Interactive peek action: reveals the top 3 of the draw pile into a choice tray,
   // you draw 1, the rest shuffle back. Its resolver suspends into a `pendingInteraction` and resumes
   // on the chosen index — the canonical interactive/`suspendChoice` fixture. `revealsFromDeck` both
   // drives the peek count and gates the card as unplayable when both piles are empty.
@@ -178,7 +178,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     },
   },
   // Bespoke-`resolve` action with no declarative `effect`: adds its gain through `gainResources`, so a
-  // sticker's `effectiveGain` still folds over it (the gap Cornucopia's bespoke resolver closed).
+  // sticker's `effectiveGain` still folds over it (the gap a bespoke resolver's output would otherwise miss).
   test_bespoke: {
     id: 'test_bespoke', name: 'Test Bespoke', kind: 'action', cost: {},
     description: '+2🔬',
@@ -192,7 +192,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     dynamicText: (_G, self) => `+${effectiveGain(DYNAMIC_BASE, self)!.food}🌾`,
     resolve: (ctx) => gainResources(ctx, DYNAMIC_BASE),
   },
-  // Growing per-instance gain, like Cornucopia: +1🌾 the first play of a copy, +1 more per prior play
+  // Growing per-instance gain: +1🌾 the first play of a copy, +1 more per prior play
   // *of that same copy* (the count lives in the instance's own `counters`, riding with the card). The
   // canonical per-copy-state fixture.
   test_growing: {

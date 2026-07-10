@@ -199,7 +199,7 @@ function BoardLeftColumn({
 /** Collapse a list of card instances into one tile per type with a count, keeping first-seen
  *  order — *except* a card with `dynamicText`, or a stickered instance, neither of which ever
  *  groups: each such copy can carry its own live value or its own sticker-adjusted stats (e.g.
- *  two Cornucopia with different play counts, or one stickered Farm among several plain ones),
+ *  two self-scaling copies with different play counts, or one stickered copy among several plain ones),
  *  so a shared count would either hide that or force picking one copy's value to speak for the
  *  stack. Each stays its own single-count entry, keyed by its stable instance id, carrying the
  *  instance so the caller can compute its current `dynamicText`/`effectiveCard`. */
@@ -262,7 +262,7 @@ interface HandCard {
   key: number;
   cardId: string;
   /** The underlying run instance — carried so a card's run-aware text (`dynamicText`) can read its
-   *  own per-copy state (e.g. Cornucopia's play count). */
+   *  own per-copy state (e.g. a self-scaling card's play count). */
   inst: CardInstance;
   /** Index into `G.hand` this render (what the moves API expects). */
   handIdx: number;
@@ -1505,7 +1505,7 @@ export function Board({
     dark_age:   'a dark age descended — knowledge was lost.',
     revolt:     'revolt erupted — your people rose against you.',
     // card-declared defeats (G.pendingDefeat) reuse this shell map too, not just core collapses:
-    stagnation: 'stagnation set in — the Enlightenment passed you by.',
+    'the sands of time': 'the age turned — the long wander ended.',
   };
 
   const proj = projectedDelta(G);
@@ -1759,7 +1759,7 @@ export function Board({
                     key={card.key}
                     as="button"
                     card={ec}
-                    // A card owning run-aware text (e.g. Cornucopia's growing gain) renders its
+                    // A card owning run-aware text (e.g. a self-scaling card's growing gain) renders its
                     // current value here; the shell just asks, with no per-card branch.
                     overrideText={c.dynamicText?.(G, card.inst)}
                     stickerBadge={card.inst.stickers}
@@ -1998,7 +1998,7 @@ export function Board({
         </div>
       )}
 
-      {/* A card effect suspended awaiting a choice (e.g. Foresight's peek). Resolve-only: no
+      {/* A card effect suspended awaiting a choice (e.g. Storytelling's discard choice). Resolve-only: no
           dismiss path — clicking an option is the only way out (see .interactionBackdrop). */}
       {G.pendingInteraction && (
         <div className={styles.interactionBackdrop} role="dialog" aria-modal="true">

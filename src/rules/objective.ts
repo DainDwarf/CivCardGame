@@ -15,7 +15,7 @@ import type { GameState } from './state';
  * the same re-derive-at-every-flush shape). A threshold win ("30 science") is thus caught at the same
  * flush where the resource crosses, exactly where the old per-move poll caught it. A defeat a card
  * must *drive* (a deadline passing, a counter escalating) lives on a threat's `defeat` hook instead
- * (e.g. Stagnation); core-resource collapse stays a universal check in `run/engine.ts`.
+ * (e.g. `sands_of_time`); core-resource collapse stays a universal check in `run/engine.ts`.
  */
 
 /** Seed the mission's objective card into `G.objective`, bare (no counters yet). Called once by
@@ -34,8 +34,8 @@ export function objectiveMet(G: GameState): boolean {
 /** Re-derive the win flag from the objective card's own `objective` predicate — the bus's counterpart
  *  to `rules/threats.ts`'s `evaluateDefeat`. Called at every `flushEvents` boundary
  *  (`rules/events.ts`), so `G.pendingVictory` is fresh before every `checkEndIf`. Set-OR-CLEAR every
- *  call (never sticky): a verdict can flip back to false within one flush (barbarian_tide's 4th wave
- *  files to `removed` AND drains Military in one resolve). Victory-only — never touches
+ *  call (never sticky): a verdict can flip back to false within one flush (e.g. an event that
+ *  files to `removed` AND drains a resource in one resolve). Victory-only — never touches
  *  `G.pendingDefeat`, which threats own. */
 export function evaluateObjective(G: GameState): void {
   G.pendingVictory = objectiveMet(G);

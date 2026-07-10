@@ -23,7 +23,7 @@ const LOCAL: Record<string, CardDef> = {
   },
   // Observer of the on-draw event: while operating, gains money each time an effect draws a card —
   // *not* the routine round-start refill (it filters on the draw's `source`). A building with no
-  // passive `produces`: its whole output is the reaction (like Scriptorium).
+  // passive `produces`: its whole output is the reaction (an on-draw observer).
   test_observer: {
     id: 'test_observer', name: 'Observer', kind: 'building', cost: {}, workers: 1, tags: ['building'],
     on: {

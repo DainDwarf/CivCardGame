@@ -104,7 +104,7 @@ describe('resolveCard', () => {
     expect(G.resources.science).toBe(4); // test_action's base +3, sticker +1
   });
 
-  it("a bespoke resolver sees an output sticker's bonus (the gap Cornucopia closed)", () => {
+  it("a bespoke resolver sees an output sticker's bonus (the gap a self-scaling resolver closes)", () => {
     const G = blankState('test');
     resolveCard({ G, self: { id: 1, cardId: 'test_bespoke', stickers: ['test_addgain'] } });
     expect(G.resources.science).toBe(3); // test_bespoke's base +2, sticker +1

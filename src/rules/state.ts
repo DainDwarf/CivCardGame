@@ -13,7 +13,7 @@ export interface CardInstance {
   /** Key into the CARDS catalogue. */
   cardId: string;
   /**
-   * Per-instance run counters (e.g. Cornucopia's play count), keyed however the card's resolver
+   * Per-instance run counters (e.g. a self-scaling card's play count), keyed however the card's resolver
    * chooses — a generic map, not bespoke fields, per the *cards own their own numbers* convention.
    * Absent until a resolver first writes one; read/written via `getCounter`/`bumpCounter`.
    *
@@ -28,7 +28,7 @@ export interface CardInstance {
    * Permanent sticker ids, copied once from the owning `MetaCardInstance` at run setup and never
    * written during a run. `rules/stickers.ts`'s `effectiveGain`/`effectiveCost`/`effectiveCard` are
    * the only readers, and they compose every output path — the declarative default *and* a card's
-   * own bespoke `resolve`/`produce` (e.g. Cornucopia) — since all gain routes through `effects.ts`'s
+   * own bespoke `resolve`/`produce` — since all gain routes through `effects.ts`'s
    * `gainResources` fold.
    */
   stickers?: string[];
@@ -63,7 +63,7 @@ export type DiscardReason = 'sacrifice' | 'demolish' | 'endOfTurn' | 'workFiled'
 
 /** Where a `draw` came from — rides on the `draw` event so an `on.draw` handler can tell the routine
  *  round-start refill (`'turnStart'`, `drawUpTo`) from a draw an action/effect *caused* (`'effect'`,
- *  the default: `effect.draw`, Foresight, etc.). Scriptorium reacts only to `'effect'` draws. */
+ *  the default: `effect.draw`, a peek card's draw, etc.). An on-draw observer might react only to `'effect'` draws. */
 export type DrawSource = 'turnStart' | 'effect';
 
 /** A snapshot of every *value* field a threshold/`resourceChange` handler might watch, taken by the
@@ -118,7 +118,7 @@ export interface GameState {
    * Exile pile — cards permanently removed from the deck (never drawn or reshuffled again); distinct
    * from the tableau (an active board entity). A card lands here only when a specific effect files it
    * there, never by its `kind`: a `building` when another card's `effect.destroy` demolishes it, an
-   * auto-resolved `event` when its own `effect.remove` is set (currently just Barbarian).
+   * auto-resolved `event` when its own `effect.remove` is set.
    */
   removed: CardInstance[];
   /** Buildings in play (each a placed `building` card), tracking their assigned workers. */
@@ -191,7 +191,7 @@ export interface GameState {
  * it survives structuredClone/undo: the resolver reveals options, parks them here, and returns; the
  * UI renders a prompt from this; `run/moves.ts`'s `resolveInteraction` re-enters the same card's
  * resolver with the chosen index, completing the effect and clearing this back to `null`.
- * **Non-cancelable** — the reveal has already committed (e.g. Foresight lifts cards off the deck,
+ * **Non-cancelable** — the reveal has already committed (e.g. a peek card lifts cards off the deck,
  * clearing the undo stack), so the only exit is answering it.
  */
 export interface PendingInteraction {

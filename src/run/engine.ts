@@ -65,8 +65,8 @@ export function endTurn(state: RunState): RunState {
   // Events left in hand auto-resolve (applying their effect) and are destroyed to the removed
   // pile; the rest of the hand recycles to discard, and the work zone files — see `settleEndOfTurn`.
   settleEndOfTurn(G);
-  // An event may have tripped collapse (a resource going negative) or the objective (e.g. the
-  // last barbarian beaten), so re-check before the next turn begins.
+  // An event may have tripped collapse (a resource going negative) or the objective (e.g. its
+  // win threshold crossed), so re-check before the next turn begins.
   const afterEvents = checkEndIf({ ...afterUpkeep, G });
   if (afterEvents.gameover) return afterEvents;
   return beginTurn(afterEvents);

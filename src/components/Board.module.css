@@ -1274,7 +1274,7 @@
   cursor: pointer;
 }
 
-/* --- Interaction modal: a card effect suspended awaiting a player choice (e.g. Foresight) --- */
+/* --- Interaction modal: a card effect suspended awaiting a player choice (e.g. Storytelling) --- */
 /* Resolve-only by design: NO click-outside / Escape dismiss. The reveal has already committed
    (cards lifted off the deck, undo stack cleared), so the only exit is picking an option — a
    dismiss path would soft-lock the run (endTurn blocked, nothing to undo to). */

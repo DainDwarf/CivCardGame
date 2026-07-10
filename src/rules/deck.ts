@@ -33,7 +33,7 @@ export function drawCard(G: GameState, source: DrawSource = 'effect'): void {
     G.hand.push(card);
     // The single choke for every draw off the top of the deck (round-start `drawUpTo` and any
     // `effect.draw`) — emit here so on-draw observers fire once at the next boundary flush, tagged
-    // with what drew it. (A card that draws a *specific* card, e.g. Foresight, bypasses this and
+    // with what drew it. (A card that draws a *specific* card bypasses this and
     // must emit its own `draw` event.)
     emitEvent(G, { type: 'draw', instanceId: card.id, cardId: card.cardId, source });
   }
@@ -55,8 +55,8 @@ export function drawUpTo(G: GameState): void {
 // as one card-facing family (like `gainResources(ctx, …)`); each only touches `ctx.G`.
 
 /**
- * Reveal (lift off) up to `n` cards from the top of the draw pile for a card that peeks — e.g.
- * Foresight. Reshuffles the discard into the deck (the same seeded path `drawCard` uses) whenever the
+ * Reveal (lift off) up to `n` cards from the top of the draw pile for a card that peeks.
+ * Reshuffles the discard into the deck (the same seeded path `drawCard` uses) whenever the
  * deck empties mid-peek, so it surfaces "what the next `n` draws would show", up to what actually
  * exists across both piles — returning fewer than `n` (or `[]`) only when both run dry. The revealed
  * cards are *removed* from the deck (not merely read), so `GameContext`'s reveal-boundary fires and
@@ -80,7 +80,7 @@ export function peekTop(ctx: EffectContext, n: number): CardInstance[] {
 
 /**
  * Draw a *specific* card instance into the hand — the verb `drawCard` (top-of-deck only) can't
- * express, used by a card that draws a chosen card (Foresight). Emits the `draw` event so on-draw
+ * express, used by a card that draws a chosen card. Emits the `draw` event so on-draw
  * observers fire, tagged `'effect'` (an effect-caused draw, never a round-start refill). The caller
  * owns removing `card` from wherever it came (e.g. `peekTop` already lifted it off the deck).
  */

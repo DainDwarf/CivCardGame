@@ -58,7 +58,7 @@ export function playCard(
   } else if (card.kind === 'work') {
     addWork(G, cardId, played.stickers);
   } else {
-    // Resolve on the played *instance* — so a self-scaling card (Cornucopia) reads/writes its own
+    // Resolve on the played *instance* — so a self-scaling card reads/writes its own
     // copy's counters, which then ride along as that same instance files to discard below.
     resolveCard({ G, self: played, target: destroyInstanceId });
   }

@@ -13,7 +13,7 @@ import { TEST_BOARD_ID, installFixtures, uninstallFixtures, installCards, uninst
 // fixtures cover the shapes no shared fixture has: an on-draw observer, an event-count survival
 // objective, and a round-based objective.
 const LOCAL: Record<string, CardDef> = {
-  // On-draw observer (Scriptorium-like): while staffed, pays +1💰 per effect-caused draw, never the
+  // On-draw observer: while staffed, pays +1💰 per effect-caused draw, never the
   // round-start refill.
   test_observer: {
     id: 'test_observer', name: 'Observer', kind: 'building', cost: {}, workers: 1, tags: ['building'],

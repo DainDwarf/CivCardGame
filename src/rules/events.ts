@@ -104,7 +104,7 @@ function findLiveInstance(G: GameState, id: number): CardInstance | undefined {
  *
  * A `building`/`work` subject is a *staffable* — its handler carries the same "while staffed"
  * contract as the observer walk applies to it, so the subject path must apply the identical
- * `isOperating` gate rather than firing unconditionally (e.g. Scriptorium drawn into hand is not
+ * `isOperating` gate rather than firing unconditionally (e.g. an on-draw observer drawn into hand is not
  * an operating copy and must not pay out on its own draw). That only makes sense once the subject
  * is resolved to its *live* zone instance (a bare `{id, cardId}` has no `workers` to gate on), so a
  * building/work subject is looked up via `findStaffable` instead of dispatched bare. A subject of any
