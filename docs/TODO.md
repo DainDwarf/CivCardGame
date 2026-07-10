@@ -30,141 +30,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Step 1 — Deck-construction constraints** DONE ✅
 
-- **Step 2 — Reset ALL content + decouple tests** — set aside every content catalogue:
-  cards, starting collection, decks, missions, **card stickers, board stickers, and the
-  boards themselves** (`content/cards.ts`, `collection.ts`, `decks.ts`, `missions.ts`,
-  `stickers.ts`, `boardStickers.ts`, `boards.ts`). `[size: L]` `[phase: 4]`
-
-  Cut into six shippable substeps. **Invariant at every substep boundary (each = one commit):**
-  `npm run typecheck` **and** `npm test` are green. Catalogues are **emptied to empty exports,
-  files + types kept** (`export const CARDS = {}`), never deleted — the app keeps typechecking.
-  **Two accepted costs:** (a) the game is knowingly *non-launchable* from the cards/boards reset
-  (2.5–2.6) until Step 3 refills it — only a live run can't be built, tests/typecheck stay green;
-  (b) **save wipe** — swapping ids leaves `localStorage`/`.civsave` referencing dead ids and the
-  store *shape* is unchanged so the reset path may miss it; pre-alpha, so document "wipe local save"
-  and confirm `parsePlayerStore` doesn't crash on dangling ids ([[prealpha-no-save-migration]]).
-
-  *Why test work fully precedes content removal:* the engine resolves through the global maps at
-  runtime (`effects.ts` `CARDS[ctx.self.cardId]`, `setup.ts` `BOARDS[config.board]`, sticker
-  lookups), so the instant a catalogue empties every spine test breaks unless its fixtures are
-  **installed into the live map** for the test's duration.
-
-  - **2.1 — Delete content-behaviour tests** — remove the `describe`/`it` blocks asserting a
-    *specific* shipped card's/sticker's inner values (Reinforced/Efficient/Irrigation deltas, a
-    named card's bespoke `resolve`). **Triage is per-block, not per-file** — mixed files
-    (`stickers.test.ts`, `boardStickers.test.ts`, `rewards.test.ts`, likely `effects.test.ts`/
-    `moves.test.ts`) keep their *mechanism* blocks, lose only their *content-value* blocks.
-
-  - **2.2 — Decouple surviving `rules/`+`run/` tests onto synthetic fixtures** — build a small shared
-    `src/rules/testFixtures.ts`: synthetic `test_*` `CardDef`s (building/work/action/event/threat/
-    **objective** shapes + staffing/production/destroy variants; the objective one carries an
-    `objective` predicate), one `test_board`, one/two `StickerDef`s, **plus
-    `installFixtures()`/`uninstallFixtures()`** that splice into the live `CARDS`/`BOARDS`/`STICKERS`
-    (generalizing `events.test.ts`'s local `FIXTURES` + `beforeAll`/`afterAll`). Mint run state via
-    the **real prod functions** (`instancesFromCardIds`, `collectionFromCounts`, `buildSeedDecks`,
-    `blankState`), never re-implemented ([[feedback-test-fixtures-share-prod-code-path]]). **Exit
-    condition:** no `rules/`/`run/` test imports a content **catalogue value** (`CARDS`/`BOARDS`/
-    `MISSIONS`/`STICKERS`/`BOARD_STICKERS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`) — a *type* or a
-    *mechanism function* (`compareCards`, `seedMissionCards`) import is fine — **and** the suite is
-    green under empty catalogues (the real gate; the import grep is only a proxy). (2.1 before 2.2 so
-    the migration doesn't port soon-deleted blocks.)
-
-    *Scope note (discovered during 2.2):* the import grep names only ~7 files, but **20** `rules/`+
-    `run/` files break under empty catalogues — 13 lean on shipped id *string literals*, not imports
-    (`blankState` + a tableau of `cardId: 'farm'`, a `stickers: ['reinforced']`). 2.2 decouples **all
-    mechanism tests** across those 20; the fixture set grew accordingly (a producer per resource, the
-    canonical actions, `test_growing`/`test_peek`, board stickers + a 2nd board). Two files stay behind
-    because their break is *coherence*, not mechanism, and defers to the substep that empties their
-    catalogue: `collection.test.ts`'s `STARTING_COLLECTION` block (→2.5) and `upgrades.test.ts`'s
-    upgrade-hint oracle, which brute-forces the *whole live* sticker/board-sticker catalogue so it can
-    only decouple once those are actually emptied (→2.3).
-
-    *Mechanism coverage to re-add on synthetic fixtures* — the 2.1 deletions (7 `describe` blocks in
-    `effects.test.ts` + `stickers.test.ts`) also carried the **only** coverage of these mechanisms; 2.2
-    must re-assert each on synthetic cards/stickers (values chosen freely, not a catalogue number).
-    Needs synthetic stickers of three shapes — an **additive-gain** one (Reinforced-like), a
-    **cost-reducing** one (Efficient-like, floors at 0), and a **restricted/conditional** one
-    (Irrigation-like, `appliesTo` gate) — plus a declarative-default card, a bespoke-`resolve` card,
-    and a card with `dynamicText`:
-    - `resolveCard` runs a card's **declarative-default** effect; a **bespoke `resolve`** still sees a
-      sticker's bonus (the gap Cornucopia closed); **resolve/display agree** (`dynamicText` reflects the
-      sticker-adjusted gain).
-    - `effectiveGain` folds an output sticker's hook over a base bag · **stacks** two of the same ·
-      leaves an unstickered instance untouched · passes `undefined` through unchanged.
-    - `effectiveCost` subtracts per-resource · **floors at 0** (never negative) · stacks · leaves
-      unstickered untouched.
-    - `stickerAppliesTo` — a **restricted** sticker matches only eligible cards (by tag/kind), an
-      **unrestricted** one matches everything.
-    - two **different** stickers compose on one copy (gain + cost together).
-    - `effectiveCard` — returns the *same object* when unstickered; reflects the gain hook in
-      `produces`, the cost hook in `cost`, and a work card's `effect.gain`.
-
-    *Content-module mechanism blocks to relocate here (mislabeled as content tests)* — two
-    `content/*.test.ts` blocks index a *named* catalogue entry (`CARDS.farm`, `MISSIONS.enlightenment`)
-    to test a **function/spine**, not the content — so they break on reset yet aren't coherence checks.
-    Relocate their mechanism coverage here onto synthetic fixtures *now*, so 2.4/2.5 can gut the
-    content-side originals freely (the empty-catalogue coherence iterators in those files survive
-    vacuously — see 2.4/2.5):
-    - **`compareCards`** (`content/cards.test.ts` — its *only* block) — the shared card comparator:
-      kind order (building < work < action < event), alphabetical within a kind, leading-`'The '` strip
-      (but *not* `'Theater'`), total order (0 only for equal name+kind). Re-assert on synthetic cards.
-    - **mission win/defeat spine** (`content/missions.test.ts`'s per-mission + `bus-driven` blocks) — the
-      per-mission blocks assert *shipped numbers* (30 science, 2 food/tick, 4 barbarians, round-12
-      deadline): those specific values are 2.1-style content, **dropped**. But the spine they drive must
-      be re-asserted on a synthetic mission (`MissionDef` built inline over the synthetic objective/threat
-      ids): `seedMissionCards` seeds `threats` → `G.threats` and `events` → the deck; the `endTurn`
-      broadcast (`dispatchEvent`) drains a synthetic threat; `objectiveMet`/`defeatMet` read the card's
-      own predicate; `evaluateObjective`/`evaluateDefeat` re-derive `G.pendingVictory`/`pendingDefeat`
-      at every `flushEvents` boundary (set-or-clear; false when unseeded).
-
-    *Teardown order for 2.3–2.6: remove dependents before dependencies. Stickers hard-reference no
-    ids; missions/decks/collection reference card ids; cards are referenced by all; boards thread
-    through `setup`/`buildRunConfig`/`blankState` deepest → last.*
-
-  - **2.3 — Reset sticker catalogues** ✅ DONE (`content/stickers.ts`, `content/boardStickers.ts` → empty) —
-    `boardStickers.test.ts` was fully migrated to synthetic fixtures in 2.2 (it's 100% mechanism —
-    it has no coherence parts to skeleton), so 2.3 only empties the two content catalogues and
-    decouples/skeletons `upgrades.test.ts`'s upgrade-hint oracle (deferred from 2.2 because it
-    brute-forces the whole live sticker/board-sticker catalogue — see 2.2's scope note). Leaf layer.
-
-  - **2.4 — Reset missions** ✅ DONE (`content/missions.ts` → empty `MISSIONS`) — gutted
-    `content/missions.test.ts` to the **coherence iterators** only (objective/threats/events + the
-    reward→card check moved in from `rewards.test.ts`); they pass vacuously on empty `MISSIONS` and
-    re-arm in Step 3. Stripped the `MISSIONS`/`CARDS` reward-coherence iterator out of
-    `rewards.test.ts` (its mechanism was already fully synthetic). `campaign.test.ts` needed **no**
-    edit — it was already 100% synthetic (type-only `MissionDef` import; DAG functions never touch
-    the catalogues). Also closed a 2.2 checklist gap: added the `evaluateObjective` true→false
-    set-or-clear case to `missionSpine.test.ts` (its backup died with the deleted content block).
-    **Earmarked for rewrite:** the gutted `content/missions.test.ts` coherence skeleton.
-
-  - **2.5 — Reset the card layer together** ✅ DONE (`content/cards.ts`, `decks.ts`, `collection.ts` →
-    empty `CARDS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`) — decks + collection rode *with* cards
-    (splitting leaves dangling instance-id refs between commits). `content/cards.test.ts` was **deleted**
-    (its only block, `compareCards`, was already relocated to synthetic in 2.2 — nothing coherence to
-    preserve); `decks.test.ts`'s coherence iterators (deck cardIds resolve · size ≥ `MIN_DECK_SIZE` ·
-    unique ids) pass **vacuously** on empty `DEFAULT_DECKS` (kept as-is, re-arm in Step 3). Removed
-    `rules/collection.test.ts`'s `STARTING_COLLECTION` coherence block (a cross-catalogue check, not a
-    mechanism — it *crashed* on empty, didn't pass vacuously). **`contract.test.ts` + `meta/store.test.ts`
-    were decoupled, not skeletoned:** their `buildRunConfig`/`reshuffleRunConfig`/`applyRunResult`/save
-    round-trip tests are pure mechanism (never touch `CARDS`), so they now run on synthetic collections +
-    inline `DeckSeed`s (arbitrary cardIds), keeping full coverage — no rewrite owed, Step 3 adds at most
-    an *integration* test. **Earmarked for rewrite:** the removed coherence blocks
-    (`STARTING_COLLECTION` owns-enough-for-`DEFAULT_DECKS`) — re-author in Step 3.
-
-  - **2.6 — Reset boards** ✅ DONE (`content/boards.ts` → empty `BOARDS`; `BoardId` widened
-    `'tribe'|'monarchy'|'republic'` → `string` since a fixed union can't key an empty record and would
-    break every `boardId: BoardId` consumer — matches the `cards.ts`/`boardStickers.ts` string-id
-    precedent). `content/boards.test.ts` kept as-is: its two coherence iterators (id↔key match ·
-    non-negative starts) pass **vacuously** on empty `BOARDS` — the same skeleton 2.4/2.5 established,
-    **earmarked for Step 3 rewrite**. `setup.test.ts` needed **no** edit — already on the synthetic
-    `TEST_BOARD` from 2.2; `contract.test.ts` likewise on plain-string `'tribe'` from 2.5 (both never
-    touch `BOARDS`). **Save-wipe clause closed:** `parsePlayerStore` is shape-only (never validates
-    board/card/sticker ids against a catalogue), so a save with dead board ids survives parsing without
-    crashing — only the launch path would notice a dead id, and the game is non-launchable until Step 3.
-    Pre-alpha: **wipe local save** when Step 3 lands new ids ([[prealpha-no-save-migration]]).
-
-  With 2.6 done, **Step 2 is complete** — every content catalogue is emptied, the suite runs green on
-  synthetic fixtures, and typecheck holds. Step 3 refills content.
+- **Step 2 — Reset ALL content + decouple tests** DONE ✅
 
 - **Step 3 — Base set + Founding deck + a new board + sandbox mission** — author the
   always-owned base card set (Neolithic-tier), the new `STARTING_COLLECTION`, and a Founding
@@ -261,6 +127,19 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 2 — Reset ALL content + decouple tests** ✅ — every content catalogue emptied to an empty
+  export (files + types kept, never deleted): `CARDS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`/`MISSIONS`/
+  `STICKERS`/`BOARD_STICKERS`/`BOARDS` all `{}`/`[]`; `BoardId` widened to `string`. Suite runs green on
+  a shared synthetic-fixture module (`rules/testFixtures.ts`: `test_*` `CardDef`s + `test_board` +
+  synthetic stickers, spliced into the live maps via `installFixtures`/`uninstallFixtures`, state minted
+  through the real prod functions). All `rules/`+`run/` mechanism tests decoupled off catalogue values;
+  mislabeled content-module mechanism blocks (`compareCards`, the mission win/defeat spine) relocated to
+  synthetic fixtures. Content-side coherence iterators (missions/decks/boards) kept but pass **vacuously**
+  on empty catalogues — earmarked for Step 3 rewrite (incl. `STARTING_COLLECTION` owns-enough coverage).
+  Game is knowingly **non-launchable** until Step 3 refills content (tests/typecheck stay green);
+  `parsePlayerStore` confirmed shape-only so dead saved ids don't crash — pre-alpha **wipe local save**
+  when Step 3 lands new ids ([[prealpha-no-save-migration]]).
 
 - **Step 1 — Deck-construction constraints** ✅ — `MIN_DECK_SIZE` floor (provisional 20, enforced at
   `rules/deckBuilder.ts` + `App.saveDeck`, reflected by the deck editor's disabled Save + `X / 20`
