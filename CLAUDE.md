@@ -250,7 +250,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `boardStickers.ts` — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
     `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
   - `boards.ts` — `BOARDS` (government boards; each sets all 8 starting resources: the 5
-    core plus population/territory/culture).
+    core plus population/territory/culture). Catalogue reset to empty for the Phase 4 content pass
+    (`BOARDS = {}`, `BoardId` widened to `string`); the game is non-launchable until Step 3 authors
+    at least one real board.
   - `missions.ts` — `MISSIONS`; each names an `objectiveCardId` (its win condition, made into
     an `objective` card that owns the win predicate — `run/setup.ts` seeds it into
     `GameState.objective`, the bus re-derives `G.pendingVictory` from it, and `run/engine.ts`'s

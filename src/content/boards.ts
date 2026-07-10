@@ -1,6 +1,9 @@
 import type { Resources } from '../rules/resources';
 
-export type BoardId = 'tribe' | 'monarchy' | 'republic';
+/** A board's catalogue id. A plain `string` (not a union) because the catalogue is emptied for the
+ *  Phase 4 content pass — a fixed union couldn't key an empty `BOARDS` and would break every
+ *  `boardId: BoardId` consumer; Step 3 authors the real boards under whatever ids it picks. */
+export type BoardId = string;
 
 /**
  * A government board is a run's starting configuration — the baseline the mission's
@@ -18,34 +21,7 @@ export interface BoardDef {
   culture: number;
 }
 
-export const BOARDS: Record<BoardId, BoardDef> = {
-  tribe: {
-    id: 'tribe',
-    name: 'Tribe',
-    description: 'A humble start: even resources and a modest population.',
-    resources: { food: 5, production: 5, science: 0, military: 0, money: 0 },
-    population: 2,
-    territory: 6,
-    culture: 0,
-  },
-
-  monarchy: {
-    id: 'monarchy',
-    name: 'Monarchy',
-    description: 'A martial court: strong on Military, thin on Population.',
-    resources: { food: 3, production: 5, science: 0, military: 4, money: 0 },
-    population: 1,
-    territory: 6,
-    culture: 0,
-  },
-
-  republic: {
-    id: 'republic',
-    name: 'Republic',
-    description: 'A mercantile assembly: flush with Money and Territory, short on Production.',
-    resources: { food: 4, production: 3, science: 0, military: 0, money: 5 },
-    population: 2,
-    territory: 8,
-    culture: 0,
-  },
-};
+// Reset to empty for the Phase 4 content pass (docs/TODO.md Step 2.6) — the catalogue and its types
+// are kept so the app keeps typechecking; the game is knowingly non-launchable (a `RunConfig` needs a
+// board) until Step 3 authors at least one real board here.
+export const BOARDS: Record<BoardId, BoardDef> = {};

@@ -151,9 +151,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     an *integration* test. **Earmarked for rewrite:** the removed coherence blocks
     (`STARTING_COLLECTION` owns-enough-for-`DEFAULT_DECKS`) — re-author in Step 3.
 
-  - **2.6 — Reset boards** (`content/boards.ts` → empty `BOARDS`) — last, most deeply wired. Skeleton
-    `content/boards.test.ts` + board-content parts of `setup.test.ts`; then close the save-wipe
-    clause above (confirm `parsePlayerStore` survives a dead-id save; document "wipe local save").
+  - **2.6 — Reset boards** ✅ DONE (`content/boards.ts` → empty `BOARDS`; `BoardId` widened
+    `'tribe'|'monarchy'|'republic'` → `string` since a fixed union can't key an empty record and would
+    break every `boardId: BoardId` consumer — matches the `cards.ts`/`boardStickers.ts` string-id
+    precedent). `content/boards.test.ts` kept as-is: its two coherence iterators (id↔key match ·
+    non-negative starts) pass **vacuously** on empty `BOARDS` — the same skeleton 2.4/2.5 established,
+    **earmarked for Step 3 rewrite**. `setup.test.ts` needed **no** edit — already on the synthetic
+    `TEST_BOARD` from 2.2; `contract.test.ts` likewise on plain-string `'tribe'` from 2.5 (both never
+    touch `BOARDS`). **Save-wipe clause closed:** `parsePlayerStore` is shape-only (never validates
+    board/card/sticker ids against a catalogue), so a save with dead board ids survives parsing without
+    crashing — only the launch path would notice a dead id, and the game is non-launchable until Step 3.
+    Pre-alpha: **wipe local save** when Step 3 lands new ids ([[prealpha-no-save-migration]]).
+
+  With 2.6 done, **Step 2 is complete** — every content catalogue is emptied, the suite runs green on
+  synthetic fixtures, and typecheck holds. Step 3 refills content.
 
 - **Step 3 — Base set + Founding deck + a new board + sandbox mission** — author the
   always-owned base card set (Neolithic-tier), the new `STARTING_COLLECTION`, and a Founding
