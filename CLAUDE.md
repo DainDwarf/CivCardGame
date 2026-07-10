@@ -87,6 +87,9 @@ shop, mission selection — the *only* place decks are edited). See
   runs through the real `applyRunResult` to write a populated `.civsave` (default `./seed.civsave`,
   gitignored) for testing the meta screens without grinding. Edit `SEED_RUNS` to change its contents;
   import it in-game via the Save menu.
+- `npm run sim` — balance tool (`scripts/sim.ts`, run via `tsx`): sweeps the headless simulator over
+  many seeds and prints an aggregated report (win rate, turns/defeat-cause/card-play stats). Seed count
+  via `npm run sim -- N` (default 200); edit `SCENARIOS` to change what's swept. See *Balance tooling*.
 
 ## Architecture
 
@@ -420,8 +423,18 @@ copy) and picks one from its own seeded stream (distinct from the run's shuffle 
 non-negativity, since a collapse ending legitimately leaves a negative pool), throwing with both seeds
 as the reproduction key. `simConfig(...)` is a content-agnostic `RunConfig` builder from plain cardIds
 (the sim counterpart to `buildRunConfig`, no meta collection needed). All randomness routes through
-`rules/rng.ts`'s `randInt` — the one seam. Only the first Step 4 deliverable ships here; heuristic
-policies, batch runs/aggregation, and a synthetic-fixture fuzz test are later work.
+`rules/rng.ts`'s `randInt` — the one seam. `SimOutcome` also carries a per-run `cardPlays` map (accepted
+`playCard`s per cardId, counted in the drive loop by reference-inequality acceptance detection) — the
+"is a card ever played / dead in the deck?" signal, unrecoverable from the final state.
+**Batch + reporting** sit on top: `runBatch(scenarios, { seeds })` (`sim/batch.ts`) sweeps a flat
+`Scenario[]` (deck/board/mission, plain cardIds) ×N seeds — two independent deterministic seed streams
+per run (`…-cfg-i` shuffle, `…-pol-i` moves), so a whole batch is reproducible — collecting whole
+`SimOutcome`s; `summarize`/`formatReport` (`sim/report.ts`) fold those into a per-scenario
+`ScenarioSummary` (win rate · turns min/median/mean/max · mean end resources · **defeat-cause histogram
+off the authoritative `gameover.reason`**, never re-derived from resources · summed `cardPlays` +
+unplayed-cards list). The `npm run sim` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`) prints the
+report; seed count via `npm run sim -- N`. Still later work: heuristic policies, `transferWorker`
+enumeration in the policy, and a synthetic-fixture move-surface fuzz test.
 
 ## Conventions
 

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed-save": "tsx scripts/seed-save.ts"
+    "seed-save": "tsx scripts/seed-save.ts",
+    "sim": "tsx scripts/sim.ts"
   },
   "dependencies": {
     "pure-rand": "^8.4.1",

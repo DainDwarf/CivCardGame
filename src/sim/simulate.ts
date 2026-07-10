@@ -54,6 +54,10 @@ export interface SimOutcome {
   finalState: GameState;
   /** Total actions dispatched (moves + `endTurn`s), incl. ones the engine rejected as invalid. */
   actionsApplied: number;
+  /** Per-cardId count of `playCard` actions the engine *accepted* this run — the "is a card ever
+   *  played / dead in the deck?" signal, impossible to recover from `finalState` (a card's play
+   *  count isn't retained once it files to a pile). Counted in the drive loop below. */
+  cardPlays: Record<string, number>;
 }
 
 /** Options for {@link simulateRun}. */
@@ -103,6 +107,7 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
   if (check) assertRunInvariants(state.G, { ...ctx, round: state.G.round, actionsApplied: 0 });
 
   let actionsApplied = 0;
+  const cardPlays: Record<string, number> = {};
   while (!state.gameover) {
     if (actionsApplied >= maxActions) {
       throw new Error(
@@ -110,7 +115,14 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
           `[configSeed=${config.seed} policySeed=${policy.seed ?? '?'} round=${state.G.round}]`,
       );
     }
-    state = applyAction(state, policy(state));
+    const action = policy(state);
+    // Capture the played cardId *before* dispatch (the hand index resolves against the pre-move hand).
+    const playedCardId = action.kind === 'playCard' ? state.G.hand[action.playHandIdx]?.cardId : undefined;
+    const next = applyAction(state, action);
+    // A rejected/no-op move returns the *identical* state object (`applyMove`/`endTurn` in
+    // `run/engine.ts`), so `next !== state` means the engine accepted it — count the play only then.
+    if (playedCardId !== undefined && next !== state) cardPlays[playedCardId] = (cardPlays[playedCardId] ?? 0) + 1;
+    state = next;
     actionsApplied += 1;
     if (check) assertRunInvariants(state.G, { ...ctx, round: state.G.round, actionsApplied });
   }
@@ -120,6 +132,7 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
     gameover: state.gameover,
     finalState: state.G,
     actionsApplied,
+    cardPlays,
   };
 }
 

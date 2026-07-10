@@ -43,10 +43,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     every action) + a content-agnostic `simConfig` builder. Legality reuses the prod
     `unplayableReason`; randomness runs through `rules/rng.ts`'s new `randInt` (the one seam). Smoke
     test (`sim/sim.test.ts`) runs the Founding deck / Tribe board / sandbox across 50 seeds.
-  - **Still open:** heuristic/greedy policies; batch runs across seeds/decks/missions;
-    aggregation/reporting; `transferWorker` enumeration in the policy; a **full move-surface fuzz test
-    over synthetic fixtures** (building/destroy/`discardCost` — deferred until real content exists in
-    Step 6, or an explicit later fuzz pass). `[size: M]` `[phase: 4]`
+  - **Shipped (batch + reporting):** `runBatch(scenarios, { seeds })` (`sim/batch.ts`) sweeps a flat
+    `Scenario[]` ×N seeds (reproducible dual seed streams); `summarize`/`formatReport` (`sim/report.ts`)
+    fold whole `SimOutcome`s into per-scenario stats (win rate · turns min/median/mean/max · mean end
+    resources · defeat-cause histogram off `gameover.reason` · summed `cardPlays` + unplayed-cards).
+    `SimOutcome.cardPlays` (accepted plays per cardId) is the new "dead card?" signal. `npm run sim`
+    CLI prints it (`scripts/sim.ts`).
+  - **Still open:** heuristic/greedy policies; `transferWorker` enumeration in the policy; a **full
+    move-surface fuzz test over synthetic fixtures** (building/destroy/`discardCost` — deferred until
+    real content exists in Step 6, or an explicit later fuzz pass). `[size: M]` `[phase: 4]`
 
 - **Step 5 — Ages map infrastructure** — promote ages from the undefined `era` placeholder to
   a real system: the `content/ages.ts` age→node/column model + the `CampaignMap.tsx` band
