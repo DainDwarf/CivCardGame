@@ -23,6 +23,10 @@ const ROW_H = 150; // vertical gap between row origins
 const PAD_X = 56;
 const PAD_Y = 36;
 
+// Half-width (% of map width) of each age→age color transition in the node-area gradient wash —
+// smaller keeps each age's color solid longer with a tighter blend between them.
+const AGE_BLEND = 2;
+
 const nodeLeft = (col: number) => PAD_X + col * COL_W;
 const nodeTop = (row: number) => PAD_Y + row * ROW_H;
 
@@ -39,8 +43,12 @@ const nodeTop = (row: number) => PAD_Y + row * ROW_H;
  *    surprise" hide-everything precedent — the node's *existence* orients the player in
  *    history, its *identity* stays hidden), and clicking it is inert.
  *
- * Ages (`content/ages.ts`) label ranges of the timeline as right-arrow bands across the top; only a
- * single "Testing" placeholder ships for now. Clicking a cleared/available node opens
+ * Ages (`content/ages.ts`) label ranges of the timeline as themed right-arrow bands across the top
+ * (Neolithic / Bronze Age / Iron Age), each tinted via a `data-age` attribute matched in the CSS
+ * module (the `data-board` precedent); per-age column positioning lands with the Step 6 missions.
+ * The node area beneath echoes those same age colors as a smooth horizontal gradient wash
+ * (`ageBackdrop`, generated from `AGES`) that blends from one age into the next.
+ * Clicking a cleared/available node opens
  * `MissionFlowPopup` on its 'detail' step — lore, explanation, and a reward preview; its "Continue"
  * advances the same popup to its 'launch' step (board picker left, deck picker right), which
  * assembles the `RunConfig` and calls `onLaunch`.
@@ -73,6 +81,21 @@ export function CampaignMap({
   const maxRow = missions.reduce((m, x) => Math.max(m, x.map!.row), 0);
   const timelineWidth = PAD_X * 2 + maxCol * COL_W + NODE_W;
   const nodeAreaHeight = PAD_Y * 2 + maxRow * ROW_H + NODE_H;
+
+  // The node area echoes the age bands' colors as a horizontal wash: each age holds its pure color
+  // solid across its (equal) share of the width and blends into the next only over a short strip
+  // around each boundary (`AGE_BLEND` = the transition half-width, %). Built from AGES off the same
+  // `--map-age-*-bg` tokens the bands use, so it stays in step with them and a fourth age needs
+  // only its token — no new code.
+  const n = AGES.length;
+  const stops = [`var(--map-age-${AGES[0].id}-bg) 0%`];
+  for (let i = 1; i < n; i++) {
+    const boundary = (i / n) * 100;
+    stops.push(`var(--map-age-${AGES[i - 1].id}-bg) ${(boundary - AGE_BLEND).toFixed(2)}%`);
+    stops.push(`var(--map-age-${AGES[i].id}-bg) ${(boundary + AGE_BLEND).toFixed(2)}%`);
+  }
+  stops.push(`var(--map-age-${AGES[n - 1].id}-bg) 100%`);
+  const ageBackdrop = `linear-gradient(to right, ${stops.join(', ')})`;
 
   // Two-step launch flow: a node click opens the detail panel (lore, explanation,
   // reward); its "Continue" advances to the board/deck picker. Both steps render inside one
@@ -125,13 +148,13 @@ export function CampaignMap({
         <div className={styles.timeline} style={{ width: `${timelineWidth}px` }}>
           <div className={styles.ageRow}>
             {AGES.map((age) => (
-              <div key={age.id} className={styles.ageBand}>
+              <div key={age.id} className={styles.ageBand} data-age={age.id}>
                 <span className={styles.ageName}>{age.name}</span>
               </div>
             ))}
           </div>
 
-          <div className={styles.nodeArea} style={{ height: `${nodeAreaHeight}px` }}>
+          <div className={styles.nodeArea} style={{ minHeight: `${nodeAreaHeight}px`, background: ageBackdrop }}>
             {/* Edges behind the nodes: a line from each mission to each of its prereqs. */}
             <svg className={styles.edges} width={timelineWidth} height={nodeAreaHeight} aria-hidden="true">
               {missions.flatMap((m) =>

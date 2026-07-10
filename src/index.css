@@ -186,8 +186,14 @@
      Age band + DAG edges + the three node states. Node state is signalled by glyph (✓/▶/🔒)
      and a text label as well as color, so these fall through to Light under the CVD themes
      rather than needing per-deficiency overrides (there's a non-color backup). */
-  --map-age-bg: #cbb994;             /* warm parchment arrow band */
+  --map-age-bg: #cbb994;             /* warm parchment arrow band (fallback for an unmatched age) */
   --map-age-text: #453a24;
+  --map-age-neolithic-bg: #b8c99a;   /* earthy sage — agriculture */
+  --map-age-neolithic-text: #384a24;
+  --map-age-bronze-bg: #c9a86a;      /* warm bronze/amber */
+  --map-age-bronze-text: #4a3820;
+  --map-age-iron-bg: #a2b2bf;        /* cool steel/slate */
+  --map-age-iron-text: #303c46;
   --map-edge: #b0a894;               /* prereq connector lines */
   --map-node-cleared: #e4f1e6;       /* done — green */
   --map-node-cleared-border: #7cb98a;
@@ -360,6 +366,12 @@
   /* ── Campaign map ── */
   --map-age-bg: #4a4130;
   --map-age-text: #e8ddc8;
+  --map-age-neolithic-bg: #3a4a2c;
+  --map-age-neolithic-text: #d8e6c2;
+  --map-age-bronze-bg: #5a4326;
+  --map-age-bronze-text: #ecd9b8;
+  --map-age-iron-bg: #38454f;
+  --map-age-iron-text: #d4dee6;
   --map-edge: #55524a;
   --map-node-cleared: #1f2a1e;
   --map-node-cleared-border: #4f7d54;

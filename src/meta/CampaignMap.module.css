@@ -35,10 +35,15 @@
   cursor: grabbing;
 }
 
-/* The wide inner content — width is set inline from the DAG's column span. */
+/* The wide inner content — width is set inline from the DAG's column span. A flex column at
+   least as tall as the canvas so the node area (flex: 1) can stretch to fill the canvas to its
+   bottom edge even when the DAG itself is short. */
 .timeline {
   position: relative;
   min-width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- Age bands (chronology labels) across the top --- */
@@ -49,8 +54,10 @@
   padding: 12px 12px 0;
 }
 
-/* A large right-pointing arrow band. Multiple ages will each span their own stretch of the
-   timeline later; for now a single "Testing" band spans the whole width. */
+/* A large right-pointing arrow band, one per age. Each is tinted by its `data-age` attribute
+   matched below (the `Board.module.css` `data-board` precedent — a CSS-only edit per age); the
+   base rule keeps `--map-age-bg`/`--map-age-text` as the fallback for an unmatched age. The bands
+   share the map width for now; positioning each over its own DAG column slice lands in Step 6. */
 .ageBand {
   flex: 1 1 auto;
   display: flex;
@@ -59,6 +66,23 @@
   height: 56px;
   background: var(--map-age-bg);
   clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 50%, calc(100% - 30px) 100%, 0 100%);
+}
+
+/* Per-age color: override the band background and the `--map-age-text` token the `.ageName`
+   below reads (inherited into it), so each age owns a bg/text pair from the themed palette. */
+.ageBand[data-age='neolithic'] {
+  background: var(--map-age-neolithic-bg);
+  --map-age-text: var(--map-age-neolithic-text);
+}
+
+.ageBand[data-age='bronze'] {
+  background: var(--map-age-bronze-bg);
+  --map-age-text: var(--map-age-bronze-text);
+}
+
+.ageBand[data-age='iron'] {
+  background: var(--map-age-iron-bg);
+  --map-age-text: var(--map-age-iron-text);
 }
 
 .ageName {
@@ -71,8 +95,14 @@
 
 /* --- Node area (the DAG) --- */
 
+/* The `background` is set inline (`ageBackdrop` in CampaignMap.tsx): a left→right gradient wash
+   echoing the age bands' colors, blending smoothly between ages across the DAG's width. The inline
+   `minHeight` fits the DAG; `flex: 1` grows it to fill the canvas to the bottom. The top margin
+   separates the wash from the age bands above. */
 .nodeArea {
   position: relative;
+  flex: 1 1 auto;
+  margin-top: 12px;
 }
 
 .edges {
