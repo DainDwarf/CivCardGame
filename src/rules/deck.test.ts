@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { drawUpTo, peekTop, drawInstance, returnToDeck } from './deck';
+import { drawUpTo, peekTop, drawInstance, returnToDeck, recoverFromDiscard } from './deck';
 import { blankState, instancesFromCardIds, type CardInstance, type GameState } from './state';
 import type { EffectContext } from './effects';
 
@@ -137,5 +137,25 @@ describe('returnToDeck', () => {
     returnToDeck(ctxFor(G), []);
     expect(G.deck.map((c) => c.cardId)).toEqual(['a', 'b', 'c']); // order untouched
     expect(G.rngState).toEqual(before); // stream not advanced
+  });
+});
+
+describe('recoverFromDiscard', () => {
+  it('removes the instance from the discard by id and draws it to hand (effect-sourced draw)', () => {
+    const G = blankState('enlightenment');
+    G.discard = instancesFromCardIds(['a', 'b', 'c'], 10);
+    recoverFromDiscard(ctxFor(G), G.discard[1]); // 'b', id 11
+    expect(G.hand.map((c) => c.cardId)).toEqual(['b']);
+    expect(G.discard.map((c) => c.cardId)).toEqual(['a', 'c']); // 'b' gone from discard
+    expect(G.events).toEqual([{ type: 'draw', instanceId: 11, cardId: 'b', source: 'effect' }]);
+  });
+
+  it('is a no-op when the id is not in the discard', () => {
+    const G = blankState('enlightenment');
+    G.discard = instancesFromCardIds(['a', 'b'], 10);
+    recoverFromDiscard(ctxFor(G), { id: 99, cardId: 'z' });
+    expect(G.hand).toEqual([]);
+    expect(G.discard.map((c) => c.cardId)).toEqual(['a', 'b']); // untouched
+    expect(G.events).toEqual([]);
   });
 });

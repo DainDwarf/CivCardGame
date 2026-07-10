@@ -17,6 +17,7 @@ export type UnplayableReason =
   | { kind: 'territory' }
   | { kind: 'noBuildingsToDestroy' }
   | { kind: 'emptyDrawPile' }
+  | { kind: 'discardEmpty' }
   | { kind: 'event' };
 
 /** Why `card` cannot be played right now, or null if it can. `self` is the exact hand instance
@@ -41,5 +42,8 @@ export function unplayableReason(G: GameState, card: CardDef, self: CardInstance
   // A peek card (revealsFromDeck) has nothing to reveal when both draw and discard piles are empty —
   // gate it rather than let it fizzle for its cost (mirrors the noBuildingsToDestroy precedent above).
   if (card.revealsFromDeck && G.deck.length + G.discard.length === 0) return { kind: 'emptyDrawPile' };
+  // A discard-recovery card (recoversFromDiscard) has nothing to recover from an empty discard —
+  // gate it rather than let it fizzle for its cost (mirrors the emptyDrawPile precedent above).
+  if (card.recoversFromDiscard && G.discard.length === 0) return { kind: 'discardEmpty' };
   return null;
 }

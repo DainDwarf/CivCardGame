@@ -22,6 +22,7 @@ const CARD_ART: Record<string, string> = {
   bartering: '🤝',
   dogs: '🐕',
   kinship: '👪',
+  storytelling: '🗣️',
   // Sandbox mission cards
   sandbox_goal: '👣',
   sands_of_time: '⏳',

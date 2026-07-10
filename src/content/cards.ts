@@ -1,6 +1,7 @@
 import { type Resources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
-import { type CardEffect, type Resolver } from '../rules/effects';
+import { type CardEffect, type Resolver, suspendChoice } from '../rules/effects';
+import { recoverFromDiscard } from '../rules/deck';
 
 export type CardKind = 'building' | 'action' | 'work' | 'event' | 'threat' | 'objective';
 
@@ -70,6 +71,14 @@ export interface CardDef {
    * dual-purpose pattern as `effect.destroy` (which both demolishes and drives `noBuildingsToDestroy`).
    */
   revealsFromDeck?: number;
+  /**
+   * Marks a card that recovers a card from the **discard** pile back to hand (e.g. Storytelling).
+   * A declarative flag `rules/playability.ts`'s `unplayableReason` gates on: an empty discard means
+   * nothing to recover, so the card is `discardEmpty`-unplayable rather than fizzling for its cost —
+   * the same dual-purpose pattern as `revealsFromDeck` (→ `emptyDrawPile`) and `effect.destroy`
+   * (→ `noBuildingsToDestroy`). The recovery itself resolves through `deck.ts`'s `recoverFromDiscard`.
+   */
+  recoversFromDiscard?: true;
   /**
    * Bespoke per-round production behavior for a `building`/`work` card whose output isn't fully
    * described by `produces`/`cultureOutput`/`effect.gain` (e.g. a future scaling building reading
@@ -223,6 +232,38 @@ export const CARDS: Record<string, CardDef> = {
   bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, effect: { gain: { food: 2 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, effect: { gain: { military: 2 } } },
   kinship: { id: 'kinship', name: 'Kinship', kind: 'action', cost: { food: 2 }, effect: { population: 1 } },
+
+  // Storytelling: the first *interactive* Paleolithic card — suspends mid-resolution for a choice
+  //   from the discard, then recovers the picked card to hand (the discard→hand counterpart to
+  //   Foresight's peek). Two-branch resolver keyed on `ctx.answer === undefined` (0 is a valid answer).
+  storytelling: {
+    id: 'storytelling', name: 'Storytelling', kind: 'action', cost: { science: 2 },
+    recoversFromDiscard: true,
+    description: 'Return a card from your discard pile to your hand.',
+    resolve: (ctx) => {
+      if (ctx.answer === undefined) {
+        // FIRST PASS — reveal the discard as options and suspend. `discardEmpty` is gated
+        // unplayable, so the empty guard is only for a direct call; the snapshot excludes
+        // Storytelling itself (still held by `playCard`, not yet filed to discard).
+        if (ctx.G.discard.length === 0) return;
+        suspendChoice(ctx, {
+          kind: 'chooseCard',
+          prompt: 'Return one card from the discard to your hand',
+          options: [...ctx.G.discard],
+          pick: 1,
+        });
+        return;
+      }
+      // RESUME PASS — `answer` is the chosen index into the parked options. `recoverFromDiscard`
+      // finds it in the discard by instance id (identity-based, robust however the resume state was
+      // rebuilt) and moves it to hand.
+      const pending = ctx.G.pendingInteraction;
+      if (!pending) return;
+      const chosen = pending.options[ctx.answer];
+      if (chosen) recoverFromDiscard(ctx, chosen);
+      ctx.G.pendingInteraction = null; // resolver owns clearing the interaction on resume
+    },
+  },
 
   // — Sandbox mission cards (mission-only; excluded from decks/collection by `isDeckable`).
   //   The objective never wins (an infinite mission scores rounds survived instead), so the run is

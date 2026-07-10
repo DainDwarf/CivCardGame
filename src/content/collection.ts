@@ -23,4 +23,5 @@ export const STARTING_COLLECTION: Record<string, number> = {
   bartering: 2,
   dogs: 2,
   kinship: 2,
+  storytelling: 2,
 };

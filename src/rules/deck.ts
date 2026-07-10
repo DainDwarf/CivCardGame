@@ -49,7 +49,8 @@ export function drawUpTo(G: GameState): void {
 
 // --- Card-facing deck primitives (the resolver-spine "two-way street") ---
 // A card that manipulates the deck/hand structurally (peeking, drawing a chosen card, shuffling cards
-// back) resolves through these instead of reaching into `G.deck`/`G.hand`/`G.rngState` itself — the
+// back, recovering one from the discard) resolves through these instead of reaching into
+// `G.deck`/`G.hand`/`G.discard`/`G.rngState` itself — the
 // same discipline that keeps output behind `gainResources`. They take the `EffectContext` so they read
 // as one card-facing family (like `gainResources(ctx, …)`); each only touches `ctx.G`.
 
@@ -100,4 +101,22 @@ export function returnToDeck(ctx: EffectContext, cards: CardInstance[]): void {
   const { result, rngState } = shuffleFromState([...cards, ...G.deck], G.rngState);
   G.deck = result;
   G.rngState = rngState;
+}
+
+/**
+ * Return a specific instance from the discard pile to the hand — the discard→hand mover a recovery
+ * card (Storytelling) resolves *through* instead of splicing `G.discard` itself (the same discipline
+ * that keeps peeking behind `peekTop`). Removes `card` from `G.discard` by id, then delegates to
+ * `drawInstance` (push to hand + emit the `draw` event). No-op if the id isn't in the discard.
+ *
+ * Reusing `drawInstance` means recovery emits a `draw` event (`source: 'effect'`) — deliberate, so
+ * on-draw observers treat a recovered card like any effect-drawn one. Harmless today (no on-draw
+ * subscribers in the current set); a future card that must tell recovery apart can branch on a new
+ * `DrawSource`.
+ */
+export function recoverFromDiscard(ctx: EffectContext, card: CardInstance): void {
+  const idx = ctx.G.discard.findIndex((c) => c.id === card.id);
+  if (idx === -1) return;
+  ctx.G.discard.splice(idx, 1);
+  drawInstance(ctx, card);
 }

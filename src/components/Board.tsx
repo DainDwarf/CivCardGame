@@ -628,6 +628,8 @@ function whyUnplayable(card: CardDef, G: GameState, self: CardInstance): string 
       return 'no buildings to demolish';
     case 'emptyDrawPile':
       return 'no cards to reveal';
+    case 'discardEmpty':
+      return 'discard empty';
     case 'event':
       return 'resolves at end of round';
   }
