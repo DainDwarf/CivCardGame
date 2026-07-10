@@ -42,19 +42,37 @@ import type { BoardId } from '../content/boards';
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);
 
+// Every fixture sticker unlocked — the default the hint tests run under, so the pre-existing oracle
+// assertions (which predate the unlock gate) still hold. The dedicated "locked" tests pass a partial
+// set to *both* the predicate and the oracle, keeping them in lockstep.
+const UNLOCKED_STICKERS: Record<string, true> = Object.fromEntries(Object.keys(FIXTURE_STICKERS).map((id) => [id, true]));
+const UNLOCKED_BOARD_STICKERS: Record<string, true> = Object.fromEntries(
+  Object.keys(FIXTURE_BOARD_STICKERS).map((id) => [id, true]),
+);
+
 /** Oracle: does *any* card upgrade actually go through — the next tier, or attaching some sticker to
  *  some owned copy? Brute-forces every (instance, sticker) pair through the real `buySticker`. */
-function cardUpgradeOracle(collection: OwnedCards, influence: number, cardId: string): boolean {
+function cardUpgradeOracle(
+  collection: OwnedCards,
+  influence: number,
+  cardId: string,
+  unlockedStickers: Record<string, true> = UNLOCKED_STICKERS,
+): boolean {
   if (buyTier(collection, influence, cardId) !== null) return true;
   return instancesOf(collection, cardId).some((inst) =>
-    Object.values(FIXTURE_STICKERS).some((s) => buySticker(collection, influence, inst.id, s.id) !== null),
+    Object.values(FIXTURE_STICKERS).some((s) => buySticker(collection, influence, inst.id, s.id, unlockedStickers) !== null),
   );
 }
 
 /** Oracle: does attaching any board sticker to `boardId` actually go through? */
-function boardUpgradeOracle(boardStickers: BoardStickers, influence: number, boardId: BoardId): boolean {
+function boardUpgradeOracle(
+  boardStickers: BoardStickers,
+  influence: number,
+  boardId: BoardId,
+  unlockedBoardStickers: Record<string, true> = UNLOCKED_BOARD_STICKERS,
+): boolean {
   return Object.values(FIXTURE_BOARD_STICKERS).some(
-    (s) => buyBoardSticker(boardStickers, influence, boardId, s.id) !== null,
+    (s) => buyBoardSticker(boardStickers, influence, boardId, s.id, unlockedBoardStickers) !== null,
   );
 }
 
@@ -83,7 +101,7 @@ describe('cardUpgradeAvailable — matches the real buy functions', () => {
   for (const c of cases) {
     it(c.name, () => {
       const collection = collectionFromCounts(c.counts);
-      expect(cardUpgradeAvailable(collection, c.influence, c.card)).toBe(
+      expect(cardUpgradeAvailable(collection, c.influence, c.card, UNLOCKED_STICKERS)).toBe(
         cardUpgradeOracle(collection, c.influence, c.card),
       );
     });
@@ -92,16 +110,24 @@ describe('cardUpgradeAvailable — matches the real buy functions', () => {
   it('all copies sticker-full but tier still buyable — on iff tier affordable', () => {
     // test_food x2 (tier x2->x4 costs 2), both copies at the sticker cap: only the tier upgrade remains.
     const full = fillStickers(collectionFromCounts({ test_food: 2 }), 'test_food');
-    expect(cardUpgradeAvailable(full, 2, 'test_food')).toBe(true); // tier affordable
-    expect(cardUpgradeAvailable(full, 2, 'test_food')).toBe(cardUpgradeOracle(full, 2, 'test_food'));
-    expect(cardUpgradeAvailable(full, 1, 'test_food')).toBe(false); // tier unaffordable, no sticker room
-    expect(cardUpgradeAvailable(full, 1, 'test_food')).toBe(cardUpgradeOracle(full, 1, 'test_food'));
+    expect(cardUpgradeAvailable(full, 2, 'test_food', UNLOCKED_STICKERS)).toBe(true); // tier affordable
+    expect(cardUpgradeAvailable(full, 2, 'test_food', UNLOCKED_STICKERS)).toBe(cardUpgradeOracle(full, 2, 'test_food'));
+    expect(cardUpgradeAvailable(full, 1, 'test_food', UNLOCKED_STICKERS)).toBe(false); // tier unaffordable, no sticker room
+    expect(cardUpgradeAvailable(full, 1, 'test_food', UNLOCKED_STICKERS)).toBe(cardUpgradeOracle(full, 1, 'test_food'));
   });
 
   it('crossing the price flips the hint (test_food x8 maxed, sticker cost 3)', () => {
     const maxed = collectionFromCounts({ test_food: 8 });
-    expect(cardUpgradeAvailable(maxed, 2, 'test_food')).toBe(false);
-    expect(cardUpgradeAvailable(maxed, 3, 'test_food')).toBe(true);
+    expect(cardUpgradeAvailable(maxed, 2, 'test_food', UNLOCKED_STICKERS)).toBe(false);
+    expect(cardUpgradeAvailable(maxed, 3, 'test_food', UNLOCKED_STICKERS)).toBe(true);
+  });
+
+  it('a locked sticker never lights the hint (maxed copies, sticker affordable, but not unlocked)', () => {
+    // x8 maxed → no tier; a sticker is affordable + has room, but with no stickers unlocked the only
+    // remaining upgrade avenue is gated off. Stays in lockstep with the oracle under the same empty set.
+    const maxed = collectionFromCounts({ test_food: 8 });
+    expect(cardUpgradeAvailable(maxed, 3, 'test_food', {})).toBe(false);
+    expect(cardUpgradeAvailable(maxed, 3, 'test_food', {})).toBe(cardUpgradeOracle(maxed, 3, 'test_food', {}));
   });
 });
 
@@ -110,18 +136,24 @@ describe('boardUpgradeAvailable — matches the real buy function', () => {
 
   it('empty board, unaffordable vs affordable (sticker cost 3)', () => {
     for (const b of boards) {
-      expect(boardUpgradeAvailable({}, 2, b)).toBe(boardUpgradeOracle({}, 2, b));
-      expect(boardUpgradeAvailable({}, 2, b)).toBe(false);
-      expect(boardUpgradeAvailable({}, 3, b)).toBe(boardUpgradeOracle({}, 3, b));
-      expect(boardUpgradeAvailable({}, 3, b)).toBe(true);
+      expect(boardUpgradeAvailable({}, 2, b, UNLOCKED_BOARD_STICKERS)).toBe(boardUpgradeOracle({}, 2, b));
+      expect(boardUpgradeAvailable({}, 2, b, UNLOCKED_BOARD_STICKERS)).toBe(false);
+      expect(boardUpgradeAvailable({}, 3, b, UNLOCKED_BOARD_STICKERS)).toBe(boardUpgradeOracle({}, 3, b));
+      expect(boardUpgradeAvailable({}, 3, b, UNLOCKED_BOARD_STICKERS)).toBe(true);
     }
   });
 
   it('a board at the cap is off even with plenty of Influence', () => {
     const b = boards[0];
     const full: BoardStickers = { [b]: ['test_bs_food', 'test_bs_military'] };
-    expect(boardUpgradeAvailable(full, 100, b)).toBe(false);
-    expect(boardUpgradeAvailable(full, 100, b)).toBe(boardUpgradeOracle(full, 100, b));
+    expect(boardUpgradeAvailable(full, 100, b, UNLOCKED_BOARD_STICKERS)).toBe(false);
+    expect(boardUpgradeAvailable(full, 100, b, UNLOCKED_BOARD_STICKERS)).toBe(boardUpgradeOracle(full, 100, b));
+  });
+
+  it('a locked board sticker never lights the hint (empty board, affordable, but not unlocked)', () => {
+    const b = boards[0];
+    expect(boardUpgradeAvailable({}, 100, b, {})).toBe(false);
+    expect(boardUpgradeAvailable({}, 100, b, {})).toBe(boardUpgradeOracle({}, 100, b, {}));
   });
 });
 
@@ -132,21 +164,23 @@ describe('nav roll-ups — on iff some tile is on', () => {
   it('anyCardUpgradeAvailable folds the per-card predicate', () => {
     const collection = collectionFromCounts({ test_food: 1, test_prod: 4 });
     for (const influence of [0, 1, 3, 5]) {
-      const expected = ownedDeckable(collection).some((c) => cardUpgradeAvailable(collection, influence, c.id));
-      expect(anyCardUpgradeAvailable(collection, influence)).toBe(expected);
+      const expected = ownedDeckable(collection).some((c) =>
+        cardUpgradeAvailable(collection, influence, c.id, UNLOCKED_STICKERS),
+      );
+      expect(anyCardUpgradeAvailable(collection, influence, UNLOCKED_STICKERS)).toBe(expected);
     }
   });
 
   it('anyCardUpgradeAvailable is off with no owned cards', () => {
-    expect(anyCardUpgradeAvailable(collectionFromCounts({}), 100)).toBe(false);
+    expect(anyCardUpgradeAvailable(collectionFromCounts({}), 100, UNLOCKED_STICKERS)).toBe(false);
   });
 
   it('anyBoardUpgradeAvailable folds the per-board predicate', () => {
     const boards: BoardId[] = [TEST_BOARD_ID, TEST_BOARD_2_ID];
     const boardStickers: BoardStickers = { [boards[0]]: ['test_bs_food', 'test_bs_military'] }; // one board capped
     for (const influence of [0, 2, 3]) {
-      const expected = boards.some((b) => boardUpgradeAvailable(boardStickers, influence, b));
-      expect(anyBoardUpgradeAvailable(boardStickers, influence)).toBe(expected);
+      const expected = boards.some((b) => boardUpgradeAvailable(boardStickers, influence, b, UNLOCKED_BOARD_STICKERS));
+      expect(anyBoardUpgradeAvailable(boardStickers, influence, UNLOCKED_BOARD_STICKERS)).toBe(expected);
     }
   });
 });

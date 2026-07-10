@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BoardId } from '../content/boards';
 import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
-import { canAttachBoardSticker, MAX_BOARD_STICKERS, type BoardStickers } from '../rules/boardStickers';
+import { canAttachBoardSticker, unlockedBoardStickerDefs, MAX_BOARD_STICKERS, type BoardStickers } from '../rules/boardStickers';
 import { boardUpgradeAvailable } from '../rules/upgrades';
 import { BoardMini } from '../components/BoardMini';
 import { BOARD_IDS } from './boardDisplay';
@@ -44,6 +44,7 @@ interface DragState {
 export function BoardMenu({
   boardStickers,
   influence,
+  unlockedBoardStickers,
   uiScale,
   onBuyBoardSticker,
 }: {
@@ -52,6 +53,9 @@ export function BoardMenu({
    *  target). */
   boardStickers: BoardStickers;
   influence: number;
+  /** Unlocked board stickers (`rules/rewards.ts`) — the tray offers only these; a locked board
+   *  sticker is hidden entirely (hidden-until-unlocked). */
+  unlockedBoardStickers: Record<string, true>;
   /** Whole-UI scale from settings — the tray/board menu renders inside App.tsx's transform:scale()
    *  wrapper, so the drag clone's inline coordinates must be divided by it (visual → local), same
    *  as `DeckEditor.tsx`. Hit-testing stays in visual px (unconverted). */
@@ -157,7 +161,7 @@ export function BoardMenu({
     // At-a-glance hint: this board can still take an affordable, under-cap sticker (idle only —
     // during a drag the highlight carries the same information, per-chip). Rendered as gold open
     // slots in the board's sticker row (its remaining capacity) rather than a corner dot.
-    const hint = !dragSticker && boardUpgradeAvailable(boardStickers, influence, boardId);
+    const hint = !dragSticker && boardUpgradeAvailable(boardStickers, influence, boardId, unlockedBoardStickers);
     return (
       <div
         key={boardId}
@@ -187,7 +191,7 @@ export function BoardMenu({
           <aside className={styles.tray}>
             <h2 className={styles.trayTitle}>Stickers</h2>
             <div className={styles.trayChips}>
-              {Object.values(BOARD_STICKERS).map((s) => {
+              {unlockedBoardStickerDefs(unlockedBoardStickers).map((s) => {
                 // Affordable for at least one board? A chip too expensive everywhere is dimmed.
                 const affordable = influence >= s.cost;
                 return (

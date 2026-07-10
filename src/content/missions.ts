@@ -42,12 +42,19 @@ export interface MissionDef {
    *  scores an attempt instead. */
   kind: 'standard' | 'infinite';
   /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
-   *  `computeRewards`) — replays pay nothing. Each id in `unlockCardIds` must name a real
-   *  `content/cards.ts` id (pinned by a coherence test). A `'standard'` mission grants **one or
-   *  more** card unlocks (docs/DESIGN.md, "Economy & progression" — e.g. "The First Settlement"
-   *  opens the whole Neolithic building set at once); `'infinite'` missions have none — they score
-   *  Influence = rounds survived instead. */
-  reward?: { influence: number; unlockCardIds: string[] };
+   *  `computeRewards`) — replays pay nothing. A `'standard'` mission grants **one or more** unlocks
+   *  across three symmetric, all-optional kinds — card unlocks (`unlockCardIds`, each naming a real
+   *  `content/cards.ts` id), card-sticker unlocks (`unlockStickerIds`, `content/stickers.ts`), and
+   *  board-sticker unlocks (`unlockBoardStickerIds`, `content/boardStickers.ts`) — a mission omits
+   *  whichever kind it doesn't grant (all pinned by a coherence test). Unlike cards, a sticker unlock
+   *  simply makes the sticker *purchasable* (hidden-until-unlocked, like a card); the Influence to buy
+   *  it is separate. `'infinite'` missions have no reward — they score Influence = rounds survived. */
+  reward?: {
+    influence: number;
+    unlockCardIds?: string[];
+    unlockStickerIds?: string[];
+    unlockBoardStickerIds?: string[];
+  };
   /** Authored position on the campaign map's DAG grid (`meta/CampaignMap.tsx`): `col` is
    *  the horizontal chronology slot (later = further along history), `row` a *signed* vertical
    *  branch offset from the center axis — `0` sits on the middle line, positive fans downward and
@@ -81,6 +88,12 @@ export interface MissionDef {
  * Neolithic band. It seeds no threat and no event — a pure stockpile race against nothing but
  * famine — and its first clear unlocks the whole Neolithic building set at once (Farm, Toolmaker,
  * Hut) plus Conquest. It carries no Influence (the cards are the prize).
+ *
+ * `growing_numbers` follows it (prereq: `first_settlement`): stand up a working settlement — a
+ * Hut, a Farm, and a Toolmaker at once — again no threat/event, the challenge being to grow
+ * territory (via replayable Conquest) enough to place all three. Its clear pays 6 Influence and
+ * unlocks the first card sticker (Irrigation) and the first
+ * board sticker (Territory) — the debut of the sticker-unlock reward kinds.
  */
 export const MISSIONS: Record<string, MissionDef> = {
   first_settlement: {
@@ -97,6 +110,22 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     reward: { influence: 0, unlockCardIds: ['farm', 'toolmaker', 'hut', 'conquest'] },
     map: { col: 0, row: 0 },
+    age: 'neolithic',
+  },
+  growing_numbers: {
+    id: 'growing_numbers',
+    name: 'Growing Numbers',
+    lore:
+      'The stores are safe and the spears are ready — now the people need a place to live and work. A ' +
+      'Hut for shelter, a Farm for bread, a Toolmaker for the crafts: raise all three and a wandering ' +
+      'band becomes a settlement that stays.',
+    prereqs: ['first_settlement'],
+    objectiveCardId: 'growing_numbers_goal',
+    victoryHint: 'Build a 🛖 Hut, a 🌱 Farm, and an ⛏️ Toolmaker.',
+    failureHint: null,
+    kind: 'standard',
+    reward: { influence: 6, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'] },
+    map: { col: 1, row: 0 },
     age: 'neolithic',
   },
   sandbox: {

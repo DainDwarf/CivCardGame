@@ -38,6 +38,21 @@ export interface BoardStickerDef {
   applyToBoard: (board: BoardDef) => BoardDef;
 }
 
-// Reset to empty for the Phase 4 content pass (docs/TODO.md Step 2.3) — the catalogue and its
-// type are kept so the app keeps typechecking; Step 6+ authors the real Phase 4 board stickers here.
-export const BOARD_STICKERS: Record<string, BoardStickerDef> = {};
+/**
+ * The board-sticker catalogue. Each entry is *hidden until unlocked* by a mission reward
+ * (`MissionDef.reward.unlockBoardStickerIds`) — purchasable only once
+ * `PlayerStore.unlockedBoardStickers` holds its id (see `rules/upgrades.ts` / the Board tray).
+ *
+ * `territory` is the first, unlocked by the "Growing Numbers" mission: +1 to a board's starting
+ * Territory (the gauge that caps tableau size), applied once at run setup.
+ */
+export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
+  territory: {
+    id: 'territory',
+    name: 'Territory',
+    description: '+1 starting Territory',
+    icon: '🌐',
+    cost: 10,
+    applyToBoard: (b) => ({ ...b, territory: b.territory + 1 }),
+  },
+};

@@ -1,11 +1,9 @@
 import { CARDS, isDeckable } from '../content/cards';
-import { STICKERS } from '../content/stickers';
-import { BOARD_STICKERS } from '../content/boardStickers';
 import { BOARDS, type BoardId } from '../content/boards';
 import { isOwned, stickerableInstancesOf, type OwnedCards } from './collection';
 import { canBuyTier } from './shop';
-import { stickerAppliesTo } from './stickers';
-import { canAttachBoardSticker, type BoardStickers } from './boardStickers';
+import { stickerAppliesTo, unlockedStickerDefs } from './stickers';
+import { canAttachBoardSticker, unlockedBoardStickerDefs, type BoardStickers } from './boardStickers';
 
 /**
  * Available-upgrade hints (docs/DESIGN.md → *Economy & progression*; TODO *Meta loop*). The one place
@@ -25,28 +23,51 @@ import { canAttachBoardSticker, type BoardStickers } from './boardStickers';
  *  `stickerAppliesTo` to mirror `buySticker` — currently vacuous, but the seam a conditional sticker
  *  would need. The room-vs-applies-vs-afford product factorizes because room is per-instance and
  *  `applies ∧ afford` is per-sticker. */
-export function cardUpgradeAvailable(collection: OwnedCards, influence: number, cardId: string): boolean {
+export function cardUpgradeAvailable(
+  collection: OwnedCards,
+  influence: number,
+  cardId: string,
+  unlockedStickers: Record<string, true>,
+): boolean {
   if (canBuyTier(collection, influence, cardId)) return true;
   const card = CARDS[cardId];
   return (
     stickerableInstancesOf(collection, cardId).length > 0 &&
-    Object.values(STICKERS).some((s) => stickerAppliesTo(s, card) && influence >= s.cost)
+    unlockedStickerDefs(unlockedStickers).some((s) => stickerAppliesTo(s, card) && influence >= s.cost)
   );
 }
 
-/** Whether `boardId` can still take an affordable board sticker (applies · under cap · affordable). */
-export function boardUpgradeAvailable(boardStickers: BoardStickers, influence: number, boardId: BoardId): boolean {
-  return Object.values(BOARD_STICKERS).some((s) => canAttachBoardSticker(boardStickers, influence, boardId, s));
+/** Whether `boardId` can still take an affordable board sticker (unlocked · applies · under cap ·
+ *  affordable). Enumerates only *unlocked* stickers, so a locked one never lights the hint. */
+export function boardUpgradeAvailable(
+  boardStickers: BoardStickers,
+  influence: number,
+  boardId: BoardId,
+  unlockedBoardStickers: Record<string, true>,
+): boolean {
+  return unlockedBoardStickerDefs(unlockedBoardStickers).some((s) =>
+    canAttachBoardSticker(boardStickers, influence, boardId, s),
+  );
 }
 
 /** Nav roll-up: does *any* owned card have an affordable upgrade? Drives the Collection nav badge. */
-export function anyCardUpgradeAvailable(collection: OwnedCards, influence: number): boolean {
+export function anyCardUpgradeAvailable(
+  collection: OwnedCards,
+  influence: number,
+  unlockedStickers: Record<string, true>,
+): boolean {
   return Object.values(CARDS).some(
-    (c) => isDeckable(c) && isOwned(collection, c.id) && cardUpgradeAvailable(collection, influence, c.id),
+    (c) => isDeckable(c) && isOwned(collection, c.id) && cardUpgradeAvailable(collection, influence, c.id, unlockedStickers),
   );
 }
 
 /** Nav roll-up: does *any* board have an affordable board-sticker upgrade? Drives the Board nav badge. */
-export function anyBoardUpgradeAvailable(boardStickers: BoardStickers, influence: number): boolean {
-  return (Object.keys(BOARDS) as BoardId[]).some((id) => boardUpgradeAvailable(boardStickers, influence, id));
+export function anyBoardUpgradeAvailable(
+  boardStickers: BoardStickers,
+  influence: number,
+  unlockedBoardStickers: Record<string, true>,
+): boolean {
+  return (Object.keys(BOARDS) as BoardId[]).some((id) =>
+    boardUpgradeAvailable(boardStickers, influence, id, unlockedBoardStickers),
+  );
 }

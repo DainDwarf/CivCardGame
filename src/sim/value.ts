@@ -14,6 +14,11 @@ const W = {
   foodBufferCap: 10,
   /** Penalty per unit of *projected-negative* food next round — the imminent-starvation cliff. */
   starvationPenalty: 20,
+  /** Reward for *currently banked* food (not just the one-round-ahead projection below) up to a
+   *  reserve cap, so the policy carries a real cushion against a run of several bad-draw rounds in a
+   *  row instead of only reacting to the immediate next turn. */
+  foodStockpileCap: 10,
+  foodStockpile: 1,
   production: 1,
   science: 1,
   military: 0.8,
@@ -51,7 +56,11 @@ const W = {
  * Survival first: the food term reads *projected* next-round food (`projectedDelta` already nets out
  * population upkeep and any in-hand events), rewarding a positive buffer up to a cap and punishing a
  * projected deficit steeply — so the greedy keeps food boxes staffed and won't over-grow population it
- * can't feed. Then two layers of capability: the generic economy terms (accumulated core resources ·
+ * can't feed. A second, separate term rewards *currently banked* food up to its own cap — the
+ * one-round projection alone doesn't push the greedy to hold a real reserve, so a run of several
+ * bad-draw rounds (no food play in hand) could still tip it into famine even while each individual
+ * round projected fine; banked-reserve credit makes the greedy stockpile ahead of that risk instead of
+ * living turn to turn. Then two layers of capability: the generic economy terms (accumulated core resources ·
  * population · operating economy · territory · culture level — what the sandbox measures a run by even
  * though it never *wins*), plus a **mission-directed** pull toward whatever this mission's objective
  * wants (`sim/objective.ts`'s `objectiveProgress`, a `[0, 1]` gradient), so the greedy voluntarily
@@ -65,6 +74,7 @@ export function scoreState(G: GameState): number {
 
   let s = 0;
   s += projFood >= 0 ? Math.min(projFood, W.foodBufferCap) : projFood * W.starvationPenalty;
+  s += Math.min(r.food, W.foodStockpileCap) * W.foodStockpile;
   s += r.production * W.production + r.science * W.science + r.military * W.military + r.money * W.money;
   s += G.population * W.population;
   s += [...G.tableau, ...G.workZone].filter(isOperating).length * W.operating;

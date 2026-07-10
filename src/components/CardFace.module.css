@@ -189,6 +189,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
+  white-space: pre-line;
   font-size: 0.64rem;
   color: var(--text-secondary);
   line-height: 1.25;

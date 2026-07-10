@@ -45,6 +45,8 @@ function sampleStore(): PlayerStore {
     collection,
     mapProgress: { enlightenment: true },
     boardStickers: {},
+    unlockedStickers: {},
+    unlockedBoardStickers: {},
     lifetime: { runsPlayed: 1, victories: 1, influenceEarned: 3 },
     bestInfinite: {},
   };
@@ -107,6 +109,14 @@ describe('exportSave / importSave', () => {
     expect(result.ok).toBe(false);
   });
 
+  it('rejects a save missing the unlocked-sticker sets — no migration path for these newer fields', () => {
+    const store = sampleStore();
+    const { unlockedStickers: _s, unlockedBoardStickers: _b, ...withoutUnlocks } = store;
+    const bogus = toBase64(JSON.stringify({ schemaVersion: 1, store: withoutUnlocks }));
+    const result = importSave(bogus);
+    expect(result.ok).toBe(false);
+  });
+
   it('rejects a pre-Step-7.2 collection shape (a bare cardId→count map) rather than loading it', () => {
     const store = sampleStore();
     const bogus = toBase64(
@@ -127,7 +137,12 @@ function standardMission(): MissionDef {
     victoryHint: '',
     failureHint: null,
     kind: 'standard',
-    reward: { influence: 2, unlockCardIds: ['granary'] },
+    reward: {
+      influence: 2,
+      unlockCardIds: ['granary'],
+      unlockStickerIds: ['irrigation'],
+      unlockBoardStickerIds: ['territory'],
+    },
     map: { col: 0, row: 0 },
   };
 }
@@ -166,11 +181,20 @@ describe('applyRunResult', () => {
     expect(copiesOwned(next.collection, 'granary')).toBe(1);
   });
 
-  it('a standard mission defeat pays nothing and leaves mapProgress untouched', () => {
+  it('a standard mission victory folds in the reward\'s card- and board-sticker unlocks', () => {
+    const store = sampleStore();
+    const next = applyRunResult(store, runResult('std', 'victory', 12), standardMission());
+    expect(next.unlockedStickers.irrigation).toBe(true);
+    expect(next.unlockedBoardStickers.territory).toBe(true);
+  });
+
+  it('a standard mission defeat pays nothing and leaves mapProgress + unlocked stickers untouched', () => {
     const store = sampleStore();
     const next = applyRunResult(store, runResult('std', 'defeat', 3), standardMission());
     expect(next.mapProgress.std).toBeUndefined();
     expect(next.influence).toBe(store.influence);
+    expect(next.unlockedStickers).toEqual(store.unlockedStickers);
+    expect(next.unlockedBoardStickers).toEqual(store.unlockedBoardStickers);
   });
 
   it('an infinite mission pays Influence = rounds survived on a victory-outcome stop', () => {

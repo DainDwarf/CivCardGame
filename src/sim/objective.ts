@@ -28,6 +28,17 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
   // no more by hoarding it — pushing it to spend the surplus on the military it still lacks.
   first_settlement_goal: (G) =>
     (Math.min(G.resources.production, 10) + Math.min(G.resources.military, 10)) / 20,
+  // "Growing Numbers": stand up a Hut, a Farm, and a Toolmaker at once — three distinct buildings, each
+  // needing a free territory *slot*, and the Tribe board starts at territory 0. So territory (grown via
+  // Conquest) is a genuine prerequisite for all three, not a detour. The building term counts *distinct*
+  // required types present (so a duplicate Farm earns nothing, pushing the policy toward the type it still
+  // lacks); blending territory in as a sub-goal is what steers a one-ply policy to play Conquest at all (a
+  // flat building-count gradient never rewards it, since Conquest raises no building on its own turn). Both
+  // terms cap at 3 and average ⇒ 1 exactly at the win (three buildings occupy three slots, so territory ≥ 3).
+  growing_numbers_goal: (G) => {
+    const built = ['hut', 'farm', 'toolmaker'].filter((id) => G.tableau.some((b) => b.cardId === id)).length;
+    return (built + Math.min(G.territory, 3)) / 6;
+  },
 };
 
 /**

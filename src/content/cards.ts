@@ -213,6 +213,15 @@ export function compareCards(a: CardDef, b: CardDef): number {
  *  one tunable knob that bounds simulation length (Step 4) without touching the economy baseline. */
 export const SANDBOX_DEADLINE = 50;
 
+/** The buildings "Growing Numbers" wants one of each of, paired with the glyph the objective's
+ *  progress text shows for it — the single source both the win predicate and the `dynamicText`
+ *  read, so the two can never list a different set. */
+const GROWING_NUMBERS_BUILDINGS: readonly (readonly [cardId: string, icon: string])[] = [
+  ['hut', '🛖'],
+  ['farm', '🌱'],
+  ['toolmaker', '⛏️'],
+];
+
 /**
  * The card catalogue. A `building` card *is* the building it becomes in the tableau (its stats
  * live right here); action cards resolve their effect and recycle through the discard; work
@@ -294,6 +303,16 @@ export const CARDS: Record<string, CardDef> = {
     description: 'Stockpile 10 🔨 production and 10 ⚔️ military at once to settle down.',
     objective: (G) => G.resources.production >= 10 && G.resources.military >= 10,
     dynamicText: (G) => `🔨 ${G.resources.production}/10 · ⚔️ ${G.resources.military}/10`,
+  },
+  growing_numbers_goal: {
+    id: 'growing_numbers_goal', name: 'Growing Numbers', kind: 'objective', cost: {},
+    description: 'Build 🛖 🌱 ⛏️',
+    objective: (G) =>
+      GROWING_NUMBERS_BUILDINGS.every(([id]) => G.tableau.some((b) => b.cardId === id)),
+    dynamicText: (G) =>
+      GROWING_NUMBERS_BUILDINGS.map(
+        ([id, icon]) => `${icon} ${G.tableau.some((b) => b.cardId === id) ? 1 : 0}/1`,
+      ).join('\n'),
   },
 
   // — Sandbox mission cards (mission-only; excluded from decks/collection by `isDeckable`).

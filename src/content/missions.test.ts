@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { MISSIONS } from './missions';
 import { CARDS } from './cards';
+import { STICKERS } from './stickers';
+import { BOARD_STICKERS } from './boardStickers';
 import { AGES, ageColSpans } from './ages';
 
 // The mission *spine* mechanism (seedMissionCards, objectiveMet/defeatMet, the bus-driven win/loss
@@ -35,13 +37,23 @@ describe('mission catalogue coherence', () => {
   });
 
   // Relocated from `rewards.test.ts` (Step 2.4): it's a mission↔card coherence check, not a reward
-  // mechanism test, so it lives with the other mission coherence iterators.
-  it('every standard mission reward names at least one real card id', () => {
+  // mechanism test, so it lives with the other mission coherence iterators. A standard mission must
+  // grant at least one unlock of *some* kind (card, card-sticker, or board-sticker — all optional and
+  // symmetric), and every id it names must reference a real catalogue entry.
+  it('every standard mission reward names at least one real unlock id', () => {
     for (const m of Object.values(MISSIONS)) {
       if (m.kind !== 'standard') continue;
-      expect(m.reward!.unlockCardIds.length, `${m.id} → reward has no unlock cards`).toBeGreaterThan(0);
-      for (const cardId of m.reward!.unlockCardIds) {
-        expect(CARDS[cardId], `${m.id} → reward → ${cardId}`).toBeDefined();
+      const { unlockCardIds = [], unlockStickerIds = [], unlockBoardStickerIds = [] } = m.reward!;
+      const total = unlockCardIds.length + unlockStickerIds.length + unlockBoardStickerIds.length;
+      expect(total, `${m.id} → reward has no unlocks of any kind`).toBeGreaterThan(0);
+      for (const cardId of unlockCardIds) {
+        expect(CARDS[cardId], `${m.id} → reward → card ${cardId}`).toBeDefined();
+      }
+      for (const stickerId of unlockStickerIds) {
+        expect(STICKERS[stickerId], `${m.id} → reward → sticker ${stickerId}`).toBeDefined();
+      }
+      for (const boardStickerId of unlockBoardStickerIds) {
+        expect(BOARD_STICKERS[boardStickerId], `${m.id} → reward → board sticker ${boardStickerId}`).toBeDefined();
       }
     }
   });

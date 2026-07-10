@@ -10,6 +10,8 @@ import {
   unplayableReason,
 } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
+import { STICKERS } from '../content/stickers';
+import { BOARD_STICKERS } from '../content/boardStickers';
 import { MISSIONS } from '../content/missions';
 import type { GameState } from '../rules';
 import { isCompleted } from '../rules/campaign';
@@ -675,6 +677,8 @@ export function Board({
   onTransition,
   mapProgress,
   collection,
+  unlockedStickers,
+  unlockedBoardStickers,
 }: {
   confirmEndTurn: boolean;
   uiScale: number;
@@ -687,6 +691,10 @@ export function Board({
    *  this is a preview, not a second source of truth. */
   mapProgress: Record<string, true>;
   collection: OwnedCards;
+  /** The player's unlocked-sticker sets entering this run — same read-only preview role, so the
+   *  gameover overlay can announce (and not double-announce) the card/board stickers this clear unlocks. */
+  unlockedStickers: Record<string, true>;
+  unlockedBoardStickers: Record<string, true>;
 }) {
   const { G, gameover, board, moves, endTurn, undo, canUndo, restart, endRun, runGen } = useGame();
   // The whole board renders inside a `transform: scale(uiScale)` wrapper (App.tsx). Pointer
@@ -2052,15 +2060,22 @@ export function Board({
       const alreadyCompleted = won && mission.kind !== 'infinite' && isCompleted(mapProgress, mission.id);
       const reward =
         mission.kind === 'infinite'
-          ? computeRewards(mission, false, collection, G.round)
+          ? computeRewards(mission, false, collection, unlockedStickers, unlockedBoardStickers, G.round)
           : won
-            ? computeRewards(mission, alreadyCompleted, collection)
+            ? computeRewards(mission, alreadyCompleted, collection, unlockedStickers, unlockedBoardStickers)
             : null;
-      // The names of every card this clear actually unlocks — each reward card not already owned
-      // (a mission may open several at once, e.g. the Neolithic set).
+      // The names of every unlock this clear actually grants — each reward card not already owned
+      // (a mission may open several at once, e.g. the Neolithic set), and each card/board sticker not
+      // already unlocked. `alreadyCompleted` already suppresses the whole reward line on a replay.
       const unlockedNames =
         reward && mission.reward
-          ? mission.reward.unlockCardIds.filter((id) => !isOwned(collection, id)).map((id) => CARDS[id].name)
+          ? [
+              ...(mission.reward.unlockCardIds ?? []).filter((id) => !isOwned(collection, id)).map((id) => CARDS[id].name),
+              ...(mission.reward.unlockStickerIds ?? []).filter((id) => !unlockedStickers[id]).map((id) => STICKERS[id].name),
+              ...(mission.reward.unlockBoardStickerIds ?? [])
+                .filter((id) => !unlockedBoardStickers[id])
+                .map((id) => BOARD_STICKERS[id].name),
+            ]
           : [];
       return (
         <div className={styles.gameoverOverlay}>

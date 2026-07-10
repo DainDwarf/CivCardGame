@@ -44,6 +44,23 @@ export interface StickerDef {
   applyCost?: (cost: Partial<Resources>) => Partial<Resources>;
 }
 
-// Reset to empty for the Phase 4 content pass (docs/TODO.md Step 2.3) — the catalogue and its
-// type are kept so the app keeps typechecking; Step 6+ authors the real Phase 4 stickers here.
-export const STICKERS: Record<string, StickerDef> = {};
+/**
+ * The card-sticker catalogue. Each entry is *hidden until unlocked* by a mission reward
+ * (`MissionDef.reward.unlockStickerIds`) — a sticker becomes purchasable only once
+ * `PlayerStore.unlockedStickers` holds its id (see `rules/upgrades.ts` / the Collection tray).
+ *
+ * `irrigation` is the first, unlocked by the "Growing Numbers" mission: +1 🌾 to a building that
+ * already produces food (so it bumps that food output, never grants food to a non-food building).
+ */
+export const STICKERS: Record<string, StickerDef> = {
+  irrigation: {
+    id: 'irrigation',
+    name: 'Irrigation',
+    description: '+1 🌾',
+    icon: '💧',
+    cost: 3,
+    // Attaches only to a building that already produces food; bumps *only* that food output.
+    appliesTo: (c) => c.kind === 'building' && (c.produces?.food ?? 0) > 0,
+    applyGain: (base) => (base ? { ...base, food: (base.food ?? 0) + 1 } : base),
+  },
+};

@@ -42,8 +42,10 @@ built; the game is now in its content-and-balance pass — see
   - **Campaign-map DAG** — `content/missions.ts` missions form a prereq-gated DAG
     (`rules/campaign.ts`), rendered as a horizontally-scrollable branching tech tree
     (`meta/CampaignMap.tsx`); each `'standard'` mission grants a fixed Influence reward
-    plus one or more card unlocks on first clear (`rules/rewards.ts`), previewed on the
-    `MissionDetailPanel` and paid out in `App.tsx`'s `recordResult`.
+    plus one or more **unlocks** on first clear (`rules/rewards.ts`) — three symmetric, all-optional
+    kinds: card unlocks (`unlockCardIds`), card-sticker unlocks (`unlockStickerIds`), and board-sticker
+    unlocks (`unlockBoardStickerIds`), all hidden-until-unlocked. Previewed on the `MissionDetailPanel`
+    (a sticker shows a generic locked chip pre-clear) and paid out in `App.tsx`'s `recordResult`.
   - **Infinite missions + threats** — `'infinite'`-kind missions never win and pay
     Influence = rounds survived on every attempt. `GameState.threats`
     (`rules/threats.ts`) are persistent, mission-seeded board hazards that escalate and
@@ -53,8 +55,11 @@ built; the game is now in its content-and-balance pass — see
     A sticker owns its own logic on its `StickerDef` (`appliesTo`/`applyGain`/`applyCost`
     hooks); `effectiveGain`/`effectiveCost`/`effectiveCard` are the only places a sticker
     touches run *or* display values, so resolution and every render site (run + meta)
-    agree. The catalogue is currently empty (`STICKERS = {}`) — real stickers are authored
-    in the content pass.
+    agree. A sticker is **hidden until unlocked** by a mission reward (`PlayerStore.unlockedStickers`,
+    fed by `unlockStickerIds`) — `rules/stickers.ts`'s `unlockedStickerDefs` is the single filter seam
+    every catalogue *enumeration* (the Collection tray, the upgrade hints) reads through, and
+    `buySticker` re-checks the unlock as its authoritative backstop. The catalogue holds one sticker so
+    far — **Irrigation** (+1 🌾 on a food-producing building), unlocked by the "Growing Numbers" mission.
   - **Board stickers** — the *board* counterpart to card stickers: permanent modifiers bought
     with Influence that tweak a board's *starting* profile (`content/boardStickers.ts`,
     `rules/boardStickers.ts`), attached per board on `PlayerStore.boardStickers` (a board is
@@ -73,7 +78,10 @@ built; the game is now in its content-and-balance pass — see
     hand-rolled pointer-drag like `DeckEditor.tsx` (no DnD library). During a drag only the *valid*
     target boards for that sticker highlight (`applies · under the cap · affordable`, the single
     `isValidTarget` predicate gating both the highlight and the drop); an invalid/missed drop no-ops.
-    The catalogue is currently empty (`BOARD_STICKERS = {}`).
+    Like card stickers, a board sticker is **hidden until unlocked** (`PlayerStore.unlockedBoardStickers`,
+    fed by a mission's `unlockBoardStickerIds`) — `unlockedBoardStickerDefs` gates the tray + hint, and
+    `buyBoardSticker` re-checks. The catalogue holds one so far — **Territory** (+1 starting territory),
+    unlocked by the "Growing Numbers" mission.
 
 ## Commands
 
@@ -278,7 +286,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `ageColSpans`, which derives each age's contiguous DAG **column slice** from its missions'
     `map.col` (a mission declares its age via `MissionDef.age`). `meta/CampaignMap.tsx` positions
     each age's arrow band + gradient wash over that slice, so *each age covers exactly its stretch of
-    the DAG*; with no `'standard'` missions placed yet the derivation is dormant (`[]` → no bands).
+    the DAG*. The Neolithic band is live — it covers the two placed standard missions (First Settlement
+    at col 0, Growing Numbers at col 1 → slice `[0,2)`); Bronze/Iron stay dormant until their missions land.
 
 **Shell — the run loop (`src/run/`) + React:**
 

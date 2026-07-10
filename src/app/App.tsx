@@ -171,7 +171,7 @@ export function App() {
   // null for an unaffordable / already-stickered / unowned instance, so a rejected attach is a
   // silent no-op here — same backstop pattern as `buyCardTier`.
   function attachSticker(instanceId: string, stickerId: string) {
-    const result = buySticker(store.collection, store.influence, instanceId, stickerId);
+    const result = buySticker(store.collection, store.influence, instanceId, stickerId, store.unlockedStickers);
     if (!result) return;
     persist({ ...store, influence: result.influence, collection: result.collection });
   }
@@ -180,7 +180,7 @@ export function App() {
   // `buyBoardSticker` is the pure rule (rules/boardStickers.ts) and returns null for an unaffordable /
   // full / inapplicable board, so a rejected buy is a silent no-op here — same backstop as above.
   function buyBoardStickerAt(boardId: BoardId, stickerId: string) {
-    const result = buyBoardSticker(store.boardStickers, store.influence, boardId, stickerId);
+    const result = buyBoardSticker(store.boardStickers, store.influence, boardId, stickerId, store.unlockedBoardStickers);
     if (!result) return;
     persist({ ...store, influence: result.influence, boardStickers: result.boardStickers });
   }
@@ -217,6 +217,8 @@ export function App() {
             onTransition={transition}
             mapProgress={store.mapProgress}
             collection={store.collection}
+            unlockedStickers={store.unlockedStickers}
+            unlockedBoardStickers={store.unlockedBoardStickers}
           />
         </GameProvider>
       ) : (
@@ -229,6 +231,8 @@ export function App() {
             influence={store.influence}
             mapProgress={store.mapProgress}
             boardStickers={store.boardStickers}
+            unlockedStickers={store.unlockedStickers}
+            unlockedBoardStickers={store.unlockedBoardStickers}
             lifetime={store.lifetime}
             bestInfinite={store.bestInfinite}
             uiScale={settings.uiScale}

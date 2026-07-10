@@ -24,6 +24,13 @@ export interface PlayerStore {
   /** Board stickers attached per board (`rules/boardStickers.ts`) — permanent modifiers bought with
    *  Influence, snapshotted into `RunConfig.boardStickers` at launch. A board with none is absent. */
   boardStickers: BoardStickers;
+  /** Card/board stickers the player has *unlocked* (via a mission's `unlockStickerIds` /
+   *  `unlockBoardStickerIds` reward — `rules/rewards.ts`). Id-sets shaped like `mapProgress` (a
+   *  sticker has no copy identity, so membership is the whole state, unlike `collection`). A sticker
+   *  is hidden from its tray until its id is present here; folded in at clear time by `applyRunResult`
+   *  so the grant is stable against later reward-list edits. Absent id = still locked. */
+  unlockedStickers: Record<string, true>;
+  unlockedBoardStickers: Record<string, true>;
   /** Lifetime cumulative counters kept as running totals — deliberately *not* derived from
    *  `runHistory`, which is capped at `HISTORY_LIMIT` and would silently undercount once trimmed.
    *  `influenceEarned` is gross Influence *gained* (the sum of every `applyRunResult` payout),
@@ -54,6 +61,8 @@ export function emptyStore(): PlayerStore {
     collection,
     mapProgress: {},
     boardStickers: {},
+    unlockedStickers: {},
+    unlockedBoardStickers: {},
     lifetime: { runsPlayed: 0, victories: 0, influenceEarned: 0 },
     bestInfinite: {},
   };
@@ -79,6 +88,8 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
   if (!Array.isArray(collectionObj.instances) || typeof collectionObj.nextId !== 'number') return null;
   if (!obj.mapProgress || typeof obj.mapProgress !== 'object') return null;
   if (!obj.boardStickers || typeof obj.boardStickers !== 'object') return null;
+  if (!obj.unlockedStickers || typeof obj.unlockedStickers !== 'object') return null;
+  if (!obj.unlockedBoardStickers || typeof obj.unlockedBoardStickers !== 'object') return null;
   if (!obj.lifetime || typeof obj.lifetime !== 'object') return null;
   const lifetime = obj.lifetime as Record<string, unknown>;
   if (
@@ -96,6 +107,8 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
     collection: obj.collection as OwnedCards,
     mapProgress: obj.mapProgress as Record<string, true>,
     boardStickers: obj.boardStickers as BoardStickers,
+    unlockedStickers: obj.unlockedStickers as Record<string, true>,
+    unlockedBoardStickers: obj.unlockedBoardStickers as Record<string, true>,
     lifetime: obj.lifetime as PlayerStore['lifetime'],
     bestInfinite: obj.bestInfinite as Record<string, number>,
   };
@@ -149,11 +162,23 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
     !infinite && result.outcome === 'victory'
       ? { ...store.mapProgress, [result.missionId]: true as const }
       : store.mapProgress;
-  const { influence, collection } = infinite
-    ? computeRewards(mission, alreadyCompleted, store.collection, result.stats.turnsTaken)
+  const { influence, collection, unlockedStickers, unlockedBoardStickers } = infinite
+    ? computeRewards(
+        mission,
+        alreadyCompleted,
+        store.collection,
+        store.unlockedStickers,
+        store.unlockedBoardStickers,
+        result.stats.turnsTaken,
+      )
     : result.outcome === 'victory'
-      ? computeRewards(mission, alreadyCompleted, store.collection)
-      : { influence: 0, collection: store.collection };
+      ? computeRewards(mission, alreadyCompleted, store.collection, store.unlockedStickers, store.unlockedBoardStickers)
+      : {
+          influence: 0,
+          collection: store.collection,
+          unlockedStickers: store.unlockedStickers,
+          unlockedBoardStickers: store.unlockedBoardStickers,
+        };
   const lifetime = {
     runsPlayed: store.lifetime.runsPlayed + 1,
     victories: store.lifetime.victories + (result.outcome === 'victory' ? 1 : 0),
@@ -171,6 +196,8 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
     mapProgress,
     influence: store.influence + influence,
     collection,
+    unlockedStickers,
+    unlockedBoardStickers,
     lifetime,
     bestInfinite,
   };

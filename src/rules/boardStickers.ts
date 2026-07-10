@@ -23,6 +23,15 @@ export function boardStickerAppliesTo(sticker: BoardStickerDef, board: BoardDef)
   return sticker.appliesTo?.(board) ?? true;
 }
 
+/** The board stickers a player has *unlocked* (via mission rewards — `PlayerStore.unlockedBoardStickers`).
+ *  The board-tray counterpart to `rules/stickers.ts`'s `unlockedStickerDefs`: the single filter seam
+ *  every *enumeration* site reads through (the Board tray, the `boardUpgradeAvailable` hint), so a
+ *  locked board sticker is hidden entirely. An *already-attached* board sticker never routes through
+ *  this (it was necessarily unlocked when bought). */
+export function unlockedBoardStickerDefs(unlockedBoardStickers: Record<string, true>): BoardStickerDef[] {
+  return Object.values(BOARD_STICKERS).filter((s) => unlockedBoardStickers[s.id]);
+}
+
 /**
  * A board's *effective* starting profile after its attached stickers — a **fold** applying each
  * attached sticker's `applyToBoard` in order, so stacking (two of the same) and composing (two
@@ -63,7 +72,8 @@ export interface BoardStickerPurchase {
 
 /**
  * Attempt to attach `stickerId` to `boardId`. Returns `null` (mirroring `buyTier`/`buySticker`) when
- * the sticker doesn't exist, the sticker doesn't apply to the board (`boardStickerAppliesTo`, the
+ * the sticker doesn't exist, the sticker isn't unlocked (`unlockedBoardStickers`, the reward gate the
+ * tray only mirrors), the sticker doesn't apply to the board (`boardStickerAppliesTo`, the
  * authoritative guard the Shop UI only mirrors), the board is already full (`MAX_BOARD_STICKERS`), or
  * the player can't afford it. The *same* sticker id can be attached twice by design — the fold in
  * `effectiveBoard` applies it once per attached copy. Appends (never replaces); immutable.
@@ -73,10 +83,11 @@ export function buyBoardSticker(
   influence: number,
   boardId: BoardId,
   stickerId: string,
+  unlockedBoardStickers: Record<string, true>,
 ): BoardStickerPurchase | null {
   const sticker = BOARD_STICKERS[stickerId];
   const board = BOARDS[boardId];
-  if (!sticker || !board || influence < sticker.cost) return null;
+  if (!sticker || !unlockedBoardStickers[stickerId] || !board || influence < sticker.cost) return null;
   const current = boardStickers[boardId] ?? [];
   if (isBoardStickerFull(current) || !boardStickerAppliesTo(sticker, board)) return null;
   return {

@@ -26,8 +26,18 @@ export function stickerAppliesTo(sticker: StickerDef, card: CardDef): boolean {
   return sticker.appliesTo?.(card) ?? true;
 }
 
+/** The stickers a player has *unlocked* (via mission rewards — `PlayerStore.unlockedStickers`).
+ *  The single filter seam: every place that *enumerates* the catalogue to offer stickers (the
+ *  Collection tray, the `cardUpgradeAvailable` hint) reads through here, so a locked sticker is
+ *  hidden entirely — hidden-until-unlocked, like an un-owned card. Keyed `STICKERS[id]` reads of an
+ *  *already-attached* sticker never route through this (it was necessarily unlocked when bought). */
+export function unlockedStickerDefs(unlockedStickers: Record<string, true>): StickerDef[] {
+  return Object.values(STICKERS).filter((s) => unlockedStickers[s.id]);
+}
+
 /** Attempt to attach `stickerId` to `instanceId`. Returns `null` (mirroring `shop.ts`'s `buyTier`)
- *  when the sticker or instance doesn't exist, the sticker doesn't apply (`stickerAppliesTo`, the
+ *  when the sticker or instance doesn't exist, the sticker isn't unlocked (`unlockedStickers`, the
+ *  reward gate the tray only mirrors), the sticker doesn't apply (`stickerAppliesTo`, the
  *  authoritative guard the shop UI only mirrors), the instance is already full, or the player can't
  *  afford it. The *same* sticker id can be attached twice by design — two Reinforced stacks to +2
  *  (the folds below apply once per attached copy). Appends (never replaces); immutable. */
@@ -36,10 +46,11 @@ export function buySticker(
   influence: number,
   instanceId: string,
   stickerId: string,
+  unlockedStickers: Record<string, true>,
 ): StickerPurchase | null {
   const sticker = STICKERS[stickerId];
   const inst = findInstance(collection, instanceId);
-  if (!sticker || !inst || isStickerFull(inst) || influence < sticker.cost) return null;
+  if (!sticker || !unlockedStickers[stickerId] || !inst || isStickerFull(inst) || influence < sticker.cost) return null;
   if (!stickerAppliesTo(sticker, CARDS[inst.cardId])) return null;
   const instances = collection.instances.map((i) =>
     i.id === instanceId ? { ...i, stickers: [...(i.stickers ?? []), stickerId] } : i,

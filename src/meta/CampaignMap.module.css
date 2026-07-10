@@ -441,6 +441,53 @@
   cursor: pointer;
 }
 
+/* Sticker unlocks in the reward preview — small chips beside the card faces (stickers have no card
+   face). One row, wrapping; a locked chip hides everything but a padlock (the whole sticker is the
+   surprise until the mission is cleared). */
+.rewardStickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.stickerChip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface-raised);
+}
+
+.stickerChipLocked {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.stickerChipIcon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.stickerChipText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.stickerChipName {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.stickerChipEffect {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
 .picker {
   min-width: 0;
 }

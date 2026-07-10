@@ -11,7 +11,7 @@ import {
 } from '../rules/collection';
 import { decksContaining } from '../rules/deckBuilder';
 import { nextTier } from '../rules/shop';
-import { effectiveCard, stickerAppliesTo } from '../rules/stickers';
+import { effectiveCard, stickerAppliesTo, unlockedStickerDefs } from '../rules/stickers';
 import { CardFace } from '../components/CardFace';
 import { CardZoomOverlay } from '../components/CardZoomOverlay';
 import styles from './CardInstancePanel.module.css';
@@ -70,6 +70,8 @@ export function CardInstancePanel({
    *  Omitted → read-only browse (faces + click-to-zoom, no tray). */
   shop?: {
     influence: number;
+    /** Unlocked card stickers — the tray offers only these (a locked sticker is hidden entirely). */
+    unlockedStickers: Record<string, true>;
     onBuyTier: (cardId: string) => void;
     onAttachSticker: (instanceId: string, stickerId: string) => void;
   };
@@ -100,7 +102,7 @@ export function CardInstancePanel({
   const upgrade = shop ? nextTier(instances.length) : null;
   // Only stickers that apply to *this* card are draggable at all (Irrigation hidden on a non-food
   // building, etc.) — each still re-gated per copy by `isValidTarget`.
-  const stickerDefs = shop ? Object.values(STICKERS).filter((s) => stickerAppliesTo(s, card)) : [];
+  const stickerDefs = shop ? unlockedStickerDefs(shop.unlockedStickers).filter((s) => stickerAppliesTo(s, card)) : [];
   // A card with every copy already full can't take another sticker of any kind — used to dim badges.
   const anyRoom = stickerableInstancesOf(collection, cardId).length > 0;
 

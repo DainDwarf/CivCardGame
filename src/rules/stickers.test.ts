@@ -9,6 +9,9 @@ import { FIXTURE_CARDS, FIXTURE_STICKERS, installFixtures, uninstallFixtures } f
 // `test_costcut` are two different unrestricted stickers, `test_restricted` the food-only one.
 const ADDGAIN = FIXTURE_STICKERS.test_addgain.cost;
 const COSTCUT = FIXTURE_STICKERS.test_costcut.cost;
+// Every fixture sticker is unlocked by default, so these tests exercise the buy path without the
+// unlock gate getting in the way; one dedicated test below covers a *locked* sticker rejection.
+const UNLOCKED: Record<string, true> = Object.fromEntries(Object.keys(FIXTURE_STICKERS).map((id) => [id, true]));
 
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);
@@ -17,7 +20,7 @@ describe('buySticker', () => {
   it('attaches the sticker and deducts its cost', () => {
     const collection = collectionFromCounts({ test_food: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    const result = buySticker(collection, ADDGAIN + 2, a, 'test_addgain');
+    const result = buySticker(collection, ADDGAIN + 2, a, 'test_addgain', UNLOCKED);
     expect(result).not.toBeNull();
     expect(result!.influence).toBe(2);
     expect(result!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['test_addgain']);
@@ -26,26 +29,33 @@ describe('buySticker', () => {
   it('does not mutate the input collection', () => {
     const collection = collectionFromCounts({ test_food: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    buySticker(collection, ADDGAIN, a, 'test_addgain');
+    buySticker(collection, ADDGAIN, a, 'test_addgain', UNLOCKED);
     expect(collection.instances.find((i) => i.id === a)?.stickers).toBeUndefined();
   });
 
   it('rejects an unknown sticker id', () => {
     const collection = collectionFromCounts({ test_food: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    expect(buySticker(collection, 5, a, 'not-a-sticker')).toBeNull();
+    expect(buySticker(collection, 5, a, 'not-a-sticker', UNLOCKED)).toBeNull();
+  });
+
+  it('rejects a sticker that is not unlocked, even when everything else is valid', () => {
+    const collection = collectionFromCounts({ test_food: 1 });
+    const [a] = collection.instances.map((i) => i.id);
+    // Affordable, applicable, room — but locked (absent from the unlocked set) → rejected.
+    expect(buySticker(collection, ADDGAIN + 5, a, 'test_addgain', {})).toBeNull();
   });
 
   it('rejects an instance the collection does not own', () => {
     const collection = collectionFromCounts({ test_food: 1 });
-    expect(buySticker(collection, 5, 'not-owned', 'test_addgain')).toBeNull();
+    expect(buySticker(collection, 5, 'not-owned', 'test_addgain', UNLOCKED)).toBeNull();
   });
 
   it('appends a second, different sticker to a once-stickered instance', () => {
     const collection = collectionFromCounts({ test_food: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    const first = buySticker(collection, ADDGAIN + COSTCUT, a, 'test_addgain')!;
-    const second = buySticker(first.collection, first.influence, a, 'test_costcut');
+    const first = buySticker(collection, ADDGAIN + COSTCUT, a, 'test_addgain', UNLOCKED)!;
+    const second = buySticker(first.collection, first.influence, a, 'test_costcut', UNLOCKED);
     expect(second).not.toBeNull();
     expect(second!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['test_addgain', 'test_costcut']);
   });
@@ -55,16 +65,16 @@ describe('buySticker', () => {
     const [a] = collection.instances.map((i) => i.id);
     // Budget affords all three, so the third's rejection is by fullness, not affordability.
     const budget = ADDGAIN * 2 + COSTCUT;
-    const first = buySticker(collection, budget, a, 'test_addgain')!;
-    const second = buySticker(first.collection, first.influence, a, 'test_costcut')!;
-    expect(buySticker(second.collection, second.influence, a, 'test_addgain')).toBeNull();
+    const first = buySticker(collection, budget, a, 'test_addgain', UNLOCKED)!;
+    const second = buySticker(first.collection, first.influence, a, 'test_costcut', UNLOCKED)!;
+    expect(buySticker(second.collection, second.influence, a, 'test_addgain', UNLOCKED)).toBeNull();
   });
 
   it('allows attaching the same sticker twice — it stacks', () => {
     const collection = collectionFromCounts({ test_food: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    const first = buySticker(collection, ADDGAIN * 2, a, 'test_addgain')!;
-    const second = buySticker(first.collection, first.influence, a, 'test_addgain');
+    const first = buySticker(collection, ADDGAIN * 2, a, 'test_addgain', UNLOCKED)!;
+    const second = buySticker(first.collection, first.influence, a, 'test_addgain', UNLOCKED);
     expect(second).not.toBeNull();
     expect(second!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['test_addgain', 'test_addgain']);
   });
@@ -72,13 +82,13 @@ describe('buySticker', () => {
   it('rejects an unaffordable purchase', () => {
     const collection = collectionFromCounts({ test_food: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    expect(buySticker(collection, 1, a, 'test_addgain')).toBeNull();
+    expect(buySticker(collection, 1, a, 'test_addgain', UNLOCKED)).toBeNull();
   });
 
   it('attaches an eligible restricted sticker (a food-only sticker on a food building)', () => {
     const collection = collectionFromCounts({ test_food: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    const result = buySticker(collection, 5, a, 'test_restricted');
+    const result = buySticker(collection, 5, a, 'test_restricted', UNLOCKED);
     expect(result).not.toBeNull();
     expect(result!.collection.instances.find((i) => i.id === a)?.stickers).toEqual(['test_restricted']);
   });
@@ -86,7 +96,7 @@ describe('buySticker', () => {
   it('rejects a restricted sticker on an ineligible card (a food-only sticker on a non-food building)', () => {
     const collection = collectionFromCounts({ test_prod: 1 });
     const [a] = collection.instances.map((i) => i.id);
-    expect(buySticker(collection, 5, a, 'test_restricted')).toBeNull();
+    expect(buySticker(collection, 5, a, 'test_restricted', UNLOCKED)).toBeNull();
   });
 });
 

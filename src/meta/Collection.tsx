@@ -21,6 +21,7 @@ export function Collection({
   collection,
   decks,
   influence,
+  unlockedStickers,
   uiScale,
   onBuyTier,
   onAttachSticker,
@@ -29,6 +30,9 @@ export function Collection({
   decks: DeckDef[];
   /** Spendable Influence — forwarded into the detail panel's buy/attach controls (Step 9.1). */
   influence: number;
+  /** Unlocked card stickers — gates the detail panel's sticker tray (a locked sticker is hidden) and
+   *  the per-tile upgrade hint. */
+  unlockedStickers: Record<string, true>;
   /** Whole-UI scale (settings) — forwarded to the detail panel for its sticker drag-clone math (Step 9.2). */
   uiScale: number;
   onBuyTier: (cardId: string) => void;
@@ -56,7 +60,7 @@ export function Collection({
                 card={c}
                 className={styles.tile}
                 countBadge={copiesOwned(collection, c.id)}
-                upgradeHint={cardUpgradeAvailable(collection, influence, c.id)}
+                upgradeHint={cardUpgradeAvailable(collection, influence, c.id, unlockedStickers)}
                 onClick={() => setDetail(c.id)}
               />
             ))}
@@ -74,7 +78,7 @@ export function Collection({
                 card={c}
                 className={styles.tile}
                 countBadge={copiesOwned(collection, c.id)}
-                upgradeHint={cardUpgradeAvailable(collection, influence, c.id)}
+                upgradeHint={cardUpgradeAvailable(collection, influence, c.id, unlockedStickers)}
                 onClick={() => setDetail(c.id)}
               />
             ))}
@@ -92,7 +96,7 @@ export function Collection({
                 card={c}
                 className={styles.tile}
                 countBadge={copiesOwned(collection, c.id)}
-                upgradeHint={cardUpgradeAvailable(collection, influence, c.id)}
+                upgradeHint={cardUpgradeAvailable(collection, influence, c.id, unlockedStickers)}
                 onClick={() => setDetail(c.id)}
               />
             ))}
@@ -105,7 +109,7 @@ export function Collection({
           cardId={detail}
           collection={collection}
           decks={decks}
-          shop={{ influence, onBuyTier, onAttachSticker }}
+          shop={{ influence, unlockedStickers, onBuyTier, onAttachSticker }}
           uiScale={uiScale}
           onClose={() => setDetail(null)}
         />

@@ -42,6 +42,8 @@ export function MetaMenu({
   influence,
   mapProgress,
   boardStickers,
+  unlockedStickers,
+  unlockedBoardStickers,
   lifetime,
   bestInfinite,
   uiScale,
@@ -66,6 +68,10 @@ export function MetaMenu({
   /** Board stickers attached per board — forwarded to `BoardMenu` (buy/list) and `CampaignMap` (the
    *  launch popup's board picker shows the *effective* profile). */
   boardStickers: BoardStickers;
+  /** Unlocked card/board stickers (`rules/rewards.ts`) — forwarded to `Collection`/`BoardMenu` so a
+   *  locked sticker is hidden from its tray, and rolled into the nav-badge upgrade hints. */
+  unlockedStickers: Record<string, true>;
+  unlockedBoardStickers: Record<string, true>;
   /** Lifetime cumulative counters — forwarded to `Stats` for its campaign-progress summary. */
   lifetime: LifetimeStats;
   /** Best rounds survived per infinite mission — forwarded to `Stats` for the best-scores board. */
@@ -104,8 +110,8 @@ export function MetaMenu({
   // shop-bearing tabs (Collection · Board) can have one. Rolls up the same per-tile predicates the
   // grids use (`rules/upgrades.ts`), so a badge can never disagree with a tile's own hint.
   const navHints: Partial<Record<Screen, boolean>> = {
-    collection: anyCardUpgradeAvailable(collection, influence),
-    board: anyBoardUpgradeAvailable(boardStickers, influence),
+    collection: anyCardUpgradeAvailable(collection, influence, unlockedStickers),
+    board: anyBoardUpgradeAvailable(boardStickers, influence, unlockedBoardStickers),
   };
 
   return (
@@ -148,6 +154,7 @@ export function MetaMenu({
             collection={collection}
             decks={decks}
             influence={influence}
+            unlockedStickers={unlockedStickers}
             uiScale={uiScale}
             onBuyTier={onBuyTier}
             onAttachSticker={onAttachSticker}
@@ -157,6 +164,7 @@ export function MetaMenu({
           <BoardMenu
             boardStickers={boardStickers}
             influence={influence}
+            unlockedBoardStickers={unlockedBoardStickers}
             uiScale={uiScale}
             onBuyBoardSticker={onBuyBoardSticker}
           />

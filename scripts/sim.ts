@@ -33,6 +33,20 @@ const SCENARIOS: Scenario[] = [
   // the "is this mission winnable, and how hard?" answer; a low one on the buildingless Founding deck is
   // the intended difficulty, not a policy failure.
   { label: 'founding/tribe/first-settlement', deckCardIds: DEFAULT_DECKS[0].cards, board: 'tribe', missionId: 'first_settlement' },
+  // "Growing Numbers": stand up a Hut, a Farm, and a Toolmaker at once. The deck below is the *basic*
+  // one — exactly what a starting player owns for free the moment they clear First Settlement: the
+  // Founding deck plus the one free copy each of Farm/Toolmaker/Hut/Conquest that mission's reward
+  // grants (`influence: 0` — no shop purchases assumed). The Tribe board starts at territory 0 — three
+  // buildings need three territory slots, so Conquest (+1 territory, replayable off one copy) has to
+  // land three times before all three can be placed, on top of the production to raise them. The win
+  // rate under greedy/heuristic reads how hard that multi-step build is for a one-ply policy with only
+  // the free starting cards.
+  {
+    label: 'founding/tribe/growing-numbers',
+    deckCardIds: [...DEFAULT_DECKS[0].cards, 'hut', 'farm', 'toolmaker', 'conquest'],
+    board: 'tribe',
+    missionId: 'growing_numbers',
+  },
 ];
 
 const seeds = Number(process.argv[2] ?? 200);
