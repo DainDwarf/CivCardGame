@@ -44,42 +44,6 @@ export interface StickerDef {
   applyCost?: (cost: Partial<Resources>) => Partial<Resources>;
 }
 
-export const STICKERS: Record<string, StickerDef> = {
-  reinforced: {
-    id: 'reinforced',
-    name: 'Reinforced',
-    description: "+1 to this copy's output",
-    icon: '💪',
-    cost: 10,
-    // +1 to every resource key the card actually produces (a multi-output building bumps each).
-    applyGain: (base) => {
-      if (!base) return base;
-      const out: Partial<Resources> = {};
-      for (const [k, v] of Object.entries(base) as [keyof Resources, number][]) out[k] = v + 1;
-      return out;
-    },
-  },
-  efficient: {
-    id: 'efficient',
-    name: 'Efficient',
-    description: 'Costs 1 less to play',
-    icon: '⚡',
-    cost: 3,
-    // -1 off every resource key the card charges, floored at 0 (never pays you to play a card).
-    applyCost: (cost) => {
-      const out: Partial<Resources> = {};
-      for (const [k, v] of Object.entries(cost) as [keyof Resources, number][]) out[k] = Math.max(0, v - 1);
-      return out;
-    },
-  },
-  irrigation: {
-    id: 'irrigation',
-    name: 'Irrigation',
-    description: '+1 🌾',
-    icon: '💧',
-    cost: 3,
-    // Attaches only to a building that already produces food; bumps *only* that food output.
-    appliesTo: (c) => c.kind === 'building' && (c.produces?.food ?? 0) > 0,
-    applyGain: (base) => (base ? { ...base, food: (base.food ?? 0) + 1 } : base),
-  },
-};
+// Reset to empty for the Phase 4 content pass (docs/TODO.md Step 2.3) — the catalogue and its
+// type are kept so the app keeps typechecking; Step 6+ authors the real Phase 4 stickers here.
+export const STICKERS: Record<string, StickerDef> = {};

@@ -38,29 +38,6 @@ export interface BoardStickerDef {
   applyToBoard: (board: BoardDef) => BoardDef;
 }
 
-export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
-  fertileLand: {
-    id: 'fertileLand',
-    name: 'Fertile Land',
-    description: '+2 starting Food',
-    icon: '🌾',
-    cost: 3,
-    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, food: b.resources.food + 2 } }),
-  },
-  garrison: {
-    id: 'garrison',
-    name: 'Garrison',
-    description: '+1 starting Military',
-    icon: '⚔️',
-    cost: 3,
-    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, military: b.resources.military + 1 } }),
-  },
-  frontier: {
-    id: 'frontier',
-    name: 'Frontier',
-    description: '+1 starting Territory',
-    icon: '🗺️',
-    cost: 10,
-    applyToBoard: (b) => ({ ...b, territory: b.territory + 1 }),
-  },
-};
+// Reset to empty for the Phase 4 content pass (docs/TODO.md Step 2.3) — the catalogue and its
+// type are kept so the app keeps typechecking; Step 6+ authors the real Phase 4 board stickers here.
+export const BOARD_STICKERS: Record<string, BoardStickerDef> = {};

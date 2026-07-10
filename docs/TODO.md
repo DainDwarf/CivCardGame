@@ -121,7 +121,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     ids; missions/decks/collection reference card ids; cards are referenced by all; boards thread
     through `setup`/`buildRunConfig`/`blankState` deepest → last.*
 
-  - **2.3 — Reset sticker catalogues** (`content/stickers.ts`, `content/boardStickers.ts` → empty) —
+  - **2.3 — Reset sticker catalogues** ✅ DONE (`content/stickers.ts`, `content/boardStickers.ts` → empty) —
     `boardStickers.test.ts` was fully migrated to synthetic fixtures in 2.2 (it's 100% mechanism —
     it has no coherence parts to skeleton), so 2.3 only empties the two content catalogues and
     decouples/skeletons `upgrades.test.ts`'s upgrade-hint oracle (deferred from 2.2 because it

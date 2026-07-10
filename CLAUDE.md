@@ -51,7 +51,8 @@ shop, mission selection — the *only* place decks are edited). See
     A sticker owns its own logic on its `StickerDef` (`appliesTo`/`applyGain`/`applyCost`
     hooks); `effectiveGain`/`effectiveCost`/`effectiveCard` are the only places a sticker
     touches run *or* display values, so resolution and every render site (run + meta)
-    agree. Current stickers: Reinforced, Efficient, Irrigation.
+    agree. Catalogue reset to empty for the Phase 4 content pass (`STICKERS = {}`); Step 6+ authors
+    the real stickers.
   - **Board stickers** — the *board* counterpart to card stickers: permanent modifiers bought
     with Influence that tweak a board's *starting* profile (`content/boardStickers.ts`,
     `rules/boardStickers.ts`), attached per board on `PlayerStore.boardStickers` (a board is
@@ -70,7 +71,8 @@ shop, mission selection — the *only* place decks are edited). See
     hand-rolled pointer-drag like `DeckEditor.tsx` (no DnD library). During a drag only the *valid*
     target boards for that sticker highlight (`applies · under the cap · affordable`, the single
     `isValidTarget` predicate gating both the highlight and the drop); an invalid/missed drop no-ops.
-    Current board stickers: Fertile Land, Garrison, Frontier.
+    Catalogue reset to empty for the Phase 4 content pass (`BOARD_STICKERS = {}`); Step 6+ authors
+    the real board stickers.
 
 ## Commands
 
