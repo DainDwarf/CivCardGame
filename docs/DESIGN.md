@@ -51,7 +51,7 @@ through a narrow, serializable contract — `src/contract.ts`:
 ```
 RunConfig   (meta → run)
   deck: DeckCard[]      // the run deck ({ cardId, stickers? }): player's meta deck +
-                        //   mission-injected cards (e.g. disasters); locked for the whole run
+                        //   mission-injected event cards; locked for the whole run
   board: BoardId        // government board — sets the run's starting resources
   missionId: string     // looked up in the MISSIONS registry — the run resolves it
   seed: string          // deterministic draws → replays & simulation
@@ -69,12 +69,12 @@ meta choices.** Building it is the contract's real job: take the player's persis
 choices (their saved deck, their chosen board) and compose the mission's modifiers on top
 of them to produce the state a run actually begins from. Two examples already in scope:
 
-- **Disasters** — a mission may inject negative cards into the run `deck` at assembly
-  time. The player's saved meta deck is the *input*; the run deck is a derived copy — the
-  saved deck is never mutated.
-- **Government boards** — the `board` sets the run's baseline starting resources, which
-  the mission's `setup` then modifies (board = baseline, `setup` = deltas; see
-  *Government boards*).
+- **Mission-injected cards** — a mission may seed cards (events into the deck, threats
+  onto the board) at assembly time. The player's saved meta deck is the *input*; the run
+  deck is a derived copy — the saved deck is never mutated.
+- **Government boards** — the `board` sets the run's baseline starting resources; the
+  mission then seeds its threat/event cards on top (board = baseline, mission = additions;
+  see *Government boards*).
 
 So the meta owns durable choices, the mission owns per-run modifiers, and the contract is
 where the two are merged into one immutable run configuration. 🔧
@@ -97,9 +97,8 @@ that files the card:
   turn** while staffed for the rest of the run, thinning your deck. While pinned in
   the tableau its card is filed nowhere — not discard, not removed. Where the card
   goes *once it leaves* the tableau isn't a property of being a building; it's
-  decided by whatever effect took it out. Today the only such card is Destroy,
-  whose effect specifies **removed**; a future card could instead reclaim territory
-  by discarding a building, sending it to **discard** like anything else.
+  decided by whatever effect took it out — a demolish effect could file it to
+  **removed**, a reclaim-territory effect to **discard**, like anything else.
   **Wonders are the same kind** — building cards tagged `wonder` (a distinct banner
   and flavour, not a distinct kind). → the *engine*.
 - **Action (recycle):** resolve an effect, then go to the **discard**. →
@@ -111,10 +110,8 @@ that files the card:
 - **Event (disaster):** never player-playable — missions inject it into the deck.
   Left in hand at end of turn, it auto-resolves its effect, then files to
   **discard** by the same default as anything else — unless that effect says
-  otherwise. Barbarian, the only event so far, specifies it's exiled to
-  **removed** instead — gone for the rest of the run — but that's Barbarian's
-  own effect talking, not an inherent property of being an Event. → mission
-  *pressure*.
+  otherwise (an effect can exile it to **removed** instead, gone for the rest of
+  the run). → mission *pressure*.
 - **Threat (board hazard):** never in a hand, pile, or deck — a mission seeds it
   directly into the persistent `GameState.threats` zone at setup, where it stays for
   the rest of the run. What it does is up to the card. Never player-owned or
@@ -170,11 +167,12 @@ like every other card that owns its logic:
 
 ```
 MissionDef
-  id, name, description
-  setup:           modifiers to the starting state (resources, deck constraints, era)
-  objectiveCardId: the mission's win/lose card, seeded into GameState.objective at setup
-  rewards:         granted on victory (currency, card unlocks)
-  tier/difficulty
+  id, name, lore
+  prereqs:          mission ids gating availability (the DAG edges)
+  threats?/events?: cards seeded onto the board / shuffled into the deck at setup
+  objectiveCardId:  the mission's win card, seeded into GameState.objective at setup
+  reward?:          granted once on first clear (Influence + one card unlock)
+  kind:             'standard' | 'infinite'
 
 CardDef (kind: 'objective')
   objective: (G, self) => boolean            // WIN condition (defeat is a threat's job)
@@ -192,12 +190,12 @@ mission-specific *defeat* belongs on a threat's `defeat` hook, and core-resource
 
 ### Illustrative missions 🔧 (show the variety the system buys us)
 
-- **The Enlightenment** (race the clock): *Objective* reach 30 Science by round 12.
-  *Failure* round 12 ends without it.
-- **The Long Winter** (resource collapse): *Objective* survive 15 rounds.
-  *Failure* the universal core-resource floor — extra Food drain each round risks **Famine**.
-- **Barbarian Tide** (escalating threat): *Objective* build 3 Wonders.
-  *Failure* the universal core-resource floor — a rising Threat drains Military each round, and hitting negative triggers **Revolt**.
+- **Race the clock:** *Objective* reach a resource threshold by a deadline round.
+  *Failure* the deadline passes without it.
+- **Resource collapse:** *Objective* survive N rounds.
+  *Failure* the universal core-resource floor — an extra drain each round risks **Famine**.
+- **Escalating threat:** *Objective* hit a build count (e.g. Wonders).
+  *Failure* the universal core-resource floor — a rising threat drains a resource each round, and hitting negative triggers its collapse (e.g. **Revolt**).
 
 Same deck, three completely different tests — and the player tailors their deck in
 the meta loop to the mission they pick.
@@ -208,9 +206,10 @@ the meta loop to the mission they pick.
 - **Deck construction** ✅ — build/edit run decks from the collection (`src/meta/DeckEditor.tsx`).
   Every deck is player-editable — there's no separate "premade" tier; a fresh
   profile just starts with a few seeded decks (`content/decks.ts`'s `DEFAULT_DECKS`)
-  the player can edit or delete like any other. No construction *constraints* yet
-  (deck size, copy/rarity limits, maybe a civilization identity) — deferred to
-  **Phase 4**. *The core puzzle*, still open on the constraints side.
+  the player can edit or delete like any other. A **minimum deck size** and the per-card
+  **copy cap = copies owned** now bite; **rarity limits** and a possible **civilization
+  identity** remain open (see *Deferred decisions*). *The core puzzle*, still open on the
+  deeper-constraints side.
 - **Government boards** — the civilization's starting configuration, chosen alongside
   the deck: it sets the run's opening resources and reskins the run loop, and is
   unlocked/upgraded through mission rewards. See *Government boards* below.
@@ -238,7 +237,7 @@ per attempt — that's the only performance-scaled source. Influence is spent on
 first copy; the **shop** raises that along a bounded ×1 / ×2 / ×4 / ×8 ladder (no infinite
 tier — every owned count is a finite, instantiable number). The deck editor caps each card
 at the number you own — the first deck-construction constraint to bite
-(general size/rarity constraints stay Phase 4).
+(a minimum deck size now joins it; rarity limits stay open).
 
 **Two non-overlapping channels.** *Missions = breadth* (a new card type, board, or wonder).
 *Shop = depth* (more copies of owned cards; permanent **stickers**). There are **no rating
@@ -248,8 +247,7 @@ of buying copies outright in the shop.
 **Stickers** are permanent modifiers bought with Influence: a **card sticker** buffs a
 *single owned copy* of a card forever; a **board sticker** modifies a board's starting
 profile (board stickers *are* the "board modifiers" — one concept, not two). Card stickers
-needed per-copy identity — decks reference owned copies by instance id, not bare `CardId[]`
-(Phase 3 Step 7.2) — which is why they shipped last, as the deepest piece.
+need per-copy identity — decks reference owned copies by instance id, not bare `CardId[]`.
 
 From **Phase 4** a sticker must first be **unlocked** via a mission reward (the breadth
 channel — `rules/rewards.ts` extends beyond card unlocks to card/board stickers) before the
@@ -334,10 +332,6 @@ on victory the meta loop looks up the mission's rewards (by the `RunResult`'s
 - **Board modifiers are permanent shop-bought stickers** (see *Economy & progression*) —
   attached to a board, not consumed per run. Whether several **stack** on one board is a
   balance detail, deferred.
-- **Phasing:** board *selection* + baseline starting resources + the visual reskin can
-  ship in **Phase 2** (a small fixed set of boards, as part of the contract). The
-  reward-driven unlocking of new boards / upgrades / modifiers needs the reward economy,
-  so it lands with **Phase 3**.
 
 ## Code architecture 🔧
 
@@ -346,8 +340,8 @@ framework-free; each loop is its own shell over them.
 
 ```
 src/
-  rules/        # pure logic, shared (production, scoring, objective/failure evaluators)
-  content/      # data, shared (cards/, missions/, shop)
+  rules/        # pure logic + core state, shared (effects, events, objective/threat evaluators)
+  content/      # data + per-entry logic, shared (cards, missions, boards, stickers, ages)
   run/          # turn engine + React context — the gauntlet
   meta/         # React + store + persistence — the workshop
   contract.ts   # RunConfig / RunResult
@@ -357,29 +351,22 @@ src/
 
 ## Build roadmap 🔧
 
-- **Phase 0 — Skeleton** ✅ done: a runnable turn-based run with a tiny card set.
-- **Phase 1 — Real run loop** ✅ done, tagged [`v0.0.1`](../CHANGELOG.md): `src/game/` → `src/run/`; hybrid cards
-  (building vs. action), the 5-resource core (Food / Production / Money / Science /
-  Military), the turn phases, and **mission-driven objective + failure** evaluators;
-  3 missions (The Enlightenment, The Long Winter, Barbarian Tide). Rules unit-tested +
-  a headless run integration test (`src/run/run.test.ts`). A run is now genuinely
-  winnable *and* losable.
-- **Phase 2 — Contract + meta shell** ✅ done, tagged [`v0.0.2`](../CHANGELOG.md):
-  `contract.ts` formalizes `RunConfig` (deck, mission, and **government board**, which
-  sets the run's starting resources — see *Government boards*) and `RunResult`. A full
-  meta layer (mission/board/deck select, a read-only collection, deck construction, a
-  run-history stats screen) emits a `RunConfig`, launches a run, and consumes the
-  `RunResult`; a **game menu** (save export/import, device-local config, a Codex rules
-  reference) is the shell's global-action surface. Everything persists to `localStorage`.
-  Deck construction *constraints* (size, copy/rarity limits) stay deferred to Phase 4.
-- **Phase 3 — Economy & progression** ✅ done, tagged [`v0.0.3`](../CHANGELOG.md): the
-  **Influence** currency, the shop (copy tiers + card *and* board stickers), the campaign-map DAG
-  (binary missions, prereq gating), reward/unlock wiring, and infinite missions — plus the
-  card-effect **resolver spine** and **event bus** underneath. See *Economy & progression*. The
-  per-card deck-copy cap arrives here; broader deck constraints stay Phase 4.
-- **Phase 4 — Content & balance** (next): reset all content and rebuild it as the **first
-  three ages — Neolithic, Bronze Age, Iron Age**. **Neolithic is the tutorial age** and
-  introduces every core mechanic (buildings, territory, conquest, culture); Bronze Age +
+- **Phase 0 — Skeleton** ✅: a runnable turn-based run with a tiny card set.
+- **Phase 1 — Real run loop** ✅ [`v0.0.1`](../CHANGELOG.md): hybrid cards (building vs.
+  action), the 5-resource core (Food / Production / Money / Science / Military), the turn
+  phases, and **mission-driven objective + failure** evaluators — a run genuinely winnable
+  *and* losable.
+- **Phase 2 — Contract + meta shell** ✅ [`v0.0.2`](../CHANGELOG.md): `contract.ts`
+  (`RunConfig`/`RunResult`, incl. the **government board**) plus a full meta layer
+  (mission/board/deck select, collection, deck construction, stats) and a **game menu**
+  (save/config/Codex); everything persists to `localStorage`.
+- **Phase 3 — Economy & progression** ✅ [`v0.0.3`](../CHANGELOG.md): the **Influence**
+  currency, the shop (copy tiers + card *and* board stickers), the campaign-map DAG (binary
+  + infinite missions, prereq gating), reward/unlock wiring — plus the card-effect
+  **resolver spine** and **event bus** underneath. See *Economy & progression*.
+- **Phase 4 — Content & balance** (in progress): reset all content and rebuild it as the
+  **first three ages — Neolithic, Bronze Age, Iron Age**. **Neolithic is the tutorial age**
+  and introduces every core mechanic (buildings, territory, conquest, culture); Bronze Age +
   Iron Age add content, not mechanics (their flavor is undecided beyond the historical
   period). Also lands the deferred **deck-construction constraints** (min deck size, hand
   limit) and the **headless simulator** (`src/sim/`) used to tune. Boards + card/board
@@ -395,9 +382,9 @@ branching tech tree of human history) — see *Theme & framing* and *Campaign ma
 Still open, deferred until the phase that needs them:
 
 - **Resource set** ✅ — resolved in Phase 1: Food / Production / Money / Science / Military. See *Resources* section above.
-- **Deck construction constraints** — shipped in **Phase 4 (Step 1)** ✅: a **minimum deck size**
-  (`MIN_DECK_SIZE`, provisional 20) and a **default hand limit** lowered 5→4, both enforced at the
-  deck writer (`rules/deckBuilder.ts` + `App.saveDeck`, the `MAX_DECKS` precedent — a core rule, not
-  a UI gate). The **per-card copy cap = copies owned** already shipped in **Phase 3** (see
+- **Deck construction constraints** — shipped ✅: a **minimum deck size** (`MIN_DECK_SIZE`,
+  provisional 20) and a **default hand limit** lowered 5→4, both enforced at the deck writer
+  (`rules/deckBuilder.ts` + `App.saveDeck`, the `MAX_DECKS` precedent — a core rule, not a UI
+  gate). The **per-card copy cap = copies owned** shipped alongside the shop (see
   *Economy & progression*). Still open ❓: **rarity limits** and a **"civilization" identity** that
-  gates combos — deferred past the initial Phase 4 content.
+  gates combos — deferred past the initial content pass.

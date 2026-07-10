@@ -16,17 +16,19 @@ pre-built deck against a mission) and a **meta loop** (persistent deck construct
 shop, mission selection — the *only* place decks are edited). See
 [`docs/DESIGN.md`](docs/DESIGN.md) for the full game design and roadmap.
 
-**Progress.** Phases 1–3 are done; Phase 4 (content & balance) is next.
+**Progress.** The run loop, the meta shell, and the economy/progression systems are all
+built; the game is now in its content-and-balance pass — see
+[`docs/DESIGN.md`](docs/DESIGN.md) for the roadmap. The systems that exist:
 
-- **Phase 1 — run loop** (`src/run/`): hybrid cards (building vs. action), the turn
+- **Run loop** (`src/run/`): hybrid cards (building vs. action), the turn
   lifecycle, a **population/worker-staffing** layer (buildings must be staffed to
   operate; the population eats food each round), and mission-driven win/lose conditions.
-- **Phase 2 — contract + meta shell**: `src/contract.ts` (`RunConfig`/`RunResult`) is
+- **Contract + meta shell**: `src/contract.ts` (`RunConfig`/`RunResult`) is
   the spine between the loops; `src/app/App.tsx` switches between the meta menu
   (`src/meta/MetaMenu.tsx`, a left-nav shell over the Mission/Collection/Board/Decks/Stats
   screens) and a run. Deck construction (`src/meta/DeckEditor.tsx`) and `localStorage`
-  persistence (`src/meta/store.ts`'s `PlayerStore`) are built.
-- **Phase 3 — economy & progression** (done). The systems that now exist:
+  persistence (`src/meta/store.ts`'s `PlayerStore`).
+- **Economy & progression**:
   - **Ownership + Influence currency** — `rules/collection.ts`'s `OwnedCards` tracks
     ownership as identified per-copy meta instances; `PlayerStore` carries
     `collection`/`influence`/`mapProgress`, seeded from `content/collection.ts`'s
@@ -35,8 +37,8 @@ shop, mission selection — the *only* place decks are edited). See
     the copies owned.
   - **Copy-tier shop** — `rules/shop.ts` (`TIER_LADDER` ×1→×2→×4→×8; `buyTier`): spend
     Influence to buy extra copies of owned cards. Bought in place from the Collection
-    screen's per-card detail panel (`meta/CardInstancePanel.tsx`), fused there in Step 9.1
-    (there's no separate Shop tab).
+    screen's per-card detail panel (`meta/CardInstancePanel.tsx`) — there's no separate
+    Shop tab.
   - **Campaign-map DAG** — `content/missions.ts` missions form a prereq-gated DAG
     (`rules/campaign.ts`), rendered as a horizontally-scrollable branching tech tree
     (`meta/CampaignMap.tsx`); each `'standard'` mission grants a fixed Influence reward
@@ -51,8 +53,8 @@ shop, mission selection — the *only* place decks are edited). See
     A sticker owns its own logic on its `StickerDef` (`appliesTo`/`applyGain`/`applyCost`
     hooks); `effectiveGain`/`effectiveCost`/`effectiveCard` are the only places a sticker
     touches run *or* display values, so resolution and every render site (run + meta)
-    agree. Catalogue reset to empty for the Phase 4 content pass (`STICKERS = {}`); Step 6+ authors
-    the real stickers.
+    agree. The catalogue is currently empty (`STICKERS = {}`) — real stickers are authored
+    in the content pass.
   - **Board stickers** — the *board* counterpart to card stickers: permanent modifiers bought
     with Influence that tweak a board's *starting* profile (`content/boardStickers.ts`,
     `rules/boardStickers.ts`), attached per board on `PlayerStore.boardStickers` (a board is
@@ -62,8 +64,8 @@ shop, mission selection — the *only* place decks are edited). See
     them — `run/setup.ts` seeds off it and the board pickers display it. The applied stickers are
     **snapshotted into `RunConfig.boardStickers` at launch** (never re-looked-up in the core
     `setup.ts`), so buying one mid-campaign can't retroactively change an in-progress/restarted
-    run. Provisional cap of 2 per board (balance is Phase 4). Board stickers have their own **Board**
-    nav tab (`meta/BoardMenu.tsx`): each board renders as a `BoardMini` (Step 9.3.2's mini-board) in a
+    run. Provisional cap of 2 per board (balance is ongoing). Board stickers have their own **Board**
+    nav tab (`meta/BoardMenu.tsx`): each board renders as a `BoardMini` in a
     grid beside a right-side **tray** (pinned via `position: sticky`, not `fixed` — UI-scaling
     invariant) of sticker boxes, each a draggable sticker badge (styled like the on-board one via the
     shared `StickerRow` tokens, just larger) + name over its effect + price. Dragging a badge onto a
@@ -71,8 +73,7 @@ shop, mission selection — the *only* place decks are edited). See
     hand-rolled pointer-drag like `DeckEditor.tsx` (no DnD library). During a drag only the *valid*
     target boards for that sticker highlight (`applies · under the cap · affordable`, the single
     `isValidTarget` predicate gating both the highlight and the drop); an invalid/missed drop no-ops.
-    Catalogue reset to empty for the Phase 4 content pass (`BOARD_STICKERS = {}`); Step 6+ authors
-    the real board stickers.
+    The catalogue is currently empty (`BOARD_STICKERS = {}`).
 
 ## Commands
 
@@ -124,7 +125,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `peekTop` (lift up to N off the top, reshuffling the discard in as the deck empties, emitting no
     `draw`), `drawInstance` (draw one *specific* card — the verb `drawCard`'s top-of-deck-only can't
     express — emitting the `draw` event), and `returnToDeck` (shuffle cards back). Each takes the
-    `EffectContext` so the family reads uniformly; only Foresight uses them today.
+    `EffectContext` so the family reads uniformly. The peek family is currently unused; the one
+    card-facing deck primitive in use today is `recoverFromDiscard` (the discard→hand counterpart,
+    used by Storytelling).
   - `effects.ts` — the **resolver spine**: `resolveCard(ctx)` is the single path a card's
     effect runs through (its own `CardDef.resolve`, else the declarative default from the
     `CardEffect` bag). The `EffectContext` (`{ G, self, target?, answer? }`) tells an effect
@@ -238,27 +241,27 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     its mission's win logic via a single pure-read `objective` predicate, the way a
     `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
     for "a card the player builds decks with" (excludes event/threat/objective), used by the
-    deck-add reject and the Collection/DeckEditor pickers. Step 3 authored the **Paleolithic starting
-    set** — buildingless hunter-gatherer actions + work cards (no buildings yet; those arrive with the
-    Neolithic arc, unlocked via missions) — plus the sandbox mission's own `objective`/`threat` cards.
+    deck-add reject and the Collection/DeckEditor pickers. The catalogue currently holds the
+    **Paleolithic starting set** — buildingless hunter-gatherer actions + work cards (no buildings
+    yet; those arrive with the Neolithic arc, unlocked via missions) — plus the sandbox mission's
+    own `objective`/`threat` cards.
   - `decks.ts` — `DeckDef` (a player deck; `cards` is meta instance ids) plus `DeckSeed`/
     `DEFAULT_DECKS` (content authored in plain cardIds, resolved by `buildSeedDecks`). A
     fresh player is meant to start with one editable deck; there's no read-only "built-in" tier.
-    Step 3 authored the real **Founding deck** (one 20-card buildingless seed) alongside the base
-    card set.
+    The one seed deck is the buildingless **Founding deck**.
   - `collection.ts` — `STARTING_COLLECTION` (a plain `Record<cardId, count>`, turned into a
-    real instance-bearing `OwnedCards` by `collectionFromCounts` at seed time). Step 3 authored the
-    real starting collection; counts are **copy-tier-attainable** (the shop's ×1→×2→×4→×8 ladder — so
-    1/2/4/8, never 3), and a `rules/collection.test.ts` coherence check pins that it covers the
+    real instance-bearing `OwnedCards` by `collectionFromCounts` at seed time). Counts are
+    **copy-tier-attainable** (the shop's ×1→×2→×4→×8 ladder — so 1/2/4/8, never 3), and a
+    `rules/collection.test.ts` coherence check pins that the starting collection covers the
     Founding deck.
   - `stickers.ts` — `STICKERS`; each `StickerDef` carries its own
     `appliesTo`/`applyGain`/`applyCost` logic and an `icon`.
   - `boardStickers.ts` — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
     `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
   - `boards.ts` — `BOARDS` (government boards; each sets all 8 starting resources: the 5
-    core plus population/territory/culture; `BoardId` is a plain `string`). Step 3 authored the first
-    board — **Tribe** (the Paleolithic start: food 5, population 2, everything else 0, no territory
-    yet); more boards land via mission rewards in later steps.
+    core plus population/territory/culture; `BoardId` is a plain `string`). The one authored
+    board is **Tribe** (the Paleolithic start: a small food store and a couple of workers, no
+    territory yet); more boards land via mission rewards.
   - `missions.ts` — `MISSIONS`; each names an `objectiveCardId` (its win condition, made into
     an `objective` card that owns the win predicate — `run/setup.ts` seeds it into
     `GameState.objective`, the bus re-derives `G.pendingVictory` from it, and `run/engine.ts`'s
@@ -345,18 +348,18 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     via `buildRunConfig`. `'infinite'` missions render in a bottom banner, not as nodes.
   - `Collection.tsx` — catalogue of owned cards (omits not-yet-unlocked ones); a tile opens
     `CardInstancePanel.tsx`, a per-owned-instance drill-down that is *also* the card shop
-    (Step 9.1 fused the standalone Shop tab in here). Reworked in Step 9.2 to the Board tab's
+    (there's no separate Shop tab). Mirroring the Board tab's
     model: each owned copy renders as a real `CardFace` (`effectiveCard` numbers + sticker badge)
-    with a caption naming the deck(s) it sits in (the Step 7.3 anti-surprise info), in a grid
+    with a caption naming the deck(s) it sits in (the anti-surprise info), in a grid
     beside a right-side sticky **tray**. The tray's pinned top holds the Influence balance + the
     buy-next-copy-tier button; below it, one draggable sticker badge per sticker that applies to
     the card. Dragging a badge onto a copy buys+attaches it in one gesture (a hand-rolled
     pointer-drag like `BoardMenu.tsx`, no DnD library — only *valid* targets, `under the cap ·
     affordable`, highlight mid-drag via the single `isValidTarget` predicate; an invalid/missed
-    drop no-ops), replacing Step 7.5's separate attach sub-mode. Clicking a copy (not dragging
+    drop no-ops). Clicking a copy (not dragging
     onto it) zooms it. Calls back into `App.tsx` (`onBuyTier`/`onAttachSticker`).
   - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: a grid of every board as a `BoardMini`
-    (Step 9.3.2's mini-board) beside a right-side sticky tray of sticker boxes (each a draggable sticker
+    beside a right-side sticky tray of sticker boxes (each a draggable sticker
     badge over its name/effect/price); dragging a badge onto a board calls `onBuyBoardSticker` to
     buy+attach in one gesture (only *valid* targets highlight mid-drag). `RESOURCE_ICON`/`BOARD_IDS`
     live in the shared `meta/boardDisplay.ts`.
@@ -450,8 +453,8 @@ mission's rounds-survived reward can't make advancing always look best); `create
 (`sim/heuristicPolicy.ts`) is a cheaper hand-written priority ladder that never clones per-candidate.
 `runPolicies(scenarios, names, { seeds })` sweeps a scenario under several named policies (`POLICY_FACTORIES`)
 with *paired* seeds. The `npm run sim [seeds] [policies]` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`)
-prints the report across all policies by default. Still later work: a synthetic-fixture move-surface fuzz
-test (building/destroy/`discardCost`), deferred until Step 6 content exists.
+prints the report across all policies by default. A synthetic-fixture move-surface fuzz test
+(building/destroy/`discardCost`) is deferred until building content exists.
 
 ## Conventions
 
