@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { computeRewards } from './rewards';
-import { MISSIONS } from '../content/missions';
-import { CARDS } from '../content/cards';
 import { copiesOwned, emptyCollection, collectionFromCounts } from './collection';
 import type { MissionDef } from '../content/missions';
+
+// Fully synthetic: `computeRewards` grants through `grantCopies`/`isOwned` on the collection and
+// never validates against `CARDS`, so the card-id literals below are inert labels. The
+// mission↔card reward-coherence iterator moved to `content/missions.test.ts` (Step 2.4).
 
 function mission(reward: MissionDef['reward']): MissionDef {
   return {
@@ -61,13 +63,6 @@ describe('computeRewards', () => {
     const m = mission({ influence: 1, unlockCardId: 'granary' });
     const result = computeRewards(m, false, collectionFromCounts({ granary: 2 }));
     expect(copiesOwned(result.collection, 'granary')).toBe(2);
-  });
-
-  it('every standard mission reward names a real card id', () => {
-    for (const m of Object.values(MISSIONS)) {
-      if (m.kind !== 'standard') continue;
-      expect(CARDS[m.reward!.unlockCardId]).toBeDefined();
-    }
   });
 });
 

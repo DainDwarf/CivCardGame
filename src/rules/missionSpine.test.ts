@@ -4,6 +4,7 @@ import {
   defeatMet,
   dispatchEvent,
   evaluateDefeat,
+  evaluateObjective,
   flushEvents,
   objectiveMet,
   seedObjective,
@@ -87,6 +88,17 @@ describe('evaluateObjective — win flag is bus-driven (set-or-clear)', () => {
     G.resources.science = 10;
     flushEvents(G, snapshot(G));
     expect(G.pendingVictory).toBe(true); // threshold crossed → flag set at the flush
+  });
+
+  it('set-or-clear (never sticky): the flag reverts true→false when the verdict does', () => {
+    const G = blankState('test');
+    seedObjective(G, mission.objectiveCardId);
+    G.resources.science = 10;
+    evaluateObjective(G);
+    expect(G.pendingVictory).toBe(true);
+    G.resources.science = 5; // verdict reverts (e.g. a later cost spends the science back down)
+    evaluateObjective(G);
+    expect(G.pendingVictory).toBe(false); // reverted, not left stuck true
   });
 
   it('leaves pendingVictory false when no objective is seeded', () => {

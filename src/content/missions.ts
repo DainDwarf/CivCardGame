@@ -1,6 +1,5 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
-import { BARBARIANS } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -40,7 +39,7 @@ export interface MissionDef {
   /** One-liner describing the mission-specific defeat condition; null if famine is the only loss. */
   failureHint: string | null;
   /** `'standard'` missions are binary complete/not; `'infinite'` has no win state and
-   *  scores an attempt instead. All current missions are `'standard'`. */
+   *  scores an attempt instead. */
   kind: 'standard' | 'infinite';
   /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
    *  `computeRewards`) — replays pay nothing. `unlockCardId` must name a real
@@ -57,84 +56,10 @@ export interface MissionDef {
   map?: { col: number; row: number };
 }
 
-export const MISSIONS: Record<string, MissionDef> = {
-  enlightenment: {
-    id: 'enlightenment',
-    name: 'The Enlightenment',
-    lore:
-      'Salons and printing presses spread new ideas faster than any army could march. ' +
-      'Scholars who once worked in isolation now trade letters across borders, and a citizenry ' +
-      'that can read starts asking its rulers harder questions.',
-    // Test DAG: gated behind The Long Winter.
-    prereqs: ['long_winter'],
-    // The round-12 deadline is a real threat card (Stagnation) — it renders the visible countdown
-    // and owns the loss itself via its own `defeat` predicate, rather than the objective card
-    // carrying a `failed` predicate.
-    threats: ['enlightenment_deadline'],
-    objectiveCardId: 'enlightenment_goal',
-    victoryHint: 'Accumulate 30 Science before round 12 ends.',
-    failureHint: 'Failing to reach 30 Science by round 12.',
-    kind: 'standard',
-    reward: { influence: 2, unlockCardId: 'university' },
-    map: { col: 1, row: 0 },
-  },
-
-  long_winter: {
-    id: 'long_winter',
-    name: 'The Long Winter',
-    lore:
-      'The sky has not cleared in months. Rivers freeze over, game vanishes from the woods, ' +
-      'and every granary in the settlement is being watched a little too closely. Your people ' +
-      'do not need conquest or invention right now — they need to survive until spring.',
-    // DAG root: always available, unlocks enlightenment/barbarian_tide.
-    prereqs: [],
-    // The 2-extra-Food-per-round drain is a real threat card (Harsh Winter) — it ticks via the
-    // same `endTurn`-broadcast → `resolveCard` spine every other threat uses.
-    threats: ['harsh_winter'],
-    objectiveCardId: 'long_winter_goal',
-    victoryHint: 'Endure 15 rounds of brutal winter without starving.',
-    failureHint: null,
-    kind: 'standard',
-    reward: { influence: 1, unlockCardId: 'granary' },
-    map: { col: 0, row: 1 },
-  },
-
-  barbarian_tide: {
-    id: 'barbarian_tide',
-    name: 'Barbarian Tide',
-    lore:
-      'Riders have been seen on the horizon — first scouts, then whole warbands, drawn by ' +
-      'rumors of your granaries and gold. They do not come all at once; they come in waves, ' +
-      'testing your walls each time before falling back to gather strength for the next.',
-    prereqs: ['long_winter'],
-    events: Array(BARBARIANS).fill('barbarian'),
-    objectiveCardId: 'barbarian_tide_goal',
-    victoryHint: `Survive all ${BARBARIANS} Barbarian waves without your Military falling below zero.`,
-    failureHint: 'Your Military falling below zero — the barbarians overrun you.',
-    kind: 'standard',
-    reward: { influence: 2, unlockCardId: 'conquest' },
-    map: { col: 1, row: 2 },
-  },
-
-  the_long_decline: {
-    id: 'the_long_decline',
-    name: 'The Long Decline',
-    lore:
-      'Every empire believes itself eternal. Foundations that took generations to lay begin, ' +
-      'imperceptibly, to crumble — a beam here, a bridge there — and no council session ever ' +
-      'votes to let it happen. It simply does. There is no enemy at the gate; the rot is already ' +
-      'inside the walls, and it never stops getting worse.',
-    prereqs: [],
-    threats: ['creeping_decay'],
-    // Never wins on its own — an 'infinite' mission has no fixed win state (its objective card's
-    // `met` is always false). The only ending is the universal core-resource-floor collapse, forced
-    // eventually by the threat's own escalation.
-    objectiveCardId: 'the_long_decline_goal',
-    victoryHint: 'There is no victory — only rounds survived.',
-    failureHint: 'Your Production falling below zero as the decay outpaces your economy.',
-    kind: 'infinite',
-  },
-};
+// Reset to empty for the Phase 4 content pass (Step 2.4). Step 3+ authors the real missions
+// (a sandbox infinite mission first, then the Neolithic arc). The type + `seedMissionCards`
+// spine stay; the game is knowingly non-launchable until Step 3 refills this.
+export const MISSIONS: Record<string, MissionDef> = {};
 
 /**
  * Inject a mission's declarative `threats`/`events` lists into a fresh run's state — the single

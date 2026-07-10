@@ -127,12 +127,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     decouples/skeletons `upgrades.test.ts`'s upgrade-hint oracle (deferred from 2.2 because it
     brute-forces the whole live sticker/board-sticker catalogue — see 2.2's scope note). Leaf layer.
 
-  - **2.4 — Reset missions** (`content/missions.ts` → empty `MISSIONS`) — by 2.4 the mechanism blocks
-    in `content/missions.test.ts` are already relocated to synthetic (2.2), so gut what's left: drop the
-    per-mission shipped-number blocks, keep only the **coherence iterators** (every mission names a real
-    objective/threat/event card of the right kind) — they pass vacuously on empty `MISSIONS` and re-arm
-    in Step 3. Also strip mission-content from `rewards.test.ts`/`campaign.test.ts`, keeping the
-    reward/DAG *mechanism* on a synthetic `MissionDef`. Earmark for rewrite.
+  - **2.4 — Reset missions** ✅ DONE (`content/missions.ts` → empty `MISSIONS`) — gutted
+    `content/missions.test.ts` to the **coherence iterators** only (objective/threats/events + the
+    reward→card check moved in from `rewards.test.ts`); they pass vacuously on empty `MISSIONS` and
+    re-arm in Step 3. Stripped the `MISSIONS`/`CARDS` reward-coherence iterator out of
+    `rewards.test.ts` (its mechanism was already fully synthetic). `campaign.test.ts` needed **no**
+    edit — it was already 100% synthetic (type-only `MissionDef` import; DAG functions never touch
+    the catalogues). Also closed a 2.2 checklist gap: added the `evaluateObjective` true→false
+    set-or-clear case to `missionSpine.test.ts` (its backup died with the deleted content block).
+    **Earmarked for rewrite:** the gutted `content/missions.test.ts` coherence skeleton.
 
   - **2.5 — Reset the card layer together** (`content/cards.ts`, `decks.ts`, `collection.ts` → empty
     `CARDS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`) — decks + collection ride *with* cards (splitting
