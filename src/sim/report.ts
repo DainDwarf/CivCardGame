@@ -5,6 +5,8 @@ import type { ScenarioRuns } from './batch';
  *  pure over the `ScenarioRuns` (no I/O), so it's unit-testable off hand-built outcomes. */
 export interface ScenarioSummary {
   label: string;
+  /** Which policy played the runs (from `ScenarioRuns.policyName`) — the report groups/labels by it. */
+  policyName: string;
   runs: number;
   wins: number;
   /** Fraction in `[0, 1]`; `0` when `runs === 0`. */
@@ -19,7 +21,13 @@ export interface ScenarioSummary {
   defeatCauses: Record<string, number>;
   /** Total accepted `playCard` count per cardId, summed across runs. */
   cardPlays: Record<string, number>;
-  /** Distinct `scenario.deckCardIds` that were *never* played in any run — the "dead card?" cue. */
+  /** Distinct `scenario.deckCardIds` that were *never* played in any run — the "dead card?" cue.
+   *  CAVEAT: under the **random** policy this is authoritative (a card left unplayed across many random
+   *  walks is genuinely hard/impossible to play). Under **greedy/heuristic** it instead means "cards
+   *  `sim/value.ts`'s `scoreState` doesn't appreciate" — a card whose payoff the value function is blind
+   *  to (e.g. Storytelling's discard→hand recovery, since hand contents aren't scored; a sub-level
+   *  culture gain, since only integer `cultureLevel` is scored) shows as unplayed though it's perfectly
+   *  playable. Trust the random policy for playability; read a competent policy's list as a value-fn gap. */
   unplayedCards: string[];
   meanActions: number;
 }
@@ -78,6 +86,7 @@ export function summarize(runs: ScenarioRuns): ScenarioSummary {
 
   return {
     label: scenario.label,
+    policyName: runs.policyName,
     runs: n,
     wins,
     winRate: n === 0 ? 0 : wins / n,
@@ -116,7 +125,7 @@ export function formatReport(summaries: ScenarioSummary[]): string {
   const blocks = summaries.map((s) => {
     const r = s.meanResources;
     const lines = [
-      `## ${s.label}`,
+      `## ${s.label} · ${s.policyName}`,
       `  runs        : ${s.runs}`,
       `  win rate    : ${pct(s.winRate)}  (${s.wins}/${s.runs})`,
       `  turns       : min ${s.turns.min} · median ${round1(s.turns.median)} · mean ${round1(s.turns.mean)} · max ${s.turns.max}`,

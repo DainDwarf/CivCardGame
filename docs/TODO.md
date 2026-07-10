@@ -49,9 +49,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     resources · defeat-cause histogram off `gameover.reason` · summed `cardPlays` + unplayed-cards).
     `SimOutcome.cardPlays` (accepted plays per cardId) is the new "dead card?" signal. `npm run sim`
     CLI prints it (`scripts/sim.ts`).
-  - **Still open:** heuristic/greedy policies; `transferWorker` enumeration in the policy; a **full
-    move-surface fuzz test over synthetic fixtures** (building/destroy/`discardCost` — deferred until
-    real content exists in Step 6, or an explicit later fuzz pass). `[size: M]` `[phase: 4]`
+  - **Shipped (greedy + heuristic policies):** a shared `enumerateActions` (`sim/actions.ts`) all
+    policies build on — reusing `unplayableReason`, now also enumerating `transferWorker`. A greedy
+    two-phase one-ply optimizer (`sim/greedyPolicy.ts`) argmaxing a pure `scoreState` value function
+    (`sim/value.ts`, survival-first), and a cheap heuristic priority ladder (`sim/heuristicPolicy.ts`).
+    `runPolicies` (`sim/batch.ts`) + the `npm run sim [seeds] [policies]` CLI sweep a scenario under
+    several policies with *paired* seeds to bracket difficulty (on founding/tribe/sandbox: random ≈ 3
+    turns, greedy/heuristic ≈ 35 — the food economy is tight even under skilled play). Tested:
+    `value.test.ts` (ranking), `actions.test.ts` (enumeration soundness), `policies.test.ts` (competence
+    vs the random floor).
+  - **Still open:** a **full move-surface fuzz test over synthetic fixtures** (building/destroy/
+    `discardCost` — deferred until real content exists in Step 6, or an explicit later fuzz pass).
+    `[size: S]` `[phase: 4]`
+  - **jot: `scoreState` is blind to sub-level culture** — the value function (`sim/value.ts`) scores
+    integer `cultureLevel`, so culture accumulating *within* a band is worth 0. Greedy/heuristic thus
+    never invest in culture and would judge a **winnable culture mission unwinnable** (Step 6 culture
+    goals + the "Culture-based missions" idea below). Fix when culture missions land: score
+    `cultureProgress(G.culture).ratio` (already in `rules/culture.ts`) so partial progress registers.
+    `[phase: 4]`
 
 - **Step 5 — Ages map infrastructure** — promote ages from the undefined `era` placeholder to
   a real system: the `content/ages.ts` age→node/column model + the `CampaignMap.tsx` band
@@ -107,6 +122,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## UI (`src/components/`)
 
 - **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]) — Step 7 may unblock it. `[size: M] [?] [blocked]` `[phase: 4]`
+  - **jot (sim, same unblock):** the heuristic policy's staffing step uses `toggleStaffing`, which on a *partially* staffed multi-worker box (`0 < workers < req`) **empties** it — the opposite of intent. Harmless today (all `req = 1`); when multi-worker buildings land, switch that step to `assignWorker` (one pip at a time) in `sim/heuristicPolicy.ts`. `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 

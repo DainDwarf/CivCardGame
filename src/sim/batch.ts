@@ -1,6 +1,17 @@
 import type { BoardId } from '../content/boards';
 import { simConfig, simulateRun, type Policy, type SimOptions, type SimOutcome } from './simulate';
 import { createRandomPolicy } from './randomPolicy';
+import { createGreedyPolicy } from './greedyPolicy';
+import { createHeuristicPolicy } from './heuristicPolicy';
+
+/** The built-in move policies a sweep can run under, by name — the random fuzzer (floor), the greedy
+ *  optimizer, and the cheap heuristic baseline (ceiling). The CLI sweeps a scenario under several to
+ *  bracket its difficulty. */
+export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = {
+  random: createRandomPolicy,
+  greedy: createGreedyPolicy,
+  heuristic: createHeuristicPolicy,
+};
 
 /**
  * One cell of a batch sweep: a deck / board / mission (plus optional board stickers) to run many
@@ -23,8 +34,13 @@ export interface BatchOptions {
   /** Runs per scenario. Each is a fresh, independently-seeded run. */
   seeds: number;
   /** How to build the move policy for a run from its policy seed. Defaults to the random-legal-move
-   *  policy / fuzzer (`createRandomPolicy`); a heuristic policy (TODO.md Step 4) slots in here. */
+   *  policy / fuzzer (`createRandomPolicy`); the greedy / heuristic policies slot in here (or pick one
+   *  by name from `POLICY_FACTORIES`). */
   policyFactory?: (policySeed: string) => Policy;
+  /** Reporting label for the policy in use (e.g. `'greedy'`) — carried onto every `ScenarioRuns` so the
+   *  report can show which policy produced which stats. Defaults to `'random'`, matching the default
+   *  factory. */
+  policyName?: string;
   /** Pass-through to each `simulateRun` (invariant checks, action cap). */
   sim?: SimOptions;
 }
@@ -33,6 +49,8 @@ export interface BatchOptions {
  *  and `cardPlays` — the fields `RunResult` alone doesn't carry. */
 export interface ScenarioRuns {
   scenario: Scenario;
+  /** Which policy played these runs (for the report), from `BatchOptions.policyName`. */
+  policyName: string;
   outcomes: SimOutcome[];
 }
 
@@ -48,6 +66,7 @@ export interface ScenarioRuns {
  */
 export function runBatch(scenarios: Scenario[], opts: BatchOptions): ScenarioRuns[] {
   const policyFactory = opts.policyFactory ?? createRandomPolicy;
+  const policyName = opts.policyName ?? 'random';
   return scenarios.map((scenario) => {
     const outcomes: SimOutcome[] = [];
     for (let i = 0; i < opts.seeds; i++) {
@@ -60,6 +79,21 @@ export function runBatch(scenarios: Scenario[], opts: BatchOptions): ScenarioRun
       });
       outcomes.push(simulateRun(config, policyFactory(`${scenario.label}-pol-${i}`), opts.sim));
     }
-    return { scenario, outcomes };
+    return { scenario, policyName, outcomes };
+  });
+}
+
+/**
+ * Sweep every scenario under several named policies, holding the seed streams identical across policies
+ * so the comparison is *paired* (same deck shuffles → the only variable is how the policy plays). Flat
+ * result list, one `ScenarioRuns` per (scenario × policy), ready for `summarize`/`formatReport`. The
+ * whole point of the greedy/heuristic policies: bracket a scenario's difficulty between the random floor
+ * and a competent ceiling. Unknown policy names throw (fail fast on a CLI typo).
+ */
+export function runPolicies(scenarios: Scenario[], policyNames: string[], opts: BatchOptions): ScenarioRuns[] {
+  return policyNames.flatMap((name) => {
+    const factory = POLICY_FACTORIES[name];
+    if (!factory) throw new Error(`Unknown policy '${name}'. Known: ${Object.keys(POLICY_FACTORIES).join(', ')}.`);
+    return runBatch(scenarios, { ...opts, policyFactory: factory, policyName: name });
   });
 }

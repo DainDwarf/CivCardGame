@@ -39,8 +39,10 @@ export type SimAction =
 /**
  * A move-selection strategy: given the live run, pick the next action. A callable with an optional
  * `seed` tag so the driver can fold the policy's seed into an invariant-violation reproduction key
- * (`createRandomPolicy` sets it). The random-legal-move policy lives in `sim/randomPolicy.ts`;
- * heuristic policies come later (see `docs/TODO.md` Step 4).
+ * (`createRandomPolicy` sets it). Three ship today, all off the shared `sim/actions.ts` legality
+ * enumeration: the random-legal-move policy / fuzzer (`sim/randomPolicy.ts`), the greedy one-ply
+ * optimizer (`sim/greedyPolicy.ts`, scoring via `sim/value.ts`), and the cheap heuristic ladder
+ * (`sim/heuristicPolicy.ts`).
  */
 export interface Policy {
   (state: RunState): SimAction;

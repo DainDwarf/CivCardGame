@@ -415,9 +415,12 @@ over the pure core + turn engine, for statistical balance answers no human can p
 reach. It re-implements **no** game logic — `simulateRun(config, policy)` (`sim/simulate.ts`) just
 drives the real engine (`createRun` → dispatch actions via `applyAction` → `toRunResult`) under a
 `Policy` that returns one `SimAction` per step (a serializable mirror of the moves + `endTurn`).
-`createRandomPolicy(seed)` (`sim/randomPolicy.ts`) is the **random-legal-move policy** — it enumerates
-the legal actions (reusing the prod gate `rules/playability.ts`'s `unplayableReason`, never a re-derived
-copy) and picks one from its own seeded stream (distinct from the run's shuffle seed). It doubles as a
+All policies build on one shared legality enumeration — `enumerateActions(G)` (`sim/actions.ts`), reusing
+the prod gate `rules/playability.ts`'s `unplayableReason` (never a re-derived copy) and returning canonical
+(deterministic) extra args; when a `pendingInteraction` is parked it returns *only* the answer actions, so
+no policy can deadlock on a no-op `endTurn`. `createRandomPolicy(seed)` (`sim/randomPolicy.ts`) is the
+**random-legal-move policy** — it picks one enumerated action from its own seeded stream (distinct from the
+run's shuffle seed), re-randomizing a play's discard/destroy extras for fuzz coverage. It doubles as a
 **crash / illegal-state fuzzer**: `assertRunInvariants` (`sim/invariants.ts`) runs after every action
 (bus drained · unique instance ids · staffing/population bounds — deliberately **not** resource
 non-negativity, since a collapse ending legitimately leaves a negative pool), throwing with both seeds
@@ -432,9 +435,16 @@ per run (`…-cfg-i` shuffle, `…-pol-i` moves), so a whole batch is reproducib
 `SimOutcome`s; `summarize`/`formatReport` (`sim/report.ts`) fold those into a per-scenario
 `ScenarioSummary` (win rate · turns min/median/mean/max · mean end resources · **defeat-cause histogram
 off the authoritative `gameover.reason`**, never re-derived from resources · summed `cardPlays` +
-unplayed-cards list). The `npm run sim` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`) prints the
-report; seed count via `npm run sim -- N`. Still later work: heuristic policies, `transferWorker`
-enumeration in the policy, and a synthetic-fixture move-surface fuzz test.
+unplayed-cards list). **Competent policies** bracket the random floor: `createGreedyPolicy(seed)`
+(`sim/greedyPolicy.ts`) is a **two-phase one-ply optimizer** — it takes the best strictly-improving
+non-`endTurn` action (argmax of `sim/value.ts`'s pure, survival-first `scoreState` over the resulting
+state), ending the turn only when nothing improves (splitting off the `endTurn` decision so an infinite
+mission's rounds-survived reward can't make advancing always look best); `createHeuristicPolicy(seed?)`
+(`sim/heuristicPolicy.ts`) is a cheaper hand-written priority ladder that never clones per-candidate.
+`runPolicies(scenarios, names, { seeds })` sweeps a scenario under several named policies (`POLICY_FACTORIES`)
+with *paired* seeds. The `npm run sim [seeds] [policies]` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`)
+prints the report across all policies by default. Still later work: a synthetic-fixture move-surface fuzz
+test (building/destroy/`discardCost`), deferred until Step 6 content exists.
 
 ## Conventions
 

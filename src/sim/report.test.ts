@@ -34,6 +34,7 @@ describe('summarize', () => {
   it('computes win rate, turns stats, and mean actions', () => {
     const runs: ScenarioRuns = {
       scenario,
+      policyName: 'test',
       outcomes: [
         outcome({ outcome: 'victory', turnsTaken: 4, actionsApplied: 10 }),
         outcome({ outcome: 'defeat', turnsTaken: 2, reason: 'famine', actionsApplied: 6 }),
@@ -52,6 +53,7 @@ describe('summarize', () => {
   it('groups defeat causes off gameover.reason, keeping a deadline defeat separate from a famine', () => {
     const runs: ScenarioRuns = {
       scenario,
+      policyName: 'test',
       outcomes: [
         outcome({ outcome: 'defeat', turnsTaken: 3, reason: 'famine' }),
         outcome({ outcome: 'defeat', turnsTaken: 3, reason: 'famine' }),
@@ -68,6 +70,7 @@ describe('summarize', () => {
   it('sums card plays across runs and derives unplayed cards from the scenario deck', () => {
     const runs: ScenarioRuns = {
       scenario, // deck is ['a', 'b', 'c']
+      policyName: 'test',
       outcomes: [
         outcome({ outcome: 'defeat', turnsTaken: 2, cardPlays: { a: 2, b: 1 } }),
         outcome({ outcome: 'defeat', turnsTaken: 2, cardPlays: { a: 3 } }),
@@ -82,6 +85,7 @@ describe('summarize', () => {
   it('averages final and strategic resources', () => {
     const runs: ScenarioRuns = {
       scenario,
+      policyName: 'test',
       outcomes: [
         outcome({ outcome: 'defeat', turnsTaken: 1, finalResources: { food: 2, production: 4, science: 0, military: 0, money: 6 }, strategic: { population: 2, territory: 1, culture: 0 } }),
         outcome({ outcome: 'defeat', turnsTaken: 1, finalResources: { food: 4, production: 0, science: 0, military: 0, money: 0 }, strategic: { population: 4, territory: 3, culture: 2 } }),
