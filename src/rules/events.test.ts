@@ -3,19 +3,32 @@ import { dispatchEvent, emitEvent, flushEvents, snapshot, MAX_EVENT_CASCADE } fr
 import { applyUpkeep } from './upkeep';
 import { gainResources } from './effects';
 import { blankState, type GameState } from './state';
-import { CARDS, type CardDef } from '../content/cards';
+import type { CardDef } from '../content/cards';
+import { installFixtures, uninstallFixtures, installCards, uninstallCards } from './testFixtures';
 
-// Fixture cards exercising behaviours no shipped card has yet (self-removal, cascade, an unbounded
-// self-emit, declare-defeat). Registered in the real CARDS catalogue for the test — the dispatcher
-// looks cards up there — under `test_` ids that can't collide, and removed afterwards.
-const FIXTURES: Record<string, CardDef> = {
-  // A threat that retires itself the moment money reaches 30 — the ticket's on-threshold example.
-  // Reassigns G.threats via filter (never splice), the self-removal footgun the docs call out.
+// Event-bus behaviours no shared fixture covers (self-removal, cascade, an unbounded self-emit, an
+// on-draw/on-discard observer, an endTurn override) live here as *local* fixtures, layered on the
+// shared set via `installCards` — they're exercised only by this suite, so they don't belong in
+// `testFixtures.ts`. Registered under `test_*` ids that can't collide; removed afterwards.
+const LOCAL: Record<string, CardDef> = {
+  // A threat that retires itself the moment money reaches 30 — the on-threshold example. Reassigns
+  // G.threats via filter (never splice), the self-removal footgun the docs call out.
   test_selfremove: {
     id: 'test_selfremove', name: 'Debt', kind: 'threat', cost: {},
     on: {
       resourceChange: ({ G, self }) => {
         if (G.resources.money >= 30) G.threats = G.threats.filter((t) => t.id !== self.id);
+      },
+    },
+  },
+  // Observer of the on-draw event: while operating, gains money each time an effect draws a card —
+  // *not* the routine round-start refill (it filters on the draw's `source`). A building with no
+  // passive `produces`: its whole output is the reaction (like Scriptorium).
+  test_observer: {
+    id: 'test_observer', name: 'Observer', kind: 'building', cost: {}, workers: 1, tags: ['building'],
+    on: {
+      draw: (ctx) => {
+        if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
       },
     },
   },
@@ -27,7 +40,7 @@ const FIXTURES: Record<string, CardDef> = {
     },
   },
   // Reacts to the round-start refill specifically (source === 'turnStart') — the negative-space partner
-  // to Scriptorium, proving the draw source is dispatchable, not just filtered out.
+  // to the observer, proving the draw source is dispatchable, not just filtered out.
   test_turnstart_only: {
     id: 'test_turnstart_only', name: 'Census', kind: 'building', cost: {}, workers: 0,
     on: {
@@ -36,10 +49,11 @@ const FIXTURES: Record<string, CardDef> = {
       },
     },
   },
-  // The other half of the cascade: reacts to its own discard (subject-triggered) with +5🔨.
+  // Reacts to *its own* discard, but only a sacrifice (a discard-cost cost), not the routine
+  // end-of-turn recycle — the reason rides on the event (like Salvage). +2🔨.
   test_react_discard: {
     id: 'test_react_discard', name: 'Reactor', kind: 'action', cost: {},
-    on: { discard: (ctx) => gainResources(ctx, { production: 5 }) },
+    on: { discard: (ctx) => { if (ctx.event?.type === 'discard' && ctx.event.reason === 'sacrifice') gainResources(ctx, { production: 2 }); } },
   },
   // Every draw emits another draw — an unbounded self-emit, to prove the cascade cap terminates.
   test_infinite: {
@@ -49,17 +63,10 @@ const FIXTURES: Record<string, CardDef> = {
     },
   },
   // A threat that declares defeat once money hits 30 — the pure-predicate capability behind "a threat
-  // owns its own driven loss" (`CardDef.defeat`, re-derived by `evaluateDefeat`, never a handler
-  // mutating `G.pendingDefeat` directly).
+  // owns its own driven loss" (`CardDef.defeat`, re-derived by `evaluateDefeat`).
   test_declare_defeat: {
     id: 'test_declare_defeat', name: 'Doom', kind: 'threat', cost: {},
     defeat: (G) => G.resources.money >= 30 && 'the doom clock struck',
-  },
-  // A self-sufficient Work card producing on the endTurn broadcast — proves the workZone is in the
-  // observer walk (its output is the declarative `effect.gain`, like any staffed Work card).
-  test_endturn_work: {
-    id: 'test_endturn_work', name: 'Dig', kind: 'work', cost: {}, workers: 0,
-    effect: { gain: { production: 1 } },
   },
   // Carries BOTH a passive `produces` and an explicit `on.endTurn`: the handler must win, proving
   // `resolveEndTurn` prefers an authored handler over the default production.
@@ -71,23 +78,25 @@ const FIXTURES: Record<string, CardDef> = {
 };
 
 beforeAll(() => {
-  for (const [id, def] of Object.entries(FIXTURES)) CARDS[id] = def;
+  installFixtures();
+  installCards(LOCAL);
 });
 afterAll(() => {
-  for (const id of Object.keys(FIXTURES)) delete CARDS[id];
+  uninstallCards(LOCAL);
+  uninstallFixtures();
 });
 
-/** A blank state with an operating (staffed) Scriptorium on the tableau. */
-function withScriptorium(stickers?: string[]): GameState {
-  const G = blankState('enlightenment');
-  G.tableau = [{ id: 1, cardId: 'scriptorium', workers: 1, ...(stickers ? { stickers } : {}) }];
+/** A blank state with an operating (staffed) on-draw observer on the tableau. */
+function withObserver(stickers?: string[]): GameState {
+  const G = blankState('test');
+  G.tableau = [{ id: 1, cardId: 'test_observer', workers: 1, ...(stickers ? { stickers } : {}) }];
   return G;
 }
 
 describe('emitEvent', () => {
   it('appends to the queue and runs no handler', () => {
-    const G = withScriptorium();
-    emitEvent(G, { type: 'draw', instanceId: 7, cardId: 'farm', source: 'effect' });
+    const G = withObserver();
+    emitEvent(G, { type: 'draw', instanceId: 7, cardId: 'test_food', source: 'effect' });
     expect(G.events).toHaveLength(1);
     expect(G.resources.money).toBe(0); // nothing dispatched yet
   });
@@ -95,135 +104,135 @@ describe('emitEvent', () => {
 
 describe('dispatchEvent — observer scope + staffing gate', () => {
   it('runs an on-draw observer on every operating tableau building', () => {
-    const G = withScriptorium();
-    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'farm', source: 'effect' });
+    const G = withObserver();
+    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'test_food', source: 'effect' });
     expect(G.resources.money).toBe(1);
   });
 
   it('skips an idle (understaffed) building — the same gate production applies', () => {
-    const G = withScriptorium();
-    G.tableau[0].workers = 0; // Scriptorium needs 1
-    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'farm', source: 'effect' });
+    const G = withObserver();
+    G.tableau[0].workers = 0; // the observer needs 1
+    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'test_food', source: 'effect' });
     expect(G.resources.money).toBe(0);
   });
 
-  it('folds a handler gain through the copy stickers (Reinforced → +1 per key)', () => {
-    const G = withScriptorium(['reinforced']);
-    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'farm', source: 'effect' });
-    expect(G.resources.money).toBe(2); // {money:1} reinforced to {money:2}
+  it('folds a handler gain through the copy stickers (+1 per key)', () => {
+    const G = withObserver(['test_addgain']);
+    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'test_food', source: 'effect' });
+    expect(G.resources.money).toBe(2); // {money:1} boosted to {money:2}
   });
 
-  it('Scriptorium ignores a round-start (turnStart) draw — only effect-caused draws pay', () => {
-    const G = withScriptorium();
-    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'farm', source: 'turnStart' });
+  it('the observer ignores a round-start (turnStart) draw — only effect-caused draws pay', () => {
+    const G = withObserver();
+    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'test_food', source: 'turnStart' });
     expect(G.resources.money).toBe(0); // the refill does not pay
   });
 
   it('a handler can react to a turnStart draw specifically (source is dispatchable, not just filtered)', () => {
-    const G = blankState('enlightenment');
+    const G = blankState('test');
     G.tableau = [{ id: 2, cardId: 'test_turnstart_only', workers: 0 }];
-    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'farm', source: 'turnStart' });
+    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'test_food', source: 'turnStart' });
     expect(G.resources.food).toBe(1);
-    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'farm', source: 'effect' });
+    dispatchEvent(G, { type: 'draw', instanceId: 7, cardId: 'test_food', source: 'effect' });
     expect(G.resources.food).toBe(1); // an effect draw does not
   });
 });
 
 describe('dispatchEvent — subject scope (self-triggered) + reason', () => {
   it("runs the discarded card's own on.discard when sacrificed", () => {
-    const G = blankState('enlightenment');
-    dispatchEvent(G, { type: 'discard', instanceId: 5, cardId: 'salvage', reason: 'sacrifice' });
+    const G = blankState('test');
+    dispatchEvent(G, { type: 'discard', instanceId: 5, cardId: 'test_react_discard', reason: 'sacrifice' });
     expect(G.resources.production).toBe(2);
   });
 
   it('no-ops for an end-of-turn recycle of the same card (reason preserved)', () => {
-    const G = blankState('enlightenment');
-    dispatchEvent(G, { type: 'discard', instanceId: 5, cardId: 'salvage', reason: 'endOfTurn' });
+    const G = blankState('test');
+    dispatchEvent(G, { type: 'discard', instanceId: 5, cardId: 'test_react_discard', reason: 'endOfTurn' });
     expect(G.resources.production).toBe(0);
   });
 
   it('runs a subject that also sits on the board only once (dedup by id)', () => {
-    // Scriptorium reacts to draws; place it and also name it as the draw subject → still one payout.
-    const G = withScriptorium();
-    dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'scriptorium', source: 'effect' });
+    // The observer reacts to draws; place it and also name it as the draw subject → still one payout.
+    const G = withObserver();
+    dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'test_observer', source: 'effect' });
     expect(G.resources.money).toBe(1);
   });
 
   it('a building/work subject not in an operating zone slot does not self-trigger (staffing gate)', () => {
-    // A freshly-drawn Scriptorium sits in hand, not the tableau — it is not an operating copy and
-    // must not pay out on its own draw (the bug: it used to fire unconditionally as the subject).
-    const G = blankState('enlightenment');
-    dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'scriptorium', source: 'effect' });
+    // A freshly-drawn observer sits in hand, not the tableau — it is not an operating copy and must
+    // not pay out on its own draw (the bug: it used to fire unconditionally as the subject).
+    const G = blankState('test');
+    dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'test_observer', source: 'effect' });
     expect(G.resources.money).toBe(0);
   });
 
   it('a building/work subject in the tableau but understaffed does not self-trigger', () => {
-    const G = withScriptorium();
-    G.tableau[0].workers = 0; // Scriptorium needs 1
-    dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'scriptorium', source: 'effect' });
+    const G = withObserver();
+    G.tableau[0].workers = 0; // the observer needs 1
+    dispatchEvent(G, { type: 'draw', instanceId: 1, cardId: 'test_observer', source: 'effect' });
     expect(G.resources.money).toBe(0);
   });
 
   it('folds a purchased sticker through a self-triggered (subject) handler, not just the observer walk', () => {
-    // The card is filed to discard (as a real leaf site does) carrying its sticker before the
-    // event dispatches — the subject path must resolve to that live copy, not a bare {id, cardId}.
-    const G = blankState('enlightenment');
-    G.discard = [{ id: 5, cardId: 'salvage', stickers: ['reinforced'] }];
-    dispatchEvent(G, { type: 'discard', instanceId: 5, cardId: 'salvage', reason: 'sacrifice' });
-    expect(G.resources.production).toBe(3); // base +2, Reinforced +1
+    // The card is filed to discard (as a real leaf site does) carrying its sticker before the event
+    // dispatches — the subject path must resolve to that live copy, not a bare {id, cardId}.
+    const G = blankState('test');
+    G.discard = [{ id: 5, cardId: 'test_react_discard', stickers: ['test_addgain'] }];
+    dispatchEvent(G, { type: 'discard', instanceId: 5, cardId: 'test_react_discard', reason: 'sacrifice' });
+    expect(G.resources.production).toBe(3); // base +2, +1 per key
   });
 });
 
 describe('dispatchEvent — endTurn broadcast (production + threat drains)', () => {
   it('a staffed building produces on endTurn', () => {
-    const G = blankState('enlightenment');
-    G.tableau = [{ id: 1, cardId: 'farm', workers: 1 }];
+    const G = blankState('test');
+    G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }];
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.food).toBe(2);
   });
 
   it('an idle (unstaffed) building produces nothing on endTurn', () => {
-    const G = blankState('enlightenment');
-    G.tableau = [{ id: 1, cardId: 'farm', workers: 0 }]; // farm needs 1
+    const G = blankState('test');
+    G.tableau = [{ id: 1, cardId: 'test_food', workers: 0 }]; // needs 1
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.food).toBe(0);
   });
 
   it('a threat drains on endTurn through its own resolveCard spine', () => {
-    const G = blankState('long_winter');
+    const G = blankState('test');
     G.resources.food = 5;
-    G.threats = [{ id: 1, cardId: 'harsh_winter' }];
+    G.threats = [{ id: 1, cardId: 'test_threat' }];
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.food).toBe(3);
   });
 
   it('an operating Work card produces on endTurn (the workZone is in the observer walk)', () => {
-    const G = blankState('enlightenment');
-    G.workZone = [{ id: 1, cardId: 'test_endturn_work', workers: 0 }]; // self-sufficient → operating
+    const G = blankState('test');
+    G.workZone = [{ id: 1, cardId: 'test_work', workers: 1 }];
     dispatchEvent(G, { type: 'endTurn' });
-    expect(G.resources.production).toBe(1);
+    expect(G.resources.production).toBe(3);
   });
 
   it('an explicit on.endTurn handler overrides the default production', () => {
-    const G = blankState('enlightenment');
+    const G = blankState('test');
     G.tableau = [{ id: 1, cardId: 'test_endturn_override', workers: 0 }];
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.science).toBe(7); // the authored handler ran
     expect(G.resources.food).toBe(0); // ...instead of the passive `produces: { food: 9 }`
   });
 
-  it('Treasury pays out once off endTurn-driven production in a full upkeep', () => {
+  it('a threshold observer pays out once off endTurn-driven production in a full upkeep', () => {
     // The load-bearing case: production runs via the endTurn broadcast, then flushEvents synthesizes
-    // the round's resourceChange — so a staffed Market pushing money past 10 must still trip Treasury.
-    const G = blankState('enlightenment');
+    // the round's resourceChange — so a staffed money building pushing money past 10 must still trip it.
+    const G = blankState('test');
     G.resources.money = 8;
     G.tableau = [
-      { id: 1, cardId: 'market', workers: 1 }, // +2 money on endTurn → crosses 10
-      { id: 2, cardId: 'treasury', workers: 1 },
+      { id: 1, cardId: 'test_money', workers: 1 }, // +2 money on endTurn → crosses 10
+      { id: 2, cardId: 'test_threshold', workers: 1 },
     ];
     applyUpkeep(G);
     expect(G.resources.money).toBe(10);
-    expect(G.resources.science).toBe(5); // Treasury's one-time payout
+    expect(G.resources.science).toBe(5); // the threshold observer's one-time payout
     expect(G.tableau[1].counters).toEqual({ fired: 1 });
     expect(G.events).toEqual([]); // drained
   });
@@ -232,8 +241,8 @@ describe('dispatchEvent — endTurn broadcast (production + threat drains)', () 
 describe('flushEvents — defeat re-derivation (evaluateDefeat)', () => {
   // `defeat` is a pure predicate (`CardDef.defeat`), re-derived from scratch by `evaluateDefeat` at
   // every flush — never a handler pushing `G.pendingDefeat` mid-dispatch off a transient snapshot.
-  it('sets G.pendingDefeat once a threat\'s own defeat predicate is met', () => {
-    const G = blankState('enlightenment');
+  it("sets G.pendingDefeat once a threat's own defeat predicate is met", () => {
+    const G = blankState('test');
     G.threats = [{ id: 1, cardId: 'test_declare_defeat' }];
     G.resources.money = 29;
     flushEvents(G, snapshot(G));
@@ -243,13 +252,13 @@ describe('flushEvents — defeat re-derivation (evaluateDefeat)', () => {
     expect(G.pendingDefeat).toEqual({ reason: 'the doom clock struck' });
   });
 
-  // Bug #3 regression: a set-only `pendingDefeat` (a handler writing it directly) would survive the
-  // condition recovering, since nothing ever cleared it — the false-defeat trap `checkEndIf` could
-  // then wrongly act on. `evaluateDefeat` re-derives the flag from live state every flush instead, the
-  // same set-OR-CLEAR shape `evaluateObjective` already uses for `pendingVictory`, so a dip that
-  // recovers before the next flush can't leave a stale flag behind.
+  // A set-only `pendingDefeat` (a handler writing it directly) would survive the condition recovering,
+  // since nothing ever cleared it — the false-defeat trap `checkEndIf` could then wrongly act on.
+  // `evaluateDefeat` re-derives the flag from live state every flush instead, the same set-OR-CLEAR
+  // shape `evaluateObjective` uses for `pendingVictory`, so a dip that recovers before the next flush
+  // can't leave a stale flag behind.
   it('clears G.pendingDefeat once the condition that set it recovers — never sticky', () => {
-    const G = blankState('enlightenment');
+    const G = blankState('test');
     G.threats = [{ id: 1, cardId: 'test_declare_defeat' }];
     G.resources.money = 30;
     flushEvents(G, snapshot(G));
@@ -261,9 +270,9 @@ describe('flushEvents — defeat re-derivation (evaluateDefeat)', () => {
 });
 
 describe('flushEvents — resourceChange synthesis', () => {
-  it('Treasury fires on the exact 10-crossing, once per copy, using the before-snapshot', () => {
-    const G = blankState('enlightenment');
-    G.tableau = [{ id: 1, cardId: 'treasury', workers: 1 }];
+  it('the threshold observer fires on the exact 10-crossing, once per copy, using the before-snapshot', () => {
+    const G = blankState('test');
+    G.tableau = [{ id: 1, cardId: 'test_threshold', workers: 1 }];
     const before = snapshot(G); // money 0
     G.resources.money = 15;
     flushEvents(G, before);
@@ -278,8 +287,8 @@ describe('flushEvents — resourceChange synthesis', () => {
   });
 
   it('drains the queue to [] and clears the flag it upheld', () => {
-    const G = withScriptorium();
-    emitEvent(G, { type: 'draw', instanceId: 7, cardId: 'farm', source: 'effect' });
+    const G = withObserver();
+    emitEvent(G, { type: 'draw', instanceId: 7, cardId: 'test_food', source: 'effect' });
     flushEvents(G, snapshot(G));
     expect(G.events).toEqual([]);
     expect(G.resources.money).toBe(1);
@@ -288,17 +297,17 @@ describe('flushEvents — resourceChange synthesis', () => {
 
 describe('flushEvents — cascade + cap', () => {
   it('drains a handler-emitted event in the same flush', () => {
-    const G = blankState('enlightenment');
+    const G = blankState('test');
     G.tableau = [{ id: 1, cardId: 'test_emit_on_draw', workers: 0 }]; // self-sufficient (workers:0)
-    emitEvent(G, { type: 'draw', instanceId: 7, cardId: 'farm', source: 'effect' });
+    emitEvent(G, { type: 'draw', instanceId: 7, cardId: 'test_food', source: 'effect' });
     flushEvents(G, snapshot(G));
-    // draw → Chainer emits a discard → Reactor's on.discard fires (+5🔨), all in one flush.
-    expect(G.resources.production).toBe(5);
+    // draw → Chainer emits a discard → Reactor's on.discard fires (+2🔨), all in one flush.
+    expect(G.resources.production).toBe(2);
     expect(G.events).toEqual([]);
   });
 
   it('terminates an unbounded self-emit at the cap and still drains to []', () => {
-    const G = blankState('enlightenment');
+    const G = blankState('test');
     G.tableau = [{ id: 1, cardId: 'test_infinite', workers: 0 }];
     emitEvent(G, { type: 'draw', instanceId: 1, cardId: 'test_infinite', source: 'effect' });
     flushEvents(G, snapshot(G));
@@ -309,10 +318,10 @@ describe('flushEvents — cascade + cap', () => {
 
 describe('self-removal via filter', () => {
   it('a threat can retire itself on a threshold, leaving the threat loop intact', () => {
-    const G = blankState('enlightenment');
+    const G = blankState('test');
     G.threats = [
       { id: 1, cardId: 'test_selfremove' },
-      { id: 2, cardId: 'harsh_winter' },
+      { id: 2, cardId: 'test_threat' },
     ];
     const before = snapshot(G);
     G.resources.money = 30;
@@ -323,7 +332,7 @@ describe('self-removal via filter', () => {
 
 describe('committed-state invariant', () => {
   it('a blank state carries an empty queue and survives structuredClone', () => {
-    const G = blankState('enlightenment');
+    const G = blankState('test');
     expect(G.events).toEqual([]);
     expect(structuredClone(G).events).toEqual([]);
   });
