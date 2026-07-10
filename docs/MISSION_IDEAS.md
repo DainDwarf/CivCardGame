@@ -6,6 +6,10 @@
 > jots live in [`TODO.md`](TODO.md). This file collects the *narrative/age framing*
 > we might build missions around, before any of it is real.
 
+## Random Ideas
+
+ - Decreasing effectiveness of old cards? (If card comes from 2 ages ago, output -1, -2, etc?)
+
 ## Starting cards
  - **Harvesting** and **Gathering** of course (food/prod)
  - **Dogs**: domesticated by Paleolithic hunter-gatherers
