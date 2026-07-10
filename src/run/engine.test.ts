@@ -1,120 +1,169 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createRun, endTurn, applyMove, type RunState } from './engine';
-import { instancesFromCardIds } from '../rules';
+import { instancesFromCardIds, seedObjective } from '../rules';
+import { gainResources } from '../rules/effects';
 import { playCard } from './moves';
 import type { RunConfig } from '../contract';
+import type { CardDef } from '../content/cards';
+import { TEST_BOARD_ID, installFixtures, uninstallFixtures, installCards, uninstallCards } from '../rules/testFixtures';
 
-/** A run with an empty draw pile, so the hand can be set explicitly and stays stable across turns. */
-function run(missionId: string): RunState {
-  const config: RunConfig = { deck: [], board: 'tribe', boardStickers: [], missionId, deckId: 'd', seed: 's' };
+// This file drives the *real* turn loop, so win/loss needs a seeded objective/threat. Rather than a
+// synthetic mission in MISSIONS, we seed `G.objective`/`G.threats` by hand after `createRun` (exactly
+// as these tests already set `G.tableau`/`G.hand` by hand) — the loop then reads them normally. Local
+// fixtures cover the shapes no shared fixture has: an on-draw observer, an event-count survival
+// objective, and a round-based objective.
+const LOCAL: Record<string, CardDef> = {
+  // On-draw observer (Scriptorium-like): while staffed, pays +1💰 per effect-caused draw, never the
+  // round-start refill.
+  test_observer: {
+    id: 'test_observer', name: 'Observer', kind: 'building', cost: {}, workers: 1, tags: ['building'],
+    on: {
+      draw: (ctx) => {
+        if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
+      },
+    },
+  },
+  // Survival objective: win once ≥2 events have been beaten (exiled to `removed`) with Military intact.
+  test_survive_obj: {
+    id: 'test_survive_obj', name: 'Survive', kind: 'objective', cost: {},
+    description: 'Beat 2 events without Military falling below zero.',
+    objective: (G) => G.removed.filter((c) => c.cardId === 'test_event').length >= 2 && G.resources.military >= 0,
+  },
+  // Round-based objective: win the instant the round counter passes 3.
+  test_round_obj: {
+    id: 'test_round_obj', name: 'Endure', kind: 'objective', cost: {},
+    description: 'Survive past round 3.',
+    objective: (G) => G.round > 3,
+  },
+};
+
+beforeAll(() => {
+  installFixtures();
+  installCards(LOCAL);
+});
+afterAll(() => {
+  uninstallCards(LOCAL);
+  uninstallFixtures();
+});
+
+/** A run with an empty draw pile, so the hand can be set explicitly and stays stable across turns.
+ *  `missionId: 'test'` has no MISSIONS entry, so no objective/threat is auto-seeded — each test seeds
+ *  what it needs by hand. */
+function run(): RunState {
+  const config: RunConfig = { deck: [], board: TEST_BOARD_ID, boardStickers: [], missionId: 'test', deckId: 'd', seed: 's' };
   return createRun(config);
 }
 
 describe('event bus through the turn loop', () => {
-  it('an on-draw building (Scriptorium) ignores the round-start refill', () => {
-    let state = run('enlightenment');
+  it('an on-draw building ignores the round-start refill', () => {
+    let state = run();
     state.G.resources.food = 50; // keep famine out of it
-    state.G.tableau = [{ id: 99, cardId: 'scriptorium', workers: 1 }]; // operating
-    // Reset the piles: an empty hand + a known draw pile so the next turn start draws a known count
-    // (createRun already drew the config deck into the opening hand).
+    state.G.tableau = [{ id: 99, cardId: 'test_observer', workers: 1 }]; // operating
+    // Reset the piles: an empty hand + a known draw pile so the next turn start draws a known count.
     state.G.hand = [];
-    state.G.deck = instancesFromCardIds(['farm', 'farm', 'farm'], 200);
+    state.G.deck = instancesFromCardIds(['a', 'a', 'a'], 200);
     state.G.discard = [];
     state.G.resources.money = 0;
     state = endTurn(state); // upkeep → next beginTurn refills the hand (turnStart draws, not effect)
     expect(state.gameover).toBeUndefined();
     expect(state.G.hand.length).toBe(3);
-    expect(state.G.resources.money).toBe(0); // round-start refill does NOT pay Scriptorium
+    expect(state.G.resources.money).toBe(0); // round-start refill does NOT pay the observer
     expect(state.G.events).toEqual([]); // queue drained — committed-state invariant
   });
 
-  it('an on-draw building (Scriptorium) pays out when a card effect (Inspiration) draws', () => {
-    let state = run('enlightenment');
+  it('an on-draw building pays out when a card effect (a draw action) draws', () => {
+    let state = run();
     state.G.resources.food = 50; // keep famine out of it
-    state.G.tableau = [{ id: 99, cardId: 'scriptorium', workers: 1 }]; // operating
-    state.G.hand = instancesFromCardIds(['inspiration'], 300); // Inspiration: cost 1💰, draws 2
-    state.G.deck = instancesFromCardIds(['farm', 'farm'], 200);
+    state.G.tableau = [{ id: 99, cardId: 'test_observer', workers: 1 }]; // operating
+    state.G.hand = instancesFromCardIds(['test_draw'], 300); // test_draw: cost 1💰, draws 2
+    state.G.deck = instancesFromCardIds(['a', 'a'], 200);
     state.G.discard = [];
     state.G.resources.money = 5;
-    state = applyMove(state, playCard, 0); // play Inspiration from hand index 0
+    state = applyMove(state, playCard, 0); // play the draw action from hand index 0
     expect(state.gameover).toBeUndefined();
-    // 5 start − 1 cost + 2 (Scriptorium firing on each of Inspiration's two effect draws) = 6.
+    // 5 start − 1 cost + 2 (observer firing on each of the two effect draws) = 6.
     expect(state.G.resources.money).toBe(6);
     expect(state.G.events).toEqual([]);
   });
 });
 
-describe('enlightenment deadline: win (objective) and lose (threat) reconciled by checkEndIf order', () => {
-  // The Stagnation threat (seeded by the mission) owns the lose condition — a pure round-12 deadline,
-  // reading no Science; the objective card owns the win (30 Science). `checkEndIf` reads the bus-written
-  // win flag (`G.pendingVictory`) *before* the threat's `pendingDefeat`, so these two cards need no
-  // knowledge of each other.
-  it('round 12 ending short of the goal is a stagnation defeat, owned by the threat', () => {
-    let state = run('enlightenment');
+describe('deadline: win (objective) and lose (threat) reconciled by checkEndIf order', () => {
+  // The deadline threat owns the lose condition — a pure round deadline, reading no resource; the
+  // objective card owns the win (10🔬). `checkEndIf` reads the bus-written win flag (`G.pendingVictory`)
+  // *before* the threat's `pendingDefeat`, so these two cards need no knowledge of each other.
+  it('the round deadline passing short of the goal is the threat-owned defeat', () => {
+    let state = run();
     state.G.resources.food = 50; // keep famine out of it
-    state.G.resources.science = 20; // short of the 30 goal
-    state.G.round = 12;
-    state = endTurn(state);
-    expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'stagnation' });
+    seedObjective(state.G, 'test_objective'); // win at 10🔬
+    state.G.threats = [{ id: 1, cardId: 'test_deadline' }]; // defeat once round > 5
+    state.G.resources.science = 5; // short of the 10 goal
+    state.G.round = 5;
+    state = endTurn(state); // beginTurn advances to round 6 → deadline fires
+    expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'test deadline' });
   });
 
-  it('reaching 30 science on the round-12 deadline still wins — the win flag is read first', () => {
-    let state = run('enlightenment');
+  it('reaching the goal as the deadline lands still wins — the win flag is read first', () => {
+    let state = run();
     state.G.resources.food = 50;
-    state.G.resources.science = 30; // goal met exactly as the deadline lands
-    state.G.round = 12;
+    seedObjective(state.G, 'test_objective');
+    state.G.threats = [{ id: 1, cardId: 'test_deadline' }];
+    state.G.resources.science = 10; // goal met exactly as the deadline lands
+    state.G.round = 5;
     state = endTurn(state);
-    expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'enlightenment' });
+    expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });
   });
 });
 
 describe('endTurn event resolution', () => {
   it('auto-resolves an event left in hand and destroys it (removed, not discarded)', () => {
-    let state = run('enlightenment');
+    let state = run();
     state.G.resources.military = 10;
     state.G.resources.food = 20; // keep famine out of the picture
-    state.G.hand = instancesFromCardIds(['barbarian']);
+    state.G.hand = instancesFromCardIds(['test_event']);
     state = endTurn(state);
     expect(state.gameover).toBeUndefined();
-    expect(state.G.resources.military).toBe(6); // barbarian drained 4
-    expect(state.G.removed.map((c) => c.cardId)).toContain('barbarian');
-    expect(state.G.discard.map((c) => c.cardId)).not.toContain('barbarian');
+    expect(state.G.resources.military).toBe(8); // test_event drained 2
+    expect(state.G.removed.map((c) => c.cardId)).toContain('test_event');
+    expect(state.G.discard.map((c) => c.cardId)).not.toContain('test_event');
     expect(state.G.hand).toEqual([]); // empty deck, nothing redrawn
   });
 
-  it('barbarian_tide: beating the fourth barbarian with military intact wins', () => {
-    let state = run('barbarian_tide');
-    state.G.removed = instancesFromCardIds(['barbarian', 'barbarian', 'barbarian']);
+  it('beating the second event with Military intact wins', () => {
+    let state = run();
+    seedObjective(state.G, 'test_survive_obj');
+    state.G.removed = instancesFromCardIds(['test_event']); // one already beaten
     state.G.resources.military = 10;
     state.G.resources.food = 20;
-    state.G.hand = instancesFromCardIds(['barbarian'], 100);
+    state.G.hand = instancesFromCardIds(['test_event'], 100);
     state = endTurn(state);
-    expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'barbarian_tide' });
+    expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });
   });
 
-  it('barbarian_tide: a fourth barbarian that drives military below zero is a defeat', () => {
-    let state = run('barbarian_tide');
-    state.G.removed = instancesFromCardIds(['barbarian', 'barbarian', 'barbarian']);
-    state.G.resources.military = 2; // 2 - 4 = -2
+  it('a second event that drives Military below zero is a defeat', () => {
+    let state = run();
+    seedObjective(state.G, 'test_survive_obj');
+    state.G.removed = instancesFromCardIds(['test_event']);
+    state.G.resources.military = 1; // 1 - 2 = -1
     state.G.resources.food = 20;
-    state.G.hand = instancesFromCardIds(['barbarian'], 100);
+    state.G.hand = instancesFromCardIds(['test_event'], 100);
     state = endTurn(state);
     expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'revolt' });
   });
 });
 
 describe('objective win timing through the real turn loop', () => {
-  // The subtlest case: a round-based win (long_winter, `round > 15`). Round increments in `beginTurn`,
-  // so the win must register there — off the `flushEvents` that follows the refill draw, even though
-  // beginTurn queues no other event. This is exactly what `flushEvents`-tail (not `dispatchEvent`-tail)
+  // The subtlest case: a round-based win (`round > 3`). Round increments in `beginTurn`, so the win
+  // must register there — off the `flushEvents` that follows the refill draw, even though beginTurn
+  // queues no other event. This is exactly what `flushEvents`-tail (not `dispatchEvent`-tail)
   // guarantees, so it gets an end-to-end assertion, not just the direct `objectiveMet` unit test.
-  it('long_winter: the round-16 rollover wins at beginTurn', () => {
-    let state = run('long_winter');
-    state.G.resources.food = 500; // Harsh Winter drains 2/round — keep famine out of it
-    state.G.population = 0; // and no population food upkeep
+  it('the round-4 rollover wins at beginTurn', () => {
+    let state = run();
+    seedObjective(state.G, 'test_round_obj');
+    state.G.resources.food = 500;
+    state.G.population = 0; // no population food upkeep
     // Drive the real loop; round starts at 1 and advances one per endTurn via beginTurn.
     for (let i = 0; i < 20 && !state.gameover; i++) state = endTurn(state);
-    expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'long_winter' });
-    expect(state.G.round).toBe(16); // won the instant round crossed 15, not a round later
+    expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });
+    expect(state.G.round).toBe(4); // won the instant round crossed 3, not a round later
   });
 });

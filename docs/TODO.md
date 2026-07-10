@@ -63,8 +63,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     (generalizing `events.test.ts`'s local `FIXTURES` + `beforeAll`/`afterAll`). Mint run state via
     the **real prod functions** (`instancesFromCardIds`, `collectionFromCounts`, `buildSeedDecks`,
     `blankState`), never re-implemented ([[feedback-test-fixtures-share-prod-code-path]]). **Exit
-    condition:** no `rules/`/`run/` test imports `content/{cards,boards,decks,missions,stickers,
-    boardStickers,collection}`. (2.1 before 2.2 so the migration doesn't port soon-deleted blocks.)
+    condition:** no `rules/`/`run/` test imports a content **catalogue value** (`CARDS`/`BOARDS`/
+    `MISSIONS`/`STICKERS`/`BOARD_STICKERS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`) — a *type* or a
+    *mechanism function* (`compareCards`, `seedMissionCards`) import is fine — **and** the suite is
+    green under empty catalogues (the real gate; the import grep is only a proxy). (2.1 before 2.2 so
+    the migration doesn't port soon-deleted blocks.)
+
+    *Scope note (discovered during 2.2):* the import grep names only ~7 files, but **20** `rules/`+
+    `run/` files break under empty catalogues — 13 lean on shipped id *string literals*, not imports
+    (`blankState` + a tableau of `cardId: 'farm'`, a `stickers: ['reinforced']`). 2.2 decouples **all
+    mechanism tests** across those 20; the fixture set grew accordingly (a producer per resource, the
+    canonical actions, `test_growing`/`test_peek`, board stickers + a 2nd board). Two files stay behind
+    because their break is *coherence*, not mechanism, and defers to the substep that empties their
+    catalogue: `collection.test.ts`'s `STARTING_COLLECTION` block (→2.5) and `upgrades.test.ts`'s
+    upgrade-hint oracle, which brute-forces the *whole live* sticker/board-sticker catalogue so it can
+    only decouple once those are actually emptied (→2.3).
 
     *Mechanism coverage to re-add on synthetic fixtures* — the 2.1 deletions (7 `describe` blocks in
     `effects.test.ts` + `stickers.test.ts`) also carried the **only** coverage of these mechanisms; 2.2
@@ -109,8 +122,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     through `setup`/`buildRunConfig`/`blankState` deepest → last.*
 
   - **2.3 — Reset sticker catalogues** (`content/stickers.ts`, `content/boardStickers.ts` → empty) —
-    skeleton the coherence parts of `boardStickers.test.ts` + the sticker-content blocks in
-    `upgrades.test.ts`. Leaf layer.
+    `boardStickers.test.ts` was fully migrated to synthetic fixtures in 2.2 (it's 100% mechanism —
+    it has no coherence parts to skeleton), so 2.3 only empties the two content catalogues and
+    decouples/skeletons `upgrades.test.ts`'s upgrade-hint oracle (deferred from 2.2 because it
+    brute-forces the whole live sticker/board-sticker catalogue — see 2.2's scope note). Leaf layer.
 
   - **2.4 — Reset missions** (`content/missions.ts` → empty `MISSIONS`) — by 2.4 the mechanism blocks
     in `content/missions.test.ts` are already relocated to synthetic (2.2), so gut what's left: drop the
