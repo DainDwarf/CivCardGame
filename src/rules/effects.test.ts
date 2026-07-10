@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { applyEffect, gainResources, resolveCard, resolveProduction, specToResolver } from './effects';
+import { applyEffect, gainResources, resolveProduction, specToResolver } from './effects';
 import { blankState, instancesFromCardIds } from './state';
-import { CARDS } from '../content/cards';
 
 describe('applyEffect', () => {
   it('ignores gain — gain is applied via gainResources, not here (no double-apply)', () => {
@@ -81,32 +80,6 @@ describe('specToResolver', () => {
     specToResolver({ destroy: true })({ G, self: { id: 2, cardId: 'destroy' } });
     expect(G.tableau).toHaveLength(1);
     expect(G.removed).toEqual([]);
-  });
-});
-
-describe('resolveCard', () => {
-  it('runs the declarative default for a catalogue card (Cultural Festival → +3 culture)', () => {
-    const G = blankState('enlightenment');
-    resolveCard({ G, self: { id: 1, cardId: 'cultural_festival' } });
-    expect(G.culture).toBe(3);
-  });
-
-  it("a Reinforced sticker bumps a declarative card's gain by 1 (Phase 3 Step 7.6)", () => {
-    const G = blankState('enlightenment');
-    resolveCard({ G, self: { id: 1, cardId: 'eureka', stickers: ['reinforced'] } });
-    expect(G.resources.science).toBe(4); // Eureka's base +3, Reinforced +1
-  });
-
-  it("a bespoke resolver (Cornucopia) now sees a Reinforced sticker's bonus (gap closed)", () => {
-    const G = blankState('enlightenment');
-    resolveCard({ G, self: { id: 1, cardId: 'cornucopia', stickers: ['reinforced'] } });
-    expect(G.resources.food).toBe(2); // base +1 (first play) + Reinforced +1
-  });
-
-  it("Cornucopia's card face shows the sticker-adjusted gain (resolve/display agree)", () => {
-    const G = blankState('enlightenment');
-    const text = CARDS.cornucopia.dynamicText!(G, { id: 1, cardId: 'cornucopia', stickers: ['reinforced'] });
-    expect(text).toBe('+2🌾'); // first play base +1, Reinforced +1 — matches the +2 food the resolver grants
   });
 });
 

@@ -56,14 +56,53 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     `moves.test.ts`) keep their *mechanism* blocks, lose only their *content-value* blocks.
 
   - **2.2 — Decouple surviving `rules/`+`run/` tests onto synthetic fixtures** — build a small shared
-    `src/rules/testFixtures.ts`: synthetic `test_*` `CardDef`s (building/work/action/event/threat +
-    staffing/production/destroy shapes), one `test_board`, one/two `StickerDef`s, **plus
+    `src/rules/testFixtures.ts`: synthetic `test_*` `CardDef`s (building/work/action/event/threat/
+    **objective** shapes + staffing/production/destroy variants; the objective one carries an
+    `objective` predicate), one `test_board`, one/two `StickerDef`s, **plus
     `installFixtures()`/`uninstallFixtures()`** that splice into the live `CARDS`/`BOARDS`/`STICKERS`
     (generalizing `events.test.ts`'s local `FIXTURES` + `beforeAll`/`afterAll`). Mint run state via
     the **real prod functions** (`instancesFromCardIds`, `collectionFromCounts`, `buildSeedDecks`,
     `blankState`), never re-implemented ([[feedback-test-fixtures-share-prod-code-path]]). **Exit
     condition:** no `rules/`/`run/` test imports `content/{cards,boards,decks,missions,stickers,
     boardStickers,collection}`. (2.1 before 2.2 so the migration doesn't port soon-deleted blocks.)
+
+    *Mechanism coverage to re-add on synthetic fixtures* — the 2.1 deletions (7 `describe` blocks in
+    `effects.test.ts` + `stickers.test.ts`) also carried the **only** coverage of these mechanisms; 2.2
+    must re-assert each on synthetic cards/stickers (values chosen freely, not a catalogue number).
+    Needs synthetic stickers of three shapes — an **additive-gain** one (Reinforced-like), a
+    **cost-reducing** one (Efficient-like, floors at 0), and a **restricted/conditional** one
+    (Irrigation-like, `appliesTo` gate) — plus a declarative-default card, a bespoke-`resolve` card,
+    and a card with `dynamicText`:
+    - `resolveCard` runs a card's **declarative-default** effect; a **bespoke `resolve`** still sees a
+      sticker's bonus (the gap Cornucopia closed); **resolve/display agree** (`dynamicText` reflects the
+      sticker-adjusted gain).
+    - `effectiveGain` folds an output sticker's hook over a base bag · **stacks** two of the same ·
+      leaves an unstickered instance untouched · passes `undefined` through unchanged.
+    - `effectiveCost` subtracts per-resource · **floors at 0** (never negative) · stacks · leaves
+      unstickered untouched.
+    - `stickerAppliesTo` — a **restricted** sticker matches only eligible cards (by tag/kind), an
+      **unrestricted** one matches everything.
+    - two **different** stickers compose on one copy (gain + cost together).
+    - `effectiveCard` — returns the *same object* when unstickered; reflects the gain hook in
+      `produces`, the cost hook in `cost`, and a work card's `effect.gain`.
+
+    *Content-module mechanism blocks to relocate here (mislabeled as content tests)* — two
+    `content/*.test.ts` blocks index a *named* catalogue entry (`CARDS.farm`, `MISSIONS.enlightenment`)
+    to test a **function/spine**, not the content — so they break on reset yet aren't coherence checks.
+    Relocate their mechanism coverage here onto synthetic fixtures *now*, so 2.4/2.5 can gut the
+    content-side originals freely (the empty-catalogue coherence iterators in those files survive
+    vacuously — see 2.4/2.5):
+    - **`compareCards`** (`content/cards.test.ts` — its *only* block) — the shared card comparator:
+      kind order (building < work < action < event), alphabetical within a kind, leading-`'The '` strip
+      (but *not* `'Theater'`), total order (0 only for equal name+kind). Re-assert on synthetic cards.
+    - **mission win/defeat spine** (`content/missions.test.ts`'s per-mission + `bus-driven` blocks) — the
+      per-mission blocks assert *shipped numbers* (30 science, 2 food/tick, 4 barbarians, round-12
+      deadline): those specific values are 2.1-style content, **dropped**. But the spine they drive must
+      be re-asserted on a synthetic mission (`MissionDef` built inline over the synthetic objective/threat
+      ids): `seedMissionCards` seeds `threats` → `G.threats` and `events` → the deck; the `endTurn`
+      broadcast (`dispatchEvent`) drains a synthetic threat; `objectiveMet`/`defeatMet` read the card's
+      own predicate; `evaluateObjective`/`evaluateDefeat` re-derive `G.pendingVictory`/`pendingDefeat`
+      at every `flushEvents` boundary (set-or-clear; false when unseeded).
 
     *Teardown order for 2.3–2.6: remove dependents before dependencies. Stickers hard-reference no
     ids; missions/decks/collection reference card ids; cards are referenced by all; boards thread
@@ -73,14 +112,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     skeleton the coherence parts of `boardStickers.test.ts` + the sticker-content blocks in
     `upgrades.test.ts`. Leaf layer.
 
-  - **2.4 — Reset missions** (`content/missions.ts` → empty `MISSIONS`) — skeleton
-    `content/missions.test.ts`; strip mission-content from `rewards.test.ts`/`campaign.test.ts`,
-    keeping the reward/DAG *mechanism* on a synthetic `MissionDef`. Earmark for rewrite.
+  - **2.4 — Reset missions** (`content/missions.ts` → empty `MISSIONS`) — by 2.4 the mechanism blocks
+    in `content/missions.test.ts` are already relocated to synthetic (2.2), so gut what's left: drop the
+    per-mission shipped-number blocks, keep only the **coherence iterators** (every mission names a real
+    objective/threat/event card of the right kind) — they pass vacuously on empty `MISSIONS` and re-arm
+    in Step 3. Also strip mission-content from `rewards.test.ts`/`campaign.test.ts`, keeping the
+    reward/DAG *mechanism* on a synthetic `MissionDef`. Earmark for rewrite.
 
   - **2.5 — Reset the card layer together** (`content/cards.ts`, `decks.ts`, `collection.ts` → empty
     `CARDS`/`DEFAULT_DECKS`/`STARTING_COLLECTION`) — decks + collection ride *with* cards (splitting
-    leaves dangling instance-id refs between commits). Skeleton `content/cards.test.ts`,
-    `decks.test.ts`, and the content-dependent parts of `contract.test.ts`. Earmark for rewrite.
+    leaves dangling instance-id refs between commits). `content/cards.test.ts`'s only block
+    (`compareCards`) is already relocated to synthetic in 2.2, so it empties cleanly; `decks.test.ts`'s
+    coherence iterators (deck cardIds resolve · size ≥ `MIN_DECK_SIZE` · unique ids) pass vacuously on
+    empty `DEFAULT_DECKS`. Skeleton those plus the content-dependent parts of `contract.test.ts`.
+    Earmark for rewrite.
 
   - **2.6 — Reset boards** (`content/boards.ts` → empty `BOARDS`) — last, most deeply wired. Skeleton
     `content/boards.test.ts` + board-content parts of `setup.test.ts`; then close the save-wipe
