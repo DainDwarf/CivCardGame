@@ -139,7 +139,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     leaves dangling instance-id refs between commits). `content/cards.test.ts`'s only block
     (`compareCards`) is already relocated to synthetic in 2.2, so it empties cleanly; `decks.test.ts`'s
     coherence iterators (deck cardIds resolve · size ≥ `MIN_DECK_SIZE` · unique ids) pass vacuously on
-    empty `DEFAULT_DECKS`. Skeleton those plus the content-dependent parts of `contract.test.ts`.
+    empty `DEFAULT_DECKS`. Skeleton those plus the content-dependent parts of `contract.test.ts` and
+    `meta/store.test.ts` (both value-import `DEFAULT_DECKS`/`STARTING_COLLECTION`), and
+    `rules/collection.test.ts`'s one `STARTING_COLLECTION` coherence block (deferred from 2.2).
     Earmark for rewrite.
 
   - **2.6 — Reset boards** (`content/boards.ts` → empty `BOARDS`) — last, most deeply wired. Skeleton
