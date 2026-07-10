@@ -34,39 +34,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Step 3 — Starting content: Paleolithic set + Founding deck + Tribe board + sandbox mission** DONE ✅
 
-- **Step 4 — Headless simulator (balance tooling)** — first deliverable DONE ✅; follow-on open.
-  A code-driven, no-browser/no-React runner over the pure core, for statistical balance answers no
-  human can play enough games to reach (is a mission winnable? is a sticker overpowered? is a card
-  ever played? is the food economy too tight?).
-  - **Shipped:** `src/sim/` — `simulateRun(config, policy)` + a seeded **random-legal-move policy**
-    (`createRandomPolicy`, doubling as a crash/illegal-state fuzzer via `assertRunInvariants` after
-    every action) + a content-agnostic `simConfig` builder. Legality reuses the prod
-    `unplayableReason`; randomness runs through `rules/rng.ts`'s new `randInt` (the one seam). Smoke
-    test (`sim/sim.test.ts`) runs the Founding deck / Tribe board / sandbox across 50 seeds.
-  - **Shipped (batch + reporting):** `runBatch(scenarios, { seeds })` (`sim/batch.ts`) sweeps a flat
-    `Scenario[]` ×N seeds (reproducible dual seed streams); `summarize`/`formatReport` (`sim/report.ts`)
-    fold whole `SimOutcome`s into per-scenario stats (win rate · turns min/median/mean/max · mean end
-    resources · defeat-cause histogram off `gameover.reason` · summed `cardPlays` + unplayed-cards).
-    `SimOutcome.cardPlays` (accepted plays per cardId) is the new "dead card?" signal. `npm run sim`
-    CLI prints it (`scripts/sim.ts`).
-  - **Shipped (greedy + heuristic policies):** a shared `enumerateActions` (`sim/actions.ts`) all
-    policies build on — reusing `unplayableReason`, now also enumerating `transferWorker`. A greedy
-    two-phase one-ply optimizer (`sim/greedyPolicy.ts`) argmaxing a pure `scoreState` value function
-    (`sim/value.ts`, survival-first), and a cheap heuristic priority ladder (`sim/heuristicPolicy.ts`).
-    `runPolicies` (`sim/batch.ts`) + the `npm run sim [seeds] [policies]` CLI sweep a scenario under
-    several policies with *paired* seeds to bracket difficulty (on founding/tribe/sandbox: random ≈ 3
-    turns, greedy/heuristic ≈ 35 — the food economy is tight even under skilled play). Tested:
-    `value.test.ts` (ranking), `actions.test.ts` (enumeration soundness), `policies.test.ts` (competence
-    vs the random floor).
-  - **Still open:** a **full move-surface fuzz test over synthetic fixtures** (building/destroy/
-    `discardCost` — deferred until real content exists in Step 6, or an explicit later fuzz pass).
-    `[size: S]` `[phase: 4]`
-  - **jot: `scoreState` is blind to sub-level culture** — the value function (`sim/value.ts`) scores
-    integer `cultureLevel`, so culture accumulating *within* a band is worth 0. Greedy/heuristic thus
-    never invest in culture and would judge a **winnable culture mission unwinnable** (Step 6 culture
-    goals + the "Culture-based missions" idea below). Fix when culture missions land: score
-    `cultureProgress(G.culture).ratio` (already in `rules/culture.ts`) so partial progress registers.
-    `[phase: 4]`
+- **Step 4 — Headless simulator (balance tooling)** ✅
 
 - **Step 5 — Ages map infrastructure** — promote ages from the undefined `era` placeholder to
   a real system: the `content/ages.ts` age→node/column model + the `CampaignMap.tsx` band
@@ -128,7 +96,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Tech debt / architecture
 
-_(none open)_
+- **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
+  building/destroy/`discardCost` move surface (the paths the current random-policy smoke test doesn't
+  hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
+  later fuzz pass. `[size: S] [blocked]` `[phase: 4]`
+- **Simulator: `scoreState` is blind to sub-level culture** — the value function (`sim/value.ts`)
+  scores integer `cultureLevel`, so culture accumulating *within* a band is worth 0. Greedy/heuristic
+  thus never invest in culture and would judge a **winnable culture mission unwinnable** (Step 6
+  culture goals + the "Culture-based missions" idea above). Fix when culture missions land: score
+  `cultureProgress(G.culture).ratio` (already in `rules/culture.ts`) so partial progress registers.
+  `[blocked]` `[phase: 4]`
 
 ---
 
@@ -137,6 +114,13 @@ _(none open)_
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 4 — Headless simulator (balance tooling)** ✅ — a code-driven, no-browser/no-React
+  runner over the pure core, for statistical balance answers no human can play enough games to reach
+  (is a mission winnable? is a sticker overpowered? is a card ever played? is the food economy too
+  tight?). Shipped: `simulateRun` + random/greedy/heuristic policies, batch + reporting, the
+  `npm run sim` CLI. Two follow-ons extracted as standalone items under *Tech debt / architecture*
+  (fuzz test · culture-aware `scoreState`), both blocked on Step 6 content.
 
 - **Step 3 — Starting content (Paleolithic)** ✅ — refilled the minimum coherent slice so the game is
   launchable again, scoped to a **Paleolithic hunter-gatherer** start with **no buildings** in the deck
