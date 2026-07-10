@@ -147,7 +147,9 @@ export interface CardDef {
   defeat?: (G: GameState, self: CardInstance) => string | false | undefined;
   /** Hand-authored effect text for the card face, used when the declarative `effect` bag can't
    *  describe the card (a `resolve`-driven card). Takes precedence over the auto-generated
-   *  `describeCard` text. */
+   *  `describeCard` text. **Keep it very short** — it renders in a tiny footer band on the card
+   *  face, so favour glyphs over words and a single terse clause (e.g. `When built: +1 🧍`), not a
+   *  full sentence with parentheticals. */
   description?: string;
   /** Run-aware effect text: given the live `GameState` and the specific card instance being
    *  rendered, returns that copy's *current* effect summary (e.g. a self-scaling card's growing gain,
@@ -240,7 +242,7 @@ export const CARDS: Record<string, CardDef> = {
   hut: {
     id: 'hut', name: 'Hut', kind: 'building', cost: { production: 4 }, workers: 0, tags: ['building'],
     effect: { population: 1 },
-    description: 'When built: +1 🧍 population. (No worker, no upkeep output.)',
+    description: 'When built: +1 🧍',
   },
 
   // — Actions: resolve once, then recycle to discard.
@@ -259,7 +261,7 @@ export const CARDS: Record<string, CardDef> = {
   storytelling: {
     id: 'storytelling', name: 'Storytelling', kind: 'action', cost: { science: 2 },
     recoversFromDiscard: true,
-    description: 'Return a card from your discard pile to your hand.',
+    description: 'Return a chosen card from discard to hand.',
     resolve: (ctx) => {
       if (ctx.answer === undefined) {
         // FIRST PASS — reveal the discard as options and suspend. `discardEmpty` is gated
