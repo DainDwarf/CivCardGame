@@ -15,10 +15,15 @@
  * reassignment matters in a scenario; it grinds long games, so it's the slow policy in the default sweep.
  *
  * Usage:
- *   npm run sim                       # default 200 seeds per scenario, all policies
+ *   npm run sim                       # default 200 seeds per scenario, all policies, all scenarios
  *   npm run sim -- 500                # override the seed count
  *   npm run sim -- 500 greedy         # only the named policy/policies (comma- or space-separated)
  *   npm run sim -- 200 random,greedy
+ *   npm run sim -- 200 scenario=rites # only scenarios whose label contains 'rites' (substring match)
+ *   npm run sim -- 200 greedy scenario=rites   # combine: one policy, one scenario
+ *
+ * `scenario=<substr>` tokens filter which scenarios run (repeat for several); every other token is a
+ * policy name. Both default to "all" when unspecified, and the two are order-independent.
  *
  * To change what's swept, edit `SCENARIOS` below — each entry is one deck / board / mission cell,
  * built from plain cardIds (no meta collection needed). As the age arcs add content, add scenarios.
@@ -78,12 +83,31 @@ if (!Number.isInteger(seeds) || seeds <= 0) {
   throw new Error(`Seed count must be a positive integer, got '${process.argv[2]}'.`);
 }
 
-// Optional policy filter: any args past the seed count, comma- or space-separated. Default: all.
-const policyArgs = process.argv
+// Any args past the seed count, comma- or space-separated. A `scenario=<substr>` token filters the
+// scenario sweep by label substring; every other token is a policy name. Both default to "all".
+const args = process.argv
   .slice(3)
   .flatMap((a) => a.split(','))
   .map((a) => a.trim())
   .filter(Boolean);
+
+const SCENARIO_PREFIX = 'scenario=';
+const scenarioPatterns = args
+  .filter((a) => a.startsWith(SCENARIO_PREFIX))
+  .map((a) => a.slice(SCENARIO_PREFIX.length).toLowerCase())
+  .filter(Boolean);
+const scenarios =
+  scenarioPatterns.length > 0
+    ? SCENARIOS.filter((s) => scenarioPatterns.some((p) => s.label.toLowerCase().includes(p)))
+    : SCENARIOS;
+if (scenarios.length === 0) {
+  const known = SCENARIOS.map((s) => s.label).join(', ');
+  throw new Error(
+    `No scenario label matches ${scenarioPatterns.map((p) => `'${p}'`).join(', ')}. Known: ${known}.`,
+  );
+}
+
+const policyArgs = args.filter((a) => !a.startsWith(SCENARIO_PREFIX));
 const policies = policyArgs.length > 0 ? policyArgs : Object.keys(POLICY_FACTORIES);
 for (const p of policies) {
   if (!POLICY_FACTORIES[p]) {
@@ -91,8 +115,11 @@ for (const p of policies) {
   }
 }
 
-const results = runPolicies(SCENARIOS, policies, { seeds });
+const results = runPolicies(scenarios, policies, { seeds });
 const summaries = results.map(summarize);
 
-console.log(`# Simulator batch report — ${seeds} seed(s) per scenario · policies: ${policies.join(', ')}\n`);
+const scope = scenarioPatterns.length > 0 ? ` · ${scenarios.length}/${SCENARIOS.length} scenarios` : '';
+console.log(
+  `# Simulator batch report — ${seeds} seed(s) per scenario · policies: ${policies.join(', ')}${scope}\n`,
+);
 console.log(formatReport(summaries));
