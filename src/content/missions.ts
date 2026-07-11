@@ -76,31 +76,10 @@ export interface MissionDef {
 }
 
 /**
- * The mission catalogue. Holds the baseline `sandbox` infinite mission plus the opening of the
- * Stone Age arc.
- *
- * `sandbox` is an `'infinite'` mission (no win state — it scores Influence = rounds survived and
- * renders in the campaign map's bottom banner, not as a DAG node). Its `sandbox_goal` objective
- * never wins by design; run length is bounded purely by the `sands_of_time` deadline threat, a
- * no-drain `defeat` predicate that ends the run once round `SANDBOX_DEADLINE` elapses — so the
- * sandbox measures the economy baseline for the Step 4 simulator without any drain skewing it.
- *
- * `first_settlement` is the first `'standard'` mission: a DAG root (no prereqs) at the start of the
- * Stone Age band. It seeds no threat and no event — a pure stockpile race against nothing but
- * famine — and its first clear unlocks the whole Stone Age building set at once (Farm, Toolmaker,
- * Hut) plus Conquest. It carries no Influence (the cards are the prize).
- *
- * `growing_numbers` follows it (prereq: `first_settlement`): stand up a working settlement — a
- * Hut, a Farm, and a Toolmaker at once — again no threat/event, the challenge being to grow
- * territory (via replayable Conquest) enough to place all three. Its clear pays 6 Influence and
- * unlocks the first card sticker (Irrigation) and the first
- * board sticker (Territory) — the debut of the sticker-unlock reward kinds.
- *
- * `rites_rituals` follows it (prereq: `growing_numbers`): the culture mission — accumulate 🎭
- * culture to reach level 2 (each level raises hand size). No threat/event and no deadline; the
- * challenge is decking in the culture cards you own (Cave Art, Clothing) to climb the gauge. Its
- * clear pays 8 Influence and unlocks Göbekli Tepe — the age's first *wonder*, a culture-gated
- * building owned here so the capstone (6.7) can build it.
+ * The mission catalogue: the baseline `sandbox` infinite mission plus the opening of the Stone Age
+ * arc. The one non-obvious entry is `sandbox` — its `sandbox_goal` objective never wins by design,
+ * so run length is bounded purely by the `sands_of_time` deadline threat, giving the simulator an
+ * economy baseline with no drain skewing it.
  */
 export const MISSIONS: Record<string, MissionDef> = {
   first_settlement: {
