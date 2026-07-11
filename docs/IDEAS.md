@@ -46,6 +46,18 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
 
 Centralized, elite-controlled, trade-dependent palace civilizations.
 
+For the trade: Wheel for the first trade works? Get a few money producing work, and bronzeworking building that use money to produce prod.
+Issue: Current jewelry card is already strong at making money
+
+Military also important: Defend your trade routes (event that sucks out money?)
+
+Empire board? Should not be too op, what's the drawback?
+
+Ziggurat
+Hammurabi code
+
+Unlock the "Fall of the bronze age" endless mission near the end? (increasing money/military/production pressure)
+
 ## Iron Age
 
 More decentralized, broader-based societies with cheaper metal, wider literacy
