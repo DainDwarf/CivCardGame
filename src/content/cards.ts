@@ -258,7 +258,7 @@ const GROWING_NUMBERS_BUILDINGS: readonly (readonly [cardId: string, icon: strin
 /** How many raider waves "Raiders at the Border" (6.4) seeds — the single source shared by the
  *  mission's injected event list (`content/missions.ts`), the `raiders_at_border_goal` win threshold,
  *  and its progress readout, so the "defeat *all* the raiders" invariant can't drift between them. */
-export const RAIDER_WAVES = 4;
+export const RAIDER_WAVES = 3;
 
 /**
  * The card catalogue. A `building` card *is* the building it becomes in the tableau (its stats
