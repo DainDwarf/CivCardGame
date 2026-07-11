@@ -32,14 +32,14 @@ interface SeedRun {
 }
 
 const SEED_RUNS: SeedRun[] = [
-  // Two of three standard missions cleared → "Missions cleared 2 / 3" and their unlock cards owned.
-  { missionId: 'enlightenment', outcome: 'victory', rounds: 12 },
-  { missionId: 'long_winter', outcome: 'victory', rounds: 9 },
-  { missionId: 'barbarian_tide', outcome: 'defeat', rounds: 6 },
-  // A few infinite attempts → best score is the max (15), not the latest (4).
-  { missionId: 'the_long_decline', outcome: 'defeat', rounds: 8 },
-  { missionId: 'the_long_decline', outcome: 'defeat', rounds: 15 },
-  { missionId: 'the_long_decline', outcome: 'defeat', rounds: 4 },
+  // The opening Stone Age chain, cleared in order — each victory pays its Influence and grants its
+  // unlocks through the real `applyRunResult`: First Settlement (farm/toolmaker/hut/conquest),
+  // Growing Numbers (+6⭐, Irrigation card sticker + Territory board sticker), Rites & Rituals
+  // (+8⭐, the Göbekli Tepe wonder). Result: 3/4 standard missions cleared, "Raiders at the Border"
+  // now available (its Chiefdom board reward still locked until it's cleared too).
+  { missionId: 'first_settlement', outcome: 'victory', rounds: 8 },
+  { missionId: 'growing_numbers', outcome: 'victory', rounds: 11 },
+  { missionId: 'rites_rituals', outcome: 'victory', rounds: 14 },
 ];
 
 function runResult(run: SeedRun): RunResult {
