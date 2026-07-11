@@ -123,6 +123,11 @@ describe('stickerAppliesTo', () => {
     expect(stickerAppliesTo(FIXTURE_STICKERS.test_addgain, FIXTURE_CARDS.test_prod)).toBe(true);
     expect(stickerAppliesTo(FIXTURE_STICKERS.test_addgain, FIXTURE_CARDS.test_action)).toBe(true);
   });
+
+  it('never applies to a wonder — even an unrestricted sticker (wonders are unmodifiable)', () => {
+    expect(stickerAppliesTo(FIXTURE_STICKERS.test_addgain, FIXTURE_CARDS.test_wonder)).toBe(false);
+    expect(stickerAppliesTo(FIXTURE_STICKERS.test_restricted, FIXTURE_CARDS.test_wonder)).toBe(false);
+  });
 });
 
 describe('effectiveGain (restricted, food-only)', () => {

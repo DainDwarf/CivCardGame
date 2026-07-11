@@ -9,7 +9,7 @@ import {
   requiredWorkersOf,
   unplayableReason,
 } from '../rules';
-import { CARDS, type CardDef } from '../content/cards';
+import { CARDS, isStructure, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
 import { BOARD_STICKERS } from '../content/boardStickers';
 import { MISSIONS } from '../content/missions';
@@ -1010,13 +1010,13 @@ export function Board({
       setPendingDestroy({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key });
       return;
     }
-    // A card that erects a building drops it into the slot under the release point (or the
-    // nearest free slot if that one's taken); the reconcile effect places the new instance there.
-    // Reserved actions occupy no slot, so a pop-reserve card needs no placement. This must be
-    // captured now, at the drop point — not after the discard-cost branch below, which can defer
-    // the actual moves.playCard call until a later click, by which point the release position
-    // is long gone.
-    if (card.kind === 'building') {
+    // A card that erects a structure (building/wonder) drops it into the slot under the release
+    // point (or the nearest free slot if that one's taken); the reconcile effect places the new
+    // instance there. Reserved actions occupy no slot, so a pop-reserve card needs no placement.
+    // This must be captured now, at the drop point — not after the discard-cost branch below, which
+    // can defer the actual moves.playCard call until a later click, by which point the release
+    // position is long gone.
+    if (isStructure(card)) {
       // Use the card's own center, not the raw cursor — the cursor can sit anywhere within the
       // card depending on where it was grabbed, which otherwise skews "closest slot" toward
       // wherever the grab point happened to land instead of where the card visually rests.

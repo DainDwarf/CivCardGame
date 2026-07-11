@@ -10,7 +10,7 @@ import {
   type Resources,
 } from '../rules';
 import type { RunState } from '../run/engine';
-import { CARDS, type CardDef } from '../content/cards';
+import { CARDS, isStructure, type CardDef } from '../content/cards';
 import { canonicalPlay, enumerateActions } from './actions';
 import { hasObjectiveGradient, objectiveProgress } from './objective';
 import { applyAction, type Policy, type SimAction } from './simulate';
@@ -93,9 +93,9 @@ function decide(state: RunState): SimAction {
     if (best) return best;
   }
 
-  // 3. Build on free territory (economy growth) — cheapest first. (No buildings in current content.)
+  // 3. Build on free territory (economy growth) — cheapest first. Structures = buildings + wonders.
   if (freeTerritory(G) > 0) {
-    const buildings = playable.filter((p) => p.card.kind === 'building');
+    const buildings = playable.filter((p) => isStructure(p.card));
     const best = bestPlay(G, buildings, (c) => -bundleValue(c.cost), -Infinity);
     if (best) return best;
   }

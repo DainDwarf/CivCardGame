@@ -1,5 +1,5 @@
 import { randInt, seededRng } from '../rules';
-import { CARDS } from '../content/cards';
+import { CARDS, isStaffable } from '../content/cards';
 import type { RunState } from '../run/engine';
 import { enumerateActions } from './actions';
 import { applyAction, type Policy, type SimAction } from './simulate';
@@ -77,15 +77,15 @@ export function createGreedy2Policy(policySeed: string): Policy {
   return policy;
 }
 
-/** The lookahead value of an action: for a `work`/`building` play, the best score reachable by one
- *  staffing follow-up from the post-play state (else the freshly-placed box would look worthless until a
- *  later turn staffs it). For every other action it is just the immediate score `s1` — so the policy is
- *  plain greedy outside the one case this experiment targets. */
+/** The lookahead value of an action: for a staffable play (work/building/wonder), the best score
+ *  reachable by one staffing follow-up from the post-play state (else the freshly-placed box would look
+ *  worthless until a later turn staffs it). For every other action it is just the immediate score `s1` —
+ *  so the policy is plain greedy outside the one case this experiment targets. */
 function lookaheadScore(state: RunState, next: RunState, action: SimAction, s1: number): number {
   if (action.kind !== 'playCard') return s1;
   const played = state.G.hand[action.playHandIdx];
   const card = played && CARDS[played.cardId];
-  if (!card || (card.kind !== 'work' && card.kind !== 'building')) return s1;
+  if (!card || !isStaffable(card)) return s1;
 
   let best = s1;
   for (const follow of enumerateActions(next.G)) {

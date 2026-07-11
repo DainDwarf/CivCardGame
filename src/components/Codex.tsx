@@ -89,7 +89,11 @@ export function Codex() {
             <dl className={styles.defList}>
               <div className={styles.defRow}>
                 <dt className={styles.defTerm}>Building</dt>
-                <dd className={styles.defDesc}>Buildings and Wonders. Pay their cost to place them in your tableau (one territory slot), where they produce every round while staffed. They stay in play for the rest of the run.</dd>
+                <dd className={styles.defDesc}>Pay their cost to place them in your tableau (one territory slot), where they produce every round while staffed. They stay in play for the rest of the run.</dd>
+              </div>
+              <div className={styles.defRow}>
+                <dt className={styles.defTerm}>Wonder</dt>
+                <dd className={styles.defDesc}>Unique monuments. Played and staffed exactly like a building, but a Wonder is one of a kind: you can never buy extra copies, it takes no stickers, and a deck may hold only one Wonder.</dd>
               </div>
               <div className={styles.defRow}>
                 <dt className={styles.defTerm}>Action</dt>

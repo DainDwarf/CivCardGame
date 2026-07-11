@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CARDS, compareCards, isDeckable, type CardDef } from '../content/cards';
 import type { DeckDef } from '../content/decks';
-import { addCard, removeCard, addInstance, removeInstance, groupCounts, MIN_DECK_SIZE } from '../rules/deckBuilder';
+import { addCard, removeCard, addInstance, removeInstance, groupCounts, deckWonderCount, MAX_WONDERS_PER_DECK, MIN_DECK_SIZE } from '../rules/deckBuilder';
 import {
   findInstance,
   hasSticker,
@@ -81,6 +81,7 @@ export function DeckEditor({
   // only offers deckable cards the player has actually unlocked.
   const cards = Object.values(CARDS).filter((c) => isDeckable(c) && isOwned(collection, c.id));
   const buildings = cards.filter((c) => c.kind === 'building').sort(compareCards);
+  const wonders = cards.filter((c) => c.kind === 'wonder').sort(compareCards);
   const works = cards.filter((c) => c.kind === 'work').sort(compareCards);
   const actions = cards.filter((c) => c.kind === 'action').sort(compareCards);
 
@@ -100,9 +101,13 @@ export function DeckEditor({
 
   // Whether every owned unstickered copy of `cardId` is already in the deck — mirrors
   // `addCard`'s cap (rules/deckBuilder.ts) so the fungible picker tile can visually reflect
-  // the same limit rather than just silently no-opping on click/drag.
+  // the same limit rather than just silently no-opping on click/drag. A wonder is *also* capped
+  // once the deck already holds `MAX_WONDERS_PER_DECK` wonders (of any card), so a second distinct
+  // wonder's tile disables instead of silently rejecting — mirrors `addCard`'s wonder guard.
   function atCap(cardId: string): boolean {
-    return remainingCopies(cardId) <= 0;
+    if (remainingCopies(cardId) <= 0) return true;
+    if (CARDS[cardId].kind === 'wonder' && deckWonderCount(deck.cards, collection) >= MAX_WONDERS_PER_DECK) return true;
+    return false;
   }
 
   // The fungible picker tile's count badge shows *remaining* unstickered copies, not total
@@ -279,8 +284,14 @@ export function DeckEditor({
       <div className={styles.picker}>
         {buildings.length > 0 && (
           <>
-            <h2 className={styles.sectionTitle}>Buildings &amp; Wonders</h2>
+            <h2 className={styles.sectionTitle}>Buildings</h2>
             <div className={styles.grid}>{buildings.flatMap(pickerTiles)}</div>
+          </>
+        )}
+        {wonders.length > 0 && (
+          <>
+            <h2 className={styles.sectionTitle}>Wonders</h2>
+            <div className={styles.grid}>{wonders.flatMap(pickerTiles)}</div>
           </>
         )}
         {works.length > 0 && (

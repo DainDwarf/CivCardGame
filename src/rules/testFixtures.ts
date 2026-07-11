@@ -74,34 +74,41 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // The food producer doubles as the restricted-sticker (food-only) eligible card.
   test_food: {
     id: 'test_food', name: 'Test Food', kind: 'building',
-    cost: { production: 2 }, produces: { food: 2 }, workers: 1, tags: ['building'],
+    cost: { production: 2 }, produces: { food: 2 }, workers: 1,
   },
   test_prod: {
     id: 'test_prod', name: 'Test Prod', kind: 'building',
-    cost: { production: 2 }, produces: { production: 2 }, workers: 1, tags: ['building'],
+    cost: { production: 2 }, produces: { production: 2 }, workers: 1,
   },
   test_sci: {
     id: 'test_sci', name: 'Test Science', kind: 'building',
-    cost: { production: 3 }, produces: { science: 2 }, workers: 1, tags: ['building'],
+    cost: { production: 3 }, produces: { science: 2 }, workers: 1,
   },
   test_money: {
     id: 'test_money', name: 'Test Money', kind: 'building',
-    cost: { production: 2 }, produces: { money: 2 }, workers: 1, tags: ['building'],
+    cost: { production: 2 }, produces: { money: 2 }, workers: 1,
   },
   // Culture producer: output via `cultureOutput` (no `produces`), like a Theater.
   test_culture: {
     id: 'test_culture', name: 'Test Culture', kind: 'building',
-    cost: { production: 3 }, cultureOutput: 2, workers: 1, tags: ['building'],
+    cost: { production: 3 }, cultureOutput: 2, workers: 1,
   },
   // Self-sufficient building (workers:0): always operating, no staffing needed — the staffing variant.
   test_selfstaffed: {
     id: 'test_selfstaffed', name: 'Test Self-Staffed', kind: 'building',
-    cost: { production: 2 }, produces: { military: 3 }, workers: 0, tags: ['building'],
+    cost: { production: 2 }, produces: { military: 3 }, workers: 0,
   },
   // Multi-output building — proves an additive-gain sticker bumps *every* produced key.
   test_multi: {
     id: 'test_multi', name: 'Test Multi', kind: 'building',
-    cost: { production: 2 }, produces: { production: 1, military: 2 }, workers: 1, tags: ['building'],
+    cost: { production: 2 }, produces: { production: 1, military: 2 }, workers: 1,
+  },
+  // Wonder: plays exactly like a building (occupies a slot, produces while staffed) but is `kind:
+  // 'wonder'` — proves the wonder gates (no copies, no stickers, one per deck) and the shared
+  // `isStructure`/`isStaffable` production/placement paths.
+  test_wonder: {
+    id: 'test_wonder', name: 'Test Wonder', kind: 'wonder',
+    cost: { production: 2 }, cultureOutput: 2, workers: 1,
   },
 
   // --- Work cards: produce their `effect.gain` only while staffed, file to discard at end of turn. ---
@@ -212,7 +219,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // events.test.ts — this one is shared because two files drive it.
   test_threshold: {
     id: 'test_threshold', name: 'Test Threshold', kind: 'building',
-    cost: { production: 2 }, workers: 1, tags: ['building'],
+    cost: { production: 2 }, workers: 1,
     description: 'While staffed, the first time 💰 reaches 10: +5🔬 (once)',
     on: {
       resourceChange: (ctx) => {

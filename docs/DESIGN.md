@@ -83,9 +83,9 @@ where the two are merged into one immutable run configuration. 🔧
 
 ### Card kinds ✅ / 🔧 details
 
-There are **six** card kinds — the `CardKind` values in `content/cards.ts`:
-`building`, `action`, `work`, `event`, `threat`, `objective`. The first four differ by how they
-leave your hand; `threat` and `objective` are the odd ones out — they never enter a hand or pile
+There are **seven** card kinds — the `CardKind` values in `content/cards.ts`:
+`building`, `wonder`, `action`, `work`, `event`, `threat`, `objective`. The first four differ by how
+they leave your hand; `threat` and `objective` are the odd ones out — they never enter a hand or pile
 at all, living instead in persistent board zones (see below). By default a card returns to the
 **discard** pile once it's done being useful (reshuffled into the deck when it runs
 dry) — the **removed** pile is the exception, used only where a specific *effect* says
@@ -98,9 +98,14 @@ that files the card:
   the tableau its card is filed nowhere — not discard, not removed. Where the card
   goes *once it leaves* the tableau isn't a property of being a building; it's
   decided by whatever effect took it out — a demolish effect could file it to
-  **removed**, a reclaim-territory effect to **discard**, like anything else.
-  **Wonders are the same kind** — building cards tagged `wonder` (a distinct banner
-  and flavour, not a distinct kind). → the *engine*.
+  **removed**, a reclaim-territory effect to **discard**, like anything else. → the *engine*.
+- **Wonder (unique monument):** its *own* kind, but plays exactly like a building —
+  occupies a tableau slot, is staffed, and produces every turn while staffed (it
+  routes through the shared `isStructure`/`isStaffable` paths). What sets it apart is
+  meta identity, not run behaviour: it's its own Collection/deck-editor category, its
+  copies can never be bought (`shop.ts`), it takes no stickers (`stickerAppliesTo`),
+  and a deck may hold at most `MAX_WONDERS_PER_DECK` of them (`deckBuilder.ts`). The
+  face shows a gold "Wonder" banner over the ordinary building colour. → the *capstone*.
 - **Action (recycle):** resolve an effect, then go to the **discard**. →
   repeatable *tactics*.
 - **Work (labour):** sticks onto the board as a staffable box instead of resolving

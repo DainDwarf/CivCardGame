@@ -98,8 +98,10 @@ export function CardInstancePanel({
   const zoomed = instances.find((i) => i.id === zoomInstance);
 
   const influence = shop?.influence ?? 0;
-  // nextTier keys off the current copy count (== instances.length); null once at ×8.
-  const upgrade = shop ? nextTier(instances.length) : null;
+  const isWonder = card.kind === 'wonder';
+  // nextTier keys off the current copy count (== instances.length); null once at ×8. A wonder is
+  // unique — copies can never be bought (mirrors `shop.ts`'s reject), so it never offers a tier.
+  const upgrade = shop && !isWonder ? nextTier(instances.length) : null;
   // Only stickers that apply to *this* card are draggable at all (Irrigation hidden on a non-food
   // building, etc.) — each still re-gated per copy by `isValidTarget`.
   const stickerDefs = shop ? unlockedStickerDefs(shop.unlockedStickers).filter((s) => stickerAppliesTo(s, card)) : [];
@@ -248,7 +250,9 @@ export function CardInstancePanel({
                       {upgrade.cost} → ×{upgrade.to} copies
                     </button>
                   ) : (
-                    <span className={styles.maxTier}>Max copies (×{instances.length})</span>
+                    <span className={styles.maxTier}>
+                      {isWonder ? 'Unique — one per deck' : `Max copies (×${instances.length})`}
+                    </span>
                   )}
                 </div>
 

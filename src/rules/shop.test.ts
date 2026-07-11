@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nextTier, buyTier } from './shop';
+import { nextTier, buyTier, canBuyTier } from './shop';
 import { copiesOwned, collectionFromCounts } from './collection';
 
 describe('nextTier', () => {
@@ -57,5 +57,12 @@ describe('buyTier', () => {
   it('returns null when the player cannot afford the upgrade', () => {
     // ×2 → ×4 costs 2; with only 1 Influence it must fail and spend nothing.
     expect(buyTier(collectionFromCounts({ farm: 2 }), 1, 'farm')).toBeNull();
+  });
+
+  it('rejects a wonder outright — wonders are unique, copies can never be bought', () => {
+    // Göbekli Tepe is a `kind: 'wonder'` card; even owned and affordable, no tier is buyable.
+    const owned = collectionFromCounts({ gobekli_tepe: 1 });
+    expect(buyTier(owned, 99, 'gobekli_tepe')).toBeNull();
+    expect(canBuyTier(owned, 99, 'gobekli_tepe')).toBe(false);
   });
 });

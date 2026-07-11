@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import type { CardDef } from '../content/cards';
+import { isStaffable, isStructure, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
 import type { Resources } from '../rules';
 import styles from './CardFace.module.css';
@@ -140,8 +140,8 @@ export function describeCard(c: CardDef): string {
   if (e?.territory) parts.push(`+${e.territory} territory`);
   if (e?.culture) parts.push(`+${e.culture} 🎭`);
   if (e?.destroy) parts.push('removes a building from the run');
-  // A building card *is* the building — show its per-round output (workers shown as meeples).
-  if (c.kind === 'building') {
+  // A building/wonder card *is* the structure — show its per-round output (workers shown as meeples).
+  if (isStructure(c)) {
     const stats = describeBuilding(c, false);
     if (stats) parts.push(stats);
   }
@@ -154,7 +154,7 @@ function cardBanner(c: CardDef): { label: string; variant: string } {
   if (c.kind === 'event') return { label: 'Event', variant: styles.bannerEvent };
   if (c.kind === 'objective') return { label: 'Objective', variant: styles.bannerObjective };
   if (c.kind === 'work') return { label: 'Work', variant: styles.bannerWork };
-  if (c.tags?.includes('wonder')) return { label: 'Wonder', variant: styles.bannerWonder };
+  if (c.kind === 'wonder') return { label: 'Wonder', variant: styles.bannerWonder };
   if (c.kind === 'action') return { label: 'Action', variant: styles.bannerAction };
   return { label: 'Building', variant: styles.bannerBuilding };
 }
@@ -167,6 +167,8 @@ export function kindClass(kind: CardDef['kind']): string {
   if (kind === 'objective') return styles.objective;
   if (kind === 'action') return styles.action;
   if (kind === 'work') return styles.work;
+  // A wonder reuses the building face colour — it's distinguished by its gold "Wonder" banner
+  // (see `cardBanner`), not a separate palette.
   return styles.building;
 }
 
@@ -293,9 +295,9 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
   const text = overrideText ?? describeCard(card);
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
-  // Worker-space meeples: building and work cards show their `workers` capacity (default 1,
-  // `0` = self-sufficient/always operating so no meeple shown); other kinds show none.
-  const workers = card.kind === 'building' || card.kind === 'work' ? card.workers ?? 1 : 0;
+  // Worker-space meeples: staffable cards (building/wonder/work) show their `workers` capacity
+  // (default 1, `0` = self-sufficient/always operating so no meeple shown); other kinds show none.
+  const workers = isStaffable(card) ? card.workers ?? 1 : 0;
   // An available upgrade tints the whole face's border/ring gold (the buyable-hint accent) rather
   // than dropping a corner dot — see `.upgradeAvailable`.
   const rootClassName = `${styles.card} ${kindClass(card.kind)}${upgradeHint ? ` ${styles.upgradeAvailable}` : ''}${

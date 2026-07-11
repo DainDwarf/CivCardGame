@@ -2,7 +2,7 @@ import { findStaffable, isOperating } from './population';
 import { runEventHandler, resolveEndTurn } from './effects';
 import { evaluateObjective } from './objective';
 import { evaluateDefeat } from './threats';
-import { CARDS } from '../content/cards';
+import { CARDS, isStaffable } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, ValueSnapshot } from './state';
 
 /**
@@ -93,7 +93,7 @@ function findLiveInstance(G: GameState, id: number): CardInstance | undefined {
  *     flavour), then
  *  2. every **operating** (staffed) tableau building, then every operating Work card, then every
  *     threat — the *observer* flavour, reusing the exact `isOperating` gate production applies, so an
- *     idle building/work box never reacts.
+ *     idle staffable (building/wonder/work) box never reacts.
  * A card only appears once (dedup by instance id: the subject may also sit on the board). The
  * per-subscriber action depends on the event: for the `endTurn` broadcast every subscriber runs
  * `resolveEndTurn` (production/threat drain by default, or its own `on.endTurn`); for every other
@@ -102,12 +102,12 @@ function findLiveInstance(G: GameState, id: number): CardInstance | undefined {
  * never `splice`, to self-remove — the zone loops here iterate a snapshot (`[...G.tableau]`), so a
  * splice wouldn't corrupt *this* dispatch, but `filter` keeps the array-identity discipline uniform.
  *
- * A `building`/`work` subject is a *staffable* — its handler carries the same "while staffed"
+ * A staffable subject (building/wonder/work) — its handler carries the same "while staffed"
  * contract as the observer walk applies to it, so the subject path must apply the identical
  * `isOperating` gate rather than firing unconditionally (e.g. an on-draw observer drawn into hand is not
  * an operating copy and must not pay out on its own draw). That only makes sense once the subject
  * is resolved to its *live* zone instance (a bare `{id, cardId}` has no `workers` to gate on), so a
- * building/work subject is looked up via `findStaffable` instead of dispatched bare. A subject of any
+ * staffable subject is looked up via `findStaffable` instead of dispatched bare. A subject of any
  * other kind (action/event/threat/objective — never staffable) fires unconditionally, but is still
  * resolved to its live zone instance (via `findLiveInstance`) rather than the bare reconstruction, so
  * its handler sees this copy's real `stickers`/`counters` (e.g. a purchased Reinforced still applies
@@ -125,8 +125,8 @@ export function dispatchEvent(G: GameState, event: GameEvent): void {
 
   const subject = subjectOf(event);
   if (subject) {
-    const kind = CARDS[subject.cardId]?.kind;
-    if (kind === 'building' || kind === 'work') {
+    const card = CARDS[subject.cardId];
+    if (card && isStaffable(card)) {
       const live = findStaffable(G, subject.id);
       if (live && isOperating(live)) run(live);
     } else {

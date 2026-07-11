@@ -21,6 +21,22 @@ export const MAX_DECKS = 6;
  *  hold at most the copies owned) lives on the collection and is enforced by `addCard` above. */
 export const MIN_DECK_SIZE = 20;
 
+/** How many `wonder` cards a single deck may hold. Wonders are unique monuments — a deck is capped
+ *  at one. The number is provisional (balance-tunable), but the *existence* of the limit is a core
+ *  rule — enforced at both deck add paths (`addCard`/`addInstance`), with the deck editor's disabled
+ *  wonder tile as its reflection. Mirrors the `MAX_DECKS`/`MIN_DECK_SIZE` precedent. */
+export const MAX_WONDERS_PER_DECK = 1;
+
+/** How many `wonder` cards `deck` currently holds — resolves each instance id back to its cardId via
+ *  `collection` (an unrecognized id counts as none), then to its `CARDS` kind. The shared leaf both
+ *  add paths gate on for `MAX_WONDERS_PER_DECK`. */
+export function deckWonderCount(deck: string[], collection: OwnedCards): number {
+  return deck.filter((instanceId) => {
+    const inst = findInstance(collection, instanceId);
+    return inst && CARDS[inst.cardId]?.kind === 'wonder';
+  }).length;
+}
+
 /** Appends one copy of `cardId` — picks the *lowest-index* owned, **unstickered** instance of that
  *  cardId not already in `deck` (`unstickeredInstancesOf` is granted order, so the first Farm added →
  *  1/2, second → 2/2, etc.). Copies are fungible only until stickered; a stickered instance is never
@@ -33,6 +49,8 @@ export function addCard(deck: string[], cardId: string, collection: OwnedCards):
   if (!(cardId in CARDS)) return 'invalid';
   // Event/threat/objective cards are mission-injected only — never player-editable into a deck.
   if (!isDeckable(CARDS[cardId])) return 'invalid';
+  // Wonders are unique — a deck may hold at most `MAX_WONDERS_PER_DECK` of them.
+  if (CARDS[cardId].kind === 'wonder' && deckWonderCount(deck, collection) >= MAX_WONDERS_PER_DECK) return 'invalid';
   const inDeck = new Set(deck);
   const free = unstickeredInstancesOf(collection, cardId).find((inst) => !inDeck.has(inst.id));
   if (!free) return 'invalid';
@@ -56,8 +74,12 @@ export function removeCard(deck: string[], cardId: string, collection: OwnedCard
  *  relying on `addCard`'s LIFO order. `'invalid'` if `instanceId` isn't owned or is already in the
  *  deck. Does not mutate `deck`. */
 export function addInstance(deck: string[], instanceId: string, collection: OwnedCards): string[] | 'invalid' {
-  if (!findInstance(collection, instanceId)) return 'invalid';
+  const inst = findInstance(collection, instanceId);
+  if (!inst) return 'invalid';
   if (deck.includes(instanceId)) return 'invalid';
+  // Wonders are unique — cap at `MAX_WONDERS_PER_DECK` here too (this add path handles stickered
+  // instances; a wonder can never be stickered, but the guard stays for symmetry with `addCard`).
+  if (CARDS[inst.cardId]?.kind === 'wonder' && deckWonderCount(deck, collection) >= MAX_WONDERS_PER_DECK) return 'invalid';
   return [...deck, instanceId];
 }
 

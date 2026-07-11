@@ -16,7 +16,7 @@ import type { CardDef } from './cards';
  * The two effect hooks cover per-copy *output* and *play-cost* only — the two things the granular
  * run-loop call sites already need (`run/moves.ts`'s `playCard` calls `effectiveCost(card.cost)`
  * on its own, so a single `applyToCard(card) => card` transformer wouldn't slot in cleanly). A
- * future sticker touching `workers`/`cultureOutput`/`tags`/`draw` needs a new hook here *plus* a
+ * future sticker touching `workers`/`cultureOutput`/`draw` needs a new hook here *plus* a
  * new compose site in `rules/stickers.ts`'s `effectiveCard` — that's the seam; don't pre-build it.
  */
 export interface StickerDef {

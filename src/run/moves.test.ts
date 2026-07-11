@@ -12,7 +12,7 @@ afterAll(uninstallFixtures);
 const PLACEMENT_BUILDING = {
   hut_fixture: {
     id: 'hut_fixture', name: 'Hut Fixture', kind: 'building' as const,
-    cost: { production: 4 }, workers: 0, effect: { population: 1 }, tags: ['building'],
+    cost: { production: 4 }, workers: 0, effect: { population: 1 },
   },
 };
 
@@ -41,6 +41,29 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.removed).toEqual([]); // the card *is* the building — not removed on play
     expect(G.discard).toEqual([]);
     expect(G.hand).toEqual([]);
+  });
+
+  it('a wonder card is placed in the tableau exactly like a building (staffed, not filed to any pile)', () => {
+    const G = blankState('test');
+    G.hand = instancesFromCardIds(['test_wonder']);
+    G.resources.production = 5;
+    G.population = 2; // idle -> the wonder auto-staffs its 1 worker
+    play(G, 'test_wonder');
+    expect(G.tableau).toEqual([{ id: 1, cardId: 'test_wonder', workers: 1 }]);
+    expect(G.removed).toEqual([]);
+    expect(G.discard).toEqual([]);
+    expect(G.hand).toEqual([]);
+  });
+
+  it('a wonder is blocked by the territory cap, just like a building', () => {
+    const G = blankState('test');
+    G.territory = 1;
+    G.tableau = [{ id: 99, cardId: 'test_food', workers: 1 }]; // the one slot is taken
+    G.hand = instancesFromCardIds(['test_wonder']);
+    G.resources.production = 5;
+    G.population = 2;
+    expect(playCard(G, 0)).toBe('invalid');
+    expect(G.tableau).toHaveLength(1); // nothing placed
   });
 
   it("resolves a building's one-shot placement effect once when placed (the Hut's +1 population)", () => {

@@ -8,13 +8,27 @@ import {
   resolveDeckCards,
   buildSeedDecks,
   decksContaining,
+  deckWonderCount,
 } from './deckBuilder';
+import type { CardDef } from '../content/cards';
 import type { DeckDef, DeckSeed } from '../content/decks';
 import { collectionFromCounts, type OwnedCards } from './collection';
-import { installFixtures, uninstallFixtures } from './testFixtures';
+import { installFixtures, uninstallFixtures, installCards, uninstallCards } from './testFixtures';
 
-beforeAll(installFixtures);
-afterAll(uninstallFixtures);
+// A second distinct wonder (the shared `test_wonder` fixture is the first) — the one-wonder-per-deck
+// cap only bites across *different* wonders, so a real test needs two.
+const LOCAL_WONDERS: Record<string, CardDef> = {
+  test_wonder2: { id: 'test_wonder2', name: 'Test Wonder 2', kind: 'wonder', cost: { production: 2 }, cultureOutput: 1, workers: 1 },
+};
+
+beforeAll(() => {
+  installFixtures();
+  installCards(LOCAL_WONDERS);
+});
+afterAll(() => {
+  uninstallCards(LOCAL_WONDERS);
+  uninstallFixtures();
+});
 
 // Generous ownership so tests unrelated to the copy cap aren't gated by it.
 const GENEROUS: OwnedCards = collectionFromCounts({ test_food: 8, test_sci: 8 });
@@ -95,6 +109,33 @@ describe('addCard', () => {
     const [a, b] = owns2.instances.map((i) => i.id);
     const stickered = { ...owns2, instances: owns2.instances.map((i) => (i.id === a ? { ...i, stickers: ['test_addgain'] } : i)) };
     expect(addCard([b], 'test_food', stickered)).toBe('invalid');
+  });
+});
+
+describe('one wonder per deck', () => {
+  // Own both distinct wonders plus a filler card.
+  const owned = collectionFromCounts({ test_wonder: 1, test_wonder2: 1, test_food: 2 });
+  const wid = (cardId: string) => owned.instances.find((i) => i.cardId === cardId)!.id;
+
+  it('deckWonderCount counts only wonder instances', () => {
+    expect(deckWonderCount([wid('test_wonder'), wid('test_food')], owned)).toBe(1);
+    expect(deckWonderCount([wid('test_food')], owned)).toBe(0);
+  });
+
+  it('accepts the first wonder', () => {
+    expect(addCard([], 'test_wonder', owned)).toEqual([wid('test_wonder')]);
+  });
+
+  it('rejects a second, *different* wonder once one is already in the deck', () => {
+    expect(addCard([wid('test_wonder')], 'test_wonder2', owned)).toBe('invalid');
+  });
+
+  it('a non-wonder card is unaffected by the wonder already in the deck', () => {
+    expect(addCard([wid('test_wonder')], 'test_food', owned)).toEqual([wid('test_wonder'), wid('test_food')]);
+  });
+
+  it('addInstance also rejects a second wonder (the by-identity add path)', () => {
+    expect(addInstance([wid('test_wonder')], wid('test_wonder2'), owned)).toBe('invalid');
   });
 });
 

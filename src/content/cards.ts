@@ -4,7 +4,7 @@ import { type CardEffect, type Resolver, suspendChoice } from '../rules/effects'
 import { recoverFromDiscard } from '../rules/deck';
 import { cultureLevel, cultureProgress } from '../rules/culture';
 
-export type CardKind = 'building' | 'action' | 'work' | 'event' | 'threat' | 'objective';
+export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'event' | 'threat' | 'objective';
 
 export interface CardDef {
   id: string;
@@ -23,6 +23,13 @@ export interface CardDef {
    *   Today that's only the Destroy action card, whose `effect.destroy` sends it to **removed**;
    *   a future card could just as well discard a building instead (e.g. to reclaim territory) and
    *   file it to **discard** like anything else.
+   * - `wonder`: a *unique* monument — plays exactly like a `building` (occupies a tableau slot,
+   *   staffed from population, produces `produces`/`cultureOutput` each round while staffed, may
+   *   carry a placement one-shot `effect`), so it routes through the same `isStructure`/`isStaffable`
+   *   paths. What sets it apart is meta-loop identity, not run behaviour: it's its own Collection/
+   *   deck-editor category, extra copies can never be bought (`shop.ts`), it can never take a sticker
+   *   (`stickerAppliesTo`), and a deck may hold at most `MAX_WONDERS_PER_DECK` of them
+   *   (`deckBuilder.ts`). The face shows a gold "Wonder" banner over the ordinary building colour.
    * - `action`: resolves its `effect`, then recycles to the **discard** pile.
    * - `work`: the card sticks onto the board as a staffable work box (see `workers`); it
    *   produces its `effect.gain` only while staffed, then recycles to the **discard** pile at
@@ -170,8 +177,6 @@ export interface CardDef {
   produces?: Partial<Resources>;
   /** `building` cards: per-round culture gained while staffed — accumulates on G.culture. */
   cultureOutput?: number;
-  /** `building` cards: classification tags, e.g. 'building' | 'wonder'. */
-  tags?: string[];
 }
 
 /** Whether a card is one the player builds decks with. `event` (mission-injected into the deck),
@@ -180,19 +185,38 @@ export interface CardDef {
  *  (`rules/deckBuilder.ts`'s add-reject, the Collection/DeckEditor pickers), so adding a future
  *  mission-only kind is one edit here, not a scattered `!== 'event' && !== 'threat' && …` list. */
 export function isDeckable(card: CardDef): boolean {
-  return card.kind === 'building' || card.kind === 'action' || card.kind === 'work';
+  return card.kind === 'building' || card.kind === 'wonder' || card.kind === 'action' || card.kind === 'work';
+}
+
+/** Whether a card *occupies a tableau/territory slot* when played — a building or a wonder (a wonder
+ *  plays exactly like a building). The single choke point for every "is this placed in the tableau?"
+ *  branch: placement routing (`moves.ts`), the territory gate (`playability.ts`), the board's
+ *  build-slot pick (`Board.tsx`), and the per-round output text (`CardFace.tsx`). Distinct from
+ *  `isStaffable` below, which also covers `work`. */
+export function isStructure(card: CardDef): boolean {
+  return card.kind === 'building' || card.kind === 'wonder';
+}
+
+/** Whether a card *produces and is staffed at upkeep* — a structure (building/wonder) or a `work`
+ *  card. The choke point for the per-round production/staffing branches (`effects.ts`'s
+ *  `resolveEndTurn`, `events.ts`'s staffable-subject lookup, `CardFace.tsx`'s worker meeples), and
+ *  the sim staffing follow-up. A card-kind predicate over a `CardDef`; not to be confused with
+ *  `population.ts`'s instance-level `Staffable`/`findStaffable`, which operate on placed instances. */
+export function isStaffable(card: CardDef): boolean {
+  return isStructure(card) || card.kind === 'work';
 }
 
 /** The stable display order of card kinds — the primary key of `compareCards`. Deckable kinds
- *  come first in play-relevance order (building → work → action); the mission-only kinds trail
- *  (only the pile viewer ever lists one, e.g. an `event` filed to `removed`). */
+ *  come first in play-relevance order (building → wonder → work → action); the mission-only kinds
+ *  trail (only the pile viewer ever lists one, e.g. an `event` filed to `removed`). */
 const KIND_RANK: Record<CardKind, number> = {
   building: 0,
-  work: 1,
-  action: 2,
-  event: 3,
-  threat: 4,
-  objective: 5,
+  wonder: 1,
+  work: 2,
+  action: 3,
+  event: 4,
+  threat: 5,
+  objective: 6,
 };
 
 /** Sort key for a card's display name: a leading "The " is dropped so "The Colossus" sorts under
@@ -247,21 +271,20 @@ export const CARDS: Record<string, CardDef> = {
   //   Farm/Toolmaker are ordinary single-worker producers; the Hut is the first building carrying a
   //   one-shot *placement* effect (no per-round output, no worker — just a one-time +1 population when
   //   built), which resolves through `playCard`'s post-placement `resolveCard`.
-  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { food: 1 }, workers: 1, tags: ['building'] },
-  toolmaker: { id: 'toolmaker', name: 'Toolmaker', kind: 'building', cost: { production: 2 }, produces: { production: 1 }, workers: 1, tags: ['building'] },
+  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { food: 1 }, workers: 1 },
+  toolmaker: { id: 'toolmaker', name: 'Toolmaker', kind: 'building', cost: { production: 2 }, produces: { production: 1 }, workers: 1 },
   hut: {
-    id: 'hut', name: 'Hut', kind: 'building', cost: { production: 4 }, workers: 0, tags: ['building'],
+    id: 'hut', name: 'Hut', kind: 'building', cost: { production: 4 }, workers: 0,
     effect: { population: 1 },
     description: 'When built: +1 🧍',
   },
-  // Göbekli Tepe: the age's first *wonder* (a `building` tagged `'wonder'`, not a new kind) — and
-  //   the first live card to carry a `cultureLevelReq` gate, so playing it is blocked until the
-  //   civilization is cultured enough. Unlocked by "Rites & Rituals" (6.3) so the capstone (6.7) can
-  //   *build* it. Stats are a PROVISIONAL first pass — 6.7 owns its real tuning.
+  // Göbekli Tepe: the age's first *wonder* (`kind: 'wonder'` — a unique monument that plays like a
+  //   building) and the first live card to carry a `cultureLevelReq` gate, so playing it is blocked
+  //   until the civilization is cultured enough. Unlocked by "Rites & Rituals" (6.3) so the capstone
+  //   (6.7) can *build* it. Stats are a PROVISIONAL first pass — 6.7 owns its real tuning.
   gobekli_tepe: {
-    id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'building',
+    id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
     cost: { production: 8 }, cultureLevelReq: 2, cultureOutput: 3, workers: 2,
-    tags: ['wonder'],
     description: 'The first temple. Requires 🎭 level 2. While staffed: +3 🎭 each round.',
   },
 

@@ -1,4 +1,4 @@
-import type { CardDef } from '../content/cards';
+import { isStructure, type CardDef } from '../content/cards';
 import { canAfford, type Resources } from './resources';
 import { cultureLevel } from './culture';
 import { freeTerritory } from './tableau';
@@ -37,7 +37,7 @@ export function unplayableReason(G: GameState, card: CardDef, self: CardInstance
   }
   if (card.cultureLevelReq && cultureLevel(G.culture) < card.cultureLevelReq)
     return { kind: 'cultureLevel', required: card.cultureLevelReq };
-  if (card.kind === 'building' && freeTerritory(G) <= 0) return { kind: 'territory' };
+  if (isStructure(card) && freeTerritory(G) <= 0) return { kind: 'territory' };
   if (card.effect?.destroy && G.tableau.length === 0) return { kind: 'noBuildingsToDestroy' };
   // A peek card (revealsFromDeck) has nothing to reveal when both draw and discard piles are empty —
   // gate it rather than let it fizzle for its cost (mirrors the noBuildingsToDestroy precedent above).

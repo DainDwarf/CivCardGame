@@ -1,3 +1,4 @@
+import { CARDS } from '../content/cards';
 import { copiesOwned, grantCopies, type OwnedCards } from './collection';
 
 /**
@@ -5,7 +6,8 @@ import { copiesOwned, grantCopies, type OwnedCards } from './collection';
  * cards the player already owns — never new cards (those come only from mission unlocks). Ownership
  * rises along the copy-tier ladder ×1 → ×2 → ×4 → ×8, each rung bought with Influence. The one pure
  * place this logic lives; `meta/Shop.tsx` is the UI consumer, `App.tsx`'s `buyCardTier` the write
- * path. Follows `rules/rewards.ts`'s immutable `{ influence, collection }` pattern.
+ * path. Follows `rules/rewards.ts`'s immutable `{ influence, collection }` pattern. `wonder` cards are
+ * the one exception — they're unique, so `canBuyTier`/`buyTier` reject them regardless of tier.
  */
 
 /** The copy-tier ladder: each rung is the Influence cost to raise ownership to the next tier. The
@@ -35,6 +37,7 @@ export function nextTier(current: number): TierUpgrade | null {
  *  `buyTier(...) !== null` without minting the copies), the leaf the upgrade-hint roll-ups
  *  (`rules/upgrades.ts`) fold over. */
 export function canBuyTier(collection: OwnedCards, influence: number, cardId: string): boolean {
+  if (CARDS[cardId]?.kind === 'wonder') return false; // wonders are unique — copies can't be bought
   const up = nextTier(copiesOwned(collection, cardId));
   return up !== null && influence >= up.cost;
 }
@@ -50,6 +53,7 @@ export interface PurchaseResult {
  *  the newly-bought copies as fresh instances (`rules/collection.ts`'s `grantCopies`) —
  *  immutable, the input `collection` is untouched. */
 export function buyTier(collection: OwnedCards, influence: number, cardId: string): PurchaseResult | null {
+  if (CARDS[cardId]?.kind === 'wonder') return null; // wonders are unique — copies can't be bought
   const current = copiesOwned(collection, cardId);
   const up = nextTier(current);
   if (!up || influence < up.cost) return null;

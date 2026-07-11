@@ -1,7 +1,7 @@
 import type { GameState } from '../rules';
 import { addBuilding, addWork, emitEvent, findStaffable, freePopulation, requiredWorkersOf, resolveCard, subtractResources, unplayableReason } from '../rules';
 import { effectiveCost } from '../rules/stickers';
-import { CARDS } from '../content/cards';
+import { CARDS, isStructure } from '../content/cards';
 
 /**
  * Play a card from hand — the sole entry for putting a card into play. Pays costs (resources plus a
@@ -50,13 +50,13 @@ export function playCard(
 
   // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
   // return the not-yet-filed sacrifices back into the deck.
-  // A building card is placed in the tableau; a work card sticks onto the board and produces only
-  // while staffed (at upkeep); everything else resolves its effect immediately through the single
-  // resolver path (which also performs a Destroy card's demolition, via `target`).
-  if (card.kind === 'building') {
-    // Place the building (auto-staffing from existing idle pop), then resolve its one-shot
+  // A building/wonder card is placed in the tableau; a work card sticks onto the board and produces
+  // only while staffed (at upkeep); everything else resolves its effect immediately through the
+  // single resolver path (which also performs a Destroy card's demolition, via `target`).
+  if (isStructure(card)) {
+    // Place the structure (auto-staffing from existing idle pop), then resolve its one-shot
     // *placement* effect on the played instance (e.g. the Hut's +1 population). A no-op for the
-    // usual produces-only building; a building's per-round output is `produces`, never resolved
+    // usual produces-only building; a structure's per-round output is `produces`, never resolved
     // here — see `CardDef.effect`. Population/territory a placement grants are global, so
     // resolving on `played` (not the new tableau instance) is fine.
     addBuilding(G, cardId, played.stickers);

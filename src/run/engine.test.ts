@@ -16,7 +16,7 @@ const LOCAL: Record<string, CardDef> = {
   // On-draw observer: while staffed, pays +1💰 per effect-caused draw, never the
   // round-start refill.
   test_observer: {
-    id: 'test_observer', name: 'Observer', kind: 'building', cost: {}, workers: 1, tags: ['building'],
+    id: 'test_observer', name: 'Observer', kind: 'building', cost: {}, workers: 1,
     on: {
       draw: (ctx) => {
         if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });

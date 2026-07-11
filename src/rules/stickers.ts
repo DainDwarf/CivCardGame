@@ -19,10 +19,13 @@ export interface StickerPurchase {
 
 /** Whether `sticker` may attach to `card` — the one eligibility dispatcher every site routes
  *  through (shop listing/offer, `buySticker`'s reject). A sticker owns its own condition via its
- *  `appliesTo` predicate (`content/stickers.ts`); absent = attaches to anything. No caller inspects
- *  a card's `kind`/`produces` or branches on a sticker id, so a new restricted sticker is authored
- *  on its def alone. */
+ *  `appliesTo` predicate (`content/stickers.ts`); absent = attaches to anything. Beyond that per-sticker
+ *  check there is one blanket card-side rule: a `wonder` never takes a sticker (wonders are unique and
+ *  unmodifiable), enforced here so every site — the tray offer, `buySticker`'s reject, and the
+ *  `upgrades.ts` hint — agrees from one seam. No caller inspects a card's `kind`/`produces` or branches
+ *  on a sticker id, so a new restricted sticker is authored on its def alone. */
 export function stickerAppliesTo(sticker: StickerDef, card: CardDef): boolean {
+  if (card.kind === 'wonder') return false;
   return sticker.appliesTo?.(card) ?? true;
 }
 

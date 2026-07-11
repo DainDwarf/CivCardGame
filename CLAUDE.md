@@ -241,18 +241,23 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   logic that rides on it, not pure data tables. **A building card *is* the building** —
   there's no separate building catalogue. One file per catalogue:
   - `cards.ts` — `CARDS`, the single card catalogue (`CardKind` =
-    building/action/work/event/threat/objective; see DESIGN.md → *Card kinds* for what each kind
-    does and how it leaves play). A `building` carries its own stats
-    (`produces`/`cultureOutput`/`workers`/`tags`) right on the `CardDef`. Whether a card
+    building/wonder/action/work/event/threat/objective; see DESIGN.md → *Card kinds* for what each
+    kind does and how it leaves play). A `building`/`wonder` carries its own stats
+    (`produces`/`cultureOutput`/`workers`) right on the `CardDef`. A `wonder` plays exactly like a
+    `building` (occupies a tableau slot, staffed, produces each round) — the two share the
+    `isStructure` (occupies a slot) and `isStaffable` (produces/staffed at upkeep) choke-point
+    predicates, so no call site open-codes a `kind === 'building'` union. A wonder is set apart only
+    in the meta loop: its own Collection/deck category, no bought copies (`shop.ts`), no stickers
+    (`stickerAppliesTo`), at most `MAX_WONDERS_PER_DECK` per deck (`deckBuilder.ts`). Whether a card
     files to `discard` vs `removed` is a property of the *effect* that files it, never the
     kind (e.g. Destroy's `effect.destroy`, an event's `effect.remove`). An `objective` card owns
     its mission's win logic via a single pure-read `objective` predicate, the way a
     `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
     for "a card the player builds decks with" (excludes event/threat/objective), used by the
-    deck-add reject and the Collection/DeckEditor pickers. The catalogue currently holds the
-    **Paleolithic starting set** — buildingless hunter-gatherer actions + work cards (no buildings
-    yet; those arrive with the Stone Age arc, unlocked via missions) — plus the sandbox mission's
-    own `objective`/`threat` cards.
+    deck-add reject and the Collection/DeckEditor pickers. The catalogue holds the **Paleolithic
+    starting set** (hunter-gatherer actions + work cards) plus the first **Stone Age** structures
+    unlocked via missions — the Farm/Toolmaker/Hut buildings and the Göbekli Tepe wonder — and the
+    sandbox mission's own `objective`/`threat` cards.
   - `decks.ts` — `DeckDef` (a player deck; `cards` is meta instance ids) plus `DeckSeed`/
     `DEFAULT_DECKS` (content authored in plain cardIds, resolved by `buildSeedDecks`). A
     fresh player is meant to start with one editable deck; there's no read-only "built-in" tier.
