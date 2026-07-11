@@ -493,10 +493,14 @@ with *paired* seeds. Above the greedies sits the **`oracle`** (`sim/oracle.ts` +
 a line of play that *wins* the mission on a seed. It rests on the determinism finding — `structuredClone(G)`
 already reveals the whole future draw order — so it searches directly instead of rolling out. Four structural
 bounds keep it tractable: it **collapses each turn** into one search edge (a bounded within-turn sub-search over
-non-`endTurn` actions, then one `endTurn`), a **transposition table** (`keyOf` — a conservative, all-zones-*ordered*
-canonical key; the sole normalization is dropping instance ids + derived/UI fields) dedups the action-ordering
-explosion, the **deadline + territory caps** bound depth/branching, and a **beam** over `scoreState` keeps the
-top-`W` states per round-depth. Soundness rests on *determinism, not the key*: every line it returns is real
+non-`endTurn` actions, then one `endTurn`), a **transposition table** (`keyOf`: `deck` ordered — it *is* the future
+draw sequence — every other zone an unordered **multiset** by `rules/state.ts`'s `contentKey`, ids + derived/UI
+fields dropped) dedups the action-ordering explosion, the **deadline + territory caps** bound depth/branching, and
+a **beam** over `scoreState` keeps the top-`W` states per round-depth. The multiset key is *complete-preserving*
+because of two engine order-independence guarantees it relies on: the discard reshuffle **canonicalizes by
+content** (`deck.ts`, so hand/discard/workZone order never leaks into the future) and the **zone
+order-independence invariant** makes per-round processing commutative (`events.ts`/`upkeep.ts`, enforced by
+`sim/zoneOrderInvariance.test.ts`). Soundness rests on *determinism, not the key*: every line it returns is real
 actions it applied through the real engine to an observed `victory`, so it replays exactly — a found line is a
 **sound proof** of winnability, and a looser key can only *miss* wins (incompleteness), never manufacture a false
 one. `searchWinningLine(root)` / `proveWinnable(config)` are the direct search APIs; `createOraclePolicy` wraps a
@@ -529,6 +533,21 @@ content exists.
   the seeded RNG (`src/rules/rng.ts`), threaded as `GameState.rngState` and advanced by
   `deck.ts`'s draw/reshuffle. `config.deck` reaches the run already shuffled from
   `config.seed` (`contract.ts`).
+- **Zones are unordered except the deck (order-independence invariant).** The draw pile is
+  the *only* ordered zone — its order is the future draw sequence. Every other zone (hand,
+  discard, tableau, workZone, threats) is conceptually an unordered heap, and the engine
+  upholds that two ways: the discard reshuffle **canonicalizes by content** before shuffling
+  (`deck.ts`'s `reshuffleIntoDeck`, via `rules/state.ts`'s `contentKey`), so the discard —
+  and the hand/workZone that file into it — never influence the future through *order*; and
+  no card's effect may make the **committed** end-of-round outcome depend on the resolution
+  order of its siblings in a batch (production, threat drains, hand-event auto-resolve). The
+  engine's *dispatch* order stays fixed for replay determinism, but the *outcome* must be
+  commutative under it. This is what lets the simulator's transposition key treat those zones
+  as multisets (`sim/oracleKey.ts`); `sim/zoneOrderInvariance.test.ts` checks it by permuting
+  the zones — but over one *fixed fixture*, so it only catches order-dependence among the cards
+  it happens to include. **When adding a card whose effect reads across its batch siblings, add
+  it to that fixture** (or the regression is silent — a too-loose oracle key that *misses* wins,
+  never a false one, since a returned line always replays through the real engine).
 - Tests import `{ describe, it, expect }` from `vitest` explicitly (globals are
   not enabled).
 - **The UI is mouse-only by design** — no keyboard-activation affordances (e.g.

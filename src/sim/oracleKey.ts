@@ -1,4 +1,4 @@
-import type { CardInstance, GameState, PendingInteraction, PlacedCard } from '../rules';
+import { contentKey, type CardInstance, type GameState, type PendingInteraction, type PlacedCard } from '../rules';
 
 /**
  * A **canonical transposition key** for a run state — the string the oracle search (`sim/oracle.ts`)
@@ -10,22 +10,28 @@ import type { CardInstance, GameState, PendingInteraction, PlacedCard } from '..
  * through the real engine to an observed `victory` gameover, so determinism guarantees the replay
  * reproduces it. The key only affects **completeness**: a too-*loose* key could falsely merge two states
  * with different futures and thereby *miss* a win (under-report winnability); a too-*tight* key merges
- * less and only costs speed. So this key is deliberately **conservative** — every zone is kept in **array
- * order** (a full state fingerprint), and the *only* normalization is:
+ * less and only costs speed.
  *
- * - **Instance ids dropped.** The engine never branches on an id's numeric *value* (ids are used only for
- *   equality/targeting, so a consistent relabeling yields an isomorphic run — see the plan's soundness
- *   note); dropping them is the one merge that matters, since `nextInstanceId` makes ids drift constantly.
- * - **Derived / constant / UI fields dropped** (`objective`/`missionId` — invariant across a search;
- *   `events` — always `[]` at a step boundary; `pendingVictory`/`pendingDefeat` — re-derived each flush and
- *   the goal test is evaluated separately; `reshuffleCount` — a pure UI cue no rule reads).
+ * The key mirrors the player's mental model — **one ordered draw pile, everything else an unordered heap**:
+ * - `deck` is **ordered**: its order *is* the future draw sequence (same multiset, different order ⇒ a
+ *   different next card), the one irreducibly-ordered field.
+ * - `hand`/`discard`/`tableau`/`workZone`/`threats`/`removed` are **sorted multisets** (by `contentKey`,
+ *   with a placed card's `workers` folded in). Two of the engine's order-independence guarantees make this
+ *   *complete-preserving* (no false merge): the discard reshuffle canonicalizes by content, so discard —
+ *   and thus the hand/workZone that file into it — no longer influence the future through *order*
+ *   (`deck.ts`); and the zone order-independence invariant makes per-round processing (production, threat
+ *   drains, hand-event auto-resolve) commutative (`events.ts`/`upkeep.ts`). Enforced by
+ *   `sim/zoneOrderInvariance.test.ts`.
+ * - `rngState` is included (it determines the *next* reshuffle's permutation).
+ * - The only normalization beyond order is dropping **instance ids** (the engine never branches on an id's
+ *   numeric value — a consistent relabeling is isomorphic) and **derived/constant/UI fields**
+ *   (`objective`/`missionId` — invariant across a search; `events` — always `[]` at a step boundary;
+ *   `pendingVictory`/`pendingDefeat` — re-derived each flush and the goal test is evaluated separately;
+ *   `reshuffleCount` — a pure UI cue no rule reads).
  *
- * Keeping every zone ordered still collapses the one combinatorial explosion that matters — **worker
- * assignment is order-independent** and never touches zone *order*, so those states still merge — while
- * conservatively *not* merging play-ordering variants (which a discard-order-sensitive reshuffle could
- * genuinely distinguish today). A looser multiset key would recover that dedup but only becomes sound once
- * the deferred order-independent-reshuffle / order-independent-zone-processing engine changes land; until
- * then, ordered is the correct trade (see the plan's transposition-key deep-dive).
+ * Multiset keying is what actually collapses the explosion: worker assignment is order-independent, and
+ * independent plays now commute (their discard/hand-order footprint no longer matters), so all those
+ * reorderings merge to one node.
  */
 export function keyOf(G: GameState): string {
   const r = G.resources;
@@ -40,46 +46,40 @@ export function keyOf(G: GameState): string {
     G.territory,
     G.culture,
     G.handSize,
-    zone(G.deck),
-    zone(G.discard),
-    zone(G.hand),
-    placedZone(G.tableau),
-    placedZone(G.workZone),
-    zone(G.threats),
-    zone(G.removed),
+    orderedZone(G.deck), // the future draw sequence — the sole ordered field
+    multiset(G.discard),
+    multiset(G.hand),
+    placedMultiset(G.tableau),
+    placedMultiset(G.workZone),
+    multiset(G.threats),
+    multiset(G.removed),
     G.rngState.join(','),
     pendingToken(G.pendingInteraction),
   ].join('|');
 }
 
-/** A single instance's content token: what it is plus its per-copy state (`counters`, `stickers`, and
- *  — for a placed card — its `workers`), with its `id` deliberately dropped. Counters and stickers are
- *  sorted so a token is order-stable within an instance. */
-function instToken(inst: CardInstance, workers?: number): string {
-  const counters = inst.counters
-    ? Object.keys(inst.counters)
-        .sort()
-        .map((k) => `${k}=${inst.counters![k]}`)
-        .join(',')
-    : '';
-  const stickers = inst.stickers && inst.stickers.length ? [...inst.stickers].sort().join(',') : '';
-  const w = workers === undefined ? '' : `@${workers}`;
-  return `${inst.cardId}#${counters}#${stickers}${w}`;
+/** An ordered zone (the deck): array order preserved, each instance reduced to its `contentKey`. */
+function orderedZone(list: readonly CardInstance[]): string {
+  return list.map(contentKey).join(';');
 }
 
-/** An ordered zone of plain instances (deck/discard/hand/threats/removed). Array order is preserved. */
-function zone(list: readonly CardInstance[]): string {
-  return list.map((c) => instToken(c)).join(';');
+/** An unordered zone: instances reduced to `contentKey` and **sorted**, so array order is erased. */
+function multiset(list: readonly CardInstance[]): string {
+  return list.map(contentKey).sort().join(';');
 }
 
-/** An ordered zone of placed (staffed) instances (tableau/workZone), folding each box's `workers` in. */
-function placedZone(list: readonly PlacedCard[]): string {
-  return list.map((c) => instToken(c, c.workers)).join(';');
+/** An unordered zone of placed (staffed) instances (tableau/workZone), folding each box's `workers`
+ *  into its token before sorting. */
+function placedMultiset(list: readonly PlacedCard[]): string {
+  return list
+    .map((c) => `${contentKey(c)}@${c.workers}`)
+    .sort()
+    .join(';');
 }
 
-/** A parked interaction's token: its card, choice shape, pick count, and revealed options in order
+/** A parked interaction's token: its card, choice shape, pick count, and revealed options **in order**
  *  (the answer is an index into `options`, so option order is load-bearing). Empty when none is parked. */
 function pendingToken(p: PendingInteraction | null): string {
   if (!p) return '';
-  return `${p.cardId}#${p.kind}#${p.pick}#${p.options.map((o) => instToken(o)).join(';')}`;
+  return `${p.cardId}#${p.kind}#${p.pick}#${p.options.map(contentKey).join(';')}`;
 }

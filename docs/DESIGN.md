@@ -139,6 +139,34 @@ A "round" = one turn:
    still in hand auto-resolves; the turn's Work cards and the rest of the hand file
    to **discard**; advance the round.
 
+### Determinism & order-independence 🔧
+
+Runs are seeded and deterministic (the foundation for replays + headless simulation).
+On top of raw determinism the engine holds a stronger, deliberately-designed property:
+**everything but the draw pile is unordered.** The draw pile's order *is* the future; a
+discard pile, a hand, the tableau — these are unordered in the player's mental model, and
+the engine matches that:
+
+- **The discard reshuffle is order-independent.** When the discard folds back into an
+  empty deck it is *canonicalized by content* before the (uniform, seeded) shuffle, so the
+  resulting deck is a pure function of the discard *multiset* and the RNG state — the order
+  cards happened to file into the discard never leaks into a future draw. (Uniform shuffling
+  is uniform regardless of input order, so this is imperceptible in play; nothing reads the
+  discard positionally.)
+- **Batch processing is order-independent.** No card's effect may make the *committed*
+  outcome of an end-of-round batch — production across the tableau, threat drains, the
+  auto-resolution of Events left in hand — depend on the order its siblings resolve in. The
+  engine dispatches in a *fixed* order (for replay determinism), but the result must be the
+  same under any order.
+
+Both together mean the whole run state reduces to *one ordered draw pile + a set of
+unordered heaps*. This is a genuine game-design choice (it's the faithful model), and it is
+also what makes the headless **seeded oracle** cheap: its search can treat those zones as
+multisets and merge the vast number of states that differ only in bookkeeping order (see
+*Code architecture*). A simulator property test permutes the zones and asserts an identical
+committed state — over a fixed fixture, so a card added with a cross-sibling batch effect must
+be added to it (a miss only costs the oracle completeness, never soundness).
+
 ### Resources ✅
 
 All resources know nothing about missions. Missions sit on top: they reference resources as objective targets, failure triggers, or pressure multipliers. The resource definitions don't change; only the mission's lens on them does.

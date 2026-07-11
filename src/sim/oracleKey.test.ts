@@ -83,6 +83,22 @@ describe('oracle transposition key', () => {
     expect(keyOf(swapped)).not.toBe(keyOf(G));
   });
 
+  it('treats every non-deck zone as an unordered multiset — reordering it leaves the key unchanged', () => {
+    const G = baseState();
+    G.hand = [
+      { id: 4, cardId: 'c' },
+      { id: 5, cardId: 'd' },
+    ];
+    G.tableau = [
+      { id: 7, cardId: 'f', workers: 1 },
+      { id: 9, cardId: 'h', workers: 0 },
+    ];
+    const reordered = structuredClone(G);
+    reordered.hand.reverse();
+    reordered.tableau.reverse();
+    expect(keyOf(reordered)).toBe(keyOf(G));
+  });
+
   it('distinguishes a placed card by its worker count and rngState', () => {
     const G = baseState();
     const staffed = structuredClone(G);

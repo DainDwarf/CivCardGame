@@ -27,6 +27,11 @@ export function discardWorkZone(G: GameState): void {
  * other card gets) — see `CardEffect.remove`'s doc comment. Non-event cards are left in hand for
  * the caller's normal discard sweep. Partition first, then resolve, so an event's own effect
  * (e.g. a draw) can't reorder the sweep. Shared by `endTurn` and `projectedDelta`.
+ *
+ * Per the **zone order-independence invariant** (see DESIGN.md / the CLAUDE.md convention), the
+ * *committed outcome* of this batch must not depend on the hand's order — the fixed iteration is for
+ * replay determinism only. (The order hand cards then file into `discard` below is likewise
+ * immaterial: the discard is unordered — its reshuffle canonicalizes by content, see `deck.ts`.)
  */
 export function resolveHandEvents(G: GameState): void {
   const events: CardInstance[] = [];

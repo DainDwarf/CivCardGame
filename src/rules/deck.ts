@@ -1,7 +1,7 @@
 import { effectiveHandSize } from './culture';
 import { shuffleFromState } from './rng';
 import { emitEvent } from './events';
-import type { CardInstance, DrawSource, GameState } from './state';
+import { contentKey, type CardInstance, type DrawSource, type GameState } from './state';
 import type { EffectContext } from './effects';
 
 /**
@@ -10,9 +10,24 @@ import type { EffectContext } from './effects';
  * spot that draws/peeks off an empty deck (`drawCard`, `peekTop`), so the shuffle-in-progress logic
  * lives once. Bumps `reshuffleCount`, a pure UI cue (`components/Board.tsx` diffs it to fire the
  * deck's shuffle animation) — no rule reads it.
+ *
+ * **Order-independent by design.** The discard is **canonicalized by content** (`contentKey`,
+ * id-independent) *before* the Fisher–Yates, so the resulting deck is a pure function of
+ * `(discard multiset, rngState)` — a discard pile is unordered in the player's mental model, and a
+ * uniform shuffle is uniform regardless of input order, so this is player-imperceptible. It's what
+ * lets the run treat the discard as unordered (nothing reads it positionally — `recoverFromDiscard`
+ * is by-id) and the simulator key the discard as a multiset (`sim/oracleKey.ts`). See the
+ * order-independence convention in DESIGN.md.
  */
 function reshuffleIntoDeck(G: GameState): void {
-  const { result, rngState } = shuffleFromState(G.discard, G.rngState);
+  // Plain code-unit compare (not `localeCompare`) so the ordering is locale-independent — determinism
+  // must hold identically across machines/CI, not just within one locale.
+  const canonical = [...G.discard].sort((a, b) => {
+    const ka = contentKey(a);
+    const kb = contentKey(b);
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+  const { result, rngState } = shuffleFromState(canonical, G.rngState);
   G.deck = result;
   G.discard = [];
   G.rngState = rngState;

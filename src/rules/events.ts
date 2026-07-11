@@ -134,7 +134,13 @@ export function dispatchEvent(G: GameState, event: GameEvent): void {
     }
   }
   // Snapshot the observer zones first: a handler may add/remove from them, but this event's
-  // subscriber set is fixed at dispatch time.
+  // subscriber set is fixed at dispatch time. This walk order is *fixed* for replay determinism —
+  // but by the **zone order-independence invariant** (a card-design rule; see DESIGN.md and the
+  // CLAUDE.md convention) the committed *outcome* must be commutative under it: no card's handler may
+  // depend on the resolution order of its siblings in the same batch (production, threat drains). That
+  // is what lets the simulator key `tableau`/`workZone`/`threats` as unordered multisets
+  // (`sim/oracleKey.ts`); `sim/zoneOrderInvariance.test.ts` checks it (over a fixed fixture — extend it
+  // when adding a card that reads across its batch siblings).
   for (const b of [...G.tableau]) if (isOperating(b)) run(b);
   for (const w of [...G.workZone]) if (isOperating(w)) run(w);
   for (const t of [...G.threats]) run(t);

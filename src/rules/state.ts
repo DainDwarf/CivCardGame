@@ -236,6 +236,26 @@ export function blankState(missionId: string): GameState {
   };
 }
 
+/**
+ * A card instance's **content key** — its game-relevant identity *minus its instance id*: the cardId
+ * plus its per-copy state (`counters`, `stickers`), both normalized to a stable order. Two instances
+ * with an equal content key are interchangeable in every rule (the engine never branches on an id's
+ * numeric value). It's the id-independent identity behind two order-independence guarantees:
+ * `deck.ts`'s reshuffle canonicalizes the discard by this key so a reshuffle is a pure function of the
+ * discard *multiset* (not its order), and the simulator's transposition key (`sim/oracleKey.ts`) hashes
+ * zones by it. Kept here in the core because it's about a `CardInstance`'s identity, not a sim concern.
+ */
+export function contentKey(inst: CardInstance): string {
+  const counters = inst.counters
+    ? Object.keys(inst.counters)
+        .sort()
+        .map((k) => `${k}=${inst.counters![k]}`)
+        .join(',')
+    : '';
+  const stickers = inst.stickers?.length ? [...inst.stickers].sort().join(',') : '';
+  return `${inst.cardId}#${counters}#${stickers}`;
+}
+
 /** Read a per-instance counter off a card, defaulting a never-touched key to 0. */
 export function getCounter(inst: CardInstance, key: string): number {
   return inst.counters?.[key] ?? 0;
