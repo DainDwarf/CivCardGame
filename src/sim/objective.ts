@@ -1,4 +1,4 @@
-import { cultureProgress, objectiveMet, type GameState } from '../rules';
+import { cultureForLevel, objectiveMet, type GameState } from '../rules';
 
 /**
  * A **sim-local progress gradient** toward a mission's objective — the signal the balance policies
@@ -39,15 +39,16 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
     const built = ['hut', 'farm', 'toolmaker'].filter((id) => G.tableau.some((b) => b.cardId === id)).length;
     return (built + Math.min(G.territory, 3)) / 6;
   },
-  // "Rites & Rituals": reach 🎭 culture *level 2*. Culture accumulates and is never spent, so the
-  // gradient is the *fractional* level `level + within-band ratio` (a smooth, monotonic function of
-  // G.culture that equals the integer level at each boundary — a discrete `cultureLevel` alone would
-  // sit flat between level-ups and give a one-ply policy nothing to climb toward from a +2 culture
-  // play). Capped at 2 and normalized ⇒ 1 exactly when level 2 is reached (which is when the objective
-  // fires), so a policy converts food/production into culture cards until it crosses, then stops.
+  // "Rites & Rituals": reach 🎭 culture *level 2*. Culture accumulates and is never spent, and the win
+  // is purely a raw-culture threshold — level 2 sits at `cultureForLevel(2)` (30) culture — so the
+  // gradient tracks *raw culture toward that threshold*, capped and normalized ⇒ 1 exactly at the win.
+  // Deliberately not the *fractional level* (`level + within-band ratio`): because the bands double
+  // (10, then 20), fractional level is non-uniform — it credits the first band twice as steeply as the
+  // wide second one, so a one-ply policy under-values the band-1 climb and can stall mid-band. Raw
+  // points make every culture point worth an equal slice of the goal, a uniform pull straight to it.
   rites_rituals_goal: (G) => {
-    const { level, ratio } = cultureProgress(G.culture);
-    return Math.min(level + ratio, 2) / 2;
+    const target = cultureForLevel(2);
+    return Math.min(G.culture, target) / target;
   },
 };
 

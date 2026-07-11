@@ -17,6 +17,13 @@ export function cultureStep(level: number): number {
   return 2 ** level * CULTURE_STEP;
 }
 
+/** Cumulative culture required to *reach* `level` from 0 — the sum of every band below it
+ *  (`10, 30, 70, 150, …`). The single source for "how much raw culture is level N worth", used by
+ *  `cultureProgress` for the band floor and by the sim's culture-goal steering. */
+export function cultureForLevel(level: number): number {
+  return CULTURE_STEP * (2 ** level - 1);
+}
+
 /** The highest level `culture` has reached. Computed iteratively to avoid float boundary error. */
 export function cultureLevel(culture: number): number {
   let level = 0;
@@ -42,7 +49,7 @@ export interface CultureProgress {
 
 export function cultureProgress(culture: number): CultureProgress {
   const level = cultureLevel(culture);
-  const spent = CULTURE_STEP * (2 ** level - 1); // cumulative culture to have reached `level`
+  const spent = cultureForLevel(level); // cumulative culture to have reached `level`
   const current = culture - spent;
   const needed = cultureStep(level);
   return { level, current, needed, ratio: needed > 0 ? Math.min(1, current / needed) : 0 };

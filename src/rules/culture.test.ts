@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { applyEffect } from './effects';
 import { dispatchEvent } from './events';
 import { applyUpkeep } from './upkeep';
-import { cultureLevel, cultureProgress, effectiveHandSize } from './culture';
+import { cultureForLevel, cultureLevel, cultureProgress, effectiveHandSize } from './culture';
 import { blankState, instancesFromCardIds } from './state';
 import { playCard } from '../run/moves';
 import type { BuildingInstance } from './state';
@@ -69,6 +69,15 @@ describe('culture: level thresholds', () => {
     expect(cultureLevel(30)).toBe(2); // +20 more
     expect(cultureLevel(69)).toBe(2);
     expect(cultureLevel(70)).toBe(3); // +40 more
+  });
+
+  it('reports the cumulative culture to reach a level (the band floors)', () => {
+    expect(cultureForLevel(0)).toBe(0);
+    expect(cultureForLevel(1)).toBe(10);
+    expect(cultureForLevel(2)).toBe(30);
+    expect(cultureForLevel(3)).toBe(70);
+    // Reaching level N ⇔ having cultureForLevel(N) culture.
+    expect(cultureLevel(cultureForLevel(2))).toBe(2);
   });
 
   it('reports progress within the current band, resetting on level-up', () => {
