@@ -1,5 +1,6 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
+import { RAIDER_WAVES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -128,6 +129,29 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     reward: { influence: 8, unlockCardIds: ['gobekli_tepe'] },
     map: { col: 2, row: 0 },
+    age: 'stone',
+  },
+  raiders_at_border: {
+    id: 'raiders_at_border',
+    name: 'Raiders at the Border',
+    lore:
+      'A settled people with full granaries does not go unnoticed. Beyond the ridgeline, hungry ' +
+      'bands have marked the easy pickings, and wave after wave will come for the stores. Spears ' +
+      'alone will not hold them: raise the warriors, meet each raid head-on, and drive the raiders ' +
+      'off for good — or watch the harvest bleed away, season after season.',
+    prereqs: ['rites_rituals'],
+    // One `raider` event per wave, tied to the objective's threshold by the shared RAIDER_WAVES const
+    // so the mission can't seed a different count than the win asks for. `Array.from` (not `.fill`)
+    // for a clean `string[]`.
+    events: Array.from({ length: RAIDER_WAVES }, () => 'raider'),
+    objectiveCardId: 'raiders_at_border_goal',
+    victoryHint: `Defeat all ${RAIDER_WAVES} raider waves — pay 3 ⚔️ to play (drive off) each one.`,
+    failureHint: null,
+    kind: 'standard',
+    // Provisional Influence-only reward. The intended Chiefdom-board unlock is deferred: it needs a new
+    // `unlockBoardIds` reward kind (boards aren't a reward type yet) — see docs/TODO.md Step 6.4.
+    reward: { influence: 8 },
+    map: { col: 3, row: -1 },
     age: 'stone',
   },
   sandbox: {

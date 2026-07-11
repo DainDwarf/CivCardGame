@@ -255,6 +255,11 @@ const GROWING_NUMBERS_BUILDINGS: readonly (readonly [cardId: string, icon: strin
   ['toolmaker', '⛏️'],
 ];
 
+/** How many raider waves "Raiders at the Border" (6.4) seeds — the single source shared by the
+ *  mission's injected event list (`content/missions.ts`), the `raiders_at_border_goal` win threshold,
+ *  and its progress readout, so the "defeat *all* the raiders" invariant can't drift between them. */
+export const RAIDER_WAVES = 4;
+
 /**
  * The card catalogue. A `building` card *is* the building it becomes in the tableau (its stats
  * live right here); action cards resolve their effect and recycle through the discard; work
@@ -342,6 +347,14 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // — Stone Age events (mission-only; injected into the deck by a mission, never deckable). An event
+  //   is a recurring hazard: left in hand it auto-resolves its drain at end of turn and reshuffles
+  //   back to recur; *played*, it pays its cost to banish itself to `removed` unresolved (its effect
+  //   never fires — playing is preventive). The raider is the debut resource-*draining* event: it
+  //   bleeds 1🌾 each round it's left standing, and is driven off for good by paying 3⚔️ — "Raiders at
+  //   the Border" (6.4) is won by defusing all its waves this way.
+  raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, effect: { loss: { food: 1 } } },
+
   // — "The First Settlement" objective (mission-only): stockpile 10🔨 and 10⚔️. Owns its own win
   //   predicate the way every objective does; no defeat of its own (famine/collapse is universal).
   first_settlement_goal: {
@@ -372,6 +385,19 @@ export const CARDS: Record<string, CardDef> = {
       const p = cultureProgress(G.culture);
       return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2`;
     },
+  },
+
+  // — "Raiders at the Border" objective (mission-only): defeat every raider wave by *playing* it —
+  //   paying its 3⚔️ cost banishes it to `removed` (the only path a raider reaches that pile, since
+  //   demolish only files buildings there). So the win is purely a count of raiders in `removed`; the
+  //   pressure is the food they drain each round left unplayed, so no mission-specific defeat is
+  //   needed (famine is the universal loss).
+  raiders_at_border_goal: {
+    id: 'raiders_at_border_goal', name: 'Raiders at the Border', kind: 'objective', cost: {},
+    description: `Defeat all ${RAIDER_WAVES} raider waves`,
+    objective: (G) => G.removed.filter((c) => c.cardId === 'raider').length >= RAIDER_WAVES,
+    dynamicText: (G) =>
+      `⚔️ ${Math.min(G.removed.filter((c) => c.cardId === 'raider').length, RAIDER_WAVES)}/${RAIDER_WAVES} defeated`,
   },
 
   // — Sandbox mission cards (mission-only; excluded from decks/collection by `isDeckable`).

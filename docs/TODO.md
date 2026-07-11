@@ -64,17 +64,32 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tutorial → Step 9.2)
   - **6.3 — Rites & Rituals** ✅ DONE — col 2. `[shipped]` (details in *Done / shipped*;
     tutorial → Step 9.3)
-  - **6.4 — Events branch: military attack/defense** (working name *"Raiders at the Border"*) —
-    col 3, row -1, prereq 6.3. **Teaches:** the **event** card mechanic (mission-injected
-    disasters that auto-resolve from hand). **Content:** seed several invasion events that drain
-    resources unless military ≥ a threshold (defense) — the debut of resource-*draining* events.
-    **Objective:** survive the wave(s) / hold the military line. **Unlocks:** the **Chiefdom
-    board** — the first *military-focused* government board (a martial opening: more Military,
-    leaner Population), so this is where the arc teaches **board choice** (Tribe vs. Chiefdom at
-    launch). ~8⭐ (provisional). **Flag:** unlocking a board needs a **new reward kind
-    (`unlockBoardIds`)** in `rules/rewards.ts` + `MissionDef.reward` — boards aren't in the reward
-    types yet (only card / card-sticker / board-sticker) — plus the Chiefdom board authored in
-    `content/boards.ts`. `[size: M] [?]`
+  - **6.4 — Events branch: military attack/defense** (*"Raiders at the Border"*) — col 3, row -1,
+    prereq 6.3. **Teaches:** the **event** card mechanic (mission-injected disasters that auto-resolve
+    from hand). **PARTIALLY SHIPPED** — the mission + its event landed; the **Chiefdom board unlock is
+    deferred** to a follow-up (needs the new `unlockBoardIds` reward kind). Done this session:
+    - The `raider` **event** card — the debut resource-*draining* event: 3⚔️ cost, drains 1🌾 on the
+      unplayed auto-resolve, defused for good by playing it (banished to `removed` unresolved).
+    - The `raiders_at_border` mission — seeds `RAIDER_WAVES` (4) raiders into the deck; **objective:**
+      defeat all 4 (count in `removed`), owned by `raiders_at_border_goal`. Deadline-free — the food
+      drain is the pressure, famine the only loss. Influence-only reward (8⭐, provisional).
+    - `sim/objective.ts` gradient (normalized raiders-defused) so the standard mission is sweepable —
+      it rewards each raider *played*, but nothing on the path there (drawing one, banking military),
+      so it's the growing_numbers dilemma again (a naive `min(military,3)` readiness term cancels on
+      the play, since military is *consumed*, unlike territory). Left at the simple form — re-tuning
+      with zero sim data is guessing.
+    - **Two things unverified, both a sim sweep (`npm run sim`):** (a) **greedy termination** — this
+      is *deadline-free* (food drain is the only pressure), so a survival-first greedy could sit at a
+      non-winning equilibrium (Foraging offsets the drain, military never accumulates, no raider ever
+      played); the sim's 100k-action backstop *throws* rather than hangs, but that would fail a sweep.
+      (b) **winnability** with Founding/Tribe (12⚔️ total + recurring food drain vs. Bow/Dogs military)
+      and the reward tuning. Watch (a) first — it may force blending a military sub-goal into the
+      gradient after all.
+    - **Deferred (the board half):** the **Chiefdom board** — first *military-focused* government board
+      (more Military, leaner Population), where the arc teaches **board choice** (Tribe vs. Chiefdom at
+      launch). Needs a **new reward kind (`unlockBoardIds`)** in `rules/rewards.ts` + `MissionDef.reward`
+      (boards aren't a reward type yet — only card / card-sticker / board-sticker), the Chiefdom board
+      authored in `content/boards.ts`, and this mission's reward extended to grant it. `[size: S] [?]`
   - **6.5 — Threat branch: population unrest** (working name *"Restless People"*) — col 3, row 0,
     prereq 6.3. **Teaches:** the **threat** mechanic (persistent board hazard). **Threat:** each
     point of population drains 1💰 **every deck reshuffle** — unrest that scales with your own

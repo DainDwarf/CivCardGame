@@ -1,4 +1,5 @@
 import { cultureForLevel, objectiveMet, type GameState } from '../rules';
+import { RAIDER_WAVES } from '../content/cards';
 
 /**
  * A **sim-local progress gradient** toward a mission's objective — the signal the balance policies
@@ -50,6 +51,15 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
     const target = cultureForLevel(2);
     return Math.min(G.culture, target) / target;
   },
+  // "Raiders at the Border": defeat every raider wave by *playing* it (paying 3⚔️ banishes it to
+  // `removed`). The gradient is just the normalized count of raiders defused — each play is an
+  // unconditional +1/N capability bump, which is what pulls the greedy through the military cost (the
+  // same way the growing_numbers territory sub-goal pulls it into Conquest). Deliberately NOT blended
+  // with a "military banked" readiness term: military is *consumed* by the play, so such a term would
+  // net to ~zero on the exact action we want (play a raider: +1 defused, −3⚔️) and the strictly-
+  // improving greedy would refuse to play it — stalling forever on a deadline-free mission.
+  raiders_at_border_goal: (G) =>
+    Math.min(G.removed.filter((c) => c.cardId === 'raider').length, RAIDER_WAVES) / RAIDER_WAVES,
 };
 
 /**
