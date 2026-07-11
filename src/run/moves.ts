@@ -63,6 +63,11 @@ export function playCard(
     resolveCard({ G, self: played });
   } else if (card.kind === 'work') {
     addWork(G, cardId, played.stickers);
+  } else if (card.kind === 'event') {
+    // A *played* event is banished **unresolved** — paying its cost pre-empts the disaster so its
+    // effect never fires (the filing below sends it to `removed`). The effect only ever resolves on
+    // the involuntary path: an event *left* in hand auto-resolves at end of turn (`upkeep.ts`'s
+    // `resolveHandEvents`). So this branch deliberately does not `resolveCard`.
   } else {
     // Resolve on the played *instance* — so a self-scaling card reads/writes its own
     // copy's counters, which then ride along as that same instance files to discard below.
@@ -73,9 +78,13 @@ export function playCard(
     emitEvent(G, { type: 'discard', instanceId: c.id, cardId: c.cardId, reason: 'sacrifice' });
   }
   // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,
-  // filed at end of turn) stay put; only action cards recycle to the discard here — the same
-  // instance object, carrying whatever counters its resolver just bumped.
+  // filed at end of turn) stay put. An `action` recycles to the **discard** — the same instance
+  // object, carrying whatever counters its resolver just bumped. A voluntarily *played* `event` is
+  // **removed** (banished for good, its effect never firing — see above), versus an unplayed one,
+  // which auto-resolves and files to discard at end of turn (`upkeep.ts`'s `resolveHandEvents`).
+  // The played-vs-auto split is the event kind's whole point.
   if (card.kind === 'action') G.discard.push(played);
+  else if (card.kind === 'event') G.removed.push(played);
 }
 
 /**

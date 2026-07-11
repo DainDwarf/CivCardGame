@@ -69,11 +69,12 @@ describe('unplayableReason', () => {
     expect(unplayableReason(G, card, self)).toBeNull();
   });
 
-  it('never lets an event card be played — it auto-resolves at end of turn instead', () => {
+  it('lets an affordable event card be played — playing it is how you banish it', () => {
     const G = blankState('test');
-    // Affordable and otherwise unconstrained, but the event gate takes precedence.
+    // Events are now player-playable (paying the cost defuses them); an affordable, otherwise
+    // unconstrained event has no gate. Unaffordable ones fall to the normal `cost` reason.
     const card: CardDef = { ...baseCard, kind: 'event' };
-    expect(unplayableReason(G, card, self)).toEqual({ kind: 'event' });
+    expect(unplayableReason(G, card, self)).toBeNull();
   });
 
   it('checks gates in priority order (cost before culture level)', () => {

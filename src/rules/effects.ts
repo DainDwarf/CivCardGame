@@ -25,10 +25,6 @@ export interface CardEffect {
    *  demolished card files to `removed`. The target is chosen by the UI and threaded as
    *  `EffectContext.target` (validated up front by `playCard`, applied inside the resolver). */
   destroy?: true;
-  /** Exile *this* card to `removed` once it resolves, instead of the default discard (e.g. a
-   *  one-shot disaster event). Checked by `rules/upkeep.ts`'s `resolveHandEvents`; not a trait of
-   *  any `kind` — the effect decides. Currently only on `event` cards. */
-  remove?: true;
 }
 
 /** Applies every field a sticker never touches (loss/draw/population/territory/culture). Gain is

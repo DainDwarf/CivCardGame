@@ -34,13 +34,20 @@ export interface CardDef {
    * - `work`: the card sticks onto the board as a staffable work box (see `workers`); it
    *   produces its `effect.gain` only while staffed, then recycles to the **discard** pile at
    *   *end of turn* (not on play). No population is locked and no idle pop is required to play it.
-   * - `event`: not player-playable and never in the deck editor/collection — missions inject it.
-   *   An event left in hand at end of turn auto-resolves its effect, then files by the same
-   *   default as any other card: **discard**, unless its effect specifies `remove: true`, which
-   *   sends it to **removed** instead. Not an inherent trait of `event` itself.
+   * - `event`: a **recurring hazard** the player can pay to defuse — mission-injected into the deck,
+   *   never built with (excluded from the deck editor/collection by `isDeckable`), but *playable once
+   *   drawn into hand*. Its fate is path-driven, and that split is the whole mechanic:
+   *   **played** — pay its `cost` to banish it to **removed** *unresolved*: its effect never fires,
+   *   so playing an event is *preventive*;
+   *   **left unplayed** at end of turn — it auto-resolves its effect for free and files to
+   *   **discard**, so it reshuffles back and *recurs*. So doing nothing lets the disaster strike
+   *   round after round; paying to play it pre-empts it for good. Because an event may fire unplayed
+   *   with no UI present, its resolver must stay non-interactive (never `suspendChoice`) — see
+   *   `rules/upkeep.ts`'s `resolveHandEvents`.
    * - `threat`: a persistent board hazard, never in hand/deck/collection/deck editor — a mission's
    *   `setup` seeds it directly into `GameState.threats` (`rules/threats.ts`'s `addThreat`), not a
-   *   pile. Unlike `event` (resolves once from hand, then files away), a threat ticks *every* upkeep
+   *   pile. Unlike an `event` (which lives in the deck/hand and fires at most once per draw), a
+   *   threat ticks *every* upkeep
    *   via the `endTurn` broadcast (`rules/events.ts`'s `dispatchEvent` → `resolveEndTurn` →
    *   `resolveCard`) and stays on the board indefinitely — the card's own `effect`/`resolve` computes
    *   and applies its drain (and, for one that escalates, bumps its own counter), the same resolver
@@ -208,7 +215,8 @@ export function isStaffable(card: CardDef): boolean {
 
 /** The stable display order of card kinds — the primary key of `compareCards`. Deckable kinds
  *  come first in play-relevance order (building → wonder → work → action); the mission-only kinds
- *  trail (only the pile viewer ever lists one, e.g. an `event` filed to `removed`). */
+ *  trail — `event` (drawn into hand and playable, or filed to a pile) ahead of the board-only
+ *  `threat`/`objective`. */
 const KIND_RANK: Record<CardKind, number> = {
   building: 0,
   wonder: 1,

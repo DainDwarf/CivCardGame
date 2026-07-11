@@ -17,16 +17,13 @@ export type UnplayableReason =
   | { kind: 'territory' }
   | { kind: 'noBuildingsToDestroy' }
   | { kind: 'emptyDrawPile' }
-  | { kind: 'discardEmpty' }
-  | { kind: 'event' };
+  | { kind: 'discardEmpty' };
 
 /** Why `card` cannot be played right now, or null if it can. `self` is the exact hand instance
  *  being checked — its own attached sticker (e.g. Efficient) may discount `card.cost` below the
  *  catalogue's raw number (`rules/stickers.ts`'s `effectiveCost`), so affordability is always
  *  checked against *this copy's* actual price, not the static card. */
 export function unplayableReason(G: GameState, card: CardDef, self: CardInstance): UnplayableReason | null {
-  // Event cards are never player-playable — they auto-resolve at end of turn.
-  if (card.kind === 'event') return { kind: 'event' };
   const cost = effectiveCost(card.cost, self);
   if (!canAfford(G.resources, cost)) {
     const missing: Partial<Resources> = {};

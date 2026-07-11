@@ -88,7 +88,9 @@ export function describeCost(c: CardDef): string {
  *  worker-icon rendering.) */
 export function describeConditions(c: CardDef): string {
   const parts: string[] = [];
-  if (c.kind === 'event') parts.push(c.effect?.remove ? 'resolves at end of round, then removed' : 'resolves at end of round');
+  // An event: play it (pay its cost) to banish it unresolved — its effect never fires (preventive);
+  // leave it and it fires for free at end of round, then recurs from the discard.
+  if (c.kind === 'event') parts.push('play to banish\nresolves at end of round');
   if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
   if (c.discardCost) parts.push(`discard ${c.discardCost}`);
   if (c.dynamicRule) parts.push(c.dynamicRule);

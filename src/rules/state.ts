@@ -111,14 +111,15 @@ export interface GameState {
   /** Draw pile. */
   deck: CardInstance[];
   /** Discard pile — the default landing spot once a card is played and resolved (or a Work card's
-   *  turn ends, or an `event` auto-resolves). Reshuffled into the deck when it runs dry. Going to
-   *  `removed` instead is the exception, driven by the *effect* not the kind — see `removed`. */
+   *  turn ends, or an unplayed `event` auto-resolves at end of turn). Reshuffled into the deck when it
+   *  runs dry. Going to `removed` instead is the exception — see `removed`. */
   discard: CardInstance[];
   /**
    * Exile pile — cards permanently removed from the deck (never drawn or reshuffled again); distinct
-   * from the tableau (an active board entity). A card lands here only when a specific effect files it
-   * there, never by its `kind`: a `building` when another card's `effect.destroy` demolishes it, an
-   * auto-resolved `event` when its own `effect.remove` is set.
+   * from the tableau (an active board entity). A card lands here only in one of two specific cases,
+   * never by a static kind rule: a `building` when another card's `effect.destroy` demolishes it, and
+   * a **voluntarily played** `event` (paying its cost banishes it *unresolved* — its effect never
+   * fires — versus an unplayed event, which auto-resolves to `discard` and recurs; see `rules/upkeep.ts`).
    */
   removed: CardInstance[];
   /** Buildings in play (each a placed `building` card), tracking their assigned workers. */

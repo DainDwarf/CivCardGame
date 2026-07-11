@@ -88,9 +88,9 @@ There are **seven** card kinds — the `CardKind` values in `content/cards.ts`:
 they leave your hand; `threat` and `objective` are the odd ones out — they never enter a hand or pile
 at all, living instead in persistent board zones (see below). By default a card returns to the
 **discard** pile once it's done being useful (reshuffled into the deck when it runs
-dry) — the **removed** pile is the exception, used only where a specific *effect* says
-so. Discard-vs-removed is never a property of the *kind*; it's decided by the effect
-that files the card:
+dry) — the **removed** pile is the exception. Two things route a card there, neither a
+static kind rule: a specific *effect* (a demolish exiling the building it destroys), and
+the `event` kind's played-vs-unplayed split (a *played* event is banished; see below).
 
 - **Building (commit):** the card *is* the building. Pay a cost to play; it leaves
   the deck and enters your **tableau** (one territory slot), producing **every
@@ -112,15 +112,19 @@ that files the card:
   on play — no idle population required to play it. Produces its effect only while
   staffed, then goes to **discard** at *end of turn* (not immediately, like Action).
   → staffed *labour*.
-- **Event (disaster):** never player-playable — missions inject it into the deck.
-  Left in hand at end of turn, it auto-resolves its effect, then files to
-  **discard** by the same default as anything else — unless that effect says
-  otherwise (an effect can exile it to **removed** instead, gone for the rest of
-  the run). → mission *pressure*.
+- **Event (recurring hazard):** missions inject it into the deck; the player can't
+  build with it, but *can play it* once drawn. Its two fates are the mechanic:
+  **play it** — pay its cost to banish it to **removed** *unresolved*; its effect never
+  fires, so playing is *preventive*; or **leave it** — at end of turn it auto-resolves
+  for free and goes to **discard**, so it reshuffles back and *recurs* round after round.
+  Doing nothing lets the disaster keep striking; paying to play it pre-empts it for good.
+  (Because an event can fire unplayed with no UI present, its effect must be
+  non-interactive.) → mission *pressure* you pay to end.
 - **Threat (board hazard):** never in a hand, pile, or deck — a mission seeds it
   directly into the persistent `GameState.threats` zone at setup, where it stays for
-  the rest of the run. What it does is up to the card. Never player-owned or
-  player-playable, so it's excluded everywhere `event` is. → persistent *pressure*.
+  the rest of the run. What it does is up to the card. Never player-owned and (unlike a
+  playable `event`) never player-playable; like `event` it's mission-only, excluded from
+  deck-building/collection (`isDeckable`). → persistent *pressure*.
 - **Objective (win/lose goal):** the mission's victory/defeat condition made into a card,
   the positive counterpart to `threat`. A mission names one `objectiveCardId`; it's seeded
   into the `GameState.objective` zone at setup and owns its mission's win/lose *logic* via a

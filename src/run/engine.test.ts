@@ -114,38 +114,54 @@ describe('deadline: win (objective) and lose (threat) reconciled by checkEndIf o
   });
 });
 
-describe('endTurn event resolution', () => {
-  it('auto-resolves an event left in hand and destroys it (removed, not discarded)', () => {
+describe('event resolution', () => {
+  it('auto-resolves an unplayed event, files it to the discard, and it recurs (redrawn next turn), never removed', () => {
     let state = run();
     state.G.resources.military = 10;
     state.G.resources.food = 20; // keep famine out of the picture
     state.G.hand = instancesFromCardIds(['test_event']);
     state = endTurn(state);
     expect(state.gameover).toBeUndefined();
-    expect(state.G.resources.military).toBe(8); // test_event drained 2
-    expect(state.G.removed.map((c) => c.cardId)).toContain('test_event');
-    expect(state.G.discard.map((c) => c.cardId)).not.toContain('test_event');
-    expect(state.G.hand).toEqual([]); // empty deck, nothing redrawn
+    expect(state.G.resources.military).toBe(8); // test_event drained 2 when it auto-resolved
+    expect(state.G.removed.map((c) => c.cardId)).not.toContain('test_event'); // unplayed → never exiled
+    // It filed to discard, which (deck was empty) reshuffled back and was redrawn — the recurrence
+    // that makes an unplayed event a standing hazard, not a one-shot.
+    expect(state.G.hand.map((c) => c.cardId)).toEqual(['test_event']);
   });
 
-  it('beating the second event with Military intact wins', () => {
+  it('playing an event banishes it to removed UNRESOLVED — the drain never fires (preventive)', () => {
+    let state = run();
+    state.G.resources.military = 10;
+    state.G.hand = instancesFromCardIds(['test_event']);
+    state = applyMove(state, playCard, 0);
+    expect(state.gameover).toBeUndefined();
+    expect(state.G.resources.military).toBe(10); // pre-empted — no -2 drain
+    expect(state.G.removed.map((c) => c.cardId)).toEqual(['test_event']); // played → removed
+    expect(state.G.discard.map((c) => c.cardId)).not.toContain('test_event');
+    expect(state.G.hand).toEqual([]);
+  });
+
+  it('banishing the second event with Military intact wins', () => {
     let state = run();
     seedObjective(state.G, 'test_survive_obj');
-    state.G.removed = instancesFromCardIds(['test_event']); // one already beaten
+    state.G.removed = instancesFromCardIds(['test_event']); // one already banished
     state.G.resources.military = 10;
-    state.G.resources.food = 20;
     state.G.hand = instancesFromCardIds(['test_event'], 100);
-    state = endTurn(state);
+    // The win is a move-granularity flag read: playing the 2nd event exiles it (unresolved, so safe)
+    // and trips the objective.
+    state = applyMove(state, playCard, 0);
     expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });
   });
 
-  it('a second event that drives Military below zero is a defeat', () => {
+  it('an unplayed event whose auto-resolve drives Military below zero is a defeat', () => {
     let state = run();
     seedObjective(state.G, 'test_survive_obj');
-    state.G.removed = instancesFromCardIds(['test_event']);
-    state.G.resources.military = 1; // 1 - 2 = -1
-    state.G.resources.food = 20;
+    state.G.removed = instancesFromCardIds(['test_event']); // one banished, one short of the objective
+    state.G.resources.military = 1; // 1 - 2 = -1 when the unplayed event fires at end of turn
+    state.G.resources.food = 20; // keep famine out of it
     state.G.hand = instancesFromCardIds(['test_event'], 100);
+    // Ending the turn *without* playing the event lets it strike: the drain fires, Military collapses,
+    // and (since the auto-resolve files to discard, not removed) the objective stays one short.
     state = endTurn(state);
     expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'revolt' });
   });

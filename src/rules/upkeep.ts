@@ -22,10 +22,12 @@ export function discardWorkZone(G: GameState): void {
 }
 
 /**
- * Resolve any `event` cards still in hand at end of turn: each applies its effect, then files
- * to `removed` if its effect says `remove: true`, or `discard` otherwise (the same default any
- * other card gets) — see `CardEffect.remove`'s doc comment. Non-event cards are left in hand for
- * the caller's normal discard sweep. Partition first, then resolve, so an event's own effect
+ * Resolve any `event` cards *left unplayed* in hand at end of turn: each applies its effect, then
+ * files to the **discard** (so it reshuffles back and can recur — an unplayed event is a recurring
+ * hazard). This is the involuntary path where the effect *actually fires*; the voluntary one is
+ * `moves.playCard`, which pays the event's cost to banish it to `removed` **unresolved** (its effect
+ * never fires — playing an event is preventive). Non-event cards are left in hand
+ * for the caller's normal discard sweep. Partition first, then resolve, so an event's own effect
  * (e.g. a draw) can't reorder the sweep. Shared by `endTurn` and `projectedDelta`.
  *
  * Per the **zone order-independence invariant** (see DESIGN.md / the CLAUDE.md convention), the
@@ -42,13 +44,12 @@ export function resolveHandEvents(G: GameState): void {
   }
   G.hand = kept;
   for (const c of events) {
-    const card = CARDS[c.cardId];
     // Events auto-resolve at end of turn with no player present, so their resolvers must be
-    // non-interactive (must not set `G.pendingInteraction` — there'd be no UI to answer it). Only
-    // `action` cards may currently open an interaction; keep any future `event` resolver deterministic.
+    // non-interactive (must not set `G.pendingInteraction` — there'd be no UI to answer it). Being
+    // player-playable does not lift this: an event may still fire unplayed at end of turn, so every
+    // event resolver must stay deterministic.
     resolveCard({ G, self: c });
-    // `remove` is a filing decision (exile vs. discard), owned here, not by the resolver.
-    (card.effect?.remove ? G.removed : G.discard).push(c);
+    G.discard.push(c);
     emitEvent(G, { type: 'discard', instanceId: c.id, cardId: c.cardId, reason: 'event' });
   }
 }

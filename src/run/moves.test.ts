@@ -209,6 +209,17 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.discard).toEqual([]); // work cards file to discard only at end of turn
   });
 
+  it('a played event is banished to removed UNRESOLVED — its effect never fires (preventive)', () => {
+    const G = blankState('test');
+    G.hand = instancesFromCardIds(['test_event']);
+    G.resources.military = 10;
+    play(G, 'test_event');
+    expect(G.resources.military).toBe(10); // playing pre-empts the disaster — the −2 drain never happens
+    expect(G.removed.map((c) => c.cardId)).toEqual(['test_event']); // played → removed, unlike an action's discard
+    expect(G.discard).toEqual([]);
+    expect(G.hand).toEqual([]);
+  });
+
   it('a work card is playable with no idle workers — it just sits unstaffed (no pop gate)', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_work', 'test_work_food']);

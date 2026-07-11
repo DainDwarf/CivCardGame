@@ -204,8 +204,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     the engine asks each instance to produce and never reads its `produces` itself. Production is
     driven by the `endTurn` broadcast; there is no standalone production module.)
   - `upkeep.ts` — `applyUpkeep` (the `endTurn` broadcast — production + threat drains — → mission
-    tick → food eaten → flush), plus `resolveHandEvents` (auto-resolves any `event` cards left in
-    hand) and `discardWorkZone` (end-of-turn work filing). `settleEndOfTurn` is the single choke
+    tick → food eaten → flush), plus `resolveHandEvents` (auto-resolves any *unplayed* `event` cards
+    left in hand → discard, so they recur) and `discardWorkZone` (end-of-turn work filing). `settleEndOfTurn` is the single choke
     point that chains resolve-hand-events → recycle-hand → file-work-zone → flush, called by both
     `run/engine.ts`'s `endTurn` and this file's `projectedDelta` (the UI preview) so the two can
     never drift the way open-coded copies once did.
@@ -253,9 +253,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `isStructure` (occupies a slot) and `isStaffable` (produces/staffed at upkeep) choke-point
     predicates, so no call site open-codes a `kind === 'building'` union. A wonder is set apart only
     in the meta loop: its own Collection/deck category, no bought copies (`shop.ts`), no stickers
-    (`stickerAppliesTo`), at most `MAX_WONDERS_PER_DECK` per deck (`deckBuilder.ts`). Whether a card
-    files to `discard` vs `removed` is a property of the *effect* that files it, never the
-    kind (e.g. Destroy's `effect.destroy`, an event's `effect.remove`). An `objective` card owns
+    (`stickerAppliesTo`), at most `MAX_WONDERS_PER_DECK` per deck (`deckBuilder.ts`). Filing to a
+    pile defaults to `discard`, with two named exceptions routed at the play/upkeep choke points, not
+    by a static kind rule: Destroy's `effect.destroy` exiles its *target* building to `removed`, and
+    the `event` kind splits by *path* — a **played** event is exiled to `removed` **unresolved** (paying
+    its cost pre-empts the disaster: its effect never fires), while one **left unplayed** auto-resolves
+    its effect at end of turn and files to `discard`, so it recurs (`moves.playCard` /
+    `upkeep.ts`'s `resolveHandEvents` own the two sides). An `objective` card owns
     its mission's win logic via a single pure-read `objective` predicate, the way a
     `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
     for "a card the player builds decks with" (excludes event/threat/objective), used by the
@@ -311,8 +315,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/run/engine.ts` — the turn state machine. `RunState = { G, gameover }`.
   `createRun(config: RunConfig)` bootstraps a run by calling `setup.ts`'s
   `createInitialState`, then running the first `beginTurn`. `endTurn(state)` runs `applyUpkeep`, checks
-  win/loss, then hands off to `upkeep.ts`'s `settleEndOfTurn` — resolves any `event` cards still in
-  hand (apply effect, exile to `removed`), recycles the hand and files the turn's played `work` cards
+  win/loss, then hands off to `upkeep.ts`'s `settleEndOfTurn` — resolves any *unplayed* `event` cards still in
+  hand (apply effect, file to `discard` so they recur), recycles the hand and files the turn's played `work` cards
   to `discard` — re-checks win/loss, then starts the next turn. `applyMove(state, moveFn, ...args)` clones `G` with `structuredClone`,
   runs the move, and checks win/loss. All three return a new `RunState` — the caller
   (React context) owns the mutable reference. `toRunResult(G, gameover)` promotes a

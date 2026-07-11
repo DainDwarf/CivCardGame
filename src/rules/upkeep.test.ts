@@ -26,15 +26,15 @@ describe('projectedDelta — event-bus reachability', () => {
 });
 
 describe('resolveHandEvents', () => {
-  it('applies an event left in hand and destroys it to the removed pile', () => {
+  it('applies an unplayed event left in hand and files it to the discard (so it recurs)', () => {
     const G = blankState('test');
     G.resources.military = 10;
     G.hand = instancesFromCardIds(['test_food', 'test_event', 'test_prod']);
     resolveHandEvents(G);
     expect(G.resources.military).toBe(8); // test_event drained 2
-    expect(G.removed.map((c) => c.cardId)).toEqual(['test_event']);
+    expect(G.discard.map((c) => c.cardId)).toEqual(['test_event']); // unplayed → discard, not removed
+    expect(G.removed).toEqual([]); // only a *played* event is exiled (see moves.playCard)
     expect(G.hand.map((c) => c.cardId)).toEqual(['test_food', 'test_prod']); // non-events stay for the discard sweep
-    expect(G.discard).toEqual([]); // test_event's effect.remove sends it to removed, not discard
   });
 
   it('resolves every event in the hand in one sweep', () => {
@@ -43,7 +43,7 @@ describe('resolveHandEvents', () => {
     G.hand = instancesFromCardIds(['test_event', 'test_event']);
     resolveHandEvents(G);
     expect(G.resources.military).toBe(6); // 10 - 2 - 2
-    expect(G.removed.map((c) => c.cardId)).toEqual(['test_event', 'test_event']);
+    expect(G.discard.map((c) => c.cardId)).toEqual(['test_event', 'test_event']);
     expect(G.hand).toEqual([]);
   });
 
@@ -52,7 +52,7 @@ describe('resolveHandEvents', () => {
     G.hand = instancesFromCardIds(['test_food', 'test_prod']);
     resolveHandEvents(G);
     expect(G.hand.map((c) => c.cardId)).toEqual(['test_food', 'test_prod']);
-    expect(G.removed).toEqual([]);
+    expect(G.discard).toEqual([]);
   });
 });
 

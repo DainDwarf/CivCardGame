@@ -684,8 +684,6 @@ function whyUnplayable(card: CardDef, G: GameState, self: CardInstance): string 
       return 'no cards to reveal';
     case 'discardEmpty':
       return 'discard empty';
-    case 'event':
-      return 'resolves at end of round';
   }
 }
 
@@ -1806,9 +1804,7 @@ export function Board({
                   isPending || isPendingDestroy ? styles.pending : '',
                   isSacrifice ? styles.sacrifice : '',
                   isDragging ? styles.dragging : '',
-                  // Events are unplayable but must NOT be dimmed — they're a threat the
-                  // player should focus on, not tune out. Their red styling stands in.
-                  !affordable && c.kind !== 'event' && !pending && !pendingDestroy ? styles.unaffordable : '',
+                  !affordable && !pending && !pendingDestroy ? styles.unaffordable : '',
                   shake?.key === card.key ? styles.shake : '',
                 ]
                   .filter(Boolean)

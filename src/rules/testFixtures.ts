@@ -242,10 +242,12 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     },
   },
 
-  // --- Event: mission-injected; auto-resolves at end of turn, then exiles itself (`remove: true`). ---
+  // --- Event: mission-injected, drawn into hand. Played (for its `cost`) → banished to removed
+  // *unresolved* (the -2 drain never fires); left unplayed → auto-resolves at end of turn (drain
+  // fires) → discard (recurs). A free cost here so the played path is trivially affordable in tests. ---
   test_event: {
     id: 'test_event', name: 'Test Event', kind: 'event',
-    cost: {}, effect: { loss: { military: 2 }, remove: true },
+    cost: {}, effect: { loss: { military: 2 } },
   },
 
   // --- Threats: flat drain, escalating drain, and a deadline that owns its own defeat. ---
