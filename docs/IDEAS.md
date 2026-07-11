@@ -1,10 +1,11 @@
-# CivCardGame — Mission Ideas (unpolished)
+# CivCardGame — Ideas (unpolished)
 
-> A scratch list of **mission and campaign flavor ideas** caught during design
-> research — *not* committed content. Anything here is a candidate, not a promise.
-> Decided, designed work lives in [`DESIGN.md`](DESIGN.md); mechanics-level idea
-> jots live in [`TODO.md`](TODO.md). This file collects the *narrative/age framing*
-> we might build missions around, before any of it is real.
+> A scratch list of **unpolished ideas** — mission/campaign flavor, and now also
+> tooling/simulator directions — caught during design research. *Not* committed
+> content: anything here is a candidate, not a promise. Decided, designed work lives
+> in [`DESIGN.md`](DESIGN.md); mechanics-level idea jots live in [`TODO.md`](TODO.md).
+> This file collects the *narrative/age framing* we might build missions around, plus
+> longer-horizon tooling bets, before any of it is real.
 
 ## Random Ideas
 
@@ -80,3 +81,35 @@ More decentralized, broader-based societies with cheaper metal, wider literacy
 ## Computer Age
 
 ## Space Age?
+
+## Simulator / balance-tooling ideas
+
+The headless sim (`src/sim/`) currently brackets skill with four policies
+(random · heuristic · greedy · greedy2). Policies are really a *skill ladder* —
+random pins the floor, the greedies sit at "reasonable play," and the useful signal
+is the **spread** between brackets. Candidate additions that widen or raise that
+ladder:
+
+- **MCTS (Monte Carlo Tree Search)** — the standard strong-play policy for this kind
+  of game: selectively grow a search tree and spend random rollouts on the promising
+  branches (UCB to balance explore/exploit). Would give a near-optimal *"how good can
+  this deck/mission actually be played?"* upper bound — a real ceiling above the
+  greedies, at the cost of being the heaviest to build and slowest to run. Needs no
+  hand-written score function (it plays rollouts to the end and counts wins), though a
+  cheaper **flat Monte Carlo** variant (rollouts per action, no tree) is a lighter
+  first step toward it.
+- **Seeded perfect-information oracle** — runs are seeded and deterministic given the
+  seed, so we can fix the seed, *reveal the whole shuffle*, and search for the genuinely
+  optimal line of play. An **omniscient upper bound**: the best any player could do if
+  they knew the future. Balance uses: if even the oracle can't clear a mission it's
+  unwinnable; the oracle↔greedy gap measures how punishing variance is. Our determinism
+  makes this unusually cheap for what it delivers.
+- **Archetype / persona policies** — scripted *human* play styles rather than optimizers:
+  a rusher (race the objective), a turtle (hoard/over-staff), a greedy-economy builder, a
+  misplay-prone novice (right idea, frequent small mistakes). These don't try to be good —
+  they try to be *representative*, so win-rate numbers reflect real audiences instead of
+  only best-case or worst-case play.
+
+> (Discussed but lower-priority: deeper N-ply/expectimax or beam search above greedy2,
+> and evolutionary weight-tuning of the existing heuristic — kept out here to keep the
+> list to the higher-value bets.)
