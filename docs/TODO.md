@@ -64,34 +64,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tutorial → Step 9.2)
   - **6.3 — Rites & Rituals** ✅ DONE — col 2. `[shipped]` (details in *Done / shipped*;
     tutorial → Step 9.3)
-  - **6.4 — Events branch: military attack/defense** (*"Raiders at the Border"*) — col 3, row -1,
-    prereq 6.3. **Teaches:** the **event** card mechanic (mission-injected disasters that auto-resolve
-    from hand). ✅ **SHIPPED** — the mission, its event, and the Chiefdom board unlock all landed. Done:
-    - The `raider` **event** card — the debut resource-*draining* event: 3⚔️ cost, drains 1🌾 on the
-      unplayed auto-resolve, defused for good by playing it (banished to `removed` unresolved).
-    - The `raiders_at_border` mission — seeds `RAIDER_WAVES` (**3**, lowered from 4 for balance —
-      `7ec1b12`) raiders into the deck; **objective:** defeat all 3 (count in `removed`), owned by
-      `raiders_at_border_goal`. Deadline-free — the food drain is the pressure, famine the only loss.
-      Influence-only reward (8⭐, provisional).
-    - `sim/objective.ts` gradient (normalized raiders-defused) so the standard mission is sweepable —
-      it rewards each raider *played*, but nothing on the path there (drawing one, banking military),
-      so it's the growing_numbers dilemma again (a naive `min(military,3)` readiness term cancels on
-      the play, since military is *consumed*, unlike territory). Left at the simple form — re-tuning
-      with zero sim data is guessing.
-    - **Sim sweep done (manually, a separate session):** the sweep confirmed the mission runs and
-      surfaced that 4 waves was too hard, so `RAIDER_WAVES` was lowered to **3** (`7ec1b12`). The two
-      concerns it was watching — (a) **greedy termination** on this deadline-free mission (a
-      survival-first greedy sitting at a non-winning equilibrium) and (b) **winnability** with
-      Founding/Tribe (now 9⚔️ total + recurring food drain vs. Bow/Dogs military) — held up under the
-      lower wave count. The reward tuning (8⭐) stays provisional.
-    - **The board half (now shipped):** the **Chiefdom board** — first *military-leaning* government
-      (more Military, leaner Population), where the arc teaches **board choice** (Tribe vs. Chiefdom at
-      launch). Landed the new **`unlockBoardIds` reward kind** (the 4th symmetric unlock, alongside
-      card / card-sticker / board-sticker) — `computeRewards` now folds all four unlock sets through one
-      `UnlockProgress` bundle; a `PlayerStore.unlockedBoards` set; a `BoardDef.starting` flag + the
-      `availableBoardIds` picker seam (`starting || unlocked`, so a fresh profile always has Tribe); the
-      Chiefdom board authored in `content/boards.ts` (**provisional stats — to tune**); and this
-      mission's reward extended to grant it. Board unlocks preview as a locked chip → `BoardMini` reveal.
+  - **6.4 — Raiders at the Border** ✅ DONE — col 3, row -1. `[shipped]` (details in *Done / shipped*;
+    tutorial → Step 9.4)
   - **6.5 — Threat branch: population unrest** (working name *"Restless People"*) — col 3, row 0,
     prereq 6.3. **Teaches:** the **threat** mechanic (persistent board hazard). **Threat:** each
     point of population drains 1💰 **every deck reshuffle** — unrest that scales with your own
@@ -156,7 +130,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
   **Per-mission tutorial substeps** — one scripted lesson per Stone Age mission, covering the
   gameplay elements that mission introduces and (post-clear) what its reward hands the player.
-  The shipped missions (6.1–6.3) are ready to script; 6.4–6.7 land as those missions ship.
+  The shipped missions (6.1–6.4) are ready to script; 6.5–6.7 land as those missions ship.
   - **9.1 — First Settlement tutorial** — teach the **run loop**: work + action cards, the
     draw/food upkeep, the objective stockpile. **Post-clear:** teach **deck-building** (add the
     newly-unlocked Farm/Toolmaker/Hut + Conquest cards into the deck — the reward's whole building
@@ -168,6 +142,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **9.3 — Rites & Rituals tutorial** — teach the **Culture** gauge: culture levels (each raises
     hand size) and the `cultureLevelReq` play-gate. **Reward:** unlocks Göbekli Tepe (the age's
     first wonder, culture-gated), owned here so the 6.7 capstone can build it.
+  - **9.4 — Raiders at the Border tutorial** — teach the **event** card mechanic: mission-injected
+    disasters (the raider waves) that auto-resolve from hand each round, draining a resource, and are
+    defused for good by *playing* them (paying the cost banishes the card unresolved). **Post-clear:**
+    teach **board choice** — the reward unlocks the **Chiefdom** board (first military-leaning
+    government), so future launches choose Tribe vs. Chiefdom.
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*
@@ -219,6 +198,34 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 6.4 — Raiders at the Border (Events branch + Chiefdom board)** ✅ — col 3, row -1, prereq 6.3.
+  The **event** card mechanic (mission-injected disasters that auto-resolve from hand) + **board choice**
+  (Tribe vs. Chiefdom at launch). Implementation:
+  - The `raider` **event** card — the debut resource-*draining* event: 3⚔️ cost, drains 1🌾 on the
+    unplayed auto-resolve, defused for good by playing it (banished to `removed` unresolved).
+  - The `raiders_at_border` mission — seeds `RAIDER_WAVES` (**3**, lowered from 4 for balance —
+    `7ec1b12`) raiders into the deck; objective: defeat all 3 (count in `removed`), owned by
+    `raiders_at_border_goal`. Deadline-free — the food drain is the pressure, famine the only loss.
+    Influence-only reward (8⭐, provisional).
+  - `sim/objective.ts` gradient (normalized raiders-defused) so the standard mission is sweepable — it
+    rewards each raider *played*, but nothing on the path there (drawing one, banking military), so it's
+    the growing_numbers dilemma again (a naive `min(military,3)` readiness term cancels on the play,
+    since military is *consumed*, unlike territory). Left at the simple form — re-tuning with zero sim
+    data is guessing.
+  - **Sim sweep done** (manually, a separate session): confirmed the mission runs and surfaced that 4
+    waves was too hard, so `RAIDER_WAVES` was lowered to **3** (`7ec1b12`). The two concerns it watched —
+    (a) **greedy termination** on this deadline-free mission (a survival-first greedy sitting at a
+    non-winning equilibrium) and (b) **winnability** with Founding/Tribe (9⚔️ total + recurring food
+    drain vs. Bow/Dogs military) — held up under the lower wave count. Reward tuning (8⭐) stays provisional.
+  - **The board half** — the **Chiefdom board**, first *military-leaning* government (more Military,
+    leaner Population); the arc teaches **board choice**. Landed the new **`unlockBoardIds` reward kind**
+    (the 4th symmetric unlock, alongside card / card-sticker / board-sticker) — `computeRewards` folds all
+    four unlock sets through one `UnlockProgress` bundle; a `PlayerStore.unlockedBoards` set; a
+    `BoardDef.starting` flag + the `availableBoardIds` picker seam (`starting || unlocked`, so a fresh
+    profile always has Tribe); the Chiefdom board authored in `content/boards.ts` (**provisional stats —
+    to tune**); this mission's reward extended to grant it. Board unlocks preview as a locked chip →
+    `BoardMini` reveal.
 
 - **Step 6.3 — Rites & Rituals (Culture mission)** ✅ — col 2, row 0, prereq 6.2. The **Culture**
   gauge: culture *levels* (each raises hand size) and the `cultureLevelReq` play-gate. Objective:
