@@ -25,7 +25,7 @@ export interface BoardDef {
  * The government boards a run can be launched on. **Phase 4 Step 3** authors the first one — `tribe`,
  * the Paleolithic starting configuration matching the buildingless starting deck: a small band
  * (population 2) with a modest food store and nothing else, no fixed territory yet (buildings — and
- * the territory that gates them — arrive with the Neolithic arc). More boards land through mission
+ * the territory that gates them — arrive with the Stone Age arc). More boards land through mission
  * rewards in later steps.
  */
 export const BOARDS: Record<BoardId, BoardDef> = {

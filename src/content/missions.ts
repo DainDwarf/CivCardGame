@@ -76,7 +76,7 @@ export interface MissionDef {
 
 /**
  * The mission catalogue. Holds the baseline `sandbox` infinite mission plus the opening of the
- * Neolithic arc.
+ * Stone Age arc.
  *
  * `sandbox` is an `'infinite'` mission (no win state — it scores Influence = rounds survived and
  * renders in the campaign map's bottom banner, not as a DAG node). Its `sandbox_goal` objective
@@ -85,8 +85,8 @@ export interface MissionDef {
  * sandbox measures the economy baseline for the Step 4 simulator without any drain skewing it.
  *
  * `first_settlement` is the first `'standard'` mission: a DAG root (no prereqs) at the start of the
- * Neolithic band. It seeds no threat and no event — a pure stockpile race against nothing but
- * famine — and its first clear unlocks the whole Neolithic building set at once (Farm, Toolmaker,
+ * Stone Age band. It seeds no threat and no event — a pure stockpile race against nothing but
+ * famine — and its first clear unlocks the whole Stone Age building set at once (Farm, Toolmaker,
  * Hut) plus Conquest. It carries no Influence (the cards are the prize).
  *
  * `growing_numbers` follows it (prereq: `first_settlement`): stand up a working settlement — a
@@ -110,7 +110,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     reward: { influence: 0, unlockCardIds: ['farm', 'toolmaker', 'hut', 'conquest'] },
     map: { col: 0, row: 0 },
-    age: 'neolithic',
+    age: 'stone',
   },
   growing_numbers: {
     id: 'growing_numbers',
@@ -126,7 +126,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     reward: { influence: 6, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'] },
     map: { col: 1, row: 0 },
-    age: 'neolithic',
+    age: 'stone',
   },
   sandbox: {
     id: 'sandbox',

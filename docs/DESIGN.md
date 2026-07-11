@@ -276,15 +276,15 @@ procedurally generated map.
   you survive for a score, which pays Influence *per attempt* (the only performance-scaled
   currency source) and tracks a best. 🔧
 - **Ages partition the tree** 🔧 — the DAG is grouped into historical **ages**,
-  **Neolithic → Bronze Age → Iron Age** to start (`content/ages.ts`), rendered as bands
-  across the map. **Neolithic is the tutorial age**, carrying every core mechanic (buildings,
+  **Stone Age → Bronze Age → Iron Age** to start (`content/ages.ts`), rendered as bands
+  across the map. **Stone Age is the tutorial age**, carrying every core mechanic (buildings,
   territory, conquest, culture); later ages add content, not mechanics. A mission declares its age
   (`MissionDef.age`) and each age *covers its slice of the DAG* — its band + gradient wash span
   exactly the columns its missions occupy, derived from their `map.col` (`content/ages.ts`'s
   `ageColSpans`).
   The **Paleolithic** sits *before* this tree, not as a band on it: it's the always-owned
   pre-game baseline — a small hunter-gatherer starting collection (buildingless actions + work
-  cards) and the **Tribe** board — that a fresh player begins with, out of which the Neolithic
+  cards) and the **Tribe** board — that a fresh player begins with, out of which the Stone Age
   (the first campaign age, where buildings/territory/conquest/culture are unlocked) grows.
 - Procedural variation (which nodes are offered, per-node modifiers/seeds) can layer
   on later; v1 is authored. 🔧
@@ -374,7 +374,7 @@ not a hook on the card.
   + infinite missions, prereq gating), reward/unlock wiring — plus the card-effect
   **resolver spine** and **event bus** underneath. See *Economy & progression*.
 - **Phase 4 — Content & balance** (in progress): reset all content and rebuild it as the
-  **first three ages — Neolithic, Bronze Age, Iron Age**. **Neolithic is the tutorial age**
+  **first three ages — Stone Age, Bronze Age, Iron Age**. **Stone Age is the tutorial age**
   and introduces every core mechanic (buildings, territory, conquest, culture); Bronze Age +
   Iron Age add content, not mechanics (their flavor is undecided beyond the historical
   period). Also lands the deferred **deck-construction constraints** (min deck size, hand

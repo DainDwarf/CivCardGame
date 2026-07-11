@@ -6,7 +6,7 @@ import type { MissionDef } from './missions';
  * player can orient themselves in history; each renders as a large right-arrow band above
  * its columns, with a matching gradient wash behind the DAG nodes beneath.
  *
- * The Phase-4 content target is the first three campaign ages — **Neolithic → Bronze Age →
+ * The Phase-4 content target is the first three campaign ages — **Stone Age → Bronze Age →
  * Iron Age** — each rendered as its own themed arrow band (the Paleolithic sits *before* the
  * tree as the always-owned starting baseline, not as a band; see docs/DESIGN.md). The eventual
  * product extends this sequence further (… → Information Age); adding an age is a data change
@@ -24,7 +24,7 @@ export interface AgeDef {
 }
 
 export const AGES: AgeDef[] = [
-  { id: 'neolithic', name: 'Neolithic' },
+  { id: 'stone', name: 'Stone Age' },
   { id: 'bronze', name: 'Bronze Age' },
   { id: 'iron', name: 'Iron Age' },
 ];

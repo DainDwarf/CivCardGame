@@ -50,7 +50,7 @@ const nodeTop = (row: number, rowExtent: number) => PAD_Y + (row + rowExtent) * 
  *    history, its *identity* stays hidden), and clicking it is inert.
  *
  * Ages (`content/ages.ts`) label ranges of the timeline as themed right-arrow bands across the top
- * (Neolithic / Bronze Age / Iron Age), each tinted via a `data-age` attribute matched in the CSS
+ * (Stone Age / Bronze Age / Iron Age), each tinted via a `data-age` attribute matched in the CSS
  * module (the `data-board` precedent). Each age *covers its slice of the DAG*: its band + the
  * gradient wash beneath echo the same age colors and span exactly the columns its missions occupy,
  * derived from those missions' `map.col` (`ageColSpans`). With no standard missions placed yet the

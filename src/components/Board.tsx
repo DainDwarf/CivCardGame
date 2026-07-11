@@ -2065,7 +2065,7 @@ export function Board({
             ? computeRewards(mission, alreadyCompleted, collection, unlockedStickers, unlockedBoardStickers)
             : null;
       // The names of every unlock this clear actually grants — each reward card not already owned
-      // (a mission may open several at once, e.g. the Neolithic set), and each card/board sticker not
+      // (a mission may open several at once, e.g. the Stone Age set), and each card/board sticker not
       // already unlocked. `alreadyCompleted` already suppresses the whole reward line on a replay.
       const unlockedNames =
         reward && mission.reward

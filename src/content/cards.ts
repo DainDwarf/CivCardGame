@@ -230,7 +230,7 @@ const GROWING_NUMBERS_BUILDINGS: readonly (readonly [cardId: string, icon: strin
  * **Phase 4 Step 3 — the Paleolithic starting set.** The always-owned base cards a fresh player
  * begins with (`content/collection.ts`'s `STARTING_COLLECTION` + the `content/decks.ts` Founding
  * deck): hunter-gatherer *actions* and staffable *work*, deliberately **no buildings** — buildings
- * arrive with the Neolithic arc (unlocked through missions). Numbers here are a first pass, tuned by
+ * arrive with the Stone Age arc (unlocked through missions). Numbers here are a first pass, tuned by
  * the Step 4 simulator. Also holds the sandbox mission's own cards (`sandbox_goal` + `sands_of_time`),
  * which are mission-only (never deckable). Tests install synthetic `test_*` cards via
  * `rules/testFixtures.ts` on top of this map for the duration of a run.
@@ -241,7 +241,7 @@ export const CARDS: Record<string, CardDef> = {
   foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, effect: { gain: { food: 3 } } },
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, effect: { gain: { production: 2 } } },
 
-  // — Neolithic buildings: the first permanent structures, unlocked by "The First Settlement". A
+  // — Stone Age buildings: the first permanent structures, unlocked by "The First Settlement". A
   //   building *is* the building — it sits in the tableau and produces each round while staffed.
   //   Farm/Toolmaker are ordinary single-worker producers; the Hut is the first building carrying a
   //   one-shot *placement* effect (no per-round output, no worker — just a one-time +1 population when

@@ -22,7 +22,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 > Phase 4 is content expansion + balance tuning with the headless simulator (see
 > [`DESIGN.md`](DESIGN.md) *Build roadmap*). The content target is the **first three ages —
-> Neolithic, Bronze Age, Iron Age**. **Neolithic is the whole tutorial age** and introduces
+> Stone Age, Bronze Age, Iron Age**. **Stone Age is the whole tutorial age** and introduces
 > *all* core gameplay (buildings, territory, conquest, culture); Bronze Age + Iron Age add
 > **no new mechanics** — they are content expansion, and their flavor is not yet decided
 > (only the historical period is fixed). Steps are loosely independent; hard dependencies are
@@ -38,7 +38,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Step 5 — Ages map infrastructure** DONE ✅
 
-- **Step 6 — Neolithic arc** (the full tutorial content, mechanics-only, no onboarding UI) —
+- **Step 6 — Stone Age arc** (the full tutorial content, mechanics-only, no onboarding UI) —
   the meat of Phase 4 gameplay: several missions introducing **all** core mechanics
   progressively — buildings (House/Farm/Workshop), then **territory limitation, conquest, and
   culture** (population targets, then culture-level goals). Author their unlock cards, reward
@@ -58,7 +58,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `[size: L]` `[?]` `[phase: 4]`
 
 - **Step 9 — Tutorial onboarding UI** — the scripted popups/indicators layer over the
-  **Neolithic** arc (the sole tutorial age), so new mechanics aren't dumped on the player at
+  **Stone Age** arc (the sole tutorial age), so new mechanics aren't dumped on the player at
   once. "Tutorial seen" state belongs in device-local `Settings` (`meta/settings.ts`), **not**
   `PlayerStore` (not game progress). Mild tension with the anti-surprise unlock convention
   (tutorials reveal; unlocks surprise). `[size: L]` `[?]` `[phase: 4]`
@@ -116,7 +116,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   start). `CampaignMap.tsx` positions each age's arrow band + gradient wash over that slice
   (absolute px on the node grid, replacing the old equal `flex` split), with a flat-tint fallback
   when empty — so with **no `'standard'` missions placed yet the derivation is dormant (`[]` → no
-  bands)** and lights up automatically when Step 6's Neolithic missions land. Guards: unit tests over
+  bands)** and lights up automatically when Step 6's Stone Age missions land. Guards: unit tests over
   synthetic missions (`ages.test.ts`) + catalogue coherence (`missions.test.ts` — every standard
   mission has a valid `map`+`age`, slices tile gap-free, and each mission's col sits inside its own
   age slice, catching interleaving the tiling would otherwise smooth away). Verified live with
@@ -133,7 +133,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Step 3 — Starting content (Paleolithic)** ✅ — refilled the minimum coherent slice so the game is
   launchable again, scoped to a **Paleolithic hunter-gatherer** start with **no buildings** in the deck
-  or collection (buildings arrive with the Neolithic arc in Step 6). Authored: 10 base cards in `CARDS`
+  or collection (buildings arrive with the Stone Age arc in Step 6). Authored: 10 base cards in `CARDS`
   (Foraging/Toolmaking work + Fire/Bow/Cave Art/Clothing/Jewelry/Bartering/Dogs/Storytelling actions);
   a 20-card buildingless **Founding** deck (`DEFAULT_DECKS`); the **Tribe** board (`BOARDS`: food 5,
   pop 2, everything else 0 incl. territory); and the baseline **`sandbox`** infinite mission — a

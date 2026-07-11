@@ -24,7 +24,7 @@
  - **Storytelling**: TBD (previously use to draw a card, but a card to draw another card is useless, don't do that)
  - **Bartering**: spends money to gain food.
 
-## Neolithic
+## Stone Age
 
 The opening age. Strong through-line is **surplus**: domestication → storage → the
 population and specialists that surplus allows → the culture/monuments specialists
@@ -59,7 +59,7 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
 - **Göbekli Tepe** - First world wonder?
 
 > Keep copper/metallurgy and the wheel **out** of this age — both are really
-> Chalcolithic/Bronze. Good "graduated the Neolithic" unlocks to bridge to the next age.
+> Chalcolithic/Bronze. Good "graduated the Stone Age" unlocks to bridge to the next age.
 
 ## Bronze Age
 

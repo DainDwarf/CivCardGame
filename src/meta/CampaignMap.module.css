@@ -73,9 +73,9 @@
 
 /* Per-age color: override the band background and the `--map-age-text` token the `.ageName`
    below reads (inherited into it), so each age owns a bg/text pair from the themed palette. */
-.ageBand[data-age='neolithic'] {
-  background: var(--map-age-neolithic-bg);
-  --map-age-text: var(--map-age-neolithic-text);
+.ageBand[data-age='stone'] {
+  background: var(--map-age-stone-bg);
+  --map-age-text: var(--map-age-stone-text);
 }
 
 .ageBand[data-age='bronze'] {

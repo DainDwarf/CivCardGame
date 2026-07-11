@@ -251,7 +251,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     for "a card the player builds decks with" (excludes event/threat/objective), used by the
     deck-add reject and the Collection/DeckEditor pickers. The catalogue currently holds the
     **Paleolithic starting set** — buildingless hunter-gatherer actions + work cards (no buildings
-    yet; those arrive with the Neolithic arc, unlocked via missions) — plus the sandbox mission's
+    yet; those arrive with the Stone Age arc, unlocked via missions) — plus the sandbox mission's
     own `objective`/`threat` cards.
   - `decks.ts` — `DeckDef` (a player deck; `cards` is meta instance ids) plus `DeckSeed`/
     `DEFAULT_DECKS` (content authored in plain cardIds, resolved by `buildSeedDecks`). A
@@ -282,11 +282,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     threat/event *cards* do through the normal resolver spine. The mission-detail panel
     (`meta/CampaignMap.tsx`'s `MissionFlowPopup`) reads the same `threats`/`events` lists to show the
     card faces a mission is about, so the display can't drift from what a run actually seeds.
-  - `ages.ts` — `AGES` (the historical bands of the campaign map — Neolithic → Bronze → Iron) plus
+  - `ages.ts` — `AGES` (the historical bands of the campaign map — Stone Age → Bronze → Iron) plus
     `ageColSpans`, which derives each age's contiguous DAG **column slice** from its missions'
     `map.col` (a mission declares its age via `MissionDef.age`). `meta/CampaignMap.tsx` positions
     each age's arrow band + gradient wash over that slice, so *each age covers exactly its stretch of
-    the DAG*. The Neolithic band is live — it covers the two placed standard missions (First Settlement
+    the DAG*. The Stone Age band is live — it covers the two placed standard missions (First Settlement
     at col 0, Growing Numbers at col 1 → slice `[0,2)`); Bronze/Iron stay dormant until their missions land.
 
 **Shell — the run loop (`src/run/`) + React:**

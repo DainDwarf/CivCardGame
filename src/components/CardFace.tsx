@@ -7,7 +7,7 @@ import styles from './CardFace.module.css';
 export const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
 
 /** Presentation-only "art" glyph shown on each card face and building box. Keyed by card id;
- *  the Paleolithic starting set (Phase 4 Step 3) and the first Neolithic buildings, plus the
+ *  the Paleolithic starting set (Phase 4 Step 3) and the first Stone Age buildings, plus the
  *  sandbox mission's own cards. */
 const CARD_ART: Record<string, string> = {
   // Work
@@ -23,7 +23,7 @@ const CARD_ART: Record<string, string> = {
   dogs: '🐕',
   storytelling: '🗣️',
   conquest: '🗡️',
-  // Neolithic buildings
+  // Stone Age buildings
   farm: '🌱',
   toolmaker: '⛏️',
   hut: '🛖',
