@@ -67,11 +67,11 @@ More decentralized, broader-based societies with cheaper metal, wider literacy
 
 User note: Maybe perfect oracle can be useful for testing various decks?
 
-The headless sim (`src/sim/`) currently brackets skill with four policies
-(random · heuristic · greedy · greedy2). Policies are really a *skill ladder* —
-random pins the floor, the greedies sit at "reasonable play," and the useful signal
-is the **spread** between brackets. Candidate additions that widen or raise that
-ladder:
+The headless sim (`src/sim/`) brackets skill with four move policies
+(random · heuristic · greedy · greedy2) plus the **`oracle`** (below, now built).
+Policies are really a *skill ladder* — random pins the floor, the greedies sit at
+"reasonable play," the oracle raises the true ceiling, and the useful signal is the
+**spread** between brackets. Candidate additions that widen or raise that ladder:
 
 - **MCTS (Monte Carlo Tree Search)** — the standard strong-play policy for this kind
   of game: selectively grow a search tree and spend random rollouts on the promising
@@ -81,12 +81,17 @@ ladder:
   hand-written score function (it plays rollouts to the end and counts wins), though a
   cheaper **flat Monte Carlo** variant (rollouts per action, no tree) is a lighter
   first step toward it.
-- **Seeded perfect-information oracle** — runs are seeded and deterministic given the
-  seed, so we can fix the seed, *reveal the whole shuffle*, and search for the genuinely
-  optimal line of play. An **omniscient upper bound**: the best any player could do if
-  they knew the future. Balance uses: if even the oracle can't clear a mission it's
-  unwinnable; the oracle↔greedy gap measures how punishing variance is. Our determinism
-  makes this unusually cheap for what it delivers.
+- **Seeded perfect-information oracle** — ✅ **built** (`sim/oracle.ts` + `sim/oracleKey.ts`;
+  the `oracle` policy). Runs are seeded and deterministic given the seed, so `structuredClone(G)`
+  already hands a rollout the whole future shuffle — a bounded, heuristic-guided, deterministic
+  graph search (turn-boundary collapse · transposition table · deadline/territory caps · beam over
+  `scoreState`) finds a *winning* line if one exists within the beam. A found line is a **sound
+  proof** of winnability (it replays through the real engine); failing to find one under the beam is
+  strong evidence, not proof. `proveWinnable(config)` is the honest per-seed prover; the `oracle`
+  policy (search then dispense the line, greedy2 fallback when none) folds into the normal
+  batch/report machinery. Slower than greedy2, so it's opt-in (excluded from the default `npm run sim`
+  sweep — name it explicitly with a small seed count). Balance uses: winnability %, and the
+  oracle↔greedy gap = how punishing variance is.
 - **Archetype / persona policies** — scripted *human* play styles rather than optimizers:
   a rusher (race the objective), a turtle (hoard/over-staff), a greedy-economy builder, a
   misplay-prone novice (right idea, frequent small mistakes). These don't try to be good —

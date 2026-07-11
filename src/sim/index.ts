@@ -5,6 +5,8 @@ export * from './randomPolicy';
 export * from './greedyPolicy';
 export * from './greedy2Policy';
 export * from './heuristicPolicy';
+export * from './oracle';
+export * from './oracleKey';
 export * from './value';
 export * from './invariants';
 export * from './batch';

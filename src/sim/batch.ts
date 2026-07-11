@@ -4,18 +4,27 @@ import { createRandomPolicy } from './randomPolicy';
 import { createGreedyPolicy } from './greedyPolicy';
 import { createGreedy2Policy } from './greedy2Policy';
 import { createHeuristicPolicy } from './heuristicPolicy';
+import { createOraclePolicy } from './oracle';
 
 /** The built-in move policies a sweep can run under, by name — the random fuzzer (floor), the greedy
- *  optimizer, the cheap heuristic baseline (ceiling), and `greedy2` (greedy + a bounded staffing
- *  lookahead). The CLI sweeps a scenario under several to bracket its difficulty; the `greedy`↔`greedy2`
- *  gap is a standing readout of how much worker reassignment matters in a scenario (see `greedy2Policy`).
- *  `greedy2` grinds long survival games, so it's the slow one in a default (all-policy) sweep. */
+ *  optimizer, the cheap heuristic baseline (ceiling), `greedy2` (greedy + a bounded staffing lookahead),
+ *  and the `oracle` (a bounded seeded-perfect-information search for a *winning* line — the true ceiling).
+ *  The CLI sweeps a scenario under several to bracket its difficulty; the `greedy`↔`greedy2` gap is a
+ *  standing readout of how much worker reassignment matters in a scenario (see `greedy2Policy`).
+ *  `greedy2` grinds long survival games and the `oracle` runs a whole graph search per seed, so both are
+ *  slow — `oracle` is excluded from the default sweep (`DEFAULT_POLICY_NAMES`) and must be named. */
 export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = {
   random: createRandomPolicy,
   greedy: createGreedyPolicy,
   greedy2: createGreedy2Policy,
   heuristic: createHeuristicPolicy,
+  oracle: createOraclePolicy,
 };
+
+/** The policies a bare `npm run sim` sweeps when none is named — every built-in *except* the `oracle`,
+ *  which runs a full search per seed and would turn a default sweep into a multi-hour run. Name `oracle`
+ *  explicitly to include it. */
+export const DEFAULT_POLICY_NAMES = ['random', 'greedy', 'greedy2', 'heuristic'];
 
 /**
  * One cell of a batch sweep: a deck / board / mission (plus optional board stickers) to run many

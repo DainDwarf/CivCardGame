@@ -8,17 +8,21 @@
  * unplayed-cards list). This re-implements **no** game logic — it composes `runBatch` → `summarize` →
  * `formatReport`, all from `src/sim`.
  *
- * Each scenario is swept under several move policies (`POLICY_FACTORIES`) with *identical* seed streams,
- * so the comparison is paired: the random fuzzer is the difficulty *floor*, the greedy / heuristic
- * policies the competent *ceiling*, and the gap tells you how much skill a scenario rewards. `greedy2`
- * (greedy + a staffing lookahead) is a diagnostic pair with `greedy` — their gap measures how much worker
- * reassignment matters in a scenario; it grinds long games, so it's the slow policy in the default sweep.
+ * Each scenario is swept under several move policies with *identical* seed streams, so the comparison is
+ * paired: the random fuzzer is the difficulty *floor*, the greedy / heuristic policies the competent
+ * *ceiling*, and the gap tells you how much skill a scenario rewards. `greedy2` (greedy + a staffing
+ * lookahead) is a diagnostic pair with `greedy` — their gap measures how much worker reassignment matters
+ * in a scenario; it grinds long games, so it's the slow policy in the default sweep. The `oracle` (a
+ * bounded seeded-perfect-information search for a *winning* line — the true ceiling / winnability prover)
+ * runs a whole graph search per seed, so it's **excluded from the default sweep**: name it explicitly, and
+ * with a small seed count.
  *
  * Usage:
- *   npm run sim                       # default 200 seeds per scenario, all policies, all scenarios
+ *   npm run sim                       # default 200 seeds per scenario, default policies, all scenarios
  *   npm run sim -- 500                # override the seed count
  *   npm run sim -- 500 greedy         # only the named policy/policies (comma- or space-separated)
  *   npm run sim -- 200 random,greedy
+ *   npm run sim -- 20 oracle          # winnability ceiling — opt-in, use a small seed count (it's slow)
  *   npm run sim -- 200 scenario=rites # only scenarios whose label contains 'rites' (substring match)
  *   npm run sim -- 200 greedy scenario=rites   # combine: one policy, one scenario
  *
@@ -28,7 +32,7 @@
  * To change what's swept, edit `SCENARIOS` below — each entry is one deck / board / mission cell,
  * built from plain cardIds (no meta collection needed). As the age arcs add content, add scenarios.
  */
-import { runPolicies, summarize, formatReport, POLICY_FACTORIES, type Scenario } from '../src/sim';
+import { runPolicies, summarize, formatReport, POLICY_FACTORIES, DEFAULT_POLICY_NAMES, type Scenario } from '../src/sim';
 import { DEFAULT_DECKS } from '../src/content/decks';
 
 const SCENARIOS: Scenario[] = [
@@ -108,7 +112,8 @@ if (scenarios.length === 0) {
 }
 
 const policyArgs = args.filter((a) => !a.startsWith(SCENARIO_PREFIX));
-const policies = policyArgs.length > 0 ? policyArgs : Object.keys(POLICY_FACTORIES);
+// Default sweep excludes `oracle` (a full search per seed — name it explicitly to include it).
+const policies = policyArgs.length > 0 ? policyArgs : DEFAULT_POLICY_NAMES;
 for (const p of policies) {
   if (!POLICY_FACTORIES[p]) {
     throw new Error(`Unknown policy '${p}'. Known: ${Object.keys(POLICY_FACTORIES).join(', ')}.`);

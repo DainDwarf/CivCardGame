@@ -488,10 +488,26 @@ adds a rung that plays the most progress-advancing card and filters progress-*re
 fallback. Without it a survival-first policy would drift at an equilibrium and never accumulate to a
 threshold win (and, with no deadline, never terminate — why a `'standard'` mission can now be swept).
 `runPolicies(scenarios, names, { seeds })` sweeps a scenario under several named policies (`POLICY_FACTORIES`)
-with *paired* seeds. The `npm run sim [seeds] [policies]` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`)
-prints the report across all policies by default (`greedy2` grinds long survival games, so it's the slow
-one in that default sweep — name a subset like `greedy,greedy2` to skip it). A synthetic-fixture move-surface fuzz test
-(building/destroy/`discardCost`) is deferred until building content exists.
+with *paired* seeds. Above the greedies sits the **`oracle`** (`sim/oracle.ts` + `sim/oracleKey.ts`) — the
+*true ceiling* and a **winnability prover**: a bounded, heuristic-guided, deterministic **graph search** for
+a line of play that *wins* the mission on a seed. It rests on the determinism finding — `structuredClone(G)`
+already reveals the whole future draw order — so it searches directly instead of rolling out. Four structural
+bounds keep it tractable: it **collapses each turn** into one search edge (a bounded within-turn sub-search over
+non-`endTurn` actions, then one `endTurn`), a **transposition table** (`keyOf` — a conservative, all-zones-*ordered*
+canonical key; the sole normalization is dropping instance ids + derived/UI fields) dedups the action-ordering
+explosion, the **deadline + territory caps** bound depth/branching, and a **beam** over `scoreState` keeps the
+top-`W` states per round-depth. Soundness rests on *determinism, not the key*: every line it returns is real
+actions it applied through the real engine to an observed `victory`, so it replays exactly — a found line is a
+**sound proof** of winnability, and a looser key can only *miss* wins (incompleteness), never manufacture a false
+one. `searchWinningLine(root)` / `proveWinnable(config)` are the direct search APIs; `createOraclePolicy` wraps a
+found line as a scripted `Policy` (dispense one action per step, **greedy2 fallback** when no line is found — so
+`oracle`-wins ⊇ `greedy2`-wins, the ceiling-dominates invariant), folding into the same batch/report machinery
+unchanged, with a `foundLine` flag distinguishing a search-proven win from a fallback one. The
+`npm run sim [seeds] [policies]` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`) prints the report across the
+`DEFAULT_POLICY_NAMES` by default (`greedy2` grinds long survival games, so it's the slow one there; the `oracle`
+runs a whole search per seed and is **excluded from the default sweep** — name it explicitly with a small seed
+count). A synthetic-fixture move-surface fuzz test (building/destroy/`discardCost`) is deferred until building
+content exists.
 
 ## Conventions
 
