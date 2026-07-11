@@ -19,6 +19,7 @@ export function BoardMini({
   boardId,
   stickerIds,
   openSlots = 0,
+  locked = false,
   className,
 }: {
   boardId: BoardId;
@@ -27,17 +28,56 @@ export function BoardMini({
   /** Empty gold-outlined placeholder slots shown after the attached sticker badges — the Board
    *  menu's buyable-hint affordance (a board's remaining capacity). Defaults to 0 elsewhere. */
   openSlots?: number;
+  /** The board counterpart to `CardFace`'s `missionLocked`: renders the same board silhouette
+   *  (tinted ground + name pill + banner shape) greyed out, but withholds every number — the core
+   *  resource + culture icons show with no values, a "?" stands in for the population tray, and the
+   *  territory area is left blank (its token/slot counts would otherwise leak population + territory). The
+   *  pre-clear stand-in for a mission's still-secret board unlock. Sticker/openSlots props are
+   *  ignored in this mode, mirroring `missionLocked`. */
+  locked?: boolean;
   className?: string;
 }) {
-  const b = effectiveBoard(BOARDS[boardId], stickerIds);
+  const board = BOARDS[boardId];
   // The 5 core resources in the run board's banner order — all shown, including zeros, so the
-  // layout stays stable across boards (unlike the text profile, which hid zeros).
+  // layout stays stable across boards (unlike the text profile, which hid zeros). Shared with the
+  // locked silhouette, which renders the same icon row with the values withheld.
   const coreOrder: (keyof Resources)[] = ['food', 'production', 'money', 'military', 'science'];
+
+  if (locked) {
+    // The board counterpart to `CardFace`'s `faceDown`: same frame + tinted ground (greyed) and the
+    // same banner *shape* so it reads as this board, but every number withheld — the core/culture
+    // icons show with no value, a "?" stands in for the population tray (whose token row would leak
+    // population), and the territory area is left blank (its slot count would leak territory).
+    return (
+      <div className={`${styles.mini} ${styles.locked}${className ? ` ${className}` : ''}`}>
+        <div className={styles.ground} data-board={boardId} />
+        <div className={styles.nameLabel}>{board.name}</div>
+
+        <div className={styles.banner}>
+          <div className={styles.populationTray}>
+            <span className={styles.lockedMark} aria-label="Population hidden">?</span>
+          </div>
+
+          <div className={styles.coreGroup}>
+            {coreOrder.map((k) => (
+              <span key={k} className={styles.stat}>
+                <span aria-hidden="true">{RESOURCE_ICON[k]}</span>
+              </span>
+            ))}
+          </div>
+
+          <div className={styles.culture}>🎭</div>
+        </div>
+
+        <div className={styles.lockedSlots} />
+      </div>
+    );
+  }
+
+  const b = effectiveBoard(BOARDS[boardId], stickerIds);
   // Individual worker tokens read clearly up to a point; past it, compact to "🧍 ×N" (a board
   // sticker could raise population well past a legible token row).
   const POP_TOKEN_LIMIT = 6;
-
-  const board = BOARDS[boardId];
 
   return (
     <div className={`${styles.mini}${className ? ` ${className}` : ''}`}>

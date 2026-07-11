@@ -4,7 +4,7 @@ import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
 import { canAttachBoardSticker, unlockedBoardStickerDefs, MAX_BOARD_STICKERS, type BoardStickers } from '../rules/boardStickers';
 import { boardUpgradeAvailable } from '../rules/upgrades';
 import { BoardMini } from '../components/BoardMini';
-import { BOARD_IDS } from './boardDisplay';
+import { availableBoardIds } from './boardDisplay';
 import styles from './BoardMenu.module.css';
 
 /** Pointer travel (px) before a press becomes a drag rather than a click — same threshold the
@@ -45,6 +45,7 @@ export function BoardMenu({
   boardStickers,
   influence,
   unlockedBoardStickers,
+  unlockedBoards,
   uiScale,
   onBuyBoardSticker,
 }: {
@@ -56,6 +57,9 @@ export function BoardMenu({
   /** Unlocked board stickers (`rules/rewards.ts`) — the tray offers only these; a locked board
    *  sticker is hidden entirely (hidden-until-unlocked). */
   unlockedBoardStickers: Record<string, true>;
+  /** Unlocked boards (`rules/rewards.ts`) — the grid shows only the available boards (starting +
+   *  unlocked, via `availableBoardIds`); a locked board is hidden entirely. */
+  unlockedBoards: Record<string, true>;
   /** Whole-UI scale from settings — the tray/board menu renders inside App.tsx's transform:scale()
    *  wrapper, so the drag clone's inline coordinates must be divided by it (visual → local), same
    *  as `DeckEditor.tsx`. Hit-testing stays in visual px (unconverted). */
@@ -186,7 +190,7 @@ export function BoardMenu({
         <h1 className={styles.title}>Board</h1>
 
         <div className={styles.layout}>
-          <div className={styles.boardGrid}>{BOARD_IDS.map(boardTile)}</div>
+          <div className={styles.boardGrid}>{availableBoardIds(unlockedBoards).map(boardTile)}</div>
 
           <aside className={styles.tray}>
             <h2 className={styles.trayTitle}>Stickers</h2>

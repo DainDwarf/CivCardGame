@@ -52,19 +52,45 @@
   background: var(--board-tribe-ground);
 }
 
-.ground[data-board='monarchy'] {
-  background: var(--board-monarchy-ground);
-}
-
-.ground[data-board='republic'] {
-  background: var(--board-republic-ground);
+.ground[data-board='chiefdom'] {
+  background: var(--board-chiefdom-ground);
 }
 
 /* The banner and slot grid sit above the ground layer. */
 .banner,
-.slotGrid {
+.slotGrid,
+.lockedSlots {
   position: relative;
   z-index: 1;
+}
+
+/* --- Locked (pre-clear) mode: the board counterpart to CardFace's `.faceDown` --- */
+/* Same silhouette (frame + ground + name pill + banner *shape*), greyed to the shared locked-node
+   base, but every number withheld. The grey base overrides the per-board ground tint below it (this
+   rule follows the `data-board` rules in source order, so it wins on equal specificity). */
+.locked .ground {
+  background: var(--map-node-locked);
+}
+
+.locked {
+  border-color: var(--map-node-locked-border);
+}
+
+/* The "?" standing in for the withheld population count (its token row would otherwise leak
+   population). Sized between the pop tokens and the big face-down glyph so it reads as "hidden
+   value" without dominating. */
+.lockedMark {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+
+/* Stands in for the territory `.slotGrid`: a blank area of the same footprint under the banner, so
+   the silhouette height matches a real mini without revealing the territory count. */
+.lockedSlots {
+  min-height: 30px;
+  padding: 2px;
 }
 
 /* Top banner: population tray (top-left) · culture (bottom-left, beneath the tray) · core resources

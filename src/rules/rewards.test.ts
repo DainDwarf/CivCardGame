@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeRewards } from './rewards';
-import { copiesOwned, emptyCollection, collectionFromCounts } from './collection';
+import { computeRewards, type UnlockProgress } from './rewards';
+import { copiesOwned, emptyCollection, collectionFromCounts, type OwnedCards } from './collection';
 import type { MissionDef } from '../content/missions';
 
 // Fully synthetic: `computeRewards` grants through `grantCopies`/`isOwned` on the collection and
@@ -35,97 +35,127 @@ function infiniteMission(): MissionDef {
   };
 }
 
-// The two unlocked-sticker sets pass *through* computeRewards; most tests start from empty.
-const NO_STICKERS: Record<string, true> = {};
+/** The player's unlock state, bundled as `computeRewards` takes it (mirrors the `PlayerStore`
+ *  fields). Defaults to empty; a test overrides only the sets it exercises. */
+function progress(overrides: Partial<UnlockProgress> = {}): UnlockProgress {
+  return {
+    collection: emptyCollection(),
+    unlockedStickers: {},
+    unlockedBoardStickers: {},
+    unlockedBoards: {},
+    ...overrides,
+  };
+}
 
 describe('computeRewards', () => {
   it('grants Influence and the unlock on a first clear', () => {
     const m = mission({ influence: 2, unlockCardIds: ['granary'] });
-    const result = computeRewards(m, false, emptyCollection(), NO_STICKERS, NO_STICKERS);
+    const result = computeRewards(m, false, progress());
     expect(result.influence).toBe(2);
-    expect(copiesOwned(result.collection, 'granary')).toBe(1);
+    expect(copiesOwned(result.progress.collection, 'granary')).toBe(1);
   });
 
   it('grants nothing on a replay of an already-completed mission', () => {
     const m = mission({ influence: 2, unlockCardIds: ['granary'] });
-    const result = computeRewards(m, true, emptyCollection(), NO_STICKERS, NO_STICKERS);
+    const result = computeRewards(m, true, progress());
     expect(result.influence).toBe(0);
-    expect(result.collection.instances).toEqual([]);
+    expect(result.progress.collection.instances).toEqual([]);
   });
 
   it('clearing the same mission twice only grants once (first-clear semantics)', () => {
     const m = mission({ influence: 1, unlockCardIds: ['granary'] });
-    const first = computeRewards(m, false, emptyCollection(), NO_STICKERS, NO_STICKERS);
-    const second = computeRewards(m, true, first.collection, NO_STICKERS, NO_STICKERS);
+    const first = computeRewards(m, false, progress());
+    const second = computeRewards(m, true, progress({ collection: first.progress.collection }));
     expect(first.influence).toBe(1);
     expect(second.influence).toBe(0);
-    expect(second.collection).toEqual(first.collection);
+    expect(second.progress.collection).toEqual(first.progress.collection);
   });
 
   it('does not grant a second copy if the unlock card is already owned', () => {
     const m = mission({ influence: 1, unlockCardIds: ['granary'] });
-    const result = computeRewards(m, false, collectionFromCounts({ granary: 2 }), NO_STICKERS, NO_STICKERS);
-    expect(copiesOwned(result.collection, 'granary')).toBe(2);
+    const result = computeRewards(m, false, progress({ collection: collectionFromCounts({ granary: 2 }) }));
+    expect(copiesOwned(result.progress.collection, 'granary')).toBe(2);
   });
 
   it('grants every card of a multi-unlock reward on a first clear', () => {
     const m = mission({ influence: 0, unlockCardIds: ['farm', 'toolmaker', 'hut'] });
-    const result = computeRewards(m, false, emptyCollection(), NO_STICKERS, NO_STICKERS);
+    const result = computeRewards(m, false, progress());
     expect(result.influence).toBe(0);
-    expect(copiesOwned(result.collection, 'farm')).toBe(1);
-    expect(copiesOwned(result.collection, 'toolmaker')).toBe(1);
-    expect(copiesOwned(result.collection, 'hut')).toBe(1);
+    expect(copiesOwned(result.progress.collection, 'farm')).toBe(1);
+    expect(copiesOwned(result.progress.collection, 'toolmaker')).toBe(1);
+    expect(copiesOwned(result.progress.collection, 'hut')).toBe(1);
   });
 
   it('grants only the not-yet-owned cards of a multi-unlock reward', () => {
     const m = mission({ influence: 0, unlockCardIds: ['farm', 'toolmaker'] });
     // Already owns `farm` (×2) — that count is untouched; the new `toolmaker` is granted once.
-    const result = computeRewards(m, false, collectionFromCounts({ farm: 2 }), NO_STICKERS, NO_STICKERS);
-    expect(copiesOwned(result.collection, 'farm')).toBe(2);
-    expect(copiesOwned(result.collection, 'toolmaker')).toBe(1);
+    const result = computeRewards(m, false, progress({ collection: collectionFromCounts({ farm: 2 }) }));
+    expect(copiesOwned(result.progress.collection, 'farm')).toBe(2);
+    expect(copiesOwned(result.progress.collection, 'toolmaker')).toBe(1);
   });
 });
 
-describe('computeRewards — sticker unlocks', () => {
+describe('computeRewards — sticker & board unlocks', () => {
   it('unions a first clear\'s card- and board-sticker unlocks into the sets', () => {
     const m = mission({ influence: 0, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'] });
-    const result = computeRewards(m, false, emptyCollection(), NO_STICKERS, NO_STICKERS);
-    expect(result.unlockedStickers).toEqual({ irrigation: true });
-    expect(result.unlockedBoardStickers).toEqual({ territory: true });
+    const result = computeRewards(m, false, progress());
+    expect(result.progress.unlockedStickers).toEqual({ irrigation: true });
+    expect(result.progress.unlockedBoardStickers).toEqual({ territory: true });
+  });
+
+  it('unions a first clear\'s board unlock into the unlocked-boards set', () => {
+    const m = mission({ influence: 0, unlockBoardIds: ['chiefdom'] });
+    const result = computeRewards(m, false, progress());
+    expect(result.progress.unlockedBoards).toEqual({ chiefdom: true });
   });
 
   it('preserves already-unlocked stickers and is idempotent on a re-unlock', () => {
     const m = mission({ influence: 0, unlockStickerIds: ['irrigation'] });
-    const result = computeRewards(m, false, emptyCollection(), { drainage: true }, NO_STICKERS);
-    expect(result.unlockedStickers).toEqual({ drainage: true, irrigation: true });
+    const result = computeRewards(m, false, progress({ unlockedStickers: { drainage: true } }));
+    expect(result.progress.unlockedStickers).toEqual({ drainage: true, irrigation: true });
   });
 
-  it('does not unlock stickers on a replay (already-completed passes the sets through unchanged)', () => {
-    const m = mission({ influence: 0, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'] });
-    const result = computeRewards(m, true, emptyCollection(), NO_STICKERS, NO_STICKERS);
-    expect(result.unlockedStickers).toEqual({});
-    expect(result.unlockedBoardStickers).toEqual({});
+  it('preserves already-unlocked boards and is idempotent on a re-unlock', () => {
+    const m = mission({ influence: 0, unlockBoardIds: ['chiefdom'] });
+    const result = computeRewards(m, false, progress({ unlockedBoards: { chiefdom: true, kingdom: true } }));
+    expect(result.progress.unlockedBoards).toEqual({ chiefdom: true, kingdom: true });
+  });
+
+  it('does not unlock on a replay (already-completed passes every set through unchanged)', () => {
+    const m = mission({ influence: 0, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'], unlockBoardIds: ['chiefdom'] });
+    const result = computeRewards(m, true, progress());
+    expect(result.progress.unlockedStickers).toEqual({});
+    expect(result.progress.unlockedBoardStickers).toEqual({});
+    expect(result.progress.unlockedBoards).toEqual({});
   });
 });
 
 describe('computeRewards — infinite missions', () => {
   it('pays Influence equal to rounds survived, with no unlock', () => {
     const m = infiniteMission();
-    const result = computeRewards(m, false, emptyCollection(), NO_STICKERS, NO_STICKERS, 10);
+    const result = computeRewards(m, false, progress(), 10);
     expect(result.influence).toBe(10);
-    expect(result.collection.instances).toEqual([]);
+    expect(result.progress.collection.instances).toEqual([]);
   });
 
   it('pays out on every attempt — "already completed" is meaningless for an infinite mission', () => {
     const m = infiniteMission();
-    const result = computeRewards(m, true, emptyCollection(), NO_STICKERS, NO_STICKERS, 7);
+    const result = computeRewards(m, true, progress(), 7);
     expect(result.influence).toBe(7);
   });
 
-  it('passes the unlocked-sticker sets through untouched', () => {
+  it('passes the unlock progress through untouched', () => {
     const m = infiniteMission();
-    const result = computeRewards(m, false, emptyCollection(), { irrigation: true }, { territory: true }, 3);
-    expect(result.unlockedStickers).toEqual({ irrigation: true });
-    expect(result.unlockedBoardStickers).toEqual({ territory: true });
+    const before: OwnedCards = collectionFromCounts({ granary: 1 });
+    const result = computeRewards(
+      m,
+      false,
+      progress({ collection: before, unlockedStickers: { irrigation: true }, unlockedBoardStickers: { territory: true }, unlockedBoards: { chiefdom: true } }),
+      3,
+    );
+    expect(result.progress.collection).toBe(before);
+    expect(result.progress.unlockedStickers).toEqual({ irrigation: true });
+    expect(result.progress.unlockedBoardStickers).toEqual({ territory: true });
+    expect(result.progress.unlockedBoards).toEqual({ chiefdom: true });
   });
 });

@@ -3,6 +3,7 @@ import { MISSIONS } from './missions';
 import { CARDS } from './cards';
 import { STICKERS } from './stickers';
 import { BOARD_STICKERS } from './boardStickers';
+import { BOARDS } from './boards';
 import { AGES, ageColSpans } from './ages';
 
 // The mission *spine* mechanism (seedMissionCards, objectiveMet/defeatMet, the bus-driven win/loss
@@ -46,7 +47,7 @@ describe('mission catalogue coherence', () => {
     for (const m of Object.values(MISSIONS)) {
       if (m.kind !== 'standard') continue;
       expect(m.reward, `${m.id} → standard mission has no reward object`).toBeDefined();
-      const { unlockCardIds = [], unlockStickerIds = [], unlockBoardStickerIds = [] } = m.reward!;
+      const { unlockCardIds = [], unlockStickerIds = [], unlockBoardStickerIds = [], unlockBoardIds = [] } = m.reward!;
       for (const cardId of unlockCardIds) {
         expect(CARDS[cardId], `${m.id} → reward → card ${cardId}`).toBeDefined();
       }
@@ -55,6 +56,9 @@ describe('mission catalogue coherence', () => {
       }
       for (const boardStickerId of unlockBoardStickerIds) {
         expect(BOARD_STICKERS[boardStickerId], `${m.id} → reward → board sticker ${boardStickerId}`).toBeDefined();
+      }
+      for (const boardId of unlockBoardIds) {
+        expect(BOARDS[boardId], `${m.id} → reward → board ${boardId}`).toBeDefined();
       }
     }
   });

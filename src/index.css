@@ -150,8 +150,7 @@
 
   /* ── Board ground tints (per government board — placeholder hues, tune later) ── */
   --board-tribe-ground: #c8a97e;     /* same as --ground: humble/rustic, no change from default */
-  --board-monarchy-ground: #a9b7c4;  /* cool steel slate-blue — martial, avoids the danger/loss red */
-  --board-republic-ground: #d9c17a;  /* warm gold — mercantile/money, avoids the culture purple */
+  --board-chiefdom-ground: #a9b7c4;  /* cool steel slate-blue — martial (the pre-wipe Monarchy hue) */
 
   /* ── Building states (green) ──────────────────────── */
   --operating-bg: #f1f7ef;
@@ -331,8 +330,7 @@
 
   /* ── Board ground tints ── */
   --board-tribe-ground: #4f4130;     /* same as --ground */
-  --board-monarchy-ground: #3a4550;
-  --board-republic-ground: #4a3f1f;
+  --board-chiefdom-ground: #3a4550;  /* the pre-wipe Monarchy dark hue */
 
   /* ── Building states (green) ── */
   --operating-bg: #1f2a1e;
@@ -449,8 +447,7 @@
   --culture-ghost: rgba(204, 121, 167, 0.35);
 
   /* ── Board ground tints ── */
-  --board-monarchy-ground: #8fa9bd;
-  --board-republic-ground: #d9c17a;
+  --board-chiefdom-ground: #8fa9bd;  /* the pre-wipe Monarchy deuteranopia hue */
 
   /* ── Building states (green) ── */
   --operating-bg: #d9f2ea;
@@ -527,8 +524,7 @@
   --culture-ghost: rgba(212, 133, 176, 0.35);
 
   /* ── Board ground tints ── */
-  --board-monarchy-ground: #8fa9bd;
-  --board-republic-ground: #dcc788;
+  --board-chiefdom-ground: #8fa9bd;  /* the pre-wipe Monarchy protanopia hue */
 
   /* ── Building states (green) ── */
   --operating-bg: #d9f2ea;
@@ -585,7 +581,7 @@
   --culture-ghost: rgba(160, 46, 116, 0.35);
 
   /* ── Board ground tints ── */
-  --board-monarchy-ground: #a2a6d0;
+  --board-chiefdom-ground: #a2a6d0;  /* the pre-wipe Monarchy tritanopia hue */
 
   /* ── Building states (green) ── */
   --operating-bg: #e0f0df;

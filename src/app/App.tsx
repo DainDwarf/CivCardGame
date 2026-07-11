@@ -219,6 +219,7 @@ export function App() {
             collection={store.collection}
             unlockedStickers={store.unlockedStickers}
             unlockedBoardStickers={store.unlockedBoardStickers}
+            unlockedBoards={store.unlockedBoards}
           />
         </GameProvider>
       ) : (
@@ -233,6 +234,7 @@ export function App() {
             boardStickers={store.boardStickers}
             unlockedStickers={store.unlockedStickers}
             unlockedBoardStickers={store.unlockedBoardStickers}
+            unlockedBoards={store.unlockedBoards}
             lifetime={store.lifetime}
             bestInfinite={store.bestInfinite}
             uiScale={settings.uiScale}

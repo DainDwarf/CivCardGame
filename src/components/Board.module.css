@@ -309,12 +309,8 @@
   background: var(--board-tribe-ground);
 }
 
-.groundBackdrop[data-board='monarchy'] {
-  background: var(--board-monarchy-ground);
-}
-
-.groundBackdrop[data-board='republic'] {
-  background: var(--board-republic-ground);
+.groundBackdrop[data-board='chiefdom'] {
+  background: var(--board-chiefdom-ground);
 }
 
 /* The play area: a row holding the left strip (objective corner + threat zone, when seeded) beside

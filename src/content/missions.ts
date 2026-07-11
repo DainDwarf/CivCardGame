@@ -44,18 +44,20 @@ export interface MissionDef {
   kind: 'standard' | 'infinite';
   /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
    *  `computeRewards`) — replays pay nothing. A `'standard'` mission's unlocks are **all optional**:
-   *  it may grant any mix across three symmetric kinds — card unlocks (`unlockCardIds`, each naming a
+   *  it may grant any mix across four symmetric kinds — card unlocks (`unlockCardIds`, each naming a
    *  real `content/cards.ts` id), card-sticker unlocks (`unlockStickerIds`, `content/stickers.ts`),
-   *  and board-sticker unlocks (`unlockBoardStickerIds`, `content/boardStickers.ts`) — or **none at
-   *  all** (an Influence-only reward, or no reward object). A coherence test pins only that whatever
-   *  ids a mission *does* name are real. Unlike cards, a sticker unlock
-   *  simply makes the sticker *purchasable* (hidden-until-unlocked, like a card); the Influence to buy
-   *  it is separate. `'infinite'` missions have no reward — they score Influence = rounds survived. */
+   *  board-sticker unlocks (`unlockBoardStickerIds`, `content/boardStickers.ts`), and board unlocks
+   *  (`unlockBoardIds`, each naming a real `content/boards.ts` id) — or **none at all** (an
+   *  Influence-only reward, or no reward object). A coherence test pins only that whatever ids a
+   *  mission *does* name are real. Unlike cards, a sticker/board unlock simply makes it *available*
+   *  (hidden-until-unlocked, like a card); a board carries no Influence cost. `'infinite'` missions
+   *  have no reward — they score Influence = rounds survived. */
   reward?: {
     influence: number;
     unlockCardIds?: string[];
     unlockStickerIds?: string[];
     unlockBoardStickerIds?: string[];
+    unlockBoardIds?: string[];
   };
   /** Authored position on the campaign map's DAG grid (`meta/CampaignMap.tsx`): `col` is
    *  the horizontal chronology slot (later = further along history), `row` a *signed* vertical
@@ -148,9 +150,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: `Defeat all ${RAIDER_WAVES} raider waves — pay 3 ⚔️ to play (drive off) each one.`,
     failureHint: null,
     kind: 'standard',
-    // Provisional Influence-only reward. The intended Chiefdom-board unlock is deferred: it needs a new
-    // `unlockBoardIds` reward kind (boards aren't a reward type yet) — see docs/TODO.md Step 6.4.
-    reward: { influence: 8 },
+    // Unlocks the Chiefdom board — the first military-leaning government, so the arc teaches board
+    // choice (Tribe vs. Chiefdom at launch). Influence amount + board stats are provisional (Step 6.4).
+    reward: { influence: 8, unlockBoardIds: ['chiefdom'] },
     map: { col: 3, row: -1 },
     age: 'stone',
   },

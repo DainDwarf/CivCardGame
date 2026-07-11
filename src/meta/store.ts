@@ -31,6 +31,13 @@ export interface PlayerStore {
    *  so the grant is stable against later reward-list edits. Absent id = still locked. */
   unlockedStickers: Record<string, true>;
   unlockedBoardStickers: Record<string, true>;
+  /** Boards the player has *unlocked* (via a mission's `unlockBoardIds` reward — `rules/rewards.ts`).
+   *  An id-set shaped like `mapProgress` (a board is singular — no per-copy identity). A board is
+   *  hidden from the pickers until its id is present here; folded in at clear time by `applyRunResult`.
+   *  Deliberately holds *only* reward-granted boards, not the always-available `starting` ones — the
+   *  pickers union the `starting` flag in (`boardDisplay.ts`'s `availableBoardIds`), so an empty set
+   *  can never lock a player out of playing. Absent id = still locked. */
+  unlockedBoards: Record<string, true>;
   /** Lifetime cumulative counters kept as running totals — deliberately *not* derived from
    *  `runHistory`, which is capped at `HISTORY_LIMIT` and would silently undercount once trimmed.
    *  `influenceEarned` is gross Influence *gained* (the sum of every `applyRunResult` payout),
@@ -63,6 +70,7 @@ export function emptyStore(): PlayerStore {
     boardStickers: {},
     unlockedStickers: {},
     unlockedBoardStickers: {},
+    unlockedBoards: {},
     lifetime: { runsPlayed: 0, victories: 0, influenceEarned: 0 },
     bestInfinite: {},
   };
@@ -90,6 +98,7 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
   if (!obj.boardStickers || typeof obj.boardStickers !== 'object') return null;
   if (!obj.unlockedStickers || typeof obj.unlockedStickers !== 'object') return null;
   if (!obj.unlockedBoardStickers || typeof obj.unlockedBoardStickers !== 'object') return null;
+  if (!obj.unlockedBoards || typeof obj.unlockedBoards !== 'object') return null;
   if (!obj.lifetime || typeof obj.lifetime !== 'object') return null;
   const lifetime = obj.lifetime as Record<string, unknown>;
   if (
@@ -109,6 +118,7 @@ function parsePlayerStore(raw: unknown): PlayerStore | null {
     boardStickers: obj.boardStickers as BoardStickers,
     unlockedStickers: obj.unlockedStickers as Record<string, true>,
     unlockedBoardStickers: obj.unlockedBoardStickers as Record<string, true>,
+    unlockedBoards: obj.unlockedBoards as Record<string, true>,
     lifetime: obj.lifetime as PlayerStore['lifetime'],
     bestInfinite: obj.bestInfinite as Record<string, number>,
   };
@@ -162,23 +172,19 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
     !infinite && result.outcome === 'victory'
       ? { ...store.mapProgress, [result.missionId]: true as const }
       : store.mapProgress;
-  const { influence, collection, unlockedStickers, unlockedBoardStickers } = infinite
-    ? computeRewards(
-        mission,
-        alreadyCompleted,
-        store.collection,
-        store.unlockedStickers,
-        store.unlockedBoardStickers,
-        result.stats.turnsTaken,
-      )
+  // The player's current unlock state, bundled to pass through `computeRewards` (in unchanged, out
+  // with this mission's unlocks folded in) — the field names mirror `PlayerStore`, so it spreads back.
+  const progress = {
+    collection: store.collection,
+    unlockedStickers: store.unlockedStickers,
+    unlockedBoardStickers: store.unlockedBoardStickers,
+    unlockedBoards: store.unlockedBoards,
+  };
+  const { influence, progress: nextProgress } = infinite
+    ? computeRewards(mission, alreadyCompleted, progress, result.stats.turnsTaken)
     : result.outcome === 'victory'
-      ? computeRewards(mission, alreadyCompleted, store.collection, store.unlockedStickers, store.unlockedBoardStickers)
-      : {
-          influence: 0,
-          collection: store.collection,
-          unlockedStickers: store.unlockedStickers,
-          unlockedBoardStickers: store.unlockedBoardStickers,
-        };
+      ? computeRewards(mission, alreadyCompleted, progress)
+      : { influence: 0, progress };
   const lifetime = {
     runsPlayed: store.lifetime.runsPlayed + 1,
     victories: store.lifetime.victories + (result.outcome === 'victory' ? 1 : 0),
@@ -195,9 +201,7 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
     runHistory: [result, ...store.runHistory].slice(0, HISTORY_LIMIT),
     mapProgress,
     influence: store.influence + influence,
-    collection,
-    unlockedStickers,
-    unlockedBoardStickers,
+    ...nextProgress,
     lifetime,
     bestInfinite,
   };

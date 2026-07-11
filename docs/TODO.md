@@ -66,8 +66,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tutorial → Step 9.3)
   - **6.4 — Events branch: military attack/defense** (*"Raiders at the Border"*) — col 3, row -1,
     prereq 6.3. **Teaches:** the **event** card mechanic (mission-injected disasters that auto-resolve
-    from hand). **PARTIALLY SHIPPED** — the mission + its event landed; the **Chiefdom board unlock is
-    deferred** to a follow-up (needs the new `unlockBoardIds` reward kind). Done this session:
+    from hand). ✅ **SHIPPED** — the mission, its event, and the Chiefdom board unlock all landed. Done:
     - The `raider` **event** card — the debut resource-*draining* event: 3⚔️ cost, drains 1🌾 on the
       unplayed auto-resolve, defused for good by playing it (banished to `removed` unresolved).
     - The `raiders_at_border` mission — seeds `RAIDER_WAVES` (**3**, lowered from 4 for balance —
@@ -85,11 +84,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
       survival-first greedy sitting at a non-winning equilibrium) and (b) **winnability** with
       Founding/Tribe (now 9⚔️ total + recurring food drain vs. Bow/Dogs military) — held up under the
       lower wave count. The reward tuning (8⭐) stays provisional.
-    - **Deferred (the board half):** the **Chiefdom board** — first *military-focused* government board
+    - **The board half (now shipped):** the **Chiefdom board** — first *military-leaning* government
       (more Military, leaner Population), where the arc teaches **board choice** (Tribe vs. Chiefdom at
-      launch). Needs a **new reward kind (`unlockBoardIds`)** in `rules/rewards.ts` + `MissionDef.reward`
-      (boards aren't a reward type yet — only card / card-sticker / board-sticker), the Chiefdom board
-      authored in `content/boards.ts`, and this mission's reward extended to grant it. `[size: S] [?]`
+      launch). Landed the new **`unlockBoardIds` reward kind** (the 4th symmetric unlock, alongside
+      card / card-sticker / board-sticker) — `computeRewards` now folds all four unlock sets through one
+      `UnlockProgress` bundle; a `PlayerStore.unlockedBoards` set; a `BoardDef.starting` flag + the
+      `availableBoardIds` picker seam (`starting || unlocked`, so a fresh profile always has Tribe); the
+      Chiefdom board authored in `content/boards.ts` (**provisional stats — to tune**); and this
+      mission's reward extended to grant it. Board unlocks preview as a locked chip → `BoardMini` reveal.
   - **6.5 — Threat branch: population unrest** (working name *"Restless People"*) — col 3, row 0,
     prereq 6.3. **Teaches:** the **threat** mechanic (persistent board hazard). **Threat:** each
     point of population drains 1💰 **every deck reshuffle** — unrest that scales with your own

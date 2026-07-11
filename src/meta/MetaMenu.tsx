@@ -44,6 +44,7 @@ export function MetaMenu({
   boardStickers,
   unlockedStickers,
   unlockedBoardStickers,
+  unlockedBoards,
   lifetime,
   bestInfinite,
   uiScale,
@@ -72,6 +73,9 @@ export function MetaMenu({
    *  locked sticker is hidden from its tray, and rolled into the nav-badge upgrade hints. */
   unlockedStickers: Record<string, true>;
   unlockedBoardStickers: Record<string, true>;
+  /** Unlocked boards (`rules/rewards.ts`) — forwarded to `BoardMenu` and `CampaignMap`'s launch popup
+   *  so a locked board is hidden from the pickers (`boardDisplay.ts`'s `availableBoardIds`). */
+  unlockedBoards: Record<string, true>;
   /** Lifetime cumulative counters — forwarded to `Stats` for its campaign-progress summary. */
   lifetime: LifetimeStats;
   /** Best rounds survived per infinite mission — forwarded to `Stats` for the best-scores board. */
@@ -145,6 +149,7 @@ export function MetaMenu({
             collection={collection}
             mapProgress={mapProgress}
             boardStickers={boardStickers}
+            unlockedBoards={unlockedBoards}
             uiScale={uiScale}
             onLaunch={onLaunch}
           />
@@ -165,6 +170,7 @@ export function MetaMenu({
             boardStickers={boardStickers}
             influence={influence}
             unlockedBoardStickers={unlockedBoardStickers}
+            unlockedBoards={unlockedBoards}
             uiScale={uiScale}
             onBuyBoardSticker={onBuyBoardSticker}
           />

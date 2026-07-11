@@ -10,7 +10,7 @@ import type { OwnedCards } from '../rules/collection';
 import { type BoardStickers } from '../rules/boardStickers';
 import { buildRunConfig, type RunConfig } from '../contract';
 import { isCompleted, isAvailable } from '../rules/campaign';
-import { BOARD_IDS } from './boardDisplay';
+import { availableBoardIds } from './boardDisplay';
 import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
 import { BoardMini } from '../components/BoardMini';
 import { CardFace } from '../components/CardFace';
@@ -65,6 +65,7 @@ export function CampaignMap({
   collection,
   mapProgress,
   boardStickers,
+  unlockedBoards,
   uiScale,
   onLaunch,
 }: {
@@ -76,6 +77,9 @@ export function CampaignMap({
   /** Board stickers attached per board — the launch popup's board picker shows the *effective*
    *  profile, and `buildRunConfig` snapshots the chosen board's stickers into the `RunConfig`. */
   boardStickers: BoardStickers;
+  /** Unlocked boards (`rules/rewards.ts`) — the launch popup's board picker shows only the
+   *  available boards (starting + unlocked, via `availableBoardIds`). */
+  unlockedBoards: Record<string, true>;
   /** Whole-UI scale (settings) — converts pointer-drag deltas (visual px) to scroll px. */
   uiScale: number;
   onLaunch: (config: RunConfig) => void;
@@ -275,6 +279,7 @@ export function CampaignMap({
           decks={decks}
           collection={collection}
           boardStickers={boardStickers}
+          unlockedBoards={unlockedBoards}
           onCancel={() => setFlow(null)}
           onContinue={() => setFlow({ mission: flow.mission, step: 'launch' })}
           onLaunch={onLaunch}
@@ -313,6 +318,7 @@ function MissionFlowPopup({
   decks,
   collection,
   boardStickers,
+  unlockedBoards,
   onCancel,
   onContinue,
   onLaunch,
@@ -323,6 +329,7 @@ function MissionFlowPopup({
   decks: DeckDef[];
   collection: OwnedCards;
   boardStickers: BoardStickers;
+  unlockedBoards: Record<string, true>;
   onCancel: () => void;
   onContinue: () => void;
   onLaunch: (config: RunConfig) => void;
@@ -338,7 +345,11 @@ function MissionFlowPopup({
         ...(mission.reward.unlockBoardStickerIds ?? []).map((id) => BOARD_STICKERS[id]),
       ]
     : [];
-  const totalUnlocks = unlockCards.length + unlockStickers.length;
+  // Board unlocks get their own preview row (a `BoardDef` has no `icon`, so it can't join the sticker
+  // chip list): a generic locked chip pre-clear, a `BoardMini` reveal post-clear — mirroring how a
+  // card unlock shows a face-down `missionLocked` face → real `CardFace`.
+  const unlockBoards = mission.reward ? (mission.reward.unlockBoardIds ?? []).map((id) => BOARDS[id]) : [];
+  const totalUnlocks = unlockCards.length + unlockStickers.length + unlockBoards.length;
   // The cards this mission is actually about: its objective (always exactly one) plus whichever
   // threat/event cards it seeds — read straight off the same declarative `threats`/`events` lists
   // `setup` injects from (see `content/missions.ts`), so this can't drift from what a launched run
@@ -497,6 +508,16 @@ function MissionFlowPopup({
                           )}
                         </div>
                       )}
+                      {unlockBoards.length > 0 && (
+                        <div className={styles.rewardBoards}>
+                          {unlockBoards.map((board) =>
+                            // A `BoardMini` either way — post-clear revealing the real board, pre-clear
+                            // its `locked` silhouette (greyed, stats withheld, name shown), mirroring
+                            // the card unlock's face-down → face reveal via `CardFace`'s `missionLocked`.
+                            <BoardMini key={board.id} boardId={board.id} locked={!alreadyCleared} />,
+                          )}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -506,7 +527,7 @@ function MissionFlowPopup({
                 <section className={styles.picker}>
                   <h3 className={styles.pickerTitle}>Government</h3>
                   <div className={styles.boardList}>
-                    {BOARD_IDS.map((id) => (
+                    {availableBoardIds(unlockedBoards).map((id) => (
                       <button
                         key={id}
                         type="button"

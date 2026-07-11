@@ -42,11 +42,15 @@ built; the game is now in its content-and-balance pass — see
   - **Campaign-map DAG** — `content/missions.ts` missions form a prereq-gated DAG
     (`rules/campaign.ts`), rendered as a horizontally-scrollable branching tech tree
     (`meta/CampaignMap.tsx`); each `'standard'` mission grants a fixed Influence reward
-    plus **zero or more** **unlocks** on first clear (`rules/rewards.ts`) — three symmetric, all-optional
-    kinds: card unlocks (`unlockCardIds`), card-sticker unlocks (`unlockStickerIds`), and board-sticker
-    unlocks (`unlockBoardStickerIds`), all hidden-until-unlocked (a mission may grant none — an
-    Influence-only reward). Previewed on the `MissionDetailPanel`
-    (a sticker shows a generic locked chip pre-clear) and paid out in `App.tsx`'s `recordResult`.
+    plus **zero or more** **unlocks** on first clear (`rules/rewards.ts`) — four symmetric, all-optional
+    kinds: card unlocks (`unlockCardIds`), card-sticker unlocks (`unlockStickerIds`), board-sticker
+    unlocks (`unlockBoardStickerIds`), and board unlocks (`unlockBoardIds`), all hidden-until-unlocked
+    (a mission may grant none — an Influence-only reward). The four unlock sets `computeRewards` grows
+    (`collection` + the three id-sets) travel through it as one `UnlockProgress` bundle mirroring the
+    `PlayerStore` fields — in unchanged, out with this mission's unlocks folded in — rather than a run of
+    transposable positional args. Previewed on the `MissionDetailPanel` (a sticker shows a generic locked
+    chip pre-clear then its real face; a board shows a greyed `locked` `BoardMini` silhouette pre-clear —
+    `CardFace`'s `missionLocked` counterpart — then its real `BoardMini`) and paid out in `App.tsx`'s `recordResult`.
   - **Infinite missions + threats** — `'infinite'`-kind missions never win and pay
     Influence = rounds survived on every attempt. `GameState.threats`
     (`rules/threats.ts`) are persistent, mission-seeded board hazards that escalate and
@@ -282,9 +286,14 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `boardStickers.ts` — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
     `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
   - `boards.ts` — `BOARDS` (government boards; each sets all 8 starting resources: the 5
-    core plus population/territory/culture; `BoardId` is a plain `string`). The one authored
-    board is **Tribe** (the Paleolithic start: a small food store and a couple of workers, no
-    territory yet); more boards land via mission rewards.
+    core plus population/territory/culture; `BoardId` is a plain `string`). A board's `starting`
+    flag marks it always-launchable; every other board is **hidden until unlocked** by a mission's
+    `unlockBoardIds` reward, exactly like a card or sticker. The board pickers read availability through
+    `meta/boardDisplay.ts`'s `availableBoardIds` (`starting || unlocked`), so the baseline never depends
+    on the mutable `PlayerStore.unlockedBoards` set — a player can never be locked out of playing. Two
+    boards so far: **Tribe** (the sole `starting` board — the Paleolithic start: a small food store and a
+    couple of workers, no territory yet) and **Chiefdom** (the first military-leaning government,
+    unlocked by the "Raiders at the Border" mission — provisional stats).
   - `missions.ts` — `MISSIONS`; each names an `objectiveCardId` (its win condition, made into
     an `objective` card that owns the win predicate — `run/setup.ts` seeds it into
     `GameState.objective`, the bus re-derives `G.pendingVictory` from it, and `run/engine.ts`'s
@@ -385,10 +394,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     affordable`, highlight mid-drag via the single `isValidTarget` predicate; an invalid/missed
     drop no-ops). Clicking a copy (not dragging
     onto it) zooms it. Calls back into `App.tsx` (`onBuyTier`/`onAttachSticker`).
-  - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: a grid of every board as a `BoardMini`
+  - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: a grid of every *available* board (via
+    `availableBoardIds`, so a locked board is hidden) as a `BoardMini`
     beside a right-side sticky tray of sticker boxes (each a draggable sticker
     badge over its name/effect/price); dragging a badge onto a board calls `onBuyBoardSticker` to
-    buy+attach in one gesture (only *valid* targets highlight mid-drag). `RESOURCE_ICON`/`BOARD_IDS`
+    buy+attach in one gesture (only *valid* targets highlight mid-drag). `RESOURCE_ICON`/`availableBoardIds`
     live in the shared `meta/boardDisplay.ts`.
   - `Decks.tsx` — every deck as a tile (a hover-revealed card fan grouped ×N via
     `groupCounts`); the tile + its list-view overlay are the shared `DeckTile`/

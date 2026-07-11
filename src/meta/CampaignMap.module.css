@@ -451,6 +451,25 @@
   margin-top: 0.3rem;
 }
 
+/* Board unlock preview — a `BoardMini` either way (its `locked` silhouette pre-clear, the real board
+   post-clear). Its own row since a board has no icon to join the sticker chip list. */
+.rewardBoards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+/* A BoardMini has no intrinsic width, so as a bare flex item it collapses to its min-content width
+   (a squished, card-shaped board). Give it the same footprint it has in the Board menu grid
+   (`minmax(260px, 1fr)`); `max-width: 100%` still lets it shrink inside a cramped reward column
+   rather than overflowing. Targets the direct child so it catches the BoardMini regardless of its
+   (module-scoped) class name. */
+.rewardBoards > * {
+  width: 260px;
+  max-width: 100%;
+}
+
 .stickerChip {
   display: flex;
   align-items: center;

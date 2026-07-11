@@ -13,6 +13,7 @@ import {
 import { CARDS, isStructure, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
 import { BOARD_STICKERS } from '../content/boardStickers';
+import { BOARDS } from '../content/boards';
 import { MISSIONS } from '../content/missions';
 import type { GameState } from '../rules';
 import { isCompleted } from '../rules/campaign';
@@ -729,6 +730,7 @@ export function Board({
   collection,
   unlockedStickers,
   unlockedBoardStickers,
+  unlockedBoards,
 }: {
   confirmEndTurn: boolean;
   uiScale: number;
@@ -741,10 +743,12 @@ export function Board({
    *  this is a preview, not a second source of truth. */
   mapProgress: Record<string, true>;
   collection: OwnedCards;
-  /** The player's unlocked-sticker sets entering this run — same read-only preview role, so the
-   *  gameover overlay can announce (and not double-announce) the card/board stickers this clear unlocks. */
+  /** The player's unlocked-sticker sets + unlocked boards entering this run — same read-only preview
+   *  role, so the gameover overlay can announce (and not double-announce) the card/board stickers and
+   *  board this clear unlocks. */
   unlockedStickers: Record<string, true>;
   unlockedBoardStickers: Record<string, true>;
+  unlockedBoards: Record<string, true>;
 }) {
   const { G, gameover, board, moves, endTurn, undo, canUndo, restart, endRun, runGen } = useGame();
   // The whole board renders inside a `transform: scale(uiScale)` wrapper (App.tsx). Pointer
@@ -2105,15 +2109,18 @@ export function Board({
       // An 'infinite' mission has no win state and never touches mapProgress — its Influence
       // (rounds survived) is paid every attempt, win or lose, so its preview isn't gated on `won`.
       const alreadyCompleted = won && mission.kind !== 'infinite' && isCompleted(mapProgress, mission.id);
+      // The player's unlock state entering this run, bundled to pass through `computeRewards` (a
+      // preview — only `reward.influence` is read here; the id lists below drive the unlock names).
+      const progress = { collection, unlockedStickers, unlockedBoardStickers, unlockedBoards };
       const reward =
         mission.kind === 'infinite'
-          ? computeRewards(mission, false, collection, unlockedStickers, unlockedBoardStickers, G.round)
+          ? computeRewards(mission, false, progress, G.round)
           : won
-            ? computeRewards(mission, alreadyCompleted, collection, unlockedStickers, unlockedBoardStickers)
+            ? computeRewards(mission, alreadyCompleted, progress)
             : null;
       // The names of every unlock this clear actually grants — each reward card not already owned
-      // (a mission may open several at once, e.g. the Stone Age set), and each card/board sticker not
-      // already unlocked. `alreadyCompleted` already suppresses the whole reward line on a replay.
+      // (a mission may open several at once, e.g. the Stone Age set), and each card/board sticker or
+      // board not already unlocked. `alreadyCompleted` already suppresses the whole reward line on a replay.
       const unlockedNames =
         reward && mission.reward
           ? [
@@ -2122,6 +2129,7 @@ export function Board({
               ...(mission.reward.unlockBoardStickerIds ?? [])
                 .filter((id) => !unlockedBoardStickers[id])
                 .map((id) => BOARD_STICKERS[id].name),
+              ...(mission.reward.unlockBoardIds ?? []).filter((id) => !unlockedBoards[id]).map((id) => BOARDS[id].name),
             ]
           : [];
       return (
