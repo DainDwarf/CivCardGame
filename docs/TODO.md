@@ -39,13 +39,98 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 5 — Ages map infrastructure** DONE ✅
 
 - **Step 6 — Stone Age arc** (the full tutorial content, mechanics-only, no onboarding UI) —
-  the meat of Phase 4 gameplay: several missions introducing **all** core mechanics
-  progressively — buildings (House/Farm/Workshop), then **territory limitation, conquest, and
-  culture** (population targets, then culture-level goals). Author their unlock cards, reward
-  amounts, prereqs, and DAG shape. **First place sticker unlocks happen:** extend
-  `rules/rewards.ts` so a mission reward can unlock a **card or board sticker** (and gate which
-  stickers are buyable) — not just a card. Balance via the Step 4 simulator. `[size: L]`
-  `[?]` `[phase: 4]`
+  the meat of Phase 4 gameplay: a chain of missions introducing **all** core mechanics
+  progressively, culminating in the age's first wonder. Author their unlock cards, reward
+  amounts, prereqs, and DAG shape; balance via the Step 4 simulator. `[size: L] [?] [phase: 4]`
+
+  **DAG shape** — a chain that fans into a 3-way branch, then reconverges on a capstone:
+  ```
+  6.1 ─▶ 6.2 ─▶ 6.3 ─┬─▶ 6.4 events  ─┐
+  col0   col1   col2  ├─▶ 6.5 threat  ─┼─▶ 6.7 wonder (col4)
+                      └─▶ 6.6 science ─┘
+                           all col3
+  ```
+  All `age: 'stone'` → the age slice grows to `[0,5)`. The player must clear all three branch
+  missions (6.4/6.5/6.6) before the capstone unlocks.
+
+  **Cross-cutting sequencing rule** (surfaced while planning 6.7): a mission that *spotlights a
+  player-played card* as its objective needs that card **unlocked by an upstream mission** — a
+  reward is granted on clear, so you can't build/play what you don't yet own. This is why the
+  Göbekli Tepe wonder card is *unlocked* upstream (6.3) but *forced* (built) at the capstone (6.7).
+
+  - **6.1 — First Settlement + Stone Age building set** ✅ DONE — col 0. Teaches the run loop
+    (work + action cards, draw/food upkeep). Objective: stockpile 10🔨 + 10⚔️. Unlocks Farm,
+    Toolmaker, Hut, Conquest (whole building set + military→territory conquest). Post-clear
+    teaches deck-building (adding the new cards). `[shipped]`
+  - **6.2 — Growing Numbers + sticker-unlock reward infra** ✅ DONE — col 1. Teaches buildings,
+    territory, worker staffing. Objective: build Hut + Farm + Toolmaker at once (a territory
+    squeeze that forces Conquest). Unlocks the first card sticker (Irrigation) + board sticker
+    (Territory), debuting the sticker-unlock reward kinds; post-clear teaches stickers +
+    Influence/shop. `[shipped]`
+  - **6.3 — Culture mission** (working name *"Rites & Rituals"*) — col 2, row 0, prereq 6.2.
+    **Teaches:** the **Culture** gauge — culture *levels* (each raises hand size) and the
+    `cultureLevelReq` play-gate. **Objective:** reach **culture level 2**. **Unlocks:** a
+    culture-gated card (`cultureLevelReq ≥ 1`, so its gate is felt right away) **and** the
+    **Göbekli Tepe wonder card** (owned here so 6.7 can *build* it — sequencing rule). Reward
+    ~8⭐ (provisional). **Flag:** balancing needs the *culture-aware `scoreState`* sim fix (see
+    Tech debt) — a **hard dependency**: greedy/heuristic currently judge any culture goal
+    unwinnable. `[size: M] [?]`
+  - **6.4 — Events branch: military attack/defense** (working name *"Raiders at the Border"*) —
+    col 3, row -1, prereq 6.3. **Teaches:** the **event** card mechanic (mission-injected
+    disasters that auto-resolve from hand). **Content:** seed several invasion events that drain
+    resources unless military ≥ a threshold (defense) — the debut of resource-*draining* events.
+    **Objective:** survive the wave(s) / hold the military line. **Unlocks:** the **Chiefdom
+    board** — the first *military-focused* government board (a martial opening: more Military,
+    leaner Population), so this is where the arc teaches **board choice** (Tribe vs. Chiefdom at
+    launch). ~8⭐ (provisional). **Flag:** unlocking a board needs a **new reward kind
+    (`unlockBoardIds`)** in `rules/rewards.ts` + `MissionDef.reward` — boards aren't in the reward
+    types yet (only card / card-sticker / board-sticker) — plus the Chiefdom board authored in
+    `content/boards.ts`. `[size: M] [?]`
+  - **6.5 — Threat branch: population unrest** (working name *"Restless People"*) — col 3, row 0,
+    prereq 6.3. **Teaches:** the **threat** mechanic (persistent board hazard). **Threat:** each
+    point of population drains 1💰 **every deck reshuffle** — unrest that scales with your own
+    size. **Objective:** reach **culture level 3** (culture placates the people — thematic).
+    **Unlocks:** a money/order card. ~9⭐ (provisional). **Flags:** (a) "per deck reshuffle" has
+    no bus trigger today — event types are draw/discard/resourceChange/endTurn, *not* reshuffle;
+    either add a `reshuffle` event or have the threat diff `G.reshuffleCount` at the `endTurn`
+    broadcast. (b) culture goal → same `scoreState` sim dependency as 6.3. `[size: M] [?]`
+  - **6.6 — Science branch: foresight & planning** (working name *"Reading the Seasons"*) —
+    col 3, row +1, prereq 6.3. **Teaches:** the **Science** role — card manipulation / foresight
+    (the debut of the built-but-unused peek family, `deck.ts`'s `peekTop`/`drawInstance`).
+    **Content:** a science-pressure mission (reach a science threshold, or one that rewards
+    seeing/reshaping the draw), leaning on the existing science cards (Fire, Storytelling) to win.
+    **Objective:** a science threshold (TBD — refine once the peek cards exist). **Unlocks:** the
+    **Calendar** card (cf. IDEAS → Stone Age) — the age's foresight entry: agricultural astronomy,
+    a peek/predict-the-draw card, the first to exercise `peekTop`. ~9⭐ (provisional). **Note:** the
+    reward *introduces* peek to the collection (built in later, like Conquest post-6.1); no
+    sequencing constraint, since the objective doesn't require owning Calendar. `[size: M] [?]`
+  - **6.7 — Wonder capstone: Göbekli Tepe** (working name *"The First Temple"*) — col 4, row 0,
+    prereq **all** of 6.4 / 6.5 / 6.6. **Teaches:** **wonders** (a building tagged `wonder` —
+    distinct banner/flavour, *not* a new kind). **Objective:** **build Göbekli Tepe** (the wonder
+    unlocked back at 6.3) — a culmination forcing territory (a slot), production (its cost), and a
+    culture gate together. **Unlocks:** the first **Influence-rewarding infinite mission** — a
+    real escalating-threat endless node (distinct from the no-drain `sandbox` *baseline*), paying
+    Influence = rounds survived per attempt, as the age's repeatable grind/graduation node.
+    ~12⭐ (provisional, one-time clear reward — separate from the infinite node's per-attempt pay).
+    **Flag — new engine support (build here, as noted):** infinite missions aren't
+    reward-unlockable today — `sandbox` is always-available with no prereqs, and the `reward` type
+    can't unlock a *mission* (only card / card-sticker / board-sticker / — pending 6.4 — board). Needs a
+    **new reward kind (`unlockMissionIds`)** (or gateable infinite missions), wired through
+    `rules/campaign.ts` availability *and* the campaign map's always-available infinite bottom
+    banner (hide until unlocked), plus the infinite mission itself authored. `[size: M] [?]`
+
+  **Mechanics coverage — the whole Stone Age arc (the point of the age).** Covered: run loop /
+  work+action / draw+food-upkeep (6.1) · deck-building (post-6.1) · buildings + territory +
+  worker staffing (6.2) · conquest (6.1/6.2) · card+board stickers + Influence/shop/copy-tiers
+  (6.2 + post) · culture levels + `cultureLevelReq` gate (6.3) · events (6.4) · **boards / board
+  choice** (6.4, Chiefdom) · threats (6.5) · **science card-manipulation / foresight** (6.6,
+  Calendar) · wonders (6.7). Interactive cards (`pendingInteraction`) ride in on the Paleolithic
+  baseline (Storytelling). **Deferred out of the Stone Age (deliberate):**
+  - **Destroy / demolish** (`effect.destroy`) — a fully-built-but-unused engine verb, **not** a
+    Stone Age mechanic. It's a card-effect (like the peek family was), not one of DESIGN's headline
+    core mechanics (buildings / territory / conquest / culture), so deferring it doesn't contradict
+    "Stone Age teaches all core mechanics." Lands in a later age (Bronze/Iron), where a built-up
+    settlement gives tearing-down its natural context. `[?]`
 
 - **Step 7 — Bronze Age arc** (content expansion; flavor TBD) — new cards + missions themed
   to the Bronze Age, **no new mechanics**. Continues unlocking cards/stickers through mission
@@ -72,10 +157,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > A pool to draw from while authoring the age arcs (Steps 5–7); each will land in whichever
 > age's mechanics fit. All `[phase: 4]`.
 
-- **Disasters — expand** — the `event` card mechanic shipped (see `CHANGELOG.md`); grow it out with more disaster types and missions that inject them (details TBD) `[?]`
+- **Disasters — expand** — the `event` card mechanic shipped (see `CHANGELOG.md`); grow it out with more disaster types and missions that inject them (first one now slotted as Step 6.4) `[?]`
 - New mission type: "Metropolis" `[?]`
-- New mission: "Build the Wonder" `[?]`
-- Culture-based missions (depend on the Culture resource) `[?]`
+- New mission: "Build the Wonder" → **slotted as Step 6.7** (Göbekli Tepe capstone)
+- Culture-based missions (depend on the Culture resource) → **slotted as Steps 6.3 / 6.5**
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]`
 - Resources transformation? Like a building that transforms production into science for example
 - Card that gives a draw when expanding territory `[?]`
