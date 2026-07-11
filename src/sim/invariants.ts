@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { freePopulation, requiredWorkersOf } from '../rules';
+import { freePopulation, workerCapOf } from '../rules';
 
 /** Enough of the run's identity to reproduce a violation: the config (deck/board/mission) seed and
  *  the move-policy seed together replay a headless run exactly, and `round`/`actionsApplied` locate
@@ -50,8 +50,8 @@ export function assertRunInvariants(G: GameState, ctx: InvariantContext = {}): v
   // Staffing stays within bounds: no negative workers, none over its requirement, no over-subscribed
   // population pool.
   for (const s of [...G.tableau, ...G.workZone]) {
-    const req = requiredWorkersOf(s);
-    if (s.workers < 0 || s.workers > req) fail(`instance ${s.id} has ${s.workers} workers (req ${req})`);
+    const cap = workerCapOf(s);
+    if (s.workers < 0 || s.workers > cap) fail(`instance ${s.id} has ${s.workers} workers (cap ${cap})`);
   }
   if (freePopulation(G) < 0) fail(`negative free population (${freePopulation(G)})`);
 }

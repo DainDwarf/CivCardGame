@@ -5,8 +5,9 @@ import {
   cultureProgress,
   freePopulation,
   isOperating,
+  producingUnits,
   projectedDelta,
-  requiredWorkersOf,
+  workerCapOf,
   unplayableReason,
 } from '../rules';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
@@ -307,6 +308,78 @@ function useAnimatedHand(hand: CardInstance[]): HandCard[] {
   return display;
 }
 
+/** Per-round output labels for a staffable box, scaled to its current staffing (`unit × units`).
+ *  A minimum of ×1 keeps an unstaffed/idle box showing its per-worker rate rather than "+0" (it's
+ *  greyed as idle anyway), matching how a single-worker building shows its output while unstaffed. */
+function boxOutputLabels(produces: Partial<Resources> | undefined, cultureOutput: number | undefined, units: number): string[] {
+  const u = Math.max(1, units);
+  return [
+    ...Object.entries(produces ?? {})
+      .filter(([, v]) => v)
+      .map(([k, v]) => `+${(v as number) * u}${COST_ICON[k as keyof Resources]}`),
+    ...(cultureOutput ? [`+${cultureOutput * u}🎭`] : []),
+  ];
+}
+
+/** A column of worker pips — one per capacity slot; filled (🧍) up to the staffed count, empty
+ *  below. Click an empty pip to staff one worker, a filled pip to unstaff one; a filled pip is also
+ *  the grab handle for dragging a worker out (to the tray or another box). Shared by `BuildingBox`
+ *  and `WorkBox`; replaces the old single all-or-nothing staff toggle now that a building can hold
+ *  several workers (Göbekli Tepe is the first). The whole column registers as the one fly-target
+ *  element per box, so `flyWorkers`' tray↔box animation is unchanged. */
+function StaffPips({
+  inst,
+  name,
+  cap,
+  gameover,
+  idle,
+  dragSource,
+  dropTarget,
+  onStaffPointerDown,
+  containerRef,
+}: {
+  inst: BuildingInstance | WorkInstance;
+  name: string;
+  cap: number;
+  gameover: boolean;
+  idle: number;
+  /** True while one of this box's workers is being dragged out of it (fades the column). */
+  dragSource?: boolean;
+  /** True while a dragged worker hovers this box and it can accept it — keeps the pips enabled so a
+   *  valid drop target doesn't render an OS "not-allowed" cursor mid-drag (see the box gates). */
+  dropTarget?: boolean;
+  onStaffPointerDown?: (e: React.PointerEvent, inst: BuildingInstance | WorkInstance, pipFilled: boolean) => void;
+  /** Registers the column so a worker-deployment token knows where to land. */
+  containerRef?: (el: HTMLElement | null) => void;
+}) {
+  return (
+    <div className={`${styles.staffPips}${dragSource ? ` ${styles.staffDragSource}` : ''}`} ref={containerRef}>
+      {Array.from({ length: cap }, (_, i) => {
+        const filled = i < inst.workers;
+        // Only disable when there's nothing to do: an empty pip needs an idle worker to fill it (or a
+        // worker being dragged onto this box, which fills it directly); a filled pip is always
+        // interactive so its worker can be pulled back off.
+        const disabled = gameover || (!filled && idle <= 0 && !dropTarget);
+        return (
+          <button
+            key={i}
+            type="button"
+            className={`${styles.staffPip} ${filled ? styles.staffFull : styles.staffEmpty}`}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              onStaffPointerDown?.(e, inst, filled);
+            }}
+            disabled={disabled}
+            aria-label={filled ? `unstaff a worker from ${name}` : `staff a worker on ${name}`}
+          >
+            <span aria-hidden="true">🧍</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** The visual face of one building box — shared by the slot grid and the drag clone. Each box is
  *  a single `BuildingInstance`; same-type buildings are never coalesced, so its stable `id` keys
  *  its slot and drives per-instance staffing/demolish. */
@@ -328,24 +401,24 @@ function BuildingBox({
   gameover: boolean;
   idle: number;
   dragging?: boolean;
-  /** True while this building's own worker is being dragged out of it (fades the toggle). */
+  /** True while one of this building's workers is being dragged out of it (fades the pip column). */
   workerDragSource?: boolean;
   /** True while a dragged worker hovers this building and it can accept it (see the matching
-   *  gate on `disabled` below — the carried worker fills the slot directly, no idle pool needed). */
+   *  gate in `StaffPips` — the carried worker fills the slot directly, no idle pool needed). */
   workerDropTarget?: boolean;
   pendingDestroy?: boolean;
   onPointerDown?: (e: React.PointerEvent) => void;
-  onStaffPointerDown?: (e: React.PointerEvent, inst: BuildingInstance) => void;
+  onStaffPointerDown?: (e: React.PointerEvent, inst: BuildingInstance | WorkInstance, pipFilled: boolean) => void;
   onDestroy?: () => void;
   /** Gameover inspect mode only — normal-mode zoom is handled by the slot-drag click/drag split
    *  instead, since `onPointerDown` never fires there (view-only board). */
   onZoomClick?: () => void;
-  /** Registers the staffing toggle so a worker-deployment token knows where to land. */
-  staffRef?: (el: HTMLButtonElement | null) => void;
+  /** Registers the staffing pip column so a worker-deployment token knows where to land. */
+  staffRef?: (el: HTMLElement | null) => void;
 }) {
   const bld = effectiveCard(CARDS[inst.cardId], inst);
-  const req = requiredWorkersOf(inst);
-  const selfSufficient = req === 0;
+  const cap = workerCapOf(inst);
+  const selfSufficient = cap === 0;
   const staffed = isOperating(inst);
   const className = [
     styles.buildingBox,
@@ -364,39 +437,24 @@ function BuildingBox({
       aria-label={pendingDestroy ? `demolish ${bld.name}` : undefined}
     >
       {!pendingDestroy && !selfSufficient && (
-        <button
-          type="button"
-          ref={staffRef}
-          className={`${styles.staffToggle} ${staffed ? styles.staffFull : styles.staffEmpty}${
-            workerDragSource ? ` ${styles.staffDragSource}` : ''
-          }`}
-          onPointerDown={(e) => { e.stopPropagation(); onStaffPointerDown?.(e, inst); }}
-          // Only disable when there's nothing to do: no worker to reclaim AND not enough idle to
-          // staff. Gating on `inst.workers === 0` (not `!staffed`) keeps a partially-staffed
-          // building interactive so its worker can always be pulled back off. `workerDropTarget`
-          // overrides the idle gate while a worker is actively being dragged onto this box — a
-          // native `disabled` button renders an OS "not-allowed" cursor on hover regardless of any
-          // in-flight custom drag, which would otherwise make a perfectly valid drop target (the
-          // carried worker fills it directly via `transferWorker`, no idle pool involved) look
-          // unusable mid-drag.
-          disabled={gameover || (inst.workers === 0 && idle < req && !workerDropTarget)}
-          aria-pressed={staffed}
-          aria-label={staffed ? `unstaff ${bld.name}` : `staff ${bld.name}`}
-        >
-          <span aria-hidden="true">🧍</span>
-        </button>
+        <StaffPips
+          inst={inst}
+          name={bld.name}
+          cap={cap}
+          gameover={gameover}
+          idle={idle}
+          dragSource={workerDragSource}
+          dropTarget={workerDropTarget}
+          onStaffPointerDown={onStaffPointerDown}
+          containerRef={staffRef}
+        />
       )}
       <div className={styles.bldBody}>
         <span className={styles.bName}>{bld.name}</span>
         <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
           <span className={styles.bldIcon} aria-hidden="true">{artFor(bld.id)}</span>
           <span className={styles.bldOutput} aria-hidden="true">
-            {[
-              ...Object.entries(bld.produces ?? {})
-                .filter(([, v]) => v)
-                .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`),
-              ...(bld.cultureOutput ? [`+${bld.cultureOutput}🎭`] : []),
-            ].join(' ')}
+            {boxOutputLabels(bld.produces, bld.cultureOutput, producingUnits(inst)).join(' ')}
           </span>
         </div>
       </div>
@@ -422,18 +480,18 @@ function WorkBox({
   inst: WorkInstance;
   gameover: boolean;
   idle: number;
-  /** True while this box's own worker is being dragged out of it (fades the toggle). */
+  /** True while one of this box's workers is being dragged out of it (fades the pip column). */
   workerDragSource?: boolean;
   /** True while a dragged worker hovers this box and it can accept one (highlights the box). */
   dropTarget?: boolean;
   boxRef?: (el: HTMLDivElement | null) => void;
-  onStaffPointerDown?: (e: React.PointerEvent, inst: WorkInstance) => void;
-  /** Registers the staffing toggle so a worker-deployment token knows where to land. */
-  staffRef?: (el: HTMLButtonElement | null) => void;
+  onStaffPointerDown?: (e: React.PointerEvent, inst: BuildingInstance | WorkInstance, pipFilled: boolean) => void;
+  /** Registers the staffing pip column so a worker-deployment token knows where to land. */
+  staffRef?: (el: HTMLElement | null) => void;
 }) {
   const card = effectiveCard(CARDS[inst.cardId], inst);
-  const req = requiredWorkersOf(inst);
-  const selfSufficient = req === 0;
+  const cap = workerCapOf(inst);
+  const selfSufficient = cap === 0;
   const staffed = isOperating(inst);
   const className = [
     styles.buildingBox,
@@ -443,28 +501,21 @@ function WorkBox({
   ]
     .filter(Boolean)
     .join(' ');
-  const gain = Object.entries(card.effect?.gain ?? {})
-    .filter(([, v]) => v)
-    .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
-    .join(' ');
+  const gain = boxOutputLabels(card.effect?.gain, undefined, producingUnits(inst)).join(' ');
   return (
     <div className={className} ref={boxRef}>
       {!selfSufficient && (
-        <button
-          type="button"
-          ref={staffRef}
-          className={`${styles.staffToggle} ${staffed ? styles.staffFull : styles.staffEmpty}${
-            workerDragSource ? ` ${styles.staffDragSource}` : ''
-          }`}
-          onPointerDown={(e) => { e.stopPropagation(); onStaffPointerDown?.(e, inst); }}
-          // See BuildingBox's matching gate: `dropTarget` overrides the idle gate mid-drag so a
-          // valid transfer target doesn't render an OS "not-allowed" cursor while a worker hovers it.
-          disabled={gameover || (inst.workers === 0 && idle < req && !dropTarget)}
-          aria-pressed={staffed}
-          aria-label={staffed ? `unstaff ${card.name}` : `staff ${card.name}`}
-        >
-          <span aria-hidden="true">🧍</span>
-        </button>
+        <StaffPips
+          inst={inst}
+          name={card.name}
+          cap={cap}
+          gameover={gameover}
+          idle={idle}
+          dragSource={workerDragSource}
+          dropTarget={dropTarget}
+          onStaffPointerDown={onStaffPointerDown}
+          containerRef={staffRef}
+        />
       )}
       <div className={styles.bldBody}>
         <span className={styles.bName}>{card.name}</span>
@@ -531,8 +582,8 @@ interface IntroGhost {
   moving: boolean;
 }
 
-/** A single 🧍 token flying from the population tray into a box's staffing toggle, giving the
- *  **non-drag** deployment paths (a click/toggle staff, or the auto-staff when a building/work card
+/** A single 🧍 token flying from the population tray into a box's staffing pip column, giving the
+ *  **non-drag** deployment paths (a click-to-staff pip, or the auto-staff when a building/work card
  *  is placed) the same visible motion a drag already gives. Purely presentational — no rule reads it.
  *  `from`/`to` are in *local* (pre-scale) px (via `px()`); `moving` flips false→true one tick after
  *  spawn so the CSS transition swipes it from `from` to `to`. */
@@ -594,7 +645,8 @@ interface SlotDrag {
 interface WorkerDrag {
   pointerId: number;
   fromBuildingId: number | null;
-  /** Whether there was actually a worker to pull out (only meaningful when dragging from a building). */
+  /** Whether the pressed pip held a worker (only meaningful when dragging from a building): a filled
+   *  pip can be pulled out (drag) or emptied (click); an empty pip can only be filled (click). */
   hadWorker: boolean;
   grabX: number;
   grabY: number;
@@ -755,9 +807,9 @@ export function Board({
   // Work-box instance id → its DOM element. Work boxes aren't in the slot grid, so worker drops
   // hit-test them separately (see workBoxAt / staffableUnder).
   const workBoxEls = useRef<Map<number, HTMLDivElement>>(new Map());
-  // Staffable instance id → its staffing-toggle button, the fly target for a worker-deployment
-  // token (see flyWorkers). A self-sufficient box renders no toggle, but it never deploys either.
-  const staffEls = useRef<Map<number, HTMLButtonElement>>(new Map());
+  // Staffable instance id → its staffing pip column, the fly target for a worker-deployment token
+  // (see flyWorkers). A self-sufficient box renders no pips, but it never deploys either.
+  const staffEls = useRef<Map<number, HTMLElement>>(new Map());
   // Slot a just-played build card should drop into; consumed by the layout-reconcile effect.
   const pendingBuildSlotRef = useRef<number | null>(null);
   const gameareaRef = useRef<HTMLDivElement>(null);
@@ -921,17 +973,18 @@ export function Board({
     });
   }
 
-  /** Begin dragging a staffable's worker (a building or a Work box): a plain click still toggles
-   *  staffing (handled on release); a real drag released onto the population tray returns one
-   *  worker to it. Only `id` and `workers` are read, so it accepts either instance kind. */
-  function onStaffPointerDown(e: React.PointerEvent, inst: BuildingInstance | WorkInstance) {
+  /** Begin a pointer interaction on one staffing pip (a building or a Work box): a plain click on a
+   *  filled pip unstaffs one worker, on an empty pip staffs one (both handled on release); a real
+   *  drag from a filled pip releases its worker onto the tray/another box. `pipFilled` records which
+   *  kind of pip was pressed. Only `id`/`workers` are read, so it accepts either instance kind. */
+  function onStaffPointerDown(e: React.PointerEvent, inst: BuildingInstance | WorkInstance, pipFilled: boolean) {
     if (e.button !== 0) return;
     if (gameover) return;
     const btnRect = e.currentTarget.getBoundingClientRect();
     setWorkerDrag({
       pointerId: e.pointerId,
       fromBuildingId: inst.id,
-      hadWorker: inst.workers > 0,
+      hadWorker: pipFilled,
       grabX: e.clientX - btnRect.left,
       grabY: e.clientY - btnRect.top,
       w: btnRect.width,
@@ -944,10 +997,10 @@ export function Board({
     });
   }
 
-  /** Fly `count` 🧍 tokens between the population tray and the staffing toggle of box `boxId`,
+  /** Fly `count` 🧍 tokens between the population tray and the staffing pip column of box `boxId`,
    *  giving the non-drag staffing paths the visible motion a drag already has: `recall: false`
-   *  (deploy) flies tray → box (a click/toggle staff, or auto-staff on placing a card); `recall:
-   *  true` flies box → tray (a click/toggle *un*staff). No-op if the tray or the toggle isn't
+   *  (deploy) flies tray → box (a click-to-staff pip, or auto-staff on placing a card); `recall:
+   *  true` flies box → tray (a click-to-unstaff pip). No-op if the tray or the pip column isn't
    *  measurable (e.g. a self-sufficient box, which never deploys). Rects are converted visual→local
    *  (`px`) since the flight layer lives inside the scaled app wrapper. */
   function flyWorkers(boxId: number, count: number, recall = false) {
@@ -960,7 +1013,7 @@ export function Board({
     for (let i = 0; i < count; i++) {
       const id = workerFlightSeq.current++;
       // A token-sized spot centered in the tray (nudged per token so several don't stack exactly),
-      // and the box's staffing toggle where a worker rests. Deploy flies tray→box; recall, box→tray.
+      // and the box's staffing pip column where a worker rests. Deploy flies tray→box; recall, box→tray.
       const nudge = (i - (count - 1) / 2) * br.width * 0.8;
       const trayPoint: Rect = {
         left: px(fr.left + fr.width / 2 - br.width / 2 + nudge),
@@ -1152,7 +1205,7 @@ export function Board({
 
   // While a worker token is being dragged (either from the tray toward a building, or out of a
   // building back toward the tray), track the pointer on the window. The drop resolves in onUp:
-  // a release with no real movement is treated as a plain click (staffing toggle), matching the
+  // a release with no real movement is treated as a plain click (staff/unstaff one pip), matching the
   // click-vs-drag split used for cards and building boxes above.
   useEffect(() => {
     if (!workerDrag) return;
@@ -1170,25 +1223,23 @@ export function Board({
       const d = workerDragRef.current;
       if (!d || e.pointerId !== d.pointerId) return;
       if (!d.active) {
-        // No real movement — a plain click on the staffing toggle (tray tokens have no click behavior).
+        // No real movement — a plain click on one pip (tray tokens have no click behavior). A filled
+        // pip unstaffs one worker (recall a token → tray); an empty pip staffs one if idle is free
+        // (deploy a token tray → box). Both move exactly one worker.
         if (d.fromBuildingId != null) {
-          // Animate the tokens this toggle actually moves (mirroring toggleStaffing's own gate),
-          // measured now — staffing doesn't move the box so the pre-move toggle rect is right: a
-          // staffed box empties (recall its workers → tray), an empty box fills if there's enough
-          // idle (deploy req from the tray → box), otherwise the toggle no-ops and nothing flies.
-          const s = buildingById.get(d.fromBuildingId) ?? workById.get(d.fromBuildingId);
-          const req = s ? requiredWorkersOf(s) : 0;
-          const staffedWorkers = s?.workers ?? 0;
-          const willStaff = !!s && staffedWorkers === 0 && req > 0 && idle >= req;
-          moves.toggleStaffing(d.fromBuildingId);
-          if (willStaff) flyWorkers(d.fromBuildingId, req);
-          else if (staffedWorkers > 0) flyWorkers(d.fromBuildingId, staffedWorkers, true);
+          if (d.hadWorker) {
+            moves.unassignWorker(d.fromBuildingId);
+            flyWorkers(d.fromBuildingId, 1, true);
+          } else if (idle > 0) {
+            moves.assignWorker(d.fromBuildingId);
+            flyWorkers(d.fromBuildingId, 1);
+          }
         }
       } else if (d.fromBuildingId == null) {
         // Dropped an idle token — staff whichever building or Work box is under the cursor, if it
         // can still accept a worker.
         const inst = staffableUnder(e.clientX, e.clientY);
-        if (inst && inst.workers < requiredWorkersOf(inst)) moves.assignWorker(inst.id);
+        if (inst && inst.workers < workerCapOf(inst)) moves.assignWorker(inst.id);
       } else if (isOverTray(e.clientX, e.clientY)) {
         // Dragged a worker out of its box and dropped it on the population tray.
         if (d.hadWorker) moves.unassignWorker(d.fromBuildingId);
@@ -1197,7 +1248,7 @@ export function Board({
         // transfer it directly (one atomic move) rather than unassign-then-assign, which would
         // split undo into two steps.
         const inst = staffableUnder(e.clientX, e.clientY);
-        if (inst && inst.id !== d.fromBuildingId && inst.workers < requiredWorkersOf(inst)) {
+        if (inst && inst.id !== d.fromBuildingId && inst.workers < workerCapOf(inst)) {
           moves.transferWorker(d.fromBuildingId, inst.id);
         }
       }
@@ -1606,7 +1657,7 @@ export function Board({
               const inst = key != null ? buildingById.get(key) : undefined;
               const isDropTarget = slotDrag?.active === true && hoverSlot === slotIdx;
               const isDragSource = slotDrag?.active === true && slotDrag.fromSlot === slotIdx;
-              const canAcceptWorker = !!inst && inst.workers < requiredWorkersOf(inst);
+              const canAcceptWorker = !!inst && inst.workers < workerCapOf(inst);
               const isWorkerDropTarget =
                 workerDrag?.active === true &&
                 workerHoverSlot === slotIdx &&
@@ -1666,7 +1717,7 @@ export function Board({
           {G.workZone.length > 0 && (
             <div className={styles.workStrip}>
               {G.workZone.map((inst) => {
-                const canAcceptWorker = inst.workers < requiredWorkersOf(inst);
+                const canAcceptWorker = inst.workers < workerCapOf(inst);
                 const isWorkerDropTarget =
                   workerDrag?.active === true &&
                   workerHoverWorkId === inst.id &&

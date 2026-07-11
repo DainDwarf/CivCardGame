@@ -319,11 +319,11 @@ describe('transferWorker: moving a worker directly between two buildings', () =>
     expect(G.tableau[1].workers).toBe(0);
   });
 
-  it('rejects when the target building is already at its worker requirement', () => {
+  it('rejects when the target building is already at its worker capacity', () => {
     const G = blankState('test');
     G.tableau = [
       { id: 1, cardId: 'test_food', workers: 1 },
-      { id: 2, cardId: 'test_prod', workers: 1 }, // test_prod needs only 1 worker
+      { id: 2, cardId: 'test_prod', workers: 1 }, // test_prod capacity is only 1 worker
     ];
     transferWorker(G, 1, 2);
     expect(G.tableau[0].workers).toBe(1); // untouched
@@ -344,5 +344,37 @@ describe('transferWorker: moving a worker directly between two buildings', () =>
     expect(G.tableau[0].workers).toBe(1);
     transferWorker(G, 999, 1);
     expect(G.tableau[0].workers).toBe(1);
+  });
+});
+
+describe('multi-worker staffing (per-worker capacity)', () => {
+  // `test_multiworker` has capacity 3: workers is a cap, not a fixed requirement.
+  it('assignWorker fills a multi-worker building one pip at a time, up to its capacity', () => {
+    const G = blankState('test');
+    G.population = 4;
+    G.tableau = [{ id: 1, cardId: 'test_multiworker', workers: 0 }];
+    assignWorker(G, 1);
+    assignWorker(G, 1);
+    expect(G.tableau[0].workers).toBe(2);
+    assignWorker(G, 1);
+    expect(G.tableau[0].workers).toBe(3);
+    assignWorker(G, 1); // at capacity — rejected
+    expect(G.tableau[0].workers).toBe(3);
+  });
+
+  it('toggleStaffing partial-fills when fewer than its capacity are idle', () => {
+    const G = blankState('test');
+    G.population = 2; // under the capacity of 3
+    G.tableau = [{ id: 1, cardId: 'test_multiworker', workers: 0 }];
+    toggleStaffing(G, 1);
+    expect(G.tableau[0].workers).toBe(2); // fills what it can
+  });
+
+  it('toggleStaffing empties a partially staffed multi-worker building', () => {
+    const G = blankState('test');
+    G.population = 3;
+    G.tableau = [{ id: 1, cardId: 'test_multiworker', workers: 2 }];
+    toggleStaffing(G, 1);
+    expect(G.tableau[0].workers).toBe(0);
   });
 });

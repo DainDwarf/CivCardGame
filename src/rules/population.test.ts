@@ -8,26 +8,42 @@ import {
   freePopulation,
   isOperating,
   nextInstanceId,
-  requiredWorkersOf,
+  producingUnits,
+  workerCapOf,
 } from './population';
 import { blankState } from './state';
 import { installFixtures, uninstallFixtures } from './testFixtures';
 
 // `test_food`/`test_prod` are 1-worker producing buildings, `test_selfstaffed` a self-sufficient
-// (workers:0) one, and `test_work`/`test_work_food` 1-worker Work cards.
+// (workers:0) one, `test_multiworker` a 3-capacity per-worker one, and `test_work`/`test_work_food`
+// 1-worker Work cards.
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);
 
-describe('worker requirements', () => {
-  it('producing buildings need a worker; self-sufficient ones do not', () => {
-    expect(requiredWorkersOf({ id: 1, cardId: 'test_food', workers: 0 })).toBe(1);
-    expect(requiredWorkersOf({ id: 1, cardId: 'test_selfstaffed', workers: 0 })).toBe(0);
+describe('worker capacity', () => {
+  it('reads the card capacity; self-sufficient cards are 0, absent defaults to 1', () => {
+    expect(workerCapOf({ id: 1, cardId: 'test_food', workers: 0 })).toBe(1);
+    expect(workerCapOf({ id: 1, cardId: 'test_selfstaffed', workers: 0 })).toBe(0);
+    expect(workerCapOf({ id: 1, cardId: 'test_multiworker', workers: 0 })).toBe(3);
   });
 
-  it('a building operates only when staffed to its requirement', () => {
+  it('a building operates once it has at least one worker; a self-sufficient one always operates', () => {
     expect(isOperating({ id: 1, cardId: 'test_food', workers: 0 })).toBe(false);
     expect(isOperating({ id: 1, cardId: 'test_food', workers: 1 })).toBe(true);
     expect(isOperating({ id: 1, cardId: 'test_selfstaffed', workers: 0 })).toBe(true); // needs none
+  });
+
+  it('a multi-worker building operates partially staffed (≥1 of its capacity)', () => {
+    expect(isOperating({ id: 1, cardId: 'test_multiworker', workers: 0 })).toBe(false);
+    expect(isOperating({ id: 1, cardId: 'test_multiworker', workers: 1 })).toBe(true);
+    expect(isOperating({ id: 1, cardId: 'test_multiworker', workers: 3 })).toBe(true);
+  });
+
+  it('producingUnits is the staffed count, or 1 for a self-sufficient card', () => {
+    expect(producingUnits({ id: 1, cardId: 'test_multiworker', workers: 0 })).toBe(0);
+    expect(producingUnits({ id: 1, cardId: 'test_multiworker', workers: 2 })).toBe(2);
+    expect(producingUnits({ id: 1, cardId: 'test_multiworker', workers: 3 })).toBe(3);
+    expect(producingUnits({ id: 1, cardId: 'test_selfstaffed', workers: 0 })).toBe(1);
   });
 });
 
@@ -58,18 +74,30 @@ describe('population accounting', () => {
   });
 });
 
-describe('auto-staffing a new building (all-or-nothing)', () => {
-  it('fully staffs a building when enough are idle', () => {
+describe('auto-staffing a new building (partial fill)', () => {
+  it('staffs a single-worker building when one is idle', () => {
     const G = blankState('test');
     G.population = 3; // all idle
-    expect(autoStaffCount(G, 'test_food')).toBe(1); // needs 1
+    expect(autoStaffCount(G, 'test_food')).toBe(1); // capacity 1
   });
 
-  it('leaves it unstaffed unless its full requirement can be met', () => {
+  it('leaves it unstaffed when none are idle', () => {
     const G = blankState('test');
     G.population = 1;
     G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }]; // 0 idle -> cannot staff
     expect(autoStaffCount(G, 'test_food')).toBe(0);
+  });
+
+  it('fills a multi-worker building to its capacity when enough are idle', () => {
+    const G = blankState('test');
+    G.population = 5; // all idle
+    expect(autoStaffCount(G, 'test_multiworker')).toBe(3); // capacity 3
+  });
+
+  it('partial-fills a multi-worker building when fewer than its capacity are idle', () => {
+    const G = blankState('test');
+    G.population = 2; // all idle, under the capacity of 3
+    expect(autoStaffCount(G, 'test_multiworker')).toBe(2);
   });
 
   it('self-sufficient buildings need no workers', () => {
@@ -94,13 +122,13 @@ describe('auto-staffing a new building (all-or-nothing)', () => {
 });
 
 describe('Work cards as staffables', () => {
-  it('a Work card requires its card.workers (default 1) and operates only when staffed', () => {
-    expect(requiredWorkersOf({ id: 1, cardId: 'test_work', workers: 0 })).toBe(1); // test_work has workers: 1
+  it('a Work card has its card.workers as capacity (default 1) and operates once staffed', () => {
+    expect(workerCapOf({ id: 1, cardId: 'test_work', workers: 0 })).toBe(1); // test_work has workers: 1
     expect(isOperating({ id: 1, cardId: 'test_work', workers: 0 })).toBe(false);
     expect(isOperating({ id: 1, cardId: 'test_work', workers: 1 })).toBe(true);
   });
 
-  it('addWork sticks the card in the workZone, auto-staffed all-or-nothing from idle pop', () => {
+  it('addWork sticks the card in the workZone, auto-staffed from idle pop', () => {
     const G = blankState('test');
     G.population = 1;
     addWork(G, 'test_work'); // 1 idle -> staffs its 1 worker

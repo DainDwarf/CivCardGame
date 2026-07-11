@@ -280,12 +280,16 @@ export const CARDS: Record<string, CardDef> = {
   },
   // Göbekli Tepe: the age's first *wonder* (`kind: 'wonder'` — a unique monument that plays like a
   //   building) and the first live card to carry a `cultureLevelReq` gate, so playing it is blocked
-  //   until the civilization is cultured enough. Unlocked by "Rites & Rituals" (6.3) so the capstone
-  //   (6.7) can *build* it. Stats are a PROVISIONAL first pass — 6.7 owns its real tuning.
+  //   until the civilization is cultured enough. Also the first **multi-worker** building (`workers`
+  //   is a *capacity*, not a fixed requirement): it operates with any 1–3 workers and its declarative
+  //   `produces`/`cultureOutput` are *per-worker unit* values scaled by the staffed count (see
+  //   `population.ts`'s `producingUnits`). Unlocked by "Rites & Rituals" (6.3) so the capstone (6.7)
+  //   can *build* it. Cost is still a provisional first pass — 6.7 owns its real tuning.
   gobekli_tepe: {
     id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
-    cost: { production: 8 }, cultureLevelReq: 2, cultureOutput: 3, workers: 2,
-    description: 'The first temple. Requires 🎭 level 2. While staffed: +3 🎭 each round.',
+    cost: { production: 8 }, cultureLevelReq: 1, workers: 3,
+    produces: { production: 1, money: 1 }, cultureOutput: 1,
+    description: '+1🔨 +1🪙 +1🎭\nper worker.',
   },
 
   // — Actions: resolve once, then recycle to discard.
@@ -354,11 +358,11 @@ export const CARDS: Record<string, CardDef> = {
   //   within-band current/needed resets at each level-up and would read confusingly against a level target.
   rites_rituals_goal: {
     id: 'rites_rituals_goal', name: 'Rites & Rituals', kind: 'objective', cost: {},
-    description: 'Reach 🎭 culture level 2',
+    description: 'Reach 🎭 level 2',
     objective: (G) => cultureLevel(G.culture) >= 2,
     dynamicText: (G) => {
       const p = cultureProgress(G.culture);
-      return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2 · ${p.current}/${p.needed} to next`;
+      return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2`;
     },
   },
 

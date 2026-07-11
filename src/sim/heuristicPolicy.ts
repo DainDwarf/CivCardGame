@@ -1,10 +1,9 @@
 import {
   freePopulation,
   freeTerritory,
-  isOperating,
   objectiveMet,
   projectedDelta,
-  requiredWorkersOf,
+  workerCapOf,
   unplayableReason,
   type GameState,
   type Resources,
@@ -59,17 +58,19 @@ function decide(state: RunState): SimAction {
   // A parked interaction is exclusive — answer it (see `enumerateActions`); a fixed pick is fine.
   if (G.pendingInteraction) return enumerateActions(G)[0];
 
-  // 1. Staff idle capacity — free and always good (production online). Prefer a food producer when the
-  //    outlook is tight, else the highest static value.
+  // 1. Staff idle capacity — free and always good (production online). Fill any box with spare
+  //    capacity one worker at a time (`assignWorker`, not `toggleStaffing` — a multi-worker box scales
+  //    per worker, so top it up pip by pip). Prefer a food producer when the outlook is tight, else
+  //    the highest static value.
   const idle = freePopulation(G);
   if (idle > 0) {
-    const understaffed = [...G.tableau, ...G.workZone].filter((s) => !isOperating(s) && requiredWorkersOf(s) <= idle);
+    const understaffed = [...G.tableau, ...G.workZone].filter((s) => s.workers < workerCapOf(s));
     if (understaffed.length > 0) {
       const projFood = projectedFood(G);
       const pick = bestBy(understaffed, (s) =>
         projFood < FOOD_SAFETY ? foodOutput(CARDS[s.cardId]) : staticValue(CARDS[s.cardId]),
       );
-      return { kind: 'toggleStaffing', id: pick.id };
+      return { kind: 'assignWorker', id: pick.id };
     }
   }
 

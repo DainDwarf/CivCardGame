@@ -1,10 +1,11 @@
-import { addResources, subtractResources, type Resources } from './resources';
+import { addResources, scaleResources, subtractResources, type Resources } from './resources';
 import { drawCard } from './deck';
 import { CARDS, isStaffable } from '../content/cards';
 import type { CardDef } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, PendingInteraction } from './state';
 import { emitEvent } from './events';
 import { effectiveGain } from './stickers';
+import { findStaffable, producingUnits } from './population';
 
 /** The immediate, one-shot effect a card applies when played. */
 export interface CardEffect {
@@ -148,11 +149,19 @@ export function resolveCard(ctx: EffectContext): void {
  * than `specToResolver`: applies only `gain` (via the shared `gainResources`) and `culture`, never a
  * one-shot play field (`draw`/`population`/`territory`/`destroy`) a card might also declare — those
  * must never fire on a recurring tick.
+ *
+ * Output scales per staffed worker: the declarative `produces`/`cultureOutput` are *per-worker unit*
+ * values, multiplied by the operating instance's `producingUnits` (its staffed count, or 1 for a
+ * self-sufficient card). `ctx.self` is a bare `CardInstance` carrying no `workers`, so the live
+ * instance is resolved from its zone. A capacity-1 producer yields `×1` — identical to a flat output.
+ * Stickers still fold once through `gainResources` (a flat sticker adds on top of the scaled base).
  */
 function defaultProduce(card: CardDef): Resolver {
   return (ctx) => {
-    gainResources(ctx, card.produces ?? card.effect?.gain);
-    applyEffect(ctx.G, { culture: card.cultureOutput });
+    const s = findStaffable(ctx.G, ctx.self.id);
+    const units = s ? producingUnits(s) : 1;
+    gainResources(ctx, scaleResources(card.produces ?? card.effect?.gain ?? {}, units));
+    applyEffect(ctx.G, { culture: (card.cultureOutput ?? 0) * units });
   };
 }
 

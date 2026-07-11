@@ -72,7 +72,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     play-gate. Objective: reach **culture level 2** (climbed by decking in owned Cave Art/Clothing —
     the intended lesson; no deadline). Unlocks **Göbekli Tepe** — the age's first wonder, itself the
     culture-gated card (a `'wonder'`-tagged building with `cultureLevelReq`), owned here so 6.7 can
-    *build* it. Reward 8⭐. Göbekli Tepe stats are provisional (6.7 tunes them). **Still deferred:**
+    *build* it. Reward 8⭐. Göbekli Tepe is now the first **multi-worker / per-worker** building
+    (3-worker capacity, +1🔨+1🪙+1🎭 per staffed worker, 🎭 level-1 gate); its cost stays provisional
+    (6.7 tunes it). **Still deferred:**
     the *culture-aware `scoreState`* sim fix (see Tech debt) — until then greedy/heuristic judge
     culture goals unwinnable, so 6.3 isn't sim-sweepable yet. `[shipped]`
   - **6.4 — Events branch: military attack/defense** (working name *"Raiders at the Border"*) —
@@ -168,9 +170,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- **Multi-pip staffing UI** — once a building can require 2–3 workers, its box needs one pip per worker slot (not the current single staff-toggle icon), so partial staffing is visible and each pip can be dragged independently. Follow-up to the now-shipped building→building worker drag; blocked on a multi-worker building actually existing (see [[multi-worker-buildings-roadmap]]) — Step 7 may unblock it. `[size: M] [?] [blocked]` `[phase: 4]`
-  - **jot (sim, same unblock):** the heuristic policy's staffing step uses `toggleStaffing`, which on a *partially* staffed multi-worker box (`0 < workers < req`) **empties** it — the opposite of intent. Harmless today (all `req = 1`); when multi-worker buildings land, switch that step to `assignWorker` (one pip at a time) in `sim/heuristicPolicy.ts`. `[phase: 4]`
-- **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Only pays off once multi-pip staffing (above) exists. `[size: S] [?] [blocked]` `[phase: 4]`
+- **Multi-pip staffing UI** ✅ SHIPPED — a building's box now shows one pip per worker-capacity slot
+  (filled up to the staffed count) instead of the single staff toggle, so partial staffing is visible;
+  click an empty pip to staff one, a filled pip to unstaff one. Landed with the Göbekli Tepe wonder (the
+  first multi-worker building — `workers` is now a *capacity*, per-worker scaling is the universal
+  staffing model; see [[multi-worker-buildings-roadmap]]). **Deferred follow-up:** independent per-pip
+  *drag* (a specific pip to another box) — box-level worker drag still moves one worker at a time.
+  - **jot (sim)** ✅ DONE — the heuristic policy's staffing rung now uses `assignWorker` (fills a
+    multi-worker box a pip at a time) instead of `toggleStaffing`, in `sim/heuristicPolicy.ts`.
+- **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 
 ## Tech debt / architecture

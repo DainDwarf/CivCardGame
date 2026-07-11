@@ -157,7 +157,7 @@ Five spendable/trackable resources, each with a **mechanical role** and a **them
 
 Three civilization-level gauges that constrain and enable play. They are never directly spent; they define the shape of your civilization.
 
-- **Population** — your workforce. Workers are drawn from the idle population pool to staff buildings (which need workers to operate) and to pay for population-reserving actions. Food production determines how large a population you can sustain.
+- **Population** — your workforce. Workers are drawn from the idle population pool to staff buildings (which need at least one worker to operate) and to pay for population-reserving actions. Food production determines how large a population you can sustain. A building has a worker **capacity**: most take a single worker, but some (starting with the Göbekli Tepe wonder) hold several, and their output **scales per staffed worker** — a partly-staffed multi-worker building still runs, just at reduced output, so how you spread a scarce workforce across your buildings is a lever.
 - **Territory** — the land your civilization controls. You cannot build more buildings than your territory allows. Expand by conquest or development; or free up slots by demolishing existing buildings.
 - **Culture** — how much your civilization shines. Accumulated over time; the more you have, the more willing your people are to act. Mechanically: culture thresholds increase hand size, and some cards require a minimum culture to be playable.
 

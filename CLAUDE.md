@@ -178,8 +178,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     handler mutating `G.pendingDefeat` directly (a stale push could outlive the condition that set it;
     see `threats.ts`).
   - `population.ts` — worker staffing over buildings *and* work cards through one `Staffable`
-    layer (`requiredWorkersOf`/`isOperating`/`freePopulation`/`findStaffable`,
-    `addBuilding`/`addWork`, the shared `nextInstanceId` allocator, `foodUpkeep`).
+    layer (`workerCapOf`/`isOperating`/`producingUnits`/`freePopulation`/`findStaffable`,
+    `addBuilding`/`addWork`, the shared `nextInstanceId` allocator, `foodUpkeep`). `workers` on a
+    card is a worker **capacity** (max assignable; `0` = self-sufficient, always operating): a
+    staffable operates at **≥1 worker** and its declarative output scales **per worker**
+    (`producingUnits` × the per-worker unit `produces`/`cultureOutput`, folded in `effects.ts`'s
+    `defaultProduce`). A capacity-1 building is the common case (scales ×1 = a flat output); the first
+    multi-worker card is the Göbekli Tepe wonder. `autoStaffCount` partial-fills toward capacity.
   - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup. A seeded threat
     ticks every round through the `endTurn` broadcast (`events.ts`'s `dispatchEvent` → `effects.ts`'s
     `resolveEndTurn` → the threat's own `resolveCard` drain), so the threat card computes its own
@@ -323,8 +328,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   *that* building's card to `removed`.
   `assignWorker`/`unassignWorker`/`transferWorker`/`toggleStaffing` all target a `Staffable`
   by its instance `id` via `findStaffable`, so they operate on a building *or* a work box
-  interchangeably. `toggleStaffing` (the UI's box control) is all-or-nothing — it fills a box
-  completely or empties it.
+  interchangeably. `toggleStaffing` (a box-level control) empties a staffed box, or fills an empty
+  one *toward its capacity* from the idle pool (partial-filling when fewer than its capacity are
+  free — a box operates at ≥1 worker). Individual workers are added/removed a pip at a time by
+  `assignWorker`/`unassignWorker` (the per-pip clicks + drags).
 - `src/run/GameContext.tsx` — React context that holds `RunState` and exposes
   `{ G, gameover, board, moves, endTurn, undo, canUndo, restart, endRun }` via `useGame()`
   (`board` is the `RunConfig.board` this run was launched with, along for presentation —

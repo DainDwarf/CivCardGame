@@ -591,23 +591,36 @@
   gap: 0.2rem;
 }
 
-/* The left-column staffing toggle: a binary empty/full switch for the whole building —
-   click fills it to its full worker requirement, or empties it entirely. */
-.staffToggle {
+/* The left-column staffing pip stack: one pip per worker capacity slot, filled up to the staffed
+   count. Stretches the full box height, so a single-worker building shows one full-height pip (the
+   old toggle look) and a multi-worker building shows its slots stacked. */
+.staffPips {
   flex: 0 0 2.3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+/* One worker slot. Click an empty pip to staff a worker, a filled pip to unstaff one; a filled pip
+   is also the grab handle for dragging a worker out. Fill/empty look reuses .staffFull/.staffEmpty. */
+.staffPip {
+  flex: 1 1 0;
+  min-height: 1.1rem;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   border-radius: 6px;
   padding: 0;
-  font-size: 1.4rem;
+  font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
   transition: background 0.12s ease, opacity 0.12s ease;
 }
 
-.staffToggle:disabled {
+.staffPip:disabled {
   cursor: not-allowed;
 }
 
@@ -631,7 +644,7 @@
   background: rgb(var(--staff-rgb) / 0.32);
 }
 
-/* The staffing toggle fades while its worker is being dragged out of the building. */
+/* The staffing pip column fades while one of its workers is being dragged out of the building. */
 .staffDragSource {
   opacity: 0.35;
 }

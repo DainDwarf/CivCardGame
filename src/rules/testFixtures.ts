@@ -110,6 +110,14 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     id: 'test_wonder', name: 'Test Wonder', kind: 'wonder',
     cost: { production: 2 }, cultureOutput: 2, workers: 1,
   },
+  // Multi-worker building (`workers: 3` = capacity, not a fixed requirement): operates at ≥1 worker
+  // and its `produces`/`cultureOutput` are *per-worker unit* values scaled by the staffed count (see
+  // `population.ts`'s `producingUnits`). The canonical variable-staffing fixture — mirrors the shape
+  // of the Göbekli Tepe wonder, the first shipped card of this kind.
+  test_multiworker: {
+    id: 'test_multiworker', name: 'Test Multi-Worker', kind: 'building',
+    cost: { production: 4 }, produces: { production: 1, money: 1 }, cultureOutput: 1, workers: 3,
+  },
 
   // --- Work cards: produce their `effect.gain` only while staffed, file to discard at end of turn. ---
   test_work: {

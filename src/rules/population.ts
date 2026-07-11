@@ -11,15 +11,27 @@ export const FOOD_PER_POP = 1;
  */
 export type Staffable = PlacedCard;
 
-/** Worker requirement of any staffable, read from its card. `workers: 0` = self-sufficient
- *  (always operating, e.g. a self-sufficient defensive structure); absent defaults to 1. */
-export function requiredWorkersOf(s: Staffable): number {
+/** Worker *capacity* of any staffable — the most workers it can hold — read from its card.
+ *  `workers: 0` = self-sufficient (holds no workers, always operating, e.g. a self-sufficient
+ *  defensive structure); absent defaults to 1. This is the assignment cap and the pip count; the
+ *  operate-threshold and the output multiplier are derived from it below. */
+export function workerCapOf(s: Staffable): number {
   return CARDS[s.cardId].workers ?? 1;
 }
 
-/** Is this staffable staffed enough to operate (produce / defend)? */
+/** Is this staffable operating (producing / defending)? Every staffable operates with at least one
+ *  worker; a self-sufficient one (capacity 0) always operates. Output then scales per worker —
+ *  see `producingUnits`. */
 export function isOperating(s: Staffable): boolean {
-  return s.workers >= requiredWorkersOf(s);
+  return workerCapOf(s) === 0 || s.workers >= 1;
+}
+
+/** The linear output multiplier for an operating staffable: the number of staffed workers, or 1 for
+ *  a self-sufficient one (capacity 0) so it yields its flat output once rather than ×0. Production
+ *  scales by this (`effects.ts`'s `defaultProduce`); the on-board box shows `unit × producingUnits`. */
+export function producingUnits(s: Staffable): number {
+  const cap = workerCapOf(s);
+  return cap === 0 ? 1 : s.workers;
 }
 
 /** Total population currently assigned across a set of staffables (tableau or workZone). */
@@ -38,17 +50,12 @@ export function foodUpkeep(G: GameState): number {
 }
 
 /**
- * Idle workers to auto-assign to a freshly placed staffable. All-or-nothing: staff it to its
- * full requirement only if that many are free, otherwise leave it unstaffed (no workers parked
- * on something that can't operate yet). 0 for self-sufficient requirements too.
+ * Idle workers to auto-assign to a freshly placed staffable: fill toward its capacity from the idle
+ * pool, partial-filling when there aren't enough free (a staffable operates at ≥1 worker and scales
+ * per worker, so a partly-staffed box still produces). 0 for a self-sufficient card (capacity 0).
  */
-function autoStaffTo(G: GameState, req: number): number {
-  return freePopulation(G) >= req ? req : 0;
-}
-
-/** Auto-staff count for a card about to be placed on the board. */
 export function autoStaffCount(G: GameState, cardId: string): number {
-  return autoStaffTo(G, CARDS[cardId].workers ?? 1);
+  return Math.min(freePopulation(G), CARDS[cardId].workers ?? 1);
 }
 
 /** The next stable instance id: one past the highest currently in *any* zone — the board (tableau,
@@ -74,7 +81,8 @@ export function nextInstanceId(G: GameState): number {
   return max + 1;
 }
 
-/** Erect a building card in the tableau, auto-staffing it from the idle pool (all-or-nothing).
+/** Erect a building card in the tableau, auto-staffing it from the idle pool (partial-filling toward
+ *  its capacity — see `autoStaffCount`).
  *  `stickers` (if the played hand instance carried any) rides onto the new tableau instance —
  *  otherwise a Reinforced building would silently lose its bonus the moment it's placed, since
  *  `resolveProduction`'s `effectiveGain` reads stickers off *this* instance, not the played card's
@@ -84,8 +92,9 @@ export function addBuilding(G: GameState, cardId: string, stickers?: string[]): 
   G.tableau.push({ id: nextInstanceId(G), cardId, workers, ...(stickers?.length ? { stickers } : {}) });
 }
 
-/** Play a Work card onto the board, auto-staffing it from the idle pool (all-or-nothing). Carries
- *  `stickers` onto the new work-zone instance, same reasoning as `addBuilding` above. */
+/** Play a Work card onto the board, auto-staffing it from the idle pool (partial-filling toward its
+ *  capacity — see `autoStaffCount`). Carries `stickers` onto the new work-zone instance, same
+ *  reasoning as `addBuilding` above. */
 export function addWork(G: GameState, cardId: string, stickers?: string[]): void {
   const workers = autoStaffCount(G, cardId);
   G.workZone.push({ id: nextInstanceId(G), cardId, workers, ...(stickers?.length ? { stickers } : {}) });

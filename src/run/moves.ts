@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { addBuilding, addWork, emitEvent, findStaffable, freePopulation, requiredWorkersOf, resolveCard, subtractResources, unplayableReason } from '../rules';
+import { addBuilding, addWork, emitEvent, findStaffable, freePopulation, workerCapOf, resolveCard, subtractResources, unplayableReason } from '../rules';
 import { effectiveCost } from '../rules/stickers';
 import { CARDS, isStructure } from '../content/cards';
 
@@ -94,11 +94,11 @@ export function resolveInteraction(G: GameState, answer: number): 'invalid' | vo
 }
 
 /** Assign one idle population to a specific staffable (building or Work card, identified by `id`),
- *  unless it's already at its worker requirement. */
+ *  unless it's already at its worker capacity. */
 export function assignWorker(G: GameState, id: number): 'invalid' | void {
   if (freePopulation(G) <= 0) return 'invalid';
   const s = findStaffable(G, id);
-  if (!s || s.workers >= requiredWorkersOf(s)) return 'invalid';
+  if (!s || s.workers >= workerCapOf(s)) return 'invalid';
   s.workers += 1;
 }
 
@@ -113,31 +113,32 @@ export function unassignWorker(G: GameState, id: number): 'invalid' | void {
  *  as a single atomic move. This is what a box-to-box drag uses instead of an unassign+assign
  *  pair — two separate moves would push two entries onto the undo stack, so one "undo" click
  *  would only unwind half the transfer. Invalid if the source has no worker to give, source and
- *  target are the same instance, or the target is already at its worker requirement. */
+ *  target are the same instance, or the target is already at its worker capacity. */
 export function transferWorker(G: GameState, fromId: number, toId: number): 'invalid' | void {
   if (fromId === toId) return 'invalid';
   const from = findStaffable(G, fromId);
   const to = findStaffable(G, toId);
   if (!from || from.workers <= 0) return 'invalid';
-  if (!to || to.workers >= requiredWorkersOf(to)) return 'invalid';
+  if (!to || to.workers >= workerCapOf(to)) return 'invalid';
   from.workers -= 1;
   to.workers += 1;
 }
 
-/** Toggle a staffable (building or Work card, identified by `id`) between empty and fully staffed
- *  in one move: staffed ones empty out entirely; empty ones fill to their full worker requirement,
- *  but only all-or-nothing (mirrors `addBuilding`'s auto-staff) — if there aren't enough idle
- *  workers to fill it completely, the toggle is rejected rather than partially staffing it. No-op
- *  target for self-sufficient requirements (0). */
+/** Toggle a staffable (building or Work card, identified by `id`) between empty and staffed in one
+ *  move: staffed ones empty out entirely; empty ones fill toward their worker capacity from the idle
+ *  pool (mirrors `addBuilding`'s auto-staff), partial-filling when there aren't enough idle to fill
+ *  it completely — a staffable operates at ≥1 worker, so a partial fill still produces. No-op target
+ *  for self-sufficient capacity (0), or an empty box with no idle workers. */
 export function toggleStaffing(G: GameState, id: number): 'invalid' | void {
   const s = findStaffable(G, id);
   if (!s) return 'invalid';
-  const req = requiredWorkersOf(s);
-  if (req === 0) return 'invalid';
+  const cap = workerCapOf(s);
+  if (cap === 0) return 'invalid';
   if (s.workers > 0) {
     s.workers = 0;
     return;
   }
-  if (freePopulation(G) < req) return 'invalid';
-  s.workers = req;
+  const fill = Math.min(freePopulation(G), cap);
+  if (fill <= 0) return 'invalid';
+  s.workers = fill;
 }

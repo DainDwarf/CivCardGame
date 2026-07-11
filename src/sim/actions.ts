@@ -1,4 +1,4 @@
-import { freePopulation, requiredWorkersOf, unplayableReason, type GameState } from '../rules';
+import { freePopulation, workerCapOf, unplayableReason, type GameState } from '../rules';
 import { CARDS, type CardDef } from '../content/cards';
 import type { SimAction } from './simulate';
 
@@ -7,7 +7,7 @@ import type { SimAction } from './simulate';
  * legality enumeration all policies share (`randomPolicy` / `greedyPolicy` / `heuristicPolicy`), so no
  * policy re-derives "what is playable" and they can never disagree with the engine. Legality reuses the
  * *production* gate `unplayableReason` (`rules/playability.ts`) for plays, and the same staffing bounds
- * the moves enforce (`freePopulation` / `requiredWorkersOf`), never a re-derived copy.
+ * the moves enforce (`freePopulation` / `workerCapOf`), never a re-derived copy.
  *
  * When a `pendingInteraction` is parked it is **exclusive**: `endTurn` no-ops and every play is blocked
  * (`run/engine.ts`), so the only legal actions are answering it — and we return *only* those. That
@@ -39,21 +39,21 @@ export function enumerateActions(G: GameState): SimAction[] {
   const idle = freePopulation(G);
   const staffables = [...G.tableau, ...G.workZone];
   for (const s of staffables) {
-    const req = requiredWorkersOf(s);
+    const cap = workerCapOf(s);
     if (s.workers > 0) actions.push({ kind: 'unassignWorker', id: s.id });
-    if (s.workers < req && idle > 0) actions.push({ kind: 'assignWorker', id: s.id });
-    // `toggleStaffing` is all-or-nothing: empties a staffed box, or fills an empty one only when the
-    // whole requirement fits in the idle pool (mirrors the move's own reject).
-    if (req > 0 && (s.workers > 0 || idle >= req)) actions.push({ kind: 'toggleStaffing', id: s.id });
+    if (s.workers < cap && idle > 0) actions.push({ kind: 'assignWorker', id: s.id });
+    // `toggleStaffing`: empties a staffed box, or fills an empty one (to min(idle, cap)) whenever any
+    // idle worker is free (mirrors the move's own reject).
+    if (cap > 0 && (s.workers > 0 || idle > 0)) actions.push({ kind: 'toggleStaffing', id: s.id });
   }
-  // `transferWorker`: move one worker from a staffed box to an understaffed one. Only meaningful once a
-  // staffable needs 2+ workers (none do today), but enumerated so the move surface is covered by the
-  // fuzzer and available to a re-optimizing greedy — see [[multi-worker-buildings-roadmap]].
+  // `transferWorker`: move one worker from a staffed box to one with spare capacity. Meaningful for
+  // multi-worker staffables (e.g. the Göbekli Tepe wonder) and enumerated so the move surface is
+  // covered by the fuzzer and available to a re-optimizing greedy — see [[multi-worker-buildings-roadmap]].
   for (const from of staffables) {
     if (from.workers <= 0) continue;
     for (const to of staffables) {
       if (to.id === from.id) continue;
-      if (to.workers < requiredWorkersOf(to)) actions.push({ kind: 'transferWorker', fromId: from.id, toId: to.id });
+      if (to.workers < workerCapOf(to)) actions.push({ kind: 'transferWorker', fromId: from.id, toId: to.id });
     }
   }
 

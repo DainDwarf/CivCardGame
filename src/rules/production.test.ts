@@ -59,3 +59,34 @@ describe('tableau production on the endTurn broadcast', () => {
     expect(G.culture).toBe(2); // only the staffed wonder produced
   });
 });
+
+describe('per-worker production scaling', () => {
+  // `test_multiworker` is a 3-capacity building; its produces {production:1, money:1} + cultureOutput:1
+  // are per-worker unit values scaled by the staffed count.
+  it('scales its unit output by the number of staffed workers', () => {
+    for (const [workers, expected] of [[1, 1], [2, 2], [3, 3]] as const) {
+      const G = blankState('test');
+      G.tableau = [b('test_multiworker', workers)];
+      dispatchEvent(G, { type: 'endTurn' });
+      expect(G.resources.production).toBe(expected);
+      expect(G.resources.money).toBe(expected);
+      expect(G.culture).toBe(expected);
+    }
+  });
+
+  it('produces nothing while unstaffed', () => {
+    const G = blankState('test');
+    G.tableau = [b('test_multiworker', 0)];
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.production).toBe(0);
+    expect(G.resources.money).toBe(0);
+    expect(G.culture).toBe(0);
+  });
+
+  it('a single-worker producer still yields its flat unit output (×1 regression)', () => {
+    const G = blankState('test');
+    G.tableau = [b('test_food', 1)];
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.food).toBe(2); // test_food produces {food: 2}, unscaled at capacity 1
+  });
+});
