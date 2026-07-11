@@ -98,7 +98,7 @@ built; the game is now in its content-and-balance pass — see
   import it in-game via the Save menu.
 - `npm run sim` — balance tool (`scripts/sim.ts`, run via `tsx`): sweeps the headless simulator over
   many seeds and prints an aggregated report (win rate, turns/defeat-cause/card-play stats). Seed count
-  via `npm run sim -- N` (default 200); edit `SCENARIOS` to change what's swept. See *Balance tooling*.
+  via `npm run sim -- N` (default 100); edit `SCENARIOS` to change what's swept. See *Balance tooling*.
 
 ## Architecture
 

@@ -58,7 +58,7 @@ const SCENARIOS: Scenario[] = [
 ];
 
 // Sweep each scenario under the named policies with paired seeds.
-const results = runPolicies(SCENARIOS, ['random', 'greedy', 'heuristic'], { seeds: 200 });
+const results = runPolicies(SCENARIOS, ['random', 'greedy', 'heuristic'], { seeds: 100 });
 console.log(formatReport(results.map(summarize)));
 ```
 
@@ -100,8 +100,8 @@ resources), `card plays` (is a card ever played?).
 
 ## Seed count
 
-200 is a quick look. Bump to **500–1000** when the win-rate gap you're judging is small,
-or noise reads as signal. Seeds cost time roughly linearly.
+100 is a quick look (the CLI default). Bump to **500–1000** when the win-rate gap you're
+judging is small, or noise reads as signal. Seeds cost time roughly linearly.
 
 ## Compare a content variant (baseline vs. an edited card/number)
 

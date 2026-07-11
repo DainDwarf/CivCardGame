@@ -18,7 +18,7 @@
  * with a small seed count.
  *
  * Usage:
- *   npm run sim                       # default 200 seeds per scenario, default policies, all scenarios
+ *   npm run sim                       # default 100 seeds per scenario, default policies, all scenarios
  *   npm run sim -- 500                # override the seed count
  *   npm run sim -- 500 greedy         # only the named policy/policies (comma- or space-separated)
  *   npm run sim -- 200 random,greedy
@@ -82,7 +82,7 @@ const SCENARIOS: Scenario[] = [
   },
 ];
 
-const seeds = Number(process.argv[2] ?? 200);
+const seeds = Number(process.argv[2] ?? 100);
 if (!Number.isInteger(seeds) || seeds <= 0) {
   throw new Error(`Seed count must be a positive integer, got '${process.argv[2]}'.`);
 }
