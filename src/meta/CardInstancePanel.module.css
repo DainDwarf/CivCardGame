@@ -44,6 +44,26 @@
   cursor: default;
 }
 
+/* A wonder can't be upgraded (unique, no stickers), so its popup is a narrow single-card column: the
+   one-line note above the lone face + its deck-usage caption — no face grid, no tray. Overrides the
+   wide `.panel` width (later same-specificity rule wins). */
+.wonderPanel {
+  width: min(320px, calc(94vw / var(--ui-scale, 1)));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.wonderNote {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
 /* Faces left, sticker tray right. The tray keeps a fixed width; the face grid takes the rest and may
    shrink (min-width: 0) so a narrow viewport squeezes the faces rather than forcing body scroll
    (invariant #1). No wrap — the tray stays on the right. */

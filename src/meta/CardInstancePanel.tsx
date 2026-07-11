@@ -189,6 +189,37 @@ export function CardInstancePanel({
   // The sticker currently being dragged (for the highlight predicate + the clone), null when idle.
   const dragSticker = drag?.active ? STICKERS[drag.stickerId] : undefined;
 
+  // A wonder can't be upgraded at all — it's unique (one copy, never bought) and takes no stickers —
+  // so its detail popup drops the whole face-grid + tray and just shows the single card with its deck
+  // usage under a one-line note. (The drag machinery above stays inert; no badge can ever be dragged.)
+  if (isWonder) {
+    const inst = instances[0];
+    const usedIn = inst ? decksContaining(inst.id, decks).map((d) => d.name) : [];
+    return (
+      <>
+        <div className={styles.backdrop} onClick={onClose} role="dialog" aria-modal="true">
+          <div className={`${styles.panel} ${styles.wonderPanel}`} onClick={(e) => e.stopPropagation()}>
+            <p className={styles.wonderNote}>Wonders are unique — they can't be upgraded with copies or stickers.</p>
+            {inst && (
+              <div className={styles.faceWrap}>
+                <CardFace card={card} onClick={() => setZoomInstance(inst.id)} />
+                <span className={styles.faceCaption}>
+                  {usedIn.length === 0
+                    ? 'unused'
+                    : usedIn.length > 2
+                      ? `in ${usedIn.length} decks`
+                      : `in ${usedIn.join(', ')}`}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <CardZoomOverlay cardId={zoomInstance ? cardId : null} onClose={() => setZoomInstance(null)} />
+      </>
+    );
+  }
+
   return (
     <>
       <div className={styles.backdrop} onClick={onClose} role="dialog" aria-modal="true">
