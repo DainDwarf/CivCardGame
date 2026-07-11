@@ -168,15 +168,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- **Multi-pip staffing UI** ✅ SHIPPED — a building's box now shows one pip per worker-capacity slot
-  (filled up to the staffed count) instead of the single staff toggle, so partial staffing is visible;
-  click an empty pip to staff one, a filled pip to unstaff one. Landed with the Göbekli Tepe wonder (the
-  first multi-worker building — `workers` is now a *capacity*, per-worker scaling is the universal
-  staffing model; see [[multi-worker-buildings-roadmap]]). **Deferred follow-up:** independent per-pip
-  *drag* (a specific pip to another box) — box-level worker drag still moves one worker at a time.
-  - **jot (sim)** ✅ DONE — the heuristic policy's staffing rung now uses `assignWorker` (fills a
-    multi-worker box a pip at a time) instead of `toggleStaffing`, in `sim/heuristicPolicy.ts`.
+- **Per-pip worker drag** — independent per-pip *drag* (drag a specific pip to another box); box-level
+  worker drag still moves one worker at a time. Deferred follow-up from the shipped multi-pip staffing UI. `[?]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]` `[phase: 4]`
+- **Re-polish the victory / gameover screens + flow** — revisit the end-of-run overlay and the transition back to the meta loop now that missions grant real rewards: the win/loss screen should surface what the run earned (Influence, any unlocks) and read well for both outcomes, and the hand-back-to-meta flow should feel finished rather than functional. `[?]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 
 ## Tech debt / architecture
@@ -185,11 +180,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   building/destroy/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
   later fuzz pass. `[size: S] [blocked]` `[phase: 4]`
-- ~~**Simulator: `scoreState` is blind to sub-level culture**~~ ✅ DONE — `sim/value.ts` now scores
-  the *fractional* culture level (`cultureProgress`'s `level + ratio`, monotonic and boundary-equal to
-  the old integer term) so culture accumulating *within* a band registers, and `sim/objective.ts` has a
-  `rites_rituals_goal` progress gradient so the goal-directed policies steer toward culture level 2.
-  Both feed the `founding/tribe/rites-rituals` sim scenario. `[phase: 4]`
 
 ---
 
@@ -226,6 +216,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     profile always has Tribe); the Chiefdom board authored in `content/boards.ts` (**provisional stats —
     to tune**); this mission's reward extended to grant it. Board unlocks preview as a locked chip →
     `BoardMini` reveal.
+
+- **Multi-pip staffing UI** ✅ — a building's box now shows one pip per worker-capacity slot
+  (filled up to the staffed count) instead of the single staff toggle, so partial staffing is visible;
+  click an empty pip to staff one, a filled pip to unstaff one. Landed with the Göbekli Tepe wonder (the
+  first multi-worker building — `workers` is now a *capacity*, per-worker scaling is the universal
+  staffing model; see [[multi-worker-buildings-roadmap]]). The heuristic policy's staffing rung was
+  switched to `assignWorker` (fills a multi-worker box a pip at a time) instead of `toggleStaffing`, in
+  `sim/heuristicPolicy.ts`. (Deferred follow-up — independent per-pip drag — kept as an active UI item.)
+
+- **Simulator: `scoreState` is blind to sub-level culture** ✅ — `sim/value.ts` now scores
+  the *fractional* culture level (`cultureProgress`'s `level + ratio`, monotonic and boundary-equal to
+  the old integer term) so culture accumulating *within* a band registers, and `sim/objective.ts` has a
+  `rites_rituals_goal` progress gradient so the goal-directed policies steer toward culture level 2.
+  Both feed the `founding/tribe/rites-rituals` sim scenario.
 
 - **Step 6.3 — Rites & Rituals (Culture mission)** ✅ — col 2, row 0, prereq 6.2. The **Culture**
   gauge: culture *levels* (each raises hand size) and the `cultureLevelReq` play-gate. Objective:
