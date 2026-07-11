@@ -45,7 +45,7 @@
   justify-content: center;
   align-items: flex-start;
   min-height: calc(162px * var(--card-scale) + 26px);
-  padding: 20px 0 6px; /* headroom for the per-card hover lift + the ×N badge */
+  padding: 28px 0 6px; /* headroom for the per-card hover lift + the ×N badge */
   overflow: visible;
 }
 
@@ -180,7 +180,7 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 1rem;
-  margin: 0 0 0.75rem;
+  margin: 0 0 1.25rem; /* keep the first row's ×N badges clear of this sticky header */
   padding: 1rem 0 0.5rem;
   background: var(--surface-raised);
   border-bottom: 1px solid var(--border-divider);
@@ -221,7 +221,7 @@
 .listGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 0.6rem;
+  gap: 1.25rem 0.6rem; /* row-gap clears each card's ×N badge (pokes ~17px above its top edge) */
   justify-content: center;
 }
 

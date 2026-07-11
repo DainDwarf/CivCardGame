@@ -249,7 +249,7 @@
 /* Optional "×N" badge (deck editor's grouped banner tiles, the run loop's pile viewer). */
 .countBadge {
   position: absolute;
-  top: -8px;
+  top: -17px;
   right: -8px;
   min-width: 22px;
   height: 22px;

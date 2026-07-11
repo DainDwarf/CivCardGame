@@ -1271,14 +1271,14 @@
 }
 
 .pileTitle {
-  margin: 0 0 0.75rem;
+  margin: 0 0 1.25rem; /* clearance so the first row's ×N badges don't ride up into this heading */
   text-align: center;
 }
 
 .pileGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 0.6rem;
+  gap: 1.25rem 0.6rem; /* row-gap clears each card's ×N badge (pokes ~17px above its top edge) */
   justify-content: center;
 }
 
