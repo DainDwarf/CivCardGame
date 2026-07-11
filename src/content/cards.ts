@@ -300,7 +300,7 @@ export const CARDS: Record<string, CardDef> = {
   //   predicate the way every objective does; no defeat of its own (famine/collapse is universal).
   first_settlement_goal: {
     id: 'first_settlement_goal', name: 'The First Settlement', kind: 'objective', cost: {},
-    description: 'Stockpile 10 🔨 production and 10 ⚔️ military at once to settle down.',
+    description: 'Have 10 🔨 and 10 ⚔️',
     objective: (G) => G.resources.production >= 10 && G.resources.military >= 10,
     dynamicText: (G) => `🔨 ${G.resources.production}/10 · ⚔️ ${G.resources.military}/10`,
   },
