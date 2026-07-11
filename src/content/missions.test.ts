@@ -37,15 +37,16 @@ describe('mission catalogue coherence', () => {
   });
 
   // Relocated from `rewards.test.ts` (Step 2.4): it's a mission↔card coherence check, not a reward
-  // mechanism test, so it lives with the other mission coherence iterators. A standard mission must
-  // grant at least one unlock of *some* kind (card, card-sticker, or board-sticker — all optional and
-  // symmetric), and every id it names must reference a real catalogue entry.
-  it('every standard mission reward names at least one real unlock id', () => {
+  // mechanism test, so it lives with the other mission coherence iterators. A standard mission carries
+  // a reward object (the reward-preview UI renders its Influence), but its unlocks are **all
+  // optional** — a mission may grant none (an Influence-only reward). So this is an id-existence
+  // check, not a count check: every unlock id a mission *does* name must reference a real catalogue
+  // entry. (Id coherence is never deferred, even where the unlock-count constraint is dropped.)
+  it('every standard mission reward names only real unlock ids', () => {
     for (const m of Object.values(MISSIONS)) {
       if (m.kind !== 'standard') continue;
+      expect(m.reward, `${m.id} → standard mission has no reward object`).toBeDefined();
       const { unlockCardIds = [], unlockStickerIds = [], unlockBoardStickerIds = [] } = m.reward!;
-      const total = unlockCardIds.length + unlockStickerIds.length + unlockBoardStickerIds.length;
-      expect(total, `${m.id} → reward has no unlocks of any kind`).toBeGreaterThan(0);
       for (const cardId of unlockCardIds) {
         expect(CARDS[cardId], `${m.id} → reward → card ${cardId}`).toBeDefined();
       }

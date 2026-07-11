@@ -42,11 +42,12 @@ export interface MissionDef {
    *  scores an attempt instead. */
   kind: 'standard' | 'infinite';
   /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
-   *  `computeRewards`) — replays pay nothing. A `'standard'` mission grants **one or more** unlocks
-   *  across three symmetric, all-optional kinds — card unlocks (`unlockCardIds`, each naming a real
-   *  `content/cards.ts` id), card-sticker unlocks (`unlockStickerIds`, `content/stickers.ts`), and
-   *  board-sticker unlocks (`unlockBoardStickerIds`, `content/boardStickers.ts`) — a mission omits
-   *  whichever kind it doesn't grant (all pinned by a coherence test). Unlike cards, a sticker unlock
+   *  `computeRewards`) — replays pay nothing. A `'standard'` mission's unlocks are **all optional**:
+   *  it may grant any mix across three symmetric kinds — card unlocks (`unlockCardIds`, each naming a
+   *  real `content/cards.ts` id), card-sticker unlocks (`unlockStickerIds`, `content/stickers.ts`),
+   *  and board-sticker unlocks (`unlockBoardStickerIds`, `content/boardStickers.ts`) — or **none at
+   *  all** (an Influence-only reward, or no reward object). A coherence test pins only that whatever
+   *  ids a mission *does* name are real. Unlike cards, a sticker unlock
    *  simply makes the sticker *purchasable* (hidden-until-unlocked, like a card); the Influence to buy
    *  it is separate. `'infinite'` missions have no reward — they score Influence = rounds survived. */
   reward?: {

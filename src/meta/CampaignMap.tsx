@@ -449,7 +449,9 @@ function MissionFlowPopup({
                       <span className={styles.rewardSubtitle}>
                         {alreadyCleared
                           ? 'Rewards already unlocked'
-                          : `${totalUnlocks} new unlock${totalUnlocks === 1 ? '' : 's'}`}
+                          : totalUnlocks === 0
+                            ? 'No new unlocks'
+                            : `${totalUnlocks} new unlock${totalUnlocks === 1 ? '' : 's'}`}
                       </span>
                       {unlockCards.length > 0 && (
                         <div className={styles.rewardCards}>

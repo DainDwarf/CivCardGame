@@ -208,7 +208,7 @@ MissionDef
   prereqs:          mission ids gating availability (the DAG edges)
   threats?/events?: cards seeded onto the board / shuffled into the deck at setup
   objectiveCardId:  the mission's win card, seeded into GameState.objective at setup
-  reward?:          granted once on first clear (Influence + one or more card unlocks)
+  reward?:          granted once on first clear (Influence + zero or more unlocks)
   kind:             'standard' | 'infinite'
 
 CardDef (kind: 'objective')
@@ -259,7 +259,8 @@ the meta loop to the mission they pick.
   objective, failure, difficulty, and reward so you can tailor your deck. See
   *Campaign map* below.
 - **Progression / unlocks** — missions are **binary** (complete / not); completing one
-  grants a fixed Influence reward and **one or more unlocks** (cards, a board, or a wonder). See
+  grants a fixed Influence reward and **zero or more unlocks** (cards, a board, or a wonder — a
+  mission may grant none, an Influence-only reward). See
   *Economy & progression* below. ✅
 - **Persistence** — all of the above saved to localStorage/IndexedDB (one profile).
 
@@ -306,7 +307,8 @@ procedurally generated map.
   *Writing* adds Library/scribe cards to your collection). 🔧 This ties unlock content
   directly to map position — clean, thematic content growth.
 - **Completion is binary — no rating tiers.** A node is either cleared or not; clearing it
-  (once) pays a fixed Influence reward and grants its single unlock. Owning *more copies* of
+  (once) pays a fixed Influence reward and grants whatever unlocks it carries (possibly none).
+  Owning *more copies* of
   a card is a separate, shop-side axis (see *Economy & progression*), not a function of how
   well you cleared. ✅
 - **Infinite nodes** are a distinct kind: an endlessly escalating threat with no win state —

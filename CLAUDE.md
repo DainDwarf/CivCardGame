@@ -42,9 +42,10 @@ built; the game is now in its content-and-balance pass — see
   - **Campaign-map DAG** — `content/missions.ts` missions form a prereq-gated DAG
     (`rules/campaign.ts`), rendered as a horizontally-scrollable branching tech tree
     (`meta/CampaignMap.tsx`); each `'standard'` mission grants a fixed Influence reward
-    plus one or more **unlocks** on first clear (`rules/rewards.ts`) — three symmetric, all-optional
+    plus **zero or more** **unlocks** on first clear (`rules/rewards.ts`) — three symmetric, all-optional
     kinds: card unlocks (`unlockCardIds`), card-sticker unlocks (`unlockStickerIds`), and board-sticker
-    unlocks (`unlockBoardStickerIds`), all hidden-until-unlocked. Previewed on the `MissionDetailPanel`
+    unlocks (`unlockBoardStickerIds`), all hidden-until-unlocked (a mission may grant none — an
+    Influence-only reward). Previewed on the `MissionDetailPanel`
     (a sticker shows a generic locked chip pre-clear) and paid out in `App.tsx`'s `recordResult`.
   - **Infinite missions + threats** — `'infinite'`-kind missions never win and pay
     Influence = rounds survived on every attempt. `GameState.threats`
