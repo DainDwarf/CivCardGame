@@ -74,9 +74,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     culture-gated card (a `'wonder'`-tagged building with `cultureLevelReq`), owned here so 6.7 can
     *build* it. Reward 8⭐. Göbekli Tepe is now the first **multi-worker / per-worker** building
     (3-worker capacity, +1🔨+1🪙+1🎭 per staffed worker, 🎭 level-1 gate); its cost stays provisional
-    (6.7 tunes it). **Still deferred:**
-    the *culture-aware `scoreState`* sim fix (see Tech debt) — until then greedy/heuristic judge
-    culture goals unwinnable, so 6.3 isn't sim-sweepable yet. `[shipped]`
+    (6.7 tunes it). The culture-aware `scoreState` sim fix + a `rites_rituals_goal` progress gradient
+    have since landed, so 6.3 is now sim-sweepable (`founding/tribe/rites-rituals` scenario). `[shipped]`
   - **6.4 — Events branch: military attack/defense** (working name *"Raiders at the Border"*) —
     col 3, row -1, prereq 6.3. **Teaches:** the **event** card mechanic (mission-injected
     disasters that auto-resolve from hand). **Content:** seed several invasion events that drain
@@ -187,12 +186,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   building/destroy/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
   later fuzz pass. `[size: S] [blocked]` `[phase: 4]`
-- **Simulator: `scoreState` is blind to sub-level culture** — the value function (`sim/value.ts`)
-  scores integer `cultureLevel`, so culture accumulating *within* a band is worth 0. Greedy/heuristic
-  thus never invest in culture and would judge a **winnable culture mission unwinnable** (Step 6
-  culture goals + the "Culture-based missions" idea above). Fix when culture missions land: score
-  `cultureProgress(G.culture).ratio` (already in `rules/culture.ts`) so partial progress registers.
-  `[blocked]` `[phase: 4]`
+- ~~**Simulator: `scoreState` is blind to sub-level culture**~~ ✅ DONE — `sim/value.ts` now scores
+  the *fractional* culture level (`cultureProgress`'s `level + ratio`, monotonic and boundary-equal to
+  the old integer term) so culture accumulating *within* a band registers, and `sim/objective.ts` has a
+  `rites_rituals_goal` progress gradient so the goal-directed policies steer toward culture level 2.
+  Both feed the `founding/tribe/rites-rituals` sim scenario. `[phase: 4]`
 
 ---
 

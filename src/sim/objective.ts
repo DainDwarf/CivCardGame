@@ -1,4 +1,4 @@
-import { objectiveMet, type GameState } from '../rules';
+import { cultureProgress, objectiveMet, type GameState } from '../rules';
 
 /**
  * A **sim-local progress gradient** toward a mission's objective — the signal the balance policies
@@ -38,6 +38,16 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
   growing_numbers_goal: (G) => {
     const built = ['hut', 'farm', 'toolmaker'].filter((id) => G.tableau.some((b) => b.cardId === id)).length;
     return (built + Math.min(G.territory, 3)) / 6;
+  },
+  // "Rites & Rituals": reach 🎭 culture *level 2*. Culture accumulates and is never spent, so the
+  // gradient is the *fractional* level `level + within-band ratio` (a smooth, monotonic function of
+  // G.culture that equals the integer level at each boundary — a discrete `cultureLevel` alone would
+  // sit flat between level-ups and give a one-ply policy nothing to climb toward from a +2 culture
+  // play). Capped at 2 and normalized ⇒ 1 exactly when level 2 is reached (which is when the objective
+  // fires), so a policy converts food/production into culture cards until it crosses, then stops.
+  rites_rituals_goal: (G) => {
+    const { level, ratio } = cultureProgress(G.culture);
+    return Math.min(level + ratio, 2) / 2;
   },
 };
 

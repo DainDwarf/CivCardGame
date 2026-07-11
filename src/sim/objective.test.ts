@@ -49,6 +49,20 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
     expect(objectiveProgress(atThreshold)).toBeLessThan(1);
   });
 
+  it('rises with accumulated culture on "Rites & Rituals" and is 1 exactly at level 2', () => {
+    const p = (culture: number) =>
+      objectiveProgress(withObjective('rites_rituals_goal', (G) => (G.culture = culture)));
+    expect(p(0)).toBe(0);
+    // Sub-level culture registers (a discrete cultureLevel would read 0 all the way to 10).
+    expect(p(5)).toBeGreaterThan(p(0));
+    expect(p(10)).toBeGreaterThan(p(5)); // level 1
+    expect(p(20)).toBeGreaterThan(p(10)); // level 1, deeper into the band
+    expect(p(30)).toBe(1); // level 2 = the win
+    expect(p(29)).toBeLessThan(1); // one short of the level still isn't done
+    // Never spent, so hoarding past the goal earns no more.
+    expect(p(70)).toBe(1);
+  });
+
   it('falls back to the binary met/not for an objective with no authored gradient (the sandbox never wins)', () => {
     // `sandbox_goal.objective` is `() => false`, so with no registry entry the progress is a constant 0
     // regardless of how rich the state is — no steering, and the greedy scorer is unchanged on it.

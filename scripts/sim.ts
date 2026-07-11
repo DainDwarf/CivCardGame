@@ -49,6 +49,28 @@ const SCENARIOS: Scenario[] = [
     board: 'tribe',
     missionId: 'growing_numbers',
   },
+  // "Rites & Rituals": climb 🎭 culture to level 2 (30 culture, never spent). The deck is the
+  // Growing Numbers one plus the two culture cards the player owns by now — Cave Art ×2 (+2🎭 each)
+  // and Clothing ×2 (+2🎭 each) — the only culture income available (Göbekli Tepe is this mission's
+  // *reward*, not yet in-deck). No deadline, so the win rate reads whether the greedy/heuristic can
+  // deck in those four cards enough times to accumulate 30 culture without starving; a stalled
+  // economy that never reaches it would burn turns rather than lose (no defeat condition).
+  {
+    label: 'founding/tribe/rites-rituals',
+    deckCardIds: [
+      ...DEFAULT_DECKS[0].cards,
+      'hut',
+      'farm',
+      'toolmaker',
+      'conquest',
+      'cave_art',
+      'cave_art',
+      'clothing',
+      'clothing',
+    ],
+    board: 'tribe',
+    missionId: 'rites_rituals',
+  },
 ];
 
 const seeds = Number(process.argv[2] ?? 200);

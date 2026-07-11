@@ -1,4 +1,4 @@
-import { cultureLevel, isOperating, projectedDelta, usedTerritory, type GameState } from '../rules';
+import { cultureProgress, isOperating, projectedDelta, usedTerritory, type GameState } from '../rules';
 import { objectiveProgress } from './objective';
 
 /**
@@ -29,6 +29,11 @@ const W = {
   /** A staffed, operating building / work box earning its keep. */
   operating: 2,
   territory: 1.5,
+  /** Reward per *fractional* culture level (`level + within-band ratio`), so culture accumulating
+   *  **within** a band registers instead of only at the discrete level-up. Otherwise a single culture
+   *  play (+2, never enough to cross a band on its own) moves this term by 0, so the greedy never
+   *  invests in a winnable culture goal (the "blind to sub-level culture" fix). Continuous and
+   *  monotonic in culture, and identical to the old integer `cultureLevel` at a band boundary (ratio 0). */
   cultureLevel: 6,
   /**
    * Pull toward the *mission's* objective — a mission-agnostic steering term. `objectiveProgress`
@@ -79,7 +84,8 @@ export function scoreState(G: GameState): number {
   s += G.population * W.population;
   s += [...G.tableau, ...G.workZone].filter(isOperating).length * W.operating;
   s += usedTerritory(G.tableau) * W.territory;
-  s += cultureLevel(G.culture) * W.cultureLevel;
+  const cp = cultureProgress(G.culture);
+  s += (cp.level + cp.ratio) * W.cultureLevel;
   s += objectiveProgress(G) * W.objectiveProgress;
   if (G.pendingVictory) s += W.victory;
   return s;

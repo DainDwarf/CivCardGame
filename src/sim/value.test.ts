@@ -49,6 +49,18 @@ describe('scoreState', () => {
     expect(scoreState(cultured)).toBeGreaterThan(scoreState(noCulture));
   });
 
+  it('rewards culture accumulating *within* a band, not only at the discrete level-up', () => {
+    // 5 culture is still level 0, but must out-score 0 culture — otherwise a single culture play (+2,
+    // never enough to cross a band alone) moves the score by nothing and the greedy never invests in a
+    // culture goal. Regression guard for the sub-level fix.
+    const none = state((G) => (G.resources.food = 5));
+    const some = state((G) => {
+      G.resources.food = 5;
+      G.culture = 5; // within band 0 — no level-up yet
+    });
+    expect(scoreState(some)).toBeGreaterThan(scoreState(none));
+  });
+
   it('rewards a state closer to the mission objective, all else equal', () => {
     // Two states with identical resources except one is *nearer* the seeded objective ("The First
     // Settlement" wants 10🔨 + 10⚔️). The nearer one must score higher — the goal-directed pull that
