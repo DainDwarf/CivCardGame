@@ -11,27 +11,12 @@
 
  - Decreasing effectiveness of old cards? (If card comes from 2 ages ago, output -1, -2, etc?)
 
-## Starting cards
- - **Harvesting** and **Gathering** of course (food/prod)
- - **Dogs**: domesticated by Paleolithic hunter-gatherers
-  millennia *before* farming, (hunting/guarding flavor) Early military? food->military?
- - **Fire**: the ur-technology (cooking/warmth/protection). Starting **science** giver.
- - **Spear** / **Bow**: possibilities for early **military**.
- - **Cave art**: earliest symbolic behavior; starting **culture** source.
- - **Clothing**: bone-needle hide sewing; production -> culture
- - **Jewelry**: shell beads/ornaments, ~100,000+ years — the earliest valuables. Starting
-   **treasury** giver.
- - **Storytelling**: TBD (previously use to draw a card, but a card to draw another card is useless, don't do that)
- - **Bartering**: spends money to gain food.
-
 ## Stone Age
 
 The opening age. Strong through-line is **surplus**: domestication → storage → the
 population and specialists that surplus allows → the culture/monuments specialists
 produce. Sequencing missions along that chain lets the age *teach* the economy.
 
-- **Cereal domestication** — unlocks the Farm. The foundational food source; turns
-  foraging into a reliable but labor-hungry supply.
 - **Granary** — storage of surplus through winter. Buffers food against upkeep / Protects against food affecting events
   - *Storage as a deck-limit lever:* storage techs (and their missions) could raise the
     **deck limit**.
@@ -42,11 +27,8 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
   that costs territory. Livestock only here (goats/sheep/cattle — they came *with*
   farming). 
 - **Pottery** — surplus storage and cooking; a low-cost early building.
-- **Irrigation** — converts labor into water access, unlocking marginal farmland. *Maybe
-  a first card sticker?* (i.e. an upgrade applied onto an existing card rather than a new card).
 - **Stone tools** — for a production / workshop building. Polished ground-stone tools =
   the literal "new stone" of Neolithic; efficiency flavor.
-- **Housing** — permanent dwellings (mudbrick); raises population capacity at a territory cost.
 - **Walls** — earliest monumental fortification (Jericho); defensive mission flavor.
 - **Burial site** — ancestor/burial cult; culture output tied to the dead.
 - **Calendar** — the age's **science/foresight** entry. Agricultural astronomy (Warren
@@ -55,7 +37,6 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
   Keep distinct from Burial site: culture (the dead) vs. science (the seasons).
 - **Beer** — fermentation converts food into culture (feasting/ritual; arguably helped
   drive cereal domestication).
-- **Early trade** — obsidian-style long-distance exchange; feeds the treasury.
 - **Göbekli Tepe** - First world wonder?
 
 > Keep copper/metallurgy and the wheel **out** of this age — both are really
@@ -83,6 +64,8 @@ More decentralized, broader-based societies with cheaper metal, wider literacy
 ## Space Age?
 
 ## Simulator / balance-tooling ideas
+
+User note: Maybe perfect oracle can be useful for testing various decks?
 
 The headless sim (`src/sim/`) currently brackets skill with four policies
 (random · heuristic · greedy · greedy2). Policies are really a *skill ladder* —
