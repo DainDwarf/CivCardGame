@@ -26,6 +26,19 @@ The whole public API is exported from `src/sim/index.ts`: `runPolicies`,
   `Scenario` to the `SCENARIOS` array in `scripts/sim.ts` and commit it. Then the
   built-in CLI covers it: `npm run sim -- [seeds] [policy,policy]`.
 
+**Already-shipped content is a CLI call, not a script.** If the deck/board/mission you
+want is *already* a row in `SCENARIOS` (any shipped mission is), don't write a scratchpad
+script — the CLI takes a **`scenario=<substr>` filter** that sweeps only the rows whose
+`label` contains that substring, alongside the seed count and policy names (all
+comma-/space-separated, order-free). So "run the oracle on Rites & Rituals for 20 seeds" is
+just:
+
+```
+npm run sim -- 20 oracle scenario=rites
+```
+
+The scratchpad recipe below is for *ad-hoc* decks/scenarios that aren't in `SCENARIOS`.
+
 ## Ad-hoc recipe (verified)
 
 Write a script in the scratchpad importing the sim API by **absolute path** (tsx
