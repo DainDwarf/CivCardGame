@@ -286,8 +286,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `ageColSpans`, which derives each age's contiguous DAG **column slice** from its missions'
     `map.col` (a mission declares its age via `MissionDef.age`). `meta/CampaignMap.tsx` positions
     each age's arrow band + gradient wash over that slice, so *each age covers exactly its stretch of
-    the DAG*. The Stone Age band is live — it covers the two placed standard missions (First Settlement
-    at col 0, Growing Numbers at col 1 → slice `[0,2)`); Bronze/Iron stay dormant until their missions land.
+    the DAG*. The Stone Age band is live — it covers the three placed standard missions (First Settlement
+    at col 0, Growing Numbers at col 1, Rites & Rituals at col 2 → slice `[0,3)`); Bronze/Iron stay
+    dormant until their missions land.
 
 **Shell — the run loop (`src/run/`) + React:**
 

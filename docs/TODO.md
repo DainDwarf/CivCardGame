@@ -67,14 +67,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     squeeze that forces Conquest). Unlocks the first card sticker (Irrigation) + board sticker
     (Territory), debuting the sticker-unlock reward kinds; post-clear teaches stickers +
     Influence/shop. `[shipped]`
-  - **6.3 — Culture mission** (working name *"Rites & Rituals"*) — col 2, row 0, prereq 6.2.
-    **Teaches:** the **Culture** gauge — culture *levels* (each raises hand size) and the
-    `cultureLevelReq` play-gate. **Objective:** reach **culture level 2**. **Unlocks:** a
-    culture-gated card (`cultureLevelReq ≥ 1`, so its gate is felt right away) **and** the
-    **Göbekli Tepe wonder card** (owned here so 6.7 can *build* it — sequencing rule). Reward
-    ~8⭐ (provisional). **Flag:** balancing needs the *culture-aware `scoreState`* sim fix (see
-    Tech debt) — a **hard dependency**: greedy/heuristic currently judge any culture goal
-    unwinnable. `[size: M] [?]`
+  - **6.3 — Culture mission** (*"Rites & Rituals"*) ✅ DONE — col 2, row 0, prereq 6.2. Teaches
+    the **Culture** gauge — culture *levels* (each raises hand size) and the `cultureLevelReq`
+    play-gate. Objective: reach **culture level 2** (climbed by decking in owned Cave Art/Clothing —
+    the intended lesson; no deadline). Unlocks **Göbekli Tepe** — the age's first wonder, itself the
+    culture-gated card (a `'wonder'`-tagged building with `cultureLevelReq`), owned here so 6.7 can
+    *build* it. Reward 8⭐. Göbekli Tepe stats are provisional (6.7 tunes them). **Still deferred:**
+    the *culture-aware `scoreState`* sim fix (see Tech debt) — until then greedy/heuristic judge
+    culture goals unwinnable, so 6.3 isn't sim-sweepable yet. `[shipped]`
   - **6.4 — Events branch: military attack/defense** (working name *"Raiders at the Border"*) —
     col 3, row -1, prereq 6.3. **Teaches:** the **event** card mechanic (mission-injected
     disasters that auto-resolve from hand). **Content:** seed several invasion events that drain

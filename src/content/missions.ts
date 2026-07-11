@@ -94,6 +94,12 @@ export interface MissionDef {
  * territory (via replayable Conquest) enough to place all three. Its clear pays 6 Influence and
  * unlocks the first card sticker (Irrigation) and the first
  * board sticker (Territory) — the debut of the sticker-unlock reward kinds.
+ *
+ * `rites_rituals` follows it (prereq: `growing_numbers`): the culture mission — accumulate 🎭
+ * culture to reach level 2 (each level raises hand size). No threat/event and no deadline; the
+ * challenge is decking in the culture cards you own (Cave Art, Clothing) to climb the gauge. Its
+ * clear pays 8 Influence and unlocks Göbekli Tepe — the age's first *wonder*, a culture-gated
+ * building owned here so the capstone (6.7) can build it.
  */
 export const MISSIONS: Record<string, MissionDef> = {
   first_settlement: {
@@ -126,6 +132,22 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     reward: { influence: 6, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'] },
     map: { col: 1, row: 0 },
+    age: 'stone',
+  },
+  rites_rituals: {
+    id: 'rites_rituals',
+    name: 'Rites & Rituals',
+    lore:
+      'A settled people needs more than bread and shelter — it needs meaning. Around the fire the ' +
+      'first rites take shape: the painted hand, the carved bone, the story told and retold until it ' +
+      'binds the band together. Let the culture of the people rise, and they will remember who they are.',
+    prereqs: ['growing_numbers'],
+    objectiveCardId: 'rites_rituals_goal',
+    victoryHint: 'Reach 🎭 culture level 2.',
+    failureHint: null,
+    kind: 'standard',
+    reward: { influence: 8, unlockCardIds: ['gobekli_tepe'] },
+    map: { col: 2, row: 0 },
     age: 'stone',
   },
   sandbox: {

@@ -2,6 +2,7 @@ import { type Resources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, type Resolver, suspendChoice } from '../rules/effects';
 import { recoverFromDiscard } from '../rules/deck';
+import { cultureLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'action' | 'work' | 'event' | 'threat' | 'objective';
 
@@ -253,6 +254,16 @@ export const CARDS: Record<string, CardDef> = {
     effect: { population: 1 },
     description: 'When built: +1 🧍',
   },
+  // Göbekli Tepe: the age's first *wonder* (a `building` tagged `'wonder'`, not a new kind) — and
+  //   the first live card to carry a `cultureLevelReq` gate, so playing it is blocked until the
+  //   civilization is cultured enough. Unlocked by "Rites & Rituals" (6.3) so the capstone (6.7) can
+  //   *build* it. Stats are a PROVISIONAL first pass — 6.7 owns its real tuning.
+  gobekli_tepe: {
+    id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'building',
+    cost: { production: 8 }, cultureLevelReq: 2, cultureOutput: 3, workers: 2,
+    tags: ['wonder'],
+    description: 'The first temple. Requires 🎭 level 2. While staffed: +3 🎭 each round.',
+  },
 
   // — Actions: resolve once, then recycle to discard.
   fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, effect: { gain: { science: 2 } } },
@@ -313,6 +324,19 @@ export const CARDS: Record<string, CardDef> = {
       GROWING_NUMBERS_BUILDINGS.map(
         ([id, icon]) => `${icon} ${G.tableau.some((b) => b.cardId === id) ? 1 : 0}/1`,
       ).join('\n'),
+  },
+
+  // — "Rites & Rituals" objective (mission-only): reach 🎭 culture level 2. Reads the derived culture
+  //   level (never a stored field); the progress line anchors on the level, since `cultureProgress`'s
+  //   within-band current/needed resets at each level-up and would read confusingly against a level target.
+  rites_rituals_goal: {
+    id: 'rites_rituals_goal', name: 'Rites & Rituals', kind: 'objective', cost: {},
+    description: 'Reach 🎭 culture level 2',
+    objective: (G) => cultureLevel(G.culture) >= 2,
+    dynamicText: (G) => {
+      const p = cultureProgress(G.culture);
+      return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2 · ${p.current}/${p.needed} to next`;
+    },
   },
 
   // — Sandbox mission cards (mission-only; excluded from decks/collection by `isDeckable`).
