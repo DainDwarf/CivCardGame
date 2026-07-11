@@ -58,24 +58,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   reward is granted on clear, so you can't build/play what you don't yet own. This is why the
   Göbekli Tepe wonder card is *unlocked* upstream (6.3) but *forced* (built) at the capstone (6.7).
 
-  - **6.1 — First Settlement + Stone Age building set** ✅ DONE — col 0. Teaches the run loop
-    (work + action cards, draw/food upkeep). Objective: stockpile 10🔨 + 10⚔️. Unlocks Farm,
-    Toolmaker, Hut, Conquest (whole building set + military→territory conquest). Post-clear
-    teaches deck-building (adding the new cards). `[shipped]`
-  - **6.2 — Growing Numbers + sticker-unlock reward infra** ✅ DONE — col 1. Teaches buildings,
-    territory, worker staffing. Objective: build Hut + Farm + Toolmaker at once (a territory
-    squeeze that forces Conquest). Unlocks the first card sticker (Irrigation) + board sticker
-    (Territory), debuting the sticker-unlock reward kinds; post-clear teaches stickers +
-    Influence/shop. `[shipped]`
-  - **6.3 — Culture mission** (*"Rites & Rituals"*) ✅ DONE — col 2, row 0, prereq 6.2. Teaches
-    the **Culture** gauge — culture *levels* (each raises hand size) and the `cultureLevelReq`
-    play-gate. Objective: reach **culture level 2** (climbed by decking in owned Cave Art/Clothing —
-    the intended lesson; no deadline). Unlocks **Göbekli Tepe** — the age's first wonder, itself the
-    culture-gated card (a `'wonder'`-tagged building with `cultureLevelReq`), owned here so 6.7 can
-    *build* it. Reward 8⭐. Göbekli Tepe is now the first **multi-worker / per-worker** building
-    (3-worker capacity, +1🔨+1🪙+1🎭 per staffed worker, 🎭 level-1 gate); its cost stays provisional
-    (6.7 tunes it). The culture-aware `scoreState` sim fix + a `rites_rituals_goal` progress gradient
-    have since landed, so 6.3 is now sim-sweepable (`founding/tribe/rites-rituals` scenario). `[shipped]`
+  - **6.1 — First Settlement** ✅ DONE — col 0. `[shipped]` (details in *Done / shipped*;
+    tutorial → Step 9.1)
+  - **6.2 — Growing Numbers** ✅ DONE — col 1. `[shipped]` (details in *Done / shipped*;
+    tutorial → Step 9.2)
+  - **6.3 — Rites & Rituals** ✅ DONE — col 2. `[shipped]` (details in *Done / shipped*;
+    tutorial → Step 9.3)
   - **6.4 — Events branch: military attack/defense** (working name *"Raiders at the Border"*) —
     col 3, row -1, prereq 6.3. **Teaches:** the **event** card mechanic (mission-injected
     disasters that auto-resolve from hand). **Content:** seed several invasion events that drain
@@ -149,6 +137,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `PlayerStore` (not game progress). Mild tension with the anti-surprise unlock convention
   (tutorials reveal; unlocks surprise). `[size: L]` `[?]` `[phase: 4]`
 
+  **Per-mission tutorial substeps** — one scripted lesson per Stone Age mission, covering the
+  gameplay elements that mission introduces and (post-clear) what its reward hands the player.
+  The shipped missions (6.1–6.3) are ready to script; 6.4–6.7 land as those missions ship.
+  - **9.1 — First Settlement tutorial** — teach the **run loop**: work + action cards, the
+    draw/food upkeep, the objective stockpile. **Post-clear:** teach **deck-building** (add the
+    newly-unlocked Farm/Toolmaker/Hut + Conquest cards into the deck — the reward's whole building
+    set + military→territory conquest).
+  - **9.2 — Growing Numbers tutorial** — teach **buildings, territory, and worker staffing** (and
+    the territory squeeze that forces Conquest). **Post-clear:** teach **stickers +
+    Influence/shop** (the reward debuts the Irrigation card sticker + Territory board sticker —
+    the sticker-unlock reward kinds).
+  - **9.3 — Rites & Rituals tutorial** — teach the **Culture** gauge: culture levels (each raises
+    hand size) and the `cultureLevelReq` play-gate. **Reward:** unlocks Göbekli Tepe (the age's
+    first wonder, culture-gated), owned here so the 6.7 capstone can build it.
+
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*
 > Steps 5–7, simulator-informed, not as a one-shot.
@@ -199,6 +202,27 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 6.3 — Rites & Rituals (Culture mission)** ✅ — col 2, row 0, prereq 6.2. The **Culture**
+  gauge: culture *levels* (each raises hand size) and the `cultureLevelReq` play-gate. Objective:
+  reach **culture level 2** (climbed by decking in owned Cave Art/Clothing — the intended lesson; no
+  deadline). Unlocks **Göbekli Tepe** — the age's first wonder, itself the culture-gated card (a
+  `'wonder'`-tagged building with `cultureLevelReq`), owned here so 6.7 can *build* it. Reward 8⭐.
+  Göbekli Tepe is the first **multi-worker / per-worker** building (3-worker capacity, +1🔨+1🪙+1🎭
+  per staffed worker, 🎭 level-1 gate); its cost stays provisional (6.7 tunes it). The culture-aware
+  `scoreState` sim fix + a `rites_rituals_goal` progress gradient landed alongside, so 6.3 is
+  sim-sweepable (`founding/tribe/rites-rituals` scenario).
+
+- **Step 6.2 — Growing Numbers (+ sticker-unlock reward infra)** ✅ — col 1. Buildings, territory,
+  worker staffing. Objective: build Hut + Farm + Toolmaker at once (a territory squeeze that forces
+  Conquest). Unlocks the first card sticker (**Irrigation**) + board sticker (**Territory**), debuting
+  the sticker-unlock reward kinds (`unlockStickerIds`/`unlockBoardStickerIds`); post-clear teaches
+  stickers + Influence/shop.
+
+- **Step 6.1 — First Settlement (+ Stone Age building set)** ✅ — col 0. The run loop (work + action
+  cards, draw/food upkeep). Objective: stockpile 10🔨 + 10⚔️. Unlocks Farm, Toolmaker, Hut, Conquest
+  (whole building set + military→territory conquest). Post-clear teaches deck-building (adding the new
+  cards).
 
 - **Step 5 — Ages map infrastructure** ✅ — each age *covers its slice of the DAG*. A mission
   declares its age (`MissionDef.age`), and `content/ages.ts`'s new `ageColSpans` derives each
