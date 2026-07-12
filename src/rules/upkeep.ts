@@ -1,5 +1,6 @@
 import { type Resources } from './resources';
 import { foodUpkeep } from './population';
+import { willReshuffleOnRefill } from './deck';
 import { resolveCard } from './effects';
 import { dispatchEvent, emitEvent, flushEvents, snapshot } from './events';
 import { CARDS } from '../content/cards';
@@ -107,6 +108,17 @@ export function projectedDelta(G: GameState): ProjectedDelta {
   // player sees (e.g. a threat's resource drain + its collapse warning) — same sequence
   // `endTurn` runs for real, via the shared `settleEndOfTurn`.
   settleEndOfTurn(clone);
+  // The next turn's refill draw fires a `reshuffle` when it empties the deck (see `deck.ts`), and a
+  // reshuffle-reacting threat (Unrest's per-🧍 🪙 drain) bleeds a resource the player is about to pay.
+  // Surface that *structural* cost by firing the `reshuffle` broadcast synthetically here — without
+  // running the draw itself, so the draw-contingent `on.draw` effects (which hinge on the hidden
+  // identity of the card drawn) never leak into the preview. Whether the reshuffle is imminent is
+  // publicly derivable (deck/discard/hand counts), so showing it reveals nothing the deck order hides.
+  if (willReshuffleOnRefill(clone)) {
+    const before = snapshot(clone);
+    emitEvent(clone, { type: 'reshuffle' });
+    flushEvents(clone, before);
+  }
   return {
     resources: {
       food: clone.resources.food - G.resources.food,

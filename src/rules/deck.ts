@@ -66,6 +66,19 @@ export function drawUpTo(G: GameState): void {
   }
 }
 
+/**
+ * Would the next round-start refill (`drawUpTo`) force a reshuffle? True iff filling the hand needs
+ * more draws than the deck holds *and* the discard has cards to fold back in — the exact condition
+ * `drawCard` reshuffles under, kept here beside `reshuffleIntoDeck` so a caller that needs to know a
+ * reshuffle is imminent *without* drawing (the `projectedDelta` preview, which fires the `reshuffle`
+ * broadcast synthetically to show its cost while suppressing the draw-contingent `on.draw` effects it
+ * mustn't leak) can't drift from the real trigger. At most one reshuffle happens per refill.
+ */
+export function willReshuffleOnRefill(G: GameState): boolean {
+  const draws = effectiveHandSize(G) - G.hand.length;
+  return draws > G.deck.length && G.discard.length > 0;
+}
+
 // --- Card-facing deck primitives (the resolver-spine "two-way street") ---
 // A card that manipulates the deck/hand structurally (peeking, drawing a chosen card, shuffling cards
 // back, recovering one from the discard) resolves through these instead of reaching into

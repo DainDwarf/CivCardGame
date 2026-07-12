@@ -1,10 +1,35 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { resolveHandEvents, projectedDelta, applyUpkeep } from './upkeep';
 import { blankState, instancesFromCardIds } from './state';
-import { installFixtures, uninstallFixtures } from './testFixtures';
+import { gainResources } from './effects';
+import { subtractResources } from './resources';
+import type { CardDef } from '../content/cards';
+import { installFixtures, uninstallFixtures, installCards, uninstallCards } from './testFixtures';
 
-beforeAll(installFixtures);
-afterAll(uninstallFixtures);
+// Local fixtures for the projected-reshuffle preview (only this suite drives them): a threat that
+// reacts to the deck fold (mirrors the shipped Unrest — drains 💰 per 🧍) and an on-draw building
+// (gains 🔬 on any draw). The pair proves `projectedDelta` shows the *structural* reshuffle cost while
+// *suppressing* the draw-contingent `on.draw` effect it must not leak.
+const LOCAL: Record<string, CardDef> = {
+  test_unrest: {
+    id: 'test_unrest', name: 'Test Unrest', kind: 'threat', cost: {},
+    description: '−1💰 per 🧍 on reshuffle',
+    on: { reshuffle: ({ G }) => subtractResources(G.resources, { money: G.population }) },
+  },
+  test_ondraw: {
+    id: 'test_ondraw', name: 'Test On-Draw', kind: 'building', cost: {}, workers: 0,
+    on: { draw: (ctx) => gainResources(ctx, { science: 5 }) },
+  },
+};
+
+beforeAll(() => {
+  installFixtures();
+  installCards(LOCAL);
+});
+afterAll(() => {
+  uninstallCards(LOCAL);
+  uninstallFixtures();
+});
 
 describe('projectedDelta — event-bus reachability', () => {
   it('reflects an upkeep-triggered handler in the HUD preview (Treasury crossing 10 during production)', () => {
@@ -83,5 +108,43 @@ describe('projectedDelta with events', () => {
     G.resources.military = 10;
     G.hand = instancesFromCardIds(['test_event']);
     expect(projectedDelta(G).resources.military).toBe(-2);
+  });
+});
+
+describe('projectedDelta — imminent next-turn reshuffle', () => {
+  it('shows a reshuffle-reacting threat drain when the next refill would fold the discard back in', () => {
+    // Empty deck + a non-empty discard: the next round-start refill reshuffles immediately, firing the
+    // Unrest-style threat. The preview must surface that 💰 drain (the player is about to pay it).
+    const G = blankState('test');
+    G.population = 3;
+    G.deck = [];
+    G.discard = instancesFromCardIds(['test_food', 'test_prod']);
+    G.threats = [{ id: 1, cardId: 'test_unrest' }];
+    expect(projectedDelta(G).resources.money).toBe(-3); // one reshuffle × pop 3
+  });
+
+  it('shows no drain when the deck can refill without a reshuffle', () => {
+    // Enough deck to refill, empty discard: no reshuffle is imminent, so the threat stays silent.
+    const G = blankState('test');
+    G.population = 3;
+    G.deck = instancesFromCardIds(['test_food', 'test_prod', 'test_sci', 'test_money', 'test_action']);
+    G.discard = [];
+    G.threats = [{ id: 1, cardId: 'test_unrest' }];
+    expect(projectedDelta(G).resources.money).toBe(0);
+  });
+
+  it('fires the reshuffle drain but NOT draw-contingent on.draw effects (no hidden-draw leak)', () => {
+    // Reshuffle imminent *and* an operating on-draw building: for real, the refill would reshuffle
+    // (drain 💰) then draw (gain 🔬). The preview fires only the structural reshuffle — it never draws,
+    // so the draw-contingent 🔬 (which would leak the identity of the card about to come up) stays hidden.
+    const G = blankState('test');
+    G.population = 3;
+    G.deck = [];
+    G.discard = instancesFromCardIds(['test_food', 'test_prod']);
+    G.threats = [{ id: 1, cardId: 'test_unrest' }];
+    G.tableau = [{ id: 10, cardId: 'test_ondraw', workers: 0 }];
+    const delta = projectedDelta(G);
+    expect(delta.resources.money).toBe(-3); // structural reshuffle cost — shown
+    expect(delta.resources.science).toBe(0); // draw-contingent on.draw — suppressed
   });
 });
