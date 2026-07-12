@@ -70,6 +70,14 @@ export interface SimOptions {
    *  so exceeding this **throws**. Default 100_000; the sandbox's round-50 deadline bounds runs far
    *  below it. */
   maxActions?: number;
+  /** Optional observer fired after every dispatched action with the action, the states either side of
+   *  it (`prev` before, `next` after), and whether the engine accepted it (`accepted: false` = a
+   *  rejected/no-op move, where `next === prev`). A trace/replay hook — the `sim` CLI's `--seed` mode
+   *  passes a per-turn logger (it reads `prev` to name a played card and to snapshot each turn's
+   *  starting economy, including turn 1 from the first call's `prev`); the batch sweep passes nothing.
+   *  Never mutate through it; it's read-only instrumentation, so a batch run stays byte-identical
+   *  whether or not it's set. */
+  onStep?: (step: { action: SimAction; prev: RunState; next: RunState; accepted: boolean }) => void;
 }
 
 /** Dispatch one {@link SimAction} onto the real engine — the only bridge from a policy's decision to
@@ -120,10 +128,13 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
     const action = policy(state);
     // Capture the played cardId *before* dispatch (the hand index resolves against the pre-move hand).
     const playedCardId = action.kind === 'playCard' ? state.G.hand[action.playHandIdx]?.cardId : undefined;
-    const next = applyAction(state, action);
+    const prev = state;
+    const next = applyAction(prev, action);
     // A rejected/no-op move returns the *identical* state object (`applyMove`/`endTurn` in
-    // `run/engine.ts`), so `next !== state` means the engine accepted it — count the play only then.
-    if (playedCardId !== undefined && next !== state) cardPlays[playedCardId] = (cardPlays[playedCardId] ?? 0) + 1;
+    // `run/engine.ts`), so `next !== prev` means the engine accepted it — count the play only then.
+    const accepted = next !== prev;
+    if (playedCardId !== undefined && accepted) cardPlays[playedCardId] = (cardPlays[playedCardId] ?? 0) + 1;
+    opts.onStep?.({ action, prev, next, accepted });
     state = next;
     actionsApplied += 1;
     if (check) assertRunInvariants(state.G, { ...ctx, round: state.G.round, actionsApplied });
@@ -143,15 +154,20 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
  * `contract.ts`'s `buildRunConfig`, which needs a player `OwnedCards` to resolve deck instance ids.
  * A simulator sweep works from a raw cardId deck (no meta collection), so this shuffles those into a
  * `DeckCard[]` the same deterministic way `buildRunConfig` does. Board stickers default to none.
+ *
+ * A deck entry is a bare cardId **or** a `DeckCard` (`{ cardId, stickers? }`), normalized the same way,
+ * so a caller carrying per-copy card stickers (the `sim` CLI's deck files) threads them straight through
+ * — `run/setup.ts`'s `instancesFromDeckCards` already applies a `DeckCard`'s stickers, this was the only
+ * seam that dropped them.
  */
 export function simConfig(opts: {
-  deckCardIds: readonly string[];
+  deckCardIds: readonly (string | DeckCard)[];
   board: BoardId;
   missionId: string;
   seed: string;
   boardStickers?: string[];
 }): RunConfig {
-  const cards: DeckCard[] = opts.deckCardIds.map((cardId) => ({ cardId }));
+  const cards: DeckCard[] = opts.deckCardIds.map((c) => (typeof c === 'string' ? { cardId: c } : c));
   return {
     deck: shuffle(cards, opts.seed),
     board: opts.board,

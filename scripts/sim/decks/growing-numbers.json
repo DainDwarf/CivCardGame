@@ -1,0 +1,19 @@
+{
+  "_comment": "Founding deck + the free copies First Settlement's reward grants (farm/toolmaker/hut/conquest). Exactly what a starting player owns the moment they can attempt Growing Numbers (no shop purchases).",
+  "cards": [
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "bartering", "count": 2 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "fire", "count": 1 },
+    { "cardId": "jewelry", "count": 2 },
+    { "cardId": "storytelling", "count": 1 },
+    { "cardId": "cave_art", "count": 1 },
+    { "cardId": "clothing", "count": 1 },
+    { "cardId": "hut", "count": 1 },
+    { "cardId": "farm", "count": 1 },
+    { "cardId": "toolmaker", "count": 1 },
+    { "cardId": "conquest", "count": 1 }
+  ]
+}

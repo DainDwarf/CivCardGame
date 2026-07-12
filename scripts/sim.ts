@@ -1,130 +1,283 @@
 /**
- * Balance tool — sweep the headless simulator over many seeds and print an aggregated report.
+ * Balance tool — sweep the headless simulator over a mission × deck × board matrix and print a report.
  *
- * The simulator (`src/sim/`) plays a *locked* deck vs. a mission on the real engine under a move
- * policy; a single run answers little, but running one scenario over many seeds gives statistical
- * balance answers no human can grind: is a mission winnable (win rate), is the food economy too tight
- * (turns distribution + defeat-cause histogram), is a card ever played (per-card play counts + the
- * unplayed-cards list). This re-implements **no** game logic — it composes `runBatch` → `summarize` →
- * `formatReport`, all from `src/sim`.
+ * The simulator (`src/sim/`) plays a *locked* deck vs. a mission on the real engine under a move policy;
+ * a single run answers little, but running one cell over many seeds gives statistical balance answers no
+ * human can grind: is a mission winnable (win rate), is the food economy too tight (turn distribution +
+ * defeat-cause histogram), is a card ever played (per-card play counts + the unplayed-cards list). This
+ * re-implements **no** game logic — it composes `runPolicies` → `summarize` → `formatReport` from `src/sim`.
  *
- * Each scenario is swept under several move policies with *identical* seed streams, so the comparison is
- * paired: the random fuzzer is the difficulty *floor*, the greedy / heuristic policies the competent
- * *ceiling*, and the gap tells you how much skill a scenario rewards. `greedy2` (greedy + a staffing
- * lookahead) is a diagnostic pair with `greedy` — their gap measures how much worker reassignment matters
- * in a scenario; it grinds long games, so it's the slow policy in the default sweep. The `oracle` (a
- * bounded seeded-perfect-information search for a *winning* line — the true ceiling / winnability prover)
- * runs a whole graph search per seed, so it's **excluded from the default sweep**: name it explicitly, and
+ * The three axes are decoupled the way the campaign menu presents them: pick the **mission(s)** by id
+ * (looked up live from `content/missions.ts` — no copied deck lists), point `--deck`/`--board` at
+ * hand-editable JSON files. One invocation sweeps `[missions] × {the deck} × {the board}`; to compare two
+ * decks or boards, edit a file or invoke twice. Each cell is swept under several policies with *identical*
+ * seed streams, so the comparison is paired: `random` is the difficulty floor / crash fuzzer, `greedy` /
+ * `heuristic` the competent ceiling, and the gap tells you how much skill a scenario rewards. `greedy2`
+ * (greedy + a staffing lookahead) and the `oracle` (a winnability prover) are nameable but slow — opt in
  * with a small seed count.
  *
  * Usage:
- *   npm run sim                       # default 100 seeds per scenario, default policies, all scenarios
- *   npm run sim -- 500                # override the seed count
- *   npm run sim -- 500 greedy         # only the named policy/policies (comma- or space-separated)
- *   npm run sim -- 200 random,greedy
- *   npm run sim -- 20 oracle          # winnability ceiling — opt-in, use a small seed count (it's slow)
- *   npm run sim -- 200 scenario=rites # only scenarios whose label contains 'rites' (substring match)
- *   npm run sim -- 200 greedy scenario=rites   # combine: one policy, one scenario
+ *   npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/growing-numbers.json --board scripts/sim/boards/tribe.json
+ *   npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board <file> --seeds 500
+ *   npm run sim -- --scenario rites_rituals --deck <file> --board <file> --policies greedy,heuristic
+ *   npm run sim -- --scenario growing_numbers --deck <file> --board <file> --format json
+ *   npm run sim -- --scenario growing_numbers --deck <file> --board <file> --policies greedy --seed 3   # replay one run
  *
- * `scenario=<substr>` tokens filter which scenarios run (repeat for several); every other token is a
- * policy name. Both default to "all" when unspecified, and the two are order-independent.
+ * Flags: `--scenario` (required, one or more mission ids), `--deck`/`--board` (required, JSON file paths),
+ * `--seeds` (default 100), `--policies` (default random,heuristic,greedy), `--format` (text|json), and
+ * `--seed <i>` which switches to **replay mode** — re-run the single (mission, policy, index) cell the
+ * batch would have run and print a per-turn trace (needs exactly one scenario and one policy).
  *
- * To change what's swept, edit `SCENARIOS` below — each entry is one deck / board / mission cell,
- * built from plain cardIds (no meta collection needed). As the age arcs add content, add scenarios.
+ * File schemas — a deck file is `{ "cards": [{ "cardId", "count"?, "stickers"? }, ...] }` (count expands
+ * to that many copies; stickers ride on every copy of the entry); a board file is
+ * `{ "board": "<id>", "stickers"?: [...] }`. Ready-made examples live under `scripts/sim/`.
  */
-import { runPolicies, summarize, formatReport, POLICY_FACTORIES, DEFAULT_POLICY_NAMES, type Scenario } from '../src/sim';
-import { DEFAULT_DECKS } from '../src/content/decks';
+import { readFileSync } from 'node:fs';
+import { parseArgs } from 'node:util';
+import { basename } from 'node:path';
+import {
+  runPolicies,
+  summarize,
+  formatReport,
+  simConfig,
+  simulateRun,
+  POLICY_FACTORIES,
+  type Scenario,
+  type SimAction,
+} from '../src/sim';
+import { MISSIONS } from '../src/content/missions';
+import { CARDS } from '../src/content/cards';
+import { BOARDS } from '../src/content/boards';
+import { STICKERS } from '../src/content/stickers';
+import { BOARD_STICKERS } from '../src/content/boardStickers';
+import { findStaffable, freePopulation, type DeckCard, type GameState } from '../src/rules';
 
-const SCENARIOS: Scenario[] = [
-  { label: 'founding/tribe/sandbox', deckCardIds: DEFAULT_DECKS[0].cards, board: 'tribe', missionId: 'sandbox' },
-  // A `'standard'` threshold mission (no deadline): terminates because the greedy/heuristic policies are
-  // now goal-directed — they steer by the objective's progress gradient (`sim/objective.ts`) and reach
-  // the win (or starve trying) in a handful of turns, rather than drifting at a survival equilibrium and
-  // blowing `simulateRun`'s action cap the way the old survival-only policies did. The win rate here is
-  // the "is this mission winnable, and how hard?" answer; a low one on the buildingless Founding deck is
-  // the intended difficulty, not a policy failure.
-  { label: 'founding/tribe/first-settlement', deckCardIds: DEFAULT_DECKS[0].cards, board: 'tribe', missionId: 'first_settlement' },
-  // "Growing Numbers": stand up a Hut, a Farm, and a Toolmaker at once. The deck below is the *basic*
-  // one — exactly what a starting player owns for free the moment they clear First Settlement: the
-  // Founding deck plus the one free copy each of Farm/Toolmaker/Hut/Conquest that mission's reward
-  // grants (`influence: 0` — no shop purchases assumed). The Tribe board starts at territory 0 — three
-  // buildings need three territory slots, so Conquest (+1 territory, replayable off one copy) has to
-  // land three times before all three can be placed, on top of the production to raise them. The win
-  // rate under greedy/heuristic reads how hard that multi-step build is for a one-ply policy with only
-  // the free starting cards.
-  {
-    label: 'founding/tribe/growing-numbers',
-    deckCardIds: [...DEFAULT_DECKS[0].cards, 'hut', 'farm', 'toolmaker', 'conquest'],
-    board: 'tribe',
-    missionId: 'growing_numbers',
-  },
-  // "Rites & Rituals": climb 🎭 culture to level 2 (30 culture, never spent). The deck is the
-  // Growing Numbers one plus the two culture cards the player owns by now — Cave Art ×2 (+2🎭 each)
-  // and Clothing ×2 (+2🎭 each) — the only culture income available (Göbekli Tepe is this mission's
-  // *reward*, not yet in-deck). No deadline, so the win rate reads whether the greedy/heuristic can
-  // deck in those four cards enough times to accumulate 30 culture without starving; a stalled
-  // economy that never reaches it would burn turns rather than lose (no defeat condition).
-  {
-    label: 'founding/tribe/rites-rituals',
-    deckCardIds: [
-      ...DEFAULT_DECKS[0].cards,
-      'hut',
-      'farm',
-      'toolmaker',
-      'conquest',
-      'cave_art',
-      'cave_art',
-      'clothing',
-      'clothing',
-    ],
-    board: 'tribe',
-    missionId: 'rites_rituals',
-  },
-];
+/** The policies a bare `--policies`-less run sweeps. Script-local on purpose: it's the user's requested
+ *  default (`random,heuristic,greedy`), *not* the same set as the exported `DEFAULT_POLICY_NAMES` (which
+ *  means "every built-in except oracle" and is a separate contract other readers rely on). */
+const DEFAULT_POLICIES = ['random', 'heuristic', 'greedy'];
 
-const seeds = Number(process.argv[2] ?? 100);
-if (!Number.isInteger(seeds) || seeds <= 0) {
-  throw new Error(`Seed count must be a positive integer, got '${process.argv[2]}'.`);
+/** Print a clean one-line error and exit — a bad flag/file is a user mistake, not a stack-trace-worthy
+ *  crash. */
+function fail(msg: string): never {
+  console.error(`sim: ${msg}`);
+  process.exit(1);
 }
 
-// Any args past the seed count, comma- or space-separated. A `scenario=<substr>` token filters the
-// scenario sweep by label substring; every other token is a policy name. Both default to "all".
-const args = process.argv
-  .slice(3)
-  .flatMap((a) => a.split(','))
-  .map((a) => a.trim())
-  .filter(Boolean);
-
-const SCENARIO_PREFIX = 'scenario=';
-const scenarioPatterns = args
-  .filter((a) => a.startsWith(SCENARIO_PREFIX))
-  .map((a) => a.slice(SCENARIO_PREFIX.length).toLowerCase())
-  .filter(Boolean);
-const scenarios =
-  scenarioPatterns.length > 0
-    ? SCENARIOS.filter((s) => scenarioPatterns.some((p) => s.label.toLowerCase().includes(p)))
-    : SCENARIOS;
-if (scenarios.length === 0) {
-  const known = SCENARIOS.map((s) => s.label).join(', ');
-  throw new Error(
-    `No scenario label matches ${scenarioPatterns.map((p) => `'${p}'`).join(', ')}. Known: ${known}.`,
-  );
+function csv(s: string | undefined): string[] {
+  return (s ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 }
 
-const policyArgs = args.filter((a) => !a.startsWith(SCENARIO_PREFIX));
-// Default sweep excludes `oracle` (a full search per seed — name it explicitly to include it).
-const policies = policyArgs.length > 0 ? policyArgs : DEFAULT_POLICY_NAMES;
-for (const p of policies) {
-  if (!POLICY_FACTORIES[p]) {
-    throw new Error(`Unknown policy '${p}'. Known: ${Object.keys(POLICY_FACTORIES).join(', ')}.`);
+// Returns parsed JSON as `any` — the loaders below validate every field they read against the real
+// content catalogues, so the untyped shape is checked at use, not by the type system.
+function readJson(path: string): any {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return fail(`cannot read file '${path}'.`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return fail(`file '${path}' is not valid JSON: ${(e as Error).message}`);
   }
 }
 
-const results = runPolicies(scenarios, policies, { seeds });
-const summaries = results.map(summarize);
+/** Load + validate a deck file into a run-ready `DeckCard[]`, expanding each `{ cardId, count, stickers }`
+ *  entry into `count` copies. Every cardId/sticker id is checked against the real catalogues — an unknown
+ *  id fails fast (a data-coherence check, like the deck editor's own rejects). */
+function loadDeck(path: string): DeckCard[] {
+  const raw = readJson(path);
+  if (!raw || !Array.isArray(raw.cards)) fail(`deck file '${path}' must be an object with a 'cards' array.`);
+  const deck: DeckCard[] = [];
+  for (const entry of raw.cards) {
+    const cardId = entry?.cardId;
+    const count = entry?.count ?? 1;
+    const stickers: string[] | undefined = entry?.stickers;
+    if (typeof cardId !== 'string' || !CARDS[cardId]) fail(`deck file '${path}': unknown cardId '${cardId}'.`);
+    if (!Number.isInteger(count) || count < 1) fail(`deck file '${path}': card '${cardId}' has invalid count ${count}.`);
+    if (stickers !== undefined && !Array.isArray(stickers)) fail(`deck file '${path}': 'stickers' on '${cardId}' must be an array.`);
+    for (const s of stickers ?? []) if (!STICKERS[s]) fail(`deck file '${path}': unknown sticker '${s}' on '${cardId}'.`);
+    for (let i = 0; i < count; i++) deck.push({ cardId, ...(stickers?.length ? { stickers: [...stickers] } : {}) });
+  }
+  if (deck.length === 0) fail(`deck file '${path}' has no cards.`);
+  return deck;
+}
 
-const scope = scenarioPatterns.length > 0 ? ` · ${scenarios.length}/${SCENARIOS.length} scenarios` : '';
-console.log(
-  `# Simulator batch report — ${seeds} seed(s) per scenario · policies: ${policies.join(', ')}${scope}\n`,
-);
-console.log(formatReport(summaries));
+/** Load + validate a board file into a board id + its board-sticker ids. */
+function loadBoard(path: string): { board: string; stickers: string[] } {
+  const raw = readJson(path);
+  if (!raw || typeof raw.board !== 'string') fail(`board file '${path}' must be an object with a 'board' id.`);
+  if (!BOARDS[raw.board]) fail(`board file '${path}': unknown board '${raw.board}'. Known: ${Object.keys(BOARDS).join(', ')}.`);
+  const stickers = raw.stickers ?? [];
+  if (!Array.isArray(stickers)) fail(`board file '${path}': 'stickers' must be an array.`);
+  for (const s of stickers) if (!BOARD_STICKERS[s]) fail(`board file '${path}': unknown board sticker '${s}'.`);
+  return { board: raw.board, stickers };
+}
+
+// Wrap `parseArgs` so an unknown flag or stray positional (strict mode throws a raw `TypeError`) surfaces
+// as the same clean `sim: …` one-liner as every other user mistake, not a stack trace.
+let values: { scenario?: string; deck?: string; board?: string; seeds?: string; policies?: string; format?: string; seed?: string };
+try {
+  ({ values } = parseArgs({
+    options: {
+      scenario: { type: 'string' },
+      deck: { type: 'string' },
+      board: { type: 'string' },
+      seeds: { type: 'string' },
+      policies: { type: 'string' },
+      format: { type: 'string' },
+      seed: { type: 'string' },
+    },
+    allowPositionals: false,
+  }));
+} catch (e) {
+  fail((e as Error).message);
+}
+
+if (!values.scenario) fail('--scenario is required (one or more mission ids, comma-separated).');
+if (!values.deck) fail('--deck is required (path to a deck JSON file).');
+if (!values.board) fail('--board is required (path to a board JSON file).');
+
+const missionIds = csv(values.scenario);
+for (const id of missionIds) {
+  if (!MISSIONS[id]) fail(`unknown --scenario mission '${id}'. Known: ${Object.keys(MISSIONS).join(', ')}.`);
+}
+
+const seeds = values.seeds !== undefined ? Number(values.seeds) : 100;
+if (!Number.isInteger(seeds) || seeds <= 0) fail(`--seeds must be a positive integer, got '${values.seeds}'.`);
+
+const policies = values.policies !== undefined ? csv(values.policies) : DEFAULT_POLICIES;
+for (const p of policies) {
+  if (!POLICY_FACTORIES[p]) fail(`unknown policy '${p}'. Known: ${Object.keys(POLICY_FACTORIES).join(', ')}.`);
+}
+
+const format = values.format ?? 'text';
+if (format !== 'text' && format !== 'json') fail(`--format must be 'text' or 'json', got '${format}'.`);
+
+const deck = loadDeck(values.deck);
+const board = loadBoard(values.board);
+const boardLabel = `${board.board}${board.stickers.length ? ` +${board.stickers.join(',')}` : ''}`;
+
+// ---- Replay mode: re-run one exact cell with a per-turn trace ----------------------------------------
+
+/** A one-line economy readout for a turn: the 5 core resources plus population (assigned/total),
+ *  territory, and culture. */
+function snapshot(G: GameState): string {
+  const r = G.resources;
+  const assigned = G.population - freePopulation(G);
+  return (
+    `food ${r.food} · prod ${r.production} · sci ${r.science} · mil ${r.military} · money ${r.money}` +
+    ` | pop ${assigned}/${G.population} · terr ${G.territory} · cult ${G.culture}`
+  );
+}
+
+/** Name a staffable (building / work box) by its card name, resolved against the pre-move state. */
+function staffName(G: GameState, id: number): string {
+  const s = findStaffable(G, id);
+  return s ? CARDS[s.cardId]?.name ?? s.cardId : `#${id}`;
+}
+
+/** Render one accepted action readably. Names resolve against `G` = the state *before* the action
+ *  (a played hand index / a target id only means anything pre-move). */
+function formatAction(action: SimAction, G: GameState): string {
+  switch (action.kind) {
+    case 'playCard': {
+      const card = G.hand[action.playHandIdx];
+      const name = card ? CARDS[card.cardId]?.name ?? card.cardId : `#${action.playHandIdx}`;
+      let s = `play ${name}`;
+      if (action.discardHandIdxs?.length) s += ` (discard ${action.discardHandIdxs.length})`;
+      if (action.destroyInstanceId != null) s += ` (destroy ${staffName(G, action.destroyInstanceId)})`;
+      return s;
+    }
+    case 'assignWorker':
+      return `assign ${staffName(G, action.id)}`;
+    case 'unassignWorker':
+      return `unassign ${staffName(G, action.id)}`;
+    case 'transferWorker':
+      return `transfer ${staffName(G, action.fromId)}→${staffName(G, action.toId)}`;
+    case 'toggleStaffing':
+      return `toggle ${staffName(G, action.id)}`;
+    case 'resolveInteraction':
+      return `answer ${action.answer}`;
+    case 'endTurn':
+      return 'endTurn';
+  }
+}
+
+function replay(missionId: string, policyName: string, idx: number): void {
+  const config = simConfig({
+    deckCardIds: deck,
+    board: board.board,
+    boardStickers: board.stickers,
+    missionId,
+    seed: `${missionId}-cfg-${idx}`,
+  });
+  const policy = POLICY_FACTORIES[policyName](`${missionId}-pol-${idx}`);
+
+  const lines: string[] = [];
+  let turnStart = '';
+  let turnActions: string[] = [];
+  let sawFirst = false;
+
+  const flushTurn = (round: number) => {
+    lines.push(`Turn ${round}  ${turnStart}`);
+    lines.push(`  ${turnActions.length ? turnActions.join(' · ') : '(no moves)'}`);
+    turnActions = [];
+  };
+
+  const outcome = simulateRun(config, policy, {
+    onStep: ({ action, prev, next, accepted }) => {
+      // Turn 1's starting economy is the very first call's `prev` (the post-setup state); every later
+      // turn's start is the state right after the endTurn that closed the previous one.
+      if (!sawFirst) {
+        turnStart = snapshot(prev.G);
+        sawFirst = true;
+      }
+      if (accepted && action.kind !== 'endTurn') turnActions.push(formatAction(action, prev.G));
+      if (action.kind === 'endTurn' && accepted) {
+        flushTurn(prev.G.round);
+        turnStart = snapshot(next.G);
+      }
+    },
+  });
+  // A run that ends mid-turn (a play triggers win/loss before any endTurn) leaves a partial turn buffered.
+  if (turnActions.length) flushTurn(outcome.finalState.round);
+
+  const g = outcome.gameover;
+  console.log(`# Replay — ${MISSIONS[missionId].name} · ${policyName} · seed ${idx}`);
+  console.log(`#   deck: ${basename(values.deck!)} (${deck.length} cards) · board: ${boardLabel}\n`);
+  console.log(lines.join('\n'));
+  console.log(`\n→ ${g.outcome}${g.reason ? ` (${g.reason})` : ''} · round ${outcome.finalState.round} · ${outcome.actionsApplied} actions`);
+}
+
+if (values.seed !== undefined) {
+  const idx = Number(values.seed);
+  if (!Number.isInteger(idx) || idx < 0) fail(`--seed must be a non-negative integer index, got '${values.seed}'.`);
+  if (missionIds.length !== 1) fail(`replay (--seed) needs exactly one --scenario mission, got ${missionIds.length}.`);
+  if (policies.length !== 1) fail(`replay (--seed) needs exactly one --policies policy, got ${policies.length}.`);
+  replay(missionIds[0], policies[0], idx);
+  process.exit(0);
+}
+
+// ---- Batch mode ---------------------------------------------------------------------------------------
+
+const scenarios: Scenario[] = missionIds.map((missionId) => ({
+  label: missionId,
+  deckCardIds: deck,
+  board: board.board,
+  missionId,
+  boardStickers: board.stickers,
+}));
+
+const summaries = runPolicies(scenarios, policies, { seeds }).map(summarize);
+
+if (format === 'json') {
+  console.log(JSON.stringify(summaries, null, 2));
+} else {
+  console.log(`# Simulator batch — ${seeds} seed(s) per cell · policies: ${policies.join(', ')}`);
+  console.log(`#   deck: ${basename(values.deck)} (${deck.length} cards) · board: ${boardLabel}`);
+  console.log(`#   scenarios: ${missionIds.join(', ')}\n`);
+  console.log(formatReport(summaries));
+}

@@ -82,7 +82,8 @@ export function summarize(runs: ScenarioRuns): ScenarioSummary {
     for (const k of Object.keys(meanResources) as (keyof Resources)[]) meanResources[k] /= n;
   }
 
-  const unplayedCards = [...new Set(scenario.deckCardIds)].filter((id) => !cardPlays[id]);
+  const deckCardIds = scenario.deckCardIds.map((c) => (typeof c === 'string' ? c : c.cardId));
+  const unplayedCards = [...new Set(deckCardIds)].filter((id) => !cardPlays[id]);
 
   return {
     label: scenario.label,

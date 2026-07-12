@@ -1,4 +1,5 @@
 import type { BoardId } from '../content/boards';
+import type { DeckCard } from '../rules/deckBuilder';
 import { simConfig, simulateRun, type Policy, type SimOptions, type SimOutcome } from './simulate';
 import { createRandomPolicy } from './randomPolicy';
 import { createGreedyPolicy } from './greedyPolicy';
@@ -37,7 +38,10 @@ export interface Scenario {
   /** Human name for the report row, also folded into each run's seed keys so two scenarios never
    *  collide on the same seed stream. */
   label: string;
-  deckCardIds: readonly string[];
+  /** The deck to play, as a draw-order list. Each entry is a bare cardId **or** a `DeckCard`
+   *  (`{ cardId, stickers? }`) — the latter carries per-copy card stickers straight into the run
+   *  (the `sim` CLI's deck files use it); `simConfig` normalizes the two. */
+  deckCardIds: readonly (string | DeckCard)[];
   board: BoardId;
   missionId: string;
   boardStickers?: string[];

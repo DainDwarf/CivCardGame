@@ -101,9 +101,12 @@ built; the game is now in its content-and-balance pass — see
   runs through the real `applyRunResult` to write a populated `.civsave` (default `./seed.civsave`,
   gitignored) for testing the meta screens without grinding. Edit `SEED_RUNS` to change its contents;
   import it in-game via the Save menu.
-- `npm run sim` — balance tool (`scripts/sim.ts`, run via `tsx`): sweeps the headless simulator over
-  many seeds and prints an aggregated report (win rate, turns/defeat-cause/card-play stats). Seed count
-  via `npm run sim -- N` (default 100); edit `SCENARIOS` to change what's swept. See *Balance tooling*.
+- `npm run sim` — balance tool (`scripts/sim.ts`, run via `tsx`): sweeps the headless simulator over a
+  mission × deck × board matrix and prints an aggregated report (win rate, turns/defeat-cause/card-play
+  stats). The three axes are decoupled: `--scenario <ids>` names mission(s) (looked up live from
+  `content/missions.ts`), `--deck`/`--board` point at JSON files (examples under `scripts/sim/`), with
+  `--seeds`/`--policies`/`--format` (text|json). `--seed <i>` switches to a single-run per-turn replay
+  trace. See *Balance tooling*.
 
 ## Architecture
 
@@ -471,13 +474,15 @@ run's shuffle seed), re-randomizing a play's discard/destroy extras for fuzz cov
 **crash / illegal-state fuzzer**: `assertRunInvariants` (`sim/invariants.ts`) runs after every action
 (bus drained · unique instance ids · staffing/population bounds — deliberately **not** resource
 non-negativity, since a collapse ending legitimately leaves a negative pool), throwing with both seeds
-as the reproduction key. `simConfig(...)` is a content-agnostic `RunConfig` builder from plain cardIds
-(the sim counterpart to `buildRunConfig`, no meta collection needed). All randomness routes through
+as the reproduction key. `simConfig(...)` is a content-agnostic `RunConfig` builder from a cardId/`DeckCard`
+deck (the sim counterpart to `buildRunConfig`, no meta collection needed — a `DeckCard` entry threads
+per-copy stickers straight through). All randomness routes through
 `rules/rng.ts`'s `randInt` — the one seam. `SimOutcome` also carries a per-run `cardPlays` map (accepted
 `playCard`s per cardId, counted in the drive loop by reference-inequality acceptance detection) — the
 "is a card ever played / dead in the deck?" signal, unrecoverable from the final state.
 **Batch + reporting** sit on top: `runBatch(scenarios, { seeds })` (`sim/batch.ts`) sweeps a flat
-`Scenario[]` (deck/board/mission, plain cardIds) ×N seeds — two independent deterministic seed streams
+`Scenario[]` (deck/board/mission; a deck entry is a bare cardId **or** a `DeckCard` carrying per-copy
+stickers) ×N seeds — two independent deterministic seed streams
 per run (`…-cfg-i` shuffle, `…-pol-i` moves), so a whole batch is reproducible — collecting whole
 `SimOutcome`s; `summarize`/`formatReport` (`sim/report.ts`) fold those into a per-scenario
 `ScenarioSummary` (win rate · turns min/median/mean/max · mean end resources · **defeat-cause histogram
@@ -522,10 +527,17 @@ one. `searchWinningLine(root)` / `proveWinnable(config)` are the direct search A
 found line as a scripted `Policy` (dispense one action per step, **greedy2 fallback** when no line is found — so
 `oracle`-wins ⊇ `greedy2`-wins, the ceiling-dominates invariant), folding into the same batch/report machinery
 unchanged, with a `foundLine` flag distinguishing a search-proven win from a fallback one. The
-`npm run sim [seeds] [policies]` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`) prints the report across the
-`DEFAULT_POLICY_NAMES` by default (`greedy2` grinds long survival games, so it's the slow one there; the `oracle`
-runs a whole search per seed and is **excluded from the default sweep** — name it explicitly with a small seed
-count). A synthetic-fixture move-surface fuzz test (building/destroy/`discardCost`) is deferred until building
+`npm run sim` CLI (`scripts/sim.ts`, mirroring `seed-save.ts`) sweeps a **mission × deck × board** matrix
+with the three axes decoupled: `--scenario <ids>` names mission(s) looked up live from `MISSIONS` (no
+copied deck lists), `--deck`/`--board` load hand-editable JSON files (a deck of `{cardId,count,stickers?}`
+entries — per-card stickers flow through `simConfig`'s widened `(string|DeckCard)[]` deck — and a board of
+`{board,stickers?}`; examples committed under `scripts/sim/decks|boards/`), swept under `--policies` (a
+*script-local* `random,heuristic,greedy` default, **not** the exported `DEFAULT_POLICY_NAMES` — name
+`greedy2`/`oracle` explicitly, both slow, with a small seed count) and rendered as `--format text|json`.
+`--seed <i>` switches to a single-run **replay**: it rebuilds the exact `(cfg,pol)` seed pair the batch
+cell `i` used and drives `simulateRun` under an `onStep` observer (fired per action with the states either
+side) to print a per-turn economy/actions trace — the observer keeps the drive loop single-sourced (the
+batch passes none). A synthetic-fixture move-surface fuzz test (building/destroy/`discardCost`) is deferred until building
 content exists.
 
 ## Conventions
