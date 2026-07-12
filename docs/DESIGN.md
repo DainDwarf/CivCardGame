@@ -213,7 +213,7 @@ MissionDef
 
 CardDef (kind: 'objective')
   objective: (G, self) => boolean            // WIN condition (defeat is a threat's job)
-  dynamicText: (G, self) => string           // live progress line
+  display.dynamicText: (G, self) => string   // live progress line (display-only fields nest under `display`)
 ```
 
 The `objective` hook is a **pure read function** (it never mutates `G`), living on the catalogue

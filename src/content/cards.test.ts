@@ -28,7 +28,7 @@ describe('CARDS', () => {
   // Mission-only kinds (event/threat/objective) may lean on the per-kind fallback, so they're exempt.
   it('every deckable card sets its own art glyph', () => {
     for (const card of Object.values(CARDS)) {
-      if (isDeckable(card)) expect(card.art, `${card.id} has no art`).toBeTruthy();
+      if (isDeckable(card)) expect(card.display?.art, `${card.id} has no art`).toBeTruthy();
     }
   });
 

@@ -166,7 +166,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   test_peek: {
     id: 'test_peek', name: 'Test Peek', kind: 'action', cost: { science: 1 },
     revealsFromDeck: 3,
-    description: 'Peek the top 3 cards; draw 1, shuffle the rest back',
+    display: { description: 'Peek the top 3 cards; draw 1, shuffle the rest back' },
     resolve: (ctx) => {
       if (ctx.answer === undefined) {
         suspendChoice(ctx, {
@@ -190,15 +190,17 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // sticker's `effectiveGain` still folds over it (the gap a bespoke resolver's output would otherwise miss).
   test_bespoke: {
     id: 'test_bespoke', name: 'Test Bespoke', kind: 'action', cost: {},
-    description: '+2🔬',
+    display: { description: '+2🔬' },
     resolve: (ctx) => gainResources(ctx, { science: 2 }),
   },
   // `dynamicText` action: its face text reads the *same* base through `effectiveGain` its `resolve`
   // gains — so the displayed number always matches what a play actually adds, sticker-adjusted.
   test_dynamic: {
     id: 'test_dynamic', name: 'Test Dynamic', kind: 'action', cost: {},
-    description: '+2🌾',
-    dynamicText: (_G, self) => `+${effectiveGain(DYNAMIC_BASE, self)!.food}🌾`,
+    display: {
+      description: '+2🌾',
+      dynamicText: (_G, self) => `+${effectiveGain(DYNAMIC_BASE, self)!.food}🌾`,
+    },
     resolve: (ctx) => gainResources(ctx, DYNAMIC_BASE),
   },
   // Growing per-instance gain: +1🌾 the first play of a copy, +1 more per prior play
@@ -206,9 +208,11 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // canonical per-copy-state fixture.
   test_growing: {
     id: 'test_growing', name: 'Test Growing', kind: 'action', cost: {},
-    description: '+1🌾',
-    dynamicRule: '+1 each time played',
-    dynamicText: (_G, self) => `+${effectiveGain(scaleResources({ food: 1 }, getCounter(self, 'plays') + 1), self)!.food}🌾`,
+    display: {
+      description: '+1🌾',
+      dynamicRule: '+1 each time played',
+      dynamicText: (_G, self) => `+${effectiveGain(scaleResources({ food: 1 }, getCounter(self, 'plays') + 1), self)!.food}🌾`,
+    },
     resolve: (ctx) => {
       gainResources(ctx, scaleResources({ food: 1 }, getCounter(ctx.self, 'plays') + 1));
       bumpCounter(ctx.self, 'plays');
@@ -222,7 +226,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   test_threshold: {
     id: 'test_threshold', name: 'Test Threshold', kind: 'building',
     cost: { production: 2 }, workers: 1,
-    description: 'While staffed, the first time 💰 reaches 10: +5🔬 (once)',
+    display: { description: 'While staffed, the first time 💰 reaches 10: +5🔬 (once)' },
     on: {
       resourceChange: (ctx) => {
         const e = ctx.event;
@@ -250,13 +254,13 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   test_threat: {
     id: 'test_threat', name: 'Test Threat', kind: 'threat',
     cost: {}, effect: { resources: { food: -2 } },
-    description: '−2🌾 every round',
+    display: { description: '−2🌾 every round' },
   },
   // Escalating drain via a bespoke `resolve` reading its own `level` counter (−1🔨, then −2, …), like
   // Creeping Decay. Reused by threats + the mission-spine relocation, hence shared.
   test_escalating: {
     id: 'test_escalating', name: 'Test Escalating', kind: 'threat', cost: {},
-    description: '−1🔨 every round, worsening',
+    display: { description: '−1🔨 every round, worsening' },
     resolve: ({ G, self }) => {
       subtractResources(G.resources, scaleResources({ production: 1 }, getCounter(self, 'level') + 1));
       bumpCounter(self, 'level');
@@ -266,16 +270,18 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // counterpart to an objective's win. `round > 5` (not `>= 5`) mirrors the shipped deadline convention.
   test_deadline: {
     id: 'test_deadline', name: 'Test Deadline', kind: 'threat', cost: {},
-    description: 'Defeat once round 5 fully elapses.',
+    display: { description: 'Defeat once round 5 fully elapses.' },
     defeat: (G) => G.round > 5 && 'test deadline',
   },
 
   // --- Objective: owns its mission's win as a pure-read predicate over `G` (never mutates it). ---
   test_objective: {
     id: 'test_objective', name: 'Test Objective', kind: 'objective', cost: {},
-    description: 'Reach 10 Science.',
     objective: (G) => G.resources.science >= 10,
-    dynamicText: (G) => `${G.resources.science}/10🔬`,
+    display: {
+      description: 'Reach 10 Science.',
+      dynamicText: (G) => `${G.resources.science}/10🔬`,
+    },
   },
 };
 

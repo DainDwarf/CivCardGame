@@ -159,7 +159,7 @@ function BoardLeftColumn({
   const objective = G.objective;
   if (!objective && G.threats.length === 0) return null;
   const objectiveCard = objective ? CARDS[objective.cardId] : undefined;
-  const objectiveText = objective && objectiveCard ? objectiveCard.dynamicText?.(G, objective) : undefined;
+  const objectiveText = objective && objectiveCard ? objectiveCard.display?.dynamicText?.(G, objective) : undefined;
   const hiddenStyle = (id: number) => (hiddenIds?.has(id) ? { visibility: 'hidden' as const } : undefined);
   return (
     <div className={styles.boardLeft}>
@@ -180,7 +180,7 @@ function BoardLeftColumn({
         <div className={styles.threatZone}>
           {G.threats.map((t) => {
             const card = CARDS[t.cardId];
-            const overrideText = card.dynamicText?.(G, t);
+            const overrideText = card.display?.dynamicText?.(G, t);
             return (
               <CardFace
                 key={t.id}
@@ -212,7 +212,7 @@ function groupCards(insts: CardInstance[]): { key: number | string; cardId: stri
   const groups = new Map<string, { inst: CardInstance; count: number }>();
   const singles: { key: number; cardId: string; inst: CardInstance; count: number; instanceId: number }[] = [];
   for (const inst of insts) {
-    if (CARDS[inst.cardId].dynamicText || inst.stickers?.length) {
+    if (CARDS[inst.cardId].display?.dynamicText || inst.stickers?.length) {
       singles.push({ key: inst.id, cardId: inst.cardId, inst, count: 1, instanceId: inst.id });
       continue;
     }
@@ -1094,7 +1094,7 @@ export function Board({
       effectiveCard(card, G.hand[d.handIdx]),
       { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h },
       'drop',
-      card.dynamicText?.(G, G.hand[d.handIdx]),
+      card.display?.dynamicText?.(G, G.hand[d.handIdx]),
       G.hand[d.handIdx].stickers,
     );
     moves.playCard(d.handIdx);
@@ -1107,7 +1107,7 @@ export function Board({
       setZoom({
         cardId: d.cardId,
         overrideCard: effectiveCard(CARDS[d.cardId], G.hand[d.handIdx]),
-        overrideText: CARDS[d.cardId].dynamicText?.(G, G.hand[d.handIdx]),
+        overrideText: CARDS[d.cardId].display?.dynamicText?.(G, G.hand[d.handIdx]),
         stickerBadge: G.hand[d.handIdx].stickers,
       });
     } else {
@@ -1490,7 +1490,7 @@ export function Board({
         setIntroGhost({
           key: item.key,
           card: item.card,
-          overrideText: item.card.dynamicText?.(G, rep),
+          overrideText: item.card.display?.dynamicText?.(G, rep),
           stickers: rep.stickers,
           count: item.insts.length,
           from: centerRect(),
@@ -1540,7 +1540,7 @@ export function Board({
       ghostFromSlot(
         pending.playedKey,
         effectiveCard(CARDS[pending.cardId], G.hand[pending.handIdx]),
-        CARDS[pending.cardId].dynamicText?.(G, G.hand[pending.handIdx]),
+        CARDS[pending.cardId].display?.dynamicText?.(G, G.hand[pending.handIdx]),
         G.hand[pending.handIdx].stickers,
       );
       moves.playCard(pending.handIdx, discards);
@@ -1556,7 +1556,7 @@ export function Board({
     ghostFromSlot(
       pendingDestroy.playedKey,
       effectiveCard(CARDS[pendingDestroy.cardId], G.hand[pendingDestroy.handIdx]),
-      CARDS[pendingDestroy.cardId].dynamicText?.(G, G.hand[pendingDestroy.handIdx]),
+      CARDS[pendingDestroy.cardId].display?.dynamicText?.(G, G.hand[pendingDestroy.handIdx]),
       G.hand[pendingDestroy.handIdx].stickers,
     );
     moves.playCard(pendingDestroy.handIdx, [], instanceId);
@@ -1825,7 +1825,7 @@ export function Board({
                     card={ec}
                     // A card owning run-aware text (e.g. a self-scaling card's growing gain) renders its
                     // current value here; the shell just asks, with no per-card branch.
-                    overrideText={c.dynamicText?.(G, card.inst)}
+                    overrideText={c.display?.dynamicText?.(G, card.inst)}
                     stickerBadge={card.inst.stickers}
                     ref={(el) => {
                       if (el) cardEls.current.set(card.key, el as HTMLButtonElement);
@@ -1839,7 +1839,7 @@ export function Board({
                         setZoom({
                           cardId: card.cardId,
                           overrideCard: ec,
-                          overrideText: c.dynamicText?.(G, card.inst),
+                          overrideText: c.display?.dynamicText?.(G, card.inst),
                           stickerBadge: card.inst.stickers,
                         });
                         return;
@@ -1959,7 +1959,7 @@ export function Board({
           <div className={styles.dragLayer} aria-hidden="true">
             <CardFace
               card={effectiveCard(CARDS[drag.cardId], G.hand[drag.handIdx])}
-              overrideText={CARDS[drag.cardId].dynamicText?.(G, G.hand[drag.handIdx])}
+              overrideText={CARDS[drag.cardId].display?.dynamicText?.(G, G.hand[drag.handIdx])}
               stickerBadge={G.hand[drag.handIdx].stickers}
               className={styles.dragCard}
               style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
@@ -2038,7 +2038,7 @@ export function Board({
             ) : (
               <div className={styles.pileGrid}>
                 {groupCards(pileView.cards).map((g) => {
-                  const overrideText = CARDS[g.cardId].dynamicText?.(G, g.inst);
+                  const overrideText = CARDS[g.cardId].display?.dynamicText?.(G, g.inst);
                   const ec = effectiveCard(CARDS[g.cardId], g.inst);
                   return (
                     <CardFace
@@ -2073,7 +2073,7 @@ export function Board({
                 <CardFace
                   key={opt.id}
                   card={effectiveCard(CARDS[opt.cardId], opt)}
-                  overrideText={CARDS[opt.cardId].dynamicText?.(G, opt)}
+                  overrideText={CARDS[opt.cardId].display?.dynamicText?.(G, opt)}
                   stickerBadge={opt.stickers}
                   className={styles.interactionCard}
                   onClick={() => moves.resolveInteraction(i)}

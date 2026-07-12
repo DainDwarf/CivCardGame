@@ -19,7 +19,7 @@ export function CardZoomOverlay({
    *  with a real instance to read (Board.tsx's run instances; the meta screens' owned/deck-group
    *  instances); absent falls back to the catalogue's plain `CARDS[cardId]`. */
   overrideCard?: CardDef;
-  /** A dynamic card's live current-value text (see `CardDef.dynamicText`) — passed by callers that
+  /** A dynamic card's live current-value text (see `CardDisplay.dynamicText`) — passed by callers that
    *  have a real run instance to read (Board.tsx); absent in static contexts (Collection, deck
    *  editor), which fall back to the card's own description. */
   overrideText?: string;

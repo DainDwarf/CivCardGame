@@ -26,13 +26,13 @@ const LOCAL: Record<string, CardDef> = {
   // Survival objective: win once ≥2 events have been beaten (exiled to `removed`) with Military intact.
   test_survive_obj: {
     id: 'test_survive_obj', name: 'Survive', kind: 'objective', cost: {},
-    description: 'Beat 2 events without Military falling below zero.',
+    display: { description: 'Beat 2 events without Military falling below zero.' },
     objective: (G) => G.removed.filter((c) => c.cardId === 'test_event').length >= 2 && G.resources.military >= 0,
   },
   // Round-based objective: win the instant the round counter passes 3.
   test_round_obj: {
     id: 'test_round_obj', name: 'Endure', kind: 'objective', cost: {},
-    description: 'Survive past round 3.',
+    display: { description: 'Survive past round 3.' },
     objective: (G) => G.round > 3,
   },
 };

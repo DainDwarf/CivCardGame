@@ -22,7 +22,7 @@ const ART_FALLBACK: Record<CardDef['kind'], string> = {
 /** The central face glyph for a card: its own colocated `art` (`content/cards.ts`), else the
  *  per-kind default. The single reader every render site goes through (the card face, the
  *  building/work boxes in `Board.tsx`). */
-export const artFor = (card: CardDef): string => card.art ?? ART_FALLBACK[card.kind];
+export const artFor = (card: CardDef): string => card.display?.art ?? ART_FALLBACK[card.kind];
 
 /** Bottom-left row of per-sticker badges — `CardFace`'s own `stickerBadge` prop
  *  renders this, and a non-`CardFace` board box that needs the identical treatment (`Board.tsx`'s
@@ -83,7 +83,7 @@ export function describeConditions(c: CardDef): string {
   if (c.kind === 'event') parts.push('play to banish resolves at end of round');
   if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
   if (c.discardCost) parts.push(`discard ${c.discardCost}`);
-  if (c.dynamicRule) parts.push(c.dynamicRule);
+  if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
   return parts.join(' · ');
 }
 
@@ -108,7 +108,7 @@ export function describeBuilding(b: CardDef, includeWorkers = true): string {
  *  whose behavior the declarative `effect` can't express authors its own `description`, which wins
  *  over the auto-generated text below. */
 export function describeCard(c: CardDef): string {
-  if (c.description) return c.description;
+  if (c.display?.description) return c.display.description;
   const e = c.effect;
   const parts: string[] = [];
   if (e?.resources) {

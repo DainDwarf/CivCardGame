@@ -13,7 +13,7 @@ import { installFixtures, uninstallFixtures, installCards, uninstallCards } from
 const LOCAL: Record<string, CardDef> = {
   test_unrest: {
     id: 'test_unrest', name: 'Test Unrest', kind: 'threat', cost: {},
-    description: '−1💰 per 🧍 on reshuffle',
+    display: { description: '−1💰 per 🧍 on reshuffle' },
     on: { reshuffle: ({ G }) => subtractResources(G.resources, { money: G.resources.population }) },
   },
   test_ondraw: {

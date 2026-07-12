@@ -87,7 +87,7 @@ describe('resolveCard', () => {
   it("a dynamicText card's face shows the sticker-adjusted gain (resolve/display agree)", () => {
     const G = blankState('test');
     const self = { id: 1, cardId: 'test_dynamic', stickers: ['test_addgain'] };
-    const text = FIXTURE_CARDS.test_dynamic.dynamicText!(G, self);
+    const text = FIXTURE_CARDS.test_dynamic.display!.dynamicText!(G, self);
     expect(text).toBe('+3🌾'); // base +2, sticker +1 — matches the +3 food resolveCard grants
     resolveCard({ G, self });
     expect(G.resources.food).toBe(3);
