@@ -181,6 +181,14 @@ export interface CardDef {
    *  cost / culture-level gates), in every context, live instance or not, since the rule itself
    *  never changes. Pairs with `dynamicText`, which supplies the actual current number below it. */
   dynamicRule?: string;
+  /** The card's central "art" glyph — the emoji shown big on the face and on a building/work box.
+   *  Colocated with the def (not a parallel map in the UI) so authoring a card prompts its face in
+   *  the same place, and so a glyph the objective progress text also wants (e.g. a Growing Numbers
+   *  building) has one source. Presentation-only — no rule reads it. Optional: a card without one
+   *  falls back to a per-kind default glyph in `CardFace.tsx`'s `artFor`. Every **deckable** card
+   *  must set it (pinned by `cards.test.ts`); mission-only kinds may lean on the fallback (the
+   *  objective's is 🏆). */
+  art?: string;
   /** `building` cards: per-round output once staffed. */
   produces?: Partial<Resources>;
   /** `building` cards: per-round culture gained while staffed — accumulates on G.culture. */
@@ -247,14 +255,10 @@ export function compareCards(a: CardDef, b: CardDef): number {
  *  one tunable knob that bounds simulation length without touching the economy baseline. */
 export const SANDBOX_DEADLINE = 50;
 
-/** The buildings "Growing Numbers" wants one of each of, paired with the glyph the objective's
- *  progress text shows for it — the single source both the win predicate and the `dynamicText`
- *  read, so the two can never list a different set. */
-const GROWING_NUMBERS_BUILDINGS: readonly (readonly [cardId: string, icon: string])[] = [
-  ['hut', '🛖'],
-  ['farm', '🌱'],
-  ['toolmaker', '⛏️'],
-];
+/** The buildings "Growing Numbers" wants one of each of — the single source both the win predicate
+ *  and the `dynamicText` read, so the two can never list a different set. The progress glyph for each
+ *  is pulled from the building's own `art` (below), not restated here, so the two can't drift. */
+const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm', 'toolmaker'];
 
 /** How many raider waves "Raiders at the Border" seeds — the single source shared by the
  *  mission's injected event list (`content/missions.ts`), the `raiders_at_border_goal` win threshold,
@@ -277,15 +281,15 @@ export const RAIDER_WAVES = 3;
 export const CARDS: Record<string, CardDef> = {
   // — Work: staffable board boxes producing only while a worker is assigned, filed to discard at
   //   end of turn. Cost nothing to play and need no idle population to place.
-  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, effect: { gain: { food: 3 } } },
-  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, effect: { gain: { production: 2 } } },
+  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, art: '🌿', effect: { gain: { food: 3 } } },
+  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, art: '🪨', effect: { gain: { production: 2 } } },
   // Beer: the first *transforming* work card — each staffed round it converts 2🌾 into 5🎭. A per-round
   //   loss can't be declared (`defaultProduce` only ever adds), so it needs a bespoke `produce` that
   //   scales the whole transform per worker (×1 at capacity 1). The food drain is unconditional: staff
   //   it while short on 🌾 and it bleeds food negative into a famine collapse — a committed cost the
   //   player manages by unstaffing. Reward-unlocked by "Restless People", never in the starting set.
   beer: {
-    id: 'beer', name: 'Beer', kind: 'work', cost: {}, workers: 1,
+    id: 'beer', name: 'Beer', kind: 'work', cost: {}, workers: 1, art: '🍺',
     description: 'Staffed: −2🌾 → +5🎭',
     produce: (ctx) => {
       const s = findStaffable(ctx.G, ctx.self.id);
@@ -300,10 +304,10 @@ export const CARDS: Record<string, CardDef> = {
   //   Farm/Toolmaker are ordinary single-worker producers; the Hut is the first building carrying a
   //   one-shot *placement* effect (no per-round output, no worker — just a one-time +1 population when
   //   built), which resolves through `playCard`'s post-placement `resolveCard`.
-  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { food: 1 }, workers: 1 },
-  toolmaker: { id: 'toolmaker', name: 'Toolmaker', kind: 'building', cost: { production: 2 }, produces: { production: 1 }, workers: 1 },
+  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { food: 1 }, workers: 1, art: '🌱' },
+  toolmaker: { id: 'toolmaker', name: 'Toolmaker', kind: 'building', cost: { production: 2 }, produces: { production: 1 }, workers: 1, art: '⛏️' },
   hut: {
-    id: 'hut', name: 'Hut', kind: 'building', cost: { production: 4 }, workers: 0,
+    id: 'hut', name: 'Hut', kind: 'building', cost: { production: 4 }, workers: 0, art: '🛖',
     effect: { population: 1 },
     description: 'When built: +1 🧍',
   },
@@ -315,27 +319,27 @@ export const CARDS: Record<string, CardDef> = {
   //   `population.ts`'s `producingUnits`). Unlocked by "Rites & Rituals" so the capstone mission
   //   can *build* it. Cost is still a provisional first pass, not yet tuned.
   gobekli_tepe: {
-    id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
+    id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder', art: '🗿',
     cost: { production: 8 }, cultureLevelReq: 1, workers: 3,
     produces: { production: 1, money: 1 }, cultureOutput: 1,
     description: '+1🔨 +1🪙 +1🎭\nper worker.',
   },
 
   // — Actions: resolve once, then recycle to discard.
-  fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, effect: { gain: { science: 2 } } },
-  bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, effect: { gain: { military: 3 } } },
-  cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'action', cost: { food: 1 }, effect: { culture: 2 } },
-  clothing: { id: 'clothing', name: 'Clothing', kind: 'action', cost: { production: 1 }, effect: { culture: 2 } },
-  jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, effect: { gain: { money: 2 } } },
-  bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, effect: { gain: { food: 2 } } },
-  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, effect: { gain: { military: 2 } } },
-  conquest: { id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 5 }, effect: { territory: 1 } },
+  fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, art: '🔥', effect: { gain: { science: 2 } } },
+  bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, art: '🏹', effect: { gain: { military: 3 } } },
+  cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'action', cost: { food: 1 }, art: '🖐️', effect: { culture: 2 } },
+  clothing: { id: 'clothing', name: 'Clothing', kind: 'action', cost: { production: 1 }, art: '🧥', effect: { culture: 2 } },
+  jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, art: '📿', effect: { gain: { money: 2 } } },
+  bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, art: '🤝', effect: { gain: { food: 2 } } },
+  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, art: '🐕', effect: { gain: { military: 2 } } },
+  conquest: { id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 5 }, art: '🗡️', effect: { territory: 1 } },
 
   // Storytelling: the first *interactive* Paleolithic card — suspends mid-resolution for a choice
   //   from the discard, then recovers the picked card to hand (the discard→hand counterpart to
   //   a deck peek). Two-branch resolver keyed on `ctx.answer === undefined` (0 is a valid answer).
   storytelling: {
-    id: 'storytelling', name: 'Storytelling', kind: 'action', cost: { science: 2 },
+    id: 'storytelling', name: 'Storytelling', kind: 'action', cost: { science: 2 }, art: '🗣️',
     recoversFromDiscard: true,
     description: 'Return a chosen card from discard to hand.',
     resolve: (ctx) => {
@@ -369,7 +373,7 @@ export const CARDS: Record<string, CardDef> = {
   //   never fires — playing is preventive). The raider is the debut resource-*draining* event: it
   //   bleeds 1🌾 each round it's left standing, and is driven off for good by paying 3⚔️ — "Raiders at
   //   the Border" is won by defusing all its waves this way.
-  raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, effect: { loss: { food: 1 } } },
+  raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, art: '🪓', effect: { loss: { food: 1 } } },
 
   // — "The First Settlement" objective (mission-only): stockpile 10🔨 and 10⚔️. Owns its own win
   //   predicate the way every objective does; no defeat of its own (famine/collapse is universal).
@@ -383,10 +387,10 @@ export const CARDS: Record<string, CardDef> = {
     id: 'growing_numbers_goal', name: 'Growing Numbers', kind: 'objective', cost: {},
     description: 'Build 🛖 🌱 ⛏️',
     objective: (G) =>
-      GROWING_NUMBERS_BUILDINGS.every(([id]) => G.tableau.some((b) => b.cardId === id)),
+      GROWING_NUMBERS_BUILDINGS.every((id) => G.tableau.some((b) => b.cardId === id)),
     dynamicText: (G) =>
       GROWING_NUMBERS_BUILDINGS.map(
-        ([id, icon]) => `${icon} ${G.tableau.some((b) => b.cardId === id) ? 1 : 0}/1`,
+        (id) => `${CARDS[id].art} ${G.tableau.some((b) => b.cardId === id) ? 1 : 0}/1`,
       ).join('\n'),
   },
 
@@ -433,13 +437,13 @@ export const CARDS: Record<string, CardDef> = {
   //   The objective never wins (an infinite mission scores rounds survived instead), so the run is
   //   bounded purely by the no-drain deadline threat below.
   sandbox_goal: {
-    id: 'sandbox_goal', name: 'The Long Wander', kind: 'objective', cost: {},
+    id: 'sandbox_goal', name: 'The Long Wander', kind: 'objective', cost: {}, art: '👣',
     description: 'There is no goal but to endure. Survive as long as the band can.',
     objective: () => false,
     dynamicText: (G) => `Round ${G.round}`,
   },
   sands_of_time: {
-    id: 'sands_of_time', name: 'The Sands of Time', kind: 'threat', cost: {},
+    id: 'sands_of_time', name: 'The Sands of Time', kind: 'threat', cost: {}, art: '⏳',
     description: `The age turns. When round ${SANDBOX_DEADLINE} elapses, the wandering ends.`,
     dynamicText: (G) => `Round ${Math.min(G.round, SANDBOX_DEADLINE)}/${SANDBOX_DEADLINE}`,
     defeat: (G) => G.round > SANDBOX_DEADLINE && 'the sands of time',
@@ -451,7 +455,7 @@ export const CARDS: Record<string, CardDef> = {
   //   counter, just a drain on each reshuffle (pure under the projection clone). No `defeat` of its own —
   //   the pressure is 🪙 bled into a bankruptcy collapse (the money counterpart to raider famine).
   unrest: {
-    id: 'unrest', name: 'Unrest', kind: 'threat', cost: {},
+    id: 'unrest', name: 'Unrest', kind: 'threat', cost: {}, art: '💢',
     description: '−1🪙 per 🧍 on reshuffle',
     on: {
       reshuffle: ({ G }) => {

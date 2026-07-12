@@ -453,7 +453,7 @@ function BuildingBox({
       <div className={styles.bldBody}>
         <span className={styles.bName}>{bld.name}</span>
         <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
-          <span className={styles.bldIcon} aria-hidden="true">{artFor(bld.id)}</span>
+          <span className={styles.bldIcon} aria-hidden="true">{artFor(bld)}</span>
           <span className={styles.bldOutput} aria-hidden="true">
             {boxOutputLabels(bld.produces, bld.cultureOutput, producingUnits(inst)).join(' ')}
           </span>
@@ -521,7 +521,7 @@ function WorkBox({
       <div className={styles.bldBody}>
         <span className={styles.bName}>{card.name}</span>
         <div className={styles.bldFace}>
-          <span className={styles.bldIcon} aria-hidden="true">{artFor(inst.cardId)}</span>
+          <span className={styles.bldIcon} aria-hidden="true">{artFor(card)}</span>
           <span className={styles.bldOutput} aria-hidden="true">{gain}</span>
         </div>
       </div>

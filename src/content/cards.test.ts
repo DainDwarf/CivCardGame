@@ -23,6 +23,15 @@ describe('CARDS', () => {
     }
   });
 
+  // Every deckable card must carry its own face glyph — the colocation the `art` field buys is only
+  // real if a new deckable card can't ship without one and silently fall back to the generic default.
+  // Mission-only kinds (event/threat/objective) may lean on the per-kind fallback, so they're exempt.
+  it('every deckable card sets its own art glyph', () => {
+    for (const card of Object.values(CARDS)) {
+      if (isDeckable(card)) expect(card.art, `${card.id} has no art`).toBeTruthy();
+    }
+  });
+
   it('every card in every default deck is deckable', () => {
     for (const deck of DEFAULT_DECKS) {
       for (const cardId of deck.cards) {

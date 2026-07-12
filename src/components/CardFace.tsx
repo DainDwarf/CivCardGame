@@ -6,38 +6,23 @@ import styles from './CardFace.module.css';
 
 export const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
 
-/** Presentation-only "art" glyph shown on each card face and building box. Keyed by card id;
- *  the Paleolithic starting set (Phase 4 Step 3) and the first Stone Age buildings, plus the
- *  sandbox mission's own cards. */
-const CARD_ART: Record<string, string> = {
-  // Work
-  foraging: '🌿',
-  toolmaking: '🪨',
-  beer: '🍺',
-  // Actions
-  fire: '🔥',
-  bow: '🏹',
-  cave_art: '🖐️',
-  clothing: '🧥',
-  jewelry: '📿',
-  bartering: '🤝',
-  dogs: '🐕',
-  storytelling: '🗣️',
-  conquest: '🗡️',
-  // Stone Age buildings
-  farm: '🌱',
-  toolmaker: '⛏️',
-  hut: '🛖',
-  // Raiders at the Border mission cards
-  raider: '🪓',
-  // Restless People mission cards
-  unrest: '💢',
-  // Sandbox mission cards
-  sandbox_goal: '👣',
-  sands_of_time: '⏳',
+/** Per-kind fallback "art" glyph — the face glyph a card shows when its def sets no `art` of its
+ *  own. Every deckable card carries explicit `art` (pinned by `cards.test.ts`), so in practice this
+ *  only stands in for mission-only kinds that opt to lean on it — chiefly the objective's 🏆. */
+const ART_FALLBACK: Record<CardDef['kind'], string> = {
+  building: '🏛️',
+  wonder: '🗿',
+  action: '⚡',
+  work: '🛠️',
+  event: '⚠️',
+  threat: '💀',
+  objective: '🏆',
 };
-export const artFor = (id: string, kind?: string) =>
-  CARD_ART[id] ?? (kind === 'objective' ? '🏆' : '🏛️');
+
+/** The central face glyph for a card: its own colocated `art` (`content/cards.ts`), else the
+ *  per-kind default. The single reader every render site goes through (the card face, the
+ *  building/work boxes in `Board.tsx`). */
+export const artFor = (card: CardDef): string => card.art ?? ART_FALLBACK[card.kind];
 
 /** Bottom-left row of per-sticker badges — `CardFace`'s own `stickerBadge` prop
  *  renders this, and a non-`CardFace` board box that needs the identical treatment (`Board.tsx`'s
@@ -327,7 +312,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
           </span>
         )}
         <div className={styles.cardArt} aria-hidden="true">
-          {artFor(card.id, card.kind)}
+          {artFor(card)}
         </div>
       </div>
       {conditions && <div className={styles.cardConditions}>{conditions}</div>}
