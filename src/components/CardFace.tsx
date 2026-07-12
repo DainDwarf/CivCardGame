@@ -111,21 +111,14 @@ export function describeCard(c: CardDef): string {
   if (c.description) return c.description;
   const e = c.effect;
   const parts: string[] = [];
-  if (e?.gain) {
-    parts.push(
-      Object.entries(e.gain)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
-        .join(' '),
-    );
-  }
-  if (e?.loss) {
-    parts.push(
-      Object.entries(e.loss)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `-${v}${COST_ICON[k as keyof Resources]}`)
-        .join(' '),
-    );
+  if (e?.resources) {
+    // The delta is signed: split into a gains line then a drains line so the face keeps its
+    // green-"+N" / red-"-N" reading (a negative value already carries its own minus sign).
+    const entries = Object.entries(e.resources).filter(([, v]) => v) as [keyof Resources, number][];
+    const gains = entries.filter(([, v]) => v > 0);
+    const drains = entries.filter(([, v]) => v < 0);
+    if (gains.length) parts.push(gains.map(([k, v]) => `+${v}${COST_ICON[k]}`).join(' '));
+    if (drains.length) parts.push(drains.map(([k, v]) => `${v}${COST_ICON[k]}`).join(' '));
   }
   if (e?.draw) parts.push(`draw ${e.draw}`);
   if (e?.population) parts.push(`+${e.population} 🧍`);

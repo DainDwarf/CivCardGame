@@ -211,8 +211,8 @@ describe('effectiveCard', () => {
     expect(cheaper.produces).toEqual(FIXTURE_CARDS.test_food.produces); // unaffected by cost-cut
   });
 
-  it("reflects the additive-gain sticker's +1 in a work card's effect.gain", () => {
+  it("reflects the additive-gain sticker's +1 in a work card's effect.resources", () => {
     const boosted = effectiveCard(FIXTURE_CARDS.test_work, { stickers: ['test_addgain'] });
-    expect(boosted.effect?.gain).toEqual({ production: 4 });
+    expect(boosted.effect?.resources).toEqual({ production: 4 });
   });
 });

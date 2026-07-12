@@ -45,7 +45,7 @@ export interface PlacedCard extends CardInstance {
  *  `produces`/`cultureOutput` each round while staffed. */
 export type BuildingInstance = PlacedCard;
 
-/** A Work card played onto the board this turn. Transient: produces its card's `effect.gain` only
+/** A Work card played onto the board this turn. Transient: produces its card's `effect.resources` only
  *  while staffed, then files to `discard` at end of turn (see `endTurn`). */
 export type WorkInstance = PlacedCard;
 

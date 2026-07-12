@@ -17,7 +17,7 @@ export interface CardDef {
    *   `cultureOutput` each round while staffed. It may *also* carry a one-shot `effect`
    *   resolved **once at placement** (e.g. the Hut's `+1 population`), applied by `playCard`
    *   right after the building is placed — distinct from `produces`, which recurs each round.
-   *   A building's per-round output is therefore always `produces`, never `effect.gain` (the
+   *   A building's per-round output is therefore always `produces`, never `effect.resources` (the
    *   latter would fire on placement *and* every round — see the `effect` field's note). It stays
    *   in play, filed nowhere, until something removes it from the tableau — where its card goes
    *   *then* isn't an inherent trait of `building`, it's whatever the removing effect specifies.
@@ -33,7 +33,7 @@ export interface CardDef {
    *   (`deckBuilder.ts`). The face shows a gold "Wonder" banner over the ordinary building colour.
    * - `action`: resolves its `effect`, then recycles to the **discard** pile.
    * - `work`: the card sticks onto the board as a staffable work box (see `workers`); it
-   *   produces its `effect.gain` only while staffed, then recycles to the **discard** pile at
+   *   produces its `effect.resources` only while staffed, then recycles to the **discard** pile at
    *   *end of turn* (not on play). No population is locked and no idle pop is required to play it.
    * - `event`: a **recurring hazard** the player can pay to defuse — mission-injected into the deck,
    *   never built with (excluded from the deck editor/collection by `isDeckable`), but *playable once
@@ -71,13 +71,13 @@ export interface CardDef {
   discardCost?: number;
   /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
   cultureLevelReq?: number;
-  /** Immediate one-shot effect when played (resource gain/loss, draw, population, territory,
+  /** Immediate one-shot effect when played (signed resource delta, draw, population, territory,
    *  culture, or demolish). For a `building` this is a **placement** one-shot, resolved once when
    *  the card is placed (e.g. the Hut's `+1 population`); the building's recurring output is the
    *  passive `produces` below, so a building must express per-round output there and **never** as
-   *  `effect.gain` (which would fire on placement *and* every round, since `defaultProduce` falls
-   *  back to `effect.gain` when `produces` is absent). `work` cards defer their `effect.gain` until
-   *  staffed at upkeep. This declarative bag
+   *  `effect.resources` (which would fire on placement *and* every round, since `defaultProduce` falls
+   *  back to `effect.resources` when `produces` is absent). `work` cards defer their `effect.resources`
+   *  until staffed at upkeep. This declarative bag
    *  drives both the default resolver (`specToResolver`) and the card's auto-generated text
    *  (`describeCard`) / play gates (`unplayableReason`), so most cards need only this. */
   effect?: CardEffect;
@@ -105,7 +105,7 @@ export interface CardDef {
   recoversFromDiscard?: true;
   /**
    * Bespoke per-round production behavior for a `building`/`work` card whose output isn't fully
-   * described by `produces`/`cultureOutput`/`effect.gain` (e.g. a future scaling building reading
+   * described by `produces`/`cultureOutput`/`effect.resources` (e.g. a future scaling building reading
    * its own `self.counters`, the production counterpart to a per-play `resolve`). When present it *replaces*
    * the declarative default built from those fields. Separate from `resolve`: a building/work card's
    * production ticks every upkeep while staffed, never at play, so it can't share the play-time
@@ -281,8 +281,8 @@ export const RAIDER_WAVES = 3;
 export const CARDS: Record<string, CardDef> = {
   // — Work: staffable board boxes producing only while a worker is assigned, filed to discard at
   //   end of turn. Cost nothing to play and need no idle population to place.
-  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, art: '🌿', effect: { gain: { food: 3 } } },
-  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, art: '🪨', effect: { gain: { production: 2 } } },
+  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, art: '🌿', effect: { resources: { food: 3 } } },
+  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, art: '🪨', effect: { resources: { production: 2 } } },
   // Beer: the first *transforming* work card — each staffed round it converts 2🌾 into 5🎭. A per-round
   //   loss can't be declared (`defaultProduce` only ever adds), so it needs a bespoke `produce` that
   //   scales the whole transform per worker (×1 at capacity 1). The food drain is unconditional: staff
@@ -326,13 +326,13 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // — Actions: resolve once, then recycle to discard.
-  fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, art: '🔥', effect: { gain: { science: 2 } } },
-  bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, art: '🏹', effect: { gain: { military: 3 } } },
+  fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, art: '🔥', effect: { resources: { science: 2 } } },
+  bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, art: '🏹', effect: { resources: { military: 3 } } },
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'action', cost: { food: 1 }, art: '🖐️', effect: { culture: 2 } },
   clothing: { id: 'clothing', name: 'Clothing', kind: 'action', cost: { production: 1 }, art: '🧥', effect: { culture: 2 } },
-  jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, art: '📿', effect: { gain: { money: 2 } } },
-  bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, art: '🤝', effect: { gain: { food: 2 } } },
-  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, art: '🐕', effect: { gain: { military: 2 } } },
+  jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, art: '📿', effect: { resources: { money: 2 } } },
+  bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, art: '🤝', effect: { resources: { food: 2 } } },
+  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, art: '🐕', effect: { resources: { military: 2 } } },
   conquest: { id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 5 }, art: '🗡️', effect: { territory: 1 } },
 
   // Storytelling: the first *interactive* Paleolithic card — suspends mid-resolution for a choice
@@ -373,7 +373,7 @@ export const CARDS: Record<string, CardDef> = {
   //   never fires — playing is preventive). The raider is the debut resource-*draining* event: it
   //   bleeds 1🌾 each round it's left standing, and is driven off for good by paying 3⚔️ — "Raiders at
   //   the Border" is won by defusing all its waves this way.
-  raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, art: '🪓', effect: { loss: { food: 1 } } },
+  raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, art: '🪓', effect: { resources: { food: -1 } } },
 
   // — "The First Settlement" objective (mission-only): stockpile 10🔨 and 10⚔️. Owns its own win
   //   predicate the way every objective does; no defeat of its own (famine/collapse is universal).

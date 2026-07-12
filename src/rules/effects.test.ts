@@ -7,12 +7,12 @@ beforeAll(installFixtures);
 afterAll(uninstallFixtures);
 
 describe('applyEffect', () => {
-  it('ignores gain — gain is applied via gainResources, not here (no double-apply)', () => {
+  it('ignores the resource delta — it is applied via gainResources, not here (no double-apply)', () => {
     const G = blankState('test');
-    applyEffect(G, { gain: { science: 3, food: 1 }, culture: 2 });
+    applyEffect(G, { resources: { science: 3, food: 1 }, culture: 2 });
     expect(G.resources.science).toBe(0);
     expect(G.resources.food).toBe(0);
-    expect(G.culture).toBe(2); // non-gain fields still apply
+    expect(G.culture).toBe(2); // non-resource fields still apply
   });
 
   it('draws cards', () => {
@@ -36,13 +36,6 @@ describe('applyEffect', () => {
     expect(G.territory).toBe(before + 1);
   });
 
-  it('removes resources (loss) and lets them go negative', () => {
-    const G = blankState('test');
-    G.resources.military = 3;
-    applyEffect(G, { loss: { military: 4 } });
-    expect(G.resources.military).toBe(-1);
-  });
-
   it('accumulates culture (Cultural Festival)', () => {
     const G = blankState('test');
     G.culture = 2;
@@ -61,7 +54,7 @@ describe('specToResolver', () => {
   it('reproduces applyEffect for a declarative effect', () => {
     const G = blankState('test');
     G.deck = instancesFromCardIds(['a', 'b']);
-    specToResolver({ gain: { science: 2 }, draw: 1, culture: 1 })({ G, self: { id: 1, cardId: 'x' } });
+    specToResolver({ resources: { science: 2 }, draw: 1, culture: 1 })({ G, self: { id: 1, cardId: 'x' } });
     expect(G.resources.science).toBe(2);
     expect(G.hand.map((c) => c.cardId)).toEqual(['a']);
     expect(G.culture).toBe(1);
@@ -131,6 +124,13 @@ describe('gainResources', () => {
     const G = blankState('test');
     gainResources({ G, self: { id: 1, cardId: 'x' } }, { food: 2 });
     expect(G.resources.food).toBe(2);
+  });
+
+  it('applies a negative delta (a drain), letting a pool go negative', () => {
+    const G = blankState('test');
+    G.resources.military = 3;
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { military: -4 });
+    expect(G.resources.military).toBe(-1);
   });
 
   it('is a no-op on an undefined bag', () => {

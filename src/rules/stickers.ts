@@ -96,18 +96,18 @@ export function effectiveCost(cost: Partial<Resources>, self: StickeredInstance)
 }
 
 /** A card instance's *displayed* stats after any attached sticker — a shallow `CardDef` copy with
- *  `cost`/`produces`/`effect.gain` swapped for their effective values, so any render site doing
+ *  `cost`/`produces`/`effect.resources` swapped for their effective values, so any render site doing
  *  `card={CARDS[cardId]}` can pass `effectiveCard(CARDS[cardId], self)` instead and show the true
  *  number with no change to `CardFace`/`describeCost`/`describeBuilding`. Returns `card` unchanged
  *  when the instance carries no sticker. */
 export function effectiveCard(card: CardDef, self: StickeredInstance): CardDef {
   if (!self.stickers?.length) return card;
   const produces = card.produces && effectiveGain(card.produces, self);
-  const gain = card.effect?.gain && effectiveGain(card.effect.gain, self);
+  const resources = card.effect?.resources && effectiveGain(card.effect.resources, self);
   return {
     ...card,
     cost: effectiveCost(card.cost, self),
     ...(produces ? { produces } : {}),
-    ...(card.effect ? { effect: { ...card.effect, ...(gain ? { gain } : {}) } } : {}),
+    ...(card.effect ? { effect: { ...card.effect, ...(resources ? { resources } : {}) } } : {}),
   };
 }

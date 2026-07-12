@@ -209,14 +209,15 @@ function bestBy<T>(xs: T[], metric: (x: T) => number): T {
   return best;
 }
 
-/** Food a card yields when operating (staffed work/building) or played (action gain). */
+/** Net food a card yields when operating (staffed work/building) or played — the signed
+ *  `effect.resources` already nets any food drain against a gain. */
 function foodOutput(card: CardDef): number {
-  return (card.effect?.gain?.food ?? 0) + (card.produces?.food ?? 0);
+  return (card.effect?.resources?.food ?? 0) + (card.produces?.food ?? 0);
 }
 
-/** A card's rough net food effect: what it yields minus what it costs/loses in food. */
+/** A card's rough net food effect: what it yields (drains already netted in) minus its food cost. */
 function staticFoodDelta(card: CardDef): number {
-  return foodOutput(card) - (card.cost.food ?? 0) - (card.effect?.loss?.food ?? 0);
+  return foodOutput(card) - (card.cost.food ?? 0);
 }
 
 function bundleValue(b?: Partial<Resources>): number {
@@ -224,10 +225,11 @@ function bundleValue(b?: Partial<Resources>): number {
   return (Object.entries(b) as [keyof Resources, number][]).reduce((sum, [k, v]) => sum + v * VW[k], 0);
 }
 
-/** A crude static worth for a *card* — gains + production + strategic outputs, minus its cost. */
+/** A crude static worth for a *card* — resource delta + production + strategic outputs, minus its
+ *  cost. The signed `effect.resources` already nets any drain against a gain. */
 function staticValue(card: CardDef): number {
-  let v = bundleValue(card.effect?.gain) + bundleValue(card.produces);
-  v -= bundleValue(card.cost) + bundleValue(card.effect?.loss);
+  let v = bundleValue(card.effect?.resources) + bundleValue(card.produces);
+  v -= bundleValue(card.cost);
   v += (card.effect?.population ?? 0) * 3;
   v += ((card.effect?.culture ?? 0) + (card.cultureOutput ?? 0)) * 0.6;
   v += (card.effect?.territory ?? 0) * 1.5;

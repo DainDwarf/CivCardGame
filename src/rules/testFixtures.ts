@@ -119,20 +119,20 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     cost: { production: 4 }, produces: { production: 1, money: 1 }, cultureOutput: 1, workers: 3,
   },
 
-  // --- Work cards: produce their `effect.gain` only while staffed, file to discard at end of turn. ---
+  // --- Work cards: produce their `effect.resources` only while staffed, file to discard at end of turn. ---
   test_work: {
     id: 'test_work', name: 'Test Work', kind: 'work',
-    cost: {}, workers: 1, effect: { gain: { production: 3 } },
+    cost: {}, workers: 1, effect: { resources: { production: 3 } },
   },
   test_work_food: {
     id: 'test_work_food', name: 'Test Work Food', kind: 'work',
-    cost: {}, workers: 1, effect: { gain: { food: 3 } },
+    cost: {}, workers: 1, effect: { resources: { food: 3 } },
   },
 
   // --- Action cards: one per canonical `effect` field, so a test can exercise each declaratively. ---
   test_action: {
     id: 'test_action', name: 'Test Action', kind: 'action',
-    cost: { science: 1 }, effect: { gain: { science: 3 } },
+    cost: { science: 1 }, effect: { resources: { science: 3 } },
   },
   test_draw: {
     id: 'test_draw', name: 'Test Draw', kind: 'action',
@@ -153,12 +153,12 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // Carries a discard cost (extra cards discarded from hand to play it), like Eureka.
   test_discard: {
     id: 'test_discard', name: 'Test Discard', kind: 'action',
-    cost: {}, discardCost: 1, effect: { gain: { science: 3 } },
+    cost: {}, discardCost: 1, effect: { resources: { science: 3 } },
   },
   // Gated behind a minimum culture level (a gate, not a cost), like The Philosopher.
   test_cultreq: {
     id: 'test_cultreq', name: 'Test Culture-Req', kind: 'action',
-    cost: { science: 1 }, cultureLevelReq: 1, effect: { gain: { science: 3 }, draw: 1 },
+    cost: { science: 1 }, cultureLevelReq: 1, effect: { resources: { science: 3 }, draw: 1 },
   },
   // Destroy action: demolishes a chosen tableau building (`effect.destroy`).
   test_destroy: {
@@ -247,15 +247,15 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // fires) → discard (recurs). A free cost here so the played path is trivially affordable in tests. ---
   test_event: {
     id: 'test_event', name: 'Test Event', kind: 'event',
-    cost: {}, effect: { loss: { military: 2 } },
+    cost: {}, effect: { resources: { military: -2 } },
   },
 
   // --- Threats: flat drain, escalating drain, and a deadline that owns its own defeat. ---
-  // Flat per-round drain via the declarative default (`effect.loss`), ticked by the `endTurn`
-  // broadcast through the shared resolver spine.
+  // Flat per-round drain via the declarative default (a negative `effect.resources`), ticked by the
+  // `endTurn` broadcast through the shared resolver spine.
   test_threat: {
     id: 'test_threat', name: 'Test Threat', kind: 'threat',
-    cost: {}, effect: { loss: { food: 2 } },
+    cost: {}, effect: { resources: { food: -2 } },
     description: '−2🌾 every round',
   },
   // Escalating drain via a bespoke `resolve` reading its own `level` counter (−1🔨, then −2, …), like

@@ -1,4 +1,4 @@
-import { addResources, scaleResources, subtractResources, type Resources } from './resources';
+import { addResources, scaleResources, type Resources } from './resources';
 import { drawCard } from './deck';
 import { CARDS, isStaffable } from '../content/cards';
 import type { CardDef } from '../content/cards';
@@ -9,10 +9,10 @@ import { findStaffable, producingUnits } from './population';
 
 /** The immediate, one-shot effect a card applies when played. */
 export interface CardEffect {
-  /** Resources gained immediately. */
-  gain?: Partial<Resources>;
-  /** Resources removed immediately (e.g. an event draining a resource). No clamp — may go negative. */
-  loss?: Partial<Resources>;
+  /** Signed resource delta applied immediately — a positive entry is a gain, a negative one a drain
+   *  (e.g. an event costing a resource). No clamp — a pool may go negative. Folded through
+   *  `gainResources`, so a card's stickers adjust the whole delta, drains included. */
+  resources?: Partial<Resources>;
   /** Cards drawn immediately. */
   draw?: number;
   /** Population gained immediately (e.g. Settlers). */
@@ -27,12 +27,11 @@ export interface CardEffect {
   destroy?: true;
 }
 
-/** Applies every field a sticker never touches (loss/draw/population/territory/culture). Gain is
+/** Applies every non-resource field (draw/population/territory/culture). The `resources` delta is
  *  deliberately excluded — it reaches `G` only through `gainResources`, the one path a sticker's
  *  `effectiveGain` can fold over it. */
 export function applyEffect(G: GameState, effect?: CardEffect): void {
   if (!effect) return;
-  if (effect.loss) subtractResources(G.resources, effect.loss);
   if (effect.draw) {
     for (let i = 0; i < effect.draw; i++) drawCard(G);
   }
@@ -115,15 +114,15 @@ function demolish(G: GameState, instanceId?: number): void {
 
 /**
  * Build a resolver from a declarative `CardEffect` — the default for the ~90% of cards fully
- * described by the data bag. Routes `gain` through `gainResources` (the shared sticker fold),
- * everything else through `applyEffect`, plus the `destroy` mutation (folded in so all effect
- * behavior resolves through one path). `remove` is *not* handled here: it decides where the played
- * card files afterwards (a caller-owned lifecycle decision, see `resolveHandEvents`), not a mutation
- * of `G`.
+ * described by the data bag. Routes the signed `resources` delta through `gainResources` (the shared
+ * sticker fold), everything else through `applyEffect`, plus the `destroy` mutation (folded in so all
+ * effect behavior resolves through one path). `remove` is *not* handled here: it decides where the
+ * played card files afterwards (a caller-owned lifecycle decision, see `resolveHandEvents`), not a
+ * mutation of `G`.
  */
 export function specToResolver(effect?: CardEffect): Resolver {
   return (ctx) => {
-    gainResources(ctx, effect?.gain);
+    gainResources(ctx, effect?.resources);
     applyEffect(ctx.G, effect);
     if (effect?.destroy) demolish(ctx.G, ctx.target);
   };
@@ -156,7 +155,7 @@ function defaultProduce(card: CardDef): Resolver {
   return (ctx) => {
     const s = findStaffable(ctx.G, ctx.self.id);
     const units = s ? producingUnits(s) : 1;
-    gainResources(ctx, scaleResources(card.produces ?? card.effect?.gain ?? {}, units));
+    gainResources(ctx, scaleResources(card.produces ?? card.effect?.resources ?? {}, units));
     applyEffect(ctx.G, { culture: (card.cultureOutput ?? 0) * units });
   };
 }
