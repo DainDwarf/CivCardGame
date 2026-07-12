@@ -13,6 +13,7 @@ const CARD_ART: Record<string, string> = {
   // Work
   foraging: '🌿',
   toolmaking: '🪨',
+  beer: '🍺',
   // Actions
   fire: '🔥',
   bow: '🏹',
@@ -27,6 +28,10 @@ const CARD_ART: Record<string, string> = {
   farm: '🌱',
   toolmaker: '⛏️',
   hut: '🛖',
+  // Raiders at the Border mission cards
+  raider: '🪓',
+  // Restless People mission cards
+  unrest: '💢',
   // Sandbox mission cards
   sandbox_goal: '👣',
   sands_of_time: '⏳',

@@ -452,8 +452,7 @@ export const CARDS: Record<string, CardDef> = {
   //   the pressure is 🪙 bled into a bankruptcy collapse (the money counterpart to raider famine).
   unrest: {
     id: 'unrest', name: 'Unrest', kind: 'threat', cost: {},
-    description: 'Each deck reshuffle: −1🪙 per 🧍.',
-    dynamicText: (G) => `−${G.population}🪙 per reshuffle`,
+    description: '−1🪙 per 🧍 on reshuffle',
     on: {
       reshuffle: ({ G }) => {
         subtractResources(G.resources, { money: G.population });
