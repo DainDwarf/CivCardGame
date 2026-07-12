@@ -156,6 +156,25 @@ export const MISSIONS: Record<string, MissionDef> = {
     map: { col: 3, row: -1 },
     age: 'stone',
   },
+  restless_people: {
+    id: 'restless_people',
+    name: 'Restless People',
+    lore:
+      'A people grown large grows restless. The stores are full and the walls are strong, yet a ' +
+      'muttering runs through the settlement — too many mouths, too little meaning, and idle hands ' +
+      'that turn to grievance every time the seasons come round again. Give them rites and revelry ' +
+      'enough to bind them, or watch the coin drain away keeping the peace, season after season.',
+    prereqs: ['rites_rituals'],
+    threats: ['unrest'],
+    objectiveCardId: 'restless_people_goal',
+    victoryHint: 'Reach 🎭 culture level 2 to placate the restless people.',
+    failureHint: 'Unrest drains 🪙 on every deck reshuffle — bankruptcy ends the run.',
+    kind: 'standard',
+    // Unlocks Beer — a work card that transforms 2🌾 into 5🎭. Influence amount is provisional.
+    reward: { influence: 9, unlockCardIds: ['beer'] },
+    map: { col: 3, row: 0 },
+    age: 'stone',
+  },
   sandbox: {
     id: 'sandbox',
     name: 'The Long Wander',

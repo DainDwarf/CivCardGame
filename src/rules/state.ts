@@ -81,15 +81,20 @@ export interface ValueSnapshot {
  * and survives structuredClone/undo. Three flavours ride the same union: **discrete** events name a
  * subject instance (`draw`/`discard`) and are *emitted* at their semantic site as a step runs;
  * **value** events (`resourceChange`) carry a before-snapshot and are *synthesized* by the flush
- * boundary via diff (resource writes have no single choke point); the **broadcast** `endTurn` names
- * no subject and is dispatched once per round at the upkeep boundary to every operating in-play
- * subscriber (it's what drives production and threat drains — see `rules/effects.ts`'s `resolveEndTurn`
- * and `rules/upkeep.ts`). See `rules/events.ts` for how each is dispatched to subscribers.
+ * boundary via diff (resource writes have no single choke point); and **broadcast** events name no
+ * subject and reach every operating in-play subscriber. Two broadcasts exist: `endTurn` is dispatched
+ * *directly* once per round at the upkeep boundary (it's what drives production and threat drains —
+ * see `rules/effects.ts`'s `resolveEndTurn` and `rules/upkeep.ts`), while `reshuffle` is *emitted* at
+ * the discard→deck fold (`rules/deck.ts`'s `reshuffleIntoDeck`) and drained at the next flush like any
+ * leaf-emitted event, letting a card react to the draw pile recycling (there is no default reshuffle
+ * behaviour — only cards declaring `on.reshuffle` react). See `rules/events.ts` for how each is
+ * dispatched to subscribers.
  */
 export type GameEvent =
   | { type: 'draw'; instanceId: number; cardId: string; source: DrawSource }
   | { type: 'discard'; instanceId: number; cardId: string; reason: DiscardReason }
   | { type: 'resourceChange'; before: ValueSnapshot }
+  | { type: 'reshuffle' }
   | { type: 'endTurn' };
 
 /** The discriminant keys of `GameEvent` — the set of triggers a `CardDef.on` map may key on. */

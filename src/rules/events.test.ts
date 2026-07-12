@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { dispatchEvent, emitEvent, flushEvents, snapshot, MAX_EVENT_CASCADE } from './events';
 import { applyUpkeep } from './upkeep';
+import { drawUpTo } from './deck';
 import { gainResources } from './effects';
-import { blankState, type GameState } from './state';
+import { blankState, instancesFromCardIds, type GameState } from './state';
 import type { CardDef } from '../content/cards';
 import { installFixtures, uninstallFixtures, installCards, uninstallCards } from './testFixtures';
 
@@ -234,6 +235,40 @@ describe('dispatchEvent — endTurn broadcast (production + threat drains)', () 
     expect(G.resources.money).toBe(10);
     expect(G.resources.science).toBe(5); // the threshold observer's one-time payout
     expect(G.tableau[1].counters).toEqual({ fired: 1 });
+    expect(G.events).toEqual([]); // drained
+  });
+});
+
+describe('dispatchEvent — reshuffle broadcast (subject-less, on.reshuffle only)', () => {
+  // The real `unrest` threat drains 1🪙 per 🧍 on every reshuffle — the mechanic Step 6.5 introduces.
+  it('reaches a threat with on.reshuffle, draining 1🪙 per population point', () => {
+    const G = blankState('test');
+    G.population = 3;
+    G.resources.money = 10;
+    G.threats = [{ id: 1, cardId: 'unrest' }];
+    dispatchEvent(G, { type: 'reshuffle' });
+    expect(G.resources.money).toBe(7); // −3 (one reshuffle × pop 3)
+  });
+
+  it('does not fire a card with no on.reshuffle handler (no default reshuffle behaviour)', () => {
+    const G = blankState('test');
+    G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }]; // a plain producer, no on.reshuffle
+    dispatchEvent(G, { type: 'reshuffle' });
+    expect(G.resources.food).toBe(0); // production runs on endTurn, not reshuffle
+  });
+
+  it('drives the Unrest drain end-to-end: a deck fold emits the event, the flush drains 🪙', () => {
+    const G = blankState('test');
+    G.population = 2;
+    G.resources.money = 5;
+    G.threats = [{ id: 1, cardId: 'unrest' }];
+    G.handSize = 1;
+    G.deck = [];
+    G.discard = instancesFromCardIds(['test_food', 'test_prod']);
+    const before = snapshot(G);
+    drawUpTo(G); // deck empty → reshuffle → emits a reshuffle event
+    flushEvents(G, before);
+    expect(G.resources.money).toBe(3); // one reshuffle × pop 2
     expect(G.events).toEqual([]); // drained
   });
 });

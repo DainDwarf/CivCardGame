@@ -66,14 +66,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tutorial → Step 9.3)
   - **6.4 — Raiders at the Border** ✅ DONE — col 3, row -1. `[shipped]` (details in *Done / shipped*;
     tutorial → Step 9.4)
-  - **6.5 — Threat branch: population unrest** (working name *"Restless People"*) — col 3, row 0,
-    prereq 6.3. **Teaches:** the **threat** mechanic (persistent board hazard). **Threat:** each
-    point of population drains 1💰 **every deck reshuffle** — unrest that scales with your own
-    size. **Objective:** reach **culture level 3** (culture placates the people — thematic).
-    **Unlocks:** a money/order card. ~9⭐ (provisional). **Flags:** (a) "per deck reshuffle" has
-    no bus trigger today — event types are draw/discard/resourceChange/endTurn, *not* reshuffle;
-    either add a `reshuffle` event or have the threat diff `G.reshuffleCount` at the `endTurn`
-    broadcast. (b) culture goal → same `scoreState` sim dependency as 6.3. `[size: M] [?]`
+  - **6.5 — Restless People** (threat branch) ✅ DONE — col 3, row 0, prereq 6.3. `[shipped]`
+    (details in *Done / shipped*; tutorial → Step 9.5)
   - **6.6 — Science branch: foresight & planning** (working name *"Reading the Seasons"*) —
     col 3, row +1, prereq 6.3. **Teaches:** the **Science** role — card manipulation / foresight
     (the debut of the built-but-unused peek family, `deck.ts`'s `peekTop`/`drawInstance`).
@@ -130,7 +124,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
   **Per-mission tutorial substeps** — one scripted lesson per Stone Age mission, covering the
   gameplay elements that mission introduces and (post-clear) what its reward hands the player.
-  The shipped missions (6.1–6.4) are ready to script; 6.5–6.7 land as those missions ship.
+  The shipped missions (6.1–6.5) are ready to script; 6.6–6.7 land as those missions ship.
   - **9.1 — First Settlement tutorial** — teach the **run loop**: work + action cards, the
     draw/food upkeep, the objective stockpile. **Post-clear:** teach **deck-building** (add the
     newly-unlocked Farm/Toolmaker/Hut + Conquest cards into the deck — the reward's whole building
@@ -147,6 +141,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     defused for good by *playing* them (paying the cost banishes the card unresolved). **Post-clear:**
     teach **board choice** — the reward unlocks the **Chiefdom** board (first military-leaning
     government), so future launches choose Tribe vs. Chiefdom.
+  - **9.5 — Restless People tutorial** — teach the **threat** mechanic: a persistent board hazard (the
+    Unrest card in the threat zone) that drains 🪙 per population on every deck reshuffle, and the
+    culture goal that placates it. **Post-clear:** the reward unlocks the **Beer** work card (a per-round
+    2🌾→5🎭 transform).
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*
@@ -190,6 +188,29 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 6.5 — Restless People (Threat branch)** ✅ — col 3, row 0, prereq 6.3. The **threat** mechanic
+  (a persistent, mission-seeded board hazard), plus a new first-class **`reshuffle` bus event**.
+  Implementation:
+  - The **`reshuffle` event** — a broadcast (no subject) emitted by `rules/deck.ts`'s `reshuffleIntoDeck`
+    when the discard folds back into the deck, drained at the next flush like any leaf-emitted event
+    (`GameEvent` union in `state.ts`; `subjectOf` in `events.ts`). No default behaviour — only a card
+    declaring `on.reshuffle` reacts. Chosen over diffing `G.reshuffleCount` in a counter (a cleaner,
+    stateless fit for the projection-clone purity contract).
+  - The **`unrest`** threat — a stateless `on.reshuffle` handler draining **1🪙 per population point**
+    on every reshuffle, so a bigger civilization is a heavier burden. No `defeat` of its own; the
+    pressure is 🪙 bled into a **bankruptcy** collapse (the money counterpart to raider famine).
+  - The **`restless_people`** mission — seeds `unrest`; objective **reach 🎭 culture level 2**
+    (`restless_people_goal`, its own objective card mirroring `rites_rituals_goal`); deadline-free.
+    Reward 9⭐ + unlocks **Beer** (provisional). `rites_rituals` (6.3) now fans to both Raiders (row −1)
+    and this mission (row 0).
+  - The **Beer** work card (reward unlock) — a per-round *transform*: each staffed round burns **2🌾 →
+    5🎭** via a bespoke `produce` (a per-round loss isn't declaratively expressible). Unconditional —
+    it drains food even into a famine collapse (a committed cost, managed by unstaffing).
+  - `sim/objective.ts` gains a `restless_people_goal` gradient (identical culture-toward-level-2 form as
+    `rites_rituals_goal`), so the standard mission is sweepable. Mechanism tests over the reshuffle
+    event + Unrest drain + Beer transform in `rules/{deck,events,production}.test.ts`. **Balance
+    (reward 9⭐, drain magnitude) stays provisional — sim sweep + manual feel-check pending.**
 
 - **Step 6.4 — Raiders at the Border (Events branch + Chiefdom board)** ✅ — col 3, row -1, prereq 6.3.
   The **event** card mechanic (mission-injected disasters that auto-resolve from hand) + **board choice**

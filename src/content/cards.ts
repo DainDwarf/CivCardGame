@@ -1,7 +1,8 @@
-import { type Resources } from '../rules/resources';
+import { subtractResources, type Resources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, type Resolver, suspendChoice } from '../rules/effects';
 import { recoverFromDiscard } from '../rules/deck';
+import { findStaffable, producingUnits } from '../rules/population';
 import { cultureLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'event' | 'threat' | 'objective';
@@ -278,6 +279,21 @@ export const CARDS: Record<string, CardDef> = {
   //   end of turn. Cost nothing to play and need no idle population to place.
   foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, effect: { gain: { food: 3 } } },
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, effect: { gain: { production: 2 } } },
+  // Beer: the first *transforming* work card — each staffed round it converts 2🌾 into 5🎭. A per-round
+  //   loss can't be declared (`defaultProduce` only ever adds), so it needs a bespoke `produce` that
+  //   scales the whole transform per worker (×1 at capacity 1). The food drain is unconditional: staff
+  //   it while short on 🌾 and it bleeds food negative into a famine collapse — a committed cost the
+  //   player manages by unstaffing. Reward-unlocked by "Restless People", never in the starting set.
+  beer: {
+    id: 'beer', name: 'Beer', kind: 'work', cost: {}, workers: 1,
+    description: 'Staffed: −2🌾 → +5🎭',
+    produce: (ctx) => {
+      const s = findStaffable(ctx.G, ctx.self.id);
+      const units = s ? producingUnits(s) : 1;
+      subtractResources(ctx.G.resources, { food: 2 * units });
+      ctx.G.culture += 5 * units;
+    },
+  },
 
   // — Stone Age buildings: the first permanent structures, unlocked by "The First Settlement". A
   //   building *is* the building — it sits in the tableau and produces each round while staffed.
@@ -400,6 +416,19 @@ export const CARDS: Record<string, CardDef> = {
       `⚔️ ${Math.min(G.removed.filter((c) => c.cardId === 'raider').length, RAIDER_WAVES)}/${RAIDER_WAVES} defeated`,
   },
 
+  // — "Restless People" objective (mission-only): reach 🎭 culture level 2 to placate the unrest — the
+  //   same culture-level win as "Rites & Rituals", but its own card so the objective plaque shows this
+  //   mission's name and progress. Reads the derived culture level, never a stored field.
+  restless_people_goal: {
+    id: 'restless_people_goal', name: 'Restless People', kind: 'objective', cost: {},
+    description: 'Reach 🎭 level 2',
+    objective: (G) => cultureLevel(G.culture) >= 2,
+    dynamicText: (G) => {
+      const p = cultureProgress(G.culture);
+      return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2`;
+    },
+  },
+
   // — Sandbox mission cards (mission-only; excluded from decks/collection by `isDeckable`).
   //   The objective never wins (an infinite mission scores rounds survived instead), so the run is
   //   bounded purely by the no-drain deadline threat below.
@@ -414,5 +443,21 @@ export const CARDS: Record<string, CardDef> = {
     description: `The age turns. When round ${SANDBOX_DEADLINE} elapses, the wandering ends.`,
     dynamicText: (G) => `Round ${Math.min(G.round, SANDBOX_DEADLINE)}/${SANDBOX_DEADLINE}`,
     defeat: (G) => G.round > SANDBOX_DEADLINE && 'the sands of time',
+  },
+
+  // — "Restless People" threat (mission-only): unrest that scales with your own size. It reacts to the
+  //   `reshuffle` bus event (`rules/deck.ts` emits one each time the discard folds back into the deck),
+  //   draining 1🪙 per 🧍 every recycle — so a bigger population is a heavier burden. Stateless: no
+  //   counter, just a drain on each reshuffle (pure under the projection clone). No `defeat` of its own —
+  //   the pressure is 🪙 bled into a bankruptcy collapse (the money counterpart to raider famine).
+  unrest: {
+    id: 'unrest', name: 'Unrest', kind: 'threat', cost: {},
+    description: 'Each deck reshuffle: −1🪙 per 🧍.',
+    dynamicText: (G) => `−${G.population}🪙 per reshuffle`,
+    on: {
+      reshuffle: ({ G }) => {
+        subtractResources(G.resources, { money: G.population });
+      },
+    },
   },
 };

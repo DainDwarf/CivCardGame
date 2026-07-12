@@ -156,8 +156,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     a **two-way street**: it dispatches a card *and* lends it the vocabulary to affect `G`, so no
     resolver hand-rolls raw state surgery (the boundary Foresight used to break).
   - `events.ts` — the **event bus**: the general trigger layer letting a card react to an event
-    whose *timing it doesn't own* (a draw, a discard elsewhere, a resource crossing a threshold, or
-    a round passing) via a `CardDef.on?: { draw?/discard?/resourceChange?/endTurn? }` handler — run
+    whose *timing it doesn't own* (a draw, a discard elsewhere, a resource crossing a threshold, the
+    draw pile reshuffling, or a round passing) via a `CardDef.on?: { draw?/discard?/resourceChange?/reshuffle?/endTurn? }` handler — run
     through the *same* `resolveCard`/`EffectContext` spine (extended with `ctx.event`), so a handler
     is authored like any bespoke `resolve` and its gains still fold through stickers. Two verbs,
     split so the bus never dispatches mid-mutation: **emit** (`emitEvent` → push to `G.events`, done
@@ -170,12 +170,15 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     order for determinism. A `building`/`work` subject is itself staffable, so it carries the same
     "while staffed" contract as the observer walk and is resolved to its live zone instance and gated
     by `isOperating` too (a card only just drawn into hand is not an operating copy and must not
-    self-trigger); a subject of any other kind (never staffable) fires unconditionally. The
-    **broadcast `endTurn`** event is the exception: it names no subject and
-    every operating in-play subscriber runs `resolveEndTurn` (its `on.endTurn`, else the default
+    self-trigger); a subject of any other kind (never staffable) fires unconditionally. Two
+    **broadcast** events name no subject and reach every operating in-play subscriber instead. The
+    **`endTurn`** broadcast runs `resolveEndTurn` on each (its `on.endTurn`, else the default
     production/threat-drain) — it's *what drives per-round production and threat drains*, dispatched
     directly at the upkeep boundary by `applyUpkeep` (not queued), so it runs at the exact slot
-    production always did, before the `resourceChange` synthesis. **`G.events` is always drained to
+    production always did, before the `resourceChange` synthesis. The **`reshuffle`** broadcast
+    (emitted by `deck.ts`'s `reshuffleIntoDeck` when the discard folds back into the deck, drained at
+    the next flush like any leaf-emitted event) has *no* default behaviour — only a card declaring
+    `on.reshuffle` reacts (e.g. the Unrest threat draining 🪙 per population point per recycle). **`G.events` is always drained to
     `[]` in any committed/undo-visible state** (see `state.ts`), so structuredClone/undo/determinism
     are untouched. Handlers must be pure over `G` (the projection clone re-runs upkeep every render)
     and must not open a `pendingInteraction`. Win and driven-loss are both pull, not push: `flushEvents`
@@ -313,8 +316,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `ageColSpans`, which derives each age's contiguous DAG **column slice** from its missions'
     `map.col` (a mission declares its age via `MissionDef.age`). `meta/CampaignMap.tsx` positions
     each age's arrow band + gradient wash over that slice, so *each age covers exactly its stretch of
-    the DAG*. The Stone Age band is live — it covers the three placed standard missions (First Settlement
-    at col 0, Growing Numbers at col 1, Rites & Rituals at col 2 → slice `[0,3)`); Bronze/Iron stay
+    the DAG*. The Stone Age band is live — it covers the placed standard missions across cols 0–3
+    (First Settlement col 0, Growing Numbers col 1, Rites & Rituals col 2, then Rites & Rituals fans
+    to Raiders at the Border and Restless People, both col 3 → slice `[0,4)`); Bronze/Iron stay
     dormant until their missions land.
 
 **Shell — the run loop (`src/run/`) + React:**

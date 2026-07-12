@@ -51,6 +51,14 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
     const target = cultureForLevel(2);
     return Math.min(G.culture, target) / target;
   },
+  // "Restless People": reach 🎭 culture *level 2* to placate the unrest — the identical culture-level
+  // win as "Rites & Rituals", so the same raw-culture-toward-threshold gradient (its own key because the
+  // objective card id differs). The threat's 🪙 drain is a survival cost `scoreState` handles; the goal
+  // gradient only needs to pull culture upward.
+  restless_people_goal: (G) => {
+    const target = cultureForLevel(2);
+    return Math.min(G.culture, target) / target;
+  },
   // "Raiders at the Border": defeat every raider wave by *playing* it (paying 3⚔️ banishes it to
   // `removed`). The gradient is just the normalized count of raiders defused — each play is an
   // unconditional +1/N capability bump, which is what pulls the greedy through the military cost (the

@@ -63,10 +63,10 @@ function valueChanged(G: GameState, before: ValueSnapshot): boolean {
 }
 
 /** The bare `{id, cardId}` a discrete event (`draw`/`discard`) names — just enough to look the
- *  subject up. `undefined` for a value (`resourceChange`) or broadcast (`endTurn`) event, which name
- *  no subject. */
+ *  subject up. `undefined` for a value (`resourceChange`) or broadcast (`endTurn`/`reshuffle`) event,
+ *  which name no subject. */
 function subjectOf(event: GameEvent): CardInstance | undefined {
-  if (event.type === 'resourceChange' || event.type === 'endTurn') return undefined;
+  if (event.type === 'resourceChange' || event.type === 'endTurn' || event.type === 'reshuffle') return undefined;
   return { id: event.instanceId, cardId: event.cardId };
 }
 

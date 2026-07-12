@@ -29,6 +29,18 @@ describe('drawUpTo', () => {
     expect(G.discard).toEqual([]);
   });
 
+  it('emits a reshuffle event each time the discard folds back into the deck', () => {
+    const G = blankState('enlightenment');
+    G.handSize = 1; // draw one card, forcing exactly one reshuffle of the empty deck
+    G.deck = [];
+    G.discard = instancesFromCardIds(['x', 'y']);
+    drawUpTo(G);
+    // A `draw` (the card taken) plus one `reshuffle` (the fold) — the broadcast a reshuffle-reactive
+    // card (e.g. the Unrest threat) drains on at the next flush.
+    expect(G.events.filter((e) => e.type === 'reshuffle')).toHaveLength(1);
+    expect(G.reshuffleCount).toBe(1);
+  });
+
   it('stops when no cards are available anywhere', () => {
     const G = blankState('enlightenment');
     drawUpTo(G);
