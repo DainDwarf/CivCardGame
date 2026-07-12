@@ -11,3 +11,6 @@ dist-ssr
 .DS_Store
 .idea
 *.log
+
+# Personal notes (not tracked)
+personal/
