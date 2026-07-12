@@ -1,10 +1,10 @@
 import { forwardRef } from 'react';
 import { isStaffable, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
-import type { Resources } from '../rules';
+import { coreOf, type CoreResources } from '../rules';
 import styles from './CardFace.module.css';
 
-export const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
+export const COST_ICON: Record<keyof CoreResources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
 
 /** Per-kind fallback "art" glyph — the face glyph a card shows when its def sets no `art` of its
  *  own. Every deckable card carries explicit `art` (pinned by `cards.test.ts`), so in practice this
@@ -66,7 +66,7 @@ export function StickerRow({
  *  (culture level, reserved population, discard cost) are shown separately — see
  *  `describeConditions`. */
 export function describeCost(c: CardDef): string {
-  const parts = (Object.entries(c.cost) as [keyof Resources, number][])
+  const parts = (Object.entries(c.cost) as [keyof CoreResources, number][])
     .filter(([, v]) => v)
     .map(([k, v]) => `${v}${COST_ICON[k]}`);
   return parts.join(' · ');
@@ -95,7 +95,7 @@ export function describeBuilding(b: CardDef, includeWorkers = true): string {
     parts.push(
       Object.entries(b.produces)
         .filter(([, v]) => v)
-        .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
+        .map(([k, v]) => `+${v}${COST_ICON[k as keyof CoreResources]}`)
         .join(' '),
     );
   }
@@ -112,18 +112,20 @@ export function describeCard(c: CardDef): string {
   const e = c.effect;
   const parts: string[] = [];
   if (e?.resources) {
-    // The delta is signed: split into a gains line then a drains line so the face keeps its
-    // green-"+N" / red-"-N" reading (a negative value already carries its own minus sign).
-    const entries = Object.entries(e.resources).filter(([, v]) => v) as [keyof Resources, number][];
+    // Only the core keys carry a cost icon; the strategic keys (population/territory/culture) get
+    // their own labelled lines below. The core delta is signed: split into a gains line then a drains
+    // line so the face keeps its green-"+N" / red-"-N" reading (a negative value carries its minus).
+    const entries = Object.entries(coreOf(e.resources)).filter(([, v]) => v) as [keyof CoreResources, number][];
     const gains = entries.filter(([, v]) => v > 0);
     const drains = entries.filter(([, v]) => v < 0);
     if (gains.length) parts.push(gains.map(([k, v]) => `+${v}${COST_ICON[k]}`).join(' '));
     if (drains.length) parts.push(drains.map(([k, v]) => `${v}${COST_ICON[k]}`).join(' '));
   }
   if (e?.draw) parts.push(`draw ${e.draw}`);
-  if (e?.population) parts.push(`+${e.population} 🧍`);
-  if (e?.territory) parts.push(`+${e.territory} territory`);
-  if (e?.culture) parts.push(`+${e.culture} 🎭`);
+  const strat = e?.resources;
+  if (strat?.population) parts.push(`${strat.population > 0 ? '+' : ''}${strat.population} 🧍`);
+  if (strat?.territory) parts.push(`${strat.territory > 0 ? '+' : ''}${strat.territory} territory`);
+  if (strat?.culture) parts.push(`${strat.culture > 0 ? '+' : ''}${strat.culture} 🎭`);
   if (e?.destroy) parts.push('removes a building from the run');
   // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` +
   // `cultureOutput` (workers are shown as meeples, not text). A work card's resource output rides

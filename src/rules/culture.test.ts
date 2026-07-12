@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { applyEffect } from './effects';
+import { specToResolver } from './effects';
 import { dispatchEvent } from './events';
 import { applyUpkeep } from './upkeep';
 import { cultureForLevel, cultureLevel, cultureProgress, effectiveHandSize } from './culture';
@@ -15,17 +15,20 @@ beforeAll(installFixtures);
 afterAll(uninstallFixtures);
 
 describe('culture: immediate gain via card effect', () => {
-  it('effect.culture raises G.culture', () => {
+  const grant = (G: ReturnType<typeof blankState>, culture: number) =>
+    specToResolver({ resources: { culture } })({ G, self: { id: 1, cardId: 'x' } });
+
+  it('a culture resource delta raises G.resources.culture', () => {
     const G = blankState('test');
-    applyEffect(G, { culture: 3 });
-    expect(G.culture).toBe(3);
+    grant(G, 3);
+    expect(G.resources.culture).toBe(3);
   });
 
   it('culture stacks across multiple gains', () => {
     const G = blankState('test');
-    applyEffect(G, { culture: 3 });
-    applyEffect(G, { culture: 2 });
-    expect(G.culture).toBe(5);
+    grant(G, 3);
+    grant(G, 2);
+    expect(G.resources.culture).toBe(5);
   });
 });
 
@@ -34,21 +37,21 @@ describe('culture: per-round output from operating buildings', () => {
     const G = blankState('test');
     G.tableau = [b('test_culture', 1)];
     dispatchEvent(G, { type: 'endTurn' });
-    expect(G.culture).toBe(2);
+    expect(G.resources.culture).toBe(2);
   });
 
   it('ignores culture from an unstaffed culture building', () => {
     const G = blankState('test');
     G.tableau = [b('test_culture', 0)];
     dispatchEvent(G, { type: 'endTurn' });
-    expect(G.culture).toBe(0);
+    expect(G.resources.culture).toBe(0);
   });
 
   it('ignores buildings with no cultureOutput', () => {
     const G = blankState('test');
     G.tableau = [b('test_food', 1), b('test_sci', 1)];
     dispatchEvent(G, { type: 'endTurn' });
-    expect(G.culture).toBe(0);
+    expect(G.resources.culture).toBe(0);
   });
 
   it('applyUpkeep accumulates culture from operating culture buildings', () => {
@@ -56,7 +59,7 @@ describe('culture: per-round output from operating buildings', () => {
     G.tableau = [b('test_culture', 1), b('test_culture', 0)]; // one operating, one idle
     G.resources.food = 10;
     applyUpkeep(G);
-    expect(G.culture).toBe(2); // only the staffed one contributes
+    expect(G.resources.culture).toBe(2); // only the staffed one contributes
   });
 });
 
@@ -94,9 +97,9 @@ describe('culture: hand-size bonus', () => {
     const G = blankState('test');
     G.handSize = 5;
     expect(effectiveHandSize(G)).toBe(5); // level 0
-    G.culture = 10;
+    G.resources.culture = 10;
     expect(effectiveHandSize(G)).toBe(6); // level 1
-    G.culture = 30;
+    G.resources.culture = 30;
     expect(effectiveHandSize(G)).toBe(7); // level 2
   });
 });
@@ -106,7 +109,7 @@ describe('culture: level gate on playCard', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_cultreq']);
     G.resources.science = 10;
-    G.culture = 9; // still level 0; test_cultreq needs level 1
+    G.resources.culture = 9; // still level 0; test_cultreq needs level 1
     const result = playCard(G, 0);
     expect(result).toBe('invalid');
     expect(G.hand.map((c) => c.cardId)).toEqual(['test_cultreq']); // card stays in hand
@@ -116,7 +119,7 @@ describe('culture: level gate on playCard', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_cultreq']);
     G.resources.science = 10;
-    G.culture = 10; // exactly level 1
+    G.resources.culture = 10; // exactly level 1
     const result = playCard(G, 0);
     expect(result).toBeUndefined(); // undefined = success
     expect(G.hand).toEqual([]);
@@ -126,8 +129,8 @@ describe('culture: level gate on playCard', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_cultreq']);
     G.resources.science = 10;
-    G.culture = 15;
+    G.resources.culture = 15;
     playCard(G, 0);
-    expect(G.culture).toBe(15); // culture is a gate, not a cost
+    expect(G.resources.culture).toBe(15); // culture is a gate, not a cost
   });
 });

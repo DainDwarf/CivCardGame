@@ -15,10 +15,10 @@ export interface BoardDef {
   id: BoardId;
   name: string;
   description: string;
+  /** All eight starting pools in one bundle: the five core (spendable) plus the three strategic
+   *  gauges (population / territory / culture). Mirrors `GameState.resources`, so `run/setup.ts`
+   *  seeds a run by copying it directly. */
   resources: Resources;
-  population: number;
-  territory: number;
-  culture: number;
   /** A *starting* board is always launchable — available on a fresh profile with no unlock. Every
    *  other board is **hidden until unlocked** by a mission reward (`unlockBoardIds`), like a card or
    *  sticker. The board pickers read this through `meta/boardDisplay.ts`'s `availableBoardIds`
@@ -40,19 +40,13 @@ export const BOARDS: Record<BoardId, BoardDef> = {
     id: 'tribe',
     name: 'Tribe',
     description: 'A wandering band of hunter-gatherers: a little food, a few hands, and the whole age ahead.',
-    resources: { food: 5, production: 0, science: 0, military: 0, money: 0 },
-    population: 2,
-    territory: 0,
-    culture: 0,
+    resources: { food: 5, production: 0, science: 0, military: 0, money: 0, population: 2, territory: 0, culture: 0 },
     starting: true,
   },
   chiefdom: {
     id: 'chiefdom',
     name: 'Chiefdom',
     description: 'A war-band under a single chief: fewer mouths to feed, but spears ready from the first season.',
-    resources: { food: 4, production: 0, science: 0, military: 4, money: 0 },
-    population: 1,
-    territory: 1,
-    culture: 0,
+    resources: { food: 4, production: 0, science: 0, military: 4, money: 0, population: 1, territory: 1, culture: 0 },
   },
 };

@@ -58,7 +58,7 @@ describe('run loop (headless integration)', () => {
     const client = start('test');
     const { G } = client.getState();
     expect(G.round).toBe(1);
-    expect(G.population).toBe(2); // TEST_BOARD population
+    expect(G.resources.population).toBe(2); // TEST_BOARD population
     expect(G.hand.map((c) => c.cardId)).toEqual(['test_food', 'test_prod', 'test_work', 'test_sci']);
     expect(G.resources.production).toBe(4); // TEST_BOARD production
     client.stop();
@@ -66,10 +66,10 @@ describe('run loop (headless integration)', () => {
 
   it('applies the chosen board baseline, not just the default board', () => {
     const alt = start('test', TEST_BOARD_2_ID).getState().G;
-    expect(alt.population).toBe(1); // TEST_BOARD_2 population
+    expect(alt.resources.population).toBe(1); // TEST_BOARD_2 population
     expect(alt.resources.military).toBe(4);
     expect(alt.resources.food).toBe(2);
-    expect(alt.territory).toBe(5);
+    expect(alt.resources.territory).toBe(5);
     expect(alt.resources.money).toBe(3);
   });
 

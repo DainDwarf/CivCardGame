@@ -119,7 +119,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/rules/` — all real game logic *and* the core state type; one module per concern.
   Unit tests sit alongside. **When adding a rule, put the logic here and test it directly
   — never bury it in a move or a component.**
-  - `state.ts` — `GameState` (the serializable run state `G`): the resource pools plus the
+  - `state.ts` — `GameState` (the serializable run state `G`): the resource pools (one combined
+    `resources: Resources` bundle — all 8, core + strategic) plus the
     card zones `deck`/`hand`/`discard`/`removed`, each a `CardInstance[]`
     (`{ id, cardId, counters? }`) so every card has a stable per-run **instance id** and
     carries its own per-copy state in its own `counters` map (via `getCounter`/`bumpCounter`)
@@ -130,7 +131,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `pendingInteraction` (a card effect suspended awaiting a player choice; while set,
     `endTurn` no-ops and undo is blocked). `instancesFromCardIds` is the shared mint path;
     `blankState()` builds an empty one. Instance ids are unique across *all* zones.
-  - `resources.ts` — the `Resources` bundle and its arithmetic (`add`/`subtract`/`scaleResources`).
+  - `resources.ts` — the three resource types and their arithmetic: `CoreResources` (the 5 spendable
+    pools — food/production/science/military/money), `StrategicResources`
+    (population/culture/territory), and combined `Resources` = both (all 8). `GameState.resources`
+    holds one combined `Resources`; a card's *cost* is a `Partial<CoreResources>` (only core is spent),
+    a `CardEffect`'s delta a `Partial<Resources>` (may touch any of the 8). Helpers: `add`/`subtract`
+    (generic over present keys), `scaleResources`, `canAfford` (core-only), `coreOf` (the core slice,
+    e.g. for `defaultProduce`'s core-only per-round scaling), and the `CORE_KEYS` source of truth.
   - `deck.ts` — draw + discard-pile reshuffle (the shared `reshuffleIntoDeck`, used by both
     `drawCard` and `peekTop`), both off the seeded RNG stream (`G.rngState`). Each reshuffle bumps
     `GameState.reshuffleCount`, a pure UI cue no rule reads — `components/Board.tsx` diffs it to

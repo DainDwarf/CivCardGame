@@ -7,9 +7,9 @@ import type { BoardDef } from './boards';
  *
  * A board sticker is a **separate catalogue** from the card `StickerDef` (`content/stickers.ts`),
  * not an extension of it: it applies *once at run setup* (not per-resolution), may touch any of the
- * board's 8 starting values — including the 3 strategic gauges (population/territory/culture) that
- * aren't in `Resources` — and has no per-instance attach identity (a board is singular). The only
- * thing shared with card stickers is the word "sticker".
+ * board's 8 starting values in its `resources` bundle — the 5 core plus the 3 strategic gauges
+ * (population/territory/culture) — and has no per-instance attach identity (a board is singular). The
+ * only thing shared with card stickers is the word "sticker".
  *
  * A board sticker **owns its own logic**: a single one-time `applyToBoard` hook (returns a modified
  * `BoardDef`), the same "the card/sticker owns its resolution" discipline the rest of the content
@@ -53,6 +53,6 @@ export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
     description: '+1 starting Territory',
     icon: '🌐',
     cost: 10,
-    applyToBoard: (b) => ({ ...b, territory: b.territory + 1 }),
+    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, territory: b.resources.territory + 1 } }),
   },
 };

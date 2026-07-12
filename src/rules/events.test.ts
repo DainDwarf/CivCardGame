@@ -243,7 +243,7 @@ describe('dispatchEvent — reshuffle broadcast (subject-less, on.reshuffle only
   // The real `unrest` threat drains 1🪙 per 🧍 on every reshuffle — the mechanic Step 6.5 introduces.
   it('reaches a threat with on.reshuffle, draining 1🪙 per population point', () => {
     const G = blankState('test');
-    G.population = 3;
+    G.resources.population = 3;
     G.resources.money = 10;
     G.threats = [{ id: 1, cardId: 'unrest' }];
     dispatchEvent(G, { type: 'reshuffle' });
@@ -259,7 +259,7 @@ describe('dispatchEvent — reshuffle broadcast (subject-less, on.reshuffle only
 
   it('drives the Unrest drain end-to-end: a deck fold emits the event, the flush drains 🪙', () => {
     const G = blankState('test');
-    G.population = 2;
+    G.resources.population = 2;
     G.resources.money = 5;
     G.threats = [{ id: 1, cardId: 'unrest' }];
     G.handSize = 1;

@@ -11,10 +11,7 @@ import { keyOf } from './oracleKey';
 function baseState(): GameState {
   const G = blankState('m');
   G.round = 3;
-  G.resources = { food: 5, production: 2, science: 0, military: 1, money: 4 };
-  G.population = 2;
-  G.territory = 3;
-  G.culture = 7;
+  G.resources = { food: 5, production: 2, science: 0, military: 1, money: 4, population: 2, territory: 3, culture: 7 };
   G.handSize = 4;
   G.deck = [
     { id: 1, cardId: 'a' },
@@ -65,9 +62,9 @@ describe('oracle transposition key', () => {
     for (const mutate of [
       (s: GameState) => (s.resources.production += 1),
       (s: GameState) => (s.round += 1),
-      (s: GameState) => (s.population += 1),
-      (s: GameState) => (s.territory += 1),
-      (s: GameState) => (s.culture += 1),
+      (s: GameState) => (s.resources.population += 1),
+      (s: GameState) => (s.resources.territory += 1),
+      (s: GameState) => (s.resources.culture += 1),
       (s: GameState) => (s.handSize += 1),
     ]) {
       const m = structuredClone(G);

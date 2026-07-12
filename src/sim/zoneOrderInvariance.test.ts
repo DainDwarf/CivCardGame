@@ -30,7 +30,7 @@ import { keyOf } from './oracleKey';
  */
 function producingState(): GameState {
   const G = blankState('sandbox');
-  G.population = 5;
+  G.resources.population = 5;
   G.resources.food = 50; // amply fed, so nothing collapses over the tested rounds
   // Two farms (duplicate content), a toolmaker, and a Foraging work box — several producing siblings,
   // each auto-staffed from the idle pool (5 pop → 4 staffed, 1 idle).
@@ -80,7 +80,7 @@ describe('zone order-independence invariant', () => {
       const after = endTurn({ G: perm, gameover: undefined });
       // Resources: a non-commutative production/drain would move a scalar here.
       expect(after.G.resources).toEqual(baseAfter.G.resources);
-      expect(after.G.culture).toBe(baseAfter.G.culture);
+      expect(after.G.resources.culture).toBe(baseAfter.G.resources.culture);
       // The multiset abstraction the oracle keys on must agree regardless of input order.
       expect(keyOf(after.G)).toBe(baseKey);
     }

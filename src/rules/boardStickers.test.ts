@@ -34,13 +34,15 @@ describe('effectiveBoard', () => {
     expect(eff.resources.food).toBe(TEST_BOARD.resources.food + 2);
     // leaves everything else untouched
     expect(eff.resources.military).toBe(TEST_BOARD.resources.military);
-    expect(eff.territory).toBe(TEST_BOARD.territory);
+    expect(eff.resources.territory).toBe(TEST_BOARD.resources.territory);
   });
 
   it('applies a strategic-gauge sticker (+1 Territory)', () => {
     const eff = effectiveBoard(TEST_BOARD, ['test_bs_territory']);
-    expect(eff.territory).toBe(TEST_BOARD.territory + 1);
-    expect(eff.resources).toEqual(TEST_BOARD.resources);
+    expect(eff.resources.territory).toBe(TEST_BOARD.resources.territory + 1);
+    // core pools untouched
+    expect(eff.resources.food).toBe(TEST_BOARD.resources.food);
+    expect(eff.resources.military).toBe(TEST_BOARD.resources.military);
   });
 
   it('stacks two of the same sticker', () => {
@@ -51,7 +53,7 @@ describe('effectiveBoard', () => {
   it('composes two different stickers', () => {
     const eff = effectiveBoard(TEST_BOARD, ['test_bs_food', 'test_bs_territory']);
     expect(eff.resources.food).toBe(TEST_BOARD.resources.food + 2);
-    expect(eff.territory).toBe(TEST_BOARD.territory + 1);
+    expect(eff.resources.territory).toBe(TEST_BOARD.resources.territory + 1);
   });
 
   it('does not mutate the input board', () => {

@@ -1,5 +1,5 @@
-/** The resource currencies a civilization accumulates. */
-export interface Resources {
+/** The five core resource currencies a civilization spends and accumulates each round. */
+export interface CoreResources {
   food: number;
   production: number;
   science: number;
@@ -7,27 +7,45 @@ export interface Resources {
   money: number;
 }
 
-export function emptyResources(): Resources {
-  return { food: 0, production: 0, science: 0, military: 0, money: 0 };
+/** The three slower "strategic" resources — they gate the tableau and hand rather than being spent. */
+export interface StrategicResources {
+  population: number;
+  culture: number;
+  territory: number;
 }
 
-/** Mutates and returns `target` with `delta` added in. */
+/** The whole resource picture: core + strategic. `GameState.resources` holds one of these, and a
+ *  `CardEffect`'s signed delta is a `Partial<Resources>` (it may touch any of the eight). A card's
+ *  *cost*, by contrast, is a `Partial<CoreResources>` — only core resources are ever spent. */
+export type Resources = CoreResources & StrategicResources;
+
+/** The core keys, in canonical order — the single source of truth for "which keys are core",
+ *  reused by `coreOf`, the cost/HUD icon maps, `collapse.ts`'s core-negatives check, and `codex.ts`. */
+export const CORE_KEYS: (keyof CoreResources)[] = ['food', 'production', 'science', 'military', 'money'];
+
+/** An all-eight-zero bundle — the seed for `GameState.resources`. */
+export function emptyResources(): Resources {
+  return { food: 0, production: 0, science: 0, military: 0, money: 0, population: 0, culture: 0, territory: 0 };
+}
+
+/** The core slice of a signed delta (drops any strategic keys) — used where only core resources may
+ *  flow, e.g. `defaultProduce`'s per-round production scaling. */
+export function coreOf(r: Partial<Resources>): Partial<CoreResources> {
+  const out: Partial<CoreResources> = {};
+  for (const k of CORE_KEYS) if (r[k] !== undefined) out[k] = r[k];
+  return out;
+}
+
+/** Mutates and returns `target` with `delta` added in. Only the keys present in `delta` are touched,
+ *  so it works over a core-only, strategic-only, or combined bundle interchangeably. */
 export function addResources(target: Resources, delta: Partial<Resources>): Resources {
-  target.food += delta.food ?? 0;
-  target.production += delta.production ?? 0;
-  target.science += delta.science ?? 0;
-  target.military += delta.military ?? 0;
-  target.money += delta.money ?? 0;
+  for (const [k, v] of Object.entries(delta) as [keyof Resources, number][]) target[k] += v;
   return target;
 }
 
-/** Mutates and returns `target` with `delta` subtracted out. */
+/** Mutates and returns `target` with `delta` subtracted out (present keys only — see `addResources`). */
 export function subtractResources(target: Resources, delta: Partial<Resources>): Resources {
-  target.food -= delta.food ?? 0;
-  target.production -= delta.production ?? 0;
-  target.science -= delta.science ?? 0;
-  target.military -= delta.military ?? 0;
-  target.money -= delta.money ?? 0;
+  for (const [k, v] of Object.entries(delta) as [keyof Resources, number][]) target[k] -= v;
   return target;
 }
 
@@ -44,13 +62,8 @@ export function scaleResources(r: Partial<Resources>, factor: number): Partial<R
   return out;
 }
 
-/** Can these resources cover the whole cost bundle? Absent keys cost nothing. */
-export function canAfford(resources: Resources, cost: Partial<Resources>): boolean {
-  return (
-    resources.food >= (cost.food ?? 0) &&
-    resources.production >= (cost.production ?? 0) &&
-    resources.science >= (cost.science ?? 0) &&
-    resources.military >= (cost.military ?? 0) &&
-    resources.money >= (cost.money ?? 0)
-  );
+/** Can these resources cover the whole cost bundle? Costs are core-only, so only the core pools are
+ *  checked; absent keys cost nothing. */
+export function canAfford(resources: Resources, cost: Partial<CoreResources>): boolean {
+  return CORE_KEYS.every((k) => resources[k] >= (cost[k] ?? 0));
 }

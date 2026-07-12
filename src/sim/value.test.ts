@@ -16,11 +16,11 @@ describe('scoreState', () => {
     // safe. The starving state must score well below the fed one despite its extra population.
     const starving = state((G) => {
       G.resources.food = 0;
-      G.population = 5;
+      G.resources.population = 5;
     });
     const fed = state((G) => {
       G.resources.food = 10;
-      G.population = 0;
+      G.resources.population = 0;
     });
     expect(scoreState(starving)).toBeLessThan(scoreState(fed));
     // And the penalty is real (negative), not merely smaller.
@@ -44,7 +44,7 @@ describe('scoreState', () => {
     });
     const cultured = state((G) => {
       G.resources.food = 5;
-      G.culture = 30; // level 2 (bands at 10, 30)
+      G.resources.culture = 30; // level 2 (bands at 10, 30)
     });
     expect(scoreState(cultured)).toBeGreaterThan(scoreState(noCulture));
   });
@@ -56,7 +56,7 @@ describe('scoreState', () => {
     const none = state((G) => (G.resources.food = 5));
     const some = state((G) => {
       G.resources.food = 5;
-      G.culture = 5; // within band 0 — no level-up yet
+      G.resources.culture = 5; // within band 0 — no level-up yet
     });
     expect(scoreState(some)).toBeGreaterThan(scoreState(none));
   });
@@ -87,14 +87,14 @@ describe('scoreState', () => {
     const starvingNearWin = state((G) => {
       seedObjective(G, 'first_settlement_goal');
       G.resources.food = 0;
-      G.population = 5; // eats 5 into the red next round
+      G.resources.population = 5; // eats 5 into the red next round
       G.resources.production = 9;
       G.resources.military = 9;
     });
     const fedFarFromGoal = state((G) => {
       seedObjective(G, 'first_settlement_goal');
       G.resources.food = 10;
-      G.population = 0;
+      G.resources.population = 0;
     });
     expect(scoreState(starvingNearWin)).toBeLessThan(scoreState(fedFarFromGoal));
   });
@@ -103,7 +103,7 @@ describe('scoreState', () => {
     // A winning state that is otherwise dire (about to starve) must still outrank a lavish, unwon one.
     const won = state((G) => {
       G.resources.food = 0;
-      G.population = 9;
+      G.resources.population = 9;
       G.pendingVictory = true;
     });
     const richLoss = state((G) => {

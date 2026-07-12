@@ -1,4 +1,4 @@
-import { type Resources } from './resources';
+import { type CoreResources } from './resources';
 import { foodUpkeep } from './population';
 import { willReshuffleOnRefill } from './deck';
 import { resolveCard } from './effects';
@@ -97,7 +97,7 @@ export function settleEndOfTurn(G: GameState): void {
 
 /** The net change the player would see if they ended the round right now. */
 export interface ProjectedDelta {
-  resources: Resources;
+  resources: CoreResources;
   culture: number;
 }
 
@@ -127,6 +127,6 @@ export function projectedDelta(G: GameState): ProjectedDelta {
       military: clone.resources.military - G.resources.military,
       money: clone.resources.money - G.resources.money,
     },
-    culture: clone.culture - G.culture,
+    culture: clone.resources.culture - G.resources.culture,
   };
 }

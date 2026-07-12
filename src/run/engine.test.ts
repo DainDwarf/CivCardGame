@@ -176,7 +176,7 @@ describe('objective win timing through the real turn loop', () => {
     let state = run();
     seedObjective(state.G, 'test_round_obj');
     state.G.resources.food = 500;
-    state.G.population = 0; // no population food upkeep
+    state.G.resources.population = 0; // no population food upkeep
     // Drive the real loop; round starts at 1 and advances one per endTurn via beginTurn.
     for (let i = 0; i < 20 && !state.gameover; i++) state = endTurn(state);
     expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });

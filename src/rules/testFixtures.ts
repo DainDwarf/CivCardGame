@@ -41,10 +41,7 @@ export const TEST_BOARD: BoardDef = {
   id: TEST_BOARD_ID,
   name: 'Test Board',
   description: 'A synthetic board for tests — distinct values on all 8 starting fields.',
-  resources: { food: 5, production: 4, science: 3, military: 2, money: 1 },
-  population: 2,
-  territory: 7,
-  culture: 0,
+  resources: { food: 5, production: 4, science: 3, military: 2, money: 1, population: 2, territory: 7, culture: 0 },
 };
 
 /** A second synthetic board, for the few tests that need to prove two boards stay independent (e.g.
@@ -54,10 +51,7 @@ export const TEST_BOARD_2: BoardDef = {
   id: TEST_BOARD_2_ID,
   name: 'Test Board 2',
   description: 'A second synthetic board for board-independence tests.',
-  resources: { food: 2, production: 6, science: 1, military: 4, money: 3 },
-  population: 1,
-  territory: 5,
-  culture: 0,
+  resources: { food: 2, production: 6, science: 1, military: 4, money: 3, population: 1, territory: 5, culture: 0 },
 };
 
 // --- Synthetic cards -------------------------------------------------------------------------------
@@ -140,15 +134,15 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   },
   test_settlers: {
     id: 'test_settlers', name: 'Test Settlers', kind: 'action',
-    cost: { food: 2 }, effect: { population: 1 },
+    cost: { food: 2 }, effect: { resources: { population: 1 } },
   },
   test_territory: {
     id: 'test_territory', name: 'Test Territory', kind: 'action',
-    cost: { military: 3 }, effect: { territory: 1 },
+    cost: { military: 3 }, effect: { resources: { territory: 1 } },
   },
   test_festival: {
     id: 'test_festival', name: 'Test Festival', kind: 'action',
-    cost: { food: 2 }, effect: { culture: 3 },
+    cost: { food: 2 }, effect: { resources: { culture: 3 } },
   },
   // Carries a discard cost (extra cards discarded from hand to play it), like Eureka.
   test_discard: {
@@ -332,7 +326,7 @@ export const FIXTURE_BOARD_STICKERS: Record<string, BoardStickerDef> = {
   },
   test_bs_territory: {
     id: 'test_bs_territory', name: 'Test BS Territory', description: '+1 starting Territory', icon: '🗺️', cost: 10,
-    applyToBoard: (b) => ({ ...b, territory: b.territory + 1 }),
+    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, territory: b.resources.territory + 1 } }),
   },
   test_bs_military: {
     id: 'test_bs_military', name: 'Test BS Military', description: '+1 starting Military', icon: '⚔️', cost: 3,

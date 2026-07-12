@@ -51,7 +51,7 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
 
   it('rises with accumulated culture on "Rites & Rituals" and is 1 exactly at level 2', () => {
     const p = (culture: number) =>
-      objectiveProgress(withObjective('rites_rituals_goal', (G) => (G.culture = culture)));
+      objectiveProgress(withObjective('rites_rituals_goal', (G) => (G.resources.culture = culture)));
     expect(p(0)).toBe(0);
     // Sub-level culture registers (a discrete cultureLevel would read 0 all the way to 10).
     expect(p(5)).toBeGreaterThan(p(0));

@@ -38,7 +38,7 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
   // terms cap at 3 and average ⇒ 1 exactly at the win (three buildings occupy three slots, so territory ≥ 3).
   growing_numbers_goal: (G) => {
     const built = ['hut', 'farm', 'toolmaker'].filter((id) => G.tableau.some((b) => b.cardId === id)).length;
-    return (built + Math.min(G.territory, 3)) / 6;
+    return (built + Math.min(G.resources.territory, 3)) / 6;
   },
   // "Rites & Rituals": reach 🎭 culture *level 2*. Culture accumulates and is never spent, and the win
   // is purely a raw-culture threshold — level 2 sits at `cultureForLevel(2)` (30) culture — so the
@@ -49,7 +49,7 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
   // points make every culture point worth an equal slice of the goal, a uniform pull straight to it.
   rites_rituals_goal: (G) => {
     const target = cultureForLevel(2);
-    return Math.min(G.culture, target) / target;
+    return Math.min(G.resources.culture, target) / target;
   },
   // "Restless People": reach 🎭 culture *level 2* to placate the unrest — the identical culture-level
   // win as "Rites & Rituals", so the same raw-culture-toward-threshold gradient (its own key because the
@@ -57,7 +57,7 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
   // gradient only needs to pull culture upward.
   restless_people_goal: (G) => {
     const target = cultureForLevel(2);
-    return Math.min(G.culture, target) / target;
+    return Math.min(G.resources.culture, target) / target;
   },
   // "Raiders at the Border": defeat every raider wave by *playing* it (paying 3⚔️ banishes it to
   // `removed`). The gradient is just the normalized count of raiders defused — each play is an

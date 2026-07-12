@@ -38,28 +38,14 @@ export function emitEvent(G: GameState, event: GameEvent): void {
 
 /** Capture the value fields a `resourceChange` handler may watch, for the flush's before/after diff. */
 export function snapshot(G: GameState): ValueSnapshot {
-  return {
-    resources: { ...G.resources },
-    population: G.population,
-    territory: G.territory,
-    culture: G.culture,
-  };
+  return { resources: { ...G.resources } };
 }
 
-/** Did any value field move since `before`? Gates whether a flush synthesizes a `resourceChange`. */
+/** Did any resource pool move since `before`? Gates whether a flush synthesizes a `resourceChange`. */
 function valueChanged(G: GameState, before: ValueSnapshot): boolean {
   const r = G.resources;
   const b = before.resources;
-  return (
-    r.food !== b.food ||
-    r.production !== b.production ||
-    r.science !== b.science ||
-    r.military !== b.military ||
-    r.money !== b.money ||
-    G.population !== before.population ||
-    G.territory !== before.territory ||
-    G.culture !== before.culture
-  );
+  return (Object.keys(r) as (keyof typeof r)[]).some((k) => r[k] !== b[k]);
 }
 
 /** The bare `{id, cardId}` a discrete event (`draw`/`discard`) names — just enough to look the

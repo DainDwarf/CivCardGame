@@ -1,4 +1,4 @@
-import type { Resources } from '../rules/resources';
+import type { CoreResources } from '../rules/resources';
 
 /**
  * Reference text for the Codex submenu (`components/Codex.tsx`) — the in-game "how the
@@ -15,7 +15,7 @@ import type { Resources } from '../rules/resources';
 
 /** One core resource's reference row. `key` ties it to the shared `COST_ICON` map. */
 export interface CoreResourceEntry {
-  key: keyof Resources;
+  key: keyof CoreResources;
   name: string;
   /** What the resource is for. */
   role: string;

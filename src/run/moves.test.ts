@@ -12,7 +12,7 @@ afterAll(uninstallFixtures);
 const PLACEMENT_BUILDING = {
   hut_fixture: {
     id: 'hut_fixture', name: 'Hut Fixture', kind: 'building' as const,
-    cost: { production: 4 }, workers: 0, effect: { population: 1 },
+    cost: { production: 4 }, workers: 0, effect: { resources: { population: 1 } },
   },
 };
 
@@ -35,7 +35,7 @@ describe('playCard: cards vs. buildings', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_food']);
     G.resources.production = 5;
-    G.population = 2; // idle -> the building auto-staffs
+    G.resources.population = 2; // idle -> the building auto-staffs
     play(G, 'test_food');
     expect(G.tableau).toEqual([{ id: 1, cardId: 'test_food', workers: 1 }]);
     expect(G.removed).toEqual([]); // the card *is* the building — not removed on play
@@ -47,7 +47,7 @@ describe('playCard: cards vs. buildings', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_wonder']);
     G.resources.production = 5;
-    G.population = 2; // idle -> the wonder auto-staffs its 1 worker
+    G.resources.population = 2; // idle -> the wonder auto-staffs its 1 worker
     play(G, 'test_wonder');
     expect(G.tableau).toEqual([{ id: 1, cardId: 'test_wonder', workers: 1 }]);
     expect(G.removed).toEqual([]);
@@ -57,11 +57,11 @@ describe('playCard: cards vs. buildings', () => {
 
   it('a wonder is blocked by the territory cap, just like a building', () => {
     const G = blankState('test');
-    G.territory = 1;
+    G.resources.territory = 1;
     G.tableau = [{ id: 99, cardId: 'test_food', workers: 1 }]; // the one slot is taken
     G.hand = instancesFromCardIds(['test_wonder']);
     G.resources.production = 5;
-    G.population = 2;
+    G.resources.population = 2;
     expect(playCard(G, 0)).toBe('invalid');
     expect(G.tableau).toHaveLength(1); // nothing placed
   });
@@ -72,11 +72,11 @@ describe('playCard: cards vs. buildings', () => {
       const G = blankState('test');
       G.hand = instancesFromCardIds(['hut_fixture']);
       G.resources.production = 4;
-      G.population = 3;
+      G.resources.population = 3;
       play(G, 'hut_fixture');
       // Placed (self-sufficient, 0 workers) AND its placement effect ran exactly once: +1 pop.
       expect(G.tableau).toEqual([{ id: 1, cardId: 'hut_fixture', workers: 0 }]);
-      expect(G.population).toBe(4);
+      expect(G.resources.population).toBe(4);
     } finally {
       uninstallCards(PLACEMENT_BUILDING);
     }
@@ -86,10 +86,10 @@ describe('playCard: cards vs. buildings', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_food']);
     G.resources.production = 5;
-    G.population = 2;
+    G.resources.population = 2;
     play(G, 'test_food');
     // The placement-resolve is a no-op for an effect-less building — only the cost was paid.
-    expect(G.population).toBe(2);
+    expect(G.resources.population).toBe(2);
     expect(G.resources.production).toBe(3);
   });
 
@@ -97,8 +97,8 @@ describe('playCard: cards vs. buildings', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_food']);
     G.resources.production = 5;
-    G.population = 2;
-    G.territory = 1;
+    G.resources.population = 2;
+    G.resources.territory = 1;
     G.tableau = [{ id: 1, cardId: 'test_prod', workers: 1 }]; // sole slot already taken
     play(G, 'test_food');
     expect(G.tableau).toHaveLength(1); // building not built
@@ -114,7 +114,7 @@ describe('playCard: cards vs. buildings', () => {
       { id: 1, cardId: 'test_food', workers: 1 },
       { id: 2, cardId: 'test_prod', workers: 1 },
     ];
-    G.population = 2;
+    G.resources.population = 2;
     play(G, 'test_destroy', [], 1); // demolish the test_food instance
     expect(G.tableau).toEqual([{ id: 2, cardId: 'test_prod', workers: 1 }]);
     expect(G.removed).toEqual([{ id: 1, cardId: 'test_food' }]); // the demolished building's card leaves play
@@ -126,13 +126,13 @@ describe('playCard: cards vs. buildings', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_destroy']);
     G.resources.production = 5;
-    G.population = 2;
+    G.resources.population = 2;
     G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }];
     play(G, 'test_destroy', [], 1);
     expect(G.tableau).toEqual([]);
     // The removed worker is now idle (freePopulation = population - assignedWorkers)
     // Population is still 2, no workers assigned => 2 idle.
-    expect(G.population).toBe(2);
+    expect(G.resources.population).toBe(2);
   });
 
   it('destroy is rejected without a target instance id', () => {
@@ -159,7 +159,7 @@ describe('playCard: cards vs. buildings', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_destroy']);
     G.resources.production = 5;
-    G.population = 1;
+    G.resources.population = 1;
     G.tableau = [
       { id: 1, cardId: 'test_food', workers: 1 }, // staffed
       { id: 2, cardId: 'test_food', workers: 0 }, // empty
@@ -172,12 +172,12 @@ describe('playCard: cards vs. buildings', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_destroy', 'test_food']);
     G.resources.production = 5;
-    G.population = 2;
-    G.territory = 1;
+    G.resources.population = 2;
+    G.resources.territory = 1;
     G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }]; // tableau at cap
     play(G, 'test_destroy', [], 1);
     expect(G.tableau).toHaveLength(0);
-    expect(G.territory).toBe(1); // territory cap unchanged — just freed a slot
+    expect(G.resources.territory).toBe(1); // territory cap unchanged — just freed a slot
     play(G, 'test_food'); // now a slot is free
     expect(G.tableau.some((b) => b.cardId === 'test_food')).toBe(true);
   });
@@ -187,11 +187,11 @@ describe('playCard: cards vs. buildings', () => {
     G.hand = instancesFromCardIds(['test_territory', 'test_food']);
     G.resources.production = 5;
     G.resources.military = 3; // test_territory's cost
-    G.population = 2;
-    G.territory = 1;
+    G.resources.population = 2;
+    G.resources.territory = 1;
     G.tableau = [{ id: 1, cardId: 'test_prod', workers: 1 }]; // full at territory 1
     play(G, 'test_territory'); // +1 territory (cost 3 military) -> room for one more
-    expect(G.territory).toBe(2);
+    expect(G.resources.territory).toBe(2);
     expect(G.discard.map((c) => c.cardId)).toEqual(['test_territory']); // action -> recycles
     play(G, 'test_food'); // now fits
     expect(G.tableau).toHaveLength(2);
@@ -201,7 +201,7 @@ describe('playCard: cards vs. buildings', () => {
   it('a work card sticks onto the board auto-staffed, applies nothing now, and is not yet discarded', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_work']);
-    G.population = 1; // one idle -> the work box auto-staffs
+    G.resources.population = 1; // one idle -> the work box auto-staffs
     play(G, 'test_work');
     expect(G.workZone).toEqual([{ id: 1, cardId: 'test_work', workers: 1 }]);
     expect(G.resources.production).toBe(0); // production is deferred to upkeep, not applied now
@@ -223,7 +223,7 @@ describe('playCard: cards vs. buildings', () => {
   it('a work card is playable with no idle workers — it just sits unstaffed (no pop gate)', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_work', 'test_work_food']);
-    G.population = 1;
+    G.resources.population = 1;
     play(G, 'test_work'); // takes the one idle worker
     play(G, 'test_work_food'); // still allowed, but nothing left to staff it
     // Instance ids are now unique across *all* zones: when test_work is played, test_work_food
@@ -238,7 +238,7 @@ describe('playCard: cards vs. buildings', () => {
   it('a work box can be staffed after the fact via the shared worker moves', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_work_food']);
-    G.population = 1;
+    G.resources.population = 1;
     play(G, 'test_work_food'); // population 1 is idle, so it auto-staffs
     expect(G.workZone[0].workers).toBe(1);
     toggleStaffing(G, 1); // empty it
@@ -279,7 +279,7 @@ describe('playCard: card stickers in the run loop (Phase 3 Step 7.6)', () => {
     // discounted cost is 1 — affordable even though the raw cost isn't.
     G.hand = [{ id: 1, cardId: 'test_food', stickers: ['test_costcut'] }];
     G.resources.production = 1; // below the raw cost of 2, but covers the discounted cost of 1
-    G.population = 1;
+    G.resources.population = 1;
     play(G, 'test_food');
     expect(G.tableau).toEqual([{ id: 1, cardId: 'test_food', workers: 1, stickers: ['test_costcut'] }]);
     expect(G.resources.production).toBe(0); // discounted to 1, all of it spent
@@ -289,7 +289,7 @@ describe('playCard: card stickers in the run loop (Phase 3 Step 7.6)', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_food']);
     G.resources.production = 0;
-    G.population = 1;
+    G.resources.population = 1;
     play(G, 'test_food');
     expect(G.tableau).toEqual([]); // unaffordable — rejected
     expect(G.hand.map((c) => c.cardId)).toEqual(['test_food']); // stays in hand
@@ -362,7 +362,7 @@ describe('multi-worker staffing (per-worker capacity)', () => {
   // `test_multiworker` has capacity 3: workers is a cap, not a fixed requirement.
   it('assignWorker fills a multi-worker building one pip at a time, up to its capacity', () => {
     const G = blankState('test');
-    G.population = 4;
+    G.resources.population = 4;
     G.tableau = [{ id: 1, cardId: 'test_multiworker', workers: 0 }];
     assignWorker(G, 1);
     assignWorker(G, 1);
@@ -375,7 +375,7 @@ describe('multi-worker staffing (per-worker capacity)', () => {
 
   it('toggleStaffing partial-fills when fewer than its capacity are idle', () => {
     const G = blankState('test');
-    G.population = 2; // under the capacity of 3
+    G.resources.population = 2; // under the capacity of 3
     G.tableau = [{ id: 1, cardId: 'test_multiworker', workers: 0 }];
     toggleStaffing(G, 1);
     expect(G.tableau[0].workers).toBe(2); // fills what it can
@@ -383,7 +383,7 @@ describe('multi-worker staffing (per-worker capacity)', () => {
 
   it('toggleStaffing empties a partially staffed multi-worker building', () => {
     const G = blankState('test');
-    G.population = 3;
+    G.resources.population = 3;
     G.tableau = [{ id: 1, cardId: 'test_multiworker', workers: 2 }];
     toggleStaffing(G, 1);
     expect(G.tableau[0].workers).toBe(0);

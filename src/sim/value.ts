@@ -81,10 +81,10 @@ export function scoreState(G: GameState): number {
   s += projFood >= 0 ? Math.min(projFood, W.foodBufferCap) : projFood * W.starvationPenalty;
   s += Math.min(r.food, W.foodStockpileCap) * W.foodStockpile;
   s += r.production * W.production + r.science * W.science + r.military * W.military + r.money * W.money;
-  s += G.population * W.population;
+  s += G.resources.population * W.population;
   s += [...G.tableau, ...G.workZone].filter(isOperating).length * W.operating;
   s += usedTerritory(G.tableau) * W.territory;
-  const cp = cultureProgress(G.culture);
+  const cp = cultureProgress(G.resources.culture);
   s += (cp.level + cp.ratio) * W.cultureLevel;
   s += objectiveProgress(G) * W.objectiveProgress;
   if (G.pendingVictory) s += W.victory;

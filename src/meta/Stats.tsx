@@ -115,8 +115,8 @@ export function Stats({
                 <span className={styles.mission}>{MISSIONS[result.missionId].name}</span>
                 <span className={styles.detail}>round {result.stats.turnsTaken}</span>
                 <span className={styles.detail}>
-                  🧍{result.stats.strategicResources.population} · {result.stats.strategicResources.territory} territory · 🎭
-                  {result.stats.strategicResources.culture}
+                  🧍{result.stats.finalResources.population} · {result.stats.finalResources.territory} territory · 🎭
+                  {result.stats.finalResources.culture}
                 </span>
               </li>
             ))}

@@ -7,12 +7,13 @@ beforeAll(installFixtures);
 afterAll(uninstallFixtures);
 
 describe('applyEffect', () => {
-  it('ignores the resource delta — it is applied via gainResources, not here (no double-apply)', () => {
+  it('applies only draw — the resource delta (core and strategic alike) reaches G via gainResources, not here', () => {
     const G = blankState('test');
-    applyEffect(G, { resources: { science: 3, food: 1 }, culture: 2 });
+    applyEffect(G, { resources: { science: 3, food: 1, population: 2, culture: 2 } });
     expect(G.resources.science).toBe(0);
     expect(G.resources.food).toBe(0);
-    expect(G.culture).toBe(2); // non-resource fields still apply
+    expect(G.resources.population).toBe(0);
+    expect(G.resources.culture).toBe(0);
   });
 
   it('draws cards', () => {
@@ -22,42 +23,22 @@ describe('applyEffect', () => {
     expect(G.hand.map((c) => c.cardId)).toEqual(['a', 'b']);
   });
 
-  it('grows population (Settlers)', () => {
-    const G = blankState('test');
-    G.population = 2;
-    applyEffect(G, { population: 1 });
-    expect(G.population).toBe(3);
-  });
-
-  it('raises the building-slot cap (Conquest / Develop)', () => {
-    const G = blankState('test');
-    const before = G.territory;
-    applyEffect(G, { territory: 1 });
-    expect(G.territory).toBe(before + 1);
-  });
-
-  it('accumulates culture (Cultural Festival)', () => {
-    const G = blankState('test');
-    G.culture = 2;
-    applyEffect(G, { culture: 3 });
-    expect(G.culture).toBe(5);
-  });
-
   it('does nothing for an undefined effect', () => {
     const G = blankState('test');
+    const before = structuredClone(G.resources);
     applyEffect(G, undefined);
-    expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 0, money: 0 });
+    expect(G.resources).toEqual(before);
   });
 });
 
 describe('specToResolver', () => {
-  it('reproduces applyEffect for a declarative effect', () => {
+  it('applies the resource delta (core + strategic) and draw for a declarative effect', () => {
     const G = blankState('test');
     G.deck = instancesFromCardIds(['a', 'b']);
-    specToResolver({ resources: { science: 2 }, draw: 1, culture: 1 })({ G, self: { id: 1, cardId: 'x' } });
+    specToResolver({ resources: { science: 2, culture: 1 }, draw: 1 })({ G, self: { id: 1, cardId: 'x' } });
     expect(G.resources.science).toBe(2);
     expect(G.hand.map((c) => c.cardId)).toEqual(['a']);
-    expect(G.culture).toBe(1);
+    expect(G.resources.culture).toBe(1);
   });
 
   it('demolishes the targeted building for a destroy effect, filing it to removed', () => {
@@ -88,7 +69,7 @@ describe('resolveCard', () => {
   it('runs the declarative default for a catalogue card (test_festival → +3 culture)', () => {
     const G = blankState('test');
     resolveCard({ G, self: { id: 1, cardId: 'test_festival' } });
-    expect(G.culture).toBe(3);
+    expect(G.resources.culture).toBe(3);
   });
 
   it("an additive-gain sticker bumps a declarative card's gain by 1", () => {
@@ -133,10 +114,19 @@ describe('gainResources', () => {
     expect(G.resources.military).toBe(-1);
   });
 
+  it('applies the strategic keys (population/territory/culture) to G.resources too', () => {
+    const G = blankState('test');
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { population: 1, territory: 1, culture: 3 });
+    expect(G.resources.population).toBe(1);
+    expect(G.resources.territory).toBe(7); // blankState seeds territory at 6
+    expect(G.resources.culture).toBe(3);
+  });
+
   it('is a no-op on an undefined bag', () => {
     const G = blankState('test');
+    const before = structuredClone(G.resources);
     gainResources({ G, self: { id: 1, cardId: 'x' } }, undefined);
-    expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 0, money: 0 });
+    expect(G.resources).toEqual(before);
   });
 });
 

@@ -1,4 +1,4 @@
-import { addResources, scaleResources, type Resources } from './resources';
+import { addResources, coreOf, scaleResources, type Resources } from './resources';
 import { drawCard } from './deck';
 import { CARDS, isStaffable } from '../content/cards';
 import type { CardDef } from '../content/cards';
@@ -9,42 +9,33 @@ import { findStaffable, producingUnits } from './population';
 
 /**
  * A card's effect: a sign- and timing-neutral bundle of state changes (a signed resource delta plus
- * draw / population / territory / culture and a demolish). It describes *what* changes, not *when* —
- * the same bundle can be applied once on play, once at placement, every staffed round, or at end of
- * turn. Which timing applies is the resolver's job (`specToResolver` on play, `resolveProduction`
- * per round, `resolveHandEvents` for an unplayed event), never a property of the bundle. Nothing in
- * it is inherently good or bad: a negative resource entry drains, a positive `population` grants growth.
+ * a draw and a demolish). It describes *what* changes, not *when* — the same bundle can be applied
+ * once on play, once at placement, every staffed round, or at end of turn. Which timing applies is
+ * the resolver's job (`specToResolver` on play, `resolveProduction` per round, `resolveHandEvents`
+ * for an unplayed event), never a property of the bundle. Nothing in it is inherently good or bad: a
+ * negative resource entry drains, a positive one grants — including the strategic pools.
  */
 export interface CardEffect {
   /** Signed resource delta applied immediately — a positive entry is a gain, a negative one a drain
-   *  (e.g. an event costing a resource). No clamp — a pool may go negative. Folded through
-   *  `gainResources`, so a card's stickers adjust the whole delta, drains included. */
+   *  (e.g. an event costing a resource). Covers all eight pools: the five core plus the three
+   *  strategic (population/territory/culture — e.g. Settlers grants population, Conquest territory,
+   *  Cultural Festival culture). No clamp — a pool may go negative. Folded through `gainResources`, so
+   *  a card's stickers adjust the whole delta, strategic and drains included. */
   resources?: Partial<Resources>;
   /** Cards drawn immediately. */
   draw?: number;
-  /** Population gained immediately (e.g. Settlers). */
-  population?: number;
-  /** Territory gained immediately — raises the cap on tableau size (e.g. Conquest, Develop). */
-  territory?: number;
-  /** Culture gained immediately — adds to G.culture (e.g. Cultural Festival). */
-  culture?: number;
   /** Demolish a player-chosen tableau building, freeing its slot and returning its workers; the
    *  demolished card files to `removed`. The target is chosen by the UI and threaded as
    *  `EffectContext.target` (validated up front by `playCard`, applied inside the resolver). */
   destroy?: true;
 }
 
-/** Applies every non-resource field (draw/population/territory/culture). The `resources` delta is
- *  deliberately excluded — it reaches `G` only through `gainResources`, the one path a sticker's
- *  `effectiveGain` can fold over it. */
+/** Applies the non-resource fields — currently only `draw`. The `resources` delta is deliberately
+ *  excluded: it reaches `G` only through `gainResources`, the one path a sticker's `effectiveGain`
+ *  folds over it. */
 export function applyEffect(G: GameState, effect?: CardEffect): void {
-  if (!effect) return;
-  if (effect.draw) {
-    for (let i = 0; i < effect.draw; i++) drawCard(G);
-  }
-  if (effect.population) G.population += effect.population;
-  if (effect.territory) G.territory += effect.territory;
-  if (effect.culture) G.culture += effect.culture;
+  if (!effect?.draw) return;
+  for (let i = 0; i < effect.draw; i++) drawCard(G);
 }
 
 /**
@@ -148,25 +139,26 @@ export function resolveCard(ctx: EffectContext): void {
 
 /**
  * Build a production resolver from a card's declarative production fields — the per-round timing for a
- * `CardEffect` bundle. Currently narrower than `specToResolver`: it applies only the resource part
- * (via the shared `gainResources`) and `culture`, not `draw`/`population`/`territory`/`destroy`. That
- * narrowing is a consequence of the single `effect` field being shared with a building's *placement*
- * one-shot — running the whole bundle each round would re-fire those placement fields — not a law of
- * production, and it's why a per-round territory or population gain (e.g. Conquest as a `work` card)
- * isn't expressible yet.
+ * `CardEffect` bundle. Narrower than `specToResolver`: it applies only the *core* resource part (via
+ * the shared `gainResources`) plus the explicit `cultureOutput`, never `draw`/`destroy` nor the
+ * strategic keys (population/territory) that an `effect.resources` fallback might carry — running the
+ * whole bundle each round would re-fire a building's *placement* one-shot, so the fallback is narrowed
+ * to its core slice with `coreOf`. A per-round territory or population gain (e.g. Conquest as a `work`
+ * card) isn't expressible yet; that awaits the production-path refactor.
  *
  * Output scales per staffed worker: the declarative `produces`/`cultureOutput` are *per-worker unit*
  * values, multiplied by the operating instance's `producingUnits` (its staffed count, or 1 for a
  * self-sufficient card). `ctx.self` is a bare `CardInstance` carrying no `workers`, so the live
  * instance is resolved from its zone. A capacity-1 producer yields `×1` — identical to a flat output.
- * Stickers still fold once through `gainResources` (a flat sticker adds on top of the scaled base).
+ * Culture output rides the same `gainResources` fold as the core part (a culture sticker would apply).
  */
 function defaultProduce(card: CardDef): Resolver {
   return (ctx) => {
     const s = findStaffable(ctx.G, ctx.self.id);
     const units = s ? producingUnits(s) : 1;
-    gainResources(ctx, scaleResources(card.produces ?? card.effect?.resources ?? {}, units));
-    applyEffect(ctx.G, { culture: (card.cultureOutput ?? 0) * units });
+    const produced = scaleResources(coreOf(card.produces ?? card.effect?.resources ?? {}), units);
+    if (card.cultureOutput) produced.culture = card.cultureOutput * units;
+    gainResources(ctx, produced);
   };
 }
 

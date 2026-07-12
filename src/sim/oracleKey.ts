@@ -42,9 +42,9 @@ export function keyOf(G: GameState): string {
     r.science,
     r.military,
     r.money,
-    G.population,
-    G.territory,
-    G.culture,
+    G.resources.population,
+    G.resources.territory,
+    G.resources.culture,
     G.handSize,
     orderedZone(G.deck), // the future draw sequence — the sole ordered field
     multiset(G.discard),

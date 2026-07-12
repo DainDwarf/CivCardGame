@@ -7,5 +7,5 @@ export function usedTerritory(tableau: BuildingInstance[]): number {
 
 /** Open territory: the cap minus what's already built. 0 means no room to build. */
 export function freeTerritory(G: GameState): number {
-  return G.territory - usedTerritory(G.tableau);
+  return G.resources.territory - usedTerritory(G.tableau);
 }

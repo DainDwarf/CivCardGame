@@ -7,7 +7,7 @@ import type { GameState } from './state';
  * The cost to climb from level L to L+1 is `2^L * CULTURE_STEP` culture, so the levels sit
  * at cumulative totals 10, 30, 70, 150, … — each band twice as wide as the last.
  *
- * The level is always DERIVED from `G.culture`; it is deliberately not stored on GameState,
+ * The level is always DERIVED from `G.resources.culture`; it is deliberately not stored on GameState,
  * so there is no second source of truth to keep in sync across save/undo.
  */
 export const CULTURE_STEP = 10;
@@ -57,5 +57,5 @@ export function cultureProgress(culture: number): CultureProgress {
 
 /** Hand size after the culture bonus: one extra card drawn per culture level reached. */
 export function effectiveHandSize(G: GameState): number {
-  return G.handSize + cultureLevel(G.culture);
+  return G.handSize + cultureLevel(G.resources.culture);
 }

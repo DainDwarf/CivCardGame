@@ -55,9 +55,9 @@ export interface RunResult {
   missionId: string;
   stats: {
     turnsTaken: number;
+    /** Every resource pool at run end — the five core plus the three strategic
+     *  (population/territory/culture), mirroring `GameState.resources`. */
     finalResources: Resources;
-    /** The 3 strategic resources at run end — kept separate from `finalResources` since they live on `GameState` directly, not in `Resources`. */
-    strategicResources: { population: number; territory: number; culture: number };
   };
 }
 

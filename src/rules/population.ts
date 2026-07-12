@@ -41,12 +41,12 @@ export function assignedWorkers(instances: Staffable[]): number {
 
 /** Population not currently assigned to any building or Work card. */
 export function freePopulation(G: GameState): number {
-  return G.population - assignedWorkers(G.tableau) - assignedWorkers(G.workZone);
+  return G.resources.population - assignedWorkers(G.tableau) - assignedWorkers(G.workZone);
 }
 
 /** Food the whole population eats each round (working or idle). */
 export function foodUpkeep(G: GameState): number {
-  return G.population * FOOD_PER_POP;
+  return G.resources.population * FOOD_PER_POP;
 }
 
 /**

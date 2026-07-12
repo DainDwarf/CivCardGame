@@ -1,5 +1,5 @@
 import { isStructure, type CardDef } from '../content/cards';
-import { canAfford, type Resources } from './resources';
+import { canAfford, type CoreResources } from './resources';
 import { cultureLevel } from './culture';
 import { freeTerritory } from './tableau';
 import type { CardInstance, GameState } from './state';
@@ -12,7 +12,7 @@ import { effectiveCost } from './stickers';
  * while `playCard` and the UI's dimming/rejection messaging share one source of truth.
  */
 export type UnplayableReason =
-  | { kind: 'cost'; missing: Partial<Resources> }
+  | { kind: 'cost'; missing: Partial<CoreResources> }
   | { kind: 'cultureLevel'; required: number }
   | { kind: 'territory' }
   | { kind: 'noBuildingsToDestroy' }
@@ -26,13 +26,13 @@ export type UnplayableReason =
 export function unplayableReason(G: GameState, card: CardDef, self: CardInstance): UnplayableReason | null {
   const cost = effectiveCost(card.cost, self);
   if (!canAfford(G.resources, cost)) {
-    const missing: Partial<Resources> = {};
-    for (const [k, v] of Object.entries(cost) as [keyof Resources, number][]) {
+    const missing: Partial<CoreResources> = {};
+    for (const [k, v] of Object.entries(cost) as [keyof CoreResources, number][]) {
       if (v > 0 && G.resources[k] < v) missing[k] = v - G.resources[k];
     }
     return { kind: 'cost', missing };
   }
-  if (card.cultureLevelReq && cultureLevel(G.culture) < card.cultureLevelReq)
+  if (card.cultureLevelReq && cultureLevel(G.resources.culture) < card.cultureLevelReq)
     return { kind: 'cultureLevel', required: card.cultureLevelReq };
   if (isStructure(card) && freeTerritory(G) <= 0) return { kind: 'territory' };
   if (card.effect?.destroy && G.tableau.length === 0) return { kind: 'noBuildingsToDestroy' };

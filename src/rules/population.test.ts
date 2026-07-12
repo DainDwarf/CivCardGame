@@ -50,7 +50,7 @@ describe('worker capacity', () => {
 describe('population accounting', () => {
   it('tracks assigned and free population', () => {
     const G = blankState('test');
-    G.population = 3;
+    G.resources.population = 3;
     G.tableau = [
       { id: 1, cardId: 'test_food', workers: 1 },
       { id: 2, cardId: 'test_prod', workers: 1 },
@@ -61,7 +61,7 @@ describe('population accounting', () => {
 
   it('workers assigned to Work cards count against free population too', () => {
     const G = blankState('test');
-    G.population = 3;
+    G.resources.population = 3;
     G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }];
     G.workZone = [{ id: 2, cardId: 'test_work', workers: 1 }];
     expect(freePopulation(G)).toBe(1); // 3 - 1 building - 1 work
@@ -69,7 +69,7 @@ describe('population accounting', () => {
 
   it('food upkeep equals population', () => {
     const G = blankState('test');
-    G.population = 4;
+    G.resources.population = 4;
     expect(foodUpkeep(G)).toBe(4);
   });
 });
@@ -77,45 +77,45 @@ describe('population accounting', () => {
 describe('auto-staffing a new building (partial fill)', () => {
   it('staffs a single-worker building when one is idle', () => {
     const G = blankState('test');
-    G.population = 3; // all idle
+    G.resources.population = 3; // all idle
     expect(autoStaffCount(G, 'test_food')).toBe(1); // capacity 1
   });
 
   it('leaves it unstaffed when none are idle', () => {
     const G = blankState('test');
-    G.population = 1;
+    G.resources.population = 1;
     G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }]; // 0 idle -> cannot staff
     expect(autoStaffCount(G, 'test_food')).toBe(0);
   });
 
   it('fills a multi-worker building to its capacity when enough are idle', () => {
     const G = blankState('test');
-    G.population = 5; // all idle
+    G.resources.population = 5; // all idle
     expect(autoStaffCount(G, 'test_multiworker')).toBe(3); // capacity 3
   });
 
   it('partial-fills a multi-worker building when fewer than its capacity are idle', () => {
     const G = blankState('test');
-    G.population = 2; // all idle, under the capacity of 3
+    G.resources.population = 2; // all idle, under the capacity of 3
     expect(autoStaffCount(G, 'test_multiworker')).toBe(2);
   });
 
   it('self-sufficient buildings need no workers', () => {
     const G = blankState('test');
-    G.population = 3;
+    G.resources.population = 3;
     expect(autoStaffCount(G, 'test_selfstaffed')).toBe(0);
   });
 
   it("carries the played instance's stickers onto the new tableau instance", () => {
     const G = blankState('test');
-    G.population = 1;
+    G.resources.population = 1;
     addBuilding(G, 'test_food', ['test_addgain']);
     expect(G.tableau).toEqual([{ id: 1, cardId: 'test_food', workers: 1, stickers: ['test_addgain'] }]);
   });
 
   it('omits the stickers field entirely when the played instance carried none', () => {
     const G = blankState('test');
-    G.population = 1;
+    G.resources.population = 1;
     addBuilding(G, 'test_food');
     expect(G.tableau).toEqual([{ id: 1, cardId: 'test_food', workers: 1 }]);
   });
@@ -130,7 +130,7 @@ describe('Work cards as staffables', () => {
 
   it('addWork sticks the card in the workZone, auto-staffed from idle pop', () => {
     const G = blankState('test');
-    G.population = 1;
+    G.resources.population = 1;
     addWork(G, 'test_work'); // 1 idle -> staffs its 1 worker
     expect(G.workZone).toEqual([{ id: 1, cardId: 'test_work', workers: 1 }]);
     expect(freePopulation(G)).toBe(0);
@@ -138,14 +138,14 @@ describe('Work cards as staffables', () => {
 
   it('addWork leaves the box unstaffed when no idle workers are free', () => {
     const G = blankState('test');
-    G.population = 0;
+    G.resources.population = 0;
     addWork(G, 'test_work_food');
     expect(G.workZone).toEqual([{ id: 1, cardId: 'test_work_food', workers: 0 }]);
   });
 
   it("carries the played instance's stickers onto the new work box — otherwise a boosted Work card would silently lose its bonus the instant it's placed", () => {
     const G = blankState('test');
-    G.population = 1;
+    G.resources.population = 1;
     addWork(G, 'test_work', ['test_addgain']);
     expect(G.workZone).toEqual([{ id: 1, cardId: 'test_work', workers: 1, stickers: ['test_addgain'] }]);
   });

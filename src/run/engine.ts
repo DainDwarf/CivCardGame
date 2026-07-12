@@ -46,8 +46,7 @@ export function toRunResult(G: GameState, gameover: Gameover): RunResult {
     missionId: gameover.missionId,
     stats: {
       turnsTaken: G.round,
-      finalResources: G.resources,
-      strategicResources: { population: G.population, territory: G.territory, culture: G.culture },
+      finalResources: { ...G.resources },
     },
   };
 }

@@ -62,7 +62,7 @@ describe('Test Peek (interactive peek) — suspend/resume', () => {
     const G = freshWithPeek();
     G.hand = instancesFromCardIds(['test_peek', 'test_food']);
     G.resources.production = 5;
-    G.population = 2;
+    G.resources.population = 2;
     playCard(G, 0); // opens the interaction
     expect(G.pendingInteraction).not.toBeNull();
     expect(playCard(G, 0)).toBe('invalid'); // 'test_food' is now at index 0

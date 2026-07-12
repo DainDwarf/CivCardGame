@@ -71,9 +71,6 @@ export type DrawSource = 'turnStart' | 'effect';
  *  `before.resources.money < 30 && G.resources.money >= 30`) to fire on the exact crossing. */
 export interface ValueSnapshot {
   resources: Resources;
-  population: number;
-  territory: number;
-  culture: number;
 }
 
 /**
@@ -108,9 +105,11 @@ export type GameEventType = GameEvent['type'];
  */
 export interface GameState {
   round: number;
+  /** All eight resource pools in one bundle: the five core (food/production/science/military/money,
+   *  spent and produced each round) plus the three strategic — `population` (a pool of workers who
+   *  each eat food every round), `territory` (caps the tableau size), and `culture` (a civilization
+   *  gauge some cards gate on). Reached as `resources.population` etc. */
   resources: Resources;
-  /** Total population — a pool of workers. Everyone eats food each round. */
-  population: number;
   /** Cards in hand. */
   hand: CardInstance[];
   /** Draw pile. */
@@ -142,13 +141,6 @@ export interface GameState {
    *  `checkEndIf` then reads — so unlike a threat the card never mutates `G`. Absent only on a bare
    *  `blankState` (tests/simulator) or a mission without one. */
   objective?: CardInstance;
-  /** Territory available — the tableau may hold at most this many buildings (one slot each);
-   *  building cards become unplayable when full. Expanded by territory cards (Conquest, Develop). */
-  territory: number;
-  /** Culture accumulated so far — a civilization-wide gauge, not a spendable currency. Grows from
-   *  operating cultural buildings (Theater) and card effects (Cultural Festival); some cards gate on
-   *  a minimum level. */
-  culture: number;
   /** How many cards to draw up to at the start of each round. */
   handSize: number;
   /** Which mission this run is playing (looked up in the MISSIONS registry). */
@@ -220,8 +212,7 @@ export interface PendingInteraction {
 export function blankState(missionId: string): GameState {
   return {
     round: 0,
-    resources: emptyResources(),
-    population: 0,
+    resources: { ...emptyResources(), territory: 6 },
     hand: [],
     deck: [],
     discard: [],
@@ -229,8 +220,6 @@ export function blankState(missionId: string): GameState {
     tableau: [],
     workZone: [],
     threats: [],
-    territory: 6,
-    culture: 0,
     handSize: 4,
     missionId,
     rngState: seededRng('blank').getState(),

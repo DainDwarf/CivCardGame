@@ -1,4 +1,4 @@
-import { subtractResources, type Resources } from '../rules/resources';
+import { subtractResources, type CoreResources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, type Resolver, suspendChoice } from '../rules/effects';
 import { recoverFromDiscard } from '../rules/deck';
@@ -61,8 +61,8 @@ export interface CardDef {
    *   live progress line. A real `CardInstance`, so a future objective can carry its own `counters`.
    */
   kind: CardKind;
-  /** Resources required to play. Absent keys are free (e.g. {} = no cost). */
-  cost: Partial<Resources>;
+  /** CoreResources required to play. Absent keys are free (e.g. {} = no cost). */
+  cost: Partial<CoreResources>;
   /** `building` and `work` cards: worker spaces to operate. Defaults to 1; `0` = self-sufficient
    *  (always operating, e.g. a defensive structure that needs no staffing). */
   workers?: number;
@@ -192,9 +192,9 @@ export interface CardDef {
   art?: string;
   /** A structure's (`building`/`wonder`) per-round resource output once staffed. (A `work` card
    *  instead carries its per-round output in `effect.resources`; see the `effect` field above.) */
-  produces?: Partial<Resources>;
+  produces?: Partial<CoreResources>;
   /** A staffable card's (`building`/`wonder`/`work`) per-round culture gained while staffed —
-   *  accumulates on G.culture (e.g. Beer, a work card). */
+   *  accumulates on G.resources.culture (e.g. Beer, a work card). */
   cultureOutput?: number;
 }
 
@@ -301,7 +301,7 @@ export const CARDS: Record<string, CardDef> = {
   toolmaker: { id: 'toolmaker', name: 'Toolmaker', kind: 'building', cost: { production: 2 }, produces: { production: 1 }, workers: 1, art: '⛏️' },
   hut: {
     id: 'hut', name: 'Hut', kind: 'building', cost: { production: 4 }, workers: 0, art: '🛖',
-    effect: { population: 1 },
+    effect: { resources: { population: 1 } },
     description: 'When built: +1 🧍',
   },
   // Göbekli Tepe: the age's first *wonder* (`kind: 'wonder'` — a unique monument that plays like a
@@ -321,12 +321,12 @@ export const CARDS: Record<string, CardDef> = {
   // — Actions: resolve once, then recycle to discard.
   fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, art: '🔥', effect: { resources: { science: 2 } } },
   bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, art: '🏹', effect: { resources: { military: 3 } } },
-  cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'action', cost: { food: 1 }, art: '🖐️', effect: { culture: 2 } },
-  clothing: { id: 'clothing', name: 'Clothing', kind: 'action', cost: { production: 1 }, art: '🧥', effect: { culture: 2 } },
+  cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'action', cost: { food: 1 }, art: '🖐️', effect: { resources: { culture: 2 } } },
+  clothing: { id: 'clothing', name: 'Clothing', kind: 'action', cost: { production: 1 }, art: '🧥', effect: { resources: { culture: 2 } } },
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, art: '📿', effect: { resources: { money: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, art: '🤝', effect: { resources: { food: 2 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, art: '🐕', effect: { resources: { military: 2 } } },
-  conquest: { id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 5 }, art: '🗡️', effect: { territory: 1 } },
+  conquest: { id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 5 }, art: '🗡️', effect: { resources: { territory: 1 } } },
 
   // Storytelling: the first *interactive* Paleolithic card — suspends mid-resolution for a choice
   //   from the discard, then recovers the picked card to hand (the discard→hand counterpart to
@@ -393,9 +393,9 @@ export const CARDS: Record<string, CardDef> = {
   rites_rituals_goal: {
     id: 'rites_rituals_goal', name: 'Rites & Rituals', kind: 'objective', cost: {},
     description: 'Reach 🎭 level 2',
-    objective: (G) => cultureLevel(G.culture) >= 2,
+    objective: (G) => cultureLevel(G.resources.culture) >= 2,
     dynamicText: (G) => {
-      const p = cultureProgress(G.culture);
+      const p = cultureProgress(G.resources.culture);
       return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2`;
     },
   },
@@ -419,9 +419,9 @@ export const CARDS: Record<string, CardDef> = {
   restless_people_goal: {
     id: 'restless_people_goal', name: 'Restless People', kind: 'objective', cost: {},
     description: 'Reach 🎭 level 2',
-    objective: (G) => cultureLevel(G.culture) >= 2,
+    objective: (G) => cultureLevel(G.resources.culture) >= 2,
     dynamicText: (G) => {
-      const p = cultureProgress(G.culture);
+      const p = cultureProgress(G.resources.culture);
       return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2`;
     },
   },
@@ -452,7 +452,7 @@ export const CARDS: Record<string, CardDef> = {
     description: '−1🪙 per 🧍 on reshuffle',
     on: {
       reshuffle: ({ G }) => {
-        subtractResources(G.resources, { money: G.population });
+        subtractResources(G.resources, { money: G.resources.population });
       },
     },
   },

@@ -33,15 +33,15 @@ describe('unplayableReason', () => {
 
   it('gates on culture level requirement', () => {
     const G = blankState('test');
-    G.culture = 0; // level 0
+    G.resources.culture = 0; // level 0
     const card: CardDef = { ...baseCard, cultureLevelReq: 1 };
     expect(unplayableReason(G, card, self)).toEqual({ kind: 'cultureLevel', required: 1 });
   });
 
   it('gates a building card on free territory', () => {
     const G = blankState('test');
-    G.territory = 1;
-    G.population = 1;
+    G.resources.territory = 1;
+    G.resources.population = 1;
     G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }]; // territory full
     const card: CardDef = { ...baseCard, kind: 'building', id: 'test_food' };
     expect(unplayableReason(G, card, self)).toEqual({ kind: 'territory' });
@@ -85,7 +85,7 @@ describe('unplayableReason', () => {
 
   it("a cost-cutting sticker discounts this copy's cost by 1 per resource, floored at 0", () => {
     const G = blankState('test');
-    G.resources = { food: 2, production: 0, science: 0, military: 0, money: 0 };
+    G.resources.food = 2;
     const card: CardDef = { ...baseCard, cost: { food: 2, production: 1 } };
     const stickered: CardInstance = { id: 2, cardId: 'test', stickers: ['test_costcut'] };
     // Raw cost would need 1 production too; test_costcut knocks both down by 1 (production floors at 0).

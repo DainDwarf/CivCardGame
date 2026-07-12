@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { BuildingInstance, CardInstance, Resources, WorkInstance } from '../rules';
+import type { BuildingInstance, CardInstance, CoreResources, WorkInstance } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
   cultureProgress,
@@ -312,7 +312,7 @@ function useAnimatedHand(hand: CardInstance[]): HandCard[] {
 /** Per-round output labels for a staffable box, scaled to its current staffing (`unit × units`).
  *  A minimum of ×1 keeps an unstaffed/idle box showing its per-worker rate rather than "+0" (it's
  *  greyed as idle anyway), matching how a single-worker building shows its output while unstaffed. */
-function boxOutputLabels(produces: Partial<Resources> | undefined, cultureOutput: number | undefined, units: number): string[] {
+function boxOutputLabels(produces: Partial<CoreResources> | undefined, cultureOutput: number | undefined, units: number): string[] {
   const u = Math.max(1, units);
   return [
     ...Object.entries(produces ?? {})
@@ -321,7 +321,7 @@ function boxOutputLabels(produces: Partial<Resources> | undefined, cultureOutput
         // The output bag is signed (a work box reads its `effect.resources`, which may drain): a
         // positive gets an explicit "+", a negative already carries its own "-".
         const n = (v as number) * u;
-        return `${n > 0 ? '+' : ''}${n}${COST_ICON[k as keyof Resources]}`;
+        return `${n > 0 ? '+' : ''}${n}${COST_ICON[k as keyof CoreResources]}`;
       }),
     ...(cultureOutput ? [`+${cultureOutput * u}🎭`] : []),
   ];
@@ -676,7 +676,7 @@ function whyUnplayable(card: CardDef, G: GameState, self: CardInstance): string 
   if (!reason) return null;
   switch (reason.kind) {
     case 'cost': {
-      const missing = (Object.entries(reason.missing) as [keyof Resources, number][])
+      const missing = (Object.entries(reason.missing) as [keyof CoreResources, number][])
         .map(([k, v]) => `${v}${COST_ICON[k]}`);
       return `need ${missing.join(' ')}`;
     }
@@ -792,7 +792,7 @@ export function Board({
   const [warnEndRound, setWarnEndRound] = useState(false);
   const [overlayMinimized, setOverlayMinimized] = useState(false);
   // Slot layout: which building (by instance id) sits in each territory slot; `null` is empty.
-  // Length tracks G.territory. Pure UI state — the core never knows where boxes sit.
+  // Length tracks G.resources.territory. Pure UI state — the core never knows where boxes sit.
   const [layout, setLayout] = useState<(number | null)[]>([]);
   const [slotDrag, setSlotDragState] = useState<SlotDrag | null>(null);
   // Slot the pointer is hovering during a slot-drag (the drop-target highlight).
@@ -1296,8 +1296,8 @@ export function Board({
     pendingBuildSlotRef.current = null;
     setLayout((prev) => {
       const next = prev.slice();
-      while (next.length < G.territory) next.push(null);
-      if (next.length > G.territory) next.length = G.territory; // defensive; territory is monotonic
+      while (next.length < G.resources.territory) next.push(null);
+      if (next.length > G.resources.territory) next.length = G.resources.territory; // defensive; territory is monotonic
       const present = new Set(G.tableau.map((b) => b.id));
       for (let i = 0; i < next.length; i++) {
         if (next[i] != null && !present.has(next[i]!)) next[i] = null; // building gone → free slot
@@ -1315,7 +1315,7 @@ export function Board({
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tableauSig, G.territory]);
+  }, [tableauSig, G.resources.territory]);
 
   // Worker-deployment animation for the non-drag *placement* path: when a building/work card is
   // played, the core auto-staffs it (population.ts's autoStaffCount) and the new box appears already
@@ -1575,7 +1575,7 @@ export function Board({
   };
 
   const proj = projectedDelta(G);
-  const collapseRisk = (key: keyof typeof G.resources) => G.resources[key] + proj.resources[key] < 0;
+  const collapseRisk = (key: keyof CoreResources) => G.resources[key] + proj.resources[key] < 0;
   const canEndRound = !pending && !pendingDestroy && !drag;
 
   return (
@@ -1587,7 +1587,7 @@ export function Board({
           ref={popTrayRef}
           className={`${styles.populationTray}${workerOverTray ? ` ${styles.trayReturnTarget}` : ''}`}
         >
-          <PopulationTokens population={G.population} idle={idle} onTokenPointerDown={onPopTokenPointerDown} />
+          <PopulationTokens population={G.resources.population} idle={idle} onTokenPointerDown={onPopTokenPointerDown} />
         </div>
 
         <div className={styles.coreGroup}>
@@ -1633,7 +1633,7 @@ export function Board({
           />
         </div>
 
-        <CultureBar culture={G.culture} projected={proj.culture} />
+        <CultureBar culture={G.resources.culture} projected={proj.culture} />
       </header>
 
       <div
