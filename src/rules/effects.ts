@@ -1,4 +1,4 @@
-import { addResources, coreOf, scaleResources, type Resources } from './resources';
+import { addResources, scaleResources, type Resources } from './resources';
 import { drawCard } from './deck';
 import { CARDS, isStaffable } from '../content/cards';
 import type { CardDef } from '../content/cards';
@@ -8,7 +8,7 @@ import { effectiveGain } from './stickers';
 import { findStaffable, producingUnits } from './population';
 
 /**
- * A card's effect: a sign- and timing-neutral bundle of state changes. It describes *what* changes, not *when* — the same bundle can be applied once on play, every staffed round, or at end of turn. Which timing applies is the resolver's job, never a property of the bundle. Nothing in it is inherently good or bad: a negative resource entry drains, a positive one grants — including the strategic pools.
+ * A card's effect: a sign- and timing-neutral bundle of state changes. It describes *what* changes, not *when* — the resolver that runs it decides the timing (on play, at end of turn for an unplayed event, each round for a declarative threat drain, or on a triggered `on.*` handler). The one timing it is *never* used for is a staffable's per-round production: that is the separate `produces` field, read only by `defaultProduce`, so ongoing output and one-shot effect can never be the same field. Nothing in it is inherently good or bad: a negative resource entry drains, a positive one grants — including the strategic pools.
  */
 export interface CardEffect {
   /** Signed resource delta applied immediately. */
@@ -129,12 +129,11 @@ export function resolveCard(ctx: EffectContext): void {
 }
 
 /**
- * Build a production resolver from a card's declarative production fields — the per-round timing for a
- * `CardEffect` bundle. Narrower than `specToResolver`: it applies only the *core* resource part (via
- * the shared `gainResources`) plus the explicit `cultureOutput`, never `draw`/`destroy` nor the
- * strategic keys (population/territory) that an `effect.resources` fallback might carry — running the
- * whole bundle each round would re-fire a building's *placement* one-shot, so the fallback is narrowed
- * to its core slice with `coreOf`. A per-round territory or population gain (e.g. Conquest as a `work`
+ * Build a production resolver from a card's declarative per-round fields — `produces` (+ the explicit
+ * `cultureOutput`), and *only* those. Production reads `produces` alone: `effect` is the on-play (and
+ * end-of-turn event) timing and is never consulted here, so the two slots stay strictly separate —
+ * a card's per-round output and its one-shot effect can never be the same field. `produces` is
+ * `Partial<CoreResources>` by type, so a strategic per-round gain (territory/population as a `work`
  * card) isn't expressible yet; that awaits the production-path refactor.
  *
  * Output scales per staffed worker: the declarative `produces`/`cultureOutput` are *per-worker unit*
@@ -147,7 +146,7 @@ function defaultProduce(card: CardDef): Resolver {
   return (ctx) => {
     const s = findStaffable(ctx.G, ctx.self.id);
     const units = s ? producingUnits(s) : 1;
-    const produced = scaleResources(coreOf(card.produces ?? card.effect?.resources ?? {}), units);
+    const produced = scaleResources(card.produces ?? {}, units);
     if (card.cultureOutput) produced.culture = card.cultureOutput * units;
     gainResources(ctx, produced);
   };

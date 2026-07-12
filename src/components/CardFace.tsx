@@ -128,8 +128,8 @@ export function describeCard(c: CardDef): string {
   if (strat?.culture) parts.push(`${strat.culture > 0 ? '+' : ''}${strat.culture} 🎭`);
   if (e?.destroy) parts.push('removes a building from the run');
   // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` +
-  // `cultureOutput` (workers are shown as meeples, not text). A work card's resource output rides
-  // `effect.resources` (handled above); this adds the culture a card like Beer produces.
+  // `cultureOutput` — here (workers are shown as meeples, not text). This is the sole path for a
+  // staffable's ongoing output, work cards included; the `effect` branch above is its one-shot only.
   if (isStaffable(c)) {
     const stats = describeBuilding(c, false);
     if (stats) parts.push(stats);

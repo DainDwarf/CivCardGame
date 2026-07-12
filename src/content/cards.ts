@@ -250,8 +250,8 @@ export const RAIDER_WAVES = 3;
 export const CARDS: Record<string, CardDef> = {
   // — Work: staffable board boxes producing only while a worker is assigned, filed to discard at
   //   end of turn. Cost nothing to play and need no idle population to place.
-  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, effect: { resources: { food: 3 } } },
-  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, effect: { resources: { production: 2 } } },
+  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, produces: { food: 3 } },
+  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { production: 2 } },
   // Beer: converts food into culture — pay 2🌾 to play, then it yields 5🎭 each staffed round. The food
   //   is a one-time play cost (charged by `playCard`), the culture a per-worker declarative output, so
   //   it's a plain producer with no bespoke logic. Reward-unlocked by "Restless People", never in the

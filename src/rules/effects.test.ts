@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { applyEffect, gainResources, resolveCard, resolveProduction, specToResolver } from './effects';
 import { blankState, instancesFromCardIds } from './state';
 import { FIXTURE_CARDS, installFixtures, uninstallFixtures } from './testFixtures';
+import { CARDS } from '../content/cards';
 
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);
@@ -141,5 +142,35 @@ describe('resolveProduction', () => {
     const G = blankState('test');
     resolveProduction({ G, self: { id: 1, cardId: 'test_food' } });
     expect(G.resources.food).toBe(2);
+  });
+
+  // Production reads `produces` alone — never `effect`. `test_action` carries `effect.resources`
+  // (+3🔬) and no `produces`; under the old `produces ?? effect.resources` fallback this would have
+  // leaked +3 science per round. Now it must produce nothing: the two timing slots are separate.
+  it('ignores a card\'s `effect` — production is `produces`-only (no fallback)', () => {
+    const G = blankState('test');
+    resolveProduction({ G, self: { id: 1, cardId: 'test_action' } });
+    expect(G.resources.science).toBe(0);
+  });
+
+  // The Hut is a `produces`-less building whose `effect` grants +1🧍 *on placement*. As an operating
+  // (self-sufficient) staffable it runs at upkeep, but must never re-grant that population each round.
+  it('never re-fires a placement `effect` at upkeep (Hut grants no per-round population)', () => {
+    const G = blankState('test');
+    const before = G.resources.population;
+    resolveProduction({ G, self: { id: 1, cardId: 'hut' } });
+    expect(G.resources.population).toBe(before);
+  });
+});
+
+// Content coherence: the `work` kind's whole output is per-round, so it lives entirely in
+// `produces`/`cultureOutput` — a work card must not carry a one-shot `effect` (it would be dead, since
+// `playCard` resolves no effect for a work card, and it would blur the produces/effect separation).
+describe('work-card content', () => {
+  it('no work card carries an `effect`', () => {
+    const offenders = Object.values(CARDS)
+      .filter((c) => c.kind === 'work' && c.effect)
+      .map((c) => c.id);
+    expect(offenders).toEqual([]);
   });
 });

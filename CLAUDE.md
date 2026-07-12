@@ -137,7 +137,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     holds one combined `Resources`; a card's *cost* is a `Partial<CoreResources>` (only core is spent),
     a `CardEffect`'s delta a `Partial<Resources>` (may touch any of the 8). Helpers: `add`/`subtract`
     (generic over present keys), `scaleResources`, `canAfford` (core-only), `coreOf` (the core slice,
-    e.g. for `defaultProduce`'s core-only per-round scaling), and the `CORE_KEYS` source of truth.
+    e.g. `CardFace`'s `describeCard` splitting an effect's core delta for the card face), and the
+    `CORE_KEYS` source of truth.
   - `deck.ts` — draw + discard-pile reshuffle (the shared `reshuffleIntoDeck`, used by both
     `drawCard` and `peekTop`), both off the seeded RNG stream (`G.rngState`). Each reshuffle bumps
     `GameState.reshuffleCount`, a pure UI cue no rule reads — `components/Board.tsx` diffs it to

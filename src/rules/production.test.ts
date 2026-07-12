@@ -32,11 +32,11 @@ describe('tableau production on the endTurn broadcast', () => {
     expect(G.resources).toEqual(expected);
   });
 
-  it("a building's strategic-only placement effect does NOT re-fire per round (Hut population is one-shot)", () => {
+  it("a building's placement effect does NOT re-fire per round (Hut population is one-shot)", () => {
     // Hut is `workers: 0` (always operating) with `effect: { resources: { population: 1 } }` and no
-    // `produces`. `defaultProduce` narrows the `effect.resources` fallback with `coreOf`, so the
-    // strategic population grant stays a one-time placement effect and never ticks each round —
-    // the invariant that keeps a per-round production path safe until the Hut/production refactor.
+    // `produces`. Production reads `produces` alone — `defaultProduce` never consults `effect` — so
+    // the population grant stays a one-time placement effect and never ticks each round. This is the
+    // produces/effect separation the fallback removal made safe by construction (no `effect` leak).
     const G = blankState('test');
     const before = structuredClone(G.resources);
     G.tableau = [b('hut', 0)];

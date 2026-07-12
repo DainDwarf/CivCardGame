@@ -113,14 +113,14 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     cost: { production: 4 }, produces: { production: 1, money: 1 }, cultureOutput: 1, workers: 3,
   },
 
-  // --- Work cards: produce their `effect.resources` only while staffed, file to discard at end of turn. ---
+  // --- Work cards: produce their `produces` only while staffed, file to discard at end of turn. ---
   test_work: {
     id: 'test_work', name: 'Test Work', kind: 'work',
-    cost: {}, workers: 1, effect: { resources: { production: 3 } },
+    cost: {}, workers: 1, produces: { production: 3 },
   },
   test_work_food: {
     id: 'test_work_food', name: 'Test Work Food', kind: 'work',
-    cost: {}, workers: 1, effect: { resources: { food: 3 } },
+    cost: {}, workers: 1, produces: { food: 3 },
   },
 
   // --- Action cards: one per canonical `effect` field, so a test can exercise each declaratively. ---
