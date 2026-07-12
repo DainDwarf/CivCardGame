@@ -9,57 +9,7 @@ export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'event' | 'th
 export interface CardDef {
   id: string;
   name: string;
-  /**
-   * What the card *is* and where it goes after play:
-   * - `building`: the card *is* a building — playing it places it in the **tableau** (one
-   *   territory slot), auto-staffed from idle population, where it produces `produces`/
-   *   `cultureOutput` each round while staffed. It may *also* carry a one-shot `effect`
-   *   resolved **once at placement** (e.g. the Hut's `+1 population`), applied by `playCard`
-   *   right after the building is placed — distinct from `produces`, which recurs each round.
-   *   A building's per-round output is therefore always `produces`, never `effect.resources` (the
-   *   latter would fire on placement *and* every round — see the `effect` field's note). It stays
-   *   in play, filed nowhere, until something removes it from the tableau — where its card goes
-   *   *then* isn't an inherent trait of `building`, it's whatever the removing effect specifies.
-   *   Today that's only the Destroy action card, whose `effect.destroy` sends it to **removed**;
-   *   a future card could just as well discard a building instead (e.g. to reclaim territory) and
-   *   file it to **discard** like anything else.
-   * - `wonder`: a *unique* monument — plays exactly like a `building` (occupies a tableau slot,
-   *   staffed from population, produces `produces`/`cultureOutput` each round while staffed, may
-   *   carry a placement one-shot `effect`), so it routes through the same `isStructure`/`isStaffable`
-   *   paths. What sets it apart is meta-loop identity, not run behaviour: it's its own Collection/
-   *   deck-editor category, extra copies can never be bought (`shop.ts`), it can never take a sticker
-   *   (`stickerAppliesTo`), and a deck may hold at most `MAX_WONDERS_PER_DECK` of them
-   *   (`deckBuilder.ts`). The face shows a gold "Wonder" banner over the ordinary building colour.
-   * - `action`: resolves its `effect`, then recycles to the **discard** pile.
-   * - `work`: the card sticks onto the board as a staffable work box (see `workers`); it
-   *   produces its `effect.resources` only while staffed, then recycles to the **discard** pile at
-   *   *end of turn* (not on play). No population is locked and no idle pop is required to play it.
-   * - `event`: a **recurring hazard** the player can pay to defuse — mission-injected into the deck,
-   *   never built with (excluded from the deck editor/collection by `isDeckable`), but *playable once
-   *   drawn into hand*. Its fate is path-driven, and that split is the whole mechanic:
-   *   **played** — pay its `cost` to banish it to **removed** *unresolved*: its effect never fires,
-   *   so playing an event is *preventive*;
-   *   **left unplayed** at end of turn — it auto-resolves its effect for free and files to
-   *   **discard**, so it reshuffles back and *recurs*. So doing nothing lets the disaster strike
-   *   round after round; paying to play it pre-empts it for good. Because an event may fire unplayed
-   *   with no UI present, its resolver must stay non-interactive (never `suspendChoice`) — see
-   *   `rules/upkeep.ts`'s `resolveHandEvents`.
-   * - `threat`: a persistent board hazard, never in hand/deck/collection/deck editor — a mission's
-   *   `setup` seeds it directly into `GameState.threats` (`rules/threats.ts`'s `addThreat`), not a
-   *   pile. Unlike an `event` (which lives in the deck/hand and fires at most once per draw), a
-   *   threat ticks *every* upkeep
-   *   via the `endTurn` broadcast (`rules/events.ts`'s `dispatchEvent` → `resolveEndTurn` →
-   *   `resolveCard`) and stays on the board indefinitely — the card's own `effect`/`resolve` computes
-   *   and applies its drain (and, for one that escalates, bumps its own counter), the same resolver
-   *   spine every other card resolves through.
-   * - `objective`: a mission's win/lose condition made into a card — the positive counterpart to
-   *   `threat`. Seeded once at setup into `GameState.objective` (`rules/objective.ts`'s
-   *   `seedObjective`) from the mission's `objectiveCardId`, never in hand/deck/collection/deck
-   *   editor. Unlike a threat it has *no* per-upkeep effect and never mutates `G` — it owns its
-   *   mission's win/lose *logic* instead, as the pure-read `objective` hook below (`rules/objective.ts`
-   *   polls it from `run/engine.ts`'s `checkEndIf` at move granularity), plus a `dynamicText` for its
-   *   live progress line. A real `CardInstance`, so a future objective can carry its own `counters`.
-   */
+  /** What the card *is* and where it goes after play — see docs/DESIGN.md → *Card kinds*. */
   kind: CardKind;
   /** CoreResources required to play. Absent keys are free (e.g. {} = no cost). */
   cost: Partial<CoreResources>;

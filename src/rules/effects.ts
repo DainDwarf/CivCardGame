@@ -8,19 +8,10 @@ import { effectiveGain } from './stickers';
 import { findStaffable, producingUnits } from './population';
 
 /**
- * A card's effect: a sign- and timing-neutral bundle of state changes (a signed resource delta plus
- * a draw and a demolish). It describes *what* changes, not *when* — the same bundle can be applied
- * once on play, once at placement, every staffed round, or at end of turn. Which timing applies is
- * the resolver's job (`specToResolver` on play, `resolveProduction` per round, `resolveHandEvents`
- * for an unplayed event), never a property of the bundle. Nothing in it is inherently good or bad: a
- * negative resource entry drains, a positive one grants — including the strategic pools.
+ * A card's effect: a sign- and timing-neutral bundle of state changes. It describes *what* changes, not *when* — the same bundle can be applied once on play, every staffed round, or at end of turn. Which timing applies is the resolver's job, never a property of the bundle. Nothing in it is inherently good or bad: a negative resource entry drains, a positive one grants — including the strategic pools.
  */
 export interface CardEffect {
-  /** Signed resource delta applied immediately — a positive entry is a gain, a negative one a drain
-   *  (e.g. an event costing a resource). Covers all eight pools: the five core plus the three
-   *  strategic (population/territory/culture — e.g. Settlers grants population, Conquest territory,
-   *  Cultural Festival culture). No clamp — a pool may go negative. Folded through `gainResources`, so
-   *  a card's stickers adjust the whole delta, strategic and drains included. */
+  /** Signed resource delta applied immediately. */
   resources?: Partial<Resources>;
   /** Cards drawn immediately. */
   draw?: number;
