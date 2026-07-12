@@ -70,15 +70,17 @@ export interface CardDef {
   discardCost?: number;
   /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
   cultureLevelReq?: number;
-  /** Immediate one-shot effect when played (signed resource delta, draw, population, territory,
-   *  culture, or demolish). For a `building` this is a **placement** one-shot, resolved once when
-   *  the card is placed (e.g. the Hut's `+1 population`); the building's recurring output is the
-   *  passive `produces` below, so a building must express per-round output there and **never** as
-   *  `effect.resources` (which would fire on placement *and* every round, since `defaultProduce` falls
-   *  back to `effect.resources` when `produces` is absent). `work` cards defer their `effect.resources`
-   *  until staffed at upkeep. This declarative bag
-   *  drives both the default resolver (`specToResolver`) and the card's auto-generated text
-   *  (`describeCard`) / play gates (`unplayableReason`), so most cards need only this. */
+  /** The card's declarative effect bundle — *what* it changes (see `CardEffect`), left to a resolver
+   *  to say *when*. This one field is currently read at a different timing per kind: an `action`
+   *  applies it once on play; a `building`/`wonder` applies it once at **placement** (e.g. the Hut's
+   *  `+1 population`), its recurring output living in the passive `produces`/`cultureOutput` below; a
+   *  `work` card defers it until staffed and applies its `effect.resources` **each round** at upkeep;
+   *  an unplayed `event` applies it at end of turn. Because a building's `effect` is a placement
+   *  one-shot while a work card's is per-round, the per-round resolver (`defaultProduce`) reads only
+   *  the resource + culture parts — so a building must never put recurring output in `effect.resources`
+   *  (it would fire at placement *and* every round), and a per-round draw/population/territory isn't
+   *  expressible yet. This bag drives the default resolver (`specToResolver`), the auto-generated face
+   *  text (`describeCard`), and the play gates (`unplayableReason`), so most cards need only this. */
   effect?: CardEffect;
   /** Bespoke play-time behavior for a card whose logic the declarative `effect` can't express
    *  (self-reference, per-card state, targeting, interaction). When present it *replaces* the
@@ -188,9 +190,11 @@ export interface CardDef {
    *  must set it (pinned by `cards.test.ts`); mission-only kinds may lean on the fallback (the
    *  objective's is 🏆). */
   art?: string;
-  /** `building` cards: per-round output once staffed. */
+  /** A structure's (`building`/`wonder`) per-round resource output once staffed. (A `work` card
+   *  instead carries its per-round output in `effect.resources`; see the `effect` field above.) */
   produces?: Partial<Resources>;
-  /** `building` cards: per-round culture gained while staffed — accumulates on G.culture. */
+  /** A staffable card's (`building`/`wonder`/`work`) per-round culture gained while staffed —
+   *  accumulates on G.culture (e.g. Beer, a work card). */
   cultureOutput?: number;
 }
 

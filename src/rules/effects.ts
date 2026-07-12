@@ -7,7 +7,14 @@ import { emitEvent } from './events';
 import { effectiveGain } from './stickers';
 import { findStaffable, producingUnits } from './population';
 
-/** The immediate, one-shot effect a card applies when played. */
+/**
+ * A card's effect: a sign- and timing-neutral bundle of state changes (a signed resource delta plus
+ * draw / population / territory / culture and a demolish). It describes *what* changes, not *when* —
+ * the same bundle can be applied once on play, once at placement, every staffed round, or at end of
+ * turn. Which timing applies is the resolver's job (`specToResolver` on play, `resolveProduction`
+ * per round, `resolveHandEvents` for an unplayed event), never a property of the bundle. Nothing in
+ * it is inherently good or bad: a negative resource entry drains, a positive `population` grants growth.
+ */
 export interface CardEffect {
   /** Signed resource delta applied immediately — a positive entry is a gain, a negative one a drain
    *  (e.g. an event costing a resource). No clamp — a pool may go negative. Folded through
@@ -140,10 +147,13 @@ export function resolveCard(ctx: EffectContext): void {
 }
 
 /**
- * Build a production resolver from a card's declarative production fields. Deliberately narrower
- * than `specToResolver`: applies only `gain` (via the shared `gainResources`) and `culture`, never a
- * one-shot play field (`draw`/`population`/`territory`/`destroy`) a card might also declare — those
- * must never fire on a recurring tick.
+ * Build a production resolver from a card's declarative production fields — the per-round timing for a
+ * `CardEffect` bundle. Currently narrower than `specToResolver`: it applies only the resource part
+ * (via the shared `gainResources`) and `culture`, not `draw`/`population`/`territory`/`destroy`. That
+ * narrowing is a consequence of the single `effect` field being shared with a building's *placement*
+ * one-shot — running the whole bundle each round would re-fire those placement fields — not a law of
+ * production, and it's why a per-round territory or population gain (e.g. Conquest as a `work` card)
+ * isn't expressible yet.
  *
  * Output scales per staffed worker: the declarative `produces`/`cultureOutput` are *per-worker unit*
  * values, multiplied by the operating instance's `producingUnits` (its staffed count, or 1 for a
