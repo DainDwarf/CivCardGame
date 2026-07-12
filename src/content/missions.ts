@@ -151,7 +151,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     failureHint: null,
     kind: 'standard',
     // Unlocks the Chiefdom board — the first military-leaning government, so the arc teaches board
-    // choice (Tribe vs. Chiefdom at launch). Influence amount + board stats are provisional (Step 6.4).
+    // choice (Tribe vs. Chiefdom at launch). Influence amount + board stats are provisional.
     reward: { influence: 8, unlockBoardIds: ['chiefdom'] },
     map: { col: 3, row: -1 },
     age: 'stone',

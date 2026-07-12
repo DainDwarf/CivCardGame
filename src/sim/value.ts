@@ -4,7 +4,7 @@ import { objectiveProgress } from './objective';
 /**
  * Heuristic **weights** for `scoreState` below. These are a deliberately-first-pass, throwaway set —
  * the simulator is the tool that *tunes* them, and they'll be re-fit once real content (buildings,
- * territory, culture goals) lands in the age arcs (see `docs/TODO.md` Step 4 / Steps 5–8). What matters
+ * territory, culture goals) lands in the age arcs. What matters
  * now is the *shape*: survival dominates capability, because famine (food driven below 0 → core collapse)
  * is the way a run is lost. So a projected-negative food next round is punished far harder than any
  * resource/economy gain is rewarded.

@@ -35,7 +35,7 @@ export interface RewardOutcome {
  * mission's unlocks folded in — the caller folds the one returned value back. Every non-granting exit
  * (infinite, already-completed, no reward) returns it unchanged, never dropping any set.
  *
- * An `'infinite'` mission (Step 6) has no fixed win state and never touches `mapProgress`
+ * An `'infinite'` mission has no fixed win state and never touches `mapProgress`
  * (see `App.tsx`'s `recordResult`), so its payout is unconditional instead: Influence equal
  * to `turnsTaken` (rounds survived), paid on *every* attempt regardless of `alreadyCompleted`
  * or whether the run's outcome reads as victory or defeat — there is no unlock to grant.

@@ -16,7 +16,7 @@ import type { BoardDef } from './boards';
  * catalogues follow. Every consumer routes through `rules/boardStickers.ts` — the eligibility
  * dispatcher `boardStickerAppliesTo` and the `effectiveBoard` fold — which carry *no* sticker-specific
  * knowledge, so a new board sticker (with a new attach condition or a new profile tweak) is added
- * here alone, never at a call site. Deliberately small — real variety/balance is Phase 4.
+ * here alone, never at a call site. Deliberately small — real variety/balance is deferred.
  */
 export interface BoardStickerDef {
   id: string;

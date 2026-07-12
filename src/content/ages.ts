@@ -6,7 +6,7 @@ import type { MissionDef } from './missions';
  * player can orient themselves in history; each renders as a large right-arrow band above
  * its columns, with a matching gradient wash behind the DAG nodes beneath.
  *
- * The Phase-4 content target is the first three campaign ages — **Stone Age → Bronze Age →
+ * The content target is the first three campaign ages — **Stone Age → Bronze Age →
  * Iron Age** — each rendered as its own themed arrow band (the Paleolithic sits *before* the
  * tree as the always-owned starting baseline, not as a band; see docs/DESIGN.md). The eventual
  * product extends this sequence further (… → Information Age); adding an age is a data change
@@ -14,9 +14,9 @@ import type { MissionDef } from './missions';
  *
  * **Each age covers its slice of the DAG.** A mission declares which age it belongs to
  * (`MissionDef.age`), and an age's slice of the timeline is *derived* from its missions'
- * columns rather than authored — see `ageColSpans`. With no `'standard'` missions authored yet
- * (only the infinite `sandbox`), the derivation is dormant: `ageColSpans` returns `[]` and the
- * map renders no bands until the first age's missions land (Step 6).
+ * columns rather than authored — see `ageColSpans`. An age with no placed missions gets no band;
+ * before any `'standard'` mission is placed, `ageColSpans` returns `[]` and the map renders no
+ * bands at all.
  */
 export interface AgeDef {
   id: string;

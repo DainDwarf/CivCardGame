@@ -5,11 +5,10 @@
  * pre-decked, for early deckbuilding variety; everything else is unlocked through missions. A plain
  * `{ cardId: count }` map, not an `OwnedCards` itself: instance identity doesn't exist until granted.
  *
- * **Phase 4 Step 3 — the Paleolithic starting collection.** Every count is a **copy-tier-attainable**
- * number (the shop's ×1→×2→×4→×8 ladder — 1/2/4/8, never 3), so a seeded quantity is one the shop
- * economy could itself reproduce. The two staffed producers a run leans on every turn (Foraging,
- * Toolmaking) start at 4; everything else at 2. This exactly covers the Founding deck (which uses
- * Foraging/Toolmaking ×4 and every other decked card ×2).
+ * Every count is a **copy-tier-attainable** number (the shop's ×1→×2→×4→×8 ladder — 1/2/4/8, never 3),
+ * so a seeded quantity is one the shop economy could itself reproduce. The two staffed producers a run
+ * leans on every turn (Foraging, Toolmaking) get the most copies; everything else the minimum. This
+ * exactly covers the Founding deck.
  */
 export const STARTING_COLLECTION: Record<string, number> = {
   foraging: 4,

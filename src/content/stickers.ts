@@ -11,7 +11,7 @@ import type { CardDef } from './cards';
  * dispatcher `stickerAppliesTo` and the effect fold in `effectiveGain`/`effectiveCost` — which
  * carry *no* sticker-specific knowledge, so a new sticker (with a new attach condition or a new
  * output/cost tweak) is added here alone, never at a call site. Deliberately small —
- * real variety/balance is Phase 4.
+ * real variety/balance is deferred.
  *
  * The two effect hooks cover per-copy *output* and *play-cost* only — the two things the granular
  * run-loop call sites already need (`run/moves.ts`'s `playCard` calls `effectiveCost(card.cost)`

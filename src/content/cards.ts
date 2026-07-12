@@ -243,7 +243,7 @@ export function compareCards(a: CardDef, b: CardDef): number {
 }
 
 /** Rounds a run of the sandbox mission lasts before the `sands_of_time` deadline threat ends it —
- *  one tunable knob that bounds simulation length (Step 4) without touching the economy baseline. */
+ *  one tunable knob that bounds simulation length without touching the economy baseline. */
 export const SANDBOX_DEADLINE = 50;
 
 /** The buildings "Growing Numbers" wants one of each of, paired with the glyph the objective's
@@ -255,7 +255,7 @@ const GROWING_NUMBERS_BUILDINGS: readonly (readonly [cardId: string, icon: strin
   ['toolmaker', '⛏️'],
 ];
 
-/** How many raider waves "Raiders at the Border" (6.4) seeds — the single source shared by the
+/** How many raider waves "Raiders at the Border" seeds — the single source shared by the
  *  mission's injected event list (`content/missions.ts`), the `raiders_at_border_goal` win threshold,
  *  and its progress readout, so the "defeat *all* the raiders" invariant can't drift between them. */
 export const RAIDER_WAVES = 3;
@@ -265,11 +265,11 @@ export const RAIDER_WAVES = 3;
  * live right here); action cards resolve their effect and recycle through the discard; work
  * cards stick onto the board for one turn.
  *
- * **Phase 4 Step 3 — the Paleolithic starting set.** The always-owned base cards a fresh player
- * begins with (`content/collection.ts`'s `STARTING_COLLECTION` + the `content/decks.ts` Founding
- * deck): hunter-gatherer *actions* and staffable *work*, deliberately **no buildings** — buildings
- * arrive with the Stone Age arc (unlocked through missions). Numbers here are a first pass, tuned by
- * the Step 4 simulator. Also holds the sandbox mission's own cards (`sandbox_goal` + `sands_of_time`),
+ * The always-owned base cards a fresh player begins with (`content/collection.ts`'s
+ * `STARTING_COLLECTION` + the `content/decks.ts` Founding deck): hunter-gatherer *actions* and
+ * staffable *work*, deliberately **no buildings** — buildings arrive with the Stone Age arc
+ * (unlocked through missions). Numbers here are a first pass. Also holds the sandbox mission's own
+ * cards (`sandbox_goal` + `sands_of_time`),
  * which are mission-only (never deckable). Tests install synthetic `test_*` cards via
  * `rules/testFixtures.ts` on top of this map for the duration of a run.
  */
@@ -296,8 +296,8 @@ export const CARDS: Record<string, CardDef> = {
   //   until the civilization is cultured enough. Also the first **multi-worker** building (`workers`
   //   is a *capacity*, not a fixed requirement): it operates with any 1–3 workers and its declarative
   //   `produces`/`cultureOutput` are *per-worker unit* values scaled by the staffed count (see
-  //   `population.ts`'s `producingUnits`). Unlocked by "Rites & Rituals" (6.3) so the capstone (6.7)
-  //   can *build* it. Cost is still a provisional first pass — 6.7 owns its real tuning.
+  //   `population.ts`'s `producingUnits`). Unlocked by "Rites & Rituals" so the capstone mission
+  //   can *build* it. Cost is still a provisional first pass, not yet tuned.
   gobekli_tepe: {
     id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
     cost: { production: 8 }, cultureLevelReq: 1, workers: 3,
@@ -352,7 +352,7 @@ export const CARDS: Record<string, CardDef> = {
   //   back to recur; *played*, it pays its cost to banish itself to `removed` unresolved (its effect
   //   never fires — playing is preventive). The raider is the debut resource-*draining* event: it
   //   bleeds 1🌾 each round it's left standing, and is driven off for good by paying 3⚔️ — "Raiders at
-  //   the Border" (6.4) is won by defusing all its waves this way.
+  //   the Border" is won by defusing all its waves this way.
   raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, effect: { loss: { food: 1 } } },
 
   // — "The First Settlement" objective (mission-only): stockpile 10🔨 and 10⚔️. Owns its own win

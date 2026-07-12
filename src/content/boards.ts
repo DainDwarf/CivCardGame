@@ -1,8 +1,8 @@
 import type { Resources } from '../rules/resources';
 
-/** A board's catalogue id. A plain `string` (not a union) because the catalogue is emptied for the
- *  Phase 4 content pass — a fixed union couldn't key an empty `BOARDS` and would break every
- *  `boardId: BoardId` consumer; Step 3 authors the real boards under whatever ids it picks. */
+/** A board's catalogue id. A plain `string` (not a union) because the catalogue grows through the
+ *  content pass — a fixed union would break every `boardId: BoardId` consumer as boards are added
+ *  or renamed. */
 export type BoardId = string;
 
 /**
@@ -28,13 +28,12 @@ export interface BoardDef {
 }
 
 /**
- * The government boards a run can be launched on. **Phase 4 Step 3** authors the first one — `tribe`,
- * the Paleolithic starting configuration matching the buildingless starting deck: a small band
- * (population 2) with a modest food store and nothing else, no fixed territory yet (buildings — and
- * the territory that gates them — arrive with the Stone Age arc). It is the sole `starting` board;
- * more boards land through mission rewards (`unlockBoardIds`) — `chiefdom`, the first military-leaning
- * government, is unlocked by the "Raiders at the Border" mission (Step 6.4), where the arc teaches
- * board choice (Tribe vs. Chiefdom at launch). Its numbers are provisional (Step 6.4 tunes them).
+ * The government boards a run can be launched on. `tribe` is the Paleolithic starting configuration
+ * matching the buildingless starting deck: a modest food store and nothing else, no fixed territory
+ * yet (buildings — and the territory that gates them — arrive with the Stone Age arc). More boards
+ * land through mission rewards (`unlockBoardIds`) — `chiefdom`, the first military-leaning
+ * government, is unlocked by the "Raiders at the Border" mission, where the arc teaches board choice
+ * (Tribe vs. Chiefdom at launch). Its numbers are provisional.
  */
 export const BOARDS: Record<BoardId, BoardDef> = {
   tribe: {
