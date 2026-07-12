@@ -318,8 +318,8 @@ function boxOutputLabels(produces: Partial<Resources> | undefined, cultureOutput
     ...Object.entries(produces ?? {})
       .filter(([, v]) => v)
       .map(([k, v]) => {
-        // Output is signed (a transforming work box can drain): a positive gets an explicit "+",
-        // a negative already carries its own "-".
+        // The output bag is signed (a work box reads its `effect.resources`, which may drain): a
+        // positive gets an explicit "+", a negative already carries its own "-".
         const n = (v as number) * u;
         return `${n > 0 ? '+' : ''}${n}${COST_ICON[k as keyof Resources]}`;
       }),
@@ -507,7 +507,7 @@ function WorkBox({
   ]
     .filter(Boolean)
     .join(' ');
-  const gain = boxOutputLabels(card.effect?.resources, undefined, producingUnits(inst)).join(' ');
+  const gain = boxOutputLabels(card.effect?.resources, card.cultureOutput, producingUnits(inst)).join(' ');
   return (
     <div className={className} ref={boxRef}>
       {!selfSufficient && (

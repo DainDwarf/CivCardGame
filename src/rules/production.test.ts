@@ -90,34 +90,3 @@ describe('per-worker production scaling', () => {
     expect(G.resources.food).toBe(2); // test_food produces {food: 2}, unscaled at capacity 1
   });
 });
-
-describe('Beer — a per-round transform work card', () => {
-  // Beer (a real content work card) burns 2🌾 to make 5🎭 each staffed round — a transform a plain
-  // producer can't express, so it rides a bespoke `produce`. It sits in the workZone like any work box.
-  it('transforms 2🌾 into 5🎭 per staffed round', () => {
-    const G = blankState('test');
-    G.resources.food = 10;
-    G.workZone = [{ id: nextId++, cardId: 'beer', workers: 1 }];
-    dispatchEvent(G, { type: 'endTurn' });
-    expect(G.resources.food).toBe(8);
-    expect(G.culture).toBe(5);
-  });
-
-  it('drains food below zero when short — the transform is unconditional (into a famine collapse)', () => {
-    const G = blankState('test');
-    G.resources.food = 1;
-    G.workZone = [{ id: nextId++, cardId: 'beer', workers: 1 }];
-    dispatchEvent(G, { type: 'endTurn' });
-    expect(G.resources.food).toBe(-1); // −2🌾 applied even without the food to cover it
-    expect(G.culture).toBe(5);
-  });
-
-  it('produces nothing while unstaffed', () => {
-    const G = blankState('test');
-    G.resources.food = 10;
-    G.workZone = [{ id: nextId++, cardId: 'beer', workers: 0 }];
-    dispatchEvent(G, { type: 'endTurn' });
-    expect(G.resources.food).toBe(10);
-    expect(G.culture).toBe(0);
-  });
-});

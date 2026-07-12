@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { isStaffable, isStructure, type CardDef } from '../content/cards';
+import { isStaffable, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
 import type { Resources } from '../rules';
 import styles from './CardFace.module.css';
@@ -125,8 +125,10 @@ export function describeCard(c: CardDef): string {
   if (e?.territory) parts.push(`+${e.territory} territory`);
   if (e?.culture) parts.push(`+${e.culture} 🎭`);
   if (e?.destroy) parts.push('removes a building from the run');
-  // A building/wonder card *is* the structure — show its per-round output (workers shown as meeples).
-  if (isStructure(c)) {
+  // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` +
+  // `cultureOutput` (workers are shown as meeples, not text). A work card's resource output rides
+  // `effect.resources` (handled above); this adds the culture a card like Beer produces.
+  if (isStaffable(c)) {
     const stats = describeBuilding(c, false);
     if (stats) parts.push(stats);
   }

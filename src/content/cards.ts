@@ -2,7 +2,6 @@ import { subtractResources, type Resources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, type Resolver, suspendChoice } from '../rules/effects';
 import { recoverFromDiscard } from '../rules/deck';
-import { findStaffable, producingUnits } from '../rules/population';
 import { cultureLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'event' | 'threat' | 'objective';
@@ -283,21 +282,11 @@ export const CARDS: Record<string, CardDef> = {
   //   end of turn. Cost nothing to play and need no idle population to place.
   foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, art: '🌿', effect: { resources: { food: 3 } } },
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, art: '🪨', effect: { resources: { production: 2 } } },
-  // Beer: the first *transforming* work card — each staffed round it converts 2🌾 into 5🎭. A per-round
-  //   loss can't be declared (`defaultProduce` only ever adds), so it needs a bespoke `produce` that
-  //   scales the whole transform per worker (×1 at capacity 1). The food drain is unconditional: staff
-  //   it while short on 🌾 and it bleeds food negative into a famine collapse — a committed cost the
-  //   player manages by unstaffing. Reward-unlocked by "Restless People", never in the starting set.
-  beer: {
-    id: 'beer', name: 'Beer', kind: 'work', cost: {}, workers: 1, art: '🍺',
-    description: 'Staffed: −2🌾 → +5🎭',
-    produce: (ctx) => {
-      const s = findStaffable(ctx.G, ctx.self.id);
-      const units = s ? producingUnits(s) : 1;
-      subtractResources(ctx.G.resources, { food: 2 * units });
-      ctx.G.culture += 5 * units;
-    },
-  },
+  // Beer: converts food into culture — pay 2🌾 to play, then it yields 5🎭 each staffed round. The food
+  //   is a one-time play cost (charged by `playCard`), the culture a per-worker declarative output, so
+  //   it's a plain producer with no bespoke logic. Reward-unlocked by "Restless People", never in the
+  //   starting set.
+  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { food: 2 }, workers: 1, art: '🍺', cultureOutput: 5 },
 
   // — Stone Age buildings: the first permanent structures, unlocked by "The First Settlement". A
   //   building *is* the building — it sits in the tableau and produces each round while staffed.

@@ -143,8 +143,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     government), so future launches choose Tribe vs. Chiefdom.
   - **9.5 — Restless People tutorial** — teach the **threat** mechanic: a persistent board hazard (the
     Unrest card in the threat zone) that drains 🪙 per population on every deck reshuffle, and the
-    culture goal that placates it. **Post-clear:** the reward unlocks the **Beer** work card (a per-round
-    2🌾→5🎭 transform).
+    culture goal that placates it. **Post-clear:** the reward unlocks the **Beer** work card (costs 2🌾
+    to play, then +5🎭 per staffed round).
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*
@@ -205,12 +205,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     (`restless_people_goal`, its own objective card mirroring `rites_rituals_goal`); deadline-free.
     Reward 9⭐ + unlocks **Beer** (provisional). `rites_rituals` (6.3) now fans to both Raiders (row −1)
     and this mission (row 0).
-  - The **Beer** work card (reward unlock) — a per-round *transform*: each staffed round burns **2🌾 →
-    5🎭** via a bespoke `produce` (a per-round loss isn't declaratively expressible). Unconditional —
-    it drains food even into a famine collapse (a committed cost, managed by unstaffing).
+  - The **Beer** work card (reward unlock) — costs **2🌾** to play, then yields **+5🎭** per staffed
+    round (a plain declarative producer: the food is a one-time play cost, the culture a per-worker
+    output — no bespoke `produce`).
   - `sim/objective.ts` gains a `restless_people_goal` gradient (identical culture-toward-level-2 form as
     `rites_rituals_goal`), so the standard mission is sweepable. Mechanism tests over the reshuffle
-    event + Unrest drain + Beer transform in `rules/{deck,events,production}.test.ts`. **Balance
+    event + Unrest drain in `rules/{deck,events}.test.ts`. **Balance
     (reward 9⭐, drain magnitude) stays provisional — sim sweep + manual feel-check pending.**
 
 - **Step 6.4 — Raiders at the Border (Events branch + Chiefdom board)** ✅ — col 3, row -1, prereq 6.3.

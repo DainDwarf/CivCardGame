@@ -170,7 +170,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Reach 🎭 culture level 2 to placate the restless people.',
     failureHint: 'Unrest drains 🪙 on every deck reshuffle — bankruptcy ends the run.',
     kind: 'standard',
-    // Unlocks Beer — a work card that transforms 2🌾 into 5🎭. Influence amount is provisional.
+    // Unlocks Beer — a work card costing 2🌾 to play that then yields 5🎭 per staffed round. Influence amount is provisional.
     reward: { influence: 9, unlockCardIds: ['beer'] },
     map: { col: 3, row: 0 },
     age: 'stone',
