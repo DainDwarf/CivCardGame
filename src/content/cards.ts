@@ -166,7 +166,7 @@ export const CARDS: Record<string, CardDef> = {
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, display: { art: '🤝' }, effect: { resources: { food: 2 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, display: { art: '🐕' }, effect: { resources: { military: 2 } } },
-  conquest: { id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 5 }, display: { art: '🗡️' }, effect: { resources: { territory: 1 } } },
+  conquest: { id: 'conquest', name: 'Conquest', kind: 'work', cost: { military: 5 }, workers: 1, display: { art: '🗡️' }, produces: { resources: { territory: 1 } } },
 
   // Storytelling keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer).
   storytelling: {
