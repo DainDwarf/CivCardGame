@@ -349,7 +349,10 @@ function MissionFlowPopup({
   // chip list): a generic locked chip pre-clear, a `BoardMini` reveal post-clear — mirroring how a
   // card unlock shows a face-down `missionLocked` face → real `CardFace`.
   const unlockBoards = mission.reward ? (mission.reward.unlockBoardIds ?? []).map((id) => BOARDS[id]) : [];
-  const totalUnlocks = unlockCards.length + unlockStickers.length + unlockBoards.length;
+  // A board *upgrade* (Tribe → Settlement): not an unlock but a replacement, previewed as a from→to
+  // pair rather than a single reveal so the "your board improves" story is legible. Counts as one gain.
+  const boardUpgrade = mission.reward?.boardUpgrade;
+  const totalUnlocks = unlockCards.length + unlockStickers.length + unlockBoards.length + (boardUpgrade ? 1 : 0);
   // The cards this mission is actually about: its objective (always exactly one) plus whichever
   // threat/event cards it seeds — read straight off the same declarative `threats`/`events` lists
   // `setup` injects from (see `content/missions.ts`), so this can't drift from what a launched run
@@ -515,6 +518,17 @@ function MissionFlowPopup({
                             // its `locked` silhouette (greyed, stats withheld, name shown), mirroring
                             // the card unlock's face-down → face reveal via `CardFace`'s `missionLocked`.
                             <BoardMini key={board.id} boardId={board.id} locked={!alreadyCleared} />,
+                          )}
+                        </div>
+                      )}
+                      {boardUpgrade && (
+                        <div className={styles.rewardBoards}>
+                          {/* Pre-clear: the *current* board with a ⬆ and its numbers withheld — the
+                              improved stats stay secret. Post-clear: just the new board, revealed. */}
+                          {alreadyCleared ? (
+                            <BoardMini boardId={boardUpgrade.to} />
+                          ) : (
+                            <BoardMini boardId={boardUpgrade.from} upgrade />
                           )}
                         </div>
                       )}

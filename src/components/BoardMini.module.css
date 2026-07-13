@@ -48,7 +48,9 @@
   color: var(--text);
 }
 
-.ground[data-board='tribe'] {
+/* Settlement shares Tribe's ground tint — the settled version of the same people (see Board.module.css). */
+.ground[data-board='tribe'],
+.ground[data-board='settlement'] {
   background: var(--board-tribe-ground);
 }
 
@@ -80,6 +82,15 @@
    population). Sized between the pop tokens and the big face-down glyph so it reads as "hidden
    value" without dominating. */
 .lockedMark {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+
+/* The board-upgrade stand-in for the population tray — a muted ⬆ reading "this board improves". Same
+   footprint as `.lockedMark` so the banner shape is unchanged. */
+.upgradeMark {
   font-size: 1.5rem;
   font-weight: 800;
   line-height: 1;

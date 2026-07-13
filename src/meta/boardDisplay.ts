@@ -1,11 +1,14 @@
-import { BOARDS, type BoardId } from '../content/boards';
+import { BOARDS, ORIGIN_BOARD_ID, type BoardId } from '../content/boards';
 
-/** The boards the player may launch on / sticker, in catalogue order: every *starting* board (always
- *  available) plus any unlocked via a mission reward (`PlayerStore.unlockedBoards`, fed by
- *  `unlockBoardIds`). The single filter seam the board pickers (launch popup, the Board menu) read
- *  through — the board counterpart to `rules/boardStickers.ts`'s `unlockedBoardStickerDefs`. A locked
- *  board is hidden entirely (anti-surprise unlock). Baseline is the `starting` flag, never the mutable
- *  set, so an empty/edited unlock set can't lock a player out of playing. */
+/** The boards the player may launch on / sticker, in catalogue order: exactly the members of
+ *  `PlayerStore.unlockedBoards` — the single source of truth for availability, seeded with the origin
+ *  board and grown/replaced by mission rewards (`unlockBoardIds` adds; a `boardUpgrade` swaps one for
+ *  another). The single filter seam the board pickers (launch popup, the Board menu) read through — the
+ *  board counterpart to `rules/boardStickers.ts`'s `unlockedBoardStickerDefs`. A locked board is hidden
+ *  entirely (anti-surprise unlock). If the set is ever empty (a hand-edited/corrupt-but-valid save),
+ *  this falls back to the origin board — the structural never-locked-out guarantee, unbypassable
+ *  because every picker routes through here. */
 export function availableBoardIds(unlockedBoards: Record<string, true>): BoardId[] {
-  return (Object.keys(BOARDS) as BoardId[]).filter((id) => BOARDS[id].starting || unlockedBoards[id]);
+  const available = (Object.keys(BOARDS) as BoardId[]).filter((id) => unlockedBoards[id]);
+  return available.length ? available : [ORIGIN_BOARD_ID];
 }

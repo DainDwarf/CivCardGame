@@ -48,9 +48,15 @@ built; the game is now in its content-and-balance pass — see
     (a mission may grant none — an Influence-only reward). The four unlock sets `computeRewards` grows
     (`collection` + the three id-sets) travel through it as one `UnlockProgress` bundle mirroring the
     `PlayerStore` fields — in unchanged, out with this mission's unlocks folded in — rather than a run of
-    transposable positional args. Previewed on the `MissionDetailPanel` (a sticker shows a generic locked
-    chip pre-clear then its real face; a board shows a greyed `locked` `BoardMini` silhouette pre-clear —
-    `CardFace`'s `missionLocked` counterpart — then its real `BoardMini`) and paid out in `App.tsx`'s `recordResult`.
+    transposable positional args. A fifth reward, `boardUpgrade` (`{ from, to }`), is *not* an unlock but a
+    board **replacement** — it retires one board for another (carrying its stickers across, filtered by
+    `boardStickerAppliesTo`), applied once on first clear by `rules/boardUpgrade.ts`'s `applyBoardUpgrade`
+    (kept out of `computeRewards`, which is append-only and doesn't touch `boardStickers`). Previewed on the
+    `MissionDetailPanel` (a sticker shows a generic locked chip pre-clear then its real face; a board shows a
+    greyed `locked` `BoardMini` silhouette pre-clear — `CardFace`'s `missionLocked` counterpart — then its
+    real `BoardMini`; a `boardUpgrade` shows the *current* board in `BoardMini`'s `upgrade` mode pre-clear —
+    real tint, numbers withheld, a ⬆ in the population slot — then only the new board once cleared) and paid
+    out in `App.tsx`'s `recordResult`.
   - **Infinite missions + threats** — `'infinite'`-kind missions never win and pay
     Influence = rounds survived on every attempt. `GameState.threats`
     (`rules/threats.ts`) are persistent, mission-seeded board hazards that escalate and
@@ -260,6 +266,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     both `BoardMenu`'s drag `isValidTarget` and the upgrade hints share), and `effectiveBoard` — the
     single fold that applies a board's stickers to its starting profile (`run/setup.ts` seeds off it;
     the board pickers display it). `MAX_BOARD_STICKERS` is the provisional per-board cap.
+  - `boardUpgrade.ts` — `applyBoardUpgrade`: the pure fold behind a `boardUpgrade` reward — retire the
+    `from` board (drop it from `unlockedBoards`), unlock `to`, and carry `from`'s stickers across
+    (filtered by `boardStickerAppliesTo`, capped at `MAX_BOARD_STICKERS`). Called once on first clear by
+    `store.ts`'s `applyRunResult`, kept out of `rewards.ts` (which is append-only and doesn't touch
+    `boardStickers`).
   - `upgrades.ts` — the **available-upgrade hints**: `cardUpgradeAvailable`/`boardUpgradeAvailable`
     (per-tile) + `anyCardUpgradeAvailable`/`anyBoardUpgradeAvailable` (nav-badge roll-ups), each
     **on ⟺ some real purchase would succeed right now** (affordable · applicable · under the caps).
@@ -312,14 +323,17 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `boardStickers.ts` — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
     `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
   - `boards.ts` — `BOARDS` (government boards; each sets all 8 starting resources: the 5
-    core plus population/territory/culture; `BoardId` is a plain `string`). A board's `starting`
-    flag marks it always-launchable; every other board is **hidden until unlocked** by a mission's
-    `unlockBoardIds` reward, exactly like a card or sticker. The board pickers read availability through
-    `meta/boardDisplay.ts`'s `availableBoardIds` (`starting || unlocked`), so the baseline never depends
-    on the mutable `PlayerStore.unlockedBoards` set — a player can never be locked out of playing. Two
-    boards so far: **Tribe** (the sole `starting` board — the Paleolithic start: a small food store and a
-    couple of workers, no territory yet) and **Chiefdom** (the first military-leaning government,
-    unlocked by the "Raiders at the Border" mission — provisional stats).
+    core plus population/territory/culture; `BoardId` is a plain `string`) + the `ORIGIN_BOARD_ID`. There
+    is no `starting` flag: availability is purely membership in `PlayerStore.unlockedBoards` — the single
+    source of truth, read through `meta/boardDisplay.ts`'s `availableBoardIds`, seeded with the origin board
+    on a fresh profile and grown/replaced by mission rewards (`unlockBoardIds` **adds**; a `boardUpgrade`
+    **swaps** one for another). A board is **hidden until unlocked** (anti-surprise), exactly like a card or
+    sticker; `availableBoardIds` falls back to the origin board if the set is ever empty, so a player can
+    never be locked out of playing. Three boards so far: **Tribe** (the `ORIGIN_BOARD_ID` — the Paleolithic
+    start: a small food store and a couple of workers, no territory yet), **Settlement** (the settled
+    upgrade of Tribe — a `boardUpgrade` reward on "The First Settlement" retires Tribe for it, sharing
+    Tribe's ground tint), and **Chiefdom** (the first military-leaning government, unlocked by the "Raiders
+    at the Border" mission — provisional stats).
   - `missions.ts` — `MISSIONS`; each names an `objectiveCardId` (its win condition, made into
     an `objective` card that owns the win predicate — `run/setup.ts` seeds it into
     `GameState.objective`, the bus re-derives `G.pendingVictory` from it, and `run/engine.ts`'s

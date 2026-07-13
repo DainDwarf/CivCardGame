@@ -20,6 +20,7 @@ export function BoardMini({
   stickerIds,
   openSlots = 0,
   locked = false,
+  upgrade = false,
   className,
 }: {
   boardId: BoardId;
@@ -35,6 +36,11 @@ export function BoardMini({
    *  pre-clear stand-in for a mission's still-secret board unlock. Sticker/openSlots props are
    *  ignored in this mode, mirroring `missionLocked`. */
   locked?: boolean;
+  /** The pre-clear stand-in for a `boardUpgrade` reward: the *current* board with its numbers withheld
+   *  (like `locked`) but its real tint kept — a ⬆ in the population slot signals "this board gets
+   *  upgraded" without revealing the new stats. Once cleared the preview shows the new board plainly
+   *  instead, so this is only ever the still-locked upgrade. */
+  upgrade?: boolean;
   className?: string;
 }) {
   const board = BOARDS[boardId];
@@ -43,19 +49,25 @@ export function BoardMini({
   // locked silhouette, which renders the same icon row with the values withheld.
   const coreOrder: (keyof CoreResources)[] = ['food', 'production', 'money', 'military', 'science'];
 
-  if (locked) {
-    // The board counterpart to `CardFace`'s `faceDown`: same frame + tinted ground (greyed) and the
-    // same banner *shape* so it reads as this board, but every number withheld — the core/culture
-    // icons show with no value, a "?" stands in for the population tray (whose token row would leak
-    // population), and the territory area is left blank (its slot count would leak territory).
+  if (locked || upgrade) {
+    // The board counterpart to `CardFace`'s `faceDown`: the same banner *shape* so it reads as this
+    // board, but every number withheld — the core/culture icons show with no value and the territory
+    // area is left blank (its slot count would leak territory). The two withholding modes differ only
+    // in the ground and the population stand-in: `locked` greys the ground and shows "?" (the whole
+    // board is secret); `upgrade` keeps the real tint and shows a ⬆ (the board is known — only that
+    // it's about to improve is the message).
     return (
-      <div className={`${styles.mini} ${styles.locked}${className ? ` ${className}` : ''}`}>
+      <div className={`${styles.mini}${locked ? ` ${styles.locked}` : ''}${className ? ` ${className}` : ''}`}>
         <div className={styles.ground} data-board={boardId} />
         <div className={styles.nameLabel}>{board.name}</div>
 
         <div className={styles.banner}>
           <div className={styles.populationTray}>
-            <span className={styles.lockedMark} aria-label="Population hidden">?</span>
+            {upgrade ? (
+              <span className={styles.upgradeMark} aria-label="Board upgraded">⬆⬆⬆</span>
+            ) : (
+              <span className={styles.lockedMark} aria-label="Population hidden">?</span>
+            )}
           </div>
 
           <div className={styles.coreGroup}>

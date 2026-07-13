@@ -60,6 +60,11 @@ describe('mission catalogue coherence', () => {
       for (const boardId of unlockBoardIds) {
         expect(BOARDS[boardId], `${m.id} → reward → board ${boardId}`).toBeDefined();
       }
+      if (m.reward!.boardUpgrade) {
+        const { from, to } = m.reward!.boardUpgrade;
+        expect(BOARDS[from], `${m.id} → reward → boardUpgrade.from ${from}`).toBeDefined();
+        expect(BOARDS[to], `${m.id} → reward → boardUpgrade.to ${to}`).toBeDefined();
+      }
     }
   });
 

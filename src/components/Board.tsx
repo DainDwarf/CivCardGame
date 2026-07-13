@@ -2080,6 +2080,11 @@ export function Board({
                 .filter((id) => !unlockedBoardStickers[id])
                 .map((id) => BOARD_STICKERS[id].name),
               ...(mission.reward.unlockBoardIds ?? []).filter((id) => !unlockedBoards[id]).map((id) => BOARDS[id].name),
+              // A board upgrade grants its `to` board (the from→to swap the pickers show) — name it here
+              // too so the win summary announces the headline reward, not just the card unlocks.
+              ...(mission.reward.boardUpgrade && !unlockedBoards[mission.reward.boardUpgrade.to]
+                ? [BOARDS[mission.reward.boardUpgrade.to].name]
+                : []),
             ]
           : [];
       return (

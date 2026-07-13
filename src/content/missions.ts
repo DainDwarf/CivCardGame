@@ -51,13 +51,19 @@ export interface MissionDef {
    *  Influence-only reward, or no reward object). A coherence test pins only that whatever ids a
    *  mission *does* name are real. Unlike cards, a sticker/board unlock simply makes it *available*
    *  (hidden-until-unlocked, like a card); a board carries no Influence cost. `'infinite'` missions
-   *  have no reward — they score Influence = rounds survived. */
+   *  have no reward — they score Influence = rounds survived.
+   *
+   *  `boardUpgrade` is the odd one out — not an *unlock* but a board *replacement*: it retires the
+   *  `from` board in favour of `to` (carrying its stickers across), so the player's government reads as
+   *  upgraded rather than a second board appearing. Applied once on first clear by `applyBoardUpgrade`
+   *  (`rules/boardUpgrade.ts`), it names two real `content/boards.ts` ids. */
   reward?: {
     influence: number;
     unlockCardIds?: string[];
     unlockStickerIds?: string[];
     unlockBoardStickerIds?: string[];
     unlockBoardIds?: string[];
+    boardUpgrade?: { from: string; to: string };
   };
   /** Authored position on the campaign map's DAG grid (`meta/CampaignMap.tsx`): `col` is
    *  the horizontal chronology slot (later = further along history), `row` a *signed* vertical
@@ -97,7 +103,13 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Stockpile 10 🔨 production and 10 ⚔️ military at once.',
     failureHint: null,
     kind: 'standard',
-    reward: { influence: 0, unlockCardIds: ['farm', 'toolmaker', 'hut', 'conquest'] },
+    // Settling upgrades the Tribe board into the settled `settlement` government (fuller stores, the
+    // first worked fields, a patch of owned territory) — the arc's first taste of board progression.
+    reward: {
+      influence: 0,
+      unlockCardIds: ['farm', 'toolmaker', 'hut', 'conquest'],
+      boardUpgrade: { from: 'tribe', to: 'settlement' },
+    },
     map: { col: 0, row: 0 },
     age: 'stone',
   },

@@ -156,6 +156,23 @@ function standardMission(): MissionDef {
   };
 }
 
+// Real board ids (tribe → settlement): `applyBoardUpgrade` resolves them against the live `BOARDS`
+// catalogue for the sticker-carry eligibility check, unlike the synthetic cardIds above.
+function boardUpgradeMission(): MissionDef {
+  return {
+    id: 'settle',
+    name: 'settle',
+    lore: '',
+    prereqs: [],
+    objectiveCardId: 'first_settlement_goal',
+    victoryHint: '',
+    failureHint: null,
+    kind: 'standard',
+    reward: { influence: 0, boardUpgrade: { from: 'tribe', to: 'settlement' } },
+    map: { col: 0, row: 0 },
+  };
+}
+
 function infiniteMission(): MissionDef {
   return {
     id: 'toto',
@@ -205,6 +222,33 @@ describe('applyRunResult', () => {
     expect(next.unlockedStickers).toEqual(store.unlockedStickers);
     expect(next.unlockedBoardStickers).toEqual(store.unlockedBoardStickers);
     expect(next.unlockedBoards).toEqual(store.unlockedBoards);
+  });
+
+  it('a board-upgrade reward swaps the board on first clear, carrying its stickers across', () => {
+    const store: PlayerStore = { ...sampleStore(), unlockedBoards: { tribe: true }, boardStickers: { tribe: ['territory'] } };
+    const next = applyRunResult(store, runResult('settle', 'victory', 12), boardUpgradeMission());
+    expect(next.unlockedBoards.settlement).toBe(true);
+    expect(next.unlockedBoards.tribe).toBeUndefined();
+    expect(next.boardStickers.settlement).toEqual(['territory']);
+    expect(next.boardStickers.tribe).toBeUndefined();
+  });
+
+  it('a board-upgrade reward is a no-op on a replay (already-completed) clear', () => {
+    const store: PlayerStore = {
+      ...sampleStore(),
+      mapProgress: { settle: true },
+      unlockedBoards: { tribe: true },
+      boardStickers: { tribe: ['territory'] },
+    };
+    const next = applyRunResult(store, runResult('settle', 'victory', 12), boardUpgradeMission());
+    expect(next.unlockedBoards).toEqual({ tribe: true });
+    expect(next.boardStickers).toEqual({ tribe: ['territory'] });
+  });
+
+  it('a board-upgrade reward does not fire on a defeat', () => {
+    const store: PlayerStore = { ...sampleStore(), unlockedBoards: { tribe: true } };
+    const next = applyRunResult(store, runResult('settle', 'defeat', 3), boardUpgradeMission());
+    expect(next.unlockedBoards).toEqual({ tribe: true });
   });
 
   it('an infinite mission pays Influence = rounds survived on a victory-outcome stop', () => {

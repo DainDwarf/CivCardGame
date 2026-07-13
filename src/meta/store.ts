@@ -5,8 +5,10 @@ import type { MissionDef } from '../content/missions';
 import { buildSeedDecks } from '../rules/deckBuilder';
 import { collectionFromCounts, type OwnedCards } from '../rules/collection';
 import type { BoardStickers } from '../rules/boardStickers';
+import { applyBoardUpgrade } from '../rules/boardUpgrade';
 import { computeRewards } from '../rules/rewards';
 import { isCompleted } from '../rules/campaign';
+import { ORIGIN_BOARD_ID } from '../content/boards';
 
 /**
  * The persisted player store (`localStorage`). `mapProgress` is a completed-mission-ids
@@ -31,12 +33,13 @@ export interface PlayerStore {
    *  so the grant is stable against later reward-list edits. Absent id = still locked. */
   unlockedStickers: Record<string, true>;
   unlockedBoardStickers: Record<string, true>;
-  /** Boards the player has *unlocked* (via a mission's `unlockBoardIds` reward — `rules/rewards.ts`).
-   *  An id-set shaped like `mapProgress` (a board is singular — no per-copy identity). A board is
-   *  hidden from the pickers until its id is present here; folded in at clear time by `applyRunResult`.
-   *  Deliberately holds *only* reward-granted boards, not the always-available `starting` ones — the
-   *  pickers union the `starting` flag in (`boardDisplay.ts`'s `availableBoardIds`), so an empty set
-   *  can never lock a player out of playing. Absent id = still locked. */
+  /** The single source of truth for which boards the player may launch on — an id-set shaped like
+   *  `mapProgress` (a board is singular — no per-copy identity), read through `boardDisplay.ts`'s
+   *  `availableBoardIds`. Seeded with the `ORIGIN_BOARD_ID` on a fresh profile (there is no separate
+   *  `starting` flag) and folded at clear time by `applyRunResult`: an `unlockBoardIds` reward *adds*
+   *  ids, a `boardUpgrade` reward swaps one for another (add `to`, drop `from`). A board is hidden from
+   *  the pickers until its id is present here; an absent id is still locked. `availableBoardIds` falls
+   *  back to the origin board if this is ever empty, so a player can never be locked out. */
   unlockedBoards: Record<string, true>;
   /** Lifetime cumulative counters kept as running totals — deliberately *not* derived from
    *  `runHistory`, which is capped at `HISTORY_LIMIT` and would silently undercount once trimmed.
@@ -70,7 +73,7 @@ export function emptyStore(): PlayerStore {
     boardStickers: {},
     unlockedStickers: {},
     unlockedBoardStickers: {},
-    unlockedBoards: {},
+    unlockedBoards: { [ORIGIN_BOARD_ID]: true },
     lifetime: { runsPlayed: 0, victories: 0, influenceEarned: 0 },
     bestInfinite: {},
   };
@@ -196,12 +199,23 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
         [result.missionId]: Math.max(store.bestInfinite[result.missionId] ?? 0, result.stats.turnsTaken),
       }
     : store.bestInfinite;
+  // A board upgrade fires on the same first-clear victory the unlock rewards do, but sits outside
+  // `computeRewards`: it *removes* a board and rewrites `boardStickers`, neither of which the
+  // append-only reward path handles. Folded over the just-unlocked board set so an `unlockBoardIds`
+  // grant and an upgrade in the same reward compose. See `rules/boardUpgrade.ts`.
+  const upgrade =
+    !infinite && result.outcome === 'victory' && !alreadyCompleted ? mission.reward?.boardUpgrade : undefined;
+  const boards = upgrade
+    ? applyBoardUpgrade(nextProgress.unlockedBoards, store.boardStickers, upgrade)
+    : { unlockedBoards: nextProgress.unlockedBoards, boardStickers: store.boardStickers };
   return {
     ...store,
     runHistory: [result, ...store.runHistory].slice(0, HISTORY_LIMIT),
     mapProgress,
     influence: store.influence + influence,
     ...nextProgress,
+    unlockedBoards: boards.unlockedBoards,
+    boardStickers: boards.boardStickers,
     lifetime,
     bestInfinite,
   };

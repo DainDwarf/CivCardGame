@@ -305,7 +305,10 @@
   background: var(--ground);
 }
 
-.groundBackdrop[data-board='tribe'] {
+/* Settlement is the settled evolution of the Tribe, so it shares Tribe's ground tint — one upgraded
+   board, not a visually distinct government. */
+.groundBackdrop[data-board='tribe'],
+.groundBackdrop[data-board='settlement'] {
   background: var(--board-tribe-ground);
 }
 

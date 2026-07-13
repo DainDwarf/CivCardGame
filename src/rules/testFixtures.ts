@@ -329,9 +329,11 @@ export const FIXTURE_STICKERS: Record<string, StickerDef> = {
 // --- Synthetic board stickers ----------------------------------------------------------------------
 
 /** Board stickers are a *separate* catalogue from card stickers (`content/boardStickers.ts`): each
- *  tweaks a board's starting profile via one `applyToBoard` fold. Three distinct shapes/ids so a test
- *  can exercise a core-resource bump, a strategic-gauge bump, stacking, composing two, and rejecting a
- *  third at the cap. All unrestricted (attach to any board). */
+ *  tweaks a board's starting profile via one `applyToBoard` fold. Distinct shapes/ids so a test can
+ *  exercise a core-resource bump, a strategic-gauge bump, stacking, composing two, and rejecting a
+ *  third at the cap. The first three are unrestricted (attach to any board); `test_bs_restricted`
+ *  carries an `appliesTo` (only `TEST_BOARD`) so a test can exercise the eligibility filter — e.g. a
+ *  board upgrade dropping a sticker that doesn't apply to the new board. */
 export const FIXTURE_BOARD_STICKERS: Record<string, BoardStickerDef> = {
   test_bs_food: {
     id: 'test_bs_food', name: 'Test BS Food', description: '+2 starting Food', icon: '🌾', cost: 3,
@@ -344,6 +346,11 @@ export const FIXTURE_BOARD_STICKERS: Record<string, BoardStickerDef> = {
   test_bs_military: {
     id: 'test_bs_military', name: 'Test BS Military', description: '+1 starting Military', icon: '⚔️', cost: 3,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, military: b.resources.military + 1 } }),
+  },
+  test_bs_restricted: {
+    id: 'test_bs_restricted', name: 'Test BS Restricted', description: '+1 starting Culture on the test board only', icon: '🎭', cost: 3,
+    appliesTo: (b) => b.id === TEST_BOARD_ID,
+    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, culture: b.resources.culture + 1 } }),
   },
 };
 
