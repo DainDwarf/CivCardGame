@@ -1,5 +1,5 @@
 {
-  "_comment": "Founding deck + the free copies First Settlement's reward grants (farm/hut/conquest). Exactly what a starting player owns the moment they can attempt Growing Numbers (no shop purchases).",
+  "_comment": "Founding deck + First Settlement's reward (farm/hut/conquest) plus a second Conquest from a shop copy-tier buy. Two Conquests because each is a one-shot land grab (+1 territory, then removed) and Growing Numbers needs both a Hut and a Farm standing (territory 2).",
   "cards": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
@@ -13,6 +13,6 @@
     { "cardId": "clothing", "count": 1 },
     { "cardId": "hut", "count": 1 },
     { "cardId": "farm", "count": 1 },
-    { "cardId": "conquest", "count": 1 }
+    { "cardId": "conquest", "count": 2 }
   ]
 }

@@ -98,6 +98,7 @@ export function describeConditions(c: CardDef): string {
   if (c.gate?.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.gate.cultureLevelReq}`);
   if (c.gate?.discardCost) parts.push(`discard ${c.gate.discardCost}`);
   if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
+  if (c.display?.note) parts.push(c.display.note);
   return parts.join(' · ');
 }
 

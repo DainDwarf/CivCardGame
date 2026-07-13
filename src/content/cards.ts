@@ -20,6 +20,10 @@ export interface CardDisplay {
   /** Static text describing *how* a dynamic card's effect scales, shown in the conditions band.
    *  Pairs with `dynamicText`, which supplies the current number below it. */
   dynamicRule?: string;
+  /** A short presentational tag shown in the conditions band — a heads-up about behaviour the face's
+   *  cost/effect text can't state (e.g. a self-removing card's "single use"). Display-only: it never
+   *  drives logic, so it must be kept in step with the closure that actually implements the behaviour. */
+  note?: string;
   /** The card's central art glyph, shown big on the face and on a building/work box. Optional — a
    *  card without one falls back to a per-kind default in `CardFace.tsx`'s `artFor`. Every deckable
    *  card must set it (pinned by `cards.test.ts`). */
@@ -165,7 +169,22 @@ export const CARDS: Record<string, CardDef> = {
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, display: { art: '🤝' }, effect: { resources: { food: 2 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, display: { art: '🐕' }, effect: { resources: { military: 2 } } },
-  conquest: { id: 'conquest', name: 'Conquest', kind: 'work', cost: { military: 5 }, workers: 1, display: { art: '🗡️' }, produces: { resources: { territory: 1 } } },
+  conquest: {
+    id: 'conquest', name: 'Conquest', kind: 'work', cost: { military: 5 }, workers: 1,
+    // The "single use" note is the face's heads-up for the self-removal below — kept in step with it.
+    display: { art: '🗡️', note: 'single use' },
+    // Conquest is a one-shot land grab, not a sustained producer: the round it yields its territory it
+    // leaves play for good. The declarative gain lands the territory, then the closure exiles this copy
+    // to `removed` — `filter` per the bus's self-removal contract, so the end-of-turn workZone→discard
+    // recycle never files it back.
+    produces: {
+      resources: { territory: 1 },
+      resolve: (ctx) => {
+        ctx.G.workZone = ctx.G.workZone.filter((w) => w.id !== ctx.self.id);
+        ctx.G.removed.push({ id: ctx.self.id, cardId: ctx.self.cardId });
+      },
+    },
+  },
 
   // Storytelling keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer).
   storytelling: {

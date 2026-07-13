@@ -4,9 +4,10 @@ import { createOraclePolicy, proveWinnable, type OracleOptions } from './oracle'
 import { simConfig, simulateRun } from './simulate';
 
 // "Growing Numbers" with the basic post-First-Settlement deck (mirrors the CLI scenario): a genuinely
-// winnable multi-step build (Conquest for territory → two distinct buildings) that greedy2 clears on
-// most seeds, so the oracle ceiling should find a line on at least one of a small scan.
-const GROWING_DECK = [...DEFAULT_DECKS[0].cards, 'hut', 'farm', 'conquest'];
+// winnable multi-step build (two Conquests for territory 2 → two distinct buildings) that greedy2 clears
+// on most seeds, so the oracle ceiling should find a line on at least one of a small scan. Two Conquests
+// because each is a one-shot land grab (+1 territory, then removed from play) — one building needs one.
+const GROWING_DECK = [...DEFAULT_DECKS[0].cards, 'hut', 'farm', 'conquest', 'conquest'];
 
 // Small-but-capable search bounds keep the tests to a handful of seconds each while still reliably finding
 // the Growing Numbers win when one exists. Not the shipped defaults (those trade cost for completeness).
