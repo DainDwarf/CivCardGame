@@ -40,6 +40,24 @@ describe('CARDS', () => {
     }
   });
 
+  // The `effect`/`upkeep` timing split, pinned both ways so the WHEN separation stays airtight:
+  //  - `effect` is the on-play slot; `event`/`threat` are never played resolved (playing an event
+  //    banishes it unresolved, a threat is never played), so an `effect` on either would silently never
+  //    fire — their recurring behaviour belongs in `upkeep`.
+  //  - `upkeep` is the hazard-only counterpart to `produces`; on any other kind `resolveEndTurn` never
+  //    reads it (a staffable routes to `resolveProduction`), so it would be silently ignored at runtime
+  //    yet still rendered on the face — a trap the reverse check forecloses.
+  it('effect and upkeep stay on their own kinds (event/threat use upkeep, never effect)', () => {
+    for (const card of Object.values(CARDS)) {
+      const isHazard = card.kind === 'event' || card.kind === 'threat';
+      if (isHazard) {
+        expect(card.effect, `${card.id} (${card.kind}) must use upkeep, not effect`).toBeUndefined();
+      } else {
+        expect(card.upkeep, `${card.id} (${card.kind}) must not use upkeep`).toBeUndefined();
+      }
+    }
+  });
+
   // The "Raiders at the Border" (6.4) win: playing a raider event banishes it to `removed` (the only
   // path a raider reaches that pile), so the objective is met exactly once RAIDER_WAVES of them sit
   // there — verified at the predicate, the one check that pins the win end-to-end without a playthrough.

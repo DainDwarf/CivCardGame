@@ -6,10 +6,11 @@ import { effectiveGain } from './stickers';
 import { findStaffable, producingUnits } from './population';
 
 /**
- * A card's effect: the one "what happens" descriptor a card carries, in three timing slots on
- * `CardDef` — `effect` (on play, or end of turn for an unplayed event / a declarative threat drain),
- * `produces` (each round while a staffable is staffed), and each `on.*` handler (a triggered event
- * reaction). Every slot is the *same* shape: the declarative fields for the common case, and a
+ * A card's effect: the one "what happens" descriptor a card carries, in four timing slots on
+ * `CardDef` — `effect` (when the card enters play), `produces` (each round while a staffable is
+ * staffed), `upkeep` (each round at the upkeep boundary — a threat's drain / an unplayed event's
+ * disaster), and each `on.*` handler (a triggered event reaction). Every slot is the *same* shape: the
+ * declarative fields for the common case, and a
  * `resolve` closure escape hatch for behaviour the fields can't express. `resolve` *replaces* the
  * declarative fields when present (it doesn't compose). Nothing here is inherently good or bad: a
  * negative resource entry drains, a positive one grants — including the strategic pools.
@@ -148,6 +149,19 @@ export function resolveProduction(ctx: EffectContext): void {
 }
 
 /**
+ * Resolve a card's recurring `upkeep` effect through the single runner — the `event`/`threat`
+ * counterpart to `resolveCard`, run at the upkeep boundary rather than on play. A threat drains through
+ * it each round (via `resolveEndTurn`, driven by the `endTurn` broadcast); an unplayed event fires its
+ * disaster through it at end of turn (via `upkeep.ts`'s `resolveHandEvents`). Reads `upkeep` alone
+ * (never `effect`), so a card's recurring hazard and its — meaningless-for-these-kinds — on-play field
+ * can never be the same slot. Unlike `resolveProduction` it does *not* scale per worker (a hazard isn't
+ * staffed), so it goes straight through the shared `runEffect` spine.
+ */
+export function resolveUpkeep(ctx: EffectContext): void {
+  runEffect(ctx, CARDS[ctx.self.cardId].upkeep);
+}
+
+/**
  * Run one card's reaction to an event: the `CardEffect` at `CARDS[self.cardId].on?.[event.type]`,
  * through the shared `runEffect`. The event-bus counterpart to `resolveCard`/`resolveProduction` — an
  * `on` handler is just a `CardEffect` (declarative for the common case, a `resolve` closure — which
@@ -164,20 +178,19 @@ export function runEventHandler(ctx: EffectContext): void {
  * Resolve one subscriber's reaction to the per-round `endTurn` broadcast — the *default* per-round
  * behaviour a card runs at the upkeep boundary: an explicit `on.endTurn` handler wins; otherwise a
  * producer (a staffable card — building/wonder/work, from the tableau/workZone) produces via
- * `resolveProduction`, and anything else the dispatcher hands us — a threats-zone entry — ticks its own drain via
- * `resolveCard`. The **zone the dispatcher walked**, not the card's kind, decides which spine runs
- * (exactly as the retired `tickThreats` ran `resolveCard` over `G.threats` kind-agnostically). The
- * dispatcher (`rules/events.ts`) already gates which subscribers reach here (operating tableau/work,
- * all threats), so this never re-checks staffing. Mirrors the codebase's existing dual spine —
- * `resolveCard` (play) vs `resolveProduction` (production).
+ * `resolveProduction`, and anything else the dispatcher hands us — a threats-zone entry — ticks its own
+ * drain via `resolveUpkeep`. The **zone the dispatcher walked**, not the card's kind, decides which
+ * spine runs. The dispatcher (`rules/events.ts`) already gates which subscribers reach here (operating
+ * tableau/work, all threats), so this never re-checks staffing. Mirrors the codebase's now-triple spine
+ * — `resolveCard` (play) vs `resolveProduction` (production) vs `resolveUpkeep` (hazard drain).
  *
- * NOTE: this forwards the `endTurn` `ctx.event` into `resolveProduction`/`resolveCard`, which today
- * ignore it. Harmless *only* while no bespoke `produces.resolve`/`effect.resolve` reads `ctx.event`; a
+ * NOTE: this forwards the `endTurn` `ctx.event` into `resolveProduction`/`resolveUpkeep`, which today
+ * ignore it. Harmless *only* while no bespoke `produces.resolve`/`upkeep.resolve` reads `ctx.event`; a
  * future one must not start branching on it (it fires on play/production too, where the field is absent).
  */
 export function resolveEndTurn(ctx: EffectContext): void {
   const card = CARDS[ctx.self.cardId];
   if (card.on?.endTurn) return void runEffect(ctx, card.on.endTurn);
   if (isStaffable(card)) resolveProduction(ctx);
-  else resolveCard(ctx);
+  else resolveUpkeep(ctx);
 }

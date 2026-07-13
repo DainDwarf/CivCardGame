@@ -119,21 +119,28 @@ export function describeBuilding(b: CardDef, includeWorkers = true): string {
 /** Presentation-only summary of what a card does (no game logic here). A card whose behavior the
  *  declarative `effect` fields can't express (an `effect.resolve` closure) authors its own
  *  `description`, which wins over the auto-generated text below. */
+function describeSignedResources(res: Partial<Resources> | undefined, into: string[]): void {
+  if (!res) return;
+  // Every resource — core or strategic — renders the same way through the shared icon map. The
+  // signed delta is split into a gains line then a drains line so the face keeps its green-"+N" /
+  // red-"-N" reading (a negative value carries its own minus).
+  const entries = (Object.entries(res) as [keyof Resources, number][]).filter(([, v]) => v);
+  const gains = entries.filter(([, v]) => v > 0);
+  const drains = entries.filter(([, v]) => v < 0);
+  if (gains.length) into.push(gains.map(([k, v]) => `+${v}${RESOURCE_ICON[k]}`).join(' '));
+  if (drains.length) into.push(drains.map(([k, v]) => `${v}${RESOURCE_ICON[k]}`).join(' '));
+}
+
 export function describeCard(c: CardDef): string {
   if (c.display?.description) return c.display.description;
   const e = c.effect;
   const parts: string[] = [];
-  if (e?.resources) {
-    // Every resource — core or strategic — renders the same way through the shared icon map. The
-    // signed delta is split into a gains line then a drains line so the face keeps its green-"+N" /
-    // red-"-N" reading (a negative value carries its own minus).
-    const entries = (Object.entries(e.resources) as [keyof Resources, number][]).filter(([, v]) => v);
-    const gains = entries.filter(([, v]) => v > 0);
-    const drains = entries.filter(([, v]) => v < 0);
-    if (gains.length) parts.push(gains.map(([k, v]) => `+${v}${RESOURCE_ICON[k]}`).join(' '));
-    if (drains.length) parts.push(drains.map(([k, v]) => `${v}${RESOURCE_ICON[k]}`).join(' '));
-  }
+  describeSignedResources(e?.resources, parts);
   if (e?.destroy) parts.push('removes a building from the run');
+  // A hazard (event/threat) shows its recurring `upkeep` drain the same signed way — the one-shot
+  // `effect` branch above doesn't apply to these kinds (they're never played resolved). A card carries
+  // `effect` or `upkeep`, never both, so this composes without collision.
+  describeSignedResources(c.upkeep?.resources, parts);
   // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` —
   // here (workers are shown as meeples, not text). This is the sole path for a
   // staffable's ongoing output, work cards included; the `effect` branch above is its one-shot only.

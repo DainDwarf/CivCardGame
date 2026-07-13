@@ -250,27 +250,28 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   },
 
   // --- Event: mission-injected, drawn into hand. Played (for its `cost`) → banished to removed
-  // *unresolved* (the -2 drain never fires); left unplayed → auto-resolves at end of turn (drain
-  // fires) → discard (recurs). A free cost here so the played path is trivially affordable in tests. ---
+  // *unresolved* (the -2 `upkeep` drain never fires); left unplayed → the `upkeep` effect auto-resolves
+  // at end of turn (drain fires) → discard (recurs). A free cost here so the played path is trivially
+  // affordable in tests. ---
   test_event: {
     id: 'test_event', name: 'Test Event', kind: 'event',
-    cost: {}, effect: { resources: { military: -2 } },
+    cost: {}, upkeep: { resources: { military: -2 } },
   },
 
   // --- Threats: flat drain, escalating drain, and a deadline that owns its own defeat. ---
-  // Flat per-round drain via the declarative default (a negative `effect.resources`), ticked by the
-  // `endTurn` broadcast through the shared resolver spine.
+  // Flat per-round drain via the declarative `upkeep` default (a negative `upkeep.resources`), ticked by
+  // the `endTurn` broadcast through the shared resolver spine.
   test_threat: {
     id: 'test_threat', name: 'Test Threat', kind: 'threat',
-    cost: {}, effect: { resources: { food: -2 } },
+    cost: {}, upkeep: { resources: { food: -2 } },
     display: { description: '−2🌾 every round' },
   },
-  // Escalating drain via a bespoke `resolve` reading its own `level` counter (−1🔨, then −2, …), like
-  // Creeping Decay. Reused by threats + the mission-spine relocation, hence shared.
+  // Escalating drain via a bespoke `upkeep.resolve` reading its own `level` counter (−1🔨, then −2, …),
+  // like Creeping Decay. Reused by threats + the mission-spine relocation, hence shared.
   test_escalating: {
     id: 'test_escalating', name: 'Test Escalating', kind: 'threat', cost: {},
     display: { description: '−1🔨 every round, worsening' },
-    effect: {
+    upkeep: {
       resolve: ({ G, self }) => {
         subtractResources(G.resources, scaleResources({ production: 1 }, getCounter(self, 'level') + 1));
         bumpCounter(self, 'level');

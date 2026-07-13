@@ -61,16 +61,18 @@ export interface CardDef {
   discardCost?: number;
   /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
   cultureLevelReq?: number;
-  /** The card's play-time effect (a `CardEffect` — declarative fields, or a `resolve` closure escape
-   *  hatch; see `rules/effects.ts`). Read at a different timing per kind: an `action` applies it once on
-   *  play; a `building`/`wonder` applies it once at **placement** (e.g. the Hut's `+1 population`), its
-   *  recurring output living in the separate `produces` below; an unplayed `event` applies it at end of
-   *  turn; a `threat` ticks it each round. (A `work` card's per-round output lives in `produces`, not
-   *  here — `effect` is one-shot.) A building must never put recurring output in `effect.resources` (it
-   *  would fire at placement *and* every round). Drives the play-time resolver (`resolveCard` →
-   *  `runEffect`), the auto-generated face text (`describeCard`), and the play gates (`unplayableReason`),
-   *  so most cards need only this. A card whose logic the declarative fields can't express authors an
-   *  `effect.resolve` closure and its own `display.description`. */
+  /** The card's effect *when it enters play* (a `CardEffect` — declarative fields, or a `resolve`
+   *  closure escape hatch; see `rules/effects.ts`): an `action` applies it once on play; a
+   *  `building`/`wonder` applies it once at **placement** (e.g. the Hut's `+1 population`), its recurring
+   *  output living in the separate `produces` below. A one-shot only — a card's *recurring* behaviour
+   *  never lives here: a staffable's per-round output is `produces`, and a threat's per-round drain / an
+   *  unplayed event's end-of-turn disaster is `upkeep` (both fire at the upkeep boundary, not on play). A
+   *  building must never put recurring output in `effect.resources` (it would fire at placement *and*
+   *  every round). Not read for `event`/`threat`, which are never played resolved (playing an event
+   *  banishes it unresolved; a threat is never played) — see `upkeep`. Drives the play-time resolver
+   *  (`resolveCard` → `runEffect`), the auto-generated face text (`describeCard`), and the play gates
+   *  (`unplayableReason`), so most cards need only this. A card whose logic the declarative fields can't
+   *  express authors an `effect.resolve` closure and its own `display.description`. */
   effect?: CardEffect;
   /**
    * How many cards this card reveals off the draw pile when played (a peek card — e.g. reveal 3).
@@ -145,6 +147,17 @@ export interface CardDef {
    *  `produces.resolve` closure (which owns its own per-worker scaling). Kept distinct from `effect` so a
    *  one-shot play field can never fire every round. `destroy` is play-only and ignored here. */
   produces?: CardEffect;
+  /** The recurring effect a board hazard fires *at the upkeep boundary* — the `event`/`threat`
+   *  counterpart to a staffable's `produces`: a `threat`'s per-round drain (run each round through
+   *  `resolveUpkeep`, driven by the `endTurn` broadcast) and an unplayed `event`'s end-of-turn disaster
+   *  (run by `upkeep.ts`'s `resolveHandEvents` for a card left in hand). A `CardEffect` like the others,
+   *  so its `resources` fold through stickers; typically a drain (a signed negative delta). Kept distinct
+   *  from `effect` so the misfit "fires each round, not on play" timing has its own named slot the way
+   *  `produces` does — `effect` is meaningless for these kinds (playing an event banishes it unresolved;
+   *  a threat is never played). `on.endTurn` *overrides* this, exactly as it overrides `produces` (see
+   *  `resolveEndTurn`). A threat that reacts to a *different* trigger uses `on` (e.g. Unrest's
+   *  `on.reshuffle`); a threat's *driven defeat* is the separate pure-read `defeat` predicate. */
+  upkeep?: CardEffect;
 }
 
 /** Whether a card is one the player builds decks with. `event` (mission-injected into the deck),
@@ -312,12 +325,12 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // — Stone Age events (mission-only; injected into the deck by a mission, never deckable). An event
-  //   is a recurring hazard: left in hand it auto-resolves its drain at end of turn and reshuffles
-  //   back to recur; *played*, it pays its cost to banish itself to `removed` unresolved (its effect
-  //   never fires — playing is preventive). The raider is the debut resource-*draining* event: it
-  //   bleeds 1🌾 each round it's left standing, and is driven off for good by paying 3⚔️ — "Raiders at
+  //   is a recurring hazard: left in hand its `upkeep` effect auto-resolves at end of turn and it
+  //   reshuffles back to recur; *played*, it pays its cost to banish itself to `removed` unresolved (its
+  //   `upkeep` never fires — playing is preventive). The raider is the debut resource-*draining* event:
+  //   it bleeds 1🌾 each round it's left standing, and is driven off for good by paying 3⚔️ — "Raiders at
   //   the Border" is won by defusing all its waves this way.
-  raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, display: { art: '🪓' }, effect: { resources: { food: -1 } } },
+  raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, display: { art: '🪓' }, upkeep: { resources: { food: -1 } } },
 
   // — "The First Settlement" objective (mission-only): stockpile 10🔨 and 10⚔️. Owns its own win
   //   predicate the way every objective does; no defeat of its own (famine/collapse is universal).
