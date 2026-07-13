@@ -1,21 +1,59 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { scoreState } from './value';
+import { PROGRESS } from './objective';
 import { addThreat, addWork, blankState, seedObjective, type GameState } from '../rules';
-import { installFixtures, uninstallFixtures } from '../rules/testFixtures';
+import type { CardDef } from '../content/cards';
+import { installFixtures, uninstallFixtures, installCards, uninstallCards } from '../rules/testFixtures';
+
+/**
+ * Local fixtures for the objective-pull bands. A *strategic*-resource goal (culture, absent from
+ * `CORE_KEYS`) is what isolates band 4 from band 5: a culture producer advances the goal but shows up in
+ * none of the core-only bands, so a survival (food) producer even wins band 5 — only band 4's *projected*
+ * read can tip the balance toward culture. Both producers are `work` cards on purpose: `permanentDelta`
+ * (value.ts) drops the work zone before running upkeep, so band 3 sees only population food drain and
+ * stays symmetric between them — no food buffer tuning against the (re-fittable) `bufferFloor`/`bufferTurns`.
+ */
+const LOCAL_CARDS = {
+  // A staffable strategic producer (culture, cost {} so it stays a work box). Serves both the
+  // staffing-credit test and the objective-directed Conquest analog.
+  test_work_culture: {
+    id: 'test_work_culture', name: 'Test Work Culture', kind: 'work',
+    cost: {}, workers: 1, produces: { resources: { culture: 2 } },
+  },
+  // A shallow strategic goal (4🎭) with a local gradient below, so one +2🎭 round is a big band-4 step.
+  test_culture_goal: {
+    id: 'test_culture_goal', name: 'Test Culture Goal', kind: 'objective', cost: {},
+    objective: (G) => G.resources.culture >= 4,
+    display: { description: 'Reach 4 Culture.' },
+  },
+} satisfies Record<string, CardDef>;
+
+/** The sim-local progress gradient for `test_culture_goal` — the registry entry the band-4 tests steer by
+ *  (spliced/removed like the card fixtures, mirroring the `PROGRESS` registry the sim layer owns). */
+const CULTURE_PROGRESS = (G: GameState) => Math.min(G.resources.culture, 4) / 4;
 
 /** A zeroed sandbox state to tweak per case. `scoreState` reads `projectedDelta`/`applyUpkeep`, which
  *  run a full upkeep on a clone — harmless on a bare state (no threats/objective/hand). */
 function state(mut: (G: GameState) => void): GameState {
-  const G = blankState('sandbox');
+  const G = blankState('test');
   mut(G);
   return G;
 }
 
 describe('scoreState', () => {
-  // The threat fixtures (`test_threat`, `test_escalating`) must be installed in the live catalogue for
-  // `addThreat` → `resolveCard`/`resolveUpkeep` to resolve their drain.
-  beforeAll(installFixtures);
-  afterAll(uninstallFixtures);
+  // The threat fixtures (`test_threat`, `test_escalating`) and the local culture producer/goal must be in
+  // the live catalogue for `addThreat`/`addWork`/`seedObjective` to resolve; the culture goal's gradient
+  // is spliced into the sim-local `PROGRESS` registry for the band-4 tests.
+  beforeAll(() => {
+    installFixtures();
+    installCards(LOCAL_CARDS);
+    PROGRESS.test_culture_goal = CULTURE_PROGRESS;
+  });
+  afterAll(() => {
+    delete PROGRESS.test_culture_goal;
+    uninstallCards(LOCAL_CARDS);
+    uninstallFixtures();
+  });
 
   it('punishes a projected food deficit far below a healthy buffer (band 2)', () => {
     // 5 mouths, no food income ⇒ next round eats 5 into the red. Zero mouths with a stocked pantry is
@@ -89,63 +127,63 @@ describe('scoreState', () => {
   });
 
   it('rewards staffing a strategic-resource producer, which no band can see (staffing credit)', () => {
-    // A staffed Beer box produces 🎭 culture — a *strategic* pool, absent from `CORE_KEYS`, so it lands
-    // in none of the core-only bands (2, 3, 5) until upkeep, and band 4 reads *current* culture. The flat
-    // per-operating-box credit is therefore the ONLY term that makes the one-ply greedy staff it. Same
-    // population either way (identical food drain), so the sole difference is whether Beer operates.
+    // A staffed culture producer yields a *strategic* pool, absent from `CORE_KEYS`, so it lands in none
+    // of the core-only bands (2, 3, 5) until upkeep, and band 4 is flat here (no objective seeded). The
+    // flat per-operating-box credit is therefore the ONLY term that makes the one-ply greedy staff it.
+    // Same population either way (identical food drain), so the sole difference is whether the box operates.
     const staffed = state((G) => {
       G.resources.food = 5;
       G.resources.population = 1;
-      addWork(G, 'beer'); // auto-staffs the one idle worker
+      addWork(G, 'test_work_culture'); // auto-staffs the one idle worker
     });
     const unstaffed = state((G) => {
       G.resources.food = 5;
       G.resources.population = 1;
-      addWork(G, 'beer');
+      addWork(G, 'test_work_culture');
       G.workZone[0].workers = 0; // same box + population, but idle ⇒ not operating
     });
     expect(scoreState(staffed)).toBeGreaterThan(scoreState(unstaffed));
   });
 
   it('rewards staffing a producer of what the OBJECTIVE needs over an equal-count survival producer (band 4, projected)', () => {
-    // Growing Numbers wants territory (grown by a staffed Conquest, whose territory lands only at upkeep).
-    // With one worker, staffing Conquest vs. Foraging (food) leaves the *operating count identical* — so
-    // the flat staffing credit can't distinguish them, and Foraging even wins band 5 (projected food). Only
-    // band 4 read on the *projected* state (Conquest's next-upkeep territory advancing the goal) tips it
-    // toward Conquest. Fails if band 4 reads the *current* state — the exact regression that hung the greedy
-    // on this deadline-free mission, invisible to every other test.
-    const conquest = state((G) => {
-      seedObjective(G, 'growing_numbers_goal');
+    // The goal wants culture (grown by a staffed culture box, whose culture lands only at upkeep). With one
+    // worker, staffing the culture box vs. a food box leaves the *operating count identical* — so the flat
+    // staffing credit can't distinguish them, and the food box even wins band 5 (projected food). Both are
+    // work cards, so band 3 (which drops the work zone) is symmetric too. Only band 4 read on the
+    // *projected* state (the culture box's next-upkeep culture advancing the goal) tips it toward culture.
+    // Fails if band 4 reads the *current* state — the exact regression that hung the greedy on a
+    // deadline-free mission, invisible to every other test.
+    const culture = state((G) => {
+      seedObjective(G, 'test_culture_goal');
       G.resources.food = 5;
       G.resources.population = 1;
-      G.resources.territory = 0; // below the goal's 2-slot need, so growing territory is real progress
-      addWork(G, 'conquest'); // auto-staffs the one idle worker → +territory next upkeep
+      G.resources.culture = 0; // below the 4🎭 goal, so growing culture is real progress
+      addWork(G, 'test_work_culture'); // auto-staffs the one idle worker → +culture next upkeep
     });
-    const foraging = state((G) => {
-      seedObjective(G, 'growing_numbers_goal');
+    const food = state((G) => {
+      seedObjective(G, 'test_culture_goal');
       G.resources.food = 5;
       G.resources.population = 1;
-      G.resources.territory = 0;
-      addWork(G, 'foraging'); // same operating count, but its output (food) doesn't advance the goal
+      G.resources.culture = 0;
+      addWork(G, 'test_work_food'); // same operating count, but its output (food) doesn't advance the goal
     });
-    expect(scoreState(conquest)).toBeGreaterThan(scoreState(foraging));
+    expect(scoreState(culture)).toBeGreaterThan(scoreState(food));
   });
 
   it('rewards a state closer to the mission objective, all else equal (band 4)', () => {
-    // Two states with identical resources except one is *nearer* the seeded objective ("The First
-    // Settlement" wants 10🔨 + 10⚔️). The nearer one must score higher — the goal-directed pull that
-    // makes the greedy stockpile toward the win rather than drift at a survival equilibrium.
+    // Two states with identical resources except one is *nearer* the seeded objective (4🎭 culture). The
+    // nearer one must score higher — the goal-directed pull that makes the greedy stockpile toward the win
+    // rather than drift at a survival equilibrium. Culture is strategic, so bands 2/3/5 are neutral and the
+    // gap is band 4 alone.
     const near = state((G) => {
-      seedObjective(G, 'first_settlement_goal');
+      seedObjective(G, 'test_culture_goal');
       G.resources.food = 5;
-      G.resources.production = 9;
-      G.resources.military = 9;
+      G.resources.culture = 3;
     });
     const far = state((G) => {
-      seedObjective(G, 'first_settlement_goal');
+      seedObjective(G, 'test_culture_goal');
       G.resources.food = 5;
-      G.resources.production = 9;
-      G.resources.military = 1;
+      G.resources.culture = 1;
     });
     expect(scoreState(near)).toBeGreaterThan(scoreState(far));
   });
@@ -155,16 +193,16 @@ describe('scoreState', () => {
     // starve must still score below a safely-fed state that is further from the goal. (Contrast the
     // `pendingVictory` case below, where an *already-won* run dominates outright.)
     const starvingNearWin = state((G) => {
-      seedObjective(G, 'first_settlement_goal');
+      seedObjective(G, 'test_culture_goal');
       G.resources.food = 0;
       G.resources.population = 5; // eats 5 into the red next round
-      G.resources.production = 9;
-      G.resources.military = 9;
+      G.resources.culture = 3; // near the 4🎭 goal
     });
     const fedFarFromGoal = state((G) => {
-      seedObjective(G, 'first_settlement_goal');
+      seedObjective(G, 'test_culture_goal');
       G.resources.food = 10;
       G.resources.population = 0;
+      G.resources.culture = 0;
     });
     expect(scoreState(starvingNearWin)).toBeLessThan(scoreState(fedFarFromGoal));
   });
