@@ -1,6 +1,7 @@
 import { subtractResources, type CoreResources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, suspendChoice } from '../rules/effects';
+import type { CardGate } from '../rules/playability';
 import { recoverFromDiscard } from '../rules/deck';
 import { cultureLevel, cultureProgress } from '../rules/culture';
 
@@ -34,12 +35,11 @@ export interface CardDef {
   kind: CardKind;
   /** CoreResources required to play. Absent keys are free (e.g. {} = no cost). */
   cost: Partial<CoreResources>;
+  /** Everything beyond the raw resource `cost` that gates play — culture-level req, discard cost, and
+   *  bespoke preconditions — as one `CardGate` (`rules/playability.ts`). Absent = only `cost` gates. */
+  gate?: CardGate;
   /** Worker capacity to operate (building/work). Defaults to 1; `0` = self-sufficient (always operating). */
   workers?: number;
-  /** Extra cost: number of other cards you must discard from hand to play this. */
-  discardCost?: number;
-  /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
-  cultureLevelReq?: number;
   /** The card's one-shot effect *when it enters play* (a `CardEffect`; see `rules/effects.ts`): an
    *  `action` applies it on play, a `building`/`wonder` at placement. Not read for `event`/`threat`. */
   effect?: CardEffect;
@@ -59,12 +59,6 @@ export interface CardDef {
    * A threat's driven defeat does NOT go through `on` — see `defeat` below.
    */
   on?: Partial<Record<GameEventType, CardEffect>>;
-  /** How many cards a peek card reveals off the draw pile — drives both the resolver's `peekTop` count
-   *  and the `emptyDrawPile` play gate (`rules/playability.ts`). */
-  revealsFromDeck?: number;
-  /** Marks a card that recovers from the discard to hand — gates it `discardEmpty`-unplayable when
-   *  the discard is empty. Resolves through `deck.ts`'s `recoverFromDiscard`. */
-  recoversFromDiscard?: true;
   /** `objective` cards only: the mission's win condition as a pure-read predicate over run state.
    *  Never mutates `G`; bus-driven into `G.pendingVictory` (`rules/objective.ts`). Defeat belongs
    *  elsewhere — a threat's `defeat` hook, or universal collapse in `run/engine.ts`. */
@@ -154,7 +148,7 @@ export const CARDS: Record<string, CardDef> = {
   gobekli_tepe: {
     id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
     display: { art: '🗿', description: '+1🔨 +1🪙 +1🎭\nper worker.' },
-    cost: { production: 8 }, cultureLevelReq: 1, workers: 3,
+    cost: { production: 8 }, gate: { cultureLevelReq: 1 }, workers: 3,
     produces: { resources: { production: 1, money: 1, culture: 1 } },
   },
 
@@ -172,7 +166,8 @@ export const CARDS: Record<string, CardDef> = {
   storytelling: {
     id: 'storytelling', name: 'Storytelling', kind: 'action', cost: { science: 2 },
     display: { art: '🗣️', description: 'Return a chosen card from discard to hand.' },
-    recoversFromDiscard: true,
+    // Nothing to recover from an empty discard — gate it rather than let it fizzle for its cost.
+    gate: { check: (G) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null) },
     effect: {
       resolve: (ctx) => {
         if (ctx.answer === undefined) {

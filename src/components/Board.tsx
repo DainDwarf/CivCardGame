@@ -1082,7 +1082,7 @@ export function Board({
       const cy = y - d.grabY + d.h / 2;
       pendingBuildSlotRef.current = chooseBuildSlot(cx, cy);
     }
-    const need = card.discardCost ?? 0;
+    const need = card.gate?.discardCost ?? 0;
     // A discard cost only applies if you have spare cards; then pick the sacrifice by clicking.
     if (need > 0 && G.hand.length - 1 >= need) {
       setPending({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key, need, discards: [] });

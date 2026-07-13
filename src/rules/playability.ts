@@ -19,6 +19,20 @@ export type UnplayableReason =
   | { kind: 'emptyDrawPile' }
   | { kind: 'discardEmpty' };
 
+/** A card's playability descriptor — everything beyond the raw resource `cost` that decides whether
+ *  it can be played, interpreted by `unplayableReason`. The declarative fields plus the `check`
+ *  closure all compose (a card must clear every one it declares). */
+export interface CardGate {
+  /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
+  cultureLevelReq?: number;
+  /** Extra cost: number of other cards you must discard from hand to play this. */
+  discardCost?: number;
+  /** Bespoke precondition the declarative fields can't express (e.g. a peek card needs a non-empty
+   *  pile, a Destroy card needs a target), checked in addition to them. Pure read over `G`; returns
+   *  the reason it blocks, or null. */
+  check?: (G: GameState, self: CardInstance) => UnplayableReason | null;
+}
+
 /** Why `card` cannot be played right now, or null if it can. `self` is the exact hand instance
  *  being checked — its own attached sticker (e.g. Efficient) may discount `card.cost` below the
  *  catalogue's raw number (`rules/stickers.ts`'s `effectiveCost`), so affordability is always
@@ -32,15 +46,8 @@ export function unplayableReason(G: GameState, card: CardDef, self: CardInstance
     }
     return { kind: 'cost', missing };
   }
-  if (card.cultureLevelReq && cultureLevel(G.resources.culture) < card.cultureLevelReq)
-    return { kind: 'cultureLevel', required: card.cultureLevelReq };
+  if (card.gate?.cultureLevelReq && cultureLevel(G.resources.culture) < card.gate.cultureLevelReq)
+    return { kind: 'cultureLevel', required: card.gate.cultureLevelReq };
   if (isStructure(card) && freeTerritory(G) <= 0) return { kind: 'territory' };
-  if (card.effect?.destroy && G.tableau.length === 0) return { kind: 'noBuildingsToDestroy' };
-  // A peek card (revealsFromDeck) has nothing to reveal when both draw and discard piles are empty —
-  // gate it rather than let it fizzle for its cost (mirrors the noBuildingsToDestroy precedent above).
-  if (card.revealsFromDeck && G.deck.length + G.discard.length === 0) return { kind: 'emptyDrawPile' };
-  // A discard-recovery card (recoversFromDiscard) has nothing to recover from an empty discard —
-  // gate it rather than let it fizzle for its cost (mirrors the emptyDrawPile precedent above).
-  if (card.recoversFromDiscard && G.discard.length === 0) return { kind: 'discardEmpty' };
-  return null;
+  return card.gate?.check?.(G, self) ?? null;
 }

@@ -33,7 +33,7 @@ export function playCard(
   // to spare. Played with an otherwise-empty hand it costs no discard (a reward for
   // sequencing the turn so this card comes last). Each index must be in range, distinct,
   // and not the played card itself.
-  const want = card.discardCost ?? 0;
+  const want = card.gate?.discardCost ?? 0;
   const required = G.hand.length - 1 >= want ? want : 0;
   if (discardHandIdxs.length !== required) return 'invalid';
   const reserved = new Set<number>([playHandIdx]);

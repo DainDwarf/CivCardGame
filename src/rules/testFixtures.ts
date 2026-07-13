@@ -150,25 +150,28 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // Carries a discard cost (extra cards discarded from hand to play it), like Eureka.
   test_discard: {
     id: 'test_discard', name: 'Test Discard', kind: 'action',
-    cost: {}, discardCost: 1, effect: { resources: { science: 3 } },
+    cost: {}, gate: { discardCost: 1 }, effect: { resources: { science: 3 } },
   },
   // Gated behind a minimum culture level (a gate, not a cost), like The Philosopher.
   test_cultreq: {
     id: 'test_cultreq', name: 'Test Culture-Req', kind: 'action',
-    cost: { science: 1 }, cultureLevelReq: 1, effect: { resources: { science: 3 } },
+    cost: { science: 1 }, gate: { cultureLevelReq: 1 }, effect: { resources: { science: 3 } },
   },
-  // Destroy action: demolishes a chosen tableau building (`effect.destroy`).
+  // Destroy action: demolishes a chosen tableau building (`effect.destroy`), gated unplayable with
+  // nothing to destroy.
   test_destroy: {
     id: 'test_destroy', name: 'Test Destroy', kind: 'action',
-    cost: { production: 1 }, effect: { destroy: true },
+    cost: { production: 1 },
+    gate: { check: (G) => (G.tableau.length === 0 ? { kind: 'noBuildingsToDestroy' } : null) },
+    effect: { destroy: true },
   },
   // Interactive peek action: reveals the top 3 of the draw pile into a choice tray,
   // you draw 1, the rest shuffle back. Its resolver suspends into a `pendingInteraction` and resumes
-  // on the chosen index — the canonical interactive/`suspendChoice` fixture. `revealsFromDeck` both
-  // drives the peek count and gates the card as unplayable when both piles are empty.
+  // on the chosen index — the canonical interactive/`suspendChoice` fixture. The `gate.check` bars it
+  // when both piles are empty (nothing to reveal).
   test_peek: {
     id: 'test_peek', name: 'Test Peek', kind: 'action', cost: { science: 1 },
-    revealsFromDeck: 3,
+    gate: { check: (G) => (G.deck.length + G.discard.length === 0 ? { kind: 'emptyDrawPile' } : null) },
     display: { description: 'Peek the top 3 cards; draw 1, shuffle the rest back' },
     effect: {
       resolve: (ctx) => {

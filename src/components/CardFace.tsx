@@ -94,8 +94,8 @@ export function describeConditions(c: CardDef): string {
   // An event: play it (pay its cost) to banish it unresolved — its effect never fires (preventive);
   // leave it and it fires for free at end of round, then recurs from the discard.
   if (c.kind === 'event') parts.push('play to banish resolves at end of round');
-  if (c.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.cultureLevelReq}`);
-  if (c.discardCost) parts.push(`discard ${c.discardCost}`);
+  if (c.gate?.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.gate.cultureLevelReq}`);
+  if (c.gate?.discardCost) parts.push(`discard ${c.gate.discardCost}`);
   if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
   return parts.join(' · ');
 }

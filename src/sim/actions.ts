@@ -67,7 +67,7 @@ export function enumerateActions(G: GameState): SimAction[] {
  * discard set the move would reject.
  */
 export function discardCostToPay(G: GameState, card: CardDef): number {
-  const want = card.discardCost ?? 0;
+  const want = card.gate?.discardCost ?? 0;
   return G.hand.length - 1 >= want ? want : 0;
 }
 
