@@ -1,111 +1,115 @@
-import { cultureProgress, isOperating, projectedDelta, type GameState } from '../rules';
-import { CARDS, isStructure } from '../content/cards';
+import { CORE_KEYS, applyUpkeep, isOperating, projectedDelta, subtractResources, type GameState, type Resources } from '../rules';
 import { objectiveProgress } from './objective';
 
 /**
- * Heuristic **weights** for `scoreState` below. These are a deliberately-first-pass, throwaway set —
- * the simulator is the tool that *tunes* them, and they'll be re-fit once real content (buildings,
- * territory, culture goals) lands in the age arcs. What matters
- * now is the *shape*: survival dominates capability, because famine (food driven below 0 → core collapse)
- * is the way a run is lost. So a projected-negative food next round is punished far harder than any
- * resource/economy gain is rewarded.
+ * Band weights for `scoreState`, high tier to low. The *ordering* is the design; the magnitudes are a
+ * first-pass the simulator will re-fit. What's load-bearing is the shape: each band's typical per-step
+ * swing dominates the band below it, and bands 3 & 5 **saturate** — once a mid-term safety buffer is met
+ * (band 3) or a pool is deep (band 5), that band goes flat and the next priority down leads. That is what
+ * lets the greedy secure survival, then commit to the objective, and only hoard when nothing else helps —
+ * instead of the old flat "reward every economy stat" shape, which was really a sandbox value function
+ * (accumulation and objective progress sat as co-equal tiers).
  */
 const W = {
-  /** Diminishing returns on hoarded food past a safe buffer — extra food beyond this is nearly free. */
-  foodBufferCap: 10,
-  /** Penalty per unit of *projected-negative* food next round — the imminent-starvation cliff. */
-  starvationPenalty: 20,
-  /** Reward for *currently banked* food (not just the one-round-ahead projection below) up to a
-   *  reserve cap, so the policy carries a real cushion against a run of several bad-draw rounds in a
-   *  row instead of only reacting to the immediate next turn. */
-  foodStockpileCap: 10,
-  foodStockpile: 1,
-  production: 1,
-  science: 1,
-  military: 0.8,
-  money: 0.8,
-  /** A worker is capability (more staffing capacity) but also eats — its food cost is already priced
-   *  into the projected-food term, so this is the net upside. */
-  population: 3,
-  /** A staffed, operating building / work box earning its keep. */
-  operating: 2,
-  /** Reward per unit of *projected* owned territory (current + what a staffed Conquest box produces
-   *  next upkeep), capped at the run's structure count. Projected, not realized, because territory is
-   *  delayed production — a Conquest play grants nothing on its turn, so a realized-territory term would
-   *  leave the play invisible to a one/two-ply policy (it would never expand at all). Sized above the
-   *  net cost of standing Conquest up (its ⚔️ cost minus the `operating` credit) so the two-ply
-   *  play→staff combo reads as improving; the structure-count cap keeps a structureless deck from
-   *  chasing useless territory. */
-  territory: 4,
-  /** Reward per *fractional* culture level (`level + within-band ratio`), so culture accumulating
-   *  **within** a band registers instead of only at the discrete level-up. Otherwise a single culture
-   *  play (+2, never enough to cross a band on its own) moves this term by 0, so the greedy never
-   *  invests in a winnable culture goal (the "blind to sub-level culture" fix). Continuous and
-   *  monotonic in culture, and identical to the old integer `cultureLevel` at a band boundary (ratio 0). */
-  cultureLevel: 6,
-  /**
-   * Pull toward the *mission's* objective — a mission-agnostic steering term. `objectiveProgress`
-   * (`rules/objective.ts`) is the objective card's own `[0, 1]` gradient (`1` = won), so this rewards a
-   * state that is *closer* to whatever this mission's goal is without the scorer knowing the target —
-   * the difference between a survival-first drifter and a policy that voluntarily stockpiles toward the
-   * win. Deliberately **capability-tier, not victory-tier**: it must stay well *under* the starvation
-   * cliff (`starvationPenalty` × a projected deficit runs into the tens-to-hundreds negative) so the
-   * greedy never walks into famine chasing progress — survival still dominates. A *met* objective is a
-   * different thing: `pendingVictory` below adds the overwhelming `victory` bonus, because a won run is
-   * *over*. Sized so holding a unit of a goal resource out-scores spending it on an off-goal card, but a
-   * single non-winning step's progress swing stays smaller than one unit of projected famine.
-   */
-  objectiveProgress: 50,
-  /** Dwarf everything: if a reachable state already meets the objective, it must outrank all others. */
+  /** Band 1 — a met objective ends the run; dwarfs everything below. */
   victory: 1_000_000,
+  /** Band 2 — per unit a core pool is *projected* to go negative next round (an actual collapse:
+   *  `rules/collapse.ts`'s famine/ruin/bankruptcy/dark_age/revolt). Steep, so climbing out dominates. */
+  collapseCliff: 500,
+  /** Band 3 — mid-term safety: cover ~`bufferTurns` of *permanent* drain plus a flat `bufferFloor` per
+   *  core pool, penalising only the shortfall below that (so a comfortably-buffered pool scores 0 and
+   *  band 4 leads). Weighted above a single objective step but well under the band-2 cliff. */
+  bufferWeight: 25,
+  bufferTurns: 3,
+  bufferFloor: 3,
+  /** Band 4 — pull toward the mission's own `[0, 1]` objective gradient (`sim/objective.ts`). Kept under
+   *  bands 2–3 so the policy never chases the win into collapse, but above raw accumulation so it commits
+   *  to the goal instead of drifting at a survival equilibrium. */
+  objective: 300,
+  /** A staffed, operating box — the **staffing incentive**, not a resource-priority band. A box's
+   *  production only lands next upkeep, so at the instant of staffing bands 2–4 are flat; band 5 sees a
+   *  *core* producer via its projected sum, but a *strategic* producer (culture/territory/population —
+   *  none of them in `CORE_KEYS`) is invisible to every band. This flat per-box credit is the only term
+   *  that makes a strictly-improving one-ply greedy staff a Beer (culture) or Conquest (territory) box at
+   *  all. A small nudge, below a single objective step. */
+  operating: 2,
+  /** Band 5 — accumulation, a *bounded* tiebreaker among otherwise-equal safe states: total *projected*
+   *  core resources up to a cap, at a weight small enough that it can never outweigh a real objective step.
+   *  No per-resource-type bias — a specific pool matters only through the objective, never intrinsically. */
+  accumulateWeight: 0.2,
+  accumulateCap: 50,
 };
 
-/** How many structure (building/wonder) cards the run holds across every zone — the ceiling on how much
- *  territory is ever worth expanding to, since a structure is the only thing that consumes a slot. */
-function structureCount(G: GameState): number {
-  const zones = [G.deck, G.hand, G.discard, G.removed, G.workZone, G.tableau];
-  return zones.reduce(
-    (n, zone) => n + zone.filter((c) => isStructure(CARDS[c.cardId])).length,
-    0,
-  );
+/**
+ * Net per-turn change from the run's **permanent** economy only — tableau production, threat drains,
+ * building maintenance, and population food — with the *transient* contributors dropped: the work zone (a
+ * work box produces once, then recycles to discard) and the hand (an unplayed event's drain is
+ * hand-contingent, not permanent). This is the steady-state floor band 3 buffers against, and is
+ * deliberately distinct from `projectedDelta` (band 2's *actual* next turn, work + events included):
+ * excluding work/events is the correct pessimistic bias for a survival guard, since work income depends on
+ * future draws. Reuses the real upkeep math via a stripped clone rather than re-deriving production.
+ */
+function permanentDelta(G: GameState): Resources {
+  const clone = structuredClone(G);
+  clone.workZone = []; // drop this-turn-only work-box production before running upkeep
+  applyUpkeep(clone); // tableau production − threat drains − building maintenance − population food
+  return subtractResources(clone.resources, G.resources); // settleEndOfTurn skipped: no hand events
 }
 
 /**
- * Score a run state — higher is better — for the greedy policy's one-ply argmax (`sim/greedyPolicy.ts`)
- * and as the ranking backbone the heuristic borrows. A **pure read** over `G` (via `projectedDelta`,
- * which clones; it never mutates `G`), so it's safe to call on a candidate's resulting state and
- * unit-testable in isolation.
+ * Score a run state — higher is better — for the greedy policies' argmax (`sim/greedyPolicy.ts`,
+ * `sim/greedy2Policy.ts`) and as the ranking backbone the heuristic and oracle beam borrow. A **pure
+ * read** over `G` (via `projectedDelta`/`applyUpkeep`, which clone; it never mutates `G`), so it's safe on
+ * a candidate's resulting state and unit-testable in isolation.
  *
- * Survival first: the food term reads *projected* next-round food (`projectedDelta` already nets out
- * population upkeep and any in-hand events), rewarding a positive buffer up to a cap and punishing a
- * projected deficit steeply — so the greedy keeps food boxes staffed and won't over-grow population it
- * can't feed. A second, separate term rewards *currently banked* food up to its own cap — the
- * one-round projection alone doesn't push the greedy to hold a real reserve, so a run of several
- * bad-draw rounds (no food play in hand) could still tip it into famine even while each individual
- * round projected fine; banked-reserve credit makes the greedy stockpile ahead of that risk instead of
- * living turn to turn. Then two layers of capability: the generic economy terms (accumulated core resources ·
- * population · operating economy · territory · culture level — what the sandbox measures a run by even
- * though it never *wins*), plus a **mission-directed** pull toward whatever this mission's objective
- * wants (`sim/objective.ts`'s `objectiveProgress`, a `[0, 1]` gradient), so the greedy voluntarily
- * stockpiles toward the goal instead of drifting at a survival equilibrium. That pull is deliberately
- * capability-tier, kept under the starvation cliff so it never lures the greedy into famine. A met
- * objective (`pendingVictory`) then adds an overwhelming bonus so any winning line is taken outright.
+ * Five priority bands, survival first (see `W`): (2) any core pool projected negative next round is an
+ * imminent collapse, punished steeply; (3) mid-term safety — a shortfall against ~3 turns of *permanent*
+ * drain (`permanentDelta`, not the transient projection) is penalised until a real cushion is banked;
+ * (4) a mission-directed pull toward the objective, kept under survival so it never chases the win into
+ * famine; (5) a small bounded accumulation term that only breaks ties among safe, equal states; and (1) a
+ * met objective, added last, dominating everything because a won run is over.
+ *
+ * Two staffing-visibility terms sit alongside the bands, because a box's production only lands next upkeep:
+ * a flat per-operating-box credit (the only signal for a *strategic* producer, invisible to every band),
+ * and band 5 reading *projected* core (so greedy2 can value a worker *transfer*, which the flat credit
+ * can't distinguish). Without them the strictly-improving greedy would never staff toward the objective.
  */
 export function scoreState(G: GameState): number {
   const r = G.resources;
-  const proj = projectedDelta(G);
-  const projFood = r.food + proj.resources.food;
-
   let s = 0;
-  s += projFood >= 0 ? Math.min(projFood, W.foodBufferCap) : projFood * W.starvationPenalty;
-  s += Math.min(r.food, W.foodStockpileCap) * W.foodStockpile;
-  s += r.production * W.production + r.science * W.science + r.military * W.military + r.money * W.money;
-  s += G.resources.population * W.population;
+
+  // Band 2 — immediate survival. Any core pool projected negative next round is a collapse.
+  const proj = projectedDelta(G).resources;
+  for (const k of CORE_KEYS) {
+    const next = r[k] + proj[k];
+    if (next < 0) s += next * W.collapseCliff;
+  }
+
+  // Band 3 — mid-term safety. Buffer each *draining* core pool to `bufferTurns` of permanent drain plus a
+  // flat floor; penalise only the shortfall, so a comfortably-buffered (or income-positive) pool scores 0
+  // and band 4 leads. Population's cost lands here as food drain, so "cover upkeep + population needs"
+  // falls out for free.
+  const perm = permanentDelta(G);
+  for (const k of CORE_KEYS) {
+    const drain = Math.max(0, -perm[k]);
+    const target = W.bufferFloor + W.bufferTurns * drain;
+    s -= Math.max(0, target - r[k]) * W.bufferWeight;
+  }
+
+  // Band 4 — objective pull. The mission's own [0, 1] gradient (1 = won).
+  s += objectiveProgress(G) * W.objective;
+
+  // Staffing incentive — a flat credit per operating box. Band 5 (projected core) sees a *core* producer
+  // being staffed, but a strategic producer (culture/territory) lands in no band until upkeep; this credit
+  // is what makes the one-ply greedy staff those boxes toward a culture/territory objective.
   s += [...G.tableau, ...G.workZone].filter(isOperating).length * W.operating;
-  s += Math.min(r.territory + proj.resources.territory, structureCount(G)) * W.territory;
-  const cp = cultureProgress(G.resources.culture);
-  s += (cp.level + cp.ratio) * W.cultureLevel;
-  s += objectiveProgress(G) * W.objectiveProgress;
-  if (G.pendingVictory) s += W.victory;
+
+  // Band 5 — accumulation, bounded. Reads *projected* core (where the turn is heading, like band 2) so a
+  // staffed core producer's not-yet-filed output and worker *transfers* between boxes are visible — which
+  // is what lets greedy2 value a transfer (flat under `operating`). Only decides among safe, equal states.
+  const core = CORE_KEYS.reduce((n, k) => n + Math.max(0, r[k] + proj[k]), 0);
+  s += Math.min(core, W.accumulateCap) * W.accumulateWeight;
+
+  if (G.pendingVictory) s += W.victory; // band 1, applied last so it's unconditional
   return s;
 }
