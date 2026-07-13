@@ -82,10 +82,10 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     id: 'test_money', name: 'Test Money', kind: 'building',
     cost: { production: 2 }, produces: { money: 2 }, workers: 1,
   },
-  // Culture producer: output via `cultureOutput` (no `produces`), like a Theater.
+  // Culture producer: per-round culture output via `produces.culture`, like a Theater.
   test_culture: {
     id: 'test_culture', name: 'Test Culture', kind: 'building',
-    cost: { production: 3 }, cultureOutput: 2, workers: 1,
+    cost: { production: 3 }, produces: { culture: 2 }, workers: 1,
   },
   // Self-sufficient building (workers:0): always operating, no staffing needed — the staffing variant.
   test_selfstaffed: {
@@ -102,15 +102,15 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // `isStructure`/`isStaffable` production/placement paths.
   test_wonder: {
     id: 'test_wonder', name: 'Test Wonder', kind: 'wonder',
-    cost: { production: 2 }, cultureOutput: 2, workers: 1,
+    cost: { production: 2 }, produces: { culture: 2 }, workers: 1,
   },
   // Multi-worker building (`workers: 3` = capacity, not a fixed requirement): operates at ≥1 worker
-  // and its `produces`/`cultureOutput` are *per-worker unit* values scaled by the staffed count (see
+  // and its `produces` values are *per-worker unit* amounts scaled by the staffed count (see
   // `population.ts`'s `producingUnits`). The canonical variable-staffing fixture — mirrors the shape
   // of the Göbekli Tepe wonder, the first shipped card of this kind.
   test_multiworker: {
     id: 'test_multiworker', name: 'Test Multi-Worker', kind: 'building',
-    cost: { production: 4 }, produces: { production: 1, money: 1 }, cultureOutput: 1, workers: 3,
+    cost: { production: 4 }, produces: { production: 1, money: 1, culture: 1 }, workers: 3,
   },
 
   // --- Work cards: produce their `produces` only while staffed, file to discard at end of turn. ---

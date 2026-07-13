@@ -60,7 +60,7 @@ describe('tableau production on the endTurn broadcast', () => {
     expect(G.resources.food).toBe(3); // base 2 + restricted sticker's +1, via the same fold as additive-gain
   });
 
-  it('a staffed wonder produces its cultureOutput exactly like a building; an unstaffed one does not', () => {
+  it('a staffed wonder produces its culture output exactly like a building; an unstaffed one does not', () => {
     const G = blankState('test');
     G.tableau = [b('test_wonder', 1), b('test_wonder', 0)]; // test_wonder → +2🎭 while staffed
     dispatchEvent(G, { type: 'endTurn' });
@@ -69,7 +69,7 @@ describe('tableau production on the endTurn broadcast', () => {
 });
 
 describe('per-worker production scaling', () => {
-  // `test_multiworker` is a 3-capacity building; its produces {production:1, money:1} + cultureOutput:1
+  // `test_multiworker` is a 3-capacity building; its produces {production:1, money:1, culture:1}
   // are per-worker unit values scaled by the staffed count.
   it('scales its unit output by the number of staffed workers', () => {
     for (const [workers, expected] of [[1, 1], [2, 2], [3, 3]] as const) {

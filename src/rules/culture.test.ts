@@ -47,7 +47,7 @@ describe('culture: per-round output from operating buildings', () => {
     expect(G.resources.culture).toBe(0);
   });
 
-  it('ignores buildings with no cultureOutput', () => {
+  it('ignores buildings with no culture output', () => {
     const G = blankState('test');
     G.tableau = [b('test_food', 1), b('test_sci', 1)];
     dispatchEvent(G, { type: 'endTurn' });

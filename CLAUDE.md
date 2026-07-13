@@ -135,7 +135,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     pools — food/production/science/military/money), `StrategicResources`
     (population/culture/territory), and combined `Resources` = both (all 8). `GameState.resources`
     holds one combined `Resources`; a card's *cost* is a `Partial<CoreResources>` (only core is spent),
-    a `CardEffect`'s delta a `Partial<Resources>` (may touch any of the 8). Helpers: `add`/`subtract`
+    while both a `CardEffect`'s delta and a structure's per-round `produces` are `Partial<Resources>`
+    (may touch any of the 8 — e.g. a culture-producing wonder puts `culture` in `produces`). Helpers: `add`/`subtract`
     (generic over present keys), `scaleResources`, `canAfford` (core-only), `coreOf` (the core slice,
     e.g. `CardFace`'s `describeCard` splitting an effect's core delta for the card face), and the
     `CORE_KEYS` source of truth.
@@ -201,7 +202,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `addBuilding`/`addWork`, the shared `nextInstanceId` allocator, `foodUpkeep`). `workers` on a
     card is a worker **capacity** (max assignable; `0` = self-sufficient, always operating): a
     staffable operates at **≥1 worker** and its declarative output scales **per worker**
-    (`producingUnits` × the per-worker unit `produces`/`cultureOutput`, folded in `effects.ts`'s
+    (`producingUnits` × the per-worker unit `produces`, folded in `effects.ts`'s
     `defaultProduce`). A capacity-1 building is the common case (scales ×1 = a flat output); the first
     multi-worker card is the Göbekli Tepe wonder. `autoStaffCount` partial-fills toward capacity.
   - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup. A seeded threat
@@ -267,7 +268,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   - `cards.ts` — `CARDS`, the single card catalogue (`CardKind` =
     building/wonder/action/work/event/threat/objective; see DESIGN.md → *Card kinds* for what each
     kind does and how it leaves play). A `building`/`wonder` carries its own stats
-    (`produces`/`cultureOutput`/`workers`) right on the `CardDef`. A `wonder` plays exactly like a
+    (`produces`/`workers`) right on the `CardDef`. A `wonder` plays exactly like a
     `building` (occupies a tableau slot, staffed, produces each round) — the two share the
     `isStructure` (occupies a slot) and `isStaffable` (produces/staffed at upkeep) choke-point
     predicates, so no call site open-codes a `kind === 'building'` union. A wonder is set apart only

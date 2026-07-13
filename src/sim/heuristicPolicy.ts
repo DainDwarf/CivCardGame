@@ -229,11 +229,11 @@ function bundleValue(b?: Partial<CoreResources>): number {
 /** A crude static worth for a *card* — resource delta + production + strategic outputs, minus its
  *  cost. The signed `effect.resources` already nets any drain against a gain. */
 function staticValue(card: CardDef): number {
-  let v = bundleValue(coreOf(card.effect?.resources ?? {})) + bundleValue(card.produces);
+  let v = bundleValue(coreOf(card.effect?.resources ?? {})) + bundleValue(coreOf(card.produces ?? {}));
   v -= bundleValue(card.cost);
-  v += (card.effect?.resources?.population ?? 0) * 3;
-  v += ((card.effect?.resources?.culture ?? 0) + (card.cultureOutput ?? 0)) * 0.6;
-  v += (card.effect?.resources?.territory ?? 0) * 1.5;
+  v += ((card.effect?.resources?.population ?? 0) + (card.produces?.population ?? 0)) * 3;
+  v += ((card.effect?.resources?.culture ?? 0) + (card.produces?.culture ?? 0)) * 0.6;
+  v += ((card.effect?.resources?.territory ?? 0) + (card.produces?.territory ?? 0)) * 1.5;
   v += (card.effect?.draw ?? 0) * 1;
   return v;
 }

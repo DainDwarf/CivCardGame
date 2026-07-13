@@ -42,7 +42,7 @@ export interface PlacedCard extends CardInstance {
 }
 
 /** A building erected in the tableau: stays in play until demolished, producing its card's
- *  `produces`/`cultureOutput` each round while staffed. */
+ *  `produces` each round while staffed. */
 export type BuildingInstance = PlacedCard;
 
 /** A Work card played onto the board this turn. Transient: produces its card's `effect.resources` only

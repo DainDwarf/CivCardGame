@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { BuildingInstance, CardInstance, CoreResources, WorkInstance } from '../rules';
+import type { BuildingInstance, CardInstance, CoreResources, Resources, WorkInstance } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
+  coreOf,
   cultureProgress,
   freePopulation,
   isOperating,
@@ -312,10 +313,10 @@ function useAnimatedHand(hand: CardInstance[]): HandCard[] {
 /** Per-round output labels for a staffable box, scaled to its current staffing (`unit × units`).
  *  A minimum of ×1 keeps an unstaffed/idle box showing its per-worker rate rather than "+0" (it's
  *  greyed as idle anyway), matching how a single-worker building shows its output while unstaffed. */
-function boxOutputLabels(produces: Partial<CoreResources> | undefined, cultureOutput: number | undefined, units: number): string[] {
+function boxOutputLabels(produces: Partial<Resources> | undefined, units: number): string[] {
   const u = Math.max(1, units);
   return [
-    ...Object.entries(produces ?? {})
+    ...Object.entries(coreOf(produces ?? {}))
       .filter(([, v]) => v)
       .map(([k, v]) => {
         // The output bag is signed (a work box reads its `produces`, which may drain): a
@@ -323,7 +324,9 @@ function boxOutputLabels(produces: Partial<CoreResources> | undefined, cultureOu
         const n = (v as number) * u;
         return `${n > 0 ? '+' : ''}${n}${COST_ICON[k as keyof CoreResources]}`;
       }),
-    ...(cultureOutput ? [`+${cultureOutput * u}🎭`] : []),
+    // Culture is the one strategic key any card produces per round (per-round population/territory
+    // is expressible on the type but unused, so it isn't labelled here — add one if a card uses it).
+    ...(produces?.culture ? [`+${produces.culture * u}🎭`] : []),
   ];
 }
 
@@ -460,7 +463,7 @@ function BuildingBox({
         <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
           <span className={styles.bldIcon} aria-hidden="true">{artFor(bld)}</span>
           <span className={styles.bldOutput} aria-hidden="true">
-            {boxOutputLabels(bld.produces, bld.cultureOutput, producingUnits(inst)).join(' ')}
+            {boxOutputLabels(bld.produces, producingUnits(inst)).join(' ')}
           </span>
         </div>
       </div>
@@ -507,7 +510,7 @@ function WorkBox({
   ]
     .filter(Boolean)
     .join(' ');
-  const gain = boxOutputLabels(card.produces, card.cultureOutput, producingUnits(inst)).join(' ');
+  const gain = boxOutputLabels(card.produces, producingUnits(inst)).join(' ');
   return (
     <div className={className} ref={boxRef}>
       {!selfSufficient && (

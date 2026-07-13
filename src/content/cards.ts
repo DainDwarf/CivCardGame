@@ -1,4 +1,4 @@
-import { subtractResources, type CoreResources } from '../rules/resources';
+import { subtractResources, type CoreResources, type Resources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, type Resolver, suspendChoice } from '../rules/effects';
 import { recoverFromDiscard } from '../rules/deck';
@@ -64,7 +64,7 @@ export interface CardDef {
   /** The card's declarative effect bundle — *what* it changes (see `CardEffect`), left to a resolver
    *  to say *when*. This one field is currently read at a different timing per kind: an `action`
    *  applies it once on play; a `building`/`wonder` applies it once at **placement** (e.g. the Hut's
-   *  `+1 population`), its recurring output living in the passive `produces`/`cultureOutput` below; a
+   *  `+1 population`), its recurring output living in the passive `produces` below; a
    *  `work` card defers it until staffed and applies its `effect.resources` **each round** at upkeep;
    *  an unplayed `event` applies it at end of turn. Because a building's `effect` is a placement
    *  one-shot while a work card's is per-round, the per-round resolver (`defaultProduce`) reads only
@@ -97,7 +97,7 @@ export interface CardDef {
   recoversFromDiscard?: true;
   /**
    * Bespoke per-round production behavior for a `building`/`work` card whose output isn't fully
-   * described by `produces`/`cultureOutput`/`effect.resources` (e.g. a future scaling building reading
+   * described by `produces`/`effect.resources` (e.g. a future scaling building reading
    * its own `self.counters`, the production counterpart to a per-play `resolve`). When present it *replaces*
    * the declarative default built from those fields. Separate from `resolve`: a building/work card's
    * production ticks every upkeep while staffed, never at play, so it can't share the play-time
@@ -156,12 +156,10 @@ export interface CardDef {
   /** The card's display-only concern (face text + art) — split out so authoring a card's look is
    *  separate from its rules. Read exclusively by the render path; see `CardDisplay`. */
   display?: CardDisplay;
-  /** A structure's (`building`/`wonder`) per-round resource output once staffed. (A `work` card
-   *  instead carries its per-round output in `effect.resources`; see the `effect` field above.) */
-  produces?: Partial<CoreResources>;
-  /** A staffable card's (`building`/`wonder`/`work`) per-round culture gained while staffed —
-   *  accumulates on G.resources.culture (e.g. Beer, a work card). */
-  cultureOutput?: number;
+  /** A structure's (`building`/`wonder`) per-round resource output once staffed. Any of the 8
+   *  resources (core or strategic — e.g. a culture-producing wonder puts `culture` here). (A `work`
+   *  card instead carries its per-round output in `effect.resources`; see the `effect` field above.) */
+  produces?: Partial<Resources>;
 }
 
 /** Whether a card is one the player builds decks with. `event` (mission-injected into the deck),
@@ -256,7 +254,7 @@ export const CARDS: Record<string, CardDef> = {
   //   is a one-time play cost (charged by `playCard`), the culture a per-worker declarative output, so
   //   it's a plain producer with no bespoke logic. Reward-unlocked by "Restless People", never in the
   //   starting set.
-  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { food: 2 }, workers: 1, display: { art: '🍺' }, cultureOutput: 5 },
+  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { food: 2 }, workers: 1, display: { art: '🍺' }, produces: { culture: 5 } },
 
   // — Stone Age buildings: the first permanent structures, unlocked by "The First Settlement". A
   //   building *is* the building — it sits in the tableau and produces each round while staffed.
@@ -274,14 +272,14 @@ export const CARDS: Record<string, CardDef> = {
   //   building) and the first live card to carry a `cultureLevelReq` gate, so playing it is blocked
   //   until the civilization is cultured enough. Also the first **multi-worker** building (`workers`
   //   is a *capacity*, not a fixed requirement): it operates with any 1–3 workers and its declarative
-  //   `produces`/`cultureOutput` are *per-worker unit* values scaled by the staffed count (see
+  //   `produces` values are *per-worker unit* amounts scaled by the staffed count (see
   //   `population.ts`'s `producingUnits`). Unlocked by "Rites & Rituals" so the capstone mission
   //   can *build* it. Cost is still a provisional first pass, not yet tuned.
   gobekli_tepe: {
     id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
     display: { art: '🗿', description: '+1🔨 +1🪙 +1🎭\nper worker.' },
     cost: { production: 8 }, cultureLevelReq: 1, workers: 3,
-    produces: { production: 1, money: 1 }, cultureOutput: 1,
+    produces: { production: 1, money: 1, culture: 1 },
   },
 
   // — Actions: resolve once, then recycle to discard.

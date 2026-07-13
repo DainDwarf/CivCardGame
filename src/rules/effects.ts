@@ -129,33 +129,31 @@ export function resolveCard(ctx: EffectContext): void {
 }
 
 /**
- * Build a production resolver from a card's declarative per-round fields — `produces` (+ the explicit
- * `cultureOutput`), and *only* those. Production reads `produces` alone: `effect` is the on-play (and
- * end-of-turn event) timing and is never consulted here, so the two slots stay strictly separate —
- * a card's per-round output and its one-shot effect can never be the same field. `produces` is
- * `Partial<CoreResources>` by type, so a strategic per-round gain (territory/population as a `work`
- * card) isn't expressible yet; that awaits the production-path refactor.
+ * Build a production resolver from a card's declarative per-round output — `produces`, and *only*
+ * that. Production reads `produces` alone: `effect` is the on-play (and end-of-turn event) timing and
+ * is never consulted here, so the two slots stay strictly separate — a card's per-round output and its
+ * one-shot effect can never be the same field. `produces` is a `Partial<Resources>`, so any of the 8
+ * resources may be produced per round (core *or* strategic — e.g. a culture-producing wonder puts
+ * `culture` in it).
  *
- * Output scales per staffed worker: the declarative `produces`/`cultureOutput` are *per-worker unit*
- * values, multiplied by the operating instance's `producingUnits` (its staffed count, or 1 for a
+ * Output scales per staffed worker: the declarative `produces` values are *per-worker unit* amounts,
+ * multiplied by the operating instance's `producingUnits` (its staffed count, or 1 for a
  * self-sufficient card). `ctx.self` is a bare `CardInstance` carrying no `workers`, so the live
  * instance is resolved from its zone. A capacity-1 producer yields `×1` — identical to a flat output.
- * Culture output rides the same `gainResources` fold as the core part (a culture sticker would apply).
+ * The whole scaled bundle (culture included) rides the one `gainResources` fold, so a sticker applies.
  */
 function defaultProduce(card: CardDef): Resolver {
   return (ctx) => {
     const s = findStaffable(ctx.G, ctx.self.id);
     const units = s ? producingUnits(s) : 1;
-    const produced = scaleResources(card.produces ?? {}, units);
-    if (card.cultureOutput) produced.culture = card.cultureOutput * units;
-    gainResources(ctx, produced);
+    gainResources(ctx, scaleResources(card.produces ?? {}, units));
   };
 }
 
 /**
  * Resolve one operating (staffed) instance's per-round production: `card.produce` if it owns one,
  * otherwise the declarative default above. Production's counterpart to `resolveCard` — the caller
- * only asks the card to produce, never reading `produces`/`cultureOutput` itself.
+ * only asks the card to produce, never reading `produces` itself.
  */
 export function resolveProduction(ctx: EffectContext): void {
   const card = CARDS[ctx.self.cardId];

@@ -92,14 +92,16 @@ export function describeConditions(c: CardDef): string {
 export function describeBuilding(b: CardDef, includeWorkers = true): string {
   const parts: string[] = [];
   if (b.produces) {
-    parts.push(
-      Object.entries(b.produces)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `+${v}${COST_ICON[k as keyof CoreResources]}`)
-        .join(' '),
-    );
+    // Core keys carry a cost icon; culture is the one strategic key any card produces per round, so
+    // it gets its own 🎭 label. (Per-round population/territory output is expressible on the type but
+    // no card uses it yet, so it isn't rendered here — add a label if one does.)
+    const core = Object.entries(coreOf(b.produces))
+      .filter(([, v]) => v)
+      .map(([k, v]) => `+${v}${COST_ICON[k as keyof CoreResources]}`)
+      .join(' ');
+    if (core) parts.push(core);
+    if (b.produces.culture) parts.push(`+${b.produces.culture}🎭`);
   }
-  if (b.cultureOutput) parts.push(`+${b.cultureOutput}🎭`);
   if (includeWorkers && b.workers) parts.push(`👷${b.workers}`);
   return parts.join(' · ');
 }
@@ -127,8 +129,8 @@ export function describeCard(c: CardDef): string {
   if (strat?.territory) parts.push(`${strat.territory > 0 ? '+' : ''}${strat.territory} territory`);
   if (strat?.culture) parts.push(`${strat.culture > 0 ? '+' : ''}${strat.culture} 🎭`);
   if (e?.destroy) parts.push('removes a building from the run');
-  // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` +
-  // `cultureOutput` — here (workers are shown as meeples, not text). This is the sole path for a
+  // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` —
+  // here (workers are shown as meeples, not text). This is the sole path for a
   // staffable's ongoing output, work cards included; the `effect` branch above is its one-shot only.
   if (isStaffable(c)) {
     const stats = describeBuilding(c, false);

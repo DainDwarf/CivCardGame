@@ -164,7 +164,7 @@ describe('resolveProduction', () => {
 });
 
 // Content coherence: the `work` kind's whole output is per-round, so it lives entirely in
-// `produces`/`cultureOutput` — a work card must not carry a one-shot `effect` (it would be dead, since
+// `produces` — a work card must not carry a one-shot `effect` (it would be dead, since
 // `playCard` resolves no effect for a work card, and it would blur the produces/effect separation).
 describe('work-card content', () => {
   it('no work card carries an `effect`', () => {
