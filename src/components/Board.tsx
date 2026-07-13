@@ -458,7 +458,7 @@ function BuildingBox({
         <div className={styles.bldFace} aria-label={describeBuilding(bld)}>
           <span className={styles.bldIcon} aria-hidden="true">{artFor(bld)}</span>
           <span className={styles.bldOutput} aria-hidden="true">
-            {boxOutputLabels(bld.produces, producingUnits(inst)).join(' ')}
+            {boxOutputLabels(bld.produces?.resources, producingUnits(inst)).join(' ')}
           </span>
         </div>
       </div>
@@ -505,7 +505,7 @@ function WorkBox({
   ]
     .filter(Boolean)
     .join(' ');
-  const gain = boxOutputLabels(card.produces, producingUnits(inst)).join(' ');
+  const gain = boxOutputLabels(card.produces?.resources, producingUnits(inst)).join(' ');
   return (
     <div className={className} ref={boxRef}>
       {!selfSufficient && (

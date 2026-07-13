@@ -104,9 +104,9 @@ export function describeConditions(c: CardDef): string {
  *  the card face, which shows worker capacity as a column of meeples instead of text. */
 export function describeBuilding(b: CardDef, includeWorkers = true): string {
   const parts: string[] = [];
-  if (b.produces) {
+  if (b.produces?.resources) {
     // Every produced resource — core or strategic — renders the same way through the shared icon map.
-    const stats = (Object.entries(b.produces) as [keyof Resources, number][])
+    const stats = (Object.entries(b.produces.resources) as [keyof Resources, number][])
       .filter(([, v]) => v)
       .map(([k, v]) => `${v > 0 ? '+' : ''}${v}${RESOURCE_ICON[k]}`)
       .join(' ');
@@ -116,9 +116,9 @@ export function describeBuilding(b: CardDef, includeWorkers = true): string {
   return parts.join(' · ');
 }
 
-/** Presentation-only summary of what a card does (no game logic here). A `resolve`-driven card
- *  whose behavior the declarative `effect` can't express authors its own `description`, which wins
- *  over the auto-generated text below. */
+/** Presentation-only summary of what a card does (no game logic here). A card whose behavior the
+ *  declarative `effect` fields can't express (an `effect.resolve` closure) authors its own
+ *  `description`, which wins over the auto-generated text below. */
 export function describeCard(c: CardDef): string {
   if (c.display?.description) return c.display.description;
   const e = c.effect;
@@ -133,7 +133,6 @@ export function describeCard(c: CardDef): string {
     if (gains.length) parts.push(gains.map(([k, v]) => `+${v}${RESOURCE_ICON[k]}`).join(' '));
     if (drains.length) parts.push(drains.map(([k, v]) => `${v}${RESOURCE_ICON[k]}`).join(' '));
   }
-  if (e?.draw) parts.push(`draw ${e.draw}`);
   if (e?.destroy) parts.push('removes a building from the run');
   // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` —
   // here (workers are shown as meeples, not text). This is the sole path for a

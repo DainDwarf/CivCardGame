@@ -135,8 +135,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     pools — food/production/science/military/money), `StrategicResources`
     (population/culture/territory), and combined `Resources` = both (all 8). `GameState.resources`
     holds one combined `Resources`; a card's *cost* is a `Partial<CoreResources>` (only core is spent),
-    while both a `CardEffect`'s delta and a structure's per-round `produces` are `Partial<Resources>`
-    (may touch any of the 8 — e.g. a culture-producing wonder puts `culture` in `produces`). Helpers: `add`/`subtract`
+    while a `CardEffect`'s `resources` delta — a card's one-shot play `effect` *or* a staffable's
+    per-round `produces`, both `CardEffect`s — is `Partial<Resources>`
+    (may touch any of the 8 — e.g. a culture-producing wonder puts `culture` in `produces.resources`). Helpers: `add`/`subtract`
     (generic over present keys), `scaleResources`, `canAfford` (core-only), `coreOf` (the core slice,
     e.g. `CardFace`'s `describeCard` splitting an effect's core delta for the card face), and the
     `CORE_KEYS` source of truth.
@@ -153,12 +154,16 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `EffectContext` so the family reads uniformly. The peek family is currently unused; the one
     card-facing deck primitive in use today is `recoverFromDiscard` (the discard→hand counterpart,
     used by Storytelling).
-  - `effects.ts` — the **resolver spine**: `resolveCard(ctx)` is the single path a card's
-    effect runs through (its own `CardDef.resolve`, else the declarative default from the
-    `CardEffect` bag). The `EffectContext` (`{ G, self, target?, answer? }`) tells an effect
-    which copy is resolving and what it targets (a Destroy demolition is just `ctx.target`).
-    `resolveProduction(ctx)` is production's narrower counterpart — recurring per-round, so
-    it deliberately omits the one-shot play fields.
+  - `effects.ts` — the **resolver spine**: a **`CardEffect`** is the one "what happens" descriptor,
+    carried in three slots on `CardDef` — the play-time `effect`, the per-round `produces`, and each
+    `on.*` handler. `runEffect(ctx, effect)` is the single declarative-or-bespoke runner: it applies the
+    declarative fields (`resources` folded through stickers, `destroy`), *unless* the effect owns a
+    `resolve` closure — the "too specific" escape hatch, which *replaces* the declarative fields.
+    `resolveCard(ctx)` runs a card's play `effect` through it. The `EffectContext`
+    (`{ G, self, target?, answer? }`) tells an effect which copy is resolving and what it targets (a
+    Destroy demolition is just `ctx.target`). `resolveProduction(ctx)` is production's separate
+    counterpart — a *different* path from `runEffect` because it scales `produces.resources` per staffed
+    worker; it reads `produces` alone (a bespoke `produces.resolve` owns its own scaling).
     An interactive effect suspends into `pendingInteraction` — via `suspendChoice(ctx, …)`, the one
     place a resolver opens one (built from `ctx.self`) — and re-enters via `moves.resolveInteraction`;
     all plain data, so undo/clone survive. Together with the `deck.ts` primitives this makes the spine
@@ -166,9 +171,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     resolver hand-rolls raw state surgery (the boundary Foresight used to break).
   - `events.ts` — the **event bus**: the general trigger layer letting a card react to an event
     whose *timing it doesn't own* (a draw, a discard elsewhere, a resource crossing a threshold, the
-    draw pile reshuffling, or a round passing) via a `CardDef.on?: { draw?/discard?/resourceChange?/reshuffle?/endTurn? }` handler — run
-    through the *same* `resolveCard`/`EffectContext` spine (extended with `ctx.event`), so a handler
-    is authored like any bespoke `resolve` and its gains still fold through stickers. Two verbs,
+    draw pile reshuffling, or a round passing) via a `CardDef.on?: { draw?/discard?/resourceChange?/reshuffle?/endTurn? }` map — each
+    entry a **`CardEffect`** run through the *same* `runEffect`/`EffectContext` spine (with `ctx.event`
+    set to the trigger, read by the handler's `resolve` closure), so its gains still fold through stickers. Two verbs,
     split so the bus never dispatches mid-mutation: **emit** (`emitEvent` → push to `G.events`, done
     at a semantic site as a step runs — a `draw` in `deck.ts`, a `discard` with its *reason* at each
     discard site) and **flush** (`flushEvents(G, before)` at a *step boundary* — `applyMove`/
@@ -202,8 +207,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `addBuilding`/`addWork`, the shared `nextInstanceId` allocator, `foodUpkeep`). `workers` on a
     card is a worker **capacity** (max assignable; `0` = self-sufficient, always operating): a
     staffable operates at **≥1 worker** and its declarative output scales **per worker**
-    (`producingUnits` × the per-worker unit `produces`, folded in `effects.ts`'s
-    `defaultProduce`). A capacity-1 building is the common case (scales ×1 = a flat output); the first
+    (`producingUnits` × the per-worker unit `produces.resources`, folded in `effects.ts`'s
+    `resolveProduction`). A capacity-1 building is the common case (scales ×1 = a flat output); the first
     multi-worker card is the Göbekli Tepe wonder. `autoStaffCount` partial-fills toward capacity.
   - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup. A seeded threat
     ticks every round through the `endTurn` broadcast (`events.ts`'s `dispatchEvent` → `effects.ts`'s
@@ -261,7 +266,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     and `MetaMenu.tsx` (Collection/Board nav badges). The tray buy controls share the same accent (a
     gold border on an available copy-tier button / sticker badge).
 - `src/content/` — the typed game catalogues (cards, decks, boards, missions, stickers).
-  A card or sticker def carries its own behaviour (a card's `resolve` closure, a sticker's
+  A card or sticker def carries its own behaviour (a card's `CardEffect.resolve` closure, a sticker's
   hooks — see the *own their own logic* convention), so these are data *and* the per-entry
   logic that rides on it, not pure data tables. **A building card *is* the building** —
   there's no separate building catalogue. One file per catalogue:
@@ -561,8 +566,8 @@ content exists.
   choice, not a blocker. Whatever the version, keep `setState` updaters **pure** — the
   run loop relies on StrictMode's intentional dev double-invoke to catch impurity.
 - **Cards and stickers own their own logic.** A card's effect runs only through
-  `resolveCard(ctx)` (its own `CardDef.resolve`, else the declarative default) — never
-  read or scale `CardDef.effect` from a move, upkeep, threat tick, or component. A
+  `resolveCard(ctx)`/`runEffect` (its `CardEffect.resolve` closure, else the declarative default) —
+  never read or scale `CardDef.effect` from a move, upkeep, threat tick, or component. A
   sticker likewise carries its behaviour on its `StickerDef`
   (`appliesTo`/`applyGain`/`applyCost`), dispatched generically by `rules/stickers.ts` —
   no sticker-specific branches at call sites. Adding a mechanic means adding a

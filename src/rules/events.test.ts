@@ -17,8 +17,10 @@ const LOCAL: Record<string, CardDef> = {
   test_selfremove: {
     id: 'test_selfremove', name: 'Debt', kind: 'threat', cost: {},
     on: {
-      resourceChange: ({ G, self }) => {
-        if (G.resources.money >= 30) G.threats = G.threats.filter((t) => t.id !== self.id);
+      resourceChange: {
+        resolve: ({ G, self }) => {
+          if (G.resources.money >= 30) G.threats = G.threats.filter((t) => t.id !== self.id);
+        },
       },
     },
   },
@@ -28,8 +30,10 @@ const LOCAL: Record<string, CardDef> = {
   test_observer: {
     id: 'test_observer', name: 'Observer', kind: 'building', cost: {}, workers: 1,
     on: {
-      draw: (ctx) => {
-        if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
+      draw: {
+        resolve: (ctx) => {
+          if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
+        },
       },
     },
   },
@@ -37,7 +41,9 @@ const LOCAL: Record<string, CardDef> = {
   test_emit_on_draw: {
     id: 'test_emit_on_draw', name: 'Chainer', kind: 'building', cost: {}, workers: 0,
     on: {
-      draw: ({ G }) => emitEvent(G, { type: 'discard', instanceId: 999, cardId: 'test_react_discard', reason: 'sacrifice' }),
+      draw: {
+        resolve: ({ G }) => emitEvent(G, { type: 'discard', instanceId: 999, cardId: 'test_react_discard', reason: 'sacrifice' }),
+      },
     },
   },
   // Reacts to the round-start refill specifically (source === 'turnStart') — the negative-space partner
@@ -45,8 +51,10 @@ const LOCAL: Record<string, CardDef> = {
   test_turnstart_only: {
     id: 'test_turnstart_only', name: 'Census', kind: 'building', cost: {}, workers: 0,
     on: {
-      draw: (ctx) => {
-        if (ctx.event?.type === 'draw' && ctx.event.source === 'turnStart') gainResources(ctx, { food: 1 });
+      draw: {
+        resolve: (ctx) => {
+          if (ctx.event?.type === 'draw' && ctx.event.source === 'turnStart') gainResources(ctx, { food: 1 });
+        },
       },
     },
   },
@@ -54,13 +62,15 @@ const LOCAL: Record<string, CardDef> = {
   // end-of-turn recycle — the reason rides on the event (like Salvage). +2🔨.
   test_react_discard: {
     id: 'test_react_discard', name: 'Reactor', kind: 'action', cost: {},
-    on: { discard: (ctx) => { if (ctx.event?.type === 'discard' && ctx.event.reason === 'sacrifice') gainResources(ctx, { production: 2 }); } },
+    on: { discard: { resolve: (ctx) => { if (ctx.event?.type === 'discard' && ctx.event.reason === 'sacrifice') gainResources(ctx, { production: 2 }); } } },
   },
   // Every draw emits another draw — an unbounded self-emit, to prove the cascade cap terminates.
   test_infinite: {
     id: 'test_infinite', name: 'Loop', kind: 'building', cost: {}, workers: 0,
     on: {
-      draw: ({ G }) => emitEvent(G, { type: 'draw', instanceId: 1, cardId: 'test_infinite', source: 'effect' }),
+      draw: {
+        resolve: ({ G }) => emitEvent(G, { type: 'draw', instanceId: 1, cardId: 'test_infinite', source: 'effect' }),
+      },
     },
   },
   // A threat that declares defeat once money hits 30 — the pure-predicate capability behind "a threat
@@ -73,8 +83,8 @@ const LOCAL: Record<string, CardDef> = {
   // `resolveEndTurn` prefers an authored handler over the default production.
   test_endturn_override: {
     id: 'test_endturn_override', name: 'Override', kind: 'building', cost: {}, workers: 0,
-    produces: { food: 9 },
-    on: { endTurn: (ctx) => gainResources(ctx, { science: 7 }) },
+    produces: { resources: { food: 9 } },
+    on: { endTurn: { resolve: (ctx) => gainResources(ctx, { science: 7 }) } },
   },
 };
 

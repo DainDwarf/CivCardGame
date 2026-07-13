@@ -14,11 +14,11 @@ const LOCAL: Record<string, CardDef> = {
   test_unrest: {
     id: 'test_unrest', name: 'Test Unrest', kind: 'threat', cost: {},
     display: { description: '−1💰 per 🧍 on reshuffle' },
-    on: { reshuffle: ({ G }) => subtractResources(G.resources, { money: G.resources.population }) },
+    on: { reshuffle: { resolve: ({ G }) => subtractResources(G.resources, { money: G.resources.population }) } },
   },
   test_ondraw: {
     id: 'test_ondraw', name: 'Test On-Draw', kind: 'building', cost: {}, workers: 0,
-    on: { draw: (ctx) => gainResources(ctx, { science: 5 }) },
+    on: { draw: { resolve: (ctx) => gainResources(ctx, { science: 5 }) } },
   },
 };
 

@@ -33,7 +33,7 @@ export function emptyResources(): Resources {
 }
 
 /** The core slice of a signed delta (drops any strategic keys) — used where only core resources may
- *  flow, e.g. `defaultProduce`'s per-round production scaling. */
+ *  flow, e.g. `resolveProduction`'s per-round production scaling. */
 export function coreOf(r: Partial<Resources>): Partial<CoreResources> {
   const out: Partial<CoreResources> = {};
   for (const k of CORE_KEYS) if (r[k] !== undefined) out[k] = r[k];

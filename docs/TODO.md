@@ -207,7 +207,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     and this mission (row 0).
   - The **Beer** work card (reward unlock) — costs **2🌾** to play, then yields **+5🎭** per staffed
     round (a plain declarative producer: the food is a one-time play cost, the culture a per-worker
-    output — no bespoke `produce`).
+    output — no bespoke `produces.resolve`).
   - `sim/objective.ts` gains a `restless_people_goal` gradient (identical culture-toward-level-2 form as
     `rites_rituals_goal`), so the standard mission is sweepable. Mechanism tests over the reshuffle
     event + Unrest drain in `rules/{deck,events}.test.ts`. **Balance

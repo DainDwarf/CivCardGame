@@ -1,6 +1,6 @@
-import { subtractResources, type CoreResources, type Resources } from '../rules/resources';
+import { subtractResources, type CoreResources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
-import { type CardEffect, type Resolver, suspendChoice } from '../rules/effects';
+import { type CardEffect, suspendChoice } from '../rules/effects';
 import { recoverFromDiscard } from '../rules/deck';
 import { cultureLevel, cultureProgress } from '../rules/culture';
 
@@ -61,24 +61,17 @@ export interface CardDef {
   discardCost?: number;
   /** Minimum culture level required to play — a gate, not a cost (culture is not consumed). */
   cultureLevelReq?: number;
-  /** The card's declarative effect bundle — *what* it changes (see `CardEffect`), left to a resolver
-   *  to say *when*. This one field is currently read at a different timing per kind: an `action`
-   *  applies it once on play; a `building`/`wonder` applies it once at **placement** (e.g. the Hut's
-   *  `+1 population`), its recurring output living in the passive `produces` below; a
-   *  `work` card defers it until staffed and applies its `effect.resources` **each round** at upkeep;
-   *  an unplayed `event` applies it at end of turn. Because a building's `effect` is a placement
-   *  one-shot while a work card's is per-round, the per-round resolver (`defaultProduce`) reads only
-   *  the resource + culture parts — so a building must never put recurring output in `effect.resources`
-   *  (it would fire at placement *and* every round), and a per-round draw/population/territory isn't
-   *  expressible yet. This bag drives the default resolver (`specToResolver`), the auto-generated face
-   *  text (`describeCard`), and the play gates (`unplayableReason`), so most cards need only this. */
+  /** The card's play-time effect (a `CardEffect` — declarative fields, or a `resolve` closure escape
+   *  hatch; see `rules/effects.ts`). Read at a different timing per kind: an `action` applies it once on
+   *  play; a `building`/`wonder` applies it once at **placement** (e.g. the Hut's `+1 population`), its
+   *  recurring output living in the separate `produces` below; an unplayed `event` applies it at end of
+   *  turn; a `threat` ticks it each round. (A `work` card's per-round output lives in `produces`, not
+   *  here — `effect` is one-shot.) A building must never put recurring output in `effect.resources` (it
+   *  would fire at placement *and* every round). Drives the play-time resolver (`resolveCard` →
+   *  `runEffect`), the auto-generated face text (`describeCard`), and the play gates (`unplayableReason`),
+   *  so most cards need only this. A card whose logic the declarative fields can't express authors an
+   *  `effect.resolve` closure and its own `display.description`. */
   effect?: CardEffect;
-  /** Bespoke play-time behavior for a card whose logic the declarative `effect` can't express
-   *  (self-reference, per-card state, targeting, interaction). When present it *replaces* the
-   *  default resolver derived from `effect`; the card then authors its own `description` for the
-   *  face, since there's no data bag to auto-render. Lives on the static catalogue, never in
-   *  `GameState` — see `rules/effects.ts`'s `EffectContext`. */
-  resolve?: Resolver;
   /**
    * How many cards this card reveals off the draw pile when played (a peek card — e.g. reveal 3).
    * A declarative descriptor that drives *two* things so they can't drift: the resolver reads it for
@@ -96,38 +89,27 @@ export interface CardDef {
    */
   recoversFromDiscard?: true;
   /**
-   * Bespoke per-round production behavior for a `building`/`work` card whose output isn't fully
-   * described by `produces`/`effect.resources` (e.g. a future scaling building reading
-   * its own `self.counters`, the production counterpart to a per-play `resolve`). When present it *replaces*
-   * the declarative default built from those fields. Separate from `resolve`: a building/work card's
-   * production ticks every upkeep while staffed, never at play, so it can't share the play-time
-   * resolver without risking a one-shot play field (draw, population, destroy) firing every round —
-   * see `rules/effects.ts`'s `resolveProduction`.
+   * Event-bus reactions (`rules/events.ts`): a map from a game-event type to the `CardEffect` that runs
+   * when that event fires — the way a card reacts to something whose *timing it doesn't own* (a draw, a
+   * discard elsewhere, a resource crossing a threshold, or a round passing via the broadcast `endTurn`),
+   * without a bespoke branch in the engine. Each handler is a `CardEffect` run through the same
+   * `runEffect` spine (with `ctx.event` set to the trigger via a `resolve` closure), so its gains fold
+   * through stickers exactly like `effect`. Dispatch scope per event: the event's *subject* (the drawn/
+   * discarded card itself) plus every *operating* tableau building, operating Work card, and threat —
+   * see `dispatchEvent`; the subject-less `endTurn` reaches all of those (it's what drives production/
+   * threat drains — an `on.endTurn` *replaces* the default per-round behaviour, see `resolveEndTurn`).
+   * Rules a handler's `resolve` closure must respect: be **pure over `G`** (the projection clone re-runs
+   * it every HUD render, so no logging/animation/IO); **never open a `pendingInteraction`** (the bus can
+   * fire at upkeep with no player, like `resolveHandEvents`); and **`filter`, never `splice`**, to
+   * self-remove from a zone (the dispatcher iterates a zone snapshot, so a splice wouldn't corrupt the
+   * dispatch, but `filter` keeps the array-identity discipline uniform). A `threat`'s own driven defeat
+   * does NOT go through `on` — see the `defeat` hook below, the pure-predicate counterpart to `objective`.
    */
-  produce?: Resolver;
-  /**
-   * Event-bus reactions (`rules/events.ts`): a map from a game-event type to a handler that runs when
-   * that event fires — the way a card reacts to something whose *timing it doesn't own* (a draw, a
-   * discard elsewhere, a resource crossing a threshold, or a round passing via the broadcast
-   * `endTurn`), without a bespoke branch in the engine. Each handler is an ordinary `Resolver`, run
-   * through the same `EffectContext` spine (with `ctx.event` set to the trigger), so it mutates
-   * `ctx.G` and adds output through `gainResources` (sticker-folded) exactly like `resolve`. Dispatch
-   * scope per event: the event's *subject* (the drawn/discarded card itself) plus every *operating*
-   * tableau building, operating Work card, and threat — see `dispatchEvent`; the subject-less
-   * `endTurn` reaches all of those (it's what drives production/threat drains — an `on.endTurn`
-   * *replaces* the default per-round behaviour, see `resolveEndTurn`). Rules a handler must respect:
-   * be **pure over `G`** (the projection clone re-runs it every HUD render, so no logging/animation/
-   * IO); **never open a `pendingInteraction`** (the bus can fire at upkeep with no player, like
-   * `resolveHandEvents`); and **`filter`, never `splice`**, to self-remove from a zone (the
-   * dispatcher iterates a zone snapshot, so a splice wouldn't corrupt the dispatch, but `filter`
-   * keeps the array-identity discipline uniform). A `threat`'s own driven defeat does NOT go through
-   * `on` — see the `defeat` hook below, the pure-predicate counterpart to `objective`.
-   */
-  on?: Partial<Record<GameEventType, Resolver>>;
+  on?: Partial<Record<GameEventType, CardEffect>>;
   /**
    * `objective` cards only: the mission's win condition, owned by the card the way every other card
    * owns its logic. A single **pure-read predicate** over the live run state returning whether the
-   * win is met. Read-only by contract: unlike `resolve`/`produce` it never mutates `G`. It's
+   * win is met. Read-only by contract: unlike an `effect`/`produces` resolver it never mutates `G`. It's
    * **bus-driven**: `rules/objective.ts`'s `evaluateObjective` re-derives it into `G.pendingVictory`
    * at every `flushEvents` boundary, and `run/engine.ts`'s `checkEndIf` reads that flag — so a
    * threshold like "30 science" registers at the flush where it's crossed. A *defeat* belongs
@@ -142,7 +124,7 @@ export interface CardDef {
    * `threat` cards only: a driven (non-collapse) defeat this threat owns — the threat counterpart to
    * `objective` above. A **pure-read predicate**: returns the defeat reason string the instant the
    * condition is met, or a falsy value otherwise. Read-only by contract — never mutates `G` (a threat
-   * that also *drains* resources still does that through `resolve`/`produce`; `defeat` only reports).
+   * that also *drains* resources still does that through its `effect`/`produces`; `defeat` only reports).
    * It's **bus-driven**, the same way `objective` is: `rules/threats.ts`'s `evaluateDefeat` re-derives
    * it into `G.pendingDefeat` at every `flushEvents` boundary, set-OR-CLEAR like `pendingVictory` —
    * never sticky, so a condition that dips and recovers within one broadcast (e.g. a threshold a later
@@ -156,10 +138,13 @@ export interface CardDef {
   /** The card's display-only concern (face text + art) — split out so authoring a card's look is
    *  separate from its rules. Read exclusively by the render path; see `CardDisplay`. */
   display?: CardDisplay;
-  /** A structure's (`building`/`wonder`) per-round resource output once staffed. Any of the 8
-   *  resources (core or strategic — e.g. a culture-producing wonder puts `culture` here). (A `work`
-   *  card instead carries its per-round output in `effect.resources`; see the `effect` field above.) */
-  produces?: Partial<Resources>;
+  /** A staffable's (`building`/`wonder`/`work`) per-round output once staffed — a `CardEffect` run each
+   *  round through `resolveProduction` (a *separate* path from play: its `resources` scale per staffed
+   *  worker). `produces.resources` may touch any of the 8 pools (core or strategic — e.g. a
+   *  culture-producing wonder puts `culture` here); a scaling/stateful producer authors a
+   *  `produces.resolve` closure (which owns its own per-worker scaling). Kept distinct from `effect` so a
+   *  one-shot play field can never fire every round. `destroy` is play-only and ignored here. */
+  produces?: CardEffect;
 }
 
 /** Whether a card is one the player builds decks with. `event` (mission-injected into the deck),
@@ -248,21 +233,21 @@ export const RAIDER_WAVES = 3;
 export const CARDS: Record<string, CardDef> = {
   // — Work: staffable board boxes producing only while a worker is assigned, filed to discard at
   //   end of turn. Cost nothing to play and need no idle population to place.
-  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, produces: { food: 3 } },
-  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { production: 2 } },
+  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, produces: { resources: { food: 3 } } },
+  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 2 } } },
   // Beer: converts food into culture — pay 2🌾 to play, then it yields 5🎭 each staffed round. The food
   //   is a one-time play cost (charged by `playCard`), the culture a per-worker declarative output, so
   //   it's a plain producer with no bespoke logic. Reward-unlocked by "Restless People", never in the
   //   starting set.
-  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { food: 2 }, workers: 1, display: { art: '🍺' }, produces: { culture: 5 } },
+  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { food: 2 }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 5 } } },
 
   // — Stone Age buildings: the first permanent structures, unlocked by "The First Settlement". A
   //   building *is* the building — it sits in the tableau and produces each round while staffed.
   //   Farm/Toolmaker are ordinary single-worker producers; the Hut is the first building carrying a
   //   one-shot *placement* effect (no per-round output, no worker — just a one-time +1 population when
   //   built), which resolves through `playCard`'s post-placement `resolveCard`.
-  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { food: 1 }, workers: 1, display: { art: '🌱' } },
-  toolmaker: { id: 'toolmaker', name: 'Toolmaker', kind: 'building', cost: { production: 2 }, produces: { production: 1 }, workers: 1, display: { art: '⛏️' } },
+  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { resources: { food: 1 } }, workers: 1, display: { art: '🌱' } },
+  toolmaker: { id: 'toolmaker', name: 'Toolmaker', kind: 'building', cost: { production: 2 }, produces: { resources: { production: 1 } }, workers: 1, display: { art: '⛏️' } },
   hut: {
     id: 'hut', name: 'Hut', kind: 'building', cost: { production: 4 }, workers: 0,
     display: { art: '🛖', description: 'When built: +1 🧍' },
@@ -279,7 +264,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
     display: { art: '🗿', description: '+1🔨 +1🪙 +1🎭\nper worker.' },
     cost: { production: 8 }, cultureLevelReq: 1, workers: 3,
-    produces: { production: 1, money: 1, culture: 1 },
+    produces: { resources: { production: 1, money: 1, culture: 1 } },
   },
 
   // — Actions: resolve once, then recycle to discard.
@@ -299,28 +284,30 @@ export const CARDS: Record<string, CardDef> = {
     id: 'storytelling', name: 'Storytelling', kind: 'action', cost: { science: 2 },
     display: { art: '🗣️', description: 'Return a chosen card from discard to hand.' },
     recoversFromDiscard: true,
-    resolve: (ctx) => {
-      if (ctx.answer === undefined) {
-        // FIRST PASS — reveal the discard as options and suspend. `discardEmpty` is gated
-        // unplayable, so the empty guard is only for a direct call; the snapshot excludes
-        // Storytelling itself (still held by `playCard`, not yet filed to discard).
-        if (ctx.G.discard.length === 0) return;
-        suspendChoice(ctx, {
-          kind: 'chooseCard',
-          prompt: 'Return one card from the discard to your hand',
-          options: [...ctx.G.discard],
-          pick: 1,
-        });
-        return;
-      }
-      // RESUME PASS — `answer` is the chosen index into the parked options. `recoverFromDiscard`
-      // finds it in the discard by instance id (identity-based, robust however the resume state was
-      // rebuilt) and moves it to hand.
-      const pending = ctx.G.pendingInteraction;
-      if (!pending) return;
-      const chosen = pending.options[ctx.answer];
-      if (chosen) recoverFromDiscard(ctx, chosen);
-      ctx.G.pendingInteraction = null; // resolver owns clearing the interaction on resume
+    effect: {
+      resolve: (ctx) => {
+        if (ctx.answer === undefined) {
+          // FIRST PASS — reveal the discard as options and suspend. `discardEmpty` is gated
+          // unplayable, so the empty guard is only for a direct call; the snapshot excludes
+          // Storytelling itself (still held by `playCard`, not yet filed to discard).
+          if (ctx.G.discard.length === 0) return;
+          suspendChoice(ctx, {
+            kind: 'chooseCard',
+            prompt: 'Return one card from the discard to your hand',
+            options: [...ctx.G.discard],
+            pick: 1,
+          });
+          return;
+        }
+        // RESUME PASS — `answer` is the chosen index into the parked options. `recoverFromDiscard`
+        // finds it in the discard by instance id (identity-based, robust however the resume state was
+        // rebuilt) and moves it to hand.
+        const pending = ctx.G.pendingInteraction;
+        if (!pending) return;
+        const chosen = pending.options[ctx.answer];
+        if (chosen) recoverFromDiscard(ctx, chosen);
+        ctx.G.pendingInteraction = null; // resolver owns clearing the interaction on resume
+      },
     },
   },
 
@@ -431,8 +418,10 @@ export const CARDS: Record<string, CardDef> = {
     id: 'unrest', name: 'Unrest', kind: 'threat', cost: {},
     display: { art: '💢', description: '−1🪙 per 🧍 on reshuffle' },
     on: {
-      reshuffle: ({ G }) => {
-        subtractResources(G.resources, { money: G.resources.population });
+      reshuffle: {
+        resolve: ({ G }) => {
+          subtractResources(G.resources, { money: G.resources.population });
+        },
       },
     },
   },

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { specToResolver } from './effects';
+import { runEffect } from './effects';
 import { dispatchEvent } from './events';
 import { applyUpkeep } from './upkeep';
 import { cultureForLevel, cultureLevel, cultureProgress, effectiveHandSize } from './culture';
@@ -16,7 +16,7 @@ afterAll(uninstallFixtures);
 
 describe('culture: immediate gain via card effect', () => {
   const grant = (G: ReturnType<typeof blankState>, culture: number) =>
-    specToResolver({ resources: { culture } })({ G, self: { id: 1, cardId: 'x' } });
+    runEffect({ G, self: { id: 1, cardId: 'x' } }, { resources: { culture } });
 
   it('a culture resource delta raises G.resources.culture', () => {
     const G = blankState('test');

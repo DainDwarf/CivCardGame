@@ -28,7 +28,7 @@ export interface CardInstance {
    * Permanent sticker ids, copied once from the owning `MetaCardInstance` at run setup and never
    * written during a run. `rules/stickers.ts`'s `effectiveGain`/`effectiveCost`/`effectiveCard` are
    * the only readers, and they compose every output path — the declarative default *and* a card's
-   * own bespoke `resolve`/`produce` — since all gain routes through `effects.ts`'s
+   * own bespoke `CardEffect.resolve` closure — since all gain routes through `effects.ts`'s
    * `gainResources` fold.
    */
   stickers?: string[];
@@ -63,7 +63,7 @@ export type DiscardReason = 'sacrifice' | 'demolish' | 'endOfTurn' | 'workFiled'
 
 /** Where a `draw` came from — rides on the `draw` event so an `on.draw` handler can tell the routine
  *  round-start refill (`'turnStart'`, `drawUpTo`) from a draw an action/effect *caused* (`'effect'`,
- *  the default: `effect.draw`, a peek card's draw, etc.). An on-draw observer might react only to `'effect'` draws. */
+ *  the default: a card-effect draw, a peek card's draw, etc.). An on-draw observer might react only to `'effect'` draws. */
 export type DrawSource = 'turnStart' | 'effect';
 
 /** A snapshot of every *value* field a threshold/`resourceChange` handler might watch, taken by the

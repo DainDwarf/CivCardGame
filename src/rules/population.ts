@@ -28,7 +28,7 @@ export function isOperating(s: Staffable): boolean {
 
 /** The linear output multiplier for an operating staffable: the number of staffed workers, or 1 for
  *  a self-sufficient one (capacity 0) so it yields its flat output once rather than ×0. Production
- *  scales by this (`effects.ts`'s `defaultProduce`); the on-board box shows `unit × producingUnits`. */
+ *  scales by this (`effects.ts`'s `resolveProduction`); the on-board box shows `unit × producingUnits`. */
 export function producingUnits(s: Staffable): number {
   const cap = workerCapOf(s);
   return cap === 0 ? 1 : s.workers;

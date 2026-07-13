@@ -51,7 +51,7 @@ export function drawCard(G: GameState, source: DrawSource = 'effect'): void {
   if (card !== undefined) {
     G.hand.push(card);
     // The single choke for every draw off the top of the deck (round-start `drawUpTo` and any
-    // `effect.draw`) — emit here so on-draw observers fire once at the next boundary flush, tagged
+    // card-effect draw) — emit here so on-draw observers fire once at the next boundary flush, tagged
     // with what drew it. (A card that draws a *specific* card bypasses this and
     // must emit its own `draw` event.)
     emitEvent(G, { type: 'draw', instanceId: card.id, cardId: card.cardId, source });

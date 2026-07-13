@@ -77,7 +77,7 @@ export function applyMove(state: RunState, moveFn: (G: GameState, ...args: any[]
   const G = structuredClone(state.G);
   const before = snapshot(G);
   if (moveFn(G, ...args) === 'invalid') return state;
-  // The move emitted its events (a sacrifice discard, an `effect.draw`); dispatch them plus the
+  // The move emitted its events (a sacrifice discard, a card-effect draw); dispatch them plus the
   // move's net resourceChange at this boundary, so a mid-turn threshold fires the same action.
   flushEvents(G, before);
   return checkEndIf({ ...state, G });

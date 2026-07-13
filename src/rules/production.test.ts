@@ -34,7 +34,7 @@ describe('tableau production on the endTurn broadcast', () => {
 
   it("a building's placement effect does NOT re-fire per round (Hut population is one-shot)", () => {
     // Hut is `workers: 0` (always operating) with `effect: { resources: { population: 1 } }` and no
-    // `produces`. Production reads `produces` alone — `defaultProduce` never consults `effect` — so
+    // `produces`. Production reads `produces` alone — `resolveProduction` never consults `effect` — so
     // the population grant stays a one-time placement effect and never ticks each round. This is the
     // produces/effect separation the fallback removal made safe by construction (no `effect` leak).
     const G = blankState('test');

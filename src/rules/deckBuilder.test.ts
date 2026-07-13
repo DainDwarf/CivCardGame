@@ -18,7 +18,7 @@ import { installFixtures, uninstallFixtures, installCards, uninstallCards } from
 // A second distinct wonder (the shared `test_wonder` fixture is the first) — the one-wonder-per-deck
 // cap only bites across *different* wonders, so a real test needs two.
 const LOCAL_WONDERS: Record<string, CardDef> = {
-  test_wonder2: { id: 'test_wonder2', name: 'Test Wonder 2', kind: 'wonder', cost: { production: 2 }, produces: { culture: 1 }, workers: 1 },
+  test_wonder2: { id: 'test_wonder2', name: 'Test Wonder 2', kind: 'wonder', cost: { production: 2 }, produces: { resources: { culture: 1 } }, workers: 1 },
 };
 
 beforeAll(() => {

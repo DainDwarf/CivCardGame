@@ -72,7 +72,7 @@ export function buySticker(
  * stacking (two Reinforced → +2) and composing (Reinforced + Efficient) fall out for free, and a
  * sticker whose def lacks the relevant hook is skipped via `?? out`.
  *
- * `effectiveGain` is also the fold a card's own bespoke `resolve`/`produce` goes
+ * `effectiveGain` is also the fold a card's own bespoke `CardEffect.resolve` closure goes
  * through — `effects.ts`'s `gainResources` is the single write path for any card's resource output
  * and calls `effectiveGain` itself, so a bespoke resolver's gain is sticker-adjusted exactly like
  * the declarative default (see `state.ts`'s `CardInstance.stickers`).
@@ -96,18 +96,19 @@ export function effectiveCost(cost: Partial<Resources>, self: StickeredInstance)
 }
 
 /** A card instance's *displayed* stats after any attached sticker — a shallow `CardDef` copy with
- *  `cost`/`produces`/`effect.resources` swapped for their effective values, so any render site doing
- *  `card={CARDS[cardId]}` can pass `effectiveCard(CARDS[cardId], self)` instead and show the true
- *  number with no change to `CardFace`/`describeCost`/`describeBuilding`. Returns `card` unchanged
- *  when the instance carries no sticker. */
+ *  `cost`/`produces.resources`/`effect.resources` swapped for their effective values, so any render
+ *  site doing `card={CARDS[cardId]}` can pass `effectiveCard(CARDS[cardId], self)` instead and show the
+ *  true number with no change to `CardFace`/`describeCost`/`describeBuilding`. Returns `card` unchanged
+ *  when the instance carries no sticker. `produces` and `effect` rebuild identically — both are
+ *  `CardEffect`s. */
 export function effectiveCard(card: CardDef, self: StickeredInstance): CardDef {
   if (!self.stickers?.length) return card;
-  const produces = card.produces && effectiveGain(card.produces, self);
+  const produces = card.produces?.resources && effectiveGain(card.produces.resources, self);
   const resources = card.effect?.resources && effectiveGain(card.effect.resources, self);
   return {
     ...card,
     cost: effectiveCost(card.cost, self),
-    ...(produces ? { produces } : {}),
+    ...(card.produces ? { produces: { ...card.produces, ...(produces ? { resources: produces } : {}) } } : {}),
     ...(card.effect ? { effect: { ...card.effect, ...(resources ? { resources } : {}) } } : {}),
   };
 }
