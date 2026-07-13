@@ -1,5 +1,5 @@
 import { addResources, scaleResources, type Resources } from './resources';
-import { CARDS, isStaffable } from '../content/cards';
+import { CARDS } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, PendingInteraction } from './state';
 import { emitEvent } from './events';
 import { effectiveGain } from './stickers';
@@ -141,18 +141,19 @@ export function runEventHandler(ctx: EffectContext): void {
 }
 
 /**
- * Resolve one subscriber's reaction to the per-round `endTurn` broadcast: an explicit `on.endTurn`
- * handler wins; otherwise a staffable produces (`resolveProduction`) and anything else — a threats-zone
- * entry — drains (`resolveUpkeep`). The dispatcher (`events.ts`) already gates which subscribers reach
- * here, so this never re-checks staffing.
+ * Resolve one subscriber's per-round `endTurn` behaviour. Its `on.endTurn` handler, its production
+ * (`resolveProduction`), and its `upkeep` drain (`resolveUpkeep`) all run and *compose* — each a no-op
+ * when its slot is empty — so one card may combine any of the three (e.g. a staffed building that also
+ * pays maintenance each round). The dispatcher (`events.ts`) gates which subscribers reach here, so this
+ * never re-checks staffing.
  *
- * NOTE: this forwards the `endTurn` `ctx.event` into `resolveProduction`/`resolveUpkeep`, which ignore
- * it today. A future bespoke `produces.resolve`/`upkeep.resolve` must not start branching on it — it
- * fires on play/production too, where the field is absent.
+ * NOTE: every slot is handed the `endTurn` `ctx.event`, which production/upkeep ignore today. A future
+ * bespoke `produces.resolve`/`upkeep.resolve` must not start branching on it — it fires on
+ * play/production too, where the field is absent.
  */
 export function resolveEndTurn(ctx: EffectContext): void {
   const card = CARDS[ctx.self.cardId];
-  if (card.on?.endTurn) return void runEffect(ctx, card.on.endTurn);
-  if (isStaffable(card)) resolveProduction(ctx);
-  else resolveUpkeep(ctx);
+  if (card.on?.endTurn) runEffect(ctx, card.on.endTurn);
+  resolveProduction(ctx);
+  resolveUpkeep(ctx);
 }

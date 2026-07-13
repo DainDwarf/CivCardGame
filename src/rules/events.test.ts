@@ -79,12 +79,19 @@ const LOCAL: Record<string, CardDef> = {
     id: 'test_declare_defeat', name: 'Doom', kind: 'threat', cost: {},
     defeat: (G) => G.resources.money >= 30 && 'the doom clock struck',
   },
-  // Carries BOTH a passive `produces` and an explicit `on.endTurn`: the handler must win, proving
-  // `resolveEndTurn` prefers an authored handler over the default production.
-  test_endturn_override: {
-    id: 'test_endturn_override', name: 'Override', kind: 'building', cost: {}, workers: 0,
+  // Carries BOTH a passive `produces` and an explicit `on.endTurn`: `resolveEndTurn` runs both, proving
+  // an authored handler composes with the default production rather than replacing it.
+  test_endturn_compose: {
+    id: 'test_endturn_compose', name: 'Compose', kind: 'building', cost: {}, workers: 0,
     produces: { resources: { food: 9 } },
     on: { endTurn: { resolve: (ctx) => gainResources(ctx, { science: 7 }) } },
+  },
+  // A staffed building that both produces and pays upkeep each round — the two slots compose
+  // (production scales per worker, the upkeep drain is flat).
+  test_maintained: {
+    id: 'test_maintained', name: 'Maintained', kind: 'building', cost: {}, workers: 1,
+    produces: { resources: { production: 2 } },
+    upkeep: { resources: { money: -1 } },
   },
 };
 
@@ -224,12 +231,21 @@ describe('dispatchEvent — endTurn broadcast (production + threat drains)', () 
     expect(G.resources.production).toBe(3);
   });
 
-  it('an explicit on.endTurn handler overrides the default production', () => {
+  it('an explicit on.endTurn handler composes with the passive production', () => {
     const G = blankState('test');
-    G.tableau = [{ id: 1, cardId: 'test_endturn_override', workers: 0 }];
+    G.tableau = [{ id: 1, cardId: 'test_endturn_compose', workers: 0 }];
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.science).toBe(7); // the authored handler ran
-    expect(G.resources.food).toBe(0); // ...instead of the passive `produces: { food: 9 }`
+    expect(G.resources.food).toBe(9); // ...alongside the passive `produces: { food: 9 }`
+  });
+
+  it('a staffed building runs both its production and its upkeep drain on endTurn', () => {
+    const G = blankState('test');
+    G.resources.money = 5;
+    G.tableau = [{ id: 1, cardId: 'test_maintained', workers: 1 }];
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.production).toBe(2); // produced, scaled per worker
+    expect(G.resources.money).toBe(4); // ...and paid its flat 1 upkeep
   });
 
   it('a threshold observer pays out once off endTurn-driven production in a full upkeep', () => {

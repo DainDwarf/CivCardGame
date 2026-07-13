@@ -189,8 +189,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     by `isOperating` too (a card only just drawn into hand is not an operating copy and must not
     self-trigger); a subject of any other kind (never staffable) fires unconditionally. Two
     **broadcast** events name no subject and reach every operating in-play subscriber instead. The
-    **`endTurn`** broadcast runs `resolveEndTurn` on each (its `on.endTurn`, else the default
-    production/threat-drain) — it's *what drives per-round production and threat drains*, dispatched
+    **`endTurn`** broadcast runs `resolveEndTurn` on each (its `on.endTurn` handler, its `produces`
+    production, and its `upkeep` threat-drain all compose — each a no-op when its slot is empty, so one
+    card may combine all three, e.g. a building that also pays maintenance) — it's *what drives per-round
+    production and threat drains*, dispatched
     directly at the upkeep boundary by `applyUpkeep` (not queued), so it runs at the exact slot
     production always did, before the `resourceChange` synthesis. The **`reshuffle`** broadcast
     (emitted by `deck.ts`'s `reshuffleIntoDeck` when the discard folds back into the deck, drained at
