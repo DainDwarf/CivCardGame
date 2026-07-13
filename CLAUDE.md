@@ -414,8 +414,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `availableBoardIds`, so a locked board is hidden) as a `BoardMini`
     beside a right-side sticky tray of sticker boxes (each a draggable sticker
     badge over its name/effect/price); dragging a badge onto a board calls `onBuyBoardSticker` to
-    buy+attach in one gesture (only *valid* targets highlight mid-drag). `RESOURCE_ICON`/`availableBoardIds`
-    live in the shared `meta/boardDisplay.ts`.
+    buy+attach in one gesture (only *valid* targets highlight mid-drag). `availableBoardIds` lives in
+    the shared `meta/boardDisplay.ts`; the glyph-per-resource `RESOURCE_ICON` map (all 8 resources, the
+    single source of truth every render site reads) lives in `components/CardFace.tsx`.
   - `Decks.tsx` — every deck as a tile (a hover-revealed card fan grouped ×N via
     `groupCounts`); the tile + its list-view overlay are the shared `DeckTile`/
     `DeckListOverlay` (`components/DeckDisplay.tsx`, also used by the launch popup), with

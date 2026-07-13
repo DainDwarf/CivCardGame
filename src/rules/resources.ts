@@ -20,8 +20,12 @@ export interface StrategicResources {
 export type Resources = CoreResources & StrategicResources;
 
 /** The core keys, in canonical order — the single source of truth for "which keys are core",
- *  reused by `coreOf`, the cost/HUD icon maps, `collapse.ts`'s core-negatives check, and `codex.ts`. */
+ *  reused by `coreOf`, the `RESOURCE_ICON` map, `collapse.ts`'s core-negatives check, and `codex.ts`. */
 export const CORE_KEYS: (keyof CoreResources)[] = ['food', 'production', 'science', 'military', 'money'];
+
+/** The strategic keys, in canonical order — the strategic counterpart to `CORE_KEYS`, used by the
+ *  codex coherence check to pin that the strategic reference table covers every strategic resource. */
+export const STRATEGIC_KEYS: (keyof StrategicResources)[] = ['population', 'culture', 'territory'];
 
 /** An all-eight-zero bundle — the seed for `GameState.resources`. */
 export function emptyResources(): Resources {

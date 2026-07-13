@@ -1,7 +1,7 @@
 import { BOARDS, type BoardId } from '../content/boards';
 import { BOARD_STICKERS } from '../content/boardStickers';
 import { effectiveBoard } from '../rules/boardStickers';
-import { RESOURCE_ICON } from '../meta/boardDisplay';
+import { RESOURCE_ICON } from './CardFace';
 import { StickerRow } from './CardFace';
 import type { CoreResources } from '../rules/resources';
 import styles from './BoardMini.module.css';
@@ -66,7 +66,7 @@ export function BoardMini({
             ))}
           </div>
 
-          <div className={styles.culture}>🎭</div>
+          <div className={styles.culture}>{RESOURCE_ICON.culture}</div>
         </div>
 
         <div className={styles.lockedSlots} />
@@ -108,7 +108,7 @@ export function BoardMini({
           ))}
         </div>
 
-        <div className={styles.culture}>🎭 {b.resources.culture}</div>
+        <div className={styles.culture}>{RESOURCE_ICON.culture} {b.resources.culture}</div>
       </div>
 
       <div className={styles.slotGrid}>

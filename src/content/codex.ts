@@ -1,4 +1,4 @@
-import type { CoreResources } from '../rules/resources';
+import type { CoreResources, StrategicResources } from '../rules/resources';
 
 /**
  * Reference text for the Codex submenu (`components/Codex.tsx`) — the in-game "how the
@@ -13,7 +13,7 @@ import type { CoreResources } from '../rules/resources';
  * transcribing it here — a hardcoded copy would silently drift when balance is retuned.
  */
 
-/** One core resource's reference row. `key` ties it to the shared `COST_ICON` map. */
+/** One core resource's reference row. `key` ties it to the shared `RESOURCE_ICON` map. */
 export interface CoreResourceEntry {
   key: keyof CoreResources;
   name: string;
@@ -31,19 +31,19 @@ export const CODEX_CORE_RESOURCES: CoreResourceEntry[] = [
   { key: 'military', name: 'Military', role: 'Power projection. Defends against disasters and enables expansion.' },
 ];
 
-/** One strategic gauge's reference row. These have no shared icon map (they render with
- *  their own glyphs in `Board.tsx`), so the icon is authored alongside the text. */
+/** One strategic gauge's reference row. `key` ties it to the shared `RESOURCE_ICON` map, exactly
+ *  like `CoreResourceEntry`. */
 export interface StrategicEntry {
-  icon: string;
+  key: keyof StrategicResources;
   name: string;
   role: string;
 }
 
 /** The 3 strategic gauges — never spent; they define the shape of your civilization. */
 export const CODEX_STRATEGIC: StrategicEntry[] = [
-  { icon: '🧍', name: 'Population', role: 'Your workforce. Workers are drawn from the idle population pool to staff buildings. Food production caps how large a population you can sustain.' },
-  { icon: '🗺️', name: 'Territory', role: 'The land you control — a cap on how many buildings can occupy your tableau. Expand it, or demolish a building to free a slot.' },
-  { icon: '🎭', name: 'Culture', role: 'How much your civilization shines. Accumulates through discrete levels; each level raises your hand size, and some cards require a minimum culture level to play.' },
+  { key: 'population', name: 'Population', role: 'Your workforce. Workers are drawn from the idle population pool to staff buildings. Food production caps how large a population you can sustain.' },
+  { key: 'territory', name: 'Territory', role: 'The land you control — a cap on how many buildings can occupy your tableau. Expand it, or demolish a building to free a slot.' },
+  { key: 'culture', name: 'Culture', role: 'How much your civilization shines. Accumulates through discrete levels; each level raises your hand size, and some cards require a minimum culture level to play.' },
 ];
 
 /** One keyword-glossary entry: the small print that appears on cards and building boxes. */

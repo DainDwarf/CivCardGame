@@ -6,7 +6,7 @@ import {
   CODEX_STRATEGIC,
   CODEX_GLOSSARY,
 } from '../content/codex';
-import { COST_ICON } from './CardFace';
+import { RESOURCE_ICON } from './CardFace';
 import styles from './Codex.module.css';
 
 type SubjectId = 'resources' | 'cardTypes' | 'playATurn' | 'glossary';
@@ -59,7 +59,7 @@ export function Codex() {
               {CODEX_CORE_RESOURCES.map((r) => (
                 <div className={styles.defRow} key={r.key}>
                   <dt className={styles.defTerm}>
-                    <span aria-hidden="true">{COST_ICON[r.key]}</span> {r.name}
+                    <span aria-hidden="true">{RESOURCE_ICON[r.key]}</span> {r.name}
                   </dt>
                   <dd className={styles.defDesc}>{r.role}</dd>
                 </div>
@@ -69,9 +69,9 @@ export function Codex() {
             <h5 className={styles.subTitle}>Strategic</h5>
             <dl className={styles.defList}>
               {CODEX_STRATEGIC.map((s) => (
-                <div className={styles.defRow} key={s.name}>
+                <div className={styles.defRow} key={s.key}>
                   <dt className={styles.defTerm}>
-                    <span aria-hidden="true">{s.icon}</span> {s.name}
+                    <span aria-hidden="true">{RESOURCE_ICON[s.key]}</span> {s.name}
                   </dt>
                   <dd className={styles.defDesc}>{s.role}</dd>
                 </div>

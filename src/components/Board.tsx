@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { BuildingInstance, CardInstance, CoreResources, Resources, WorkInstance } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
-  coreOf,
   cultureProgress,
   freePopulation,
   isOperating,
@@ -22,7 +21,7 @@ import { computeRewards } from '../rules/rewards';
 import { isOwned, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
 import { sortDeckEntries } from '../rules/deckBuilder';
-import { CardFace, COST_ICON, StickerRow, artFor, describeBuilding } from './CardFace';
+import { CardFace, RESOURCE_ICON, StickerRow, artFor, describeBuilding } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
 
@@ -117,7 +116,7 @@ function CultureBar({ culture, projected }: { culture: number; projected: number
   return (
     <div className={styles.cultureBar}>
       <span className={styles.cultureLevel} tabIndex={0}>
-        <span aria-hidden="true">🎭</span> {level}
+        <span aria-hidden="true">{RESOURCE_ICON.culture}</span> {level}
         <span className={styles.tooltip} role="tooltip">
           <strong>Culture level {level}</strong> — each level raises your hand size and unlocks cards.
         </span>
@@ -315,19 +314,15 @@ function useAnimatedHand(hand: CardInstance[]): HandCard[] {
  *  greyed as idle anyway), matching how a single-worker building shows its output while unstaffed. */
 function boxOutputLabels(produces: Partial<Resources> | undefined, units: number): string[] {
   const u = Math.max(1, units);
-  return [
-    ...Object.entries(coreOf(produces ?? {}))
-      .filter(([, v]) => v)
-      .map(([k, v]) => {
-        // The output bag is signed (a work box reads its `produces`, which may drain): a
-        // positive gets an explicit "+", a negative already carries its own "-".
-        const n = (v as number) * u;
-        return `${n > 0 ? '+' : ''}${n}${COST_ICON[k as keyof CoreResources]}`;
-      }),
-    // Culture is the one strategic key any card produces per round (per-round population/territory
-    // is expressible on the type but unused, so it isn't labelled here — add one if a card uses it).
-    ...(produces?.culture ? [`+${produces.culture * u}🎭`] : []),
-  ];
+  // Every produced resource — core or strategic — renders the same way through the shared icon map.
+  // The output bag is signed (a work box reads its `produces`, which may drain): a positive gets an
+  // explicit "+", a negative already carries its own "-".
+  return (Object.entries(produces ?? {}) as [keyof Resources, number][])
+    .filter(([, v]) => v)
+    .map(([k, v]) => {
+      const n = v * u;
+      return `${n > 0 ? '+' : ''}${n}${RESOURCE_ICON[k]}`;
+    });
 }
 
 /** A column of worker pips — one per capacity slot; filled (🧍) up to the staffed count, empty
@@ -680,11 +675,11 @@ function whyUnplayable(card: CardDef, G: GameState, self: CardInstance): string 
   switch (reason.kind) {
     case 'cost': {
       const missing = (Object.entries(reason.missing) as [keyof CoreResources, number][])
-        .map(([k, v]) => `${v}${COST_ICON[k]}`);
+        .map(([k, v]) => `${v}${RESOURCE_ICON[k]}`);
       return `need ${missing.join(' ')}`;
     }
     case 'cultureLevel':
-      return `need 🎭 level ${reason.required}`;
+      return `need ${RESOURCE_ICON.culture} level ${reason.required}`;
     case 'territory':
       return 'territory full';
     case 'noBuildingsToDestroy':
@@ -1595,7 +1590,7 @@ export function Board({
 
         <div className={styles.coreGroup}>
           <Stat
-            icon="🌾"
+            icon={RESOURCE_ICON.food}
             label="Food"
             description="Sustenance from food-producing buildings. Your population eats it each round."
             value={G.resources.food}
@@ -1603,7 +1598,7 @@ export function Board({
             warn={collapseRisk('food')}
           />
           <Stat
-            icon="🔨"
+            icon={RESOURCE_ICON.production}
             label="Production"
             description="Your build budget, spent to construct buildings."
             value={G.resources.production}
@@ -1611,7 +1606,7 @@ export function Board({
             warn={collapseRisk('production')}
           />
           <Stat
-            icon="🪙"
+            icon={RESOURCE_ICON.money}
             label="Money"
             description="Coin from commercial buildings. Spent on action cards."
             value={G.resources.money}
@@ -1619,7 +1614,7 @@ export function Board({
             warn={collapseRisk('money')}
           />
           <Stat
-            icon="⚔️"
+            icon={RESOURCE_ICON.military}
             label="Military"
             description="Military power of your civilization."
             value={G.resources.military}
@@ -1627,7 +1622,7 @@ export function Board({
             warn={collapseRisk('military')}
           />
           <Stat
-            icon="🔬"
+            icon={RESOURCE_ICON.science}
             label="Science"
             description="Knowledge from research buildings."
             value={G.resources.science}
