@@ -114,16 +114,17 @@ see below). An *effect* can route a card there too — see the building note.
   → staffed *labour*.
 - **Event (recurring hazard):** missions inject it into the deck; the player can't
   build with it, but *can play it* once drawn. Its two fates are the mechanic:
-  **play it** — pay its cost to banish it to **removed** *unresolved*; its effect never
-  fires, so playing is *preventive*; or **leave it** — at end of turn it auto-resolves
-  for free and goes to **discard**, so it reshuffles back and *recurs* round after round.
-  Doing nothing lets the disaster keep striking; paying to play it pre-empts it for good.
-  (Because an event can fire unplayed with no UI present, its effect must be
-  non-interactive.) → mission *pressure* you pay to end.
+  **play it** — pay its cost to banish it to **removed**, resolving its one-shot `effect` (if any)
+  but *pre-empting* the recurring disaster (its `upkeep` never fires), so playing is *preventive*; or
+  **leave it** — at end of turn it auto-resolves its `upkeep` for free and goes to **discard**, so it
+  reshuffles back and *recurs* round after round. Doing nothing lets the disaster keep striking;
+  paying to play it pre-empts it for good. (Because an event can fire unplayed with no UI present, its
+  `upkeep` must be non-interactive.) → mission *pressure* you pay to end.
 - **Threat (board hazard):** never in a hand, pile, or deck — a mission seeds it
   directly into the persistent `GameState.threats` zone at setup, where it stays for
-  the rest of the run. What it does is up to the card. Never player-owned and (unlike a
-  playable `event`) never player-playable; like `event` it's mission-only, excluded from
+  the rest of the run. What it does is up to the card: a one-time entry `effect` resolved once at
+  seed (its only "on entry" moment) plus a recurring `upkeep` drain each round. Never player-owned and
+  (unlike a playable `event`) never player-playable; like `event` it's mission-only, excluded from
   deck-building/collection (`isDeckable`). → persistent *pressure*.
 - **Objective (win/lose goal):** the mission's victory/defeat condition made into a card,
   the positive counterpart to `threat`. A mission names one `objectiveCardId`; it's seeded

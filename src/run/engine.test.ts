@@ -131,7 +131,7 @@ describe('event resolution', () => {
     expect(state.G.hand.map((c) => c.cardId)).toEqual(['test_event']);
   });
 
-  it('playing an event banishes it to removed UNRESOLVED — the drain never fires (preventive)', () => {
+  it('playing an event pre-empts its upkeep drain and banishes it to removed', () => {
     let state = run();
     state.G.resources.military = 10;
     state.G.hand = instancesFromCardIds(['test_event']);
@@ -149,8 +149,8 @@ describe('event resolution', () => {
     state.G.removed = instancesFromCardIds(['test_event']); // one already banished
     state.G.resources.military = 10;
     state.G.hand = instancesFromCardIds(['test_event'], 100);
-    // The win is a move-granularity flag read: playing the 2nd event exiles it (unresolved, so safe)
-    // and trips the objective.
+    // The win is a move-granularity flag read: playing the 2nd event exiles it (its upkeep drain
+    // pre-empted, so safe) and trips the objective.
     state = applyMove(state, playCard, 0);
     expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });
   });

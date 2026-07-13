@@ -7,17 +7,18 @@ import { findStaffable, producingUnits } from './population';
 /**
  * A card's "what happens" descriptor, carried in four timing slots on `CardDef`: `effect` (on play),
  * `produces` (each round while staffed), `upkeep` (each round at the upkeep boundary), and each `on.*`
- * handler. A `resolve` closure, when present, *replaces* the declarative fields rather than composing.
+ * handler. The declarative `resources` and a `resolve` closure *compose* — both apply, resources first.
  * Signs are neutral: a negative resource entry drains, a positive one grants — any of the 8 pools.
  */
 export interface CardEffect {
-  /** Signed resource delta. Applied once on play/on-handler; scaled per staffed worker in `produces`.
-   *  Reaches `G` only through `gainResources`, so a sticker folds over it. */
+  /** Signed resource delta, applied *before* any `resolve` closure. Applied once on play/on-handler;
+   *  scaled per staffed worker in `produces`. Reaches `G` only through `gainResources`, so a sticker
+   *  folds over it. */
   resources?: Partial<Resources>;
   /** The "too specific" escape hatch: a bespoke closure for behaviour the declarative fields can't
-   *  express (self-reference, per-copy state, targeting, interaction). *Replaces* the declarative fields;
-   *  it must add its own output through `gainResources` (so stickers still fold) and may mutate `ctx.G`.
-   *  In `produces` it owns its own per-worker scaling. */
+   *  express (self-reference, per-copy state, targeting, interaction). Runs *after* the declarative
+   *  `resources` (composing with it, not replacing); it must add its own output through `gainResources`
+   *  (so stickers still fold) and may mutate `ctx.G`. In `produces` it owns its own per-worker scaling. */
   resolve?: Resolver;
 }
 
@@ -70,13 +71,14 @@ export function suspendChoice(
 
 /**
  * Run a `CardEffect` against `ctx` — the single declarative-or-bespoke runner shared by play, `upkeep`,
- * and the `on.*` handlers. A `resolve` closure replaces the declarative fields; otherwise the signed
- * `resources` delta routes through `gainResources`. Production is the one slot that does NOT run through
- * this — it scales per worker (`resolveProduction`).
+ * and the `on.*` handlers. The declarative `resources` delta applies first (through `gainResources`),
+ * then any `resolve` closure runs — the two *compose*, so a closure sees the declarative gain already
+ * folded into `G`. Either field alone is the common case; both is a base gain plus bespoke logic.
+ * Production is the one slot that does NOT run through this — it scales per worker (`resolveProduction`).
  */
 export function runEffect(ctx: EffectContext, effect?: CardEffect): void {
-  if (effect?.resolve) return effect.resolve(ctx);
   gainResources(ctx, effect?.resources);
+  effect?.resolve?.(ctx);
 }
 
 /** Resolve a card's play-time `effect` through the single runner — shared by `playCard` and
@@ -87,23 +89,25 @@ export function resolveCard(ctx: EffectContext): void {
 
 /**
  * Resolve one operating (staffed) instance's per-round production from its `produces`. Deliberately a
- * *separate* path from `runEffect` because it scales per worker: a bespoke `produces.resolve` owns its
- * own scaling, otherwise the declarative `produces.resources` are per-worker amounts multiplied by the
- * instance's `producingUnits` (1 for a self-sufficient card). `ctx.self` carries no `workers`, so the
- * live instance is resolved from its zone. The scaled bundle rides `gainResources`, so a sticker applies.
+ * *separate* path from `runEffect` because it scales per worker: the declarative `produces.resources`
+ * are per-worker amounts multiplied by the instance's `producingUnits` (1 for a self-sufficient card),
+ * then any `produces.resolve` runs and *composes* (owning its own scaling), mirroring `runEffect`'s
+ * gain-then-closure order. `ctx.self` carries no `workers`, so the live instance is resolved from its
+ * zone. The scaled bundle rides `gainResources`, so a sticker applies.
  */
 export function resolveProduction(ctx: EffectContext): void {
   const produces = CARDS[ctx.self.cardId].produces;
-  if (produces?.resolve) return produces.resolve(ctx);
   const s = findStaffable(ctx.G, ctx.self.id);
   const units = s ? producingUnits(s) : 1;
   gainResources(ctx, scaleResources(produces?.resources ?? {}, units));
+  produces?.resolve?.(ctx);
 }
 
 /**
- * Resolve a card's recurring `upkeep` through the single runner — the `event`/`threat` counterpart to
- * `resolveCard`, run at the upkeep boundary. Unlike `resolveProduction` it does *not* scale per worker
- * (a hazard isn't staffed), so it goes straight through `runEffect`.
+ * Resolve a card's recurring `upkeep` through the single runner, run at the upkeep boundary: a threat's
+ * drain, an unplayed event's disaster (via `resolveHandEvents`), or an operating staffable's maintenance
+ * (via `resolveEndTurn`, composing with its per-worker `produces`). Unlike `resolveProduction` it does
+ * *not* scale per worker — upkeep is a flat recurring cost — so it goes straight through `runEffect`.
  */
 export function resolveUpkeep(ctx: EffectContext): void {
   runEffect(ctx, CARDS[ctx.self.cardId].upkeep);

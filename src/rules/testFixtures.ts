@@ -244,10 +244,10 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     },
   },
 
-  // --- Event: mission-injected, drawn into hand. Played (for its `cost`) → banished to removed
-  // *unresolved* (the -2 `upkeep` drain never fires); left unplayed → the `upkeep` effect auto-resolves
-  // at end of turn (drain fires) → discard (recurs). A free cost here so the played path is trivially
-  // affordable in tests. ---
+  // --- Event: mission-injected, drawn into hand. Played (for its `cost`) → its one-shot `effect`
+  // resolves (this fixture carries none) but the -2 `upkeep` disaster is pre-empted → banished to
+  // removed; left unplayed → the `upkeep` auto-resolves at end of turn (drain fires) → discard
+  // (recurs). A free cost here so the played path is trivially affordable in tests. ---
   test_event: {
     id: 'test_event', name: 'Test Event', kind: 'event',
     cost: {}, upkeep: { resources: { military: -2 } },

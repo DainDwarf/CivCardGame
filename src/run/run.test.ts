@@ -178,7 +178,7 @@ describe('run loop (headless integration)', () => {
     client.stop();
   });
 
-  it('an event sitting in hand can be played — it is banished to removed unresolved (preventive)', () => {
+  it('an event sitting in hand can be played — its upkeep disaster is pre-empted and it is banished to removed', () => {
     const client = start('test');
     client.getState().G.resources.military = 10;
     client.getState().G.hand.push({ id: 999, cardId: 'test_event' });
@@ -186,7 +186,7 @@ describe('run loop (headless integration)', () => {
     client.moves.playCard(idx);
     expect(client.getState().G.hand.some((c) => c.cardId === 'test_event')).toBe(false); // left hand
     expect(client.getState().G.removed.map((c) => c.cardId)).toContain('test_event'); // played → removed
-    expect(client.getState().G.resources.military).toBe(10); // effect never fired — playing pre-empts it
+    expect(client.getState().G.resources.military).toBe(10); // upkeep drain never fired — playing pre-empts it
     client.stop();
   });
 });

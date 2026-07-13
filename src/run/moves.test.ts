@@ -133,15 +133,38 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.discard).toEqual([]); // work cards file to discard only at end of turn
   });
 
-  it('a played event is banished to removed UNRESOLVED — its effect never fires (preventive)', () => {
+  it('a played event pre-empts its upkeep disaster and is banished to removed', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_event']);
     G.resources.military = 10;
     play(G, 'test_event');
-    expect(G.resources.military).toBe(10); // playing pre-empts the disaster — the −2 drain never happens
+    expect(G.resources.military).toBe(10); // playing pre-empts the disaster — the −2 upkeep drain never fires
     expect(G.removed.map((c) => c.cardId)).toEqual(['test_event']); // played → removed, unlike an action's discard
     expect(G.discard).toEqual([]);
     expect(G.hand).toEqual([]);
+  });
+
+  it("a played event resolves its one-shot `effect` while still pre-empting its upkeep", () => {
+    // An event carrying both: playing it fires the `effect` (a one-shot reward for defusing) yet the
+    // recurring `upkeep` disaster is pre-empted, and it files to removed.
+    const EFFECT_EVENT = {
+      effect_event: {
+        id: 'effect_event', name: 'Effect Event', kind: 'event' as const,
+        cost: {}, effect: { resources: { science: 2 } }, upkeep: { resources: { military: -2 } },
+      },
+    };
+    installCards(EFFECT_EVENT);
+    try {
+      const G = blankState('test');
+      G.hand = instancesFromCardIds(['effect_event']);
+      G.resources.military = 10;
+      play(G, 'effect_event');
+      expect(G.resources.science).toBe(2); // the played `effect` fired
+      expect(G.resources.military).toBe(10); // the `upkeep` disaster was pre-empted
+      expect(G.removed.map((c) => c.cardId)).toEqual(['effect_event']);
+    } finally {
+      uninstallCards(EFFECT_EVENT);
+    }
   });
 
   it('a work card is playable with no idle workers — it just sits unstaffed (no pop gate)', () => {

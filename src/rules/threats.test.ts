@@ -3,7 +3,8 @@ import { addThreat, defeatMet, evaluateDefeat } from './threats';
 import { dispatchEvent } from './events';
 import { nextInstanceId } from './population';
 import { blankState } from './state';
-import { installFixtures, uninstallFixtures } from './testFixtures';
+import { installCards, installFixtures, uninstallCards, uninstallFixtures } from './testFixtures';
+import type { CardDef } from '../content/cards';
 
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);
@@ -21,6 +22,28 @@ describe('addThreat', () => {
     addThreat(G, 'test_event');
     expect(G.threats[0].id).toBe(2);
     expect(nextInstanceId(G)).toBe(3);
+  });
+
+  // A threat's seed is its one "on entry" moment: `addThreat` resolves the threat's `effect` once (the
+  // counterpart to an action resolving on play). Its recurring drain stays on `upkeep`, untouched here.
+  it("resolves the threat's one-time entry `effect` once at seed", () => {
+    const ENTRY_THREAT: Record<string, CardDef> = {
+      test_entry_threat: {
+        id: 'test_entry_threat', name: 'Entry Threat', kind: 'threat', cost: {},
+        effect: { resources: { money: -3 } }, upkeep: { resources: { food: -1 } },
+      },
+    };
+    installCards(ENTRY_THREAT);
+    try {
+      const G = blankState('test');
+      G.resources.money = 10;
+      const foodBefore = G.resources.food;
+      addThreat(G, 'test_entry_threat');
+      expect(G.resources.money).toBe(7); // the entry effect fired exactly once at seed
+      expect(G.resources.food).toBe(foodBefore); // recurring upkeep is a separate slot, not fired at seed
+    } finally {
+      uninstallCards(ENTRY_THREAT);
+    }
   });
 });
 

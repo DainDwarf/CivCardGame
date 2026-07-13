@@ -11,12 +11,21 @@ export const FOOD_PER_POP = 1;
  */
 export type Staffable = PlacedCard;
 
-/** Worker *capacity* of any staffable — the most workers it can hold — read from its card.
- *  `workers: 0` = self-sufficient (holds no workers, always operating, e.g. a self-sufficient
- *  defensive structure); absent defaults to 1. This is the assignment cap and the pip count; the
+/** Worker *capacity* of a staffable card, by id — the most workers it can hold. `workers: 0` =
+ *  self-sufficient (holds no workers, always operating). A staffable card MUST declare `workers`; a
+ *  missing field throws rather than silently defaulting, so a forgotten field fails fast at the first
+ *  staffing read instead of a phantom capacity-1 box appearing (`cards.test.ts` pins every real
+ *  staffable declares it, catching it earlier still). */
+export function cardWorkerCap(cardId: string): number {
+  const cap = CARDS[cardId].workers;
+  if (cap === undefined) throw new Error(`staffable card '${cardId}' declares no workers`);
+  return cap;
+}
+
+/** Worker *capacity* of any staffable instance — the assignment cap and the pip count; the
  *  operate-threshold and the output multiplier are derived from it below. */
 export function workerCapOf(s: Staffable): number {
-  return CARDS[s.cardId].workers ?? 1;
+  return cardWorkerCap(s.cardId);
 }
 
 /** Is this staffable operating (producing / defending)? Every staffable operates with at least one
@@ -55,7 +64,7 @@ export function foodUpkeep(G: GameState): number {
  * per worker, so a partly-staffed box still produces). 0 for a self-sufficient card (capacity 0).
  */
 export function autoStaffCount(G: GameState, cardId: string): number {
-  return Math.min(freePopulation(G), CARDS[cardId].workers ?? 1);
+  return Math.min(freePopulation(G), cardWorkerCap(cardId));
 }
 
 /** The next stable instance id: one past the highest currently in *any* zone — the board (tableau,

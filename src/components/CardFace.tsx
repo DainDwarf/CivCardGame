@@ -2,6 +2,7 @@ import { forwardRef } from 'react';
 import { isStaffable, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
 import { type CoreResources, type Resources } from '../rules';
+import { cardWorkerCap } from '../rules/population';
 import styles from './CardFace.module.css';
 
 /** The one glyph-per-resource map for all 8 resources — the single source of truth every render site
@@ -136,9 +137,9 @@ export function describeCard(c: CardDef): string {
   const e = c.effect;
   const parts: string[] = [];
   describeSignedResources(e?.resources, parts);
-  // A hazard (event/threat) shows its recurring `upkeep` drain the same signed way — the one-shot
-  // `effect` branch above doesn't apply to these kinds (they're never played resolved). A card carries
-  // `effect` or `upkeep`, never both, so this composes without collision.
+  // Recurring `upkeep` (a hazard's drain or a staffable's maintenance) shows its signed delta the same
+  // way, appended after any one-shot `effect` above — a card may carry both (e.g. a threat with an entry
+  // `effect` plus a per-round drain), and the two just concatenate.
   describeSignedResources(c.upkeep?.resources, parts);
   // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` —
   // here (workers are shown as meeples, not text). This is the sole path for a
@@ -298,8 +299,8 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
   // Worker-space meeples: staffable cards (building/wonder/work) show their `workers` capacity
-  // (default 1, `0` = self-sufficient/always operating so no meeple shown); other kinds show none.
-  const workers = isStaffable(card) ? card.workers ?? 1 : 0;
+  // (`0` = self-sufficient/always operating so no meeple shown); other kinds show none.
+  const workers = isStaffable(card) ? cardWorkerCap(card.id) : 0;
   // An available upgrade tints the whole face's border/ring gold (the buyable-hint accent) rather
   // than dropping a corner dot — see `.upgradeAvailable`.
   const rootClassName = `${styles.card} ${kindClass(card.kind)}${upgradeHint ? ` ${styles.upgradeAvailable}` : ''}${

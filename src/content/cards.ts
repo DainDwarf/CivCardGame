@@ -38,18 +38,24 @@ export interface CardDef {
   /** Everything beyond the raw resource `cost` that gates play — culture-level req, discard cost, and
    *  bespoke preconditions — as one `CardGate` (`rules/playability.ts`). Absent = only `cost` gates. */
   gate?: CardGate;
-  /** Worker capacity to operate (building/work). Defaults to 1; `0` = self-sufficient (always operating). */
+  /** Worker capacity to operate — required on every staffable card (building/wonder/work), unread on
+   *  the others. `0` = self-sufficient (always operating). No default: a missing field on a staffable
+   *  throws (`population.ts`'s `cardWorkerCap`) rather than silently reading as 1. */
   workers?: number;
-  /** The card's one-shot effect *when it enters play* (a `CardEffect`; see `rules/effects.ts`): an
-   *  `action` applies it on play, a `building`/`wonder` at placement. Not read for `event`/`threat`. */
+  /** The card's one-shot effect at its *entry moment* (a `CardEffect`; see `rules/effects.ts`): an
+   *  `action`/`event` on play, a `building`/`wonder` at placement, a `threat` once at seed
+   *  (`rules/threats.ts`'s `addThreat`). A played `event` resolves this *and* pre-empts its recurring
+   *  `upkeep` disaster; a threat's recurring drain stays on `upkeep`/`on`, separate from this one-time
+   *  entry. */
   effect?: CardEffect;
   /** A staffable's per-round output once staffed — run through `resolveProduction`, scaling its
    *  `resources` per staffed worker. May touch any of the 8 pools. Kept distinct from `effect` so a
    *  one-shot play field can never fire every round. */
   produces?: CardEffect;
-  /** The recurring effect a hazard fires *at the upkeep boundary*: a `threat`'s per-round drain or an
-   *  unplayed `event`'s end-of-turn disaster. Distinct from `effect` (meaningless for these kinds).
-   *  `on.endTurn` overrides this; a threat reacting to another trigger uses `on`. */
+  /** A recurring per-round effect fired *at the upkeep boundary*, flat (never per-worker-scaled like
+   *  `produces`): a `threat`'s drain, an unplayed `event`'s end-of-turn disaster, or an operating
+   *  staffable's maintenance. Composes with `produces` and `on.endTurn` — `resolveEndTurn` runs all
+   *  three (`rules/effects.ts`); a card reacting to another trigger uses `on`. */
   upkeep?: CardEffect;
   /**
    * Event-bus reactions (`rules/events.ts`): a `CardEffect` per event type, for reacting to something

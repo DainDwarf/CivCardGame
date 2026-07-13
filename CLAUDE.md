@@ -136,7 +136,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     (population/culture/territory), and combined `Resources` = both (all 8). `GameState.resources`
     holds one combined `Resources`; a card's *cost* is a `Partial<CoreResources>` (only core is spent),
     while a `CardEffect`'s `resources` delta — a card's one-shot play `effect`, a staffable's
-    per-round `produces`, *or* a hazard's per-round `upkeep`, all `CardEffect`s — is `Partial<Resources>`
+    per-round `produces`, *or* a per-round `upkeep` (a hazard's drain or a staffable's maintenance), all `CardEffect`s — is `Partial<Resources>`
     (may touch any of the 8 — e.g. a culture-producing wonder puts `culture` in `produces.resources`). Helpers: `add`/`subtract`
     (generic over present keys), `scaleResources`, `canAfford` (core-only), `coreOf` (the core slice,
     e.g. `CardFace`'s `describeCard` splitting an effect's core delta for the card face), and the
@@ -156,13 +156,13 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     used by Storytelling).
   - `effects.ts` — the **resolver spine**: a **`CardEffect`** is the one "what happens" descriptor,
     carried in four timing slots on `CardDef` — the play-time `effect`, the per-round `produces`, the
-    upkeep-boundary `upkeep` (a threat's drain / an unplayed event's disaster), and each `on.*` handler.
+    upkeep-boundary `upkeep` (a threat's drain, an unplayed event's disaster, or a staffable's flat maintenance), and each `on.*` handler.
     `runEffect(ctx, effect)` is the single declarative-or-bespoke runner: it applies the
-    declarative `resources` field (folded through stickers), *unless* the effect owns a
-    `resolve` closure — the "too specific" escape hatch, which *replaces* the declarative fields.
+    declarative `resources` field (folded through stickers), then runs any `resolve` closure — the
+    "too specific" escape hatch — so the two *compose* (resources first, closure sees the folded gain).
     `resolveCard(ctx)` runs a card's play `effect` through it, and `resolveUpkeep(ctx)` its recurring
-    `upkeep` (read alone, never `effect` — the misfit "each round, not on play" timing of event/threat
-    gets its own named slot the way `produces` does). The `EffectContext`
+    `upkeep` (read alone, never `effect` — the "each round, not on play" slot: a hazard's drain or a
+    staffable's flat maintenance, kept separate from `effect` the way `produces` is). The `EffectContext`
     (`{ G, self, answer? }`) tells an effect which copy is resolving. `resolveProduction(ctx)` is production's separate
     counterpart — a *different* path from `runEffect` because it scales `produces.resources` per staffed
     worker; it reads `produces` alone (a bespoke `produces.resolve` owns its own scaling).
@@ -214,7 +214,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     (`producingUnits` × the per-worker unit `produces.resources`, folded in `effects.ts`'s
     `resolveProduction`). A capacity-1 building is the common case (scales ×1 = a flat output); the first
     multi-worker card is the Göbekli Tepe wonder. `autoStaffCount` partial-fills toward capacity.
-  - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup. A seeded threat
+  - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup, resolving the
+    threat's one-time entry `effect` once at seed (a threat's only "on entry" moment, the counterpart to
+    an action's on-play `effect`; a no-op for the usual `effect`-less threat). A seeded threat then
     ticks every round through the `endTurn` broadcast (`events.ts`'s `dispatchEvent` → `effects.ts`'s
     `resolveEndTurn` → the threat's own `resolveUpkeep` drain, reading its `upkeep` slot), so the threat
     card computes its own behaviour — the engine never reads or scales its data. A threat's *driven* defeat (a deadline, not
@@ -284,9 +286,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     in the meta loop: its own Collection/deck category, no bought copies (`shop.ts`), no stickers
     (`stickerAppliesTo`), at most `MAX_WONDERS_PER_DECK` per deck (`deckBuilder.ts`). Filing to a
     pile defaults to `discard`, with one named exception routed at the play/upkeep choke points, not
-    by a static kind rule: the `event` kind splits by *path* — a **played** event is exiled to `removed` **unresolved** (paying
-    its cost pre-empts the disaster: its `upkeep` effect never fires), while one **left unplayed** fires
-    its `upkeep` at end of turn and files to `discard`, so it recurs (`moves.playCard` /
+    by a static kind rule: the `event` kind splits by *path* — a **played** event resolves its one-shot
+    `effect` (if any) but is exiled to `removed` with its recurring `upkeep` disaster **pre-empted**
+    (paying its cost is preventive: the `upkeep` never fires), while one **left unplayed** fires its
+    `upkeep` at end of turn and files to `discard`, so it recurs (`moves.playCard` /
     `upkeep.ts`'s `resolveHandEvents` own the two sides). An `objective` card owns
     its mission's win logic via a single pure-read `objective` predicate, the way a
     `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate

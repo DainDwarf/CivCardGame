@@ -1,14 +1,19 @@
 import { CARDS } from '../content/cards';
 import { nextInstanceId } from './population';
+import { resolveCard } from './effects';
 import type { GameState } from './state';
 
-/** Seed a new threat onto the board, bare (no counters yet). Mission `setup` is the only caller —
- *  a threat is never played by the player. A seeded threat ticks every round via the `endTurn`
- *  broadcast (`rules/events.ts`'s `dispatchEvent` → `rules/effects.ts`'s `resolveEndTurn`, which runs
- *  the threat's own `resolveUpkeep` drain), so there's no per-tick function here — the card owns its
- *  behaviour and the bus drives it. */
+/** Seed a new threat onto the board (bare, no counters yet) and resolve its one-time entry `effect`
+ *  once — a threat's seed is its only "on entry" moment, since it's never played (the `threat`
+ *  counterpart to an action resolving its `effect` on play; a no-op for the usual `effect`-less threat).
+ *  Its *recurring* drain is separate: a seeded threat ticks every round via the `endTurn` broadcast
+ *  (`rules/events.ts`'s `dispatchEvent` → `rules/effects.ts`'s `resolveEndTurn`, which runs the threat's
+ *  own `resolveUpkeep` drain), so there's no per-tick function here — the card owns its behaviour and the
+ *  bus drives it. Mission `setup` is the only caller. */
 export function addThreat(G: GameState, cardId: string): void {
-  G.threats.push({ id: nextInstanceId(G), cardId });
+  const threat = { id: nextInstanceId(G), cardId };
+  G.threats.push(threat);
+  resolveCard({ G, self: threat });
 }
 
 /** Whether any seeded threat's own `defeat` predicate is met right now — the threat counterpart to

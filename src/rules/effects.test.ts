@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { gainResources, resolveCard, resolveProduction, runEffect } from './effects';
 import { blankState } from './state';
-import { FIXTURE_CARDS, installFixtures, uninstallFixtures } from './testFixtures';
-import { CARDS } from '../content/cards';
+import { FIXTURE_CARDS, installCards, installFixtures, uninstallCards, uninstallFixtures } from './testFixtures';
+import { CARDS, type CardDef } from '../content/cards';
 
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);
@@ -15,14 +15,14 @@ describe('runEffect', () => {
     expect(G.resources.culture).toBe(1);
   });
 
-  it('a bespoke `resolve` REPLACES the declarative fields (they do not compose)', () => {
+  it('composes the declarative fields with a bespoke `resolve` (both apply, resources first)', () => {
     const G = blankState('test');
     runEffect(
       { G, self: { id: 1, cardId: 'x' } },
       { resources: { science: 9 }, resolve: (ctx) => gainResources(ctx, { food: 2 }) },
     );
-    expect(G.resources.food).toBe(2);
-    expect(G.resources.science).toBe(0); // the declarative +9🔬 is not applied
+    expect(G.resources.food).toBe(2); // the closure's gain
+    expect(G.resources.science).toBe(9); // the declarative delta applies too
   });
 
   it('does nothing for an undefined effect', () => {
@@ -131,6 +131,28 @@ describe('resolveProduction', () => {
     const before = G.resources.population;
     resolveProduction({ G, self: { id: 1, cardId: 'hut' } });
     expect(G.resources.population).toBe(before);
+  });
+
+  // A `produces` carrying BOTH a declarative bag and a `resolve`: the scaled declarative gain applies
+  // *and* the closure runs (composing like `runEffect`), each on its own scaling.
+  it('composes a bespoke `produces.resolve` with the per-worker-scaled declarative produces', () => {
+    const local: Record<string, CardDef> = {
+      test_prod_compose: {
+        id: 'test_prod_compose', name: 'Prod Compose', kind: 'building' as const,
+        cost: {}, workers: 2,
+        produces: { resources: { food: 1 }, resolve: (ctx) => gainResources(ctx, { science: 3 }) },
+      },
+    };
+    installCards(local);
+    try {
+      const G = blankState('test');
+      G.tableau = [{ id: 1, cardId: 'test_prod_compose', workers: 2 }];
+      resolveProduction({ G, self: { id: 1, cardId: 'test_prod_compose' } });
+      expect(G.resources.food).toBe(2); // declarative +1🌾/worker × 2 workers
+      expect(G.resources.science).toBe(3); // the closure's flat gain composes on top
+    } finally {
+      uninstallCards(local);
+    }
   });
 });
 

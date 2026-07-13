@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CARDS, isDeckable, RAIDER_WAVES } from './cards';
+import { CARDS, isDeckable, isStaffable, RAIDER_WAVES } from './cards';
 import { STARTING_COLLECTION } from './collection';
 import { DEFAULT_DECKS } from './decks';
 import { blankState } from '../rules';
@@ -40,21 +40,12 @@ describe('CARDS', () => {
     }
   });
 
-  // The `effect`/`upkeep` timing split, pinned both ways so the WHEN separation stays airtight:
-  //  - `effect` is the on-play slot; `event`/`threat` are never played resolved (playing an event
-  //    banishes it unresolved, a threat is never played), so an `effect` on either would silently never
-  //    fire — their recurring behaviour belongs in `upkeep`.
-  //  - `upkeep` is the hazard-only counterpart to `produces`; on any other kind `resolveEndTurn` never
-  //    reads it (a staffable routes to `resolveProduction`), so it would be silently ignored at runtime
-  //    yet still rendered on the face — a trap the reverse check forecloses.
-  it('effect and upkeep stay on their own kinds (event/threat use upkeep, never effect)', () => {
+  // No default for `workers`: a staffable card (building/wonder/work) missing it would throw at the
+  // first staffing read (`population.ts`'s `cardWorkerCap`), so pin the whole catalogue at test time
+  // rather than discover a forgotten field mid-run.
+  it('every staffable card declares its workers capacity', () => {
     for (const card of Object.values(CARDS)) {
-      const isHazard = card.kind === 'event' || card.kind === 'threat';
-      if (isHazard) {
-        expect(card.effect, `${card.id} (${card.kind}) must use upkeep, not effect`).toBeUndefined();
-      } else {
-        expect(card.upkeep, `${card.id} (${card.kind}) must not use upkeep`).toBeUndefined();
-      }
+      if (isStaffable(card)) expect(card.workers, `${card.id} has no workers`).not.toBeUndefined();
     }
   });
 

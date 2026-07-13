@@ -4,6 +4,7 @@ import {
   addWork,
   assignedWorkers,
   autoStaffCount,
+  cardWorkerCap,
   foodUpkeep,
   freePopulation,
   isOperating,
@@ -12,7 +13,8 @@ import {
   workerCapOf,
 } from './population';
 import { blankState } from './state';
-import { installFixtures, uninstallFixtures } from './testFixtures';
+import { installCards, installFixtures, uninstallCards, uninstallFixtures } from './testFixtures';
+import type { CardDef } from '../content/cards';
 
 // `test_food`/`test_prod` are 1-worker producing buildings, `test_selfstaffed` a self-sufficient
 // (workers:0) one, `test_multiworker` a 3-capacity per-worker one, and `test_work`/`test_work_food`
@@ -122,10 +124,24 @@ describe('auto-staffing a new building (partial fill)', () => {
 });
 
 describe('Work cards as staffables', () => {
-  it('a Work card has its card.workers as capacity (default 1) and operates once staffed', () => {
+  it('a Work card has its card.workers as capacity and operates once staffed', () => {
     expect(workerCapOf({ id: 1, cardId: 'test_work', workers: 0 })).toBe(1); // test_work has workers: 1
     expect(isOperating({ id: 1, cardId: 'test_work', workers: 0 })).toBe(false);
     expect(isOperating({ id: 1, cardId: 'test_work', workers: 1 })).toBe(true);
+  });
+
+  // The fail-fast the "no default" decision buys: a staffable card that forgot `workers` throws at the
+  // first cap read rather than silently reading as 1 (which would leak a phantom capacity-1 box).
+  it('cardWorkerCap throws for a staffable card missing its workers field', () => {
+    const NO_WORKERS: Record<string, CardDef> = {
+      test_no_workers: { id: 'test_no_workers', name: 'No Workers', kind: 'building', cost: {} },
+    };
+    installCards(NO_WORKERS);
+    try {
+      expect(() => cardWorkerCap('test_no_workers')).toThrow();
+    } finally {
+      uninstallCards(NO_WORKERS);
+    }
   });
 
   it('addWork sticks the card in the workZone, auto-staffed from idle pop', () => {
