@@ -128,7 +128,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   The shipped missions (6.1–6.5) are ready to script; 6.6–6.7 land as those missions ship.
   - **9.1 — First Settlement tutorial** — teach the **run loop**: work + action cards, the
     draw/food upkeep, the objective stockpile. **Post-clear:** teach **deck-building** (add the
-    newly-unlocked Farm/Toolmaker/Hut + Conquest cards into the deck — the reward's whole building
+    newly-unlocked Farm/Hut + Conquest cards into the deck — the reward's whole building
     set + military→territory conquest).
   - **9.2 — Growing Numbers tutorial** — teach **buildings, territory, and worker staffing** (and
     the territory squeeze that forces Conquest). **Post-clear:** teach **stickers +
@@ -289,7 +289,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   stickers + Influence/shop.
 
 - **Step 6.1 — First Settlement (+ Stone Age building set)** ✅ — col 0. The run loop (work + action
-  cards, draw/food upkeep). Objective: stockpile 10🔨 + 10⚔️. Unlocks Farm, Toolmaker, Hut, Conquest
+  cards, draw/food upkeep). Objective: stockpile 10🔨 + 10⚔️. Unlocks Farm, Hut, Conquest
   (whole building set + military→territory conquest). Post-clear teaches deck-building (adding the new
   cards).
 

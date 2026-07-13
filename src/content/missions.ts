@@ -107,7 +107,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // first worked fields, a patch of owned territory) — the arc's first taste of board progression.
     reward: {
       influence: 0,
-      unlockCardIds: ['farm', 'toolmaker', 'hut', 'conquest'],
+      unlockCardIds: ['farm', 'hut', 'conquest'],
       boardUpgrade: { from: 'tribe', to: 'settlement' },
     },
     map: { col: 0, row: 0 },

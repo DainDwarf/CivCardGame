@@ -141,7 +141,6 @@ export const CARDS: Record<string, CardDef> = {
 
   // — Buildings —
   farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { resources: { food: 1 } }, workers: 1, display: { art: '🌱' } },
-  toolmaker: { id: 'toolmaker', name: 'Toolmaker', kind: 'building', cost: { production: 2 }, produces: { resources: { production: 1 } }, workers: 1, display: { art: '⛏️' } },
   // Hut: a one-shot *placement* grant (+1 population when built) — on `effect`, not `produces`, so it
   //   fires once at placement rather than every round.
   hut: {

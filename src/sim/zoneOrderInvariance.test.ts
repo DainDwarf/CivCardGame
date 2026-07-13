@@ -32,16 +32,17 @@ function producingState(): GameState {
   const G = blankState('sandbox');
   G.resources.population = 5;
   G.resources.food = 50; // amply fed, so nothing collapses over the tested rounds
-  // Two farms (duplicate content), a toolmaker, and a Foraging work box — several producing siblings,
-  // each auto-staffed from the idle pool (5 pop → 4 staffed, 1 idle).
+  // Two farms (duplicate content), plus Conquest and Foraging work boxes — several producing siblings
+  // emitting to different pools (food/territory), each auto-staffed from the idle pool (5 pop → 4 staffed,
+  // 1 idle), so a non-commutative production would move a scalar.
   addBuilding(G, 'farm');
   addBuilding(G, 'farm');
-  addBuilding(G, 'toolmaker');
+  addWork(G, 'conquest');
   addWork(G, 'foraging');
   // A few non-event hand cards + a stocked deck/discard, so the end-of-turn recycle and a possible
   // reshuffle both run and their ordering can't leak into the result.
   G.hand = instancesFromCardIds(['conquest', 'cave_art', 'clothing'], 200);
-  G.deck = instancesFromCardIds(['farm', 'toolmaker', 'foraging'], 300);
+  G.deck = instancesFromCardIds(['farm', 'conquest', 'foraging'], 300);
   G.discard = instancesFromCardIds(['cave_art', 'clothing', 'conquest'], 400);
   return G;
 }

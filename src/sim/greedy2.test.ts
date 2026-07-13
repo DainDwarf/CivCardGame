@@ -1,22 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { addBuilding, blankState, findStaffable, instancesFromCardIds, type GameState } from '../rules';
+import { addWork, blankState, findStaffable, instancesFromCardIds, type GameState } from '../rules';
 import type { RunState } from '../run/engine';
 import { createGreedyPolicy } from './greedyPolicy';
 import { createGreedy2Policy } from './greedy2Policy';
 import { applyAction } from './simulate';
 
 /**
- * The exact saturated-population case: 2 population, both committed to a Farm and a Toolmaker, a Foraging
+ * The exact saturated-population case: 1 population committed to a Toolmaking (+2🔨 work box), a Foraging
  * (+3🌾 work box) in hand, no idle worker. Playing Foraging alone is score-neutral (unstaffed, not
- * operating), so plain one-ply greedy can't see that playing it *and then transferring a worker in* is a
- * net food gain. `greedy2`'s bounded staffing lookahead should.
+ * operating), so plain one-ply greedy can't see that playing it *and then transferring the worker in* is a
+ * net gain (trade the +2🔨 for +3🌾). `greedy2`'s bounded staffing lookahead should. Both boxes are work
+ * cards, so relocating the worker leaves the *permanent* economy untouched (the survival buffer band reads
+ * only tableau/upkeep) and the gain shows purely as more projected resource.
  */
 function saturatedState(): RunState {
   const G: GameState = blankState('sandbox');
   G.resources.food = 5; // fed, but under the buffer cap so extra food still scores
-  G.resources.population = 2;
-  addBuilding(G, 'farm'); // auto-staffs 1 (idle 2 → 1)
-  addBuilding(G, 'toolmaker'); // auto-staffs 1 (idle 1 → 0)
+  G.resources.population = 1;
+  addWork(G, 'toolmaking'); // auto-staffs the one worker (idle 1 → 0)
   G.hand = instancesFromCardIds(['foraging'], 100);
   return { G, gameover: undefined };
 }
@@ -45,8 +46,8 @@ describe('greedy2 — bounded staffing lookahead over plain greedy', () => {
     expect(second.kind).toBe('transferWorker');
     if (second.kind === 'transferWorker') {
       expect(second.toId).toBe(forageBox!.id);
-      // The source is one of the two staffed producers.
-      expect(findStaffable(afterPlay.G, second.fromId)?.cardId).toMatch(/farm|toolmaker/);
+      // The source is the staffed Toolmaking box the worker relocates out of.
+      expect(findStaffable(afterPlay.G, second.fromId)?.cardId).toBe('toolmaking');
     }
   });
 });

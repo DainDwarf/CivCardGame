@@ -78,20 +78,20 @@ describe('computeRewards', () => {
   });
 
   it('grants every card of a multi-unlock reward on a first clear', () => {
-    const m = mission({ influence: 0, unlockCardIds: ['farm', 'toolmaker', 'hut'] });
+    const m = mission({ influence: 0, unlockCardIds: ['farm', 'conquest', 'hut'] });
     const result = computeRewards(m, false, progress());
     expect(result.influence).toBe(0);
     expect(copiesOwned(result.progress.collection, 'farm')).toBe(1);
-    expect(copiesOwned(result.progress.collection, 'toolmaker')).toBe(1);
+    expect(copiesOwned(result.progress.collection, 'conquest')).toBe(1);
     expect(copiesOwned(result.progress.collection, 'hut')).toBe(1);
   });
 
   it('grants only the not-yet-owned cards of a multi-unlock reward', () => {
-    const m = mission({ influence: 0, unlockCardIds: ['farm', 'toolmaker'] });
-    // Already owns `farm` (×2) — that count is untouched; the new `toolmaker` is granted once.
+    const m = mission({ influence: 0, unlockCardIds: ['farm', 'conquest'] });
+    // Already owns `farm` (×2) — that count is untouched; the new `conquest` is granted once.
     const result = computeRewards(m, false, progress({ collection: collectionFromCounts({ farm: 2 }) }));
     expect(copiesOwned(result.progress.collection, 'farm')).toBe(2);
-    expect(copiesOwned(result.progress.collection, 'toolmaker')).toBe(1);
+    expect(copiesOwned(result.progress.collection, 'conquest')).toBe(1);
   });
 });
 

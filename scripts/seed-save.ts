@@ -33,7 +33,7 @@ interface SeedRun {
 
 const SEED_RUNS: SeedRun[] = [
   // The opening Stone Age chain, cleared in order — each victory pays its Influence and grants its
-  // unlocks through the real `applyRunResult`: First Settlement (farm/toolmaker/hut/conquest),
+  // unlocks through the real `applyRunResult`: First Settlement (farm/hut/conquest),
   // Growing Numbers (+6⭐, Irrigation card sticker + Territory board sticker), Rites & Rituals
   // (+8⭐, the Göbekli Tepe wonder). Result: 3/4 standard missions cleared, "Raiders at the Border"
   // now available (its Chiefdom board reward still locked until it's cleared too).
