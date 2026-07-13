@@ -136,7 +136,6 @@ export function describeCard(c: CardDef): string {
   const e = c.effect;
   const parts: string[] = [];
   describeSignedResources(e?.resources, parts);
-  if (e?.destroy) parts.push('removes a building from the run');
   // A hazard (event/threat) shows its recurring `upkeep` drain the same signed way — the one-shot
   // `effect` branch above doesn't apply to these kinds (they're never played resolved). A card carries
   // `effect` or `upkeep`, never both, so this composes without collision.

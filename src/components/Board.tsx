@@ -386,7 +386,7 @@ function StaffPips({
 
 /** The visual face of one building box — shared by the slot grid and the drag clone. Each box is
  *  a single `BuildingInstance`; same-type buildings are never coalesced, so its stable `id` keys
- *  its slot and drives per-instance staffing/demolish. */
+ *  its slot and drives per-instance staffing. */
 function BuildingBox({
   inst,
   gameover,
@@ -394,10 +394,8 @@ function BuildingBox({
   dragging,
   workerDragSource,
   workerDropTarget,
-  pendingDestroy,
   onPointerDown,
   onStaffPointerDown,
-  onDestroy,
   onZoomClick,
   staffRef,
 }: {
@@ -410,10 +408,8 @@ function BuildingBox({
   /** True while a dragged worker hovers this building and it can accept it (see the matching
    *  gate in `StaffPips` — the carried worker fills the slot directly, no idle pool needed). */
   workerDropTarget?: boolean;
-  pendingDestroy?: boolean;
   onPointerDown?: (e: React.PointerEvent) => void;
   onStaffPointerDown?: (e: React.PointerEvent, inst: BuildingInstance | WorkInstance, pipFilled: boolean) => void;
-  onDestroy?: () => void;
   /** Gameover inspect mode only — normal-mode zoom is handled by the slot-drag click/drag split
    *  instead, since `onPointerDown` never fires there (view-only board). */
   onZoomClick?: () => void;
@@ -428,19 +424,12 @@ function BuildingBox({
     styles.buildingBox,
     staffed ? styles.operating : styles.idleBuilding,
     dragging ? styles.boxDragging : '',
-    pendingDestroy ? styles.demolishTarget : '',
   ]
     .filter(Boolean)
     .join(' ');
   return (
-    <div
-      className={className}
-      onPointerDown={onPointerDown}
-      onClick={pendingDestroy ? onDestroy : onZoomClick}
-      role={pendingDestroy ? 'button' : undefined}
-      aria-label={pendingDestroy ? `demolish ${bld.name}` : undefined}
-    >
-      {!pendingDestroy && !selfSufficient && (
+    <div className={className} onPointerDown={onPointerDown} onClick={onZoomClick}>
+      {!selfSufficient && (
         <StaffPips
           inst={inst}
           name={bld.name}
@@ -541,13 +530,6 @@ interface PendingPlay {
   playedKey: number;
   need: number;
   discards: number[]; // hand indices marked to discard
-}
-
-/** A destroy card play awaiting a building target selection. */
-interface PendingDestroy {
-  cardId: string;
-  handIdx: number;
-  playedKey: number;
 }
 
 type Rect = { left: number; top: number; width: number; height: number };
@@ -682,8 +664,6 @@ function whyUnplayable(card: CardDef, G: GameState, self: CardInstance): string 
       return `need ${RESOURCE_ICON.culture} level ${reason.required}`;
     case 'territory':
       return 'territory full';
-    case 'noBuildingsToDestroy':
-      return 'no buildings to demolish';
     case 'emptyDrawPile':
       return 'no cards to reveal';
     case 'discardEmpty':
@@ -763,7 +743,6 @@ export function Board({
   const px = (v: number) => v / uiScale;
   const mission = MISSIONS[G.missionId];
   const [pending, setPending] = useState<PendingPlay | null>(null);
-  const [pendingDestroy, setPendingDestroy] = useState<PendingDestroy | null>(null);
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
   const [zoom, setZoom] = useState<{ cardId: string; overrideText?: string; overrideCard?: CardDef; stickerBadge?: string[] } | null>(null);
   const [pileView, setPileView] = useState<{ title: string; cards: CardInstance[] } | null>(null);
@@ -937,8 +916,7 @@ export function Board({
   function onBoxPointerDown(e: React.PointerEvent, inst: BuildingInstance, fromSlot: number) {
     if (e.button !== 0) return;
     if (gameover && overlayMinimized) return; // inspect mode — board is view-only
-    if (pendingDestroy) return; // in targeting mode a click demolishes, not drags
-    if ((e.target as HTMLElement).closest('button')) return; // let staffing/demolish clicks through
+    if ((e.target as HTMLElement).closest('button')) return; // let staffing clicks through
     const r = e.currentTarget.getBoundingClientRect();
     setSlotDrag({
       id: inst.id,
@@ -960,7 +938,7 @@ export function Board({
    *  are interchangeable, so no token identity is tracked — only that one is available. */
   function onPopTokenPointerDown(e: React.PointerEvent) {
     if (e.button !== 0) return;
-    if (gameover || pending || pendingDestroy) return;
+    if (gameover || pending) return;
     const r = e.currentTarget.getBoundingClientRect();
     setWorkerDrag({
       pointerId: e.pointerId,
@@ -1063,11 +1041,6 @@ export function Board({
       rejectShake(d.key, reason);
       return;
     }
-    // Destroy card: player must choose a building target before the move fires.
-    if (card.effect?.destroy) {
-      setPendingDestroy({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key });
-      return;
-    }
     // A card that erects a structure (building/wonder) drops it into the slot under the release
     // point (or the nearest free slot if that one's taken); the reconcile effect places the new
     // instance there. Reserved actions occupy no slot, so a pop-reserve card needs no placement.
@@ -1116,7 +1089,7 @@ export function Board({
   }
 
   function onCardPointerDown(e: React.PointerEvent, card: HandCard) {
-    if (e.button !== 0 || pending || pendingDestroy) return; // in selection mode, clicks select instead
+    if (e.button !== 0 || pending) return; // in selection mode, clicks select instead
     if (gameover && overlayMinimized) return; // inspect mode — zoom handled by onClick instead
     const r = cardEls.current.get(card.key)?.getBoundingClientRect();
     if (!r) return;
@@ -1280,7 +1253,7 @@ export function Board({
   }, [layout]);
 
   // Reconcile the slot layout with the tableau and territory cap. Runs whenever a building
-  // is built/destroyed (the key signature changes) or territory grows. Existing placements —
+  // is built (the key signature changes) or territory grows. Existing placements —
   // including ones the player dragged — are preserved; vanished buildings free their slot; a
   // newly built one takes its drop slot (else the first free slot). Territory only ever grows,
   // so slots are appended and pre-existing ones never shift.
@@ -1352,7 +1325,7 @@ export function Board({
   });
 
   // The canvas fills the gap between the banner and the hand bar; track their heights so it
-  // stays flush as they reflow (e.g. the hand bar grows when a discard/destroy prompt shows).
+  // stays flush as they reflow (e.g. the hand bar grows when a discard prompt shows).
   useEffect(() => {
     const measure = () =>
       setInsets({ top: bannerRef.current?.offsetHeight ?? 0, bottom: handBarRef.current?.offsetHeight ?? 0 });
@@ -1376,10 +1349,9 @@ export function Board({
     if (!gameover) setOverlayMinimized(false);
   }, [gameover]);
 
-  // Clear pending sacrifice-pick, pending destroy, and the end-round warning at the start of each new round.
+  // Clear pending sacrifice-pick and the end-round warning at the start of each new round.
   useEffect(() => {
     setPending(null);
-    setPendingDestroy(null);
     setWarnEndRound(false);
   }, [G.round]);
 
@@ -1548,20 +1520,6 @@ export function Board({
     }
   }
 
-  /** Fire the destroy move against a chosen building instance, then exit targeting mode. */
-  function handleDestroyTarget(instanceId: number) {
-    if (!pendingDestroy) return;
-    ghostFromSlot(
-      pendingDestroy.playedKey,
-      effectiveCard(CARDS[pendingDestroy.cardId], G.hand[pendingDestroy.handIdx]),
-      CARDS[pendingDestroy.cardId].display?.dynamicText?.(G, G.hand[pendingDestroy.handIdx]),
-      G.hand[pendingDestroy.handIdx].stickers,
-    );
-    moves.playCard(pendingDestroy.handIdx, [], instanceId);
-    setPendingDestroy(null);
-  }
-
-
   const COLLAPSE_MESSAGES: Record<string, string> = {
     famine:     'famine struck — your people starved.',
     ruin:       'ruin befell — your economy collapsed.',
@@ -1574,7 +1532,7 @@ export function Board({
 
   const proj = projectedDelta(G);
   const collapseRisk = (key: keyof CoreResources) => G.resources[key] + proj.resources[key] < 0;
-  const canEndRound = !pending && !pendingDestroy && !drag;
+  const canEndRound = !pending && !drag;
 
   return (
     <>
@@ -1695,14 +1653,12 @@ export function Board({
                       idle={idle}
                       workerDragSource={isWorkerDragSource}
                       workerDropTarget={isWorkerDropTarget}
-                      pendingDestroy={!!pendingDestroy}
                       onPointerDown={(e) => onBoxPointerDown(e, inst, slotIdx)}
                       onStaffPointerDown={onStaffPointerDown}
                       staffRef={(el) => {
                         if (el) staffEls.current.set(inst.id, el);
                         else staffEls.current.delete(inst.id);
                       }}
-                      onDestroy={() => handleDestroyTarget(inst.id)}
                       onZoomClick={
                         gameover && overlayMinimized
                           ? () =>
@@ -1766,7 +1722,7 @@ export function Board({
             />
             <button
               className={styles.undoBtn}
-              disabled={!canUndo || !!pending || !!pendingDestroy || drag?.active === true}
+              disabled={!canUndo || !!pending || drag?.active === true}
               onClick={undo}
               title="Undo your last action (cleared when you draw or end the round)"
             >
@@ -1782,13 +1738,6 @@ export function Board({
                 {CARDS[pending.cardId].name} again to cancel.
               </p>
             )}
-            {pendingDestroy && (
-              <p className={styles.discardPrompt}>
-                Playing <strong>{CARDS[pendingDestroy.cardId].name}</strong> — click a building
-                above to demolish it, or click{' '}
-                {CARDS[pendingDestroy.cardId].name} again to cancel.
-              </p>
-            )}
             {rejectMsg && (
               <p className={styles.rejectToast} role="alert">{rejectMsg}</p>
             )}
@@ -1802,16 +1751,15 @@ export function Board({
                 // Discard cost never blocks play — it's waived when you can't cover it.
                 const affordable = whyUnplayable(c, G, card.inst) === null;
                 const isPending = pending?.handIdx === card.handIdx;
-                const isPendingDestroy = pendingDestroy?.handIdx === card.handIdx;
                 const isSacrifice = pending?.discards.includes(card.handIdx) ?? false;
                 const isDragging = drag?.active === true && drag.key === card.key;
                 const className = [
                   styles.handCard,
                   card.isNew ? styles.dealIn : '',
-                  isPending || isPendingDestroy ? styles.pending : '',
+                  isPending ? styles.pending : '',
                   isSacrifice ? styles.sacrifice : '',
                   isDragging ? styles.dragging : '',
-                  !affordable && !pending && !pendingDestroy ? styles.unaffordable : '',
+                  !affordable && !pending ? styles.unaffordable : '',
                   shake?.key === card.key ? styles.shake : '',
                 ]
                   .filter(Boolean)
@@ -1843,7 +1791,6 @@ export function Board({
                         return;
                       }
                       if (pending) handlePendingClick(card);
-                      else if (pendingDestroy && card.handIdx === pendingDestroy.handIdx) setPendingDestroy(null);
                     }}
                   />
                 );

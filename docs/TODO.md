@@ -100,11 +100,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   choice** (6.4, Chiefdom) · threats (6.5) · **science card-manipulation / foresight** (6.6,
   Calendar) · wonders (6.7). Interactive cards (`pendingInteraction`) ride in on the Paleolithic
   baseline (Storytelling). **Deferred out of the Stone Age (deliberate):**
-  - **Destroy / demolish** (`effect.destroy`) — a fully-built-but-unused engine verb, **not** a
-    Stone Age mechanic. It's a card-effect (like the peek family was), not one of DESIGN's headline
-    core mechanics (buildings / territory / conquest / culture), so deferring it doesn't contradict
-    "Stone Age teaches all core mechanics." Lands in a later age (Bronze/Iron), where a built-up
-    settlement gives tearing-down its natural context. `[?]`
+  - **Destroy / demolish** — **not** a Stone Age mechanic. Was a fully-built-but-unused engine verb
+    (a declarative `effect.destroy` + a `destroyInstanceId` targeting channel), **removed** during the
+    card tech-debt pass rather than carried through the refactor unused — it's a card-effect (like the
+    peek family), not one of DESIGN's headline core mechanics (buildings / territory / conquest /
+    culture). Reimplement it cleanly on the resolver spine (a `resolve` closure) when a real card wants
+    it — Bronze/Iron, where a built-up settlement gives tearing-down its natural context. `[?]`
 
 - **Step 7 — Bronze Age arc** (content expansion; flavor TBD) — new cards + missions themed
   to the Bronze Age, **no new mechanics**. Continues unlocking cards/stickers through mission
@@ -178,7 +179,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ## Tech debt / architecture
 
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
-  building/destroy/`discardCost` move surface (the paths the current random-policy smoke test doesn't
+  building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
   later fuzz pass. `[size: S] [blocked]` `[phase: 4]`
 

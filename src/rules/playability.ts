@@ -15,7 +15,6 @@ export type UnplayableReason =
   | { kind: 'cost'; missing: Partial<CoreResources> }
   | { kind: 'cultureLevel'; required: number }
   | { kind: 'territory' }
-  | { kind: 'noBuildingsToDestroy' }
   | { kind: 'emptyDrawPile' }
   | { kind: 'discardEmpty' };
 
@@ -28,8 +27,7 @@ export interface CardGate {
   /** Extra cost: number of other cards you must discard from hand to play this. */
   discardCost?: number;
   /** Bespoke precondition the declarative fields can't express (e.g. a peek card needs a non-empty
-   *  pile, a Destroy card needs a target), checked in addition to them. Pure read over `G`; returns
-   *  the reason it blocks, or null. */
+   *  pile), checked in addition to them. Pure read over `G`; returns the reason it blocks, or null. */
   check?: (G: GameState, self: CardInstance) => UnplayableReason | null;
 }
 

@@ -1,7 +1,6 @@
 import { addResources, scaleResources, type Resources } from './resources';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, PendingInteraction } from './state';
-import { emitEvent } from './events';
 import { effectiveGain } from './stickers';
 import { findStaffable, producingUnits } from './population';
 
@@ -15,9 +14,6 @@ export interface CardEffect {
   /** Signed resource delta. Applied once on play/on-handler; scaled per staffed worker in `produces`.
    *  Reaches `G` only through `gainResources`, so a sticker folds over it. */
   resources?: Partial<Resources>;
-  /** Demolish a player-chosen tableau building (its card files to `removed`, freeing slot + workers).
-   *  Target threaded as `EffectContext.target`; validated by `playCard`, applied inside the resolver. */
-  destroy?: true;
   /** The "too specific" escape hatch: a bespoke closure for behaviour the declarative fields can't
    *  express (self-reference, per-copy state, targeting, interaction). *Replaces* the declarative fields;
    *  it must add its own output through `gainResources` (so stickers still fold) and may mutate `ctx.G`.
@@ -36,9 +32,6 @@ export interface EffectContext {
    *  `self.counters` (via `getCounter`/`bumpCounter`) for per-copy state riding with this physical card.
    *  On a resume pass (`resolveInteraction`) it's reconstructed from the parked `PendingInteraction`. */
   self: CardInstance;
-  /** A target instance id the UI pre-selected before the move fired (e.g. the building a Destroy card
-   *  demolishes), threaded here rather than as a bespoke move parameter. */
-  target?: number;
   /**
    * The player's answer to a suspended interaction: `undefined` on the first pass (the resolver reveals
    * options and parks a `PendingInteraction`), the chosen option index on resume. Branch on
@@ -75,29 +68,15 @@ export function suspendChoice(
   ctx.G.pendingInteraction = { cardId: ctx.self.cardId, instanceId: ctx.self.id, ...choice };
 }
 
-/** Demolish a tableau building by instance id, filing its card to `removed` (frees the slot and its
- *  workers). No-op if the id is absent or not in the tableau. */
-function demolish(G: GameState, instanceId?: number): void {
-  if (instanceId === undefined) return;
-  const idx = G.tableau.findIndex((b) => b.id === instanceId);
-  if (idx === -1) return;
-  const [building] = G.tableau.splice(idx, 1);
-  // Keep its id so the removed pile stays identity-consistent with every other zone (its
-  // staffing-only `workers` is dropped).
-  G.removed.push({ id: building.id, cardId: building.cardId });
-  emitEvent(G, { type: 'discard', instanceId: building.id, cardId: building.cardId, reason: 'demolish' });
-}
-
 /**
  * Run a `CardEffect` against `ctx` — the single declarative-or-bespoke runner shared by play, `upkeep`,
  * and the `on.*` handlers. A `resolve` closure replaces the declarative fields; otherwise the signed
- * `resources` delta routes through `gainResources` and `destroy` demolishes `ctx.target`. Production is
- * the one slot that does NOT run through this — it scales per worker (`resolveProduction`).
+ * `resources` delta routes through `gainResources`. Production is the one slot that does NOT run through
+ * this — it scales per worker (`resolveProduction`).
  */
 export function runEffect(ctx: EffectContext, effect?: CardEffect): void {
   if (effect?.resolve) return effect.resolve(ctx);
   gainResources(ctx, effect?.resources);
-  if (effect?.destroy) demolish(ctx.G, ctx.target);
 }
 
 /** Resolve a card's play-time `effect` through the single runner — shared by `playCard` and

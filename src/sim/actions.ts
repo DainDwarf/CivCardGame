@@ -15,9 +15,9 @@ import type { SimAction } from './simulate';
  * would loop until `simulateRun`'s action cap throws), centralizing the guard here instead of trusting
  * each policy to remember it.
  *
- * The extras are *canonical*: a discard-cost play sacrifices the first eligible other-hand cards and a
- * Destroy targets the first tableau building. A policy wanting *randomized* extras (the fuzzer) rebuilds
- * them from this skeleton (see `randomPolicy`), sharing only the sacrifice *count* via `discardCostToPay`.
+ * The extras are *canonical*: a discard-cost play sacrifices the first eligible other-hand cards. A
+ * policy wanting *randomized* extras (the fuzzer) rebuilds them from this skeleton (see `randomPolicy`),
+ * sharing only the sacrifice *count* via `discardCostToPay`.
  */
 export function enumerateActions(G: GameState): SimAction[] {
   if (G.pendingInteraction) {
@@ -72,7 +72,7 @@ export function discardCostToPay(G: GameState, card: CardDef): number {
 }
 
 /** A canonical (deterministic) `playCard` for an already-vetted-playable hand index: the discard-cost
- *  sacrifices are the first eligible other-hand cards and a Destroy targets the first tableau building. */
+ *  sacrifices are the first eligible other-hand cards. */
 export function canonicalPlay(G: GameState, playHandIdx: number, card: CardDef): SimAction {
   const required = discardCostToPay(G, card);
   let discardHandIdxs: number[] | undefined;
@@ -81,6 +81,5 @@ export function canonicalPlay(G: GameState, playHandIdx: number, card: CardDef):
     for (let i = 0; i < G.hand.length && idxs.length < required; i++) if (i !== playHandIdx) idxs.push(i);
     discardHandIdxs = idxs;
   }
-  const destroyInstanceId = card.effect?.destroy && G.tableau.length > 0 ? G.tableau[0].id : undefined;
-  return { kind: 'playCard', playHandIdx, discardHandIdxs, destroyInstanceId };
+  return { kind: 'playCard', playHandIdx, discardHandIdxs };
 }

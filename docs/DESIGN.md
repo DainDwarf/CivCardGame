@@ -88,9 +88,9 @@ There are **seven** card kinds — the `CardKind` values in `content/cards.ts`:
 they leave your hand; `threat` and `objective` are the odd ones out — they never enter a hand or pile
 at all, living instead in persistent board zones (see below). By default a card returns to the
 **discard** pile once it's done being useful (reshuffled into the deck when it runs
-dry) — the **removed** pile is the exception. Two things route a card there, neither a
-static kind rule: a specific *effect* (a demolish exiling the building it destroys), and
-the `event` kind's played-vs-unplayed split (a *played* event is banished; see below).
+dry) — the **removed** pile is the exception. What routes a card there is a *path*, not a
+static kind rule: the `event` kind's played-vs-unplayed split (a *played* event is banished;
+see below). An *effect* can route a card there too — see the building note.
 
 - **Building (commit):** the card *is* the building. Pay a cost to play; it leaves
   the deck and enters your **tableau** (one territory slot), producing **every
@@ -190,7 +190,7 @@ Five spendable/trackable resources, each with a **mechanical role** and a **them
 Three civilization-level gauges that constrain and enable play. They are never directly spent; they define the shape of your civilization.
 
 - **Population** — your workforce. Workers are drawn from the idle population pool to staff buildings (which need at least one worker to operate) and to pay for population-reserving actions. Food production determines how large a population you can sustain. A building has a worker **capacity**: most take a single worker, but some (starting with the Göbekli Tepe wonder) hold several, and their output **scales per staffed worker** — a partly-staffed multi-worker building still runs, just at reduced output, so how you spread a scarce workforce across your buildings is a lever.
-- **Territory** — the land your civilization controls. You cannot build more buildings than your territory allows. Expand by conquest or development; or free up slots by demolishing existing buildings.
+- **Territory** — the land your civilization controls. You cannot build more buildings than your territory allows. Expand by conquest or development.
 - **Culture** — how much your civilization shines. Accumulated over time; the more you have, the more willing your people are to act. Mechanically: culture thresholds increase hand size, and some cards require a minimum culture to be playable.
 
 Further expansion axes (`Faith`, …) remain possible.

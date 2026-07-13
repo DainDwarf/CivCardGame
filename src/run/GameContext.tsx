@@ -11,7 +11,7 @@ interface GameContextValue {
   /** The board this run was launched with — drives board-tinted run-loop presentation (e.g. the ground backdrop). */
   board: BoardId;
   moves: {
-    playCard: (handIdx: number, discardHandIdxs?: number[], destroyInstanceId?: number) => void;
+    playCard: (handIdx: number, discardHandIdxs?: number[]) => void;
     assignWorker: (id: number) => void;
     unassignWorker: (id: number) => void;
     toggleStaffing: (id: number) => void;
@@ -117,8 +117,8 @@ export function GameProvider({
   const { present, past, gen } = session;
 
   const moves = useMemo(() => ({
-    playCard: (handIdx: number, discardHandIdxs: number[] = [], destroyInstanceId?: number) =>
-      dispatch({ type: 'move', fn: playCard, args: [handIdx, discardHandIdxs, destroyInstanceId] }),
+    playCard: (handIdx: number, discardHandIdxs: number[] = []) =>
+      dispatch({ type: 'move', fn: playCard, args: [handIdx, discardHandIdxs] }),
     assignWorker: (id: number) => dispatch({ type: 'move', fn: assignWorker, args: [id] }),
     unassignWorker: (id: number) => dispatch({ type: 'move', fn: unassignWorker, args: [id] }),
     toggleStaffing: (id: number) => dispatch({ type: 'move', fn: toggleStaffing, args: [id] }),

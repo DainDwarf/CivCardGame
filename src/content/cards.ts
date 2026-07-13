@@ -45,7 +45,7 @@ export interface CardDef {
   effect?: CardEffect;
   /** A staffable's per-round output once staffed — run through `resolveProduction`, scaling its
    *  `resources` per staffed worker. May touch any of the 8 pools. Kept distinct from `effect` so a
-   *  one-shot play field can never fire every round; `destroy` is play-only and ignored here. */
+   *  one-shot play field can never fire every round. */
   produces?: CardEffect;
   /** The recurring effect a hazard fires *at the upkeep boundary*: a `threat`'s per-round drain or an
    *  unplayed `event`'s end-of-turn disaster. Distinct from `effect` (meaningless for these kinds).

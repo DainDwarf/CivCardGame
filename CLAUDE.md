@@ -158,13 +158,12 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     carried in four timing slots on `CardDef` — the play-time `effect`, the per-round `produces`, the
     upkeep-boundary `upkeep` (a threat's drain / an unplayed event's disaster), and each `on.*` handler.
     `runEffect(ctx, effect)` is the single declarative-or-bespoke runner: it applies the
-    declarative fields (`resources` folded through stickers, `destroy`), *unless* the effect owns a
+    declarative `resources` field (folded through stickers), *unless* the effect owns a
     `resolve` closure — the "too specific" escape hatch, which *replaces* the declarative fields.
     `resolveCard(ctx)` runs a card's play `effect` through it, and `resolveUpkeep(ctx)` its recurring
     `upkeep` (read alone, never `effect` — the misfit "each round, not on play" timing of event/threat
     gets its own named slot the way `produces` does). The `EffectContext`
-    (`{ G, self, target?, answer? }`) tells an effect which copy is resolving and what it targets (a
-    Destroy demolition is just `ctx.target`). `resolveProduction(ctx)` is production's separate
+    (`{ G, self, answer? }`) tells an effect which copy is resolving. `resolveProduction(ctx)` is production's separate
     counterpart — a *different* path from `runEffect` because it scales `produces.resources` per staffed
     worker; it reads `produces` alone (a bespoke `produces.resolve` owns its own scaling).
     An interactive effect suspends into `pendingInteraction` — via `suspendChoice(ctx, …)`, the one
@@ -284,9 +283,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     predicates, so no call site open-codes a `kind === 'building'` union. A wonder is set apart only
     in the meta loop: its own Collection/deck category, no bought copies (`shop.ts`), no stickers
     (`stickerAppliesTo`), at most `MAX_WONDERS_PER_DECK` per deck (`deckBuilder.ts`). Filing to a
-    pile defaults to `discard`, with two named exceptions routed at the play/upkeep choke points, not
-    by a static kind rule: Destroy's `effect.destroy` exiles its *target* building to `removed`, and
-    the `event` kind splits by *path* — a **played** event is exiled to `removed` **unresolved** (paying
+    pile defaults to `discard`, with one named exception routed at the play/upkeep choke points, not
+    by a static kind rule: the `event` kind splits by *path* — a **played** event is exiled to `removed` **unresolved** (paying
     its cost pre-empts the disaster: its `upkeep` effect never fires), while one **left unplayed** fires
     its `upkeep` at end of turn and files to `discard`, so it recurs (`moves.playCard` /
     `upkeep.ts`'s `resolveHandEvents` own the two sides). An `objective` card owns
@@ -364,8 +362,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   card is placed in the `tableau` via `addBuilding` (staying in play, *not* filed to a pile) and a
   `work` card sticks onto the board via `addWork` (resolving *no* effect on play, filing to
   `discard` only at end of turn); every other card resolves its `effect` and, if `action`,
-  files to `discard`. A card with `effect.destroy` demolishes a chosen tableau building and sends
-  *that* building's card to `removed`.
+  files to `discard`.
   `assignWorker`/`unassignWorker`/`transferWorker`/`toggleStaffing` all target a `Staffable`
   by its instance `id` via `findStaffable`, so they operate on a building *or* a work box
   interchangeably. `toggleStaffing` (a box-level control) empties a staffed box, or fills an empty
@@ -494,7 +491,7 @@ the prod gate `rules/playability.ts`'s `unplayableReason` (never a re-derived co
 (deterministic) extra args; when a `pendingInteraction` is parked it returns *only* the answer actions, so
 no policy can deadlock on a no-op `endTurn`. `createRandomPolicy(seed)` (`sim/randomPolicy.ts`) is the
 **random-legal-move policy** — it picks one enumerated action from its own seeded stream (distinct from the
-run's shuffle seed), re-randomizing a play's discard/destroy extras for fuzz coverage. It doubles as a
+run's shuffle seed), re-randomizing a play's discard extras for fuzz coverage. It doubles as a
 **crash / illegal-state fuzzer**: `assertRunInvariants` (`sim/invariants.ts`) runs after every action
 (bus drained · unique instance ids · staffing/population bounds — deliberately **not** resource
 non-negativity, since a collapse ending legitimately leaves a negative pool), throwing with both seeds
@@ -561,7 +558,7 @@ entries — per-card stickers flow through `simConfig`'s widened `(string|DeckCa
 `--seed <i>` switches to a single-run **replay**: it rebuilds the exact `(cfg,pol)` seed pair the batch
 cell `i` used and drives `simulateRun` under an `onStep` observer (fired per action with the states either
 side) to print a per-turn economy/actions trace — the observer keeps the drive loop single-sourced (the
-batch passes none). A synthetic-fixture move-surface fuzz test (building/destroy/`discardCost`) is deferred until building
+batch passes none). A synthetic-fixture move-surface fuzz test (building/`discardCost`) is deferred until building
 content exists.
 
 ## Conventions

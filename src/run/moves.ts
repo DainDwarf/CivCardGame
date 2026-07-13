@@ -6,14 +6,12 @@ import { CARDS, isStructure } from '../content/cards';
 /**
  * Play a card from hand — the sole entry for putting a card into play. Pays costs (resources plus a
  * discard cost: `discardHandIdxs` gives the hand positions to sacrifice, distinct from the played
- * slot), then routes by `kind` (see the inline routing below). A card with `effect.destroy` requires
- * `destroyInstanceId`, the tableau building to demolish. Moves are the only place `G` may change.
+ * slot), then routes by `kind` (see the inline routing below). Moves are the only place `G` may change.
  */
 export function playCard(
   G: GameState,
   playHandIdx: number,
   discardHandIdxs: number[] = [],
-  destroyInstanceId?: number,
 ): 'invalid' | void {
   // No card may be played while an interaction is pending — the player must answer it first.
   if (G.pendingInteraction) return 'invalid';
@@ -23,11 +21,6 @@ export function playCard(
 
   const card = CARDS[cardId];
   if (!card || unplayableReason(G, card, played)) return 'invalid';
-  // A destroy card needs a valid target instance in the tableau.
-  if (card.effect?.destroy) {
-    if (destroyInstanceId === undefined) return 'invalid';
-    if (!G.tableau.some((b) => b.id === destroyInstanceId)) return 'invalid';
-  }
 
   // Discard-as-cost: sacrifice `discardCost` other cards — but only if you have that many
   // to spare. Played with an otherwise-empty hand it costs no discard (a reward for
@@ -52,7 +45,7 @@ export function playCard(
   // return the not-yet-filed sacrifices back into the deck.
   // A building/wonder card is placed in the tableau; a work card sticks onto the board and produces
   // only while staffed (at upkeep); everything else resolves its effect immediately through the
-  // single resolver path (which also performs a Destroy card's demolition, via `target`).
+  // single resolver path.
   if (isStructure(card)) {
     // Place the structure (auto-staffing from existing idle pop), then resolve its one-shot
     // *placement* effect on the played instance (e.g. the Hut's +1 population). A no-op for the
@@ -71,7 +64,7 @@ export function playCard(
   } else {
     // Resolve on the played *instance* — so a self-scaling card reads/writes its own
     // copy's counters, which then ride along as that same instance files to discard below.
-    resolveCard({ G, self: played, target: destroyInstanceId });
+    resolveCard({ G, self: played });
   }
   for (const c of sacrifices) {
     G.discard.push(c);

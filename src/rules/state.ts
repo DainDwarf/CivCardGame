@@ -17,11 +17,10 @@ export interface CardInstance {
    * chooses — a generic map, not bespoke fields, per the *cards own their own numbers* convention.
    * Absent until a resolver first writes one; read/written via `getCounter`/`bumpCounter`.
    *
-   * NOTE: three transitions deliberately drop `counters` when re-minting a plain instance, harmless
+   * NOTE: two transitions deliberately drop `counters` when re-minting a plain instance, harmless
    * today because no work/building/interactive card uses one — but the exact spots a *future* such
-   * card would lose its state: `upkeep.ts`'s `discardWorkZone` (work box → discard), `effects.ts`'s
-   * `demolish` (tableau building → removed), and `moves.ts`'s `resolveInteraction` (rebuilding
-   * `self` for a resume pass).
+   * card would lose its state: `upkeep.ts`'s `discardWorkZone` (work box → discard) and `moves.ts`'s
+   * `resolveInteraction` (rebuilding `self` for a resume pass).
    */
   counters?: Record<string, number>;
   /**
@@ -41,7 +40,7 @@ export interface PlacedCard extends CardInstance {
   workers: number;
 }
 
-/** A building erected in the tableau: stays in play until demolished, producing its card's
+/** A building erected in the tableau: stays in play for the rest of the run, producing its card's
  *  `produces` each round while staffed. */
 export type BuildingInstance = PlacedCard;
 
@@ -59,7 +58,7 @@ export type ThreatInstance = CardInstance;
 /** Why a card was filed to a pile — rides on a `discard` event so a card's `on.discard` handler can
  *  tell a *sacrifice* (a discard-cost cost, which should trigger) from an *end-of-turn recycle* (which
  *  usually shouldn't). Every discard site emits with its reason; the handler decides what to do. */
-export type DiscardReason = 'sacrifice' | 'demolish' | 'endOfTurn' | 'workFiled' | 'event';
+export type DiscardReason = 'sacrifice' | 'endOfTurn' | 'workFiled' | 'event';
 
 /** Where a `draw` came from — rides on the `draw` event so an `on.draw` handler can tell the routine
  *  round-start refill (`'turnStart'`, `drawUpTo`) from a draw an action/effect *caused* (`'effect'`,
@@ -120,10 +119,10 @@ export interface GameState {
   discard: CardInstance[];
   /**
    * Exile pile — cards permanently removed from the deck (never drawn or reshuffled again); distinct
-   * from the tableau (an active board entity). A card lands here only in one of two specific cases,
-   * never by a static kind rule: a `building` when another card's `effect.destroy` demolishes it, and
-   * a **voluntarily played** `event` (paying its cost banishes it *unresolved* — its `upkeep` never
-   * fires — versus an unplayed event, whose `upkeep` resolves to `discard` and recurs; see `rules/upkeep.ts`).
+   * from the tableau (an active board entity). A card lands here only by a **voluntarily played**
+   * `event` (paying its cost banishes it *unresolved* — its `upkeep` never fires — versus an unplayed
+   * event, whose `upkeep` resolves to `discard` and recurs; see `rules/upkeep.ts`), never by a static
+   * kind rule.
    */
   removed: CardInstance[];
   /** Buildings in play (each a placed `building` card), tracking their assigned workers. */

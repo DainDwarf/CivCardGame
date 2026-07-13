@@ -157,14 +157,6 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     id: 'test_cultreq', name: 'Test Culture-Req', kind: 'action',
     cost: { science: 1 }, gate: { cultureLevelReq: 1 }, effect: { resources: { science: 3 } },
   },
-  // Destroy action: demolishes a chosen tableau building (`effect.destroy`), gated unplayable with
-  // nothing to destroy.
-  test_destroy: {
-    id: 'test_destroy', name: 'Test Destroy', kind: 'action',
-    cost: { production: 1 },
-    gate: { check: (G) => (G.tableau.length === 0 ? { kind: 'noBuildingsToDestroy' } : null) },
-    effect: { destroy: true },
-  },
   // Interactive peek action: reveals the top 3 of the draw pile into a choice tray,
   // you draw 1, the rest shuffle back. Its resolver suspends into a `pendingInteraction` and resumes
   // on the chosen index — the canonical interactive/`suspendChoice` fixture. The `gate.check` bars it

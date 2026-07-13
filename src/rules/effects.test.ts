@@ -15,25 +15,6 @@ describe('runEffect', () => {
     expect(G.resources.culture).toBe(1);
   });
 
-  it('demolishes the targeted building for a destroy effect, filing it to removed', () => {
-    const G = blankState('test');
-    G.tableau = [
-      { id: 1, cardId: 'test_food', workers: 1 },
-      { id: 2, cardId: 'test_prod', workers: 1 },
-    ];
-    runEffect({ G, self: { id: 3, cardId: 'test_destroy' }, target: 1 }, { destroy: true });
-    expect(G.tableau).toEqual([{ id: 2, cardId: 'test_prod', workers: 1 }]);
-    expect(G.removed).toEqual([{ id: 1, cardId: 'test_food' }]);
-  });
-
-  it('a destroy effect with no valid target is a no-op', () => {
-    const G = blankState('test');
-    G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }];
-    runEffect({ G, self: { id: 2, cardId: 'test_destroy' } }, { destroy: true });
-    expect(G.tableau).toHaveLength(1);
-    expect(G.removed).toEqual([]);
-  });
-
   it('a bespoke `resolve` REPLACES the declarative fields (they do not compose)', () => {
     const G = blankState('test');
     runEffect(

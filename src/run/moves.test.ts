@@ -19,7 +19,7 @@ const PLACEMENT_BUILDING = {
 /** Invoke the move directly with a minimal context (it only reads `G`). Hand cards are now
  *  identity-bearing instances, so look a card up by its `cardId` (first match, like the old
  *  `indexOf`). */
-function play(G: GameState, cardId: string, discardCardIds: string[] = [], destroyInstanceId?: number) {
+function play(G: GameState, cardId: string, discardCardIds: string[] = []) {
   const idx = G.hand.findIndex((c) => c.cardId === cardId);
   if (idx === -1) throw new Error(`play: '${cardId}' not in hand`);
   const discardIdxs = discardCardIds.map((d) => {
@@ -27,7 +27,7 @@ function play(G: GameState, cardId: string, discardCardIds: string[] = [], destr
     if (i === -1) throw new Error(`play: discard '${d}' not in hand`);
     return i;
   });
-  playCard(G, idx, discardIdxs, destroyInstanceId);
+  playCard(G, idx, discardIdxs);
 }
 
 describe('playCard: cards vs. buildings', () => {
@@ -104,82 +104,6 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.tableau).toHaveLength(1); // building not built
     expect(G.hand.map((c) => c.cardId)).toEqual(['test_food']); // card stays in hand, nothing paid
     expect(G.resources.production).toBe(5);
-  });
-
-  it('destroy removes the targeted building from the tableau and frees its territory slot', () => {
-    const G = blankState('test');
-    G.hand = instancesFromCardIds(['test_destroy']);
-    G.resources.production = 5;
-    G.tableau = [
-      { id: 1, cardId: 'test_food', workers: 1 },
-      { id: 2, cardId: 'test_prod', workers: 1 },
-    ];
-    G.resources.population = 2;
-    play(G, 'test_destroy', [], 1); // demolish the test_food instance
-    expect(G.tableau).toEqual([{ id: 2, cardId: 'test_prod', workers: 1 }]);
-    expect(G.removed).toEqual([{ id: 1, cardId: 'test_food' }]); // the demolished building's card leaves play
-    expect(G.resources.production).toBe(4); // paid 1 production
-    expect(G.discard.map((c) => c.cardId)).toEqual(['test_destroy']); // action → recycles
-  });
-
-  it('destroy frees assigned workers back to the idle pool', () => {
-    const G = blankState('test');
-    G.hand = instancesFromCardIds(['test_destroy']);
-    G.resources.production = 5;
-    G.resources.population = 2;
-    G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }];
-    play(G, 'test_destroy', [], 1);
-    expect(G.tableau).toEqual([]);
-    // The removed worker is now idle (freePopulation = population - assignedWorkers)
-    // Population is still 2, no workers assigned => 2 idle.
-    expect(G.resources.population).toBe(2);
-  });
-
-  it('destroy is rejected without a target instance id', () => {
-    const G = blankState('test');
-    G.hand = instancesFromCardIds(['test_destroy']);
-    G.resources.production = 5;
-    G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }];
-    play(G, 'test_destroy'); // no destroyInstanceId
-    expect(G.tableau).toHaveLength(1); // nothing removed
-    expect(G.resources.production).toBe(5); // nothing paid
-  });
-
-  it('destroy is rejected when the target instance is not in the tableau', () => {
-    const G = blankState('test');
-    G.hand = instancesFromCardIds(['test_destroy']);
-    G.resources.production = 5;
-    G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }];
-    play(G, 'test_destroy', [], 999); // no instance with id 999
-    expect(G.tableau).toHaveLength(1);
-    expect(G.resources.production).toBe(5);
-  });
-
-  it('destroy removes exactly the targeted instance among identical siblings', () => {
-    const G = blankState('test');
-    G.hand = instancesFromCardIds(['test_destroy']);
-    G.resources.production = 5;
-    G.resources.population = 1;
-    G.tableau = [
-      { id: 1, cardId: 'test_food', workers: 1 }, // staffed
-      { id: 2, cardId: 'test_food', workers: 0 }, // empty
-    ];
-    play(G, 'test_destroy', [], 2); // demolish the empty copy, by id
-    expect(G.tableau).toEqual([{ id: 1, cardId: 'test_food', workers: 1 }]); // targeted instance removed
-  });
-
-  it('destroy enables a building card to be played after demolishing a full tableau', () => {
-    const G = blankState('test');
-    G.hand = instancesFromCardIds(['test_destroy', 'test_food']);
-    G.resources.production = 5;
-    G.resources.population = 2;
-    G.resources.territory = 1;
-    G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }]; // tableau at cap
-    play(G, 'test_destroy', [], 1);
-    expect(G.tableau).toHaveLength(0);
-    expect(G.resources.territory).toBe(1); // territory cap unchanged — just freed a slot
-    play(G, 'test_food'); // now a slot is free
-    expect(G.tableau.some((b) => b.cardId === 'test_food')).toBe(true);
   });
 
   it('a territory card opens a slot so the next building can be played', () => {

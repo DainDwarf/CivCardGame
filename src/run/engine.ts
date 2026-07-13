@@ -61,8 +61,8 @@ export function endTurn(state: RunState): RunState {
   // Check for collapse/victory before clearing the hand so that the hand is visible for inspection.
   const afterUpkeep = checkEndIf({ ...state, G });
   if (afterUpkeep.gameover) return afterUpkeep;
-  // Events left in hand auto-resolve (applying their effect) and are destroyed to the removed
-  // pile; the rest of the hand recycles to discard, and the work zone files — see `settleEndOfTurn`.
+  // Events left in hand auto-resolve (firing their upkeep) and file to discard so they recur; the
+  // rest of the hand recycles to discard, and the work zone files — see `settleEndOfTurn`.
   settleEndOfTurn(G);
   // An event may have tripped collapse (a resource going negative) or the objective (e.g. its
   // win threshold crossed), so re-check before the next turn begins.

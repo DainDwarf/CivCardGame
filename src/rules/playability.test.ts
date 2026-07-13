@@ -47,13 +47,13 @@ describe('unplayableReason', () => {
     expect(unplayableReason(G, card, self)).toEqual({ kind: 'territory' });
   });
 
-  it("returns a card's bespoke gate.check reason (e.g. a destroy card with no target)", () => {
+  it("returns a card's bespoke gate.check reason (e.g. a recover card needs a non-empty discard)", () => {
     const G = blankState('test');
     const card: CardDef = {
       ...baseCard,
-      gate: { check: (G) => (G.tableau.length === 0 ? { kind: 'noBuildingsToDestroy' } : null) },
+      gate: { check: (G) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null) },
     };
-    expect(unplayableReason(G, card, self)).toEqual({ kind: 'noBuildingsToDestroy' });
+    expect(unplayableReason(G, card, self)).toEqual({ kind: 'discardEmpty' });
   });
 
   it('composes gate.check with the declarative gates, running check after them', () => {
@@ -63,17 +63,17 @@ describe('unplayableReason', () => {
       ...baseCard,
       gate: {
         cultureLevelReq: 1,
-        check: (G) => (G.tableau.length === 0 ? { kind: 'noBuildingsToDestroy' } : null),
+        check: (G) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null),
       },
     };
     const belowCulture = blankState('test'); // culture 0 → declarative gate blocks, check not reached
     expect(unplayableReason(belowCulture, card, self)).toEqual({ kind: 'cultureLevel', required: 1 });
 
     const cultureMet = blankState('test');
-    cultureMet.resources.culture = 10; // level 1 → declarative passes, so the empty-tableau check runs
-    expect(unplayableReason(cultureMet, card, self)).toEqual({ kind: 'noBuildingsToDestroy' });
+    cultureMet.resources.culture = 10; // level 1 → declarative passes, so the empty-discard check runs
+    expect(unplayableReason(cultureMet, card, self)).toEqual({ kind: 'discardEmpty' });
 
-    cultureMet.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }]; // now both gates pass
+    cultureMet.discard = [{ id: 1, cardId: 'test' }]; // now both gates pass
     expect(unplayableReason(cultureMet, card, self)).toBeNull();
   });
 

@@ -42,7 +42,7 @@ export interface StrategicEntry {
 /** The 3 strategic gauges — never spent; they define the shape of your civilization. */
 export const CODEX_STRATEGIC: StrategicEntry[] = [
   { key: 'population', name: 'Population', role: 'Your workforce. Workers are drawn from the idle population pool to staff buildings. Food production caps how large a population you can sustain.' },
-  { key: 'territory', name: 'Territory', role: 'The land you control — a cap on how many buildings can occupy your tableau. Expand it, or demolish a building to free a slot.' },
+  { key: 'territory', name: 'Territory', role: 'The land you control — a cap on how many buildings can occupy your tableau. Expand it to raise the cap.' },
   { key: 'culture', name: 'Culture', role: 'How much your civilization shines. Accumulates through discrete levels; each level raises your hand size, and some cards require a minimum culture level to play.' },
 ];
 
@@ -57,6 +57,6 @@ export interface GlossaryEntry {
 export const CODEX_GLOSSARY: GlossaryEntry[] = [
   { term: 'Discard cost', definition: 'You must discard that many other cards from your hand to play it.' },
   { term: 'Culture requirement', definition: 'The card can only be played once your culture has reached the required level. Culture is not consumed.' },
-  { term: 'Territory', definition: 'The cap on how many buildings your tableau can hold. Raise it with expansion cards or demolish a building to reclaim a slot.' },
+  { term: 'Territory', definition: 'The cap on how many buildings your tableau can hold. Raise it with expansion cards.' },
   { term: 'Removed vs. discard', definition: 'By default, a card returns to the discard pile once it leaves play — reshuffled into the deck when it runs dry. The removed pile is the exception: a card that is removed lands there, gone for the rest of the run.' },
 ];
