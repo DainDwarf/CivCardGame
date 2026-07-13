@@ -10,6 +10,20 @@
 ## Random Ideas
 
  - Decreasing effectiveness of old cards? (If card comes from 2 ages ago, output -1, -2, etc?)
+ - **Parameterized objective/threat cards** — today each "N-of-something" mission
+   (`raiders_at_border`, `sandbox`) needs an exported tuning const in `content/cards.ts`
+   (`RAIDER_WAVES`, `SANDBOX_DEADLINE`) shared between the mission's seed and the card's
+   predicate. Objective cards stay **bespoke 1:1** with missions, so one const per such
+   mission is fine and this is deliberately *not* done. **If that floating-const growth ever
+   gets annoying** (or you want one reusable "defeat N waves" / "survive N rounds" card across
+   many missions), the structural fix is to make the *mission* own the number: `MissionDef`
+   carries it, and setup threads it onto the seeded objective/threat instance's `counters`, so
+   the card reads it via `getCounter(self, …)` and no shared const exists. Plumbing checked:
+   `rules/objective.ts`'s `seedObjective` would just grow a `counters` arg (it already mints
+   the instance), and `sim/objective.ts` would read the counter off the objective instance
+   instead of importing the const. Note the dependency direction rules out the naive move —
+   `cards.ts` is upstream of `missions.ts`, so a card can't import a const *from* the mission;
+   the counter thread is the only cycle-free way to give the mission ownership.
 
 ## Stone Age
 

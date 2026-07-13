@@ -1,6 +1,6 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
-import { RAIDER_WAVES } from './cards';
+import { RAIDER_WAVES, SANDBOX_DEADLINE } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -185,7 +185,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     threats: ['sands_of_time'],
     objectiveCardId: 'sandbox_goal',
     victoryHint: 'There is no victory — only rounds survived.',
-    failureHint: 'The run ends once the age turns (round 50), or if a core resource collapses.',
+    failureHint: `The run ends once the age turns (round ${SANDBOX_DEADLINE}), or if a core resource collapses.`,
     kind: 'infinite',
   },
 };
