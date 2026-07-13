@@ -575,6 +575,19 @@ content exists.
   (`appliesTo`/`applyGain`/`applyCost`), dispatched generically by `rules/stickers.ts` —
   no sticker-specific branches at call sites. Adding a mechanic means adding a
   closure/hook on the data, not a branch in the engine.
+- **Comments state non-obvious intent about the code they sit on — nothing else.** A comment earns
+  its place only by expressing a rationale/constraint the adjacent code can't, and you **re-shave a
+  comment when you edit near it** rather than appending. Repeated development breeds three failure
+  modes; reject all three:
+  1. **Paraphrase** — restating what the code plainly says; it just drifts stale.
+  2. **History** — "used to…", "was X before Y", "Phase N"; that's git/CHANGELOG's job, and stale
+     history reads as a contradiction of the current logic.
+  3. **Semantic bleeding** — a comment explaining the behaviour of *unrelated* code. The worst of
+     the three: it bloats and drifts when the *other* code changes, and it's a **code smell** — a
+     comment that *must* reach into another module's behaviour usually means logic landed in the
+     wrong place. Keep a mechanism's explanation where the mechanism lives; from elsewhere use a bare
+     pointer, never a re-explanation. If a comment can't stay local, stop and check whether the
+     *code* is misplaced — surface that rather than writing the bleeding comment.
 - All state changes flow through `applyMove` / `endTurn` in `engine.ts` — moves
   receive a `structuredClone` of `G` and mutate it directly; never mutate `G` elsewhere.
 - **Game logic is deterministic — never `Math.random`.** Runs are seeded so they're
