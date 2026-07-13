@@ -102,23 +102,33 @@ export interface ProjectedDelta {
   resources: Resources;
 }
 
-export function projectedDelta(G: GameState): ProjectedDelta {
+/**
+ * The full state the run would be in at the *start of next turn* if the player ended the round now (a
+ * clone — `G` is untouched). The single source of the next-turn projection: `projectedDelta` subtracts
+ * from it, and the simulator's value function reads any pool / the objective off it (delayed production
+ * toward a goal — Conquest's territory, Beer's culture — lands at upkeep, so it's only visible here).
+ */
+export function projectNextTurn(G: GameState): GameState {
   const clone = structuredClone(G);
   applyUpkeep(clone);
-  // Events in hand auto-resolve at end of turn too, so fold their impact into the delta the
-  // player sees (e.g. a threat's resource drain + its collapse warning) — same sequence
-  // `endTurn` runs for real, via the shared `settleEndOfTurn`.
+  // Events in hand auto-resolve at end of turn too, so fold their impact into the projection the
+  // consumer sees (e.g. a threat's resource drain + its collapse warning) — same sequence `endTurn`
+  // runs for real, via the shared `settleEndOfTurn`.
   settleEndOfTurn(clone);
   // The next turn's refill draw fires a `reshuffle` when it empties the deck (see `deck.ts`), and a
   // reshuffle-reacting threat (Unrest's per-🧍 🪙 drain) bleeds a resource the player is about to pay.
   // Surface that *structural* cost by firing the `reshuffle` broadcast synthetically here — without
   // running the draw itself, so the draw-contingent `on.draw` effects (which hinge on the hidden
-  // identity of the card drawn) never leak into the preview. Whether the reshuffle is imminent is
+  // identity of the card drawn) never leak into the projection. Whether the reshuffle is imminent is
   // publicly derivable (deck/discard/hand counts), so showing it reveals nothing the deck order hides.
   if (willReshuffleOnRefill(clone)) {
     const before = snapshot(clone);
     emitEvent(clone, { type: 'reshuffle' });
     flushEvents(clone, before);
   }
-  return { resources: subtractResources(clone.resources, G.resources) };
+  return clone;
+}
+
+export function projectedDelta(G: GameState): ProjectedDelta {
+  return { resources: subtractResources(projectNextTurn(G).resources, G.resources) };
 }

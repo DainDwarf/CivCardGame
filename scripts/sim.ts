@@ -226,27 +226,39 @@ function replay(missionId: string, policyName: string, idx: number): void {
     turnActions = [];
   };
 
-  const outcome = simulateRun(config, policy, {
-    onStep: ({ action, prev, next, accepted }) => {
-      // Turn 1's starting economy is the very first call's `prev` (the post-setup state); every later
-      // turn's start is the state right after the endTurn that closed the previous one.
-      if (!sawFirst) {
-        turnStart = snapshot(prev.G);
-        sawFirst = true;
-      }
-      if (accepted && action.kind !== 'endTurn') turnActions.push(formatAction(action, prev.G));
-      if (action.kind === 'endTurn' && accepted) {
-        flushTurn(prev.G.round);
-        turnStart = snapshot(next.G);
-      }
-    },
-  });
+  const header = `# Replay — ${MISSIONS[missionId].name} · ${policyName} · seed ${idx}\n#   deck: ${basename(values.deck!)} (${deck.length} cards) · board: ${boardLabel}\n`;
+
+  let outcome: ReturnType<typeof simulateRun>;
+  try {
+    outcome = simulateRun(config, policy, {
+      onStep: ({ action, prev, next, accepted }) => {
+        // Turn 1's starting economy is the very first call's `prev` (the post-setup state); every later
+        // turn's start is the state right after the endTurn that closed the previous one.
+        if (!sawFirst) {
+          turnStart = snapshot(prev.G);
+          sawFirst = true;
+        }
+        if (accepted && action.kind !== 'endTurn') turnActions.push(formatAction(action, prev.G));
+        if (action.kind === 'endTurn' && accepted) {
+          flushTurn(prev.G.round);
+          turnStart = snapshot(next.G);
+        }
+      },
+    });
+  } catch (err) {
+    // A non-terminating (or invariant-violating) run still accumulated a trace via `onStep` — print it so
+    // the abort is *diagnostic*, showing exactly what the policy was doing, then re-raise for a non-zero exit.
+    if (turnActions.length) flushTurn(NaN);
+    console.log(header);
+    console.log(lines.join('\n'));
+    console.error(`\n✗ ${(err as Error).message}`);
+    throw err;
+  }
   // A run that ends mid-turn (a play triggers win/loss before any endTurn) leaves a partial turn buffered.
   if (turnActions.length) flushTurn(outcome.finalState.round);
 
   const g = outcome.gameover;
-  console.log(`# Replay — ${MISSIONS[missionId].name} · ${policyName} · seed ${idx}`);
-  console.log(`#   deck: ${basename(values.deck!)} (${deck.length} cards) · board: ${boardLabel}\n`);
+  console.log(header);
   console.log(lines.join('\n'));
   console.log(`\n→ ${g.outcome}${g.reason ? ` (${g.reason})` : ''} · round ${outcome.finalState.round} · ${outcome.actionsApplied} actions`);
 }

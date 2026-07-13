@@ -107,6 +107,30 @@ describe('scoreState', () => {
     expect(scoreState(staffed)).toBeGreaterThan(scoreState(unstaffed));
   });
 
+  it('rewards staffing a producer of what the OBJECTIVE needs over an equal-count survival producer (band 4, projected)', () => {
+    // Growing Numbers wants territory (grown by a staffed Conquest, whose territory lands only at upkeep).
+    // With one worker, staffing Conquest vs. Foraging (food) leaves the *operating count identical* — so
+    // the flat staffing credit can't distinguish them, and Foraging even wins band 5 (projected food). Only
+    // band 4 read on the *projected* state (Conquest's next-upkeep territory advancing the goal) tips it
+    // toward Conquest. Fails if band 4 reads the *current* state — the exact regression that hung the greedy
+    // on this deadline-free mission, invisible to every other test.
+    const conquest = state((G) => {
+      seedObjective(G, 'growing_numbers_goal');
+      G.resources.food = 5;
+      G.resources.population = 1;
+      G.resources.territory = 0; // below the goal's 3-slot need, so growing territory is real progress
+      addWork(G, 'conquest'); // auto-staffs the one idle worker → +territory next upkeep
+    });
+    const foraging = state((G) => {
+      seedObjective(G, 'growing_numbers_goal');
+      G.resources.food = 5;
+      G.resources.population = 1;
+      G.resources.territory = 0;
+      addWork(G, 'foraging'); // same operating count, but its output (food) doesn't advance the goal
+    });
+    expect(scoreState(conquest)).toBeGreaterThan(scoreState(foraging));
+  });
+
   it('rewards a state closer to the mission objective, all else equal (band 4)', () => {
     // Two states with identical resources except one is *nearer* the seeded objective ("The First
     // Settlement" wants 10🔨 + 10⚔️). The nearer one must score higher — the goal-directed pull that
