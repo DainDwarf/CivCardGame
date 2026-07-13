@@ -21,7 +21,7 @@ describe('territory', () => {
 
   it('free territory is the cap minus what is built', () => {
     const G = blankState('test');
-    G.territory = 3;
+    G.resources.territory = 3;
     G.tableau = [b('test_food', 1), b('test_prod', 1)];
     expect(freeTerritory(G)).toBe(1);
     G.tableau.push(b('test_sci'));

@@ -33,40 +33,48 @@ describe('unplayableReason', () => {
 
   it('gates on culture level requirement', () => {
     const G = blankState('test');
-    G.culture = 0; // level 0
-    const card: CardDef = { ...baseCard, cultureLevelReq: 1 };
+    G.resources.culture = 0; // level 0
+    const card: CardDef = { ...baseCard, gate: { cultureLevelReq: 1 } };
     expect(unplayableReason(G, card, self)).toEqual({ kind: 'cultureLevel', required: 1 });
   });
 
   it('gates a building card on free territory', () => {
     const G = blankState('test');
-    G.territory = 1;
-    G.population = 1;
+    G.resources.territory = 1;
+    G.resources.population = 1;
     G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }]; // territory full
     const card: CardDef = { ...baseCard, kind: 'building', id: 'test_food' };
     expect(unplayableReason(G, card, self)).toEqual({ kind: 'territory' });
   });
 
-  it('gates a destroy card on there being a building to demolish', () => {
+  it("returns a card's bespoke gate.check reason (e.g. a recover card needs a non-empty discard)", () => {
     const G = blankState('test');
-    const card: CardDef = { ...baseCard, effect: { destroy: true } };
-    expect(unplayableReason(G, card, self)).toEqual({ kind: 'noBuildingsToDestroy' });
+    const card: CardDef = {
+      ...baseCard,
+      gate: { check: (G) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null) },
+    };
+    expect(unplayableReason(G, card, self)).toEqual({ kind: 'discardEmpty' });
   });
 
-  it('gates a peek card (revealsFromDeck) when both draw and discard piles are empty', () => {
-    const G = blankState('test');
-    G.deck = [];
-    G.discard = [];
-    const card: CardDef = { ...baseCard, revealsFromDeck: 3 };
-    expect(unplayableReason(G, card, self)).toEqual({ kind: 'emptyDrawPile' });
-  });
+  it('composes gate.check with the declarative gates, running check after them', () => {
+    // A card declaring both a cultureLevelReq and a check: the declarative gate is checked first, and
+    // the check only runs (and can block) once every declarative gate has passed.
+    const card: CardDef = {
+      ...baseCard,
+      gate: {
+        cultureLevelReq: 1,
+        check: (G) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null),
+      },
+    };
+    const belowCulture = blankState('test'); // culture 0 → declarative gate blocks, check not reached
+    expect(unplayableReason(belowCulture, card, self)).toEqual({ kind: 'cultureLevel', required: 1 });
 
-  it('leaves a peek card playable while any card remains in either pile', () => {
-    const G = blankState('test');
-    G.deck = [];
-    G.discard = [{ id: 1, cardId: 'test_food' }]; // one card left to reshuffle in and reveal
-    const card: CardDef = { ...baseCard, revealsFromDeck: 3 };
-    expect(unplayableReason(G, card, self)).toBeNull();
+    const cultureMet = blankState('test');
+    cultureMet.resources.culture = 10; // level 1 → declarative passes, so the empty-discard check runs
+    expect(unplayableReason(cultureMet, card, self)).toEqual({ kind: 'discardEmpty' });
+
+    cultureMet.discard = [{ id: 1, cardId: 'test' }]; // now both gates pass
+    expect(unplayableReason(cultureMet, card, self)).toBeNull();
   });
 
   it('lets an affordable event card be played — playing it is how you banish it', () => {
@@ -79,13 +87,13 @@ describe('unplayableReason', () => {
 
   it('checks gates in priority order (cost before culture level)', () => {
     const G = blankState('test');
-    const card: CardDef = { ...baseCard, cost: { food: 5 }, cultureLevelReq: 1 };
+    const card: CardDef = { ...baseCard, cost: { food: 5 }, gate: { cultureLevelReq: 1 } };
     expect(unplayableReason(G, card, self)).toEqual({ kind: 'cost', missing: { food: 5 } });
   });
 
   it("a cost-cutting sticker discounts this copy's cost by 1 per resource, floored at 0", () => {
     const G = blankState('test');
-    G.resources = { food: 2, production: 0, science: 0, military: 0, money: 0 };
+    G.resources.food = 2;
     const card: CardDef = { ...baseCard, cost: { food: 2, production: 1 } };
     const stickered: CardInstance = { id: 2, cardId: 'test', stickers: ['test_costcut'] };
     // Raw cost would need 1 production too; test_costcut knocks both down by 1 (production floors at 0).

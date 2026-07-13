@@ -1,5 +1,4 @@
 import { BOARDS, type BoardId } from '../content/boards';
-import type { Resources } from '../rules/resources';
 
 /** The boards the player may launch on / sticker, in catalogue order: every *starting* board (always
  *  available) plus any unlocked via a mission reward (`PlayerStore.unlockedBoards`, fed by
@@ -10,13 +9,3 @@ import type { Resources } from '../rules/resources';
 export function availableBoardIds(unlockedBoards: Record<string, true>): BoardId[] {
   return (Object.keys(BOARDS) as BoardId[]).filter((id) => BOARDS[id].starting || unlockedBoards[id]);
 }
-
-/** Icons for the 5 core resources — shared by every board-profile display (`BoardMini`, the run
- *  board banner). */
-export const RESOURCE_ICON: Record<keyof Resources, string> = {
-  food: '🌾',
-  production: '🔨',
-  science: '🔬',
-  military: '⚔️',
-  money: '🪙',
-};

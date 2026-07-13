@@ -1,6 +1,6 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
-import { RAIDER_WAVES } from './cards';
+import { RAIDER_WAVES, SANDBOX_DEADLINE } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -170,7 +170,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Reach 🎭 culture level 2 to placate the restless people.',
     failureHint: 'Unrest drains 🪙 on every deck reshuffle — bankruptcy ends the run.',
     kind: 'standard',
-    // Unlocks Beer — a work card that transforms 2🌾 into 5🎭. Influence amount is provisional.
+    // Unlocks Beer — a work card costing 2🌾 to play that then yields 5🎭 per staffed round. Influence amount is provisional.
     reward: { influence: 9, unlockCardIds: ['beer'] },
     map: { col: 3, row: 0 },
     age: 'stone',
@@ -185,7 +185,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     threats: ['sands_of_time'],
     objectiveCardId: 'sandbox_goal',
     victoryHint: 'There is no victory — only rounds survived.',
-    failureHint: 'The run ends once the age turns (round 50), or if a core resource collapses.',
+    failureHint: `The run ends once the age turns (round ${SANDBOX_DEADLINE}), or if a core resource collapses.`,
     kind: 'infinite',
   },
 };

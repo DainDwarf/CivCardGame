@@ -1,7 +1,7 @@
-import { type Resources } from './resources';
+import { type CoreResources } from './resources';
 import { foodUpkeep } from './population';
 import { willReshuffleOnRefill } from './deck';
-import { resolveCard } from './effects';
+import { resolveUpkeep } from './effects';
 import { dispatchEvent, emitEvent, flushEvents, snapshot } from './events';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameState } from './state';
@@ -23,10 +23,10 @@ export function discardWorkZone(G: GameState): void {
 }
 
 /**
- * Resolve any `event` cards *left unplayed* in hand at end of turn: each applies its effect, then
- * files to the **discard** (so it reshuffles back and can recur — an unplayed event is a recurring
- * hazard). This is the involuntary path where the effect *actually fires*; the voluntary one is
- * `moves.playCard`, which pays the event's cost to banish it to `removed` **unresolved** (its effect
+ * Resolve any `event` cards *left unplayed* in hand at end of turn: each fires its `upkeep` effect,
+ * then files to the **discard** (so it reshuffles back and can recur — an unplayed event is a recurring
+ * hazard). This is the involuntary path where the `upkeep` effect *actually fires*; the voluntary one is
+ * `moves.playCard`, which pays the event's cost to banish it to `removed` **unresolved** (its `upkeep`
  * never fires — playing an event is preventive). Non-event cards are left in hand
  * for the caller's normal discard sweep. Partition first, then resolve, so an event's own effect
  * (e.g. a draw) can't reorder the sweep. Shared by `endTurn` and `projectedDelta`.
@@ -45,11 +45,11 @@ export function resolveHandEvents(G: GameState): void {
   }
   G.hand = kept;
   for (const c of events) {
-    // Events auto-resolve at end of turn with no player present, so their resolvers must be
+    // Events auto-resolve at end of turn with no player present, so their `upkeep` resolvers must be
     // non-interactive (must not set `G.pendingInteraction` — there'd be no UI to answer it). Being
     // player-playable does not lift this: an event may still fire unplayed at end of turn, so every
     // event resolver must stay deterministic.
-    resolveCard({ G, self: c });
+    resolveUpkeep({ G, self: c });
     G.discard.push(c);
     emitEvent(G, { type: 'discard', instanceId: c.id, cardId: c.cardId, reason: 'event' });
   }
@@ -97,7 +97,7 @@ export function settleEndOfTurn(G: GameState): void {
 
 /** The net change the player would see if they ended the round right now. */
 export interface ProjectedDelta {
-  resources: Resources;
+  resources: CoreResources;
   culture: number;
 }
 
@@ -127,6 +127,6 @@ export function projectedDelta(G: GameState): ProjectedDelta {
       military: clone.resources.military - G.resources.military,
       money: clone.resources.money - G.resources.money,
     },
-    culture: clone.culture - G.culture,
+    culture: clone.resources.culture - G.resources.culture,
   };
 }

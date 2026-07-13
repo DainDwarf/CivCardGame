@@ -17,18 +17,17 @@ export interface CardInstance {
    * chooses — a generic map, not bespoke fields, per the *cards own their own numbers* convention.
    * Absent until a resolver first writes one; read/written via `getCounter`/`bumpCounter`.
    *
-   * NOTE: three transitions deliberately drop `counters` when re-minting a plain instance, harmless
+   * NOTE: two transitions deliberately drop `counters` when re-minting a plain instance, harmless
    * today because no work/building/interactive card uses one — but the exact spots a *future* such
-   * card would lose its state: `upkeep.ts`'s `discardWorkZone` (work box → discard), `effects.ts`'s
-   * `demolish` (tableau building → removed), and `moves.ts`'s `resolveInteraction` (rebuilding
-   * `self` for a resume pass).
+   * card would lose its state: `upkeep.ts`'s `discardWorkZone` (work box → discard) and `moves.ts`'s
+   * `resolveInteraction` (rebuilding `self` for a resume pass).
    */
   counters?: Record<string, number>;
   /**
    * Permanent sticker ids, copied once from the owning `MetaCardInstance` at run setup and never
    * written during a run. `rules/stickers.ts`'s `effectiveGain`/`effectiveCost`/`effectiveCard` are
    * the only readers, and they compose every output path — the declarative default *and* a card's
-   * own bespoke `resolve`/`produce` — since all gain routes through `effects.ts`'s
+   * own bespoke `CardEffect.resolve` closure — since all gain routes through `effects.ts`'s
    * `gainResources` fold.
    */
   stickers?: string[];
@@ -41,11 +40,11 @@ export interface PlacedCard extends CardInstance {
   workers: number;
 }
 
-/** A building erected in the tableau: stays in play until demolished, producing its card's
- *  `produces`/`cultureOutput` each round while staffed. */
+/** A building erected in the tableau: stays in play for the rest of the run, producing its card's
+ *  `produces` each round while staffed. */
 export type BuildingInstance = PlacedCard;
 
-/** A Work card played onto the board this turn. Transient: produces its card's `effect.gain` only
+/** A Work card played onto the board this turn. Transient: produces its card's `effect.resources` only
  *  while staffed, then files to `discard` at end of turn (see `endTurn`). */
 export type WorkInstance = PlacedCard;
 
@@ -59,11 +58,11 @@ export type ThreatInstance = CardInstance;
 /** Why a card was filed to a pile — rides on a `discard` event so a card's `on.discard` handler can
  *  tell a *sacrifice* (a discard-cost cost, which should trigger) from an *end-of-turn recycle* (which
  *  usually shouldn't). Every discard site emits with its reason; the handler decides what to do. */
-export type DiscardReason = 'sacrifice' | 'demolish' | 'endOfTurn' | 'workFiled' | 'event';
+export type DiscardReason = 'sacrifice' | 'endOfTurn' | 'workFiled' | 'event';
 
 /** Where a `draw` came from — rides on the `draw` event so an `on.draw` handler can tell the routine
  *  round-start refill (`'turnStart'`, `drawUpTo`) from a draw an action/effect *caused* (`'effect'`,
- *  the default: `effect.draw`, a peek card's draw, etc.). An on-draw observer might react only to `'effect'` draws. */
+ *  the default: a card-effect draw, a peek card's draw, etc.). An on-draw observer might react only to `'effect'` draws. */
 export type DrawSource = 'turnStart' | 'effect';
 
 /** A snapshot of every *value* field a threshold/`resourceChange` handler might watch, taken by the
@@ -71,9 +70,6 @@ export type DrawSource = 'turnStart' | 'effect';
  *  `before.resources.money < 30 && G.resources.money >= 30`) to fire on the exact crossing. */
 export interface ValueSnapshot {
   resources: Resources;
-  population: number;
-  territory: number;
-  culture: number;
 }
 
 /**
@@ -108,9 +104,11 @@ export type GameEventType = GameEvent['type'];
  */
 export interface GameState {
   round: number;
+  /** All eight resource pools in one bundle: the five core (food/production/science/military/money,
+   *  spent and produced each round) plus the three strategic — `population` (a pool of workers who
+   *  each eat food every round), `territory` (caps the tableau size), and `culture` (a civilization
+   *  gauge some cards gate on). Reached as `resources.population` etc. */
   resources: Resources;
-  /** Total population — a pool of workers. Everyone eats food each round. */
-  population: number;
   /** Cards in hand. */
   hand: CardInstance[];
   /** Draw pile. */
@@ -121,10 +119,10 @@ export interface GameState {
   discard: CardInstance[];
   /**
    * Exile pile — cards permanently removed from the deck (never drawn or reshuffled again); distinct
-   * from the tableau (an active board entity). A card lands here only in one of two specific cases,
-   * never by a static kind rule: a `building` when another card's `effect.destroy` demolishes it, and
-   * a **voluntarily played** `event` (paying its cost banishes it *unresolved* — its effect never
-   * fires — versus an unplayed event, which auto-resolves to `discard` and recurs; see `rules/upkeep.ts`).
+   * from the tableau (an active board entity). A card lands here only by a **voluntarily played**
+   * `event` (paying its cost banishes it *unresolved* — its `upkeep` never fires — versus an unplayed
+   * event, whose `upkeep` resolves to `discard` and recurs; see `rules/upkeep.ts`), never by a static
+   * kind rule.
    */
   removed: CardInstance[];
   /** Buildings in play (each a placed `building` card), tracking their assigned workers. */
@@ -142,13 +140,6 @@ export interface GameState {
    *  `checkEndIf` then reads — so unlike a threat the card never mutates `G`. Absent only on a bare
    *  `blankState` (tests/simulator) or a mission without one. */
   objective?: CardInstance;
-  /** Territory available — the tableau may hold at most this many buildings (one slot each);
-   *  building cards become unplayable when full. Expanded by territory cards (Conquest, Develop). */
-  territory: number;
-  /** Culture accumulated so far — a civilization-wide gauge, not a spendable currency. Grows from
-   *  operating cultural buildings (Theater) and card effects (Cultural Festival); some cards gate on
-   *  a minimum level. */
-  culture: number;
   /** How many cards to draw up to at the start of each round. */
   handSize: number;
   /** Which mission this run is playing (looked up in the MISSIONS registry). */
@@ -220,8 +211,7 @@ export interface PendingInteraction {
 export function blankState(missionId: string): GameState {
   return {
     round: 0,
-    resources: emptyResources(),
-    population: 0,
+    resources: { ...emptyResources(), territory: 6 },
     hand: [],
     deck: [],
     discard: [],
@@ -229,8 +219,6 @@ export function blankState(missionId: string): GameState {
     tableau: [],
     workZone: [],
     threats: [],
-    territory: 6,
-    culture: 0,
     handSize: 4,
     missionId,
     rngState: seededRng('blank').getState(),

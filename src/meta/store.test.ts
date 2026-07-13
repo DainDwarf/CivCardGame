@@ -30,8 +30,7 @@ function sampleRunResult(): RunResult {
     missionId: 'first-harvest',
     stats: {
       turnsTaken: 12,
-      finalResources: { food: 1, production: 2, money: 3, science: 4, military: 5 },
-      strategicResources: { population: 1, territory: 2, culture: 3 },
+      finalResources: { food: 1, production: 2, money: 3, science: 4, military: 5, population: 1, territory: 2, culture: 3 },
     },
   };
 }
@@ -176,8 +175,7 @@ function runResult(missionId: string, outcome: RunResult['outcome'], turnsTaken:
     missionId,
     stats: {
       turnsTaken,
-      finalResources: { food: 0, production: 0, money: 0, science: 0, military: 0 },
-      strategicResources: { population: 0, territory: 0, culture: 0 },
+      finalResources: { food: 0, production: 0, money: 0, science: 0, military: 0, population: 0, territory: 0, culture: 0 },
     },
   };
 }

@@ -18,21 +18,23 @@ const LOCAL: Record<string, CardDef> = {
   test_observer: {
     id: 'test_observer', name: 'Observer', kind: 'building', cost: {}, workers: 1,
     on: {
-      draw: (ctx) => {
-        if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
+      draw: {
+        resolve: (ctx) => {
+          if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
+        },
       },
     },
   },
   // Survival objective: win once ≥2 events have been beaten (exiled to `removed`) with Military intact.
   test_survive_obj: {
     id: 'test_survive_obj', name: 'Survive', kind: 'objective', cost: {},
-    description: 'Beat 2 events without Military falling below zero.',
+    display: { description: 'Beat 2 events without Military falling below zero.' },
     objective: (G) => G.removed.filter((c) => c.cardId === 'test_event').length >= 2 && G.resources.military >= 0,
   },
   // Round-based objective: win the instant the round counter passes 3.
   test_round_obj: {
     id: 'test_round_obj', name: 'Endure', kind: 'objective', cost: {},
-    description: 'Survive past round 3.',
+    display: { description: 'Survive past round 3.' },
     objective: (G) => G.round > 3,
   },
 };
@@ -129,7 +131,7 @@ describe('event resolution', () => {
     expect(state.G.hand.map((c) => c.cardId)).toEqual(['test_event']);
   });
 
-  it('playing an event banishes it to removed UNRESOLVED — the drain never fires (preventive)', () => {
+  it('playing an event pre-empts its upkeep drain and banishes it to removed', () => {
     let state = run();
     state.G.resources.military = 10;
     state.G.hand = instancesFromCardIds(['test_event']);
@@ -147,8 +149,8 @@ describe('event resolution', () => {
     state.G.removed = instancesFromCardIds(['test_event']); // one already banished
     state.G.resources.military = 10;
     state.G.hand = instancesFromCardIds(['test_event'], 100);
-    // The win is a move-granularity flag read: playing the 2nd event exiles it (unresolved, so safe)
-    // and trips the objective.
+    // The win is a move-granularity flag read: playing the 2nd event exiles it (its upkeep drain
+    // pre-empted, so safe) and trips the objective.
     state = applyMove(state, playCard, 0);
     expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });
   });
@@ -176,7 +178,7 @@ describe('objective win timing through the real turn loop', () => {
     let state = run();
     seedObjective(state.G, 'test_round_obj');
     state.G.resources.food = 500;
-    state.G.population = 0; // no population food upkeep
+    state.G.resources.population = 0; // no population food upkeep
     // Drive the real loop; round starts at 1 and advances one per endTurn via beginTurn.
     for (let i = 0; i < 20 && !state.gameover; i++) state = endTurn(state);
     expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });

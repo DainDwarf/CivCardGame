@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { runPolicies, summarize, type Scenario, type ScenarioSummary } from './index';
-import type { Resources } from '../rules';
+import type { CoreResources } from '../rules';
 import { DEFAULT_DECKS } from '../content/decks';
 
 const SCENARIO: Scenario = {
@@ -10,7 +10,7 @@ const SCENARIO: Scenario = {
   missionId: 'sandbox',
 };
 
-function totalResources(r: Resources): number {
+function totalResources(r: CoreResources): number {
   return r.food + r.production + r.science + r.military + r.money;
 }
 

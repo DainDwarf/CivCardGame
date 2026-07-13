@@ -6,8 +6,8 @@ import type { CardDef } from './cards';
  * per-copy buffs bought with Influence and attached to one owned `MetaCardInstance`
  * (`rules/collection.ts`) forever. **A sticker owns its own logic** — both what it may attach
  * to (`appliesTo`) and what it does (`applyGain`/`applyCost`) are declared right here, on the
- * def, the same "the card owns its resolution" discipline `content/cards.ts`'s `resolve`/
- * `produce` closures follow. Every consumer routes through `rules/stickers.ts` — the eligibility
+ * def, the same "the card owns its resolution" discipline a `CardEffect.resolve` closure
+ * follows. Every consumer routes through `rules/stickers.ts` — the eligibility
  * dispatcher `stickerAppliesTo` and the effect fold in `effectiveGain`/`effectiveCost` — which
  * carry *no* sticker-specific knowledge, so a new sticker (with a new attach condition or a new
  * output/cost tweak) is added here alone, never at a call site. Deliberately small —
@@ -16,7 +16,7 @@ import type { CardDef } from './cards';
  * The two effect hooks cover per-copy *output* and *play-cost* only — the two things the granular
  * run-loop call sites already need (`run/moves.ts`'s `playCard` calls `effectiveCost(card.cost)`
  * on its own, so a single `applyToCard(card) => card` transformer wouldn't slot in cleanly). A
- * future sticker touching `workers`/`cultureOutput`/`draw` needs a new hook here *plus* a
+ * future sticker touching `workers`/`draw` needs a new hook here *plus* a
  * new compose site in `rules/stickers.ts`'s `effectiveCard` — that's the seam; don't pre-build it.
  */
 export interface StickerDef {
@@ -60,7 +60,7 @@ export const STICKERS: Record<string, StickerDef> = {
     icon: '💧',
     cost: 3,
     // Attaches only to a building that already produces food; bumps *only* that food output.
-    appliesTo: (c) => c.kind === 'building' && (c.produces?.food ?? 0) > 0,
+    appliesTo: (c) => c.kind === 'building' && (c.produces?.resources?.food ?? 0) > 0,
     applyGain: (base) => (base ? { ...base, food: (base.food ?? 0) + 1 } : base),
   },
 };

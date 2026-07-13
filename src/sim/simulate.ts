@@ -29,7 +29,7 @@ import { assertRunInvariants } from './invariants';
  */
 export type SimAction =
   | { kind: 'endTurn' }
-  | { kind: 'playCard'; playHandIdx: number; discardHandIdxs?: number[]; destroyInstanceId?: number }
+  | { kind: 'playCard'; playHandIdx: number; discardHandIdxs?: number[] }
   | { kind: 'assignWorker'; id: number }
   | { kind: 'unassignWorker'; id: number }
   | { kind: 'transferWorker'; fromId: number; toId: number }
@@ -88,7 +88,7 @@ export function applyAction(state: RunState, action: SimAction): RunState {
     case 'endTurn':
       return endTurn(state);
     case 'playCard':
-      return applyMove(state, playCard, action.playHandIdx, action.discardHandIdxs ?? [], action.destroyInstanceId);
+      return applyMove(state, playCard, action.playHandIdx, action.discardHandIdxs ?? []);
     case 'assignWorker':
       return applyMove(state, assignWorker, action.id);
     case 'unassignWorker':

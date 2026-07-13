@@ -14,7 +14,7 @@ import { applyAction } from './simulate';
 function saturatedState(): RunState {
   const G: GameState = blankState('sandbox');
   G.resources.food = 5; // fed, but under the buffer cap so extra food still scores
-  G.population = 2;
+  G.resources.population = 2;
   addBuilding(G, 'farm'); // auto-staffs 1 (idle 2 → 1)
   addBuilding(G, 'toolmaker'); // auto-staffs 1 (idle 1 → 0)
   G.hand = instancesFromCardIds(['foraging'], 100);

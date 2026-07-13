@@ -46,8 +46,7 @@ export function toRunResult(G: GameState, gameover: Gameover): RunResult {
     missionId: gameover.missionId,
     stats: {
       turnsTaken: G.round,
-      finalResources: G.resources,
-      strategicResources: { population: G.population, territory: G.territory, culture: G.culture },
+      finalResources: { ...G.resources },
     },
   };
 }
@@ -62,8 +61,8 @@ export function endTurn(state: RunState): RunState {
   // Check for collapse/victory before clearing the hand so that the hand is visible for inspection.
   const afterUpkeep = checkEndIf({ ...state, G });
   if (afterUpkeep.gameover) return afterUpkeep;
-  // Events left in hand auto-resolve (applying their effect) and are destroyed to the removed
-  // pile; the rest of the hand recycles to discard, and the work zone files — see `settleEndOfTurn`.
+  // Events left in hand auto-resolve (firing their upkeep) and file to discard so they recur; the
+  // rest of the hand recycles to discard, and the work zone files — see `settleEndOfTurn`.
   settleEndOfTurn(G);
   // An event may have tripped collapse (a resource going negative) or the objective (e.g. its
   // win threshold crossed), so re-check before the next turn begins.
@@ -78,7 +77,7 @@ export function applyMove(state: RunState, moveFn: (G: GameState, ...args: any[]
   const G = structuredClone(state.G);
   const before = snapshot(G);
   if (moveFn(G, ...args) === 'invalid') return state;
-  // The move emitted its events (a sacrifice discard, an `effect.draw`); dispatch them plus the
+  // The move emitted its events (a sacrifice discard, a card-effect draw); dispatch them plus the
   // move's net resourceChange at this boundary, so a mid-turn threshold fires the same action.
   flushEvents(G, before);
   return checkEndIf({ ...state, G });

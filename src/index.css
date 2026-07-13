@@ -160,8 +160,6 @@
 
   /* ── Board misc ───────────────────────────────────── */
   --slot-border-rgb: 90 62 30;   /* empty-slot / reserve-strip dashed border */
-  --demolish-rgb: 200 30 30;     /* demolish hazard stripes */
-  --demolish-hover-rgb: 230 20 20;
   --tooltip-bg: #222;            /* board tooltip */
   --badge-bg: #2c2c2c;           /* count badge, end-round button, dark chips */
   --badge-hover: #000;           /* end-round / restart button hover */
@@ -340,8 +338,6 @@
 
   /* ── Board misc ── */
   --slot-border-rgb: 150 120 80;
-  --demolish-rgb: 200 30 30;
-  --demolish-hover-rgb: 230 20 20;
   --tooltip-bg: #3a3a42;
   --badge-bg: #3a3a42;
   --badge-hover: #52525c;
@@ -454,10 +450,6 @@
   --operating-border: #009e73;
   --idle-bg: #f5f2ea;
   --staff-rgb: 0 158 115;
-
-  /* ── Board misc ── */
-  --demolish-rgb: 213 94 0;
-  --demolish-hover-rgb: 179 78 0;
 }
 
 :root[data-theme='protanopia'] {
@@ -531,10 +523,6 @@
   --operating-border: #00ab80;
   --idle-bg: #f5f2ea;
   --staff-rgb: 0 171 128;
-
-  /* ── Board misc ── */
-  --demolish-rgb: 232 114 15;
-  --demolish-hover-rgb: 194 94 10;
 }
 
 :root[data-theme='tritanopia'] {

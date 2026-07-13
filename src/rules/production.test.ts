@@ -18,22 +18,30 @@ afterAll(uninstallFixtures);
 describe('tableau production on the endTurn broadcast', () => {
   it('counts only staffed buildings', () => {
     const G = blankState('test');
+    const expected = { ...G.resources, food: 2, production: 2 }; // one staffed food + one staffed prod
     G.tableau = [b('test_food', 1), b('test_food', 0), b('test_prod', 1)];
     dispatchEvent(G, { type: 'endTurn' });
-    expect(G.resources).toEqual({
-      food: 2, // only the one staffed food building
-      production: 2, // staffed production building
-      science: 0,
-      military: 0,
-      money: 0,
-    });
+    expect(G.resources).toEqual(expected);
   });
 
   it('a self-sufficient building produces without workers', () => {
     const G = blankState('test');
+    const expected = { ...G.resources, military: 3 };
     G.tableau = [b('test_selfstaffed', 0)];
     dispatchEvent(G, { type: 'endTurn' });
-    expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 3, money: 0 });
+    expect(G.resources).toEqual(expected);
+  });
+
+  it("a building's placement effect does NOT re-fire per round (Hut population is one-shot)", () => {
+    // Hut is `workers: 0` (always operating) with `effect: { resources: { population: 1 } }` and no
+    // `produces`. Production reads `produces` alone — `resolveProduction` never consults `effect` — so
+    // the population grant stays a one-time placement effect and never ticks each round. This is the
+    // produces/effect separation the fallback removal made safe by construction (no `effect` leak).
+    const G = blankState('test');
+    const before = structuredClone(G.resources);
+    G.tableau = [b('hut', 0)];
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources).toEqual(before);
   });
 
   it('an additive-gain building produces its base output +1, its plain sibling unaffected', () => {
@@ -52,16 +60,16 @@ describe('tableau production on the endTurn broadcast', () => {
     expect(G.resources.food).toBe(3); // base 2 + restricted sticker's +1, via the same fold as additive-gain
   });
 
-  it('a staffed wonder produces its cultureOutput exactly like a building; an unstaffed one does not', () => {
+  it('a staffed wonder produces its culture output exactly like a building; an unstaffed one does not', () => {
     const G = blankState('test');
     G.tableau = [b('test_wonder', 1), b('test_wonder', 0)]; // test_wonder → +2🎭 while staffed
     dispatchEvent(G, { type: 'endTurn' });
-    expect(G.culture).toBe(2); // only the staffed wonder produced
+    expect(G.resources.culture).toBe(2); // only the staffed wonder produced
   });
 });
 
 describe('per-worker production scaling', () => {
-  // `test_multiworker` is a 3-capacity building; its produces {production:1, money:1} + cultureOutput:1
+  // `test_multiworker` is a 3-capacity building; its produces {production:1, money:1, culture:1}
   // are per-worker unit values scaled by the staffed count.
   it('scales its unit output by the number of staffed workers', () => {
     for (const [workers, expected] of [[1, 1], [2, 2], [3, 3]] as const) {
@@ -70,7 +78,7 @@ describe('per-worker production scaling', () => {
       dispatchEvent(G, { type: 'endTurn' });
       expect(G.resources.production).toBe(expected);
       expect(G.resources.money).toBe(expected);
-      expect(G.culture).toBe(expected);
+      expect(G.resources.culture).toBe(expected);
     }
   });
 
@@ -80,7 +88,7 @@ describe('per-worker production scaling', () => {
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.production).toBe(0);
     expect(G.resources.money).toBe(0);
-    expect(G.culture).toBe(0);
+    expect(G.resources.culture).toBe(0);
   });
 
   it('a single-worker producer still yields its flat unit output (×1 regression)', () => {
@@ -88,36 +96,5 @@ describe('per-worker production scaling', () => {
     G.tableau = [b('test_food', 1)];
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.food).toBe(2); // test_food produces {food: 2}, unscaled at capacity 1
-  });
-});
-
-describe('Beer — a per-round transform work card', () => {
-  // Beer (a real content work card) burns 2🌾 to make 5🎭 each staffed round — a transform a plain
-  // producer can't express, so it rides a bespoke `produce`. It sits in the workZone like any work box.
-  it('transforms 2🌾 into 5🎭 per staffed round', () => {
-    const G = blankState('test');
-    G.resources.food = 10;
-    G.workZone = [{ id: nextId++, cardId: 'beer', workers: 1 }];
-    dispatchEvent(G, { type: 'endTurn' });
-    expect(G.resources.food).toBe(8);
-    expect(G.culture).toBe(5);
-  });
-
-  it('drains food below zero when short — the transform is unconditional (into a famine collapse)', () => {
-    const G = blankState('test');
-    G.resources.food = 1;
-    G.workZone = [{ id: nextId++, cardId: 'beer', workers: 1 }];
-    dispatchEvent(G, { type: 'endTurn' });
-    expect(G.resources.food).toBe(-1); // −2🌾 applied even without the food to cover it
-    expect(G.culture).toBe(5);
-  });
-
-  it('produces nothing while unstaffed', () => {
-    const G = blankState('test');
-    G.resources.food = 10;
-    G.workZone = [{ id: nextId++, cardId: 'beer', workers: 0 }];
-    dispatchEvent(G, { type: 'endTurn' });
-    expect(G.resources.food).toBe(10);
-    expect(G.culture).toBe(0);
   });
 });

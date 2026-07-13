@@ -1,9 +1,9 @@
 import { BOARDS, type BoardId } from '../content/boards';
 import { BOARD_STICKERS } from '../content/boardStickers';
 import { effectiveBoard } from '../rules/boardStickers';
-import { RESOURCE_ICON } from '../meta/boardDisplay';
+import { RESOURCE_ICON } from './CardFace';
 import { StickerRow } from './CardFace';
-import type { Resources } from '../rules/resources';
+import type { CoreResources } from '../rules/resources';
 import styles from './BoardMini.module.css';
 
 /**
@@ -41,7 +41,7 @@ export function BoardMini({
   // The 5 core resources in the run board's banner order — all shown, including zeros, so the
   // layout stays stable across boards (unlike the text profile, which hid zeros). Shared with the
   // locked silhouette, which renders the same icon row with the values withheld.
-  const coreOrder: (keyof Resources)[] = ['food', 'production', 'money', 'military', 'science'];
+  const coreOrder: (keyof CoreResources)[] = ['food', 'production', 'money', 'military', 'science'];
 
   if (locked) {
     // The board counterpart to `CardFace`'s `faceDown`: same frame + tinted ground (greyed) and the
@@ -66,7 +66,7 @@ export function BoardMini({
             ))}
           </div>
 
-          <div className={styles.culture}>🎭</div>
+          <div className={styles.culture}>{RESOURCE_ICON.culture}</div>
         </div>
 
         <div className={styles.lockedSlots} />
@@ -87,13 +87,13 @@ export function BoardMini({
 
       <div className={styles.banner}>
         <div className={styles.populationTray}>
-          {b.population > POP_TOKEN_LIMIT ? (
-            <span className={styles.popCompact} aria-label={`Population ${b.population}`}>
-              🧍 ×{b.population}
+          {b.resources.population > POP_TOKEN_LIMIT ? (
+            <span className={styles.popCompact} aria-label={`Population ${b.resources.population}`}>
+              🧍 ×{b.resources.population}
             </span>
           ) : (
-            <span className={styles.popTokens} aria-label={`Population ${b.population}`}>
-              {Array.from({ length: b.population }, (_, i) => (
+            <span className={styles.popTokens} aria-label={`Population ${b.resources.population}`}>
+              {Array.from({ length: b.resources.population }, (_, i) => (
                 <span key={i} aria-hidden="true">🧍</span>
               ))}
             </span>
@@ -108,11 +108,11 @@ export function BoardMini({
           ))}
         </div>
 
-        <div className={styles.culture}>🎭 {b.culture}</div>
+        <div className={styles.culture}>{RESOURCE_ICON.culture} {b.resources.culture}</div>
       </div>
 
       <div className={styles.slotGrid}>
-        {Array.from({ length: b.territory }, (_, i) => (
+        {Array.from({ length: b.resources.territory }, (_, i) => (
           <div key={i} className={styles.slotEmpty} />
         ))}
       </div>

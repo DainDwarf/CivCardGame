@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CARDS, isDeckable, RAIDER_WAVES } from './cards';
+import { CARDS, isDeckable, isStaffable, RAIDER_WAVES } from './cards';
 import { STARTING_COLLECTION } from './collection';
 import { DEFAULT_DECKS } from './decks';
 import { blankState } from '../rules';
@@ -28,7 +28,7 @@ describe('CARDS', () => {
   // Mission-only kinds (event/threat/objective) may lean on the per-kind fallback, so they're exempt.
   it('every deckable card sets its own art glyph', () => {
     for (const card of Object.values(CARDS)) {
-      if (isDeckable(card)) expect(card.art, `${card.id} has no art`).toBeTruthy();
+      if (isDeckable(card)) expect(card.display?.art, `${card.id} has no art`).toBeTruthy();
     }
   });
 
@@ -37,6 +37,15 @@ describe('CARDS', () => {
       for (const cardId of deck.cards) {
         expect(isDeckable(CARDS[cardId]), `${deck.id} → ${cardId} is not deckable`).toBe(true);
       }
+    }
+  });
+
+  // No default for `workers`: a staffable card (building/wonder/work) missing it would throw at the
+  // first staffing read (`population.ts`'s `cardWorkerCap`), so pin the whole catalogue at test time
+  // rather than discover a forgotten field mid-run.
+  it('every staffable card declares its workers capacity', () => {
+    for (const card of Object.values(CARDS)) {
+      if (isStaffable(card)) expect(card.workers, `${card.id} has no workers`).not.toBeUndefined();
     }
   });
 

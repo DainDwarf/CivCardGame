@@ -180,7 +180,7 @@ function staffName(G: GameState, id: number): string {
 }
 
 /** Render one accepted action readably. Names resolve against `G` = the state *before* the action
- *  (a played hand index / a target id only means anything pre-move). */
+ *  (a played hand index only means anything pre-move). */
 function formatAction(action: SimAction, G: GameState): string {
   switch (action.kind) {
     case 'playCard': {
@@ -188,7 +188,6 @@ function formatAction(action: SimAction, G: GameState): string {
       const name = card ? CARDS[card.cardId]?.name ?? card.cardId : `#${action.playHandIdx}`;
       let s = `play ${name}`;
       if (action.discardHandIdxs?.length) s += ` (discard ${action.discardHandIdxs.length})`;
-      if (action.destroyInstanceId != null) s += ` (destroy ${staffName(G, action.destroyInstanceId)})`;
       return s;
     }
     case 'assignWorker':

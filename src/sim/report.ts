@@ -12,9 +12,8 @@ export interface ScenarioSummary {
   /** Fraction in `[0, 1]`; `0` when `runs === 0`. */
   winRate: number;
   turns: { min: number; mean: number; median: number; max: number };
-  /** Mean of each `RunResult.stats.finalResources` at run end. */
+  /** Mean of each `RunResult.stats.finalResources` pool at run end — all eight (core + strategic). */
   meanResources: Resources;
-  meanStrategic: { population: number; territory: number; culture: number };
   /** How defeats ended, grouped by the authoritative `gameover.reason` (a `CollapseReason` like
    *  `famine`, or a threat cause like the sandbox deadline) — never re-derived from resources, since a
    *  deadline defeat leaves no negative pool. Victories are omitted. The "food economy too tight?" cue. */
@@ -52,9 +51,6 @@ export function summarize(runs: ScenarioRuns): ScenarioSummary {
   const wins = outcomes.filter((o) => o.result.outcome === 'victory').length;
 
   const meanResources = emptyResources();
-  let popSum = 0;
-  let terrSum = 0;
-  let cultSum = 0;
   // min/max folded into the loop rather than `Math.min(...turnsList)` — the spread overflows the call
   // stack at the large seed counts this tool exists to enable.
   let turnsMin = Infinity;
@@ -67,9 +63,6 @@ export function summarize(runs: ScenarioRuns): ScenarioSummary {
     if (t < turnsMin) turnsMin = t;
     if (t > turnsMax) turnsMax = t;
     addResources(meanResources, o.result.stats.finalResources);
-    popSum += o.result.stats.strategicResources.population;
-    terrSum += o.result.stats.strategicResources.territory;
-    cultSum += o.result.stats.strategicResources.culture;
     if (o.result.outcome === 'defeat') {
       const cause = o.gameover.reason ?? 'unknown';
       defeatCauses[cause] = (defeatCauses[cause] ?? 0) + 1;
@@ -98,7 +91,6 @@ export function summarize(runs: ScenarioRuns): ScenarioSummary {
       max: n === 0 ? 0 : turnsMax,
     },
     meanResources,
-    meanStrategic: { population: n === 0 ? 0 : popSum / n, territory: n === 0 ? 0 : terrSum / n, culture: n === 0 ? 0 : cultSum / n },
     defeatCauses,
     cardPlays,
     unplayedCards,
@@ -132,7 +124,7 @@ export function formatReport(summaries: ScenarioSummary[]): string {
       `  turns       : min ${s.turns.min} · median ${round1(s.turns.median)} · mean ${round1(s.turns.mean)} · max ${s.turns.max}`,
       `  mean actions: ${round1(s.meanActions)}`,
       `  mean end res: food ${round1(r.food)} · prod ${round1(r.production)} · sci ${round1(r.science)} · mil ${round1(r.military)} · money ${round1(r.money)}`,
-      `  mean strat  : pop ${round1(s.meanStrategic.population)} · terr ${round1(s.meanStrategic.territory)} · cult ${round1(s.meanStrategic.culture)}`,
+      `  mean strat  : pop ${round1(r.population)} · terr ${round1(r.territory)} · cult ${round1(r.culture)}`,
       `  defeat causes:`,
       ...histLines(s.defeatCauses),
       `  card plays:`,

@@ -522,38 +522,6 @@
   opacity: 0.35;
 }
 
-/* A building box selectable as a demolish target: red hazard stripes cover it entirely,
-   signalling that a click anywhere on the box destroys it (no staffing controls underneath). */
-.demolishTarget {
-  position: relative;
-  cursor: pointer;
-}
-
-.demolishTarget::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
-  background: repeating-linear-gradient(
-    45deg,
-    rgb(var(--demolish-rgb) / 0.35),
-    rgb(var(--demolish-rgb) / 0.35) 10px,
-    transparent 10px,
-    transparent 20px
-  );
-  pointer-events: none;
-}
-
-.demolishTarget:hover::after {
-  background: repeating-linear-gradient(
-    45deg,
-    rgb(var(--demolish-hover-rgb) / 0.5),
-    rgb(var(--demolish-hover-rgb) / 0.5) 10px,
-    transparent 10px,
-    transparent 20px
-  );
-}
-
 .operating {
   background: var(--operating-bg);
   border-color: var(--operating-border) !important;

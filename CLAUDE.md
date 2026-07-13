@@ -119,7 +119,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
 - `src/rules/` — all real game logic *and* the core state type; one module per concern.
   Unit tests sit alongside. **When adding a rule, put the logic here and test it directly
   — never bury it in a move or a component.**
-  - `state.ts` — `GameState` (the serializable run state `G`): the resource pools plus the
+  - `state.ts` — `GameState` (the serializable run state `G`): the resource pools (one combined
+    `resources: Resources` bundle — all 8, core + strategic) plus the
     card zones `deck`/`hand`/`discard`/`removed`, each a `CardInstance[]`
     (`{ id, cardId, counters? }`) so every card has a stable per-run **instance id** and
     carries its own per-copy state in its own `counters` map (via `getCounter`/`bumpCounter`)
@@ -130,7 +131,16 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `pendingInteraction` (a card effect suspended awaiting a player choice; while set,
     `endTurn` no-ops and undo is blocked). `instancesFromCardIds` is the shared mint path;
     `blankState()` builds an empty one. Instance ids are unique across *all* zones.
-  - `resources.ts` — the `Resources` bundle and its arithmetic (`add`/`subtract`/`scaleResources`).
+  - `resources.ts` — the three resource types and their arithmetic: `CoreResources` (the 5 spendable
+    pools — food/production/science/military/money), `StrategicResources`
+    (population/culture/territory), and combined `Resources` = both (all 8). `GameState.resources`
+    holds one combined `Resources`; a card's *cost* is a `Partial<CoreResources>` (only core is spent),
+    while a `CardEffect`'s `resources` delta — a card's one-shot play `effect`, a staffable's
+    per-round `produces`, *or* a per-round `upkeep` (a hazard's drain or a staffable's maintenance), all `CardEffect`s — is `Partial<Resources>`
+    (may touch any of the 8 — e.g. a culture-producing wonder puts `culture` in `produces.resources`). Helpers: `add`/`subtract`
+    (generic over present keys), `scaleResources`, `canAfford` (core-only), `coreOf` (the core slice,
+    e.g. `CardFace`'s `describeCard` splitting an effect's core delta for the card face), and the
+    `CORE_KEYS` source of truth.
   - `deck.ts` — draw + discard-pile reshuffle (the shared `reshuffleIntoDeck`, used by both
     `drawCard` and `peekTop`), both off the seeded RNG stream (`G.rngState`). Each reshuffle bumps
     `GameState.reshuffleCount`, a pure UI cue no rule reads — `components/Board.tsx` diffs it to
@@ -144,12 +154,18 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `EffectContext` so the family reads uniformly. The peek family is currently unused; the one
     card-facing deck primitive in use today is `recoverFromDiscard` (the discard→hand counterpart,
     used by Storytelling).
-  - `effects.ts` — the **resolver spine**: `resolveCard(ctx)` is the single path a card's
-    effect runs through (its own `CardDef.resolve`, else the declarative default from the
-    `CardEffect` bag). The `EffectContext` (`{ G, self, target?, answer? }`) tells an effect
-    which copy is resolving and what it targets (a Destroy demolition is just `ctx.target`).
-    `resolveProduction(ctx)` is production's narrower counterpart — recurring per-round, so
-    it deliberately omits the one-shot play fields.
+  - `effects.ts` — the **resolver spine**: a **`CardEffect`** is the one "what happens" descriptor,
+    carried in four timing slots on `CardDef` — the play-time `effect`, the per-round `produces`, the
+    upkeep-boundary `upkeep` (a threat's drain, an unplayed event's disaster, or a staffable's flat maintenance), and each `on.*` handler.
+    `runEffect(ctx, effect)` is the single declarative-or-bespoke runner: it applies the
+    declarative `resources` field (folded through stickers), then runs any `resolve` closure — the
+    "too specific" escape hatch — so the two *compose* (resources first, closure sees the folded gain).
+    `resolveCard(ctx)` runs a card's play `effect` through it, and `resolveUpkeep(ctx)` its recurring
+    `upkeep` (read alone, never `effect` — the "each round, not on play" slot: a hazard's drain or a
+    staffable's flat maintenance, kept separate from `effect` the way `produces` is). The `EffectContext`
+    (`{ G, self, answer? }`) tells an effect which copy is resolving. `resolveProduction(ctx)` is production's separate
+    counterpart — a *different* path from `runEffect` because it scales `produces.resources` per staffed
+    worker; it reads `produces` alone (a bespoke `produces.resolve` owns its own scaling).
     An interactive effect suspends into `pendingInteraction` — via `suspendChoice(ctx, …)`, the one
     place a resolver opens one (built from `ctx.self`) — and re-enters via `moves.resolveInteraction`;
     all plain data, so undo/clone survive. Together with the `deck.ts` primitives this makes the spine
@@ -157,9 +173,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     resolver hand-rolls raw state surgery (the boundary Foresight used to break).
   - `events.ts` — the **event bus**: the general trigger layer letting a card react to an event
     whose *timing it doesn't own* (a draw, a discard elsewhere, a resource crossing a threshold, the
-    draw pile reshuffling, or a round passing) via a `CardDef.on?: { draw?/discard?/resourceChange?/reshuffle?/endTurn? }` handler — run
-    through the *same* `resolveCard`/`EffectContext` spine (extended with `ctx.event`), so a handler
-    is authored like any bespoke `resolve` and its gains still fold through stickers. Two verbs,
+    draw pile reshuffling, or a round passing) via a `CardDef.on?: { draw?/discard?/resourceChange?/reshuffle?/endTurn? }` map — each
+    entry a **`CardEffect`** run through the *same* `runEffect`/`EffectContext` spine (with `ctx.event`
+    set to the trigger, read by the handler's `resolve` closure), so its gains still fold through stickers. Two verbs,
     split so the bus never dispatches mid-mutation: **emit** (`emitEvent` → push to `G.events`, done
     at a semantic site as a step runs — a `draw` in `deck.ts`, a `discard` with its *reason* at each
     discard site) and **flush** (`flushEvents(G, before)` at a *step boundary* — `applyMove`/
@@ -172,8 +188,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     by `isOperating` too (a card only just drawn into hand is not an operating copy and must not
     self-trigger); a subject of any other kind (never staffable) fires unconditionally. Two
     **broadcast** events name no subject and reach every operating in-play subscriber instead. The
-    **`endTurn`** broadcast runs `resolveEndTurn` on each (its `on.endTurn`, else the default
-    production/threat-drain) — it's *what drives per-round production and threat drains*, dispatched
+    **`endTurn`** broadcast runs `resolveEndTurn` on each (its `on.endTurn` handler, its `produces`
+    production, and its `upkeep` threat-drain all compose — each a no-op when its slot is empty, so one
+    card may combine all three, e.g. a building that also pays maintenance) — it's *what drives per-round
+    production and threat drains*, dispatched
     directly at the upkeep boundary by `applyUpkeep` (not queued), so it runs at the exact slot
     production always did, before the `resourceChange` synthesis. The **`reshuffle`** broadcast
     (emitted by `deck.ts`'s `reshuffleIntoDeck` when the discard folds back into the deck, drained at
@@ -193,13 +211,15 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `addBuilding`/`addWork`, the shared `nextInstanceId` allocator, `foodUpkeep`). `workers` on a
     card is a worker **capacity** (max assignable; `0` = self-sufficient, always operating): a
     staffable operates at **≥1 worker** and its declarative output scales **per worker**
-    (`producingUnits` × the per-worker unit `produces`/`cultureOutput`, folded in `effects.ts`'s
-    `defaultProduce`). A capacity-1 building is the common case (scales ×1 = a flat output); the first
+    (`producingUnits` × the per-worker unit `produces.resources`, folded in `effects.ts`'s
+    `resolveProduction`). A capacity-1 building is the common case (scales ×1 = a flat output); the first
     multi-worker card is the Göbekli Tepe wonder. `autoStaffCount` partial-fills toward capacity.
-  - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup. A seeded threat
+  - `threats.ts` — persistent board hazards: `addThreat` seeds one at mission setup, resolving the
+    threat's one-time entry `effect` once at seed (a threat's only "on entry" moment, the counterpart to
+    an action's on-play `effect`; a no-op for the usual `effect`-less threat). A seeded threat then
     ticks every round through the `endTurn` broadcast (`events.ts`'s `dispatchEvent` → `effects.ts`'s
-    `resolveEndTurn` → the threat's own `resolveCard` drain), so the threat card computes its own
-    behaviour — the engine never reads or scales its data. A threat's *driven* defeat (a deadline, not
+    `resolveEndTurn` → the threat's own `resolveUpkeep` drain, reading its `upkeep` slot), so the threat
+    card computes its own behaviour — the engine never reads or scales its data. A threat's *driven* defeat (a deadline, not
     a resource drain) is a separate pure-read `defeat` hook, the loss counterpart to `objective.ts`'s
     `objective`; `defeatMet`/`evaluateDefeat` re-derive it into `G.pendingDefeat` at every `flushEvents`
     boundary, set-or-clear like the win flag — never a handler mutating `G.pendingDefeat` mid-dispatch,
@@ -252,24 +272,24 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     and `MetaMenu.tsx` (Collection/Board nav badges). The tray buy controls share the same accent (a
     gold border on an available copy-tier button / sticker badge).
 - `src/content/` — the typed game catalogues (cards, decks, boards, missions, stickers).
-  A card or sticker def carries its own behaviour (a card's `resolve` closure, a sticker's
+  A card or sticker def carries its own behaviour (a card's `CardEffect.resolve` closure, a sticker's
   hooks — see the *own their own logic* convention), so these are data *and* the per-entry
   logic that rides on it, not pure data tables. **A building card *is* the building** —
   there's no separate building catalogue. One file per catalogue:
   - `cards.ts` — `CARDS`, the single card catalogue (`CardKind` =
     building/wonder/action/work/event/threat/objective; see DESIGN.md → *Card kinds* for what each
     kind does and how it leaves play). A `building`/`wonder` carries its own stats
-    (`produces`/`cultureOutput`/`workers`) right on the `CardDef`. A `wonder` plays exactly like a
+    (`produces`/`workers`) right on the `CardDef`. A `wonder` plays exactly like a
     `building` (occupies a tableau slot, staffed, produces each round) — the two share the
     `isStructure` (occupies a slot) and `isStaffable` (produces/staffed at upkeep) choke-point
     predicates, so no call site open-codes a `kind === 'building'` union. A wonder is set apart only
     in the meta loop: its own Collection/deck category, no bought copies (`shop.ts`), no stickers
     (`stickerAppliesTo`), at most `MAX_WONDERS_PER_DECK` per deck (`deckBuilder.ts`). Filing to a
-    pile defaults to `discard`, with two named exceptions routed at the play/upkeep choke points, not
-    by a static kind rule: Destroy's `effect.destroy` exiles its *target* building to `removed`, and
-    the `event` kind splits by *path* — a **played** event is exiled to `removed` **unresolved** (paying
-    its cost pre-empts the disaster: its effect never fires), while one **left unplayed** auto-resolves
-    its effect at end of turn and files to `discard`, so it recurs (`moves.playCard` /
+    pile defaults to `discard`, with one named exception routed at the play/upkeep choke points, not
+    by a static kind rule: the `event` kind splits by *path* — a **played** event resolves its one-shot
+    `effect` (if any) but is exiled to `removed` with its recurring `upkeep` disaster **pre-empted**
+    (paying its cost is preventive: the `upkeep` never fires), while one **left unplayed** fires its
+    `upkeep` at end of turn and files to `discard`, so it recurs (`moves.playCard` /
     `upkeep.ts`'s `resolveHandEvents` own the two sides). An `objective` card owns
     its mission's win logic via a single pure-read `objective` predicate, the way a
     `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
@@ -345,8 +365,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   card is placed in the `tableau` via `addBuilding` (staying in play, *not* filed to a pile) and a
   `work` card sticks onto the board via `addWork` (resolving *no* effect on play, filing to
   `discard` only at end of turn); every other card resolves its `effect` and, if `action`,
-  files to `discard`. A card with `effect.destroy` demolishes a chosen tableau building and sends
-  *that* building's card to `removed`.
+  files to `discard`.
   `assignWorker`/`unassignWorker`/`transferWorker`/`toggleStaffing` all target a `Staffable`
   by its instance `id` via `findStaffable`, so they operate on a building *or* a work box
   interchangeably. `toggleStaffing` (a box-level control) empties a staffed box, or fills an empty
@@ -405,8 +424,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `availableBoardIds`, so a locked board is hidden) as a `BoardMini`
     beside a right-side sticky tray of sticker boxes (each a draggable sticker
     badge over its name/effect/price); dragging a badge onto a board calls `onBuyBoardSticker` to
-    buy+attach in one gesture (only *valid* targets highlight mid-drag). `RESOURCE_ICON`/`availableBoardIds`
-    live in the shared `meta/boardDisplay.ts`.
+    buy+attach in one gesture (only *valid* targets highlight mid-drag). `availableBoardIds` lives in
+    the shared `meta/boardDisplay.ts`; the glyph-per-resource `RESOURCE_ICON` map (all 8 resources, the
+    single source of truth every render site reads) lives in `components/CardFace.tsx`.
   - `Decks.tsx` — every deck as a tile (a hover-revealed card fan grouped ×N via
     `groupCounts`); the tile + its list-view overlay are the shared `DeckTile`/
     `DeckListOverlay` (`components/DeckDisplay.tsx`, also used by the launch popup), with
@@ -474,7 +494,7 @@ the prod gate `rules/playability.ts`'s `unplayableReason` (never a re-derived co
 (deterministic) extra args; when a `pendingInteraction` is parked it returns *only* the answer actions, so
 no policy can deadlock on a no-op `endTurn`. `createRandomPolicy(seed)` (`sim/randomPolicy.ts`) is the
 **random-legal-move policy** — it picks one enumerated action from its own seeded stream (distinct from the
-run's shuffle seed), re-randomizing a play's discard/destroy extras for fuzz coverage. It doubles as a
+run's shuffle seed), re-randomizing a play's discard extras for fuzz coverage. It doubles as a
 **crash / illegal-state fuzzer**: `assertRunInvariants` (`sim/invariants.ts`) runs after every action
 (bus drained · unique instance ids · staffing/population bounds — deliberately **not** resource
 non-negativity, since a collapse ending legitimately leaves a negative pool), throwing with both seeds
@@ -541,7 +561,7 @@ entries — per-card stickers flow through `simConfig`'s widened `(string|DeckCa
 `--seed <i>` switches to a single-run **replay**: it rebuilds the exact `(cfg,pol)` seed pair the batch
 cell `i` used and drives `simulateRun` under an `onStep` observer (fired per action with the states either
 side) to print a per-turn economy/actions trace — the observer keeps the drive loop single-sourced (the
-batch passes none). A synthetic-fixture move-surface fuzz test (building/destroy/`discardCost`) is deferred until building
+batch passes none). A synthetic-fixture move-surface fuzz test (building/`discardCost`) is deferred until building
 content exists.
 
 ## Conventions
@@ -551,12 +571,25 @@ content exists.
   choice, not a blocker. Whatever the version, keep `setState` updaters **pure** — the
   run loop relies on StrictMode's intentional dev double-invoke to catch impurity.
 - **Cards and stickers own their own logic.** A card's effect runs only through
-  `resolveCard(ctx)` (its own `CardDef.resolve`, else the declarative default) — never
-  read or scale `CardDef.effect` from a move, upkeep, threat tick, or component. A
+  `resolveCard(ctx)`/`runEffect` (its `CardEffect.resolve` closure, else the declarative default) —
+  never read or scale `CardDef.effect` from a move, upkeep, threat tick, or component. A
   sticker likewise carries its behaviour on its `StickerDef`
   (`appliesTo`/`applyGain`/`applyCost`), dispatched generically by `rules/stickers.ts` —
   no sticker-specific branches at call sites. Adding a mechanic means adding a
   closure/hook on the data, not a branch in the engine.
+- **Comments state non-obvious intent about the code they sit on — nothing else.** A comment earns
+  its place only by expressing a rationale/constraint the adjacent code can't, and you **re-shave a
+  comment when you edit near it** rather than appending. Repeated development breeds three failure
+  modes; reject all three:
+  1. **Paraphrase** — restating what the code plainly says; it just drifts stale.
+  2. **History** — "used to…", "was X before Y", "Phase N"; that's git/CHANGELOG's job, and stale
+     history reads as a contradiction of the current logic.
+  3. **Semantic bleeding** — a comment explaining the behaviour of *unrelated* code. The worst of
+     the three: it bloats and drifts when the *other* code changes, and it's a **code smell** — a
+     comment that *must* reach into another module's behaviour usually means logic landed in the
+     wrong place. Keep a mechanism's explanation where the mechanism lives; from elsewhere use a bare
+     pointer, never a re-explanation. If a comment can't stay local, stop and check whether the
+     *code* is misplaced — surface that rather than writing the bleeding comment.
 - All state changes flow through `applyMove` / `endTurn` in `engine.ts` — moves
   receive a `structuredClone` of `G` and mutate it directly; never mutate `G` elsewhere.
 - **Game logic is deterministic — never `Math.random`.** Runs are seeded so they're

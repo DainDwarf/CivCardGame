@@ -5,8 +5,9 @@ import {
   projectedDelta,
   workerCapOf,
   unplayableReason,
+  coreOf,
   type GameState,
-  type Resources,
+  type CoreResources,
 } from '../rules';
 import type { RunState } from '../run/engine';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
@@ -23,7 +24,7 @@ const FOOD_COMFORT = 12;
 
 /** Rough per-currency worth, for statically ranking a *card* (not a state) — the heuristic's cheap
  *  stand-in for cloning-and-scoring every candidate the way the greedy does. Throwaway first-pass. */
-const VW: Resources = { food: 1, production: 1, science: 1, military: 0.8, money: 0.8 };
+const VW: CoreResources = { food: 1, production: 1, science: 1, military: 0.8, money: 0.8 };
 
 /**
  * A **heuristic** policy: a hand-written priority ladder encoding a sensible-player strategy, evaluated
@@ -103,8 +104,8 @@ function decide(state: RunState): SimAction {
 
   // 4. Food is comfortable — grow population.
   if (projFood >= FOOD_COMFORT) {
-    const growers = playable.filter((p) => (p.card.effect?.population ?? 0) > 0);
-    const best = bestPlay(G, growers, (c) => c.effect?.population ?? 0, 0);
+    const growers = playable.filter((p) => (p.card.effect?.resources?.population ?? 0) > 0);
+    const best = bestPlay(G, growers, (c) => c.effect?.resources?.population ?? 0, 0);
     if (best) return best;
   }
 
@@ -209,28 +210,29 @@ function bestBy<T>(xs: T[], metric: (x: T) => number): T {
   return best;
 }
 
-/** Food a card yields when operating (staffed work/building) or played (action gain). */
+/** Net food a card yields when operating (staffed work/building) or played — the signed
+ *  `effect.resources` already nets any food drain against a gain. */
 function foodOutput(card: CardDef): number {
-  return (card.effect?.gain?.food ?? 0) + (card.produces?.food ?? 0);
+  return (card.effect?.resources?.food ?? 0) + (card.produces?.resources?.food ?? 0);
 }
 
-/** A card's rough net food effect: what it yields minus what it costs/loses in food. */
+/** A card's rough net food effect: what it yields (drains already netted in) minus its food cost. */
 function staticFoodDelta(card: CardDef): number {
-  return foodOutput(card) - (card.cost.food ?? 0) - (card.effect?.loss?.food ?? 0);
+  return foodOutput(card) - (card.cost.food ?? 0);
 }
 
-function bundleValue(b?: Partial<Resources>): number {
+function bundleValue(b?: Partial<CoreResources>): number {
   if (!b) return 0;
-  return (Object.entries(b) as [keyof Resources, number][]).reduce((sum, [k, v]) => sum + v * VW[k], 0);
+  return (Object.entries(b) as [keyof CoreResources, number][]).reduce((sum, [k, v]) => sum + v * VW[k], 0);
 }
 
-/** A crude static worth for a *card* — gains + production + strategic outputs, minus its cost. */
+/** A crude static worth for a *card* — resource delta + production + strategic outputs, minus its
+ *  cost. The signed `effect.resources` already nets any drain against a gain. */
 function staticValue(card: CardDef): number {
-  let v = bundleValue(card.effect?.gain) + bundleValue(card.produces);
-  v -= bundleValue(card.cost) + bundleValue(card.effect?.loss);
-  v += (card.effect?.population ?? 0) * 3;
-  v += ((card.effect?.culture ?? 0) + (card.cultureOutput ?? 0)) * 0.6;
-  v += (card.effect?.territory ?? 0) * 1.5;
-  v += (card.effect?.draw ?? 0) * 1;
+  let v = bundleValue(coreOf(card.effect?.resources ?? {})) + bundleValue(coreOf(card.produces?.resources ?? {}));
+  v -= bundleValue(card.cost);
+  v += ((card.effect?.resources?.population ?? 0) + (card.produces?.resources?.population ?? 0)) * 3;
+  v += ((card.effect?.resources?.culture ?? 0) + (card.produces?.resources?.culture ?? 0)) * 0.6;
+  v += ((card.effect?.resources?.territory ?? 0) + (card.produces?.resources?.territory ?? 0)) * 1.5;
   return v;
 }

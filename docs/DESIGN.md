@@ -88,9 +88,9 @@ There are **seven** card kinds — the `CardKind` values in `content/cards.ts`:
 they leave your hand; `threat` and `objective` are the odd ones out — they never enter a hand or pile
 at all, living instead in persistent board zones (see below). By default a card returns to the
 **discard** pile once it's done being useful (reshuffled into the deck when it runs
-dry) — the **removed** pile is the exception. Two things route a card there, neither a
-static kind rule: a specific *effect* (a demolish exiling the building it destroys), and
-the `event` kind's played-vs-unplayed split (a *played* event is banished; see below).
+dry) — the **removed** pile is the exception. What routes a card there is a *path*, not a
+static kind rule: the `event` kind's played-vs-unplayed split (a *played* event is banished;
+see below). An *effect* can route a card there too — see the building note.
 
 - **Building (commit):** the card *is* the building. Pay a cost to play; it leaves
   the deck and enters your **tableau** (one territory slot), producing **every
@@ -114,16 +114,17 @@ the `event` kind's played-vs-unplayed split (a *played* event is banished; see b
   → staffed *labour*.
 - **Event (recurring hazard):** missions inject it into the deck; the player can't
   build with it, but *can play it* once drawn. Its two fates are the mechanic:
-  **play it** — pay its cost to banish it to **removed** *unresolved*; its effect never
-  fires, so playing is *preventive*; or **leave it** — at end of turn it auto-resolves
-  for free and goes to **discard**, so it reshuffles back and *recurs* round after round.
-  Doing nothing lets the disaster keep striking; paying to play it pre-empts it for good.
-  (Because an event can fire unplayed with no UI present, its effect must be
-  non-interactive.) → mission *pressure* you pay to end.
+  **play it** — pay its cost to banish it to **removed**, resolving its one-shot `effect` (if any)
+  but *pre-empting* the recurring disaster (its `upkeep` never fires), so playing is *preventive*; or
+  **leave it** — at end of turn it auto-resolves its `upkeep` for free and goes to **discard**, so it
+  reshuffles back and *recurs* round after round. Doing nothing lets the disaster keep striking;
+  paying to play it pre-empts it for good. (Because an event can fire unplayed with no UI present, its
+  `upkeep` must be non-interactive.) → mission *pressure* you pay to end.
 - **Threat (board hazard):** never in a hand, pile, or deck — a mission seeds it
   directly into the persistent `GameState.threats` zone at setup, where it stays for
-  the rest of the run. What it does is up to the card. Never player-owned and (unlike a
-  playable `event`) never player-playable; like `event` it's mission-only, excluded from
+  the rest of the run. What it does is up to the card: a one-time entry `effect` resolved once at
+  seed (its only "on entry" moment) plus a recurring `upkeep` drain each round. Never player-owned and
+  (unlike a playable `event`) never player-playable; like `event` it's mission-only, excluded from
   deck-building/collection (`isDeckable`). → persistent *pressure*.
 - **Objective (win/lose goal):** the mission's victory/defeat condition made into a card,
   the positive counterpart to `threat`. A mission names one `objectiveCardId`; it's seeded
@@ -190,7 +191,7 @@ Five spendable/trackable resources, each with a **mechanical role** and a **them
 Three civilization-level gauges that constrain and enable play. They are never directly spent; they define the shape of your civilization.
 
 - **Population** — your workforce. Workers are drawn from the idle population pool to staff buildings (which need at least one worker to operate) and to pay for population-reserving actions. Food production determines how large a population you can sustain. A building has a worker **capacity**: most take a single worker, but some (starting with the Göbekli Tepe wonder) hold several, and their output **scales per staffed worker** — a partly-staffed multi-worker building still runs, just at reduced output, so how you spread a scarce workforce across your buildings is a lever.
-- **Territory** — the land your civilization controls. You cannot build more buildings than your territory allows. Expand by conquest or development; or free up slots by demolishing existing buildings.
+- **Territory** — the land your civilization controls. You cannot build more buildings than your territory allows. Expand by conquest or development.
 - **Culture** — how much your civilization shines. Accumulated over time; the more you have, the more willing your people are to act. Mechanically: culture thresholds increase hand size, and some cards require a minimum culture to be playable.
 
 Further expansion axes (`Faith`, …) remain possible.
@@ -213,7 +214,7 @@ MissionDef
 
 CardDef (kind: 'objective')
   objective: (G, self) => boolean            // WIN condition (defeat is a threat's job)
-  dynamicText: (G, self) => string           // live progress line
+  display.dynamicText: (G, self) => string   // live progress line (display-only fields nest under `display`)
 ```
 
 The `objective` hook is a **pure read function** (it never mutates `G`), living on the catalogue

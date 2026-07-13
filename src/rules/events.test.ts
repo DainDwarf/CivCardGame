@@ -17,8 +17,10 @@ const LOCAL: Record<string, CardDef> = {
   test_selfremove: {
     id: 'test_selfremove', name: 'Debt', kind: 'threat', cost: {},
     on: {
-      resourceChange: ({ G, self }) => {
-        if (G.resources.money >= 30) G.threats = G.threats.filter((t) => t.id !== self.id);
+      resourceChange: {
+        resolve: ({ G, self }) => {
+          if (G.resources.money >= 30) G.threats = G.threats.filter((t) => t.id !== self.id);
+        },
       },
     },
   },
@@ -28,8 +30,10 @@ const LOCAL: Record<string, CardDef> = {
   test_observer: {
     id: 'test_observer', name: 'Observer', kind: 'building', cost: {}, workers: 1,
     on: {
-      draw: (ctx) => {
-        if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
+      draw: {
+        resolve: (ctx) => {
+          if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
+        },
       },
     },
   },
@@ -37,7 +41,9 @@ const LOCAL: Record<string, CardDef> = {
   test_emit_on_draw: {
     id: 'test_emit_on_draw', name: 'Chainer', kind: 'building', cost: {}, workers: 0,
     on: {
-      draw: ({ G }) => emitEvent(G, { type: 'discard', instanceId: 999, cardId: 'test_react_discard', reason: 'sacrifice' }),
+      draw: {
+        resolve: ({ G }) => emitEvent(G, { type: 'discard', instanceId: 999, cardId: 'test_react_discard', reason: 'sacrifice' }),
+      },
     },
   },
   // Reacts to the round-start refill specifically (source === 'turnStart') — the negative-space partner
@@ -45,8 +51,10 @@ const LOCAL: Record<string, CardDef> = {
   test_turnstart_only: {
     id: 'test_turnstart_only', name: 'Census', kind: 'building', cost: {}, workers: 0,
     on: {
-      draw: (ctx) => {
-        if (ctx.event?.type === 'draw' && ctx.event.source === 'turnStart') gainResources(ctx, { food: 1 });
+      draw: {
+        resolve: (ctx) => {
+          if (ctx.event?.type === 'draw' && ctx.event.source === 'turnStart') gainResources(ctx, { food: 1 });
+        },
       },
     },
   },
@@ -54,13 +62,15 @@ const LOCAL: Record<string, CardDef> = {
   // end-of-turn recycle — the reason rides on the event (like Salvage). +2🔨.
   test_react_discard: {
     id: 'test_react_discard', name: 'Reactor', kind: 'action', cost: {},
-    on: { discard: (ctx) => { if (ctx.event?.type === 'discard' && ctx.event.reason === 'sacrifice') gainResources(ctx, { production: 2 }); } },
+    on: { discard: { resolve: (ctx) => { if (ctx.event?.type === 'discard' && ctx.event.reason === 'sacrifice') gainResources(ctx, { production: 2 }); } } },
   },
   // Every draw emits another draw — an unbounded self-emit, to prove the cascade cap terminates.
   test_infinite: {
     id: 'test_infinite', name: 'Loop', kind: 'building', cost: {}, workers: 0,
     on: {
-      draw: ({ G }) => emitEvent(G, { type: 'draw', instanceId: 1, cardId: 'test_infinite', source: 'effect' }),
+      draw: {
+        resolve: ({ G }) => emitEvent(G, { type: 'draw', instanceId: 1, cardId: 'test_infinite', source: 'effect' }),
+      },
     },
   },
   // A threat that declares defeat once money hits 30 — the pure-predicate capability behind "a threat
@@ -69,12 +79,19 @@ const LOCAL: Record<string, CardDef> = {
     id: 'test_declare_defeat', name: 'Doom', kind: 'threat', cost: {},
     defeat: (G) => G.resources.money >= 30 && 'the doom clock struck',
   },
-  // Carries BOTH a passive `produces` and an explicit `on.endTurn`: the handler must win, proving
-  // `resolveEndTurn` prefers an authored handler over the default production.
-  test_endturn_override: {
-    id: 'test_endturn_override', name: 'Override', kind: 'building', cost: {}, workers: 0,
-    produces: { food: 9 },
-    on: { endTurn: (ctx) => gainResources(ctx, { science: 7 }) },
+  // Carries BOTH a passive `produces` and an explicit `on.endTurn`: `resolveEndTurn` runs both, proving
+  // an authored handler composes with the default production rather than replacing it.
+  test_endturn_compose: {
+    id: 'test_endturn_compose', name: 'Compose', kind: 'building', cost: {}, workers: 0,
+    produces: { resources: { food: 9 } },
+    on: { endTurn: { resolve: (ctx) => gainResources(ctx, { science: 7 }) } },
+  },
+  // A staffed building that both produces and pays upkeep each round — the two slots compose
+  // (production scales per worker, the upkeep drain is flat).
+  test_maintained: {
+    id: 'test_maintained', name: 'Maintained', kind: 'building', cost: {}, workers: 1,
+    produces: { resources: { production: 2 } },
+    upkeep: { resources: { money: -1 } },
   },
 };
 
@@ -214,12 +231,21 @@ describe('dispatchEvent — endTurn broadcast (production + threat drains)', () 
     expect(G.resources.production).toBe(3);
   });
 
-  it('an explicit on.endTurn handler overrides the default production', () => {
+  it('an explicit on.endTurn handler composes with the passive production', () => {
     const G = blankState('test');
-    G.tableau = [{ id: 1, cardId: 'test_endturn_override', workers: 0 }];
+    G.tableau = [{ id: 1, cardId: 'test_endturn_compose', workers: 0 }];
     dispatchEvent(G, { type: 'endTurn' });
     expect(G.resources.science).toBe(7); // the authored handler ran
-    expect(G.resources.food).toBe(0); // ...instead of the passive `produces: { food: 9 }`
+    expect(G.resources.food).toBe(9); // ...alongside the passive `produces: { food: 9 }`
+  });
+
+  it('a staffed building runs both its production and its upkeep drain on endTurn', () => {
+    const G = blankState('test');
+    G.resources.money = 5;
+    G.tableau = [{ id: 1, cardId: 'test_maintained', workers: 1 }];
+    dispatchEvent(G, { type: 'endTurn' });
+    expect(G.resources.production).toBe(2); // produced, scaled per worker
+    expect(G.resources.money).toBe(4); // ...and paid its flat 1 upkeep
   });
 
   it('a threshold observer pays out once off endTurn-driven production in a full upkeep', () => {
@@ -243,7 +269,7 @@ describe('dispatchEvent — reshuffle broadcast (subject-less, on.reshuffle only
   // The real `unrest` threat drains 1🪙 per 🧍 on every reshuffle — the mechanic Step 6.5 introduces.
   it('reaches a threat with on.reshuffle, draining 1🪙 per population point', () => {
     const G = blankState('test');
-    G.population = 3;
+    G.resources.population = 3;
     G.resources.money = 10;
     G.threats = [{ id: 1, cardId: 'unrest' }];
     dispatchEvent(G, { type: 'reshuffle' });
@@ -259,7 +285,7 @@ describe('dispatchEvent — reshuffle broadcast (subject-less, on.reshuffle only
 
   it('drives the Unrest drain end-to-end: a deck fold emits the event, the flush drains 🪙', () => {
     const G = blankState('test');
-    G.population = 2;
+    G.resources.population = 2;
     G.resources.money = 5;
     G.threats = [{ id: 1, cardId: 'unrest' }];
     G.handSize = 1;

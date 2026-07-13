@@ -6,14 +6,12 @@ import { CARDS, isStructure } from '../content/cards';
 /**
  * Play a card from hand — the sole entry for putting a card into play. Pays costs (resources plus a
  * discard cost: `discardHandIdxs` gives the hand positions to sacrifice, distinct from the played
- * slot), then routes by `kind` (see the inline routing below). A card with `effect.destroy` requires
- * `destroyInstanceId`, the tableau building to demolish. Moves are the only place `G` may change.
+ * slot), then routes by `kind` (see the inline routing below). Moves are the only place `G` may change.
  */
 export function playCard(
   G: GameState,
   playHandIdx: number,
   discardHandIdxs: number[] = [],
-  destroyInstanceId?: number,
 ): 'invalid' | void {
   // No card may be played while an interaction is pending — the player must answer it first.
   if (G.pendingInteraction) return 'invalid';
@@ -23,17 +21,12 @@ export function playCard(
 
   const card = CARDS[cardId];
   if (!card || unplayableReason(G, card, played)) return 'invalid';
-  // A destroy card needs a valid target instance in the tableau.
-  if (card.effect?.destroy) {
-    if (destroyInstanceId === undefined) return 'invalid';
-    if (!G.tableau.some((b) => b.id === destroyInstanceId)) return 'invalid';
-  }
 
   // Discard-as-cost: sacrifice `discardCost` other cards — but only if you have that many
   // to spare. Played with an otherwise-empty hand it costs no discard (a reward for
   // sequencing the turn so this card comes last). Each index must be in range, distinct,
   // and not the played card itself.
-  const want = card.discardCost ?? 0;
+  const want = card.gate?.discardCost ?? 0;
   const required = G.hand.length - 1 >= want ? want : 0;
   if (discardHandIdxs.length !== required) return 'invalid';
   const reserved = new Set<number>([playHandIdx]);
@@ -52,7 +45,7 @@ export function playCard(
   // return the not-yet-filed sacrifices back into the deck.
   // A building/wonder card is placed in the tableau; a work card sticks onto the board and produces
   // only while staffed (at upkeep); everything else resolves its effect immediately through the
-  // single resolver path (which also performs a Destroy card's demolition, via `target`).
+  // single resolver path.
   if (isStructure(card)) {
     // Place the structure (auto-staffing from existing idle pop), then resolve its one-shot
     // *placement* effect on the played instance (e.g. the Hut's +1 population). A no-op for the
@@ -63,15 +56,12 @@ export function playCard(
     resolveCard({ G, self: played });
   } else if (card.kind === 'work') {
     addWork(G, cardId, played.stickers);
-  } else if (card.kind === 'event') {
-    // A *played* event is banished **unresolved** — paying its cost pre-empts the disaster so its
-    // effect never fires (the filing below sends it to `removed`). The effect only ever resolves on
-    // the involuntary path: an event *left* in hand auto-resolves at end of turn (`upkeep.ts`'s
-    // `resolveHandEvents`). So this branch deliberately does not `resolveCard`.
   } else {
-    // Resolve on the played *instance* — so a self-scaling card reads/writes its own
-    // copy's counters, which then ride along as that same instance files to discard below.
-    resolveCard({ G, self: played, target: destroyInstanceId });
+    // action or event: resolve the one-shot `effect` on the played *instance* — so a self-scaling
+    // card reads/writes its own copy's counters, which ride along as it files below. A *played* event
+    // resolves its `effect` too, but paying its cost pre-empts the disaster: its recurring `upkeep`
+    // never fires (that strikes only on the unplayed path — `upkeep.ts`'s `resolveHandEvents`).
+    resolveCard({ G, self: played });
   }
   for (const c of sacrifices) {
     G.discard.push(c);
@@ -80,7 +70,7 @@ export function playCard(
   // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,
   // filed at end of turn) stay put. An `action` recycles to the **discard** — the same instance
   // object, carrying whatever counters its resolver just bumped. A voluntarily *played* `event` is
-  // **removed** (banished for good, its effect never firing — see above), versus an unplayed one,
+  // **removed** (banished for good, its recurring `upkeep` never firing), versus an unplayed one,
   // which auto-resolves and files to discard at end of turn (`upkeep.ts`'s `resolveHandEvents`).
   // The played-vs-auto split is the event kind's whole point.
   if (card.kind === 'action') G.discard.push(played);

@@ -3,6 +3,7 @@ import { summarize } from './report';
 import { runBatch, type Scenario, type ScenarioRuns } from './batch';
 import { simConfig, simulateRun, createRandomPolicy, type SimOutcome } from './index';
 import { blankState } from '../rules';
+import { emptyResources, type Resources } from '../rules/resources';
 import { DEFAULT_DECKS } from '../content/decks';
 
 /** Build a minimal `SimOutcome` for aggregation tests. `summarize` reads only `result`/`gameover`/
@@ -14,13 +15,11 @@ function outcome(opts: {
   reason?: string;
   cardPlays?: Record<string, number>;
   actionsApplied?: number;
-  finalResources?: { food: number; production: number; science: number; military: number; money: number };
-  strategic?: { population: number; territory: number; culture: number };
+  finalResources?: Partial<Resources>;
 }): SimOutcome {
-  const finalResources = opts.finalResources ?? { food: 0, production: 0, science: 0, military: 0, money: 0 };
-  const strategicResources = opts.strategic ?? { population: 0, territory: 0, culture: 0 };
+  const finalResources = { ...emptyResources(), ...opts.finalResources };
   return {
-    result: { outcome: opts.outcome, missionId: 'test', stats: { turnsTaken: opts.turnsTaken, finalResources, strategicResources } },
+    result: { outcome: opts.outcome, missionId: 'test', stats: { turnsTaken: opts.turnsTaken, finalResources } },
     gameover: { outcome: opts.outcome, reason: opts.reason, missionId: 'test' },
     finalState: blankState('test'),
     actionsApplied: opts.actionsApplied ?? 0,
@@ -82,18 +81,17 @@ describe('summarize', () => {
     expect(s.unplayedCards).toEqual(['c']);
   });
 
-  it('averages final and strategic resources', () => {
+  it('averages final resources — core and strategic alike, in one bundle', () => {
     const runs: ScenarioRuns = {
       scenario,
       policyName: 'test',
       outcomes: [
-        outcome({ outcome: 'defeat', turnsTaken: 1, finalResources: { food: 2, production: 4, science: 0, military: 0, money: 6 }, strategic: { population: 2, territory: 1, culture: 0 } }),
-        outcome({ outcome: 'defeat', turnsTaken: 1, finalResources: { food: 4, production: 0, science: 0, military: 0, money: 0 }, strategic: { population: 4, territory: 3, culture: 2 } }),
+        outcome({ outcome: 'defeat', turnsTaken: 1, finalResources: { food: 2, production: 4, money: 6, population: 2, territory: 1, culture: 0 } }),
+        outcome({ outcome: 'defeat', turnsTaken: 1, finalResources: { food: 4, population: 4, territory: 3, culture: 2 } }),
       ],
     };
     const s = summarize(runs);
-    expect(s.meanResources).toEqual({ food: 3, production: 2, science: 0, military: 0, money: 3 });
-    expect(s.meanStrategic).toEqual({ population: 3, territory: 2, culture: 1 });
+    expect(s.meanResources).toEqual({ food: 3, production: 2, science: 0, military: 0, money: 3, population: 3, territory: 2, culture: 1 });
   });
 });
 

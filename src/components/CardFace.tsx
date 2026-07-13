@@ -1,10 +1,24 @@
 import { forwardRef } from 'react';
-import { isStaffable, isStructure, type CardDef } from '../content/cards';
+import { isStaffable, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
-import type { Resources } from '../rules';
+import { type CoreResources, type Resources } from '../rules';
+import { cardWorkerCap } from '../rules/population';
 import styles from './CardFace.module.css';
 
-export const COST_ICON: Record<keyof Resources, string> = { food: '🌾', production: '🔨', science: '🔬', military: '⚔️', money: '🪙' };
+/** The one glyph-per-resource map for all 8 resources — the single source of truth every render site
+ *  (card faces, the run board banner, `BoardMini`, the Codex, Stats) reads through, so a resource's
+ *  icon is defined once. Costs are core-only, but the map spans core + strategic since effects,
+ *  production, and the HUD all display strategic resources too. */
+export const RESOURCE_ICON: Record<keyof Resources, string> = {
+  food: '🌾',
+  production: '🔨',
+  science: '🔬',
+  military: '⚔️',
+  money: '🪙',
+  population: '🧍',
+  culture: '🎭',
+  territory: '⊞',
+};
 
 /** Per-kind fallback "art" glyph — the face glyph a card shows when its def sets no `art` of its
  *  own. Every deckable card carries explicit `art` (pinned by `cards.test.ts`), so in practice this
@@ -22,7 +36,7 @@ const ART_FALLBACK: Record<CardDef['kind'], string> = {
 /** The central face glyph for a card: its own colocated `art` (`content/cards.ts`), else the
  *  per-kind default. The single reader every render site goes through (the card face, the
  *  building/work boxes in `Board.tsx`). */
-export const artFor = (card: CardDef): string => card.art ?? ART_FALLBACK[card.kind];
+export const artFor = (card: CardDef): string => card.display?.art ?? ART_FALLBACK[card.kind];
 
 /** Bottom-left row of per-sticker badges — `CardFace`'s own `stickerBadge` prop
  *  renders this, and a non-`CardFace` board box that needs the identical treatment (`Board.tsx`'s
@@ -66,9 +80,9 @@ export function StickerRow({
  *  (culture level, reserved population, discard cost) are shown separately — see
  *  `describeConditions`. */
 export function describeCost(c: CardDef): string {
-  const parts = (Object.entries(c.cost) as [keyof Resources, number][])
+  const parts = (Object.entries(c.cost) as [keyof CoreResources, number][])
     .filter(([, v]) => v)
-    .map(([k, v]) => `${v}${COST_ICON[k]}`);
+    .map(([k, v]) => `${v}${RESOURCE_ICON[k]}`);
   return parts.join(' · ');
 }
 
@@ -81,9 +95,9 @@ export function describeConditions(c: CardDef): string {
   // An event: play it (pay its cost) to banish it unresolved — its effect never fires (preventive);
   // leave it and it fires for free at end of round, then recurs from the discard.
   if (c.kind === 'event') parts.push('play to banish resolves at end of round');
-  if (c.cultureLevelReq) parts.push(`requires 🎭 level ${c.cultureLevelReq}`);
-  if (c.discardCost) parts.push(`discard ${c.discardCost}`);
-  if (c.dynamicRule) parts.push(c.dynamicRule);
+  if (c.gate?.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.gate.cultureLevelReq}`);
+  if (c.gate?.discardCost) parts.push(`discard ${c.gate.discardCost}`);
+  if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
   return parts.join(' · ');
 }
 
@@ -91,49 +105,46 @@ export function describeConditions(c: CardDef): string {
  *  the card face, which shows worker capacity as a column of meeples instead of text. */
 export function describeBuilding(b: CardDef, includeWorkers = true): string {
   const parts: string[] = [];
-  if (b.produces) {
-    parts.push(
-      Object.entries(b.produces)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
-        .join(' '),
-    );
+  if (b.produces?.resources) {
+    // Every produced resource — core or strategic — renders the same way through the shared icon map.
+    const stats = (Object.entries(b.produces.resources) as [keyof Resources, number][])
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${v > 0 ? '+' : ''}${v}${RESOURCE_ICON[k]}`)
+      .join(' ');
+    if (stats) parts.push(stats);
   }
-  if (b.cultureOutput) parts.push(`+${b.cultureOutput}🎭`);
   if (includeWorkers && b.workers) parts.push(`👷${b.workers}`);
   return parts.join(' · ');
 }
 
-/** Presentation-only summary of what a card does (no game logic here). A `resolve`-driven card
- *  whose behavior the declarative `effect` can't express authors its own `description`, which wins
- *  over the auto-generated text below. */
+/** Presentation-only summary of what a card does (no game logic here). A card whose behavior the
+ *  declarative `effect` fields can't express (an `effect.resolve` closure) authors its own
+ *  `description`, which wins over the auto-generated text below. */
+function describeSignedResources(res: Partial<Resources> | undefined, into: string[]): void {
+  if (!res) return;
+  // Every resource — core or strategic — renders the same way through the shared icon map. The
+  // signed delta is split into a gains line then a drains line so the face keeps its green-"+N" /
+  // red-"-N" reading (a negative value carries its own minus).
+  const entries = (Object.entries(res) as [keyof Resources, number][]).filter(([, v]) => v);
+  const gains = entries.filter(([, v]) => v > 0);
+  const drains = entries.filter(([, v]) => v < 0);
+  if (gains.length) into.push(gains.map(([k, v]) => `+${v}${RESOURCE_ICON[k]}`).join(' '));
+  if (drains.length) into.push(drains.map(([k, v]) => `${v}${RESOURCE_ICON[k]}`).join(' '));
+}
+
 export function describeCard(c: CardDef): string {
-  if (c.description) return c.description;
+  if (c.display?.description) return c.display.description;
   const e = c.effect;
   const parts: string[] = [];
-  if (e?.gain) {
-    parts.push(
-      Object.entries(e.gain)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `+${v}${COST_ICON[k as keyof Resources]}`)
-        .join(' '),
-    );
-  }
-  if (e?.loss) {
-    parts.push(
-      Object.entries(e.loss)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `-${v}${COST_ICON[k as keyof Resources]}`)
-        .join(' '),
-    );
-  }
-  if (e?.draw) parts.push(`draw ${e.draw}`);
-  if (e?.population) parts.push(`+${e.population} 🧍`);
-  if (e?.territory) parts.push(`+${e.territory} territory`);
-  if (e?.culture) parts.push(`+${e.culture} 🎭`);
-  if (e?.destroy) parts.push('removes a building from the run');
-  // A building/wonder card *is* the structure — show its per-round output (workers shown as meeples).
-  if (isStructure(c)) {
+  describeSignedResources(e?.resources, parts);
+  // Recurring `upkeep` (a hazard's drain or a staffable's maintenance) shows its signed delta the same
+  // way, appended after any one-shot `effect` above — a card may carry both (e.g. a threat with an entry
+  // `effect` plus a per-round drain), and the two just concatenate.
+  describeSignedResources(c.upkeep?.resources, parts);
+  // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` —
+  // here (workers are shown as meeples, not text). This is the sole path for a
+  // staffable's ongoing output, work cards included; the `effect` branch above is its one-shot only.
+  if (isStaffable(c)) {
     const stats = describeBuilding(c, false);
     if (stats) parts.push(stats);
   }
@@ -288,8 +299,8 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
   // Worker-space meeples: staffable cards (building/wonder/work) show their `workers` capacity
-  // (default 1, `0` = self-sufficient/always operating so no meeple shown); other kinds show none.
-  const workers = isStaffable(card) ? card.workers ?? 1 : 0;
+  // (`0` = self-sufficient/always operating so no meeple shown); other kinds show none.
+  const workers = isStaffable(card) ? cardWorkerCap(card.id) : 0;
   // An available upgrade tints the whole face's border/ring gold (the buyable-hint accent) rather
   // than dropping a corner dot — see `.upgradeAvailable`.
   const rootClassName = `${styles.card} ${kindClass(card.kind)}${upgradeHint ? ` ${styles.upgradeAvailable}` : ''}${

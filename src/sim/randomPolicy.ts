@@ -11,8 +11,8 @@ type Rng = ReturnType<typeof seededRng>;
  * (`sim/actions.ts`'s `enumerateActions` — reusing the prod gate `unplayableReason`, so the fuzzer and
  * the real UI agree on what is playable) and picks one uniformly from its own seeded stream (distinct
  * from the run's shuffle seed, so play-order and draw-order vary independently). For a `playCard` it then
- * *re-randomizes* the extras the canonical enumeration fixed (which cards to sacrifice, which building to
- * Destroy) so the fuzzer still exercises those choices. A parked interaction resolves to a random option —
+ * *re-randomizes* the extras the canonical enumeration fixed (which cards to sacrifice) so the fuzzer still
+ * exercises those choices. A parked interaction resolves to a random option —
  * `enumerateActions` already returns only those when one is pending, so no special-case is needed here.
  *
  * Doubles as a crash / illegal-state fuzzer — walking arbitrary legal sequences drives the run into
@@ -31,7 +31,7 @@ export function createRandomPolicy(policySeed: string): Policy {
 }
 
 /** Rebuild a legal `playCard` for `playHandIdx` with *randomized* extras — a random discard-cost
- *  sacrifice (of the count `discardCostToPay` fixes, waive included) and a random Destroy target. */
+ *  sacrifice (of the count `discardCostToPay` fixes, waive included). */
 function randomizePlay(G: GameState, playHandIdx: number, rng: Rng): SimAction {
   const card = CARDS[G.hand[playHandIdx].cardId];
   const required = discardCostToPay(G, card);
@@ -43,12 +43,7 @@ function randomizePlay(G: GameState, playHandIdx: number, rng: Rng): SimAction {
     discardHandIdxs = pickDistinct(others, required, rng);
   }
 
-  let destroyInstanceId: number | undefined;
-  if (card.effect?.destroy && G.tableau.length > 0) {
-    destroyInstanceId = G.tableau[randInt(rng, 0, G.tableau.length - 1)].id;
-  }
-
-  return { kind: 'playCard', playHandIdx, discardHandIdxs, destroyInstanceId };
+  return { kind: 'playCard', playHandIdx, discardHandIdxs };
 }
 
 /** Pick `k` distinct entries from `pool` via a partial Fisher–Yates shuffle over a copy. */

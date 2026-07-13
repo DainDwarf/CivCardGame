@@ -1,5 +1,6 @@
 import { MISSIONS } from '../content/missions';
 import { CARDS, isDeckable } from '../content/cards';
+import { RESOURCE_ICON } from '../components/CardFace';
 import type { RunResult } from '../contract';
 import { distinctCardIdsOwned, type OwnedCards } from '../rules/collection';
 import { standardMissionProgress } from '../rules/campaign';
@@ -115,8 +116,9 @@ export function Stats({
                 <span className={styles.mission}>{MISSIONS[result.missionId].name}</span>
                 <span className={styles.detail}>round {result.stats.turnsTaken}</span>
                 <span className={styles.detail}>
-                  🧍{result.stats.strategicResources.population} · {result.stats.strategicResources.territory} territory · 🎭
-                  {result.stats.strategicResources.culture}
+                  {RESOURCE_ICON.population}{result.stats.finalResources.population} · {RESOURCE_ICON.territory}
+                  {result.stats.finalResources.territory} · {RESOURCE_ICON.culture}
+                  {result.stats.finalResources.culture}
                 </span>
               </li>
             ))}

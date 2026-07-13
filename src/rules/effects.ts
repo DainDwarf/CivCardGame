@@ -1,85 +1,56 @@
-import { addResources, scaleResources, subtractResources, type Resources } from './resources';
-import { drawCard } from './deck';
-import { CARDS, isStaffable } from '../content/cards';
-import type { CardDef } from '../content/cards';
+import { addResources, scaleResources, type Resources } from './resources';
+import { CARDS } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, PendingInteraction } from './state';
-import { emitEvent } from './events';
 import { effectiveGain } from './stickers';
 import { findStaffable, producingUnits } from './population';
 
-/** The immediate, one-shot effect a card applies when played. */
+/**
+ * A card's "what happens" descriptor, carried in four timing slots on `CardDef`: `effect` (on play),
+ * `produces` (each round while staffed), `upkeep` (each round at the upkeep boundary), and each `on.*`
+ * handler. The declarative `resources` and a `resolve` closure *compose* — both apply, resources first.
+ * Signs are neutral: a negative resource entry drains, a positive one grants — any of the 8 pools.
+ */
 export interface CardEffect {
-  /** Resources gained immediately. */
-  gain?: Partial<Resources>;
-  /** Resources removed immediately (e.g. an event draining a resource). No clamp — may go negative. */
-  loss?: Partial<Resources>;
-  /** Cards drawn immediately. */
-  draw?: number;
-  /** Population gained immediately (e.g. Settlers). */
-  population?: number;
-  /** Territory gained immediately — raises the cap on tableau size (e.g. Conquest, Develop). */
-  territory?: number;
-  /** Culture gained immediately — adds to G.culture (e.g. Cultural Festival). */
-  culture?: number;
-  /** Demolish a player-chosen tableau building, freeing its slot and returning its workers; the
-   *  demolished card files to `removed`. The target is chosen by the UI and threaded as
-   *  `EffectContext.target` (validated up front by `playCard`, applied inside the resolver). */
-  destroy?: true;
-}
-
-/** Applies every field a sticker never touches (loss/draw/population/territory/culture). Gain is
- *  deliberately excluded — it reaches `G` only through `gainResources`, the one path a sticker's
- *  `effectiveGain` can fold over it. */
-export function applyEffect(G: GameState, effect?: CardEffect): void {
-  if (!effect) return;
-  if (effect.loss) subtractResources(G.resources, effect.loss);
-  if (effect.draw) {
-    for (let i = 0; i < effect.draw; i++) drawCard(G);
-  }
-  if (effect.population) G.population += effect.population;
-  if (effect.territory) G.territory += effect.territory;
-  if (effect.culture) G.culture += effect.culture;
+  /** Signed resource delta, applied *before* any `resolve` closure. Applied once on play/on-handler;
+   *  scaled per staffed worker in `produces`. Reaches `G` only through `gainResources`, so a sticker
+   *  folds over it. */
+  resources?: Partial<Resources>;
+  /** The "too specific" escape hatch: a bespoke closure for behaviour the declarative fields can't
+   *  express (self-reference, per-copy state, targeting, interaction). Runs *after* the declarative
+   *  `resources` (composing with it, not replacing); it must add its own output through `gainResources`
+   *  (so stickers still fold) and may mutate `ctx.G`. In `produces` it owns its own per-worker scaling. */
+  resolve?: Resolver;
 }
 
 /**
- * The context a card's resolver runs against — the seam that makes effects aware of *who* is
- * resolving and *what* they target, which the bare `applyEffect(G, effect)` cannot express.
- * Deliberately plain data + `G`: nothing here is stored in `GameState`, so the serializable-state
- * discipline (structuredClone undo, the projection HUD) is untouched.
+ * The context a resolver runs against — the seam that makes an effect aware of *who* is resolving and
+ * *what* they target, which a bare `(G, effect)` signature can't express. Plain data + `G`: nothing is
+ * stored in `GameState`, so structuredClone undo and the projection HUD stay untouched.
  */
 export interface EffectContext {
   G: GameState;
-  /** The exact card instance doing the resolving (`{ id, cardId, counters? }`). A resolver reads
-   *  `self.cardId` for its identity and reads/writes `self.counters` (via `getCounter`/`bumpCounter`)
-   *  for per-copy state that rides with this physical card — e.g. a self-scaling card's growing gain. On a
-   *  resume pass (`resolveInteraction`) this is reconstructed from the parked `PendingInteraction`. */
+  /** The exact card instance resolving. A resolver reads `self.cardId` for identity and reads/writes
+   *  `self.counters` (via `getCounter`/`bumpCounter`) for per-copy state riding with this physical card.
+   *  On a resume pass (`resolveInteraction`) it's reconstructed from the parked `PendingInteraction`. */
   self: CardInstance;
-  /** A pre-selected target instance id chosen by the UI before the move fired (e.g. the building a
-   *  Destroy card demolishes), threaded here instead of as a bespoke move parameter. */
-  target?: number;
   /**
-   * The player's answer to a suspended interaction, `undefined` on the *first* pass (when the
-   * resolver reveals options and parks a `PendingInteraction`) and the chosen option index on
-   * *resume* (via `resolveInteraction`). Branch on `answer === undefined`, never `!answer` — index
-   * `0` is a valid answer.
+   * The player's answer to a suspended interaction: `undefined` on the first pass (the resolver reveals
+   * options and parks a `PendingInteraction`), the chosen option index on resume. Branch on
+   * `answer === undefined`, never `!answer` — index `0` is a valid answer.
    */
   answer?: number;
   /**
-   * The event this resolution is reacting to, set only when the bus (`rules/events.ts`) is running a
-   * card's `on` handler — a handler reads it for the trigger's detail (which card was discarded and
-   * why, the before-snapshot for a threshold). Absent on a normal play/production resolution.
+   * The event this resolution reacts to, set only while the bus (`rules/events.ts`) runs an `on`
+   * handler — read for the trigger's detail. Absent on a normal play/production resolution.
    */
   event?: GameEvent;
 }
 
-/** A card's play-time behavior: mutate `ctx.G` given the resolving card and its target. Lives on the
- *  static catalogue (`CardDef.resolve`), never in `GameState` — see `EffectContext`. */
+/** A bespoke effect closure: mutate `ctx.G` given the resolving card and its target. */
 export type Resolver = (ctx: EffectContext) => void;
 
-/** The ONE path a card's output reaches G: fold this copy's output stickers over `base`, then add.
- *  Every gain — declarative (`specToResolver`), production (`defaultProduce`), and bespoke
- *  `resolve`/`produce` — routes through here, so no output can reach G unstickered. No-op on an
- *  absent/empty bag. A bespoke resolver must add output through this, never `addResources` directly. */
+/** The ONE path a card's output reaches `G`: fold this copy's stickers over `base`, then add. Every
+ *  gain routes through here, so nothing reaches `G` unstickered. No-op on an absent/empty bag. */
 export function gainResources(ctx: EffectContext, base: Partial<Resources> | undefined): void {
   const g = effectiveGain(base, ctx.self);
   if (g) addResources(ctx.G.resources, g);
@@ -87,11 +58,9 @@ export function gainResources(ctx: EffectContext, base: Partial<Resources> | und
 
 /**
  * Suspend the resolving card into a player choice — the one place a resolver opens a
- * `pendingInteraction` (the interaction seam of the resolver spine's "two-way street"). Builds it from
- * `ctx.self` (the suspended card's id/cardId, so `moves.ts`'s `resolveInteraction` can reconstruct
- * `self` and re-enter this resolver) plus the passed choice shape. The resolver returns right after;
- * it re-runs with `ctx.answer` set to the chosen index. See `PendingInteraction` — non-cancelable, so
- * a resolver must only call this once the reveal has committed (e.g. after `peekTop` lifted the cards).
+ * `pendingInteraction`. Builds it from `ctx.self` so `moves.ts`'s `resolveInteraction` can reconstruct
+ * `self` and re-enter this resolver with `ctx.answer` set. Non-cancelable, so only call it once the
+ * reveal has committed (e.g. after `peekTop` lifted the cards).
  */
 export function suspendChoice(
   ctx: EffectContext,
@@ -100,109 +69,74 @@ export function suspendChoice(
   ctx.G.pendingInteraction = { cardId: ctx.self.cardId, instanceId: ctx.self.id, ...choice };
 }
 
-/** Demolish a tableau building by instance id, filing its card to `removed` (frees the slot and its
- *  workers). No-op if the id is absent or not in the tableau. */
-function demolish(G: GameState, instanceId?: number): void {
-  if (instanceId === undefined) return;
-  const idx = G.tableau.findIndex((b) => b.id === instanceId);
-  if (idx === -1) return;
-  const [building] = G.tableau.splice(idx, 1);
-  // File the demolished card to removed as a plain card instance (its staffing-only `workers` is
-  // dropped); keep its id so the removed pile stays identity-consistent with every other zone.
-  G.removed.push({ id: building.id, cardId: building.cardId });
-  emitEvent(G, { type: 'discard', instanceId: building.id, cardId: building.cardId, reason: 'demolish' });
+/**
+ * Run a `CardEffect` against `ctx` — the single declarative-or-bespoke runner shared by play, `upkeep`,
+ * and the `on.*` handlers. The declarative `resources` delta applies first (through `gainResources`),
+ * then any `resolve` closure runs — the two *compose*, so a closure sees the declarative gain already
+ * folded into `G`. Either field alone is the common case; both is a base gain plus bespoke logic.
+ * Production is the one slot that does NOT run through this — it scales per worker (`resolveProduction`).
+ */
+export function runEffect(ctx: EffectContext, effect?: CardEffect): void {
+  gainResources(ctx, effect?.resources);
+  effect?.resolve?.(ctx);
 }
 
-/**
- * Build a resolver from a declarative `CardEffect` — the default for the ~90% of cards fully
- * described by the data bag. Routes `gain` through `gainResources` (the shared sticker fold),
- * everything else through `applyEffect`, plus the `destroy` mutation (folded in so all effect
- * behavior resolves through one path). `remove` is *not* handled here: it decides where the played
- * card files afterwards (a caller-owned lifecycle decision, see `resolveHandEvents`), not a mutation
- * of `G`.
- */
-export function specToResolver(effect?: CardEffect): Resolver {
-  return (ctx) => {
-    gainResources(ctx, effect?.gain);
-    applyEffect(ctx.G, effect);
-    if (effect?.destroy) demolish(ctx.G, ctx.target);
-  };
-}
-
-/**
- * Resolve a card's effect through the single resolver path: its own `resolve` if it owns one,
- * otherwise the declarative default from its `effect`. The one place "the card's effect" runs —
- * shared by `playCard` and `resolveHandEvents`.
- */
+/** Resolve a card's play-time `effect` through the single runner — shared by `playCard` and
+ *  `resolveHandEvents`. */
 export function resolveCard(ctx: EffectContext): void {
-  const card = CARDS[ctx.self.cardId];
-  const resolver = card.resolve ?? specToResolver(card.effect);
-  resolver(ctx);
+  runEffect(ctx, CARDS[ctx.self.cardId].effect);
 }
 
 /**
- * Build a production resolver from a card's declarative production fields. Deliberately narrower
- * than `specToResolver`: applies only `gain` (via the shared `gainResources`) and `culture`, never a
- * one-shot play field (`draw`/`population`/`territory`/`destroy`) a card might also declare — those
- * must never fire on a recurring tick.
- *
- * Output scales per staffed worker: the declarative `produces`/`cultureOutput` are *per-worker unit*
- * values, multiplied by the operating instance's `producingUnits` (its staffed count, or 1 for a
- * self-sufficient card). `ctx.self` is a bare `CardInstance` carrying no `workers`, so the live
- * instance is resolved from its zone. A capacity-1 producer yields `×1` — identical to a flat output.
- * Stickers still fold once through `gainResources` (a flat sticker adds on top of the scaled base).
- */
-function defaultProduce(card: CardDef): Resolver {
-  return (ctx) => {
-    const s = findStaffable(ctx.G, ctx.self.id);
-    const units = s ? producingUnits(s) : 1;
-    gainResources(ctx, scaleResources(card.produces ?? card.effect?.gain ?? {}, units));
-    applyEffect(ctx.G, { culture: (card.cultureOutput ?? 0) * units });
-  };
-}
-
-/**
- * Resolve one operating (staffed) instance's per-round production: `card.produce` if it owns one,
- * otherwise the declarative default above. Production's counterpart to `resolveCard` — the caller
- * only asks the card to produce, never reading `produces`/`cultureOutput` itself.
+ * Resolve one operating (staffed) instance's per-round production from its `produces`. Deliberately a
+ * *separate* path from `runEffect` because it scales per worker: the declarative `produces.resources`
+ * are per-worker amounts multiplied by the instance's `producingUnits` (1 for a self-sufficient card),
+ * then any `produces.resolve` runs and *composes* (owning its own scaling), mirroring `runEffect`'s
+ * gain-then-closure order. `ctx.self` carries no `workers`, so the live instance is resolved from its
+ * zone. The scaled bundle rides `gainResources`, so a sticker applies.
  */
 export function resolveProduction(ctx: EffectContext): void {
-  const card = CARDS[ctx.self.cardId];
-  const resolver = card.produce ?? defaultProduce(card);
-  resolver(ctx);
+  const produces = CARDS[ctx.self.cardId].produces;
+  const s = findStaffable(ctx.G, ctx.self.id);
+  const units = s ? producingUnits(s) : 1;
+  gainResources(ctx, scaleResources(produces?.resources ?? {}, units));
+  produces?.resolve?.(ctx);
 }
 
 /**
- * Run one card's reaction to an event: dispatch `CARDS[self.cardId].on?.[event.type]` on `ctx`. The
- * event-bus counterpart to `resolveCard`/`resolveProduction` — the single place an `on` handler runs,
- * so a handler is authored like any bespoke resolver (mutate `ctx.G`, add output through
- * `gainResources` so stickers still fold). No-op if the card has no handler for this event type (the
- * dispatcher pre-filters to subscribers, but this stays safe on its own). `ctx.event` is guaranteed
- * set by the caller (`rules/events.ts`'s `dispatchEvent`).
+ * Resolve a card's recurring `upkeep` through the single runner, run at the upkeep boundary: a threat's
+ * drain, an unplayed event's disaster (via `resolveHandEvents`), or an operating staffable's maintenance
+ * (via `resolveEndTurn`, composing with its per-worker `produces`). Unlike `resolveProduction` it does
+ * *not* scale per worker — upkeep is a flat recurring cost — so it goes straight through `runEffect`.
+ */
+export function resolveUpkeep(ctx: EffectContext): void {
+  runEffect(ctx, CARDS[ctx.self.cardId].upkeep);
+}
+
+/**
+ * Run one card's reaction to an event: the `CardEffect` at `CARDS[self.cardId].on?.[event.type]`,
+ * through `runEffect`. No-op if the card has no handler for this type (the dispatcher pre-filters, but
+ * this stays safe alone). `ctx.event` is guaranteed set by the caller (`events.ts`'s `dispatchEvent`).
  */
 export function runEventHandler(ctx: EffectContext): void {
   if (!ctx.event) return;
-  CARDS[ctx.self.cardId]?.on?.[ctx.event.type]?.(ctx);
+  runEffect(ctx, CARDS[ctx.self.cardId]?.on?.[ctx.event.type]);
 }
 
 /**
- * Resolve one subscriber's reaction to the per-round `endTurn` broadcast — the *default* per-round
- * behaviour a card runs at the upkeep boundary: an explicit `on.endTurn` handler wins; otherwise a
- * producer (a staffable card — building/wonder/work, from the tableau/workZone) produces via
- * `resolveProduction`, and anything else the dispatcher hands us — a threats-zone entry — ticks its own drain via
- * `resolveCard`. The **zone the dispatcher walked**, not the card's kind, decides which spine runs
- * (exactly as the retired `tickThreats` ran `resolveCard` over `G.threats` kind-agnostically). The
- * dispatcher (`rules/events.ts`) already gates which subscribers reach here (operating tableau/work,
- * all threats), so this never re-checks staffing. Mirrors the codebase's existing dual spine —
- * `resolveCard` (play) vs `resolveProduction` (production).
+ * Resolve one subscriber's per-round `endTurn` behaviour. Its `on.endTurn` handler, its production
+ * (`resolveProduction`), and its `upkeep` drain (`resolveUpkeep`) all run and *compose* — each a no-op
+ * when its slot is empty — so one card may combine any of the three (e.g. a staffed building that also
+ * pays maintenance each round). The dispatcher (`events.ts`) gates which subscribers reach here, so this
+ * never re-checks staffing.
  *
- * NOTE: this forwards the `endTurn` `ctx.event` into `resolveProduction`/`resolveCard`, which today
- * ignore it. Harmless *only* while no bespoke `produce`/`resolve` reads `ctx.event`; a future one
- * must not start branching on it (it fires on play/production too, where the field is absent).
+ * NOTE: every slot is handed the `endTurn` `ctx.event`, which production/upkeep ignore today. A future
+ * bespoke `produces.resolve`/`upkeep.resolve` must not start branching on it — it fires on
+ * play/production too, where the field is absent.
  */
 export function resolveEndTurn(ctx: EffectContext): void {
   const card = CARDS[ctx.self.cardId];
-  if (card.on?.endTurn) return void card.on.endTurn(ctx);
-  if (isStaffable(card)) resolveProduction(ctx);
-  else resolveCard(ctx);
+  if (card.on?.endTurn) runEffect(ctx, card.on.endTurn);
+  resolveProduction(ctx);
+  resolveUpkeep(ctx);
 }

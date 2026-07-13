@@ -1,89 +1,35 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { applyEffect, gainResources, resolveCard, resolveProduction, specToResolver } from './effects';
-import { blankState, instancesFromCardIds } from './state';
-import { FIXTURE_CARDS, installFixtures, uninstallFixtures } from './testFixtures';
+import { gainResources, resolveCard, resolveProduction, runEffect } from './effects';
+import { blankState } from './state';
+import { FIXTURE_CARDS, installCards, installFixtures, uninstallCards, uninstallFixtures } from './testFixtures';
+import { CARDS, type CardDef } from '../content/cards';
 
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);
 
-describe('applyEffect', () => {
-  it('ignores gain — gain is applied via gainResources, not here (no double-apply)', () => {
+describe('runEffect', () => {
+  it('applies the resource delta (core + strategic) through gainResources', () => {
     const G = blankState('test');
-    applyEffect(G, { gain: { science: 3, food: 1 }, culture: 2 });
-    expect(G.resources.science).toBe(0);
-    expect(G.resources.food).toBe(0);
-    expect(G.culture).toBe(2); // non-gain fields still apply
+    runEffect({ G, self: { id: 1, cardId: 'x' } }, { resources: { science: 2, culture: 1 } });
+    expect(G.resources.science).toBe(2);
+    expect(G.resources.culture).toBe(1);
   });
 
-  it('draws cards', () => {
+  it('composes the declarative fields with a bespoke `resolve` (both apply, resources first)', () => {
     const G = blankState('test');
-    G.deck = instancesFromCardIds(['a', 'b', 'c']);
-    applyEffect(G, { draw: 2 });
-    expect(G.hand.map((c) => c.cardId)).toEqual(['a', 'b']);
-  });
-
-  it('grows population (Settlers)', () => {
-    const G = blankState('test');
-    G.population = 2;
-    applyEffect(G, { population: 1 });
-    expect(G.population).toBe(3);
-  });
-
-  it('raises the building-slot cap (Conquest / Develop)', () => {
-    const G = blankState('test');
-    const before = G.territory;
-    applyEffect(G, { territory: 1 });
-    expect(G.territory).toBe(before + 1);
-  });
-
-  it('removes resources (loss) and lets them go negative', () => {
-    const G = blankState('test');
-    G.resources.military = 3;
-    applyEffect(G, { loss: { military: 4 } });
-    expect(G.resources.military).toBe(-1);
-  });
-
-  it('accumulates culture (Cultural Festival)', () => {
-    const G = blankState('test');
-    G.culture = 2;
-    applyEffect(G, { culture: 3 });
-    expect(G.culture).toBe(5);
+    runEffect(
+      { G, self: { id: 1, cardId: 'x' } },
+      { resources: { science: 9 }, resolve: (ctx) => gainResources(ctx, { food: 2 }) },
+    );
+    expect(G.resources.food).toBe(2); // the closure's gain
+    expect(G.resources.science).toBe(9); // the declarative delta applies too
   });
 
   it('does nothing for an undefined effect', () => {
     const G = blankState('test');
-    applyEffect(G, undefined);
-    expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 0, money: 0 });
-  });
-});
-
-describe('specToResolver', () => {
-  it('reproduces applyEffect for a declarative effect', () => {
-    const G = blankState('test');
-    G.deck = instancesFromCardIds(['a', 'b']);
-    specToResolver({ gain: { science: 2 }, draw: 1, culture: 1 })({ G, self: { id: 1, cardId: 'x' } });
-    expect(G.resources.science).toBe(2);
-    expect(G.hand.map((c) => c.cardId)).toEqual(['a']);
-    expect(G.culture).toBe(1);
-  });
-
-  it('demolishes the targeted building for a destroy effect, filing it to removed', () => {
-    const G = blankState('test');
-    G.tableau = [
-      { id: 1, cardId: 'test_food', workers: 1 },
-      { id: 2, cardId: 'test_prod', workers: 1 },
-    ];
-    specToResolver({ destroy: true })({ G, self: { id: 3, cardId: 'test_destroy' }, target: 1 });
-    expect(G.tableau).toEqual([{ id: 2, cardId: 'test_prod', workers: 1 }]);
-    expect(G.removed).toEqual([{ id: 1, cardId: 'test_food' }]);
-  });
-
-  it('a destroy effect with no valid target is a no-op', () => {
-    const G = blankState('test');
-    G.tableau = [{ id: 1, cardId: 'test_food', workers: 1 }];
-    specToResolver({ destroy: true })({ G, self: { id: 2, cardId: 'test_destroy' } });
-    expect(G.tableau).toHaveLength(1);
-    expect(G.removed).toEqual([]);
+    const before = structuredClone(G.resources);
+    runEffect({ G, self: { id: 1, cardId: 'x' } }, undefined);
+    expect(G.resources).toEqual(before);
   });
 });
 
@@ -95,7 +41,7 @@ describe('resolveCard', () => {
   it('runs the declarative default for a catalogue card (test_festival → +3 culture)', () => {
     const G = blankState('test');
     resolveCard({ G, self: { id: 1, cardId: 'test_festival' } });
-    expect(G.culture).toBe(3);
+    expect(G.resources.culture).toBe(3);
   });
 
   it("an additive-gain sticker bumps a declarative card's gain by 1", () => {
@@ -113,7 +59,7 @@ describe('resolveCard', () => {
   it("a dynamicText card's face shows the sticker-adjusted gain (resolve/display agree)", () => {
     const G = blankState('test');
     const self = { id: 1, cardId: 'test_dynamic', stickers: ['test_addgain'] };
-    const text = FIXTURE_CARDS.test_dynamic.dynamicText!(G, self);
+    const text = FIXTURE_CARDS.test_dynamic.display!.dynamicText!(G, self);
     expect(text).toBe('+3🌾'); // base +2, sticker +1 — matches the +3 food resolveCard grants
     resolveCard({ G, self });
     expect(G.resources.food).toBe(3);
@@ -133,10 +79,26 @@ describe('gainResources', () => {
     expect(G.resources.food).toBe(2);
   });
 
+  it('applies a negative delta (a drain), letting a pool go negative', () => {
+    const G = blankState('test');
+    G.resources.military = 3;
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { military: -4 });
+    expect(G.resources.military).toBe(-1);
+  });
+
+  it('applies the strategic keys (population/territory/culture) to G.resources too', () => {
+    const G = blankState('test');
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { population: 1, territory: 1, culture: 3 });
+    expect(G.resources.population).toBe(1);
+    expect(G.resources.territory).toBe(7); // blankState seeds territory at 6
+    expect(G.resources.culture).toBe(3);
+  });
+
   it('is a no-op on an undefined bag', () => {
     const G = blankState('test');
+    const before = structuredClone(G.resources);
     gainResources({ G, self: { id: 1, cardId: 'x' } }, undefined);
-    expect(G.resources).toEqual({ food: 0, production: 0, science: 0, military: 0, money: 0 });
+    expect(G.resources).toEqual(before);
   });
 });
 
@@ -151,5 +113,57 @@ describe('resolveProduction', () => {
     const G = blankState('test');
     resolveProduction({ G, self: { id: 1, cardId: 'test_food' } });
     expect(G.resources.food).toBe(2);
+  });
+
+  // Production reads `produces` alone — never `effect`. `test_action` carries `effect.resources`
+  // (+3🔬) and no `produces`; under the old `produces ?? effect.resources` fallback this would have
+  // leaked +3 science per round. Now it must produce nothing: the two timing slots are separate.
+  it('ignores a card\'s `effect` — production is `produces`-only (no fallback)', () => {
+    const G = blankState('test');
+    resolveProduction({ G, self: { id: 1, cardId: 'test_action' } });
+    expect(G.resources.science).toBe(0);
+  });
+
+  // The Hut is a `produces`-less building whose `effect` grants +1🧍 *on placement*. As an operating
+  // (self-sufficient) staffable it runs at upkeep, but must never re-grant that population each round.
+  it('never re-fires a placement `effect` at upkeep (Hut grants no per-round population)', () => {
+    const G = blankState('test');
+    const before = G.resources.population;
+    resolveProduction({ G, self: { id: 1, cardId: 'hut' } });
+    expect(G.resources.population).toBe(before);
+  });
+
+  // A `produces` carrying BOTH a declarative bag and a `resolve`: the scaled declarative gain applies
+  // *and* the closure runs (composing like `runEffect`), each on its own scaling.
+  it('composes a bespoke `produces.resolve` with the per-worker-scaled declarative produces', () => {
+    const local: Record<string, CardDef> = {
+      test_prod_compose: {
+        id: 'test_prod_compose', name: 'Prod Compose', kind: 'building' as const,
+        cost: {}, workers: 2,
+        produces: { resources: { food: 1 }, resolve: (ctx) => gainResources(ctx, { science: 3 }) },
+      },
+    };
+    installCards(local);
+    try {
+      const G = blankState('test');
+      G.tableau = [{ id: 1, cardId: 'test_prod_compose', workers: 2 }];
+      resolveProduction({ G, self: { id: 1, cardId: 'test_prod_compose' } });
+      expect(G.resources.food).toBe(2); // declarative +1🌾/worker × 2 workers
+      expect(G.resources.science).toBe(3); // the closure's flat gain composes on top
+    } finally {
+      uninstallCards(local);
+    }
+  });
+});
+
+// Content coherence: the `work` kind's whole output is per-round, so it lives entirely in
+// `produces` — a work card must not carry a one-shot `effect` (it would be dead, since
+// `playCard` resolves no effect for a work card, and it would blur the produces/effect separation).
+describe('work-card content', () => {
+  it('no work card carries an `effect`', () => {
+    const offenders = Object.values(CARDS)
+      .filter((c) => c.kind === 'work' && c.effect)
+      .map((c) => c.id);
+    expect(offenders).toEqual([]);
   });
 });

@@ -35,7 +35,7 @@ describe('createInitialState: board stickers', () => {
   it('the unstickered run seeds off the board baseline', () => {
     const base = createInitialState({ ...config, boardStickers: [] });
     expect(base.resources.food).toBe(TEST_BOARD.resources.food);
-    expect(base.territory).toBe(TEST_BOARD.territory);
+    expect(base.resources.territory).toBe(TEST_BOARD.resources.territory);
   });
 
   it('folds a core-resource board sticker into the starting profile (+2 Food)', () => {
@@ -47,6 +47,6 @@ describe('createInitialState: board stickers', () => {
   it('folds a strategic-gauge board sticker (+1 Territory)', () => {
     const base = createInitialState({ ...config, boardStickers: [] });
     const G = createInitialState({ ...config, boardStickers: ['test_bs_territory'] });
-    expect(G.territory).toBe(base.territory + 1);
+    expect(G.resources.territory).toBe(base.resources.territory + 1);
   });
 });

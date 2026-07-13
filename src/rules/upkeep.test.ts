@@ -13,12 +13,12 @@ import { installFixtures, uninstallFixtures, installCards, uninstallCards } from
 const LOCAL: Record<string, CardDef> = {
   test_unrest: {
     id: 'test_unrest', name: 'Test Unrest', kind: 'threat', cost: {},
-    description: '−1💰 per 🧍 on reshuffle',
-    on: { reshuffle: ({ G }) => subtractResources(G.resources, { money: G.population }) },
+    display: { description: '−1💰 per 🧍 on reshuffle' },
+    on: { reshuffle: { resolve: ({ G }) => subtractResources(G.resources, { money: G.resources.population }) } },
   },
   test_ondraw: {
     id: 'test_ondraw', name: 'Test On-Draw', kind: 'building', cost: {}, workers: 0,
-    on: { draw: (ctx) => gainResources(ctx, { science: 5 }) },
+    on: { draw: { resolve: (ctx) => gainResources(ctx, { science: 5 }) } },
   },
 };
 
@@ -116,7 +116,7 @@ describe('projectedDelta — imminent next-turn reshuffle', () => {
     // Empty deck + a non-empty discard: the next round-start refill reshuffles immediately, firing the
     // Unrest-style threat. The preview must surface that 💰 drain (the player is about to pay it).
     const G = blankState('test');
-    G.population = 3;
+    G.resources.population = 3;
     G.deck = [];
     G.discard = instancesFromCardIds(['test_food', 'test_prod']);
     G.threats = [{ id: 1, cardId: 'test_unrest' }];
@@ -126,7 +126,7 @@ describe('projectedDelta — imminent next-turn reshuffle', () => {
   it('shows no drain when the deck can refill without a reshuffle', () => {
     // Enough deck to refill, empty discard: no reshuffle is imminent, so the threat stays silent.
     const G = blankState('test');
-    G.population = 3;
+    G.resources.population = 3;
     G.deck = instancesFromCardIds(['test_food', 'test_prod', 'test_sci', 'test_money', 'test_action']);
     G.discard = [];
     G.threats = [{ id: 1, cardId: 'test_unrest' }];
@@ -138,7 +138,7 @@ describe('projectedDelta — imminent next-turn reshuffle', () => {
     // (drain 💰) then draw (gain 🔬). The preview fires only the structural reshuffle — it never draws,
     // so the draw-contingent 🔬 (which would leak the identity of the card about to come up) stays hidden.
     const G = blankState('test');
-    G.population = 3;
+    G.resources.population = 3;
     G.deck = [];
     G.discard = instancesFromCardIds(['test_food', 'test_prod']);
     G.threats = [{ id: 1, cardId: 'test_unrest' }];
