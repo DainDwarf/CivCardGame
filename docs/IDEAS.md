@@ -41,17 +41,13 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
   that costs territory. Livestock only here (goats/sheep/cattle — they came *with*
   farming). 
 - **Pottery** — surplus storage and cooking; a low-cost early building.
-- **Stone tools** — for a production / workshop building. Polished ground-stone tools =
-  the literal "new stone" of Neolithic; efficiency flavor.
 - **Walls** — earliest monumental fortification (Jericho); defensive mission flavor.
 - **Burial site** — ancestor/burial cult; culture output tied to the dead.
 - **Calendar** — the age's **science/foresight** entry. Agricultural astronomy (Warren
   Field ~8,000 BCE, Nabta Playa): knowing *when* to plant/harvest. Flavor as a
   prediction/timing mechanic — peek the deck, foresee an event, buff the next harvest.
   Keep distinct from Burial site: culture (the dead) vs. science (the seasons).
-- **Beer** — fermentation converts food into culture (feasting/ritual; arguably helped
-  drive cereal domestication).
-- **Göbekli Tepe** - First world wonder?
+
 
 > Keep copper/metallurgy and the wheel **out** of this age — both are really
 > Chalcolithic/Bronze. Good "graduated the Stone Age" unlocks to bridge to the next age.
@@ -107,17 +103,6 @@ Policies are really a *skill ladder* — random pins the floor, the greedies sit
   hand-written score function (it plays rollouts to the end and counts wins), though a
   cheaper **flat Monte Carlo** variant (rollouts per action, no tree) is a lighter
   first step toward it.
-- **Seeded perfect-information oracle** — ✅ **built** (`sim/oracle.ts` + `sim/oracleKey.ts`;
-  the `oracle` policy). Runs are seeded and deterministic given the seed, so `structuredClone(G)`
-  already hands a rollout the whole future shuffle — a bounded, heuristic-guided, deterministic
-  graph search (turn-boundary collapse · transposition table · deadline/territory caps · beam over
-  `scoreState`) finds a *winning* line if one exists within the beam. A found line is a **sound
-  proof** of winnability (it replays through the real engine); failing to find one under the beam is
-  strong evidence, not proof. `proveWinnable(config)` is the honest per-seed prover; the `oracle`
-  policy (search then dispense the line, greedy2 fallback when none) folds into the normal
-  batch/report machinery. Slower than greedy2, so it's opt-in (excluded from the default `npm run sim`
-  sweep — name it explicitly with a small seed count). Balance uses: winnability %, and the
-  oracle↔greedy gap = how punishing variance is.
 - **Archetype / persona policies** — scripted *human* play styles rather than optimizers:
   a rusher (race the objective), a turtle (hoard/over-staff), a greedy-economy builder, a
   misplay-prone novice (right idea, frequent small mistakes). These don't try to be good —
@@ -126,4 +111,4 @@ Policies are really a *skill ladder* — random pins the floor, the greedies sit
 
 > (Discussed but lower-priority: deeper N-ply/expectimax or beam search above greedy2,
 > and evolutionary weight-tuning of the existing heuristic — kept out here to keep the
-> list to the higher-value bets.)
+> list to the higher-value bets. Can it also reuse the same state reducing than oracle?)
