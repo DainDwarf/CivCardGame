@@ -1,14 +1,14 @@
 /**
- * Shared synthetic fixtures for the `rules/`+`run/` unit tests. The core engine resolves through the
- * *live* global catalogues at runtime (`CARDS[ctx.self.cardId]`, `BOARDS[config.board]`, sticker
- * lookups), so a test that asserts a *mechanism* (not a shipped card's numbers) still needs *some*
- * card/board/sticker installed in those maps for the test's duration. Rather than each test leaning on
- * a shipped id — which breaks the instant a catalogue is emptied for a content reset — tests install
- * these `test_*` fixtures, whose values are chosen freely to exercise the mechanism and can never
- * collide with real ids.
+ * Shared synthetic fixtures for the `rules/`+`run/`+`sim/` unit tests. The core engine resolves through
+ * the *live* global catalogues at runtime (`CARDS[ctx.self.cardId]`, `BOARDS[config.board]`,
+ * `MISSIONS[config.missionId]`, sticker lookups), so a test that asserts a *mechanism* (not a shipped
+ * card's numbers) still needs *some* card/board/mission/sticker installed in those maps for the test's
+ * duration. Rather than each test leaning on a shipped id — which breaks the instant a catalogue is
+ * emptied for a content reset — tests install these `test_*` fixtures, whose values are chosen freely to
+ * exercise the mechanism and can never collide with real ids.
  *
  * `installFixtures()`/`uninstallFixtures()` splice the fixtures into the live `CARDS`/`BOARDS`/
- * `STICKERS` and remove them again — the generalization of `events.test.ts`'s original local
+ * `STICKERS`/`MISSIONS` and remove them again — the generalization of `events.test.ts`'s original local
  * `FIXTURES` + `beforeAll`/`afterAll`. Call them in a suite's `beforeAll`/`afterAll` (or
  * `beforeEach`/`afterEach`). All run state is minted through the *real* production functions
  * (`instancesFromCardIds`, `collectionFromCounts`, `buildSeedDecks`, `blankState`) — never
@@ -24,6 +24,7 @@ import { CARDS, type CardDef } from '../content/cards';
 import { BOARDS, type BoardDef, type BoardId } from '../content/boards';
 import { STICKERS, type StickerDef } from '../content/stickers';
 import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
+import { MISSIONS, type MissionDef } from '../content/missions';
 import { scaleResources, subtractResources } from './resources';
 import { getCounter, bumpCounter } from './state';
 import { gainResources, suspendChoice } from './effects';
@@ -280,8 +281,16 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     display: { description: 'Defeat once round 5 fully elapses.' },
     defeat: (G) => G.round > 5 && 'test deadline',
   },
+  // A far-off deadline (no drain): a pure termination bound for a *winnable* fixture mission, so a run
+  // that never finds the win (a policy's fallback path) still terminates instead of looping forever —
+  // far enough out that a normal winning line lands well before it.
+  test_deadline_far: {
+    id: 'test_deadline_far', name: 'Test Deadline Far', kind: 'threat', cost: {},
+    display: { description: 'Defeat once round 30 fully elapses.' },
+    defeat: (G) => G.round > 30 && 'test far deadline',
+  },
 
-  // --- Objective: owns its mission's win as a pure-read predicate over `G` (never mutates it). ---
+  // --- Objectives: each owns its mission's win as a pure-read predicate over `G` (never mutates it). ---
   test_objective: {
     id: 'test_objective', name: 'Test Objective', kind: 'objective', cost: {},
     objective: (G) => G.resources.science >= 10,
@@ -289,6 +298,13 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
       description: 'Reach 10 Science.',
       dynamicText: (G) => `${G.resources.science}/10🔬`,
     },
+  },
+  // An always-false objective — the win counterpart to the sandbox's `sandbox_goal`, for a fixture
+  // *unwinnable* mission (no line exists at any depth). Pair with a deadline threat so a run still ends.
+  test_never: {
+    id: 'test_never', name: 'Test Never', kind: 'objective', cost: {},
+    objective: () => false,
+    display: { description: 'Cannot be won.' },
   },
 };
 
@@ -354,6 +370,34 @@ export const FIXTURE_BOARD_STICKERS: Record<string, BoardStickerDef> = {
   },
 };
 
+// --- Synthetic missions ----------------------------------------------------------------------------
+
+/** The fixture missions the *full-run* sim tests (`report`, `oracle`) drive through `simConfig` →
+ *  `run/setup.ts`, which looks the mission up in the live `MISSIONS`. Built on the fixture objective/
+ *  threat cards above so a content reset can't break them. Only the fields `setup`/`report` read are
+ *  filled — the campaign-map presentation fields (`map`/`age`/`reward`) are irrelevant to a headless run. */
+export const FIXTURE_MISSIONS: Record<string, MissionDef> = {
+  // A shallow, genuinely winnable threshold mission: reach 10🔬 (`test_objective`). The far deadline
+  // only guarantees termination on a policy's non-winning fallback path — a real winning line lands
+  // long before it. Seed a science-producer deck at the call site (the mission names no cards).
+  test_win: {
+    id: 'test_win', name: 'Test Win', lore: '', prereqs: [],
+    threats: ['test_deadline_far'],
+    objectiveCardId: 'test_objective',
+    victoryHint: 'Reach 10 science.', failureHint: null,
+    kind: 'standard',
+  },
+  // An unwinnable mission bounded by a near deadline: `test_never` can never be met, so the only exit is
+  // the round-5 `test_deadline` — a fast defeat for the winnability-prover's false branch.
+  test_unwinnable: {
+    id: 'test_unwinnable', name: 'Test Unwinnable', lore: '', prereqs: [],
+    threats: ['test_deadline'],
+    objectiveCardId: 'test_never',
+    victoryHint: 'There is no victory.', failureHint: 'Defeat at round 5.',
+    kind: 'standard',
+  },
+};
+
 // --- Install / uninstall ---------------------------------------------------------------------------
 
 /** Splice an arbitrary card record into the live `CARDS` for a test's duration — the generic primitive
@@ -375,6 +419,7 @@ export function installFixtures(): void {
   installCards(FIXTURE_CARDS);
   for (const [id, def] of Object.entries(FIXTURE_STICKERS)) STICKERS[id] = def;
   for (const [id, def] of Object.entries(FIXTURE_BOARD_STICKERS)) BOARD_STICKERS[id] = def;
+  for (const [id, def] of Object.entries(FIXTURE_MISSIONS)) MISSIONS[id] = def;
   BOARDS[TEST_BOARD_ID] = TEST_BOARD;
   BOARDS[TEST_BOARD_2_ID] = TEST_BOARD_2;
 }
@@ -384,6 +429,7 @@ export function uninstallFixtures(): void {
   uninstallCards(FIXTURE_CARDS);
   for (const id of Object.keys(FIXTURE_STICKERS)) delete STICKERS[id];
   for (const id of Object.keys(FIXTURE_BOARD_STICKERS)) delete BOARD_STICKERS[id];
+  for (const id of Object.keys(FIXTURE_MISSIONS)) delete MISSIONS[id];
   delete BOARDS[TEST_BOARD_ID];
   delete BOARDS[TEST_BOARD_2_ID];
 }

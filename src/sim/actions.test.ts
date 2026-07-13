@@ -1,21 +1,27 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { enumerateActions } from './actions';
 import { applyAction, simConfig, createRandomPolicy } from './index';
 import { createRun } from '../run/engine';
 import { blankState } from '../rules';
-import { DEFAULT_DECKS } from '../content/decks';
+import { installFixtures, uninstallFixtures, TEST_BOARD_ID } from '../rules/testFixtures';
 
-const FOUNDING = DEFAULT_DECKS[0].cards;
+// A synthetic deck spanning the staffable + action kinds, so a random run enumerates plays, worker
+// assignment, and transfers — the whole action surface — without leaning on the shipped catalogue. The
+// mission's round-5 deadline (`test_unwinnable`) guarantees every random run terminates in the step budget.
+const FIXTURE_DECK = ['test_food', 'test_prod', 'test_work', 'test_work_food', 'test_action', 'test_settlers'];
 
 describe('enumerateActions', () => {
+  beforeAll(installFixtures);
+  afterAll(uninstallFixtures);
+
   // The core contract the greedy/heuristic policies rely on: every action the enumeration offers is one
   // the real engine accepts. If a bogus (rejected) action slipped through, `applyAction` would return
   // the *same* state object and a two-phase greedy could stall on it — so we assert reference-inequality
-  // (acceptance) for every candidate at every state of a real random run. This also polices the newly
-  // added `transferWorker` enumeration against `moves.transferWorker`'s own reject.
+  // (acceptance) for every candidate at every state of a real random run. This also polices the
+  // `transferWorker` enumeration against `moves.transferWorker`'s own reject.
   it('offers only engine-accepted actions at every state of a random run', () => {
     for (let s = 0; s < 12; s++) {
-      const config = simConfig({ deckCardIds: FOUNDING, board: 'tribe', missionId: 'sandbox', seed: `snd-${s}` });
+      const config = simConfig({ deckCardIds: FIXTURE_DECK, board: TEST_BOARD_ID, missionId: 'test_unwinnable', seed: `snd-${s}` });
       let state = createRun(config);
       const policy = createRandomPolicy(`snd-pol-${s}`);
       let steps = 0;
@@ -32,7 +38,7 @@ describe('enumerateActions', () => {
   });
 
   it('always offers ending the turn when no interaction is pending', () => {
-    const config = simConfig({ deckCardIds: FOUNDING, board: 'tribe', missionId: 'sandbox', seed: 'endturn' });
+    const config = simConfig({ deckCardIds: FIXTURE_DECK, board: TEST_BOARD_ID, missionId: 'test_unwinnable', seed: 'endturn' });
     const state = createRun(config);
     expect(enumerateActions(state.G).some((a) => a.kind === 'endTurn')).toBe(true);
   });
@@ -40,7 +46,7 @@ describe('enumerateActions', () => {
   it('offers ONLY interaction answers while an interaction is parked', () => {
     // A parked interaction is exclusive (endTurn no-ops, plays are blocked), so the enumeration must
     // return nothing but `resolveInteraction` — the structural guard against a no-op endTurn deadlock.
-    const G = blankState('sandbox');
+    const G = blankState('test');
     G.pendingInteraction = {
       cardId: 'storytelling',
       instanceId: 1,

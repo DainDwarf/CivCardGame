@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   addBuilding,
   addWork,
@@ -7,6 +7,7 @@ import {
   shuffle,
   type GameState,
 } from '../rules';
+import { installFixtures, uninstallFixtures } from '../rules/testFixtures';
 import { endTurn, type RunState } from '../run/engine';
 import { keyOf } from './oracleKey';
 
@@ -29,21 +30,22 @@ import { keyOf } from './oracleKey';
  * oracle actually relies on).
  */
 function producingState(): GameState {
-  const G = blankState('sandbox');
-  G.resources.population = 5;
+  const G = blankState('test'); // mission label only — no objective/threats seeded here
+  G.resources.population = 6;
   G.resources.food = 50; // amply fed, so nothing collapses over the tested rounds
-  // Two farms (duplicate content), plus Conquest and Foraging work boxes — several producing siblings
-  // emitting to different pools (food/territory), each auto-staffed from the idle pool (5 pop → 4 staffed,
-  // 1 idle), so a non-commutative production would move a scalar.
-  addBuilding(G, 'farm');
-  addBuilding(G, 'farm');
-  addWork(G, 'conquest');
-  addWork(G, 'foraging');
+  // Several producing siblings emitting to different pools — two duplicate food buildings, a multi-output
+  // building (production + military), and two work boxes (production, food) — each auto-staffed from the
+  // idle pool (6 pop → 5 staffed, 1 idle), so a non-commutative production would move a scalar.
+  addBuilding(G, 'test_food');
+  addBuilding(G, 'test_food');
+  addBuilding(G, 'test_multi');
+  addWork(G, 'test_work');
+  addWork(G, 'test_work_food');
   // A few non-event hand cards + a stocked deck/discard, so the end-of-turn recycle and a possible
   // reshuffle both run and their ordering can't leak into the result.
-  G.hand = instancesFromCardIds(['conquest', 'cave_art', 'clothing'], 200);
-  G.deck = instancesFromCardIds(['farm', 'conquest', 'foraging'], 300);
-  G.discard = instancesFromCardIds(['cave_art', 'clothing', 'conquest'], 400);
+  G.hand = instancesFromCardIds(['test_work', 'test_action', 'test_settlers'], 200);
+  G.deck = instancesFromCardIds(['test_food', 'test_work', 'test_work_food'], 300);
+  G.discard = instancesFromCardIds(['test_action', 'test_settlers', 'test_work'], 400);
   return G;
 }
 
@@ -71,6 +73,9 @@ function permutations(G: GameState): GameState[] {
 }
 
 describe('zone order-independence invariant', () => {
+  beforeAll(installFixtures);
+  afterAll(uninstallFixtures);
+
   it('endTurn is commutative under any permutation of the unordered zones', () => {
     const base = producingState();
     const baseState: RunState = { G: structuredClone(base), gameover: undefined };
@@ -81,7 +86,6 @@ describe('zone order-independence invariant', () => {
       const after = endTurn({ G: perm, gameover: undefined });
       // Resources: a non-commutative production/drain would move a scalar here.
       expect(after.G.resources).toEqual(baseAfter.G.resources);
-      expect(after.G.resources.culture).toBe(baseAfter.G.resources.culture);
       // The multiset abstraction the oracle keys on must agree regardless of input order.
       expect(keyOf(after.G)).toBe(baseKey);
     }

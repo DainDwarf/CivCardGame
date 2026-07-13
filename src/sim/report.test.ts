@@ -1,10 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { summarize } from './report';
 import { runBatch, type Scenario, type ScenarioRuns } from './batch';
 import { simConfig, simulateRun, createRandomPolicy, type SimOutcome } from './index';
 import { blankState } from '../rules';
 import { emptyResources, type Resources } from '../rules/resources';
-import { DEFAULT_DECKS } from '../content/decks';
+import { installFixtures, uninstallFixtures, TEST_BOARD_ID } from '../rules/testFixtures';
+
+// A synthetic deck of freely-playable fixture cards — several zero-cost actions/work so a random policy
+// reliably plays *some* card over a short run, and the whole run stays independent of the shipped catalogue.
+const FIXTURE_DECK = ['test_work', 'test_bespoke', 'test_dynamic', 'test_growing', 'test_action', 'test_settlers'];
 
 /** Build a minimal `SimOutcome` for aggregation tests. `summarize` reads only `result`/`gameover`/
  *  `actionsApplied`/`cardPlays`, so `finalState` is a throwaway `blankState()` (built via the real
@@ -96,33 +100,38 @@ describe('summarize', () => {
 });
 
 describe('runBatch', () => {
+  beforeAll(installFixtures);
+  afterAll(uninstallFixtures);
+
   it('is reproducible — the same scenarios and seed count yield identical outcomes', () => {
     const scenarios: Scenario[] = [
-      { label: 'founding/tribe/sandbox', deckCardIds: DEFAULT_DECKS[0].cards, board: 'tribe', missionId: 'sandbox' },
+      { label: 'fixture/unwinnable', deckCardIds: FIXTURE_DECK, board: TEST_BOARD_ID, missionId: 'test_unwinnable' },
     ];
     const a = runBatch(scenarios, { seeds: 3 });
     const b = runBatch(scenarios, { seeds: 3 });
     const results = (rs: typeof a) => rs[0].outcomes.map((o) => o.result);
     expect(results(a)).toEqual(results(b));
-    // A defeat-only mission (sandbox objective is `() => false`) — sanity that the sweep actually ran.
+    // A defeat-only mission (`test_never` objective is `() => false`) — sanity that the sweep actually ran.
     expect(a[0].outcomes).toHaveLength(3);
     expect(a[0].outcomes.every((o) => o.result.outcome === 'defeat')).toBe(true);
   });
 });
 
 describe('simulateRun cardPlays instrumentation', () => {
+  beforeAll(installFixtures);
+  afterAll(uninstallFixtures);
+
   // Pins the reference-inequality accepted-play detection against the *real* engine (the one core
   // change), without brittly tying to specific RNG draws — a drive-loop refactor that broke counting
   // would fail here even though the synthetic `summarize` tests inject `cardPlays` directly.
   it('counts only accepted plays of real deck cards, bounded by actions taken', () => {
-    const FOUNDING = DEFAULT_DECKS[0].cards;
-    const config = simConfig({ deckCardIds: FOUNDING, board: 'tribe', missionId: 'sandbox', seed: 'cfg-0' });
+    const config = simConfig({ deckCardIds: FIXTURE_DECK, board: TEST_BOARD_ID, missionId: 'test_unwinnable', seed: 'cfg-0' });
     const o = simulateRun(config, createRandomPolicy('pol-0'));
 
-    const deck = new Set(FOUNDING);
+    const deck = new Set(FIXTURE_DECK);
     const total = Object.values(o.cardPlays).reduce((a, b) => a + b, 0);
     expect(total).toBeGreaterThan(0); // the policy plays cards during a run
     expect(total).toBeLessThanOrEqual(o.actionsApplied); // never more plays than actions dispatched
-    for (const id of Object.keys(o.cardPlays)) expect(deck.has(id)).toBe(true); // only real deck cards
+    for (const id of Object.keys(o.cardPlays)) expect(deck.has(id)).toBe(true); // only cards from the deck
   });
 });
