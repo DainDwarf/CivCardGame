@@ -283,7 +283,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   sim-sweepable (`founding/tribe/rites-rituals` scenario).
 
 - **Step 6.2 — Growing Numbers (+ sticker-unlock reward infra)** ✅ — col 1. Buildings, territory,
-  worker staffing. Objective: build Hut + Farm + Toolmaker at once (a territory squeeze that forces
+  worker staffing. Objective: build Hut + Farm at once (a territory squeeze that forces
   Conquest). Unlocks the first card sticker (**Irrigation**) + board sticker (**Territory**), debuting
   the sticker-unlock reward kinds (`unlockStickerIds`/`unlockBoardStickerIds`); post-clear teaches
   stickers + Influence/shop.

@@ -118,11 +118,11 @@ export const MISSIONS: Record<string, MissionDef> = {
     name: 'Growing Numbers',
     lore:
       'The stores are safe and the spears are ready — now the people need a place to live and work. A ' +
-      'Hut for shelter, a Farm for bread, a Toolmaker for the crafts: raise all three and a wandering ' +
-      'band becomes a settlement that stays.',
+      'Hut for shelter, a Farm for bread: raise them both and a wandering band becomes a settlement ' +
+      'that stays.',
     prereqs: ['first_settlement'],
     objectiveCardId: 'growing_numbers_goal',
-    victoryHint: 'Build a 🛖 Hut, a 🌱 Farm, and an ⛏️ Toolmaker.',
+    victoryHint: 'Build a 🛖 Hut and a 🌱 Farm.',
     failureHint: null,
     kind: 'standard',
     reward: { influence: 6, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'] },

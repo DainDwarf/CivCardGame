@@ -123,7 +123,7 @@ export const SANDBOX_DEADLINE = 50;
 
 /** The buildings "Growing Numbers" wants — shared by the win predicate and the `dynamicText`, so
  *  the two can't list a different set. Each progress glyph is pulled from the building's own `art`. */
-const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm', 'toolmaker'];
+const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm'];
 
 /** How many raider waves "Raiders at the Border" seeds — shared by the mission's injected event list
  *  (`content/missions.ts`), the `raiders_at_border_goal` win threshold, and its progress readout. */
@@ -216,7 +216,7 @@ export const CARDS: Record<string, CardDef> = {
     objective: (G) =>
       GROWING_NUMBERS_BUILDINGS.every((id) => G.tableau.some((b) => b.cardId === id)),
     display: {
-      description: 'Build 🛖 🌱 ⛏️',
+      description: 'Build 🛖 🌱',
       dynamicText: (G) =>
         GROWING_NUMBERS_BUILDINGS.map(
           (id) => `${CARDS[id].display?.art} ${G.tableau.some((b) => b.cardId === id) ? 1 : 0}/1`,

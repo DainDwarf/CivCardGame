@@ -118,7 +118,7 @@ describe('scoreState', () => {
       seedObjective(G, 'growing_numbers_goal');
       G.resources.food = 5;
       G.resources.population = 1;
-      G.resources.territory = 0; // below the goal's 3-slot need, so growing territory is real progress
+      G.resources.territory = 0; // below the goal's 2-slot need, so growing territory is real progress
       addWork(G, 'conquest'); // auto-staffs the one idle worker → +territory next upkeep
     });
     const foraging = state((G) => {

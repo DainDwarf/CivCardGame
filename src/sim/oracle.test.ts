@@ -4,7 +4,7 @@ import { createOraclePolicy, proveWinnable, type OracleOptions } from './oracle'
 import { simConfig, simulateRun } from './simulate';
 
 // "Growing Numbers" with the basic post-First-Settlement deck (mirrors the CLI scenario): a genuinely
-// winnable multi-step build (Conquest ×3 for territory → three distinct buildings) that greedy2 clears on
+// winnable multi-step build (Conquest for territory → two distinct buildings) that greedy2 clears on
 // most seeds, so the oracle ceiling should find a line on at least one of a small scan.
 const GROWING_DECK = [...DEFAULT_DECKS[0].cards, 'hut', 'farm', 'toolmaker', 'conquest'];
 
