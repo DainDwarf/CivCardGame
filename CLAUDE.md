@@ -535,8 +535,9 @@ objective rung, not for the whole action set); `createGreedy2Policy(seed)` (`sim
 `greedy` plus a **bounded 2-ply staffing lookahead** — it values a `work`/`building` play by the best
 worker it could then relocate into the new box, so it sees the play→staff combo one-ply greedy misses when
 population is saturated. It's kept as a deliberate diagnostic *pair* with `greedy`: the `greedy`↔`greedy2`
-win-rate gap measures how much **worker reassignment** is a skill lever in a scenario (decisive on Growing
-Numbers — ~41% greedy → ~93% greedy2). These policies are **goal-directed**: they steer toward the
+win-rate gap measures how much **worker reassignment** is a skill lever in a scenario (most decisive where
+a mission's win hinges on staffing a work box while population is saturated). These policies are
+**goal-directed**: they steer toward the
 *mission's* objective via `sim/objective.ts`'s `objectiveProgress` — a sim-local `[0,1]` progress
 gradient the run engine doesn't expose (an objective is only a win/lose boolean). It lives strictly in
 `sim/` (never a hook on a card/mission — see DESIGN.md's *`sim/` is a consumer*), keyed by objective card

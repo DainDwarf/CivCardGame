@@ -166,10 +166,10 @@ const boardLabel = `${board.board}${board.stickers.length ? ` +${board.stickers.
  *  territory, and culture. */
 function snapshot(G: GameState): string {
   const r = G.resources;
-  const assigned = G.population - freePopulation(G);
+  const assigned = r.population - freePopulation(G);
   return (
     `food ${r.food} · prod ${r.production} · sci ${r.science} · mil ${r.military} · money ${r.money}` +
-    ` | pop ${assigned}/${G.population} · terr ${G.territory} · cult ${G.culture}`
+    ` | pop ${assigned}/${r.population} · terr ${r.territory} · cult ${r.culture}`
   );
 }
 

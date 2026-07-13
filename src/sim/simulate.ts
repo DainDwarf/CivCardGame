@@ -67,7 +67,7 @@ export interface SimOptions {
   /** Assert structural invariants after every action (the fuzzer teeth). Default `true`. */
   check?: boolean;
   /** Hard backstop against a non-terminating run — a run that never reaches gameover is itself a bug,
-   *  so exceeding this **throws**. Default 100_000; the sandbox's round-50 deadline bounds runs far
+   *  so exceeding this **throws**. Default 10_000; the sandbox's round-50 deadline bounds runs far
    *  below it. */
   maxActions?: number;
   /** Optional observer fired after every dispatched action with the action, the states either side of
@@ -110,7 +110,7 @@ export function applyAction(state: RunState, action: SimAction): RunState {
  */
 export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions = {}): SimOutcome {
   const check = opts.check ?? true;
-  const maxActions = opts.maxActions ?? 100_000;
+  const maxActions = opts.maxActions ?? 10_000;
   const ctx = { configSeed: config.seed, policySeed: policy.seed };
 
   let state = createRun(config);

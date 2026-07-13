@@ -1,4 +1,5 @@
-import { cultureProgress, isOperating, projectedDelta, usedTerritory, type GameState } from '../rules';
+import { cultureProgress, isOperating, projectedDelta, type GameState } from '../rules';
+import { CARDS, isStructure } from '../content/cards';
 import { objectiveProgress } from './objective';
 
 /**
@@ -28,7 +29,14 @@ const W = {
   population: 3,
   /** A staffed, operating building / work box earning its keep. */
   operating: 2,
-  territory: 1.5,
+  /** Reward per unit of *projected* owned territory (current + what a staffed Conquest box produces
+   *  next upkeep), capped at the run's structure count. Projected, not realized, because territory is
+   *  delayed production — a Conquest play grants nothing on its turn, so a realized-territory term would
+   *  leave the play invisible to a one/two-ply policy (it would never expand at all). Sized above the
+   *  net cost of standing Conquest up (its ⚔️ cost minus the `operating` credit) so the two-ply
+   *  play→staff combo reads as improving; the structure-count cap keeps a structureless deck from
+   *  chasing useless territory. */
+  territory: 4,
   /** Reward per *fractional* culture level (`level + within-band ratio`), so culture accumulating
    *  **within** a band registers instead of only at the discrete level-up. Otherwise a single culture
    *  play (+2, never enough to cross a band on its own) moves this term by 0, so the greedy never
@@ -51,6 +59,16 @@ const W = {
   /** Dwarf everything: if a reachable state already meets the objective, it must outrank all others. */
   victory: 1_000_000,
 };
+
+/** How many structure (building/wonder) cards the run holds across every zone — the ceiling on how much
+ *  territory is ever worth expanding to, since a structure is the only thing that consumes a slot. */
+function structureCount(G: GameState): number {
+  const zones = [G.deck, G.hand, G.discard, G.removed, G.workZone, G.tableau];
+  return zones.reduce(
+    (n, zone) => n + zone.filter((c) => isStructure(CARDS[c.cardId])).length,
+    0,
+  );
+}
 
 /**
  * Score a run state — higher is better — for the greedy policy's one-ply argmax (`sim/greedyPolicy.ts`)
@@ -75,7 +93,8 @@ const W = {
  */
 export function scoreState(G: GameState): number {
   const r = G.resources;
-  const projFood = r.food + projectedDelta(G).resources.food;
+  const proj = projectedDelta(G);
+  const projFood = r.food + proj.resources.food;
 
   let s = 0;
   s += projFood >= 0 ? Math.min(projFood, W.foodBufferCap) : projFood * W.starvationPenalty;
@@ -83,7 +102,7 @@ export function scoreState(G: GameState): number {
   s += r.production * W.production + r.science * W.science + r.military * W.military + r.money * W.money;
   s += G.resources.population * W.population;
   s += [...G.tableau, ...G.workZone].filter(isOperating).length * W.operating;
-  s += usedTerritory(G.tableau) * W.territory;
+  s += Math.min(r.territory + proj.resources.territory, structureCount(G)) * W.territory;
   const cp = cultureProgress(G.resources.culture);
   s += (cp.level + cp.ratio) * W.cultureLevel;
   s += objectiveProgress(G) * W.objectiveProgress;

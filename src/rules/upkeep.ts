@@ -1,4 +1,4 @@
-import { type CoreResources } from './resources';
+import { subtractResources, type Resources } from './resources';
 import { foodUpkeep } from './population';
 import { willReshuffleOnRefill } from './deck';
 import { resolveUpkeep } from './effects';
@@ -95,10 +95,11 @@ export function settleEndOfTurn(G: GameState): void {
   flushEvents(G, before);
 }
 
-/** The net change the player would see if they ended the round right now. */
+/** The net change the player would see if they ended the round right now — the full 8-resource delta
+ *  (core + strategic). All 8 so a consumer can read any pool's projected movement (the sim values
+ *  projected territory; the HUD reads the core deltas + culture), not only the core. */
 export interface ProjectedDelta {
-  resources: CoreResources;
-  culture: number;
+  resources: Resources;
 }
 
 export function projectedDelta(G: GameState): ProjectedDelta {
@@ -119,14 +120,5 @@ export function projectedDelta(G: GameState): ProjectedDelta {
     emitEvent(clone, { type: 'reshuffle' });
     flushEvents(clone, before);
   }
-  return {
-    resources: {
-      food: clone.resources.food - G.resources.food,
-      production: clone.resources.production - G.resources.production,
-      science: clone.resources.science - G.resources.science,
-      military: clone.resources.military - G.resources.military,
-      money: clone.resources.money - G.resources.money,
-    },
-    culture: clone.resources.culture - G.resources.culture,
-  };
+  return { resources: subtractResources(clone.resources, G.resources) };
 }

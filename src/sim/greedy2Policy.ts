@@ -18,9 +18,9 @@ const STAFFING_KINDS = new Set<SimAction['kind']>([
 /**
  * A **greedy with a bounded 2-ply staffing lookahead** — kept alongside plain `createGreedyPolicy` as a
  * deliberate diagnostic *pair*: the win-rate gap between the two on a scenario measures how much
- * **worker reassignment** (relocating a worker into a freshly-placed box) is a skill lever there, a signal
- * neither policy shows alone. (Observed decisive on "Growing Numbers": ~41% greedy → ~93% greedy2, because
- * surviving that long multi-step build hinges on staffing a food work box when population is saturated.)
+ * **worker reassignment** (relocating a worker into a freshly-placed box) is a skill lever there — most
+ * decisive on a mission whose win hinges on staffing a work box while population is saturated, a signal
+ * neither policy shows alone.
  *
  * Identical to `createGreedyPolicy` except in how it *values* a play of a `work`/`building` card: instead
  * of scoring only the immediate post-play state, it scores the best state reachable by *one* follow-up

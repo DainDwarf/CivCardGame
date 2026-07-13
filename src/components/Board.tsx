@@ -1589,7 +1589,7 @@ export function Board({
           />
         </div>
 
-        <CultureBar culture={G.resources.culture} projected={proj.culture} />
+        <CultureBar culture={G.resources.culture} projected={proj.resources.culture} />
       </header>
 
       <div
