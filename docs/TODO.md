@@ -191,6 +191,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
 
+- **Card model tech-debt pass** ✅ — a structural refactor of the card/effect/resource model (the
+  `tech-debt/cards` branch), no gameplay change. Highlights:
+  - **One combined `resources` bundle** — `population`/`territory`/`culture` folded off `GameState`
+    into `resources`, split into `CoreResources` (the 5 spendable) + `StrategicResources` (the 3
+    gauges) = `Resources`; a card's *cost* stays `Partial<CoreResources>`.
+  - **Unified `CardEffect`** — `gain`/`loss`/`draw`/`population`/`territory`/`culture` collapse into one
+    signed `resources` delta plus a `resolve` escape hatch; the two *compose* through one `runEffect`.
+    Timing is now four explicit slots on `CardDef`: `effect` (play), `produces` (per-worker per round),
+    `upkeep` (flat per round), and `on.*`.
+  - **Extracted `CardGate`** (culture-req / discard-cost / bespoke `check`) and **`CardDisplay`**
+    (description / dynamicText / art) off `CardDef`; `RESOURCE_ICON` unified over all 8 resources.
+  - **Fail-fast `workers`** — a staffable card must declare `workers` (no silent default); pinned by
+    `cards.test.ts`.
+  - **Dropped the unused destroy/demolish verb** — reimplement cleanly on the resolver spine when a real
+    card wants it (see the Stone Age deferral note above).
+
 - **Step 6.5 — Restless People (Threat branch)** ✅ — col 3, row 0, prereq 6.3. The **threat** mechanic
   (a persistent, mission-seeded board hazard), plus a new first-class **`reshuffle` bus event**.
   Implementation:
