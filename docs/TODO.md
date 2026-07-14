@@ -179,7 +179,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   reload/re-init the app so the running UI reflects the new store instead of stale in-memory state. `[?]`
 - **Re-polish the victory / gameover screens + flow** — revisit the end-of-run overlay and the transition back to the meta loop now that missions grant real rewards: the win/loss screen should surface what the run earned (Influence, any unlocks) and read well for both outcomes, and the hand-back-to-meta flow should feel finished rather than functional. `[?]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
-- **Show remaining cards in deck** — a view of the cards still in the draw pile, **not** in draw order (that would leak the future/shuffle) but sorted and grouped by the default deck order (×N grouping like the deck editor). Lets the player see what's left to draw without revealing the sequence. `[?]`
 
 ## Tech debt / architecture
 

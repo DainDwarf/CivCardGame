@@ -750,7 +750,7 @@ export function Board({
   const [pending, setPending] = useState<PendingPlay | null>(null);
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
   const [zoom, setZoom] = useState<{ cardId: string; overrideText?: string; overrideCard?: CardDef; stickerBadge?: string[] } | null>(null);
-  const [pileView, setPileView] = useState<{ title: string; cards: CardInstance[] } | null>(null);
+  const [pileView, setPileView] = useState<{ title: string; cards: CardInstance[]; note?: string } | null>(null);
   const [drag, setDragState] = useState<DragState | null>(null);
   const [shake, setShake] = useState<{ key: number; n: number } | null>(null);
   const [deckShuffling, setDeckShuffling] = useState(false);
@@ -1722,6 +1722,7 @@ export function Board({
               label="deck"
               count={G.deck.length}
               elRef={deckPileRef}
+              onView={() => setPileView({ title: 'Cards in deck', cards: G.deck, note: 'Grouped — not in draw order' })}
             />
             <button
               className={styles.undoBtn}
@@ -1981,6 +1982,7 @@ export function Board({
             <h3 className={styles.pileTitle}>
               {pileView.title} ({pileView.cards.length})
             </h3>
+            {pileView.note && <p className={styles.pileHint}>{pileView.note}</p>}
             {pileView.cards.length === 0 ? (
               <p className={styles.empty}>Empty.</p>
             ) : (
