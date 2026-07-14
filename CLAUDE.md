@@ -147,15 +147,16 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     (generic over present keys), `scaleResources`, `canAfford` (core-only), `coreOf` (the core slice,
     e.g. `CardFace`'s `describeCard` splitting an effect's core delta for the card face), and the
     `CORE_KEYS` source of truth.
-  - `deck.ts` — draw + discard-pile reshuffle (the shared `reshuffleIntoDeck`, used by both
-    `drawCard` and `peekTop`), both off the seeded RNG stream (`G.rngState`). Each reshuffle bumps
+  - `deck.ts` — draw + discard-pile reshuffle (the shared `reshuffleIntoDeck`, used by `drawCard`),
+    off the seeded RNG stream (`G.rngState`). Each reshuffle bumps
     `GameState.reshuffleCount`, a pure UI cue no rule reads — `components/Board.tsx` diffs it to
     fire the deck pile's shuffle animation (a length-diff can't tell a reshuffle apart from a card
-    effect that only grows/shrinks the deck, e.g. `returnToDeck`/`peekTop`).
+    effect that only grows/shrinks the deck, e.g. `returnToDeck`).
     Also the **card-facing deck primitives** a peek/draw-manipulation card resolves *through* instead
     of touching `G.deck`/`G.hand`/`G.rngState` itself (the deck counterpart to `gainResources`):
-    `peekTop` (lift up to N off the top, reshuffling the discard in as the deck empties, emitting no
-    `draw`), `drawInstance` (draw one *specific* card — the verb `drawCard`'s top-of-deck-only can't
+    `peekTop` (a **pure read** of the top up-to-N cards — mutates nothing, never reshuffles; bumps
+    `GameState.revealCount` so the undo shell treats the peek as a boundary), `drawInstance` (draw one
+    *specific* card — the verb `drawCard`'s top-of-deck-only can't
     express — emitting the `draw` event), and `returnToDeck` (shuffle cards back). Each takes the
     `EffectContext` so the family reads uniformly. The peek family is currently unused; the one
     card-facing deck primitive in use today is `recoverFromDiscard` (the discard→hand counterpart,

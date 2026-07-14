@@ -7,7 +7,7 @@ import type { EffectContext } from './effects';
 /**
  * Fold the discard pile back into the draw pile, deterministically from the run's RNG stream
  * (`G.rngState`, advanced here so the next reshuffle continues the same stream) — shared by every
- * spot that draws/peeks off an empty deck (`drawCard`, `peekTop`), so the shuffle-in-progress logic
+ * spot that draws off an empty deck (`drawCard`), so the shuffle-in-progress logic
  * lives once. Bumps `reshuffleCount`, a pure UI cue (`components/Board.tsx` diffs it to fire the
  * deck's shuffle animation) — no rule reads it.
  *
@@ -87,26 +87,22 @@ export function willReshuffleOnRefill(G: GameState): boolean {
 // as one card-facing family (like `gainResources(ctx, …)`); each only touches `ctx.G`.
 
 /**
- * Reveal (lift off) up to `n` cards from the top of the draw pile for a card that peeks.
- * Reshuffles the discard into the deck (the same seeded path `drawCard` uses) whenever the
- * deck empties mid-peek, so it surfaces "what the next `n` draws would show", up to what actually
- * exists across both piles — returning fewer than `n` (or `[]`) only when both run dry. The revealed
- * cards are *removed* from the deck (not merely read), so `GameContext`'s reveal-boundary fires and
- * the undo stack clears; the caller then decides each card's fate (drawn to hand via `drawInstance`,
- * or shuffled back via `returnToDeck`). Emits **no** `draw` event — a peek isn't a draw (the chosen
- * card's draw is emitted by `drawInstance`).
+ * Look at the top `min(n, deck.length)` cards of the draw pile for a card that peeks — a **pure
+ * read** that mutates nothing: the cards stay on the deck in place, so peeking never reorders the
+ * draw, reshuffles the discard, or advances the RNG. A short deck simply yields fewer than `n` (a
+ * peek can't foresee past the next shuffle). Emits **no** `draw` event (a peek isn't a draw). Bumps
+ * `revealCount` when it actually reveals something, so `GameContext`'s undo reducer treats the move
+ * as a boundary and clears the stack (a deck-diff can't see a read that leaves the deck untouched) —
+ * the revealed knowledge can't be undone away for a cost refund.
+ *
+ * The returned instances are **live references into `G.deck`** (a slice, not detached copies): fine to
+ * display, but a card that then draws one must pull it out by id (`deck.filter(c => c.id !== …)`),
+ * never assume the returned objects are its own to mutate or splice.
  */
 export function peekTop(ctx: EffectContext, n: number): CardInstance[] {
   const { G } = ctx;
-  const out: CardInstance[] = [];
-  for (let i = 0; i < n; i++) {
-    if (G.deck.length === 0) {
-      if (G.discard.length === 0) break; // both piles exhausted — return what we have
-      reshuffleIntoDeck(G);
-    }
-    const card = G.deck.shift();
-    if (card !== undefined) out.push(card);
-  }
+  const out = G.deck.slice(0, n); // slice() clamps to deck length; the deck itself is untouched
+  if (out.length > 0) G.revealCount += 1;
   return out;
 }
 

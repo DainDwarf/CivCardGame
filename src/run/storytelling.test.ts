@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { playCard, resolveInteraction } from './moves';
+import { endTurn } from './engine';
 import { blankState, instancesFromCardIds, type GameState } from '../rules';
 
 // Storytelling is a real catalogue card (not a test fixture): cost 2🔬, recoversFromDiscard — suspend
@@ -67,5 +68,37 @@ describe('Storytelling (discard recovery) — suspend/resume', () => {
     expect(G.hand.map((c) => c.cardId)).toEqual(['storytelling']); // still in hand, untouched
     expect(G.resources.science).toBe(2); // cost not paid
     expect(G.pendingInteraction).toBeNull();
+  });
+
+  // The interaction *engine* itself (not Storytelling-specific), exercised through this real
+  // suspend/resume card — reject/blocking guards on `moves`/`endTurn` while a choice is parked.
+  it('rejects resolveInteraction when nothing is pending', () => {
+    const G = freshWithStory();
+    expect(resolveInteraction(G, 0)).toBe('invalid');
+  });
+
+  it('rejects an out-of-range answer and leaves the interaction pending', () => {
+    const G = freshWithStory();
+    playCard(G, 0);
+    expect(resolveInteraction(G, 5)).toBe('invalid');
+    expect(resolveInteraction(G, -1)).toBe('invalid');
+    expect(G.pendingInteraction).not.toBeNull();
+  });
+
+  it('blocks playing another card while an interaction is pending', () => {
+    const G = freshWithStory();
+    G.hand = instancesFromCardIds(['storytelling', 'fire']); // ids 1–2
+    G.resources.production = 1; // enough to play 'fire' — proving it's the pending guard, not affordability
+    playCard(G, 0); // opens the interaction; storytelling files to discard
+    expect(G.pendingInteraction).not.toBeNull();
+    expect(playCard(G, 0)).toBe('invalid'); // 'fire' is now at index 0 — blocked while pending
+    expect(G.hand.map((c) => c.cardId)).toEqual(['fire']); // untouched
+  });
+
+  it('endTurn no-ops while an interaction is pending', () => {
+    const G = freshWithStory();
+    playCard(G, 0);
+    const state = { G, gameover: undefined };
+    expect(endTurn(state)).toBe(state); // same reference — the turn cannot end mid-choice
   });
 });

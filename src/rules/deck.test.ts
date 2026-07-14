@@ -79,46 +79,33 @@ describe('drawUpTo', () => {
 });
 
 describe('peekTop', () => {
-  it('lifts the top N off the deck and emits no draw event (a peek is not a draw)', () => {
+  it('reads the top N without removing them, emits no draw, and bumps revealCount', () => {
     const G = blankState('enlightenment');
     G.deck = instancesFromCardIds(['a', 'b', 'c', 'd']);
     const out = peekTop(ctxFor(G), 3);
     expect(out.map((c) => c.cardId)).toEqual(['a', 'b', 'c']);
-    expect(G.deck.map((c) => c.cardId)).toEqual(['d']); // revealed cards removed from the deck
-    expect(G.events).toEqual([]);
+    expect(G.deck.map((c) => c.cardId)).toEqual(['a', 'b', 'c', 'd']); // a pure look — deck untouched
+    expect(G.events).toEqual([]); // no draw event
+    expect(G.revealCount).toBe(1); // the undo-boundary signal
   });
 
-  it('reshuffles the discard in when the deck empties mid-peek', () => {
+  it('reveals fewer than N when the deck is short, without touching the discard', () => {
     const G = blankState('enlightenment');
     G.deck = instancesFromCardIds(['a'], 10);
     G.discard = instancesFromCardIds(['b', 'c'], 20);
     const out = peekTop(ctxFor(G), 3);
-    expect(out.map((c) => c.cardId).sort()).toEqual(['a', 'b', 'c']);
-    expect(out[0].cardId).toBe('a'); // 'a' lifted before the reshuffle; b/c come from the reshuffle
-    expect(G.deck).toEqual([]);
-    expect(G.discard).toEqual([]);
+    expect(out.map((c) => c.cardId)).toEqual(['a']); // only what's on the deck — no reshuffle to top up
+    expect(G.deck.map((c) => c.cardId)).toEqual(['a']);
+    expect(G.discard.map((c) => c.cardId)).toEqual(['b', 'c']);
+    expect(G.reshuffleCount).toBe(0);
   });
 
-  it('returns fewer than N (or none) once both piles run dry', () => {
+  it('returns nothing and does not bump revealCount when the deck is empty', () => {
     const G = blankState('enlightenment');
-    G.deck = instancesFromCardIds(['a'], 10);
-    expect(peekTop(ctxFor(G), 3).map((c) => c.cardId)).toEqual(['a']);
-    expect(peekTop(ctxFor(G), 3)).toEqual([]); // both piles now empty
-  });
-
-  it('reshuffles deterministically from the run rngState', () => {
-    const setup = () => {
-      const G = blankState('enlightenment');
-      G.deck = [];
-      G.discard = instancesFromCardIds(['a', 'b', 'c', 'd']);
-      return G;
-    };
-    const first = setup();
-    const second = setup();
-    const a = peekTop(ctxFor(first), 3);
-    const b = peekTop(ctxFor(second), 3);
-    expect(a).toEqual(b);
-    expect(first.rngState).toEqual(second.rngState);
+    G.deck = [];
+    G.discard = instancesFromCardIds(['b', 'c'], 20);
+    expect(peekTop(ctxFor(G), 3)).toEqual([]); // a peek only sees the deck, never the discard
+    expect(G.revealCount).toBe(0); // nothing revealed — no boundary
   });
 });
 

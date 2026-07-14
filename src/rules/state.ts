@@ -175,12 +175,19 @@ export interface GameState {
   pendingVictory?: boolean;
   /**
    * How many times the discard pile has folded back into an empty draw pile this run — bumped once
-   * per reshuffle by `rules/deck.ts`'s shared `reshuffleIntoDeck` (used by both `drawCard` and
-   * `peekTop`). Pure UI cue: no rule reads it. `run/GameContext.tsx`'s Board diffs it against its
-   * last-seen value to fire the deck's shuffle animation, since a length-diff can't tell a reshuffle
-   * apart from a card effect that only grows/shrinks the deck (e.g. `returnToDeck`/`peekTop`).
+   * per reshuffle by `rules/deck.ts`'s shared `reshuffleIntoDeck` (used by `drawCard`). Pure UI cue:
+   * no rule reads it. `run/GameContext.tsx`'s Board diffs it against its last-seen value to fire the
+   * deck's shuffle animation, since a length-diff can't tell a reshuffle apart from a card effect
+   * that only grows/shrinks the deck (e.g. `returnToDeck`).
    */
   reshuffleCount: number;
+  /**
+   * How many times a move has revealed hidden draw-pile information *without changing the deck* this
+   * run — bumped by `rules/deck.ts`'s `peekTop`. A pure signal no rule reads: `run/GameContext.tsx`'s
+   * undo reducer diffs it to treat a peek move as a boundary (deck-diff alone can't see a pure read),
+   * so the stack clears and the revealed knowledge can't be undone away for a cost refund.
+   */
+  revealCount: number;
 }
 
 /**
@@ -227,6 +234,7 @@ export function blankState(missionId: string): GameState {
     pendingDefeat: null,
     pendingVictory: false,
     reshuffleCount: 0,
+    revealCount: 0,
   };
 }
 

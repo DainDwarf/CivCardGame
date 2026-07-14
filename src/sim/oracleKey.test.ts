@@ -47,13 +47,14 @@ describe('oracle transposition key', () => {
     expect(keyOf(relabeled)).toBe(keyOf(G));
   });
 
-  it('drops derived / constant / UI fields (objective, pending flags, reshuffleCount)', () => {
+  it('drops derived / constant / UI fields (objective, pending flags, reshuffleCount, revealCount)', () => {
     const G = baseState();
     const other = structuredClone(G);
     other.objective = { id: 999, cardId: 'obj' };
     other.pendingVictory = true;
     other.pendingDefeat = { reason: 'deadline' };
     other.reshuffleCount += 5;
+    other.revealCount += 3;
     expect(keyOf(other)).toBe(keyOf(G));
   });
 

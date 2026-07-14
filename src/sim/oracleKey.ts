@@ -27,7 +27,7 @@ import { contentKey, type CardInstance, type GameState, type PendingInteraction,
  *   numeric value — a consistent relabeling is isomorphic) and **derived/constant/UI fields**
  *   (`objective`/`missionId` — invariant across a search; `events` — always `[]` at a step boundary;
  *   `pendingVictory`/`pendingDefeat` — re-derived each flush and the goal test is evaluated separately;
- *   `reshuffleCount` — a pure UI cue no rule reads).
+ *   `reshuffleCount`/`revealCount` — pure UI/undo cues no rule reads).
  *
  * Multiset keying is what actually collapses the explosion: worker assignment is order-independent, and
  * independent plays now commute (their discard/hand-order footprint no longer matters), so all those

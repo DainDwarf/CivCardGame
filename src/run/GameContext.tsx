@@ -64,8 +64,9 @@ type Action =
   | { type: 'restart'; config: RunConfig };
 
 /** Two decks are equal when they hold the same card instances in the same order (compared by stable
- *  instance id — strictly more precise than comparing card ids, and enough to detect a reveal like
- *  a peek card lifting cards off the top). */
+ *  instance id — strictly more precise than comparing card ids). Detects a draw-pile reorder or
+ *  membership change (a draw, a reshuffle); a pure-read peek leaves the deck equal and is caught
+ *  separately via `revealCount`. */
 function sameDeck(a: { id: number }[], b: { id: number }[]): boolean {
   return a.length === b.length && a.every((c, i) => c.id === b[i].id);
 }
@@ -76,12 +77,12 @@ function reducer(s: Session, action: Action): Session {
       const next = applyMove(s.present, action.fn, ...action.args);
       // `applyMove` returns the same reference when the move is invalid or the game is over.
       if (next === s.present) return s;
-      // A move that touched the draw pile (drew cards / reshuffled) revealed new information —
-      // it's a hard boundary you can't undo past, so the whole stack is cleared.
-      // GAP: this only catches reveals that *change* the deck. A future "peek top-N" that
-      // reveals cards without removing them won't be detected here — that move must set its
-      // own explicit "revealed" flag for the reducer to treat as a boundary.
-      const revealed = !sameDeck(s.present.G.deck, next.G.deck);
+      // A move that revealed new draw-pile information is a hard boundary you can't undo past (else
+      // you could peek, undo the cost, and keep the knowledge), so the whole stack is cleared. Two
+      // reveal channels: a deck change (drew cards / reshuffled) and a pure-read peek that leaves the
+      // deck untouched but bumps `revealCount`.
+      const revealed =
+        !sameDeck(s.present.G.deck, next.G.deck) || next.G.revealCount !== s.present.G.revealCount;
       return { present: next, past: revealed ? [] : [...s.past, s.present], gen: s.gen };
     }
     case 'endTurn': {

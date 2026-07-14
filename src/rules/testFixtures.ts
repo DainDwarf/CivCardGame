@@ -27,8 +27,8 @@ import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
 import { MISSIONS, type MissionDef } from '../content/missions';
 import { scaleResources, subtractResources } from './resources';
 import { getCounter, bumpCounter } from './state';
-import { gainResources, suspendChoice } from './effects';
-import { drawCard, peekTop, drawInstance, returnToDeck } from './deck';
+import { gainResources } from './effects';
+import { drawCard } from './deck';
 import { effectiveGain } from './stickers';
 
 // --- Synthetic board -------------------------------------------------------------------------------
@@ -157,35 +157,6 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   test_cultreq: {
     id: 'test_cultreq', name: 'Test Culture-Req', kind: 'action',
     cost: { science: 1 }, gate: { cultureLevelReq: 1 }, effect: { resources: { science: 3 } },
-  },
-  // Interactive peek action: reveals the top 3 of the draw pile into a choice tray,
-  // you draw 1, the rest shuffle back. Its resolver suspends into a `pendingInteraction` and resumes
-  // on the chosen index — the canonical interactive/`suspendChoice` fixture. The `gate.check` bars it
-  // when both piles are empty (nothing to reveal).
-  test_peek: {
-    id: 'test_peek', name: 'Test Peek', kind: 'action', cost: { science: 1 },
-    gate: { check: (G) => (G.deck.length + G.discard.length === 0 ? { kind: 'emptyDrawPile' } : null) },
-    display: { description: 'Peek the top 3 cards; draw 1, shuffle the rest back' },
-    effect: {
-      resolve: (ctx) => {
-        if (ctx.answer === undefined) {
-          suspendChoice(ctx, {
-            kind: 'chooseCard',
-            prompt: 'Draw one — the rest shuffle back',
-            options: peekTop(ctx, 3),
-            pick: 1,
-          });
-          return;
-        }
-        const pending = ctx.G.pendingInteraction;
-        if (!pending) return;
-        const chosen = pending.options[ctx.answer];
-        const rest = pending.options.filter((_, i) => i !== ctx.answer);
-        if (chosen !== undefined) drawInstance(ctx, chosen);
-        returnToDeck(ctx, rest);
-        ctx.G.pendingInteraction = null;
-      },
-    },
   },
   // Bespoke-`resolve` action with no declarative resources: adds its gain through `gainResources`, so a
   // sticker's `effectiveGain` still folds over it (the gap a bespoke resolver's output would otherwise miss).
