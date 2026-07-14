@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { playCard, resolveInteraction } from './moves';
 import { blankState, instancesFromCardIds, type GameState } from '../rules';
 import { assertRunInvariants } from '../sim';
-import { CALENDAR_PEEK } from '../content/cards';
 
 // Calendar is a real catalogue card (cost 1🔬): a look-only peek at the top of the draw pile. It
 // suspends into a `reveal` interaction the player acknowledges (drawing/keeping nothing). Deck cards use
@@ -24,10 +23,10 @@ describe('Calendar (deck peek) — look-only reveal', () => {
       instanceId: 1,
       kind: 'reveal',
       prompt: 'The next cards you will draw, in order',
-      options: instancesFromCardIds(['a', 'b', 'c'], 10), // the top CALENDAR_PEEK, in draw order
+      options: instancesFromCardIds(['a', 'b', 'c'], 10), // the top 3, in draw order
       pick: 0,
     });
-    expect(G.pendingInteraction?.options).toHaveLength(CALENDAR_PEEK);
+    expect(G.pendingInteraction?.options).toHaveLength(3);
     // Pure read: the peeked cards stay on the deck (still drawable), and nothing entered the hand.
     expect(G.deck.map((c) => c.cardId)).toEqual(['a', 'b', 'c', 'd']);
     expect(G.hand).toEqual([]);
@@ -50,7 +49,7 @@ describe('Calendar (deck peek) — look-only reveal', () => {
     expect(G.resources.science).toBe(0);
   });
 
-  it('reveals fewer than CALENDAR_PEEK on a short deck without reshuffling the discard', () => {
+  it('reveals fewer than the peek limit on a short deck without reshuffling the discard', () => {
     const G = freshWithCalendar(['a', 'b']);
     G.discard = instancesFromCardIds(['x', 'y'], 20);
     playCard(G, 0);

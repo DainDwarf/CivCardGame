@@ -153,10 +153,6 @@ export const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm'];
  *  (`content/missions.ts`), the `raiders_at_border_goal` win threshold, and its progress readout. */
 export const RAIDER_WAVES = 3;
 
-/** How many upcoming cards the Calendar reveals — shared by its resolver and its face text so the
- *  two can't disagree. */
-export const CALENDAR_PEEK = 3;
-
 /**
  * The card catalogue. Numbers are a first pass. Tests install synthetic `test_*` cards on top via
  * `rules/testFixtures.ts`.
@@ -224,7 +220,7 @@ export const CARDS: Record<string, CardDef> = {
   // effect on resume, so any resource field would double-apply.
   calendar: {
     id: 'calendar', name: 'Calendar', kind: 'action', cost: { science: 1 },
-    display: { art: '📅', description: `Look at the top ${CALENDAR_PEEK} cards of your draw pile.` },
+    display: { art: '📅', description: 'Look at the top 3 cards of your draw pile.' },
     // Nothing to reveal from an empty pile — gate it (reusing the peek reason) rather than fizzle for
     // its cost. Peeking never reshuffles, so `deck.length` (not deck+discard) is the emptiness test.
     gate: { check: (G) => (G.deck.length === 0 ? { kind: 'emptyDrawPile' } : null) },
@@ -233,7 +229,7 @@ export const CARDS: Record<string, CardDef> = {
         if (ctx.answer === undefined) {
           // First pass: pure-read the top cards (peekTop leaves them on the deck) and park a look-only
           // reveal. The options alias live `G.deck` instances — fine, the reveal never mutates them.
-          const top = peekTop(ctx, CALENDAR_PEEK);
+          const top = peekTop(ctx, 3);
           if (top.length === 0) return;
           suspendChoice(ctx, {
             kind: 'reveal',

@@ -194,8 +194,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     reads the parked options and acknowledges (choosing nothing, `pick: 0`). `enumerateActions` collapses
     it to a single dismiss; the Board modal renders the cards display-only (no pointer/hover) under a
     **Continue** button; `resolveInteraction` is the shared resume path unchanged.
-  - The **Calendar** action (reward unlock) — cost **1🔬**, a pure-read peek at the top `CALENDAR_PEEK`
-    (**3**) cards *in order*. `effect` is resolve-only (no declarative `resources` — `resolveInteraction`
+  - The **Calendar** action (reward unlock) — cost **1🔬**, a pure-read peek at the top **3**
+    cards *in order*. `effect` is resolve-only (no declarative `resources` — `resolveInteraction`
     re-runs the whole effect on resume, which would double-apply a resource field): first pass `peekTop`s
     + suspends a `'reveal'`, resume clears it (a look keeps nothing). Gated unplayable on an **empty draw
     pile** (`deck.length === 0`, reusing the pre-wired `emptyDrawPile` reason) — peeking never reshuffles,
