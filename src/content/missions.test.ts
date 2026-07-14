@@ -18,7 +18,7 @@ describe('mission catalogue coherence', () => {
       const card = CARDS[m.objectiveCardId];
       expect(card, `${m.id} → ${m.objectiveCardId}`).toBeDefined();
       expect(card.kind).toBe('objective');
-      expect(typeof card.objective).toBe('function');
+      expect(card.goals?.length, `${m.objectiveCardId} declares no goals`).toBeGreaterThan(0);
     }
   });
 

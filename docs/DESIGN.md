@@ -128,9 +128,9 @@ see below). An *effect* can route a card there too — see the building note.
   deck-building/collection (`isDeckable`). → persistent *pressure*.
 - **Objective (win/lose goal):** the mission's victory/defeat condition made into a card,
   the positive counterpart to `threat`. A mission names one `objectiveCardId`; it's seeded
-  into the `GameState.objective` zone at setup and owns its mission's win/lose *logic* via a
-  pure-read `objective` predicate (bus-driven into `G.pendingVictory`, read by the engine's
-  `checkEndIf`) plus a live progress readout. Never in a hand/pile/deck and excluded everywhere `event`/`threat`
+  into the `GameState.objective` zone at setup and owns its mission's win *logic* via declarative
+  `goals` — the single source the win boolean, the live readout, and the sim's steering gradient all
+  derive from (bus-driven into `G.pendingVictory`, read by the engine's `checkEndIf`). Never in a hand/pile/deck and excluded everywhere `event`/`threat`
   are (`isDeckable`). → the mission's *goal*.
 
 ### Turn structure 🔧

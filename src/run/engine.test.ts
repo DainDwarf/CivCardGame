@@ -29,13 +29,16 @@ const LOCAL: Record<string, CardDef> = {
   test_survive_obj: {
     id: 'test_survive_obj', name: 'Survive', kind: 'objective', cost: {},
     display: { description: 'Beat 2 events without Military falling below zero.' },
-    objective: (G) => G.removed.filter((c) => c.cardId === 'test_event').length >= 2 && G.resources.military >= 0,
+    goals: [
+      { icon: '⚔️', measure: (G) => G.removed.filter((c) => c.cardId === 'test_event').length, target: 2 },
+      { icon: '🛡️', measure: (G) => G.resources.military, target: 0 },
+    ],
   },
-  // Round-based objective: win the instant the round counter passes 3.
+  // Round-based objective: win the instant the round counter passes 3 (round > 3 ⇔ round ≥ 4).
   test_round_obj: {
     id: 'test_round_obj', name: 'Endure', kind: 'objective', cost: {},
     display: { description: 'Survive past round 3.' },
-    objective: (G) => G.round > 3,
+    goals: [{ icon: '⏳', measure: (G) => G.round, target: 4 }],
   },
 };
 

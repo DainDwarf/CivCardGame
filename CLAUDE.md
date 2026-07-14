@@ -208,7 +208,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `[]` in any committed/undo-visible state** (see `state.ts`), so structuredClone/undo/determinism
     are untouched. Handlers must be pure over `G` (the projection clone re-runs upkeep every render)
     and must not open a `pendingInteraction`. Win and driven-loss are both pull, not push: `flushEvents`
-    re-derives `G.pendingVictory` from the objective card's `objective` predicate (`objective.ts`'s
+    re-derives `G.pendingVictory` from the objective card's declarative `goals` (`objective.ts`'s
     `evaluateObjective`) *and* `G.pendingDefeat` from every seeded threat's own `defeat` predicate
     (`threats.ts`'s `evaluateDefeat`) at every step boundary, and `checkEndIf` (`engine.ts`) reads both
     flags — so win/lose is entirely bus-driven flag-reads, never a poll of card logic, and never a
@@ -229,12 +229,15 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `resolveEndTurn` → the threat's own `resolveUpkeep` drain, reading its `upkeep` slot), so the threat
     card computes its own behaviour — the engine never reads or scales its data. A threat's *driven* defeat (a deadline, not
     a resource drain) is a separate pure-read `defeat` hook, the loss counterpart to `objective.ts`'s
-    `objective`; `defeatMet`/`evaluateDefeat` re-derive it into `G.pendingDefeat` at every `flushEvents`
+    `goals`; `defeatMet`/`evaluateDefeat` re-derive it into `G.pendingDefeat` at every `flushEvents`
     boundary, set-or-clear like the win flag — never a handler mutating `G.pendingDefeat` mid-dispatch,
     which could leave a stale flag if the condition recovers later in the same broadcast.
   - `objective.ts` — the win counterpart to `threats.ts`: `seedObjective` seeds the mission's
-    objective card into `G.objective` at setup; `objectiveMet` reads that card's own pure
-    `objective` predicate. It's bus-driven, not polled: `evaluateObjective` re-derives the verdict into
+    objective card into `G.objective` at setup; `objectiveMet` folds the card's declarative `goals`
+    (won when every goal is met — `goalMet`/`goalProgress`, the single source the run boolean, the live
+    readout `goalsReadout`, and the sim's steering gradient all derive from; a goal that isn't a plain
+    numeric threshold carries its own bespoke `met`, the way `CardEffect` owns `resolve`). It's
+    bus-driven, not polled: `evaluateObjective` re-derives the verdict into
     `G.pendingVictory` at every `flushEvents` boundary (`events.ts`), the way `threats.ts`'s
     `evaluateDefeat` re-derives `G.pendingDefeat`, and `engine.ts`'s `checkEndIf` reads both flags —
     never a card predicate or a mission predicate. A mission-specific *defeat* is a threat's job
@@ -304,8 +307,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     (paying its cost is preventive: the `upkeep` never fires), while one **left unplayed** fires its
     `upkeep` at end of turn and files to `discard`, so it recurs (`moves.playCard` /
     `upkeep.ts`'s `resolveHandEvents` own the two sides). An `objective` card owns
-    its mission's win logic via a single pure-read `objective` predicate, the way a
-    `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
+    its mission's win logic via declarative `goals` (each a `measure`/`target`, with an optional
+    bespoke `met` escape hatch), the way a `threat` owns its drain — see `rules/objective.ts`. `isDeckable(card)` is the single predicate
     for "a card the player builds decks with" (excludes event/threat/objective), used by the
     deck-add reject and the Collection/DeckEditor pickers. The catalogue holds the **Paleolithic
     starting set** (hunter-gatherer actions + work cards) plus the first **Stone Age** structures —

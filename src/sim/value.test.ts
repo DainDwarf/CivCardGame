@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { scoreState } from './value';
-import { PROGRESS } from './objective';
 import { addThreat, addWork, blankState, seedObjective, type GameState } from '../rules';
 import type { CardDef } from '../content/cards';
 import { installFixtures, uninstallFixtures, installCards, uninstallCards } from '../rules/testFixtures';
@@ -20,17 +19,14 @@ const LOCAL_CARDS = {
     id: 'test_work_culture', name: 'Test Work Culture', kind: 'work',
     cost: {}, workers: 1, produces: { resources: { culture: 2 } },
   },
-  // A shallow strategic goal (4🎭) with a local gradient below, so one +2🎭 round is a big band-4 step.
+  // A shallow strategic goal (4🎭) — its declarative goal yields the band-4 gradient `min(culture,4)/4`,
+  // so one +2🎭 round is a big band-4 step.
   test_culture_goal: {
     id: 'test_culture_goal', name: 'Test Culture Goal', kind: 'objective', cost: {},
-    objective: (G) => G.resources.culture >= 4,
+    goals: [{ icon: '🎭', measure: (G) => G.resources.culture, target: 4 }],
     display: { description: 'Reach 4 Culture.' },
   },
 } satisfies Record<string, CardDef>;
-
-/** The sim-local progress gradient for `test_culture_goal` — the registry entry the band-4 tests steer by
- *  (spliced/removed like the card fixtures, mirroring the `PROGRESS` registry the sim layer owns). */
-const CULTURE_PROGRESS = (G: GameState) => Math.min(G.resources.culture, 4) / 4;
 
 /** A zeroed sandbox state to tweak per case. `scoreState` reads `projectedDelta`/`applyUpkeep`, which
  *  run a full upkeep on a clone — harmless on a bare state (no threats/objective/hand). */
@@ -42,15 +38,13 @@ function state(mut: (G: GameState) => void): GameState {
 
 describe('scoreState', () => {
   // The threat fixtures (`test_threat`, `test_escalating`) and the local culture producer/goal must be in
-  // the live catalogue for `addThreat`/`addWork`/`seedObjective` to resolve; the culture goal's gradient
-  // is spliced into the sim-local `PROGRESS` registry for the band-4 tests.
+  // the live catalogue for `addThreat`/`addWork`/`seedObjective` to resolve; the culture goal's band-4
+  // gradient derives from its own declarative `goals`, so no separate registry splice is needed.
   beforeAll(() => {
     installFixtures();
     installCards(LOCAL_CARDS);
-    PROGRESS.test_culture_goal = CULTURE_PROGRESS;
   });
   afterAll(() => {
-    delete PROGRESS.test_culture_goal;
     uninstallCards(LOCAL_CARDS);
     uninstallFixtures();
   });

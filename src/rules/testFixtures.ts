@@ -261,10 +261,10 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     defeat: (G) => G.round > 30 && 'test far deadline',
   },
 
-  // --- Objectives: each owns its mission's win as a pure-read predicate over `G` (never mutates it). ---
+  // --- Objectives: each owns its mission's win as declarative `goals` over `G` (never mutates it). ---
   test_objective: {
     id: 'test_objective', name: 'Test Objective', kind: 'objective', cost: {},
-    objective: (G) => G.resources.science >= 10,
+    goals: [{ icon: '🔬', measure: (G) => G.resources.science, target: 10 }],
     display: {
       description: 'Reach 10 Science.',
       dynamicText: (G) => `${G.resources.science}/10🔬`,
@@ -274,7 +274,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // *unwinnable* mission (no line exists at any depth). Pair with a deadline threat so a run still ends.
   test_never: {
     id: 'test_never', name: 'Test Never', kind: 'objective', cost: {},
-    objective: () => false,
+    goals: [{ icon: '🚫', measure: () => 0, target: 1, met: () => false }],
     display: { description: 'Cannot be won.' },
   },
 };

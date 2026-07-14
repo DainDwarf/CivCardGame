@@ -3,7 +3,7 @@ import { type CardInstance, type GameEventType, type GameState } from '../rules/
 import { type CardEffect, suspendChoice } from '../rules/effects';
 import type { CardGate } from '../rules/playability';
 import { peekTop } from '../rules/deck';
-import { cultureLevel, cultureProgress } from '../rules/culture';
+import { cultureForLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'event' | 'threat' | 'objective';
 
@@ -28,6 +28,23 @@ export interface CardDisplay {
    *  card without one falls back to a per-kind default in `CardFace.tsx`'s `artFor`. Every deckable
    *  card must set it (pinned by `cards.test.ts`). */
   art?: string;
+}
+
+/** One sub-goal of an `objective` card: "reach `target` on `measure(G)`". Declarative by default;
+ *  a goal that isn't a plain numeric threshold owns its own bespoke `met` closure — the escape hatch
+ *  lives on the structure, the way `CardEffect` owns `resolve`. See `rules/objective.ts` for the
+ *  `goalMet`/`goalProgress` folds every consumer (predicate, readout, sim gradient) reads through. */
+export interface ObjectiveGoal {
+  /** Glyph for the derived live readout (`goalsReadout`). Unread when the card overrides its readout
+   *  via `display.dynamicText`. */
+  icon: string;
+  /** Current value toward this sub-goal — a pure read over `G`. */
+  measure: (G: GameState) => number;
+  /** Value of `measure` that satisfies the sub-goal. */
+  target: number;
+  /** Bespoke escape hatch: when present it decides satisfaction instead of `measure >= target`, for a
+   *  goal that isn't a plain numeric threshold (e.g. the sandbox's never-winning `() => false`). */
+  met?: (G: GameState) => boolean;
 }
 
 export interface CardDef {
@@ -69,10 +86,12 @@ export interface CardDef {
    * A threat's driven defeat does NOT go through `on` — see `defeat` below.
    */
   on?: Partial<Record<GameEventType, CardEffect>>;
-  /** `objective` cards only: the mission's win condition as a pure-read predicate over run state.
-   *  Never mutates `G`; bus-driven into `G.pendingVictory` (`rules/objective.ts`). Defeat belongs
-   *  elsewhere — a threat's `defeat` hook, or universal collapse in `run/engine.ts`. */
-  objective?: (G: GameState, self: CardInstance) => boolean;
+  /** `objective` cards only: the mission's win condition as declarative sub-goals — the single source
+   *  the boolean predicate, the live readout, and the sim's steering gradient all derive from
+   *  (`rules/objective.ts`). Won when *every* goal is met; a bare-read over `G`, never mutating it,
+   *  bus-driven into `G.pendingVictory`. Defeat belongs elsewhere — a threat's `defeat` hook, or
+   *  universal collapse in `run/engine.ts`. */
+  goals?: ObjectiveGoal[];
   /** `threat` cards only: a driven (non-collapse) defeat as a pure-read predicate returning the reason
    *  string, or falsy. Never mutates `G`; bus-driven into `G.pendingDefeat` set-OR-CLEAR
    *  (`rules/threats.ts`), so it must not stick. A round deadline uses `round > N`, not `>= N` —
@@ -125,9 +144,10 @@ export function compareCards(a: CardDef, b: CardDef): number {
 /** Rounds the sandbox mission lasts before the `sands_of_time` deadline threat ends it. */
 export const SANDBOX_DEADLINE = 50;
 
-/** The buildings "Growing Numbers" wants — shared by the win predicate and the `dynamicText`, so
- *  the two can't list a different set. Each progress glyph is pulled from the building's own `art`. */
-const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm'];
+/** The buildings "Growing Numbers" wants — shared by the win goal, the `dynamicText` readout, and the
+ *  sim's steering override (`sim/objective.ts`), so none can list a different set. Each progress glyph
+ *  is pulled from the building's own `art`. */
+export const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm'];
 
 /** How many raider waves "Raiders at the Border" seeds — shared by the mission's injected event list
  *  (`content/missions.ts`), the `raiders_at_border_goal` win threshold, and its progress readout. */
@@ -235,16 +255,23 @@ export const CARDS: Record<string, CardDef> = {
   // — Objectives —
   first_settlement_goal: {
     id: 'first_settlement_goal', name: 'The First Settlement', kind: 'objective', cost: {},
-    objective: (G) => G.resources.production >= 10 && G.resources.military >= 10,
-    display: {
-      description: 'Have 10 🔨 and 10 ⚔️',
-      dynamicText: (G) => `🔨 ${G.resources.production}/10 · ⚔️ ${G.resources.military}/10`,
-    },
+    goals: [
+      { icon: '🔨', measure: (G) => G.resources.production, target: 10 },
+      { icon: '⚔️', measure: (G) => G.resources.military, target: 10 },
+    ],
+    display: { description: 'Have 10 🔨 and 10 ⚔️' },
   },
   growing_numbers_goal: {
     id: 'growing_numbers_goal', name: 'Growing Numbers', kind: 'objective', cost: {},
-    objective: (G) =>
-      GROWING_NUMBERS_BUILDINGS.every((id) => G.tableau.some((b) => b.cardId === id)),
+    // One goal counting the distinct required buildings present (both ⇒ met); the per-building
+    //   breakdown is left to `dynamicText`, which the generic readout can't express.
+    goals: [
+      {
+        icon: '🏛️',
+        measure: (G) => GROWING_NUMBERS_BUILDINGS.filter((id) => G.tableau.some((b) => b.cardId === id)).length,
+        target: GROWING_NUMBERS_BUILDINGS.length,
+      },
+    ],
     display: {
       description: 'Build 🛖 🌱',
       dynamicText: (G) =>
@@ -254,11 +281,11 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // Progress anchors on the culture *level*, not `cultureProgress`'s within-band count, which resets
-  //   each level-up and would read confusingly against a level target.
+  // Culture is never spent, so `culture >= cultureForLevel(N)` is exactly `cultureLevel >= N`. The
+  //   readout anchors on the *level* (a within-band count would reset each level-up), so it overrides.
   rites_rituals_goal: {
     id: 'rites_rituals_goal', name: 'Rites & Rituals', kind: 'objective', cost: {},
-    objective: (G) => cultureLevel(G.resources.culture) >= 1,
+    goals: [{ icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(1) }],
     display: {
       description: 'Reach 🎭 level 1',
       dynamicText: (G) => {
@@ -271,7 +298,13 @@ export const CARDS: Record<string, CardDef> = {
   // A raider reaches `removed` only by being played, so counting them there counts defeated waves.
   raiders_at_border_goal: {
     id: 'raiders_at_border_goal', name: 'Raiders at the Border', kind: 'objective', cost: {},
-    objective: (G) => G.removed.filter((c) => c.cardId === 'raider').length >= RAIDER_WAVES,
+    goals: [
+      {
+        icon: '⚔️',
+        measure: (G) => G.removed.filter((c) => c.cardId === 'raider').length,
+        target: RAIDER_WAVES,
+      },
+    ],
     display: {
       description: `Defeat all ${RAIDER_WAVES} raider waves`,
       dynamicText: (G) =>
@@ -283,7 +316,7 @@ export const CARDS: Record<string, CardDef> = {
   // "Rites & Rituals", which only asks for level 1).
   restless_people_goal: {
     id: 'restless_people_goal', name: 'Restless People', kind: 'objective', cost: {},
-    objective: (G) => cultureLevel(G.resources.culture) >= 2,
+    goals: [{ icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(2) }],
     display: {
       description: 'Reach 🎭 level 2',
       dynamicText: (G) => {
@@ -295,23 +328,20 @@ export const CARDS: Record<string, CardDef> = {
 
   reading_seasons_goal: {
     id: 'reading_seasons_goal', name: 'Reading the Seasons', kind: 'objective', cost: {},
-    objective: (G) => G.resources.science >= 10,
-    display: {
-      description: 'Reach 10 🔬 science',
-      dynamicText: (G) => `🔬 ${G.resources.science}/10`,
-    },
+    goals: [{ icon: '🔬', measure: (G) => G.resources.science, target: 10 }],
+    display: { description: 'Reach 10 🔬 science' },
   },
 
-  // Sandbox is an infinite mission: the objective never wins by design; the run is bounded by the
-  //   deadline threat below.
+  // Sandbox is an infinite mission: the objective never wins by design (a single bespoke goal whose
+  //   `met` is always false); the run is bounded by the deadline threat below.
   sandbox_goal: {
     id: 'sandbox_goal', name: 'The Long Wander', kind: 'objective', cost: {},
+    goals: [{ icon: '👣', measure: () => 0, target: 1, met: () => false }],
     display: {
       art: '👣',
       description: 'There is no goal but to endure. Survive as long as the band can.',
       dynamicText: (G) => `Round ${G.round}`,
     },
-    objective: () => false,
   },
 
   // — Threats —

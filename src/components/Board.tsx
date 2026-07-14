@@ -4,6 +4,7 @@ import { useGame } from '../run/GameContext';
 import {
   cultureProgress,
   freePopulation,
+  goalsReadout,
   isOperating,
   producingUnits,
   projectedDelta,
@@ -159,7 +160,11 @@ function BoardLeftColumn({
   const objective = G.objective;
   if (!objective && G.threats.length === 0) return null;
   const objectiveCard = objective ? CARDS[objective.cardId] : undefined;
-  const objectiveText = objective && objectiveCard ? objectiveCard.display?.dynamicText?.(G, objective) : undefined;
+  const objectiveText =
+    objective && objectiveCard
+      ? objectiveCard.display?.dynamicText?.(G, objective) ??
+        (objectiveCard.goals && goalsReadout(objectiveCard.goals, G))
+      : undefined;
   const hiddenStyle = (id: number) => (hiddenIds?.has(id) ? { visibility: 'hidden' as const } : undefined);
   return (
     <div className={styles.boardLeft}>

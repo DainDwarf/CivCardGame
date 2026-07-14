@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { objectiveProgress, PROGRESS } from './objective';
-import { blankState, seedObjective, type GameState } from '../rules';
+import { objectiveProgress, hasObjectiveGradient, OVERRIDES } from './objective';
+import { blankState, seedObjective, cultureForLevel, type GameState } from '../rules';
 import { CARDS } from '../content/cards';
 
 /** A zeroed state carrying the given objective card, tweaked per case. */
@@ -62,29 +62,88 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
     expect(p(70)).toBe(1);
   });
 
-  it('falls back to the binary met/not for an objective with no authored gradient (the sandbox never wins)', () => {
-    // `sandbox_goal.objective` is `() => false`, so with no registry entry the progress is a constant 0
-    // regardless of how rich the state is — no steering, and the greedy scorer is unchanged on it.
+  it('the sandbox never wins and offers no gradient to climb (a purely-bespoke goal)', () => {
+    // `sandbox_goal`'s single goal is `met: () => false` with a constant-0 measure, so the progress is
+    // 0 regardless of how rich the state is — no steering, and the greedy scorer is unchanged on it.
     const rich = withObjective('sandbox_goal', (G) => {
       G.resources.production = 50;
       G.resources.military = 50;
       G.round = 20;
     });
     expect(objectiveProgress(rich)).toBe(0);
+    expect(hasObjectiveGradient(rich)).toBe(false);
   });
 
   it('is 0 when no objective is seeded', () => {
     expect(objectiveProgress(blankState('sandbox'))).toBe(0);
+    expect(hasObjectiveGradient(blankState('sandbox'))).toBe(false);
   });
 
-  // Coherence, never deferred (see the data-coherence-vs-balance convention): a mistyped/renamed key
-  // would silently fall back to the flat gradient and drift that whole mission, surfacing only as a
-  // `simulateRun` throw when it's swept. Pin every key to a real objective card at test time instead.
-  it('every registry key names a real objective card', () => {
-    for (const cardId of Object.keys(PROGRESS)) {
+  it('reports a climbable gradient for the declarative objectives', () => {
+    for (const cardId of ['first_settlement_goal', 'rites_rituals_goal', 'raiders_at_border_goal']) {
+      expect(hasObjectiveGradient(withObjective(cardId)), cardId).toBe(true);
+    }
+  });
+
+  // Balance-neutrality: the goals-derived gradient must reproduce the pre-refactor per-objective
+  // formulas bit-for-bit, so migrating to declarative goals can't silently shift any policy's steering.
+  it('reproduces the pre-refactor gradient for the purely-declarative objectives', () => {
+    const fs = (prod: number, mil: number) =>
+      objectiveProgress(
+        withObjective('first_settlement_goal', (G) => {
+          G.resources.production = prod;
+          G.resources.military = mil;
+        }),
+      );
+    // old: (min(prod,10) + min(mil,10)) / 20
+    expect(fs(3, 7)).toBe((Math.min(3, 10) + Math.min(7, 10)) / 20);
+    expect(fs(12, 4)).toBe((Math.min(12, 10) + Math.min(4, 10)) / 20);
+
+    const rs = (sci: number) =>
+      objectiveProgress(withObjective('reading_seasons_goal', (G) => (G.resources.science = sci)));
+    expect(rs(6)).toBe(Math.min(6, 10) / 10); // old: min(science,10)/10
+    expect(rs(14)).toBe(1);
+
+    const raid = (n: number) =>
+      objectiveProgress(
+        withObjective('raiders_at_border_goal', (G) => {
+          G.removed = Array.from({ length: n }, (_, i) => ({ id: i + 1, cardId: 'raider' }));
+        }),
+      );
+    expect(raid(1)).toBe(Math.min(1, 3) / 3); // old: min(count,RAIDER_WAVES)/RAIDER_WAVES
+    expect(raid(5)).toBe(1);
+
+    const cult = (c: number) =>
+      objectiveProgress(withObjective('rites_rituals_goal', (G) => (G.resources.culture = c)));
+    expect(cult(5)).toBe(Math.min(5, cultureForLevel(1)) / cultureForLevel(1)); // old: min(culture,target)/target
+  });
+
+  // "Growing Numbers" keeps a sim-only override (its territory steering term isn't in the win
+  // predicate), which must still equal the pre-refactor formula: (buildingsBuilt + min(territory,2)) / 4.
+  it('preserves the growing_numbers territory-steering override', () => {
+    const gn = (huts: boolean, farm: boolean, territory: number) =>
+      objectiveProgress(
+        withObjective('growing_numbers_goal', (G) => {
+          G.resources.territory = territory;
+          G.tableau = [
+            ...(huts ? [{ id: 1, cardId: 'hut', workers: 0 }] : []),
+            ...(farm ? [{ id: 2, cardId: 'farm', workers: 0 }] : []),
+          ];
+        }),
+      );
+    const expected = (built: number, terr: number) => (built + Math.min(terr, 2)) / 4;
+    expect(gn(false, false, 0)).toBe(expected(0, 0));
+    expect(gn(true, false, 1)).toBe(expected(1, 1));
+    expect(gn(true, true, 2)).toBe(expected(2, 2)); // the win: both built, two slots ⇒ territory ≥ 2
+  });
+
+  // Coherence, never deferred (see the data-coherence-vs-balance convention): a mistyped/renamed
+  // override key would silently drop its steering term, surfacing only as a drifted sweep.
+  it('every OVERRIDES key names a real objective card', () => {
+    for (const cardId of Object.keys(OVERRIDES)) {
       const card = CARDS[cardId];
-      expect(card, `PROGRESS key '${cardId}' has no card`).toBeDefined();
-      expect(card.kind, `PROGRESS key '${cardId}' is not an objective card`).toBe('objective');
+      expect(card, `OVERRIDES key '${cardId}' has no card`).toBeDefined();
+      expect(card.kind, `OVERRIDES key '${cardId}' is not an objective card`).toBe('objective');
     }
   });
 });
