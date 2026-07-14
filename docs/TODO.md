@@ -175,8 +175,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Per-pip worker drag** — independent per-pip *drag* (drag a specific pip to another box); box-level
   worker drag still moves one worker at a time. Deferred follow-up from the shipped multi-pip staffing UI. `[?]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]` `[phase: 4]`
-- **Reload game when wiping save** — after a destructive Save-menu action (Clear, Load/import),
-  reload/re-init the app so the running UI reflects the new store instead of stale in-memory state. `[?]`
 - **Re-polish the victory / gameover screens + flow** — revisit the end-of-run overlay and the transition back to the meta loop now that missions grant real rewards: the win/loss screen should surface what the run earned (Influence, any unlocks) and read well for both outcomes, and the hand-back-to-meta flow should feel finished rather than functional. `[?]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 
@@ -194,6 +192,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Reload game when wiping save** ✅ — a destructive Save-menu action (Clear, Load/import) now
+  persists the new store then reloads the app (through the fade transition) instead of swapping React
+  state in place, so no component-local UI state (e.g. an open DeckEditor's working copy) survives
+  stale. Concentrated at `App.tsx`'s `handleImportStore` choke point; the now-unreachable success toast
+  in `GameMenu`'s `confirmPending` was dropped (the fresh screen is the feedback; the parse-error path
+  still uses `importMessage`).
 
 - **Step 6.7 — Göbekli Tepe (Wonder capstone)** ✅ — col 4, row 0, prereq **both** branch tips
   (6.4 Raiders + 6.5 Restless People), extending the Stone Age slice to `[0,5)`. The **wonder** role

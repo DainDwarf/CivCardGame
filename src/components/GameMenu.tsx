@@ -179,7 +179,8 @@ export function GameMenu({
       return;
     }
     onImportStore(pending.kind === 'import' ? pending.store : emptyStore());
-    setImportMessage({ kind: 'ok', text: pending.kind === 'import' ? 'Save loaded.' : 'Save cleared.' });
+    // onImportStore reloads the app, so no success message is shown here — the fresh
+    // screen is the feedback. (The error path in handleFileChosen still uses importMessage.)
     setPending(null);
   }
 

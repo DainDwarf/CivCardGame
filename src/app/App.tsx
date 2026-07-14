@@ -122,12 +122,15 @@ export function App() {
   }, [settings.theme]);
 
   // Load/Clear (GameMenu's Save submenu) replace the store wholesale, which can be
-  // triggered mid-run. The run's RunConfig no longer corresponds to anything in the
-  // new store, so it's closed silently — not through onRunEnd/recordResult, since it
-  // was never actually finished and shouldn't be scored as a RunResult.
+  // triggered mid-run. Persist first (synchronous localStorage write), then reload so the
+  // whole app re-inits from the new store — swapping React state in place leaves
+  // component-local state (e.g. an open DeckEditor's working copy) stale against it. The
+  // reload resets `view` to the menu, so any in-progress run is abandoned silently (it was
+  // never finished, so it shouldn't be scored as a RunResult). Wrapped in `transition()`
+  // so it fades to black before the reload, matching the app's other hard cuts.
   function handleImportStore(next: PlayerStore) {
-    persist(next);
-    setView({ screen: 'menu' });
+    saveStore(next);
+    transition(() => window.location.reload());
   }
 
   // A run also lands here when the player hits Restart instead of End Run — that
