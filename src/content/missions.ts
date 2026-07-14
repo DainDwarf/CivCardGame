@@ -141,7 +141,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Reach 🎭 culture level 1.',
     failureHint: null,
     kind: 'standard',
-    reward: { influence: 8, unlockCardIds: ['gobekli_tepe'] },
+    reward: { influence: 8, unlockCardIds: ['burial'] },
     map: { col: 2, row: 0 },
     age: 'stone',
   },

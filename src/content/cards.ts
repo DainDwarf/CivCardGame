@@ -156,6 +156,7 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🛖', description: 'When built: +1 🧍' },
     effect: { resources: { population: 1 } },
   },
+  burial: { id: 'burial', name: 'Burial', kind: 'building', cost: { production: 2 }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '⚰️' } },
 
   // — Wonders —
   gobekli_tepe: {
