@@ -61,13 +61,13 @@ describe('summarize', () => {
         outcome({ outcome: 'defeat', turnsTaken: 3, reason: 'famine' }),
         outcome({ outcome: 'defeat', turnsTaken: 3, reason: 'famine' }),
         // A deadline defeat leaves NO negative pool — only `gameover.reason` distinguishes it.
-        outcome({ outcome: 'defeat', turnsTaken: 51, reason: 'the sands of time' }),
+        outcome({ outcome: 'defeat', turnsTaken: 51, reason: 'the deadline' }),
         // A victory contributes no defeat cause.
         outcome({ outcome: 'victory', turnsTaken: 5 }),
       ],
     };
     const s = summarize(runs);
-    expect(s.defeatCauses).toEqual({ famine: 2, 'the sands of time': 1 });
+    expect(s.defeatCauses).toEqual({ famine: 2, 'the deadline': 1 });
   });
 
   it('sums card plays across runs and derives unplayed cards from the scenario deck', () => {

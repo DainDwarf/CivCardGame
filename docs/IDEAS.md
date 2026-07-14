@@ -10,9 +10,9 @@
 ## Random Ideas
 
  - Decreasing effectiveness of old cards? (If card comes from 2 ages ago, output -1, -2, etc?)
- - **Parameterized objective/threat cards** — today each "N-of-something" mission
-   (`raiders_at_border`, `sandbox`) needs an exported tuning const in `content/cards.ts`
-   (`RAIDER_WAVES`, `SANDBOX_DEADLINE`) shared between the mission's seed and the card's
+ - **Parameterized objective/threat cards** — today an "N-of-something" mission
+   (`raiders_at_border`) needs an exported tuning const in `content/cards.ts`
+   (`RAIDER_WAVES`) shared between the mission's seed and the card's
    predicate. Objective cards stay **bespoke 1:1** with missions, so one const per such
    mission is fine and this is deliberately *not* done. **If that floating-const growth ever
    gets annoying** (or you want one reusable "defeat N waves" / "survive N rounds" card across

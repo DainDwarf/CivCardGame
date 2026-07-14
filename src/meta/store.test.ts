@@ -186,6 +186,10 @@ function infiniteMission(): MissionDef {
   };
 }
 
+function rewardlessMission(): MissionDef {
+  return { ...infiniteMission(), id: 'sandbox', rewardless: true };
+}
+
 function runResult(missionId: string, outcome: RunResult['outcome'], turnsTaken: number): RunResult {
   return {
     outcome,
@@ -297,6 +301,16 @@ describe('applyRunResult', () => {
     expect(store.bestInfinite.toto).toBe(15);
     store = applyRunResult(store, runResult('toto', 'defeat', 4), infiniteMission()); // worse attempt
     expect(store.bestInfinite.toto).toBe(15); // best is sticky — this is the whole point vs. a runHistory scan
+  });
+
+  it('a rewardless infinite mission (the sandbox) pays no Influence and records no best-score, run after run', () => {
+    let store = sampleStore();
+    store = applyRunResult(store, runResult('sandbox', 'defeat', 30), rewardlessMission());
+    store = applyRunResult(store, runResult('sandbox', 'defeat', 12), rewardlessMission());
+    expect(store.influence).toBe(3); // unchanged from the seed
+    expect(store.lifetime.influenceEarned).toBe(3); // no gross gain either
+    expect(store.bestInfinite.sandbox).toBeUndefined();
+    expect(store.lifetime.runsPlayed).toBe(3); // still counts as runs played
   });
 
   it('a standard mission never records a bestInfinite entry', () => {

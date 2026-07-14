@@ -67,8 +67,8 @@ export interface SimOptions {
   /** Assert structural invariants after every action (the fuzzer teeth). Default `true`. */
   check?: boolean;
   /** Hard backstop against a non-terminating run — a run that never reaches gameover is itself a bug,
-   *  so exceeding this **throws**. Default 10_000; the sandbox's round-50 deadline bounds runs far
-   *  below it. */
+   *  so exceeding this **throws**. Default 10_000; a mission's deadline (or resource collapse) is meant
+   *  to end a run well below it. The endless sandbox has no deadline, so the sim doesn't drive it. */
   maxActions?: number;
   /** Optional observer fired after every dispatched action with the action, the states either side of
    *  it (`prev` before, `next` after), and whether the engine accepted it (`accepted: false` = a

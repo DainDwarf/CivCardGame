@@ -1,6 +1,6 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
-import { RAIDER_WAVES, SANDBOX_DEADLINE } from './cards';
+import { RAIDER_WAVES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -42,6 +42,11 @@ export interface MissionDef {
   /** `'standard'` missions are binary complete/not; `'infinite'` has no win state and
    *  scores an attempt instead. */
   kind: 'standard' | 'infinite';
+  /** Opts an `'infinite'` mission out of scoring: no Influence payout and no `bestInfinite`
+   *  best-score entry — a pure no-stakes practice space (the sandbox). One flag, both consequences,
+   *  so a scored infinite mission stays the default and the "rounds survived is a reward" and "…is a
+   *  score" branches can't diverge. Meaningless on a `'standard'` mission. */
+  rewardless?: boolean;
   /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
    *  `computeRewards`) — replays pay nothing. A `'standard'` mission's unlocks are **all optional**:
    *  it may grant any mix across four symmetric kinds — card unlocks (`unlockCardIds`, each naming a
@@ -51,7 +56,7 @@ export interface MissionDef {
    *  Influence-only reward, or no reward object). A coherence test pins only that whatever ids a
    *  mission *does* name are real. Unlike cards, a sticker/board unlock simply makes it *available*
    *  (hidden-until-unlocked, like a card); a board carries no Influence cost. `'infinite'` missions
-   *  have no reward — they score Influence = rounds survived.
+   *  have no reward object — they score Influence = rounds survived instead (unless `rewardless`).
    *
    *  `boardUpgrade` is the odd one out — not an *unlock* but a board *replacement*: it retires the
    *  `from` board in favour of `to` (carrying its stickers across), so the player's government reads as
@@ -85,10 +90,10 @@ export interface MissionDef {
 }
 
 /**
- * The mission catalogue: the baseline `sandbox` infinite mission plus the opening of the Stone Age
- * arc. The one non-obvious entry is `sandbox` — its `sandbox_goal` objective never wins by design,
- * so run length is bounded purely by the `sands_of_time` deadline threat, giving the simulator an
- * economy baseline with no drain skewing it.
+ * The mission catalogue: the endless `sandbox` mission plus the opening of the Stone Age arc. The one
+ * non-obvious entry is `sandbox` — its `sandbox_goal` objective never wins and nothing bounds the run
+ * (no deadline threat), so it's a no-stakes practice space that ends only on collapse or when the
+ * player quits (hence `rewardless`); the simulator doesn't drive it.
  */
 export const MISSIONS: Record<string, MissionDef> = {
   first_settlement: {
@@ -230,14 +235,15 @@ export const MISSIONS: Record<string, MissionDef> = {
     name: 'The Long Wander',
     lore:
       'Before cities, before harvests — only the band, the seasons, and the long walk between them. ' +
-      'There is nothing here to win. Wander well, and see how long the age carries you.',
+      'No clock, no foe, no prize: a quiet place to try a deck or simply watch a civilization grow. ' +
+      'Wander as long as you like, and end the run whenever you please.',
     // Gated behind the Stone Age capstone: the endless sandbox opens once the age is mastered.
     prereqs: ['first_temple'],
-    threats: ['sands_of_time'],
     objectiveCardId: 'sandbox_goal',
-    victoryHint: 'There is no victory — only rounds survived.',
-    failureHint: `The run ends once the age turns (round ${SANDBOX_DEADLINE}), or if a core resource collapses.`,
+    victoryHint: 'Nothing to win, nothing to earn — a no-pressure space to test decks and enjoy the build.',
+    failureHint: 'The wander never ends on its own — it lasts until a core resource collapses, or you choose to stop.',
     kind: 'infinite',
+    rewardless: true,
   },
 };
 

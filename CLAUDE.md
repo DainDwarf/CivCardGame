@@ -58,7 +58,9 @@ built; the game is now in its content-and-balance pass — see
     real tint, numbers withheld, a ⬆ in the population slot — then only the new board once cleared) and paid
     out in `App.tsx`'s `recordResult`.
   - **Infinite missions + threats** — `'infinite'`-kind missions never win and pay
-    Influence = rounds survived on every attempt. `GameState.threats`
+    Influence = rounds survived on every attempt, unless flagged `rewardless` (the endless,
+    deadline-free **sandbox**: no payout, no `bestInfinite` best-score — a no-stakes practice space).
+    `GameState.threats`
     (`rules/threats.ts`) are persistent, mission-seeded board hazards that escalate and
     drain resources each upkeep (each resolving through the shared resolver spine).
   - **Card stickers** — permanent per-copy buffs bought with Influence
@@ -313,7 +315,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     deck-add reject and the Collection/DeckEditor pickers. The catalogue holds the **Paleolithic
     starting set** (hunter-gatherer actions + work cards) plus the first **Stone Age** structures —
     the mission-unlocked Farm/Hut/Burial buildings and the Göbekli Tepe wonder (defined but not yet
-    granted by any mission) — and the sandbox mission's own `objective`/`threat` cards.
+    granted by any mission) — and the sandbox mission's own never-winning `objective` card.
   - `decks.ts` — `DeckDef` (a player deck; `cards` is meta instance ids) plus `DeckSeed`/
     `DEFAULT_DECKS` (content authored in plain cardIds, resolved by `buildSeedDecks`). A
     fresh player is meant to start with one editable deck; there's no read-only "built-in" tier.

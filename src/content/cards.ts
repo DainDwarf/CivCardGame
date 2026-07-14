@@ -141,9 +141,6 @@ export function compareCards(a: CardDef, b: CardDef): number {
   return KIND_RANK[a.kind] - KIND_RANK[b.kind] || sortName(a).localeCompare(sortName(b));
 }
 
-/** Rounds the sandbox mission lasts before the `sands_of_time` deadline threat ends it. */
-export const SANDBOX_DEADLINE = 50;
-
 /** The buildings "Growing Numbers" wants — shared by the win goal, the `dynamicText` readout, and the
  *  sim's steering override (`sim/objective.ts`), so none can list a different set. Each progress glyph
  *  is pulled from the building's own `art`. */
@@ -348,29 +345,20 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // Sandbox is an infinite mission: the objective never wins by design (a single bespoke goal whose
-  //   `met` is always false); the run is bounded by the deadline threat below.
+  // Sandbox is an endless no-stakes mission: the objective never wins by design (a single bespoke
+  //   goal whose `met` is always false), and nothing bounds the run — it lasts until the player quits
+  //   or a core resource collapses.
   sandbox_goal: {
     id: 'sandbox_goal', name: 'The Long Wander', kind: 'objective', cost: {},
     goals: [{ icon: '👣', measure: () => 0, target: 1, met: () => false }],
     display: {
       art: '👣',
-      description: 'There is no goal but to endure. Survive as long as the band can.',
+      description: 'No goal but the wander itself. Build, grow, and stay as long as you like.',
       dynamicText: (G) => `Round ${G.round}`,
     },
   },
 
   // — Threats —
-  sands_of_time: {
-    id: 'sands_of_time', name: 'The Sands of Time', kind: 'threat', cost: {},
-    display: {
-      art: '⏳',
-      description: `The age turns. When round ${SANDBOX_DEADLINE} elapses, the wandering ends.`,
-      dynamicText: (G) => `Round ${Math.min(G.round, SANDBOX_DEADLINE)}/${SANDBOX_DEADLINE}`,
-    },
-    defeat: (G) => G.round > SANDBOX_DEADLINE && 'the sands of time',
-  },
-
   unrest: {
     id: 'unrest', name: 'Unrest', kind: 'threat', cost: {},
     display: { art: '💢', description: '−1🪙 per 🧍 on reshuffle' },
