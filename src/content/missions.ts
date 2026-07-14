@@ -142,7 +142,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     failureHint: null,
     kind: 'standard',
     reward: { influence: 8, unlockCardIds: ['burial'] },
-    map: { col: 2, row: 0 },
+    map: { col: 2, row: -1 },
     age: 'stone',
   },
   raiders_at_border: {
@@ -176,7 +176,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'muttering runs through the settlement — too many mouths, too little meaning, and idle hands ' +
       'that turn to grievance every time the seasons come round again. Give them rites and revelry ' +
       'enough to bind them, or watch the coin drain away keeping the peace, season after season.',
-    prereqs: ['rites_rituals'],
+    prereqs: ['reading_seasons'],
     threats: ['unrest'],
     objectiveCardId: 'restless_people_goal',
     victoryHint: 'Reach 🎭 culture level 2 to placate the restless people.',
@@ -184,7 +184,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     // Unlocks Beer — a work card costing 2🌾 to play that then yields 5🎭 per staffed round. Influence amount is provisional.
     reward: { influence: 9, unlockCardIds: ['beer'] },
-    map: { col: 3, row: 0 },
+    map: { col: 3, row: 1 },
     age: 'stone',
   },
   reading_seasons: {
@@ -194,7 +194,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'The seasons keep their own calendar — the flood, the frost, the return of the herds — and a ' +
       'people who can read it eats well while others starve. Watch the sky, mark the days, and learn ' +
       'to see the turning of the year before it arrives.',
-    prereqs: ['rites_rituals'],
+    prereqs: ['growing_numbers'],
     objectiveCardId: 'reading_seasons_goal',
     victoryHint: 'Stockpile 10 🔬 science.',
     failureHint: null,
@@ -203,7 +203,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // objective doesn't require owning it, so there's no build-what-you-don't-have sequencing bind.
     // Influence amount provisional (balance pending a sim sweep).
     reward: { influence: 9, unlockCardIds: ['calendar'] },
-    map: { col: 3, row: 1 },
+    map: { col: 2, row: 1 },
     age: 'stone',
   },
   sandbox: {

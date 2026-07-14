@@ -353,9 +353,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `map.col` (a mission declares its age via `MissionDef.age`). `meta/CampaignMap.tsx` positions
     each age's arrow band + gradient wash over that slice, so *each age covers exactly its stretch of
     the DAG*. The Stone Age band is live — it covers the placed standard missions across cols 0–3
-    (First Settlement col 0, Growing Numbers col 1, Rites & Rituals col 2, then Rites & Rituals fans
-    three ways to Raiders at the Border, Restless People, and Reading the Seasons, all col 3 → slice
-    `[0,4)`); Bronze/Iron stay dormant until their missions land.
+    (First Settlement col 0 → Growing Numbers col 1, which forks two branches: Rites & Rituals col 2 →
+    Raiders at the Border col 3, and Reading the Seasons col 2 → Restless People col 3 → slice `[0,4)`);
+    Bronze/Iron stay dormant until their missions land.
 
 **Shell — the run loop (`src/run/`) + React:**
 

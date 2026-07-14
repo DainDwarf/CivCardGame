@@ -43,15 +43,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   progressively, culminating in the age's first wonder. Author their unlock cards, reward
   amounts, prereqs, and DAG shape; balance via the Step 4 simulator. `[size: L] [?] [phase: 4]`
 
-  **DAG shape** — a chain that fans into a 3-way branch, then reconverges on a capstone:
+  **DAG shape** — the chain forks at 6.2 into two parallel branches that reconverge on a capstone:
   ```
-  6.1 ─▶ 6.2 ─▶ 6.3 ─┬─▶ 6.4 events  ─┐
-  col0   col1   col2  ├─▶ 6.5 threat  ─┼─▶ 6.7 wonder (col4)
-                      └─▶ 6.6 science ─┘
-                           all col3
+  6.1 ─▶ 6.2 ─┬─▶ 6.3 rites ───▶ 6.4 events ──┐
+  col0   col1 │  col2            col3          │
+              └─▶ 6.6 science ─▶ 6.5 threat ──┴─▶ 6.7 wonder (col4)
+                 col2            col3
   ```
-  All `age: 'stone'` → the age slice grows to `[0,5)`. The player must clear all three branch
-  missions (6.4/6.5/6.6) before the capstone unlocks.
+  All `age: 'stone'` → the age slice grows to `[0,5)`. The player must clear both branch tips
+  (6.4 Raiders and 6.5 Restless People — which in turn require 6.3/6.6) before the capstone unlocks.
 
   **Cross-cutting sequencing rule** (surfaced while planning 6.7): a mission that *spotlights a
   player-played card* as its objective needs that card **unlocked by an upstream mission** — a
@@ -62,16 +62,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tutorial → Step 9.1)
   - **6.2 — Growing Numbers** ✅ DONE — col 1. `[shipped]` (details in *Done / shipped*;
     tutorial → Step 9.2)
-  - **6.3 — Rites & Rituals** ✅ DONE — col 2. `[shipped]` (details in *Done / shipped*;
-    tutorial → Step 9.3)
-  - **6.4 — Raiders at the Border** ✅ DONE — col 3, row -1. `[shipped]` (details in *Done / shipped*;
-    tutorial → Step 9.4)
-  - **6.5 — Restless People** (threat branch) ✅ DONE — col 3, row 0, prereq 6.3. `[shipped]`
-    (details in *Done / shipped*; tutorial → Step 9.5)
-  - **6.6 — Reading the Seasons** (science branch) ✅ DONE — col 3, row +1, prereq 6.3. `[shipped]`
+  - **6.3 — Rites & Rituals** ✅ DONE — col 2, row -1 (top branch, prereq 6.2). `[shipped]` (details
+    in *Done / shipped*; tutorial → Step 9.3)
+  - **6.4 — Raiders at the Border** ✅ DONE — col 3, row -1 (top branch, prereq 6.3). `[shipped]`
+    (details in *Done / shipped*; tutorial → Step 9.4)
+  - **6.6 — Reading the Seasons** (science branch) ✅ DONE — col 2, row +1, prereq 6.2. `[shipped]`
     (details in *Done / shipped*; tutorial → a later Step 9 substep)
+  - **6.5 — Restless People** (threat branch) ✅ DONE — col 3, row +1, prereq 6.6. `[shipped]`
+    (details in *Done / shipped*; tutorial → Step 9.5)
   - **6.7 — Wonder capstone: Göbekli Tepe** (working name *"The First Temple"*) — col 4, row 0,
-    prereq **all** of 6.4 / 6.5 / 6.6. **Teaches:** **wonders** (a building tagged `wonder` —
+    prereq **both** branch tips (6.4 / 6.5). **Teaches:** **wonders** (a building tagged `wonder` —
     distinct banner/flavour, *not* a new kind). **Objective:** **build Göbekli Tepe** (the wonder
     unlocked back at 6.3) — a culmination forcing territory (a slot), production (its cost), and a
     culture gate together. **Unlocks:** the first **Influence-rewarding infinite mission** — a
@@ -183,7 +183,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
 
-- **Step 6.6 — Reading the Seasons (Science branch + Calendar card)** ✅ — col 3, row +1, prereq 6.3.
+- **Step 6.6 — Reading the Seasons (Science branch + Calendar card)** ✅ — col 2, row +1, prereq 6.2.
   The **Science** role — card manipulation / foresight — debuting the peek family (`deck.ts`'s
   `peekTop`) and a new **look-only interaction**. Implementation:
   - The **`'reveal'` `PendingInteraction` kind** — the view-only sibling of `'chooseCard'`: the player
@@ -197,8 +197,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     pile** (`deck.length === 0`, reusing the pre-wired `emptyDrawPile` reason) — peeking never reshuffles,
     so that's the right emptiness test, and it avoids parking a zero-option reveal.
   - The **`reading_seasons`** mission — objective **reach 10🔬 science** (`reading_seasons_goal`,
-    deadline-free); reward **9⭐ + unlocks Calendar**. `rites_rituals` (6.3) now fans **three** ways
-    (Raiders row −1, Restless People row 0, this row +1), all col 3 → Stone Age slice stays `[0,4)`.
+    deadline-free); reward **9⭐ + unlocks Calendar**. This mission branches off `growing_numbers`
+    (6.2) as the science branch (col 2, row +1) and leads to Restless People (6.5) → Stone Age slice
+    stays `[0,4)`.
   - `sim/objective.ts` gains a `reading_seasons_goal` gradient (`min(science,10)/10`) so the standard
     mission is sweepable. Calendar itself is mechanically inert for the sim (a look-only info card that
     *spends* science) — the fuzzer plays+dismisses it; `assertRunInvariants` is unaffected (it never reads
@@ -221,7 +222,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Dropped the unused destroy/demolish verb** — reimplement cleanly on the resolver spine when a real
     card wants it (see the Stone Age deferral note above).
 
-- **Step 6.5 — Restless People (Threat branch)** ✅ — col 3, row 0, prereq 6.3. The **threat** mechanic
+- **Step 6.5 — Restless People (Threat branch)** ✅ — col 3, row +1, prereq 6.6. The **threat** mechanic
   (a persistent, mission-seeded board hazard), plus a new first-class **`reshuffle` bus event**.
   Implementation:
   - The **`reshuffle` event** — a broadcast (no subject) emitted by `rules/deck.ts`'s `reshuffleIntoDeck`
@@ -234,8 +235,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     pressure is 🪙 bled into a **bankruptcy** collapse (the money counterpart to raider famine).
   - The **`restless_people`** mission — seeds `unrest`; objective **reach 🎭 culture level 2**
     (`restless_people_goal`, its own objective card mirroring `rites_rituals_goal`); deadline-free.
-    Reward 9⭐ + unlocks **Beer** (provisional). `rites_rituals` (6.3) now fans to both Raiders (row −1)
-    and this mission (row 0).
+    Reward 9⭐ + unlocks **Beer** (provisional). This mission sits downstream of Reading the Seasons
+    (6.6, the science branch) at col 3, row +1.
   - The **Beer** work card (reward unlock) — costs **2🌾** to play, then yields **+5🎭** per staffed
     round (a plain declarative producer: the food is a one-time play cost, the culture a per-worker
     output — no bespoke `produces.resolve`).
@@ -286,7 +287,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `rites_rituals_goal` progress gradient so the goal-directed policies steer toward culture level 1.
   Both feed the `founding/tribe/rites-rituals` sim scenario.
 
-- **Step 6.3 — Rites & Rituals (Culture mission)** ✅ — col 2, row 0, prereq 6.2. The **Culture**
+- **Step 6.3 — Rites & Rituals (Culture mission)** ✅ — col 2, row -1, prereq 6.2. The **Culture**
   gauge: culture *levels* (each raises hand size) and the `cultureLevelReq` play-gate. Objective:
   reach **culture level 1** (climbed by decking in owned Cave Art — the intended lesson; no
   deadline). Unlocks **Göbekli Tepe** — the age's first wonder, itself the culture-gated card (a
