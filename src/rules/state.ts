@@ -195,22 +195,24 @@ export interface GameState {
  * it survives structuredClone/undo: the resolver reveals options, parks them here, and returns; the
  * UI renders a prompt from this; `run/moves.ts`'s `resolveInteraction` re-enters the same card's
  * resolver with the chosen index, completing the effect and clearing this back to `null`.
- * **Non-cancelable** — the reveal has already committed (e.g. a peek card lifts cards off the deck,
- * clearing the undo stack), so the only exit is answering it.
+ * **Non-cancelable** — the reveal has already committed (a peek bumps `revealCount`, clearing the undo
+ * stack), so the only exit is resolving it.
  */
 export interface PendingInteraction {
   /** The card whose resolver is suspended — `resolveInteraction` re-enters *this* card's resolver. */
   cardId: string;
   /** The suspended card's own instance id, so the resume pass can reconstruct its `self`. */
   instanceId: number;
-  /** Which choice shape this is (drives the UI prompt). Only `'chooseCard'` exists so far. */
-  kind: 'chooseCard';
+  /** Which choice shape this is (drives the UI prompt): `'chooseCard'` picks one of the `options`;
+   *  `'reveal'` is a look-only acknowledgement (a peek — the player reads the options and dismisses,
+   *  choosing nothing). */
+  kind: 'chooseCard' | 'reveal';
   /** Prompt text for the modal header — authored by the card, so the shell needs no per-card copy. */
   prompt: string;
-  /** The revealed card instances to pick from — full instances (not bare ids) so the chosen copy
-   *  keeps its identity when it moves into the hand. */
+  /** The revealed card instances to pick from (or, for `'reveal'`, simply to read) — full instances
+   *  (not bare ids) so the chosen copy keeps its identity when it moves into the hand. */
   options: CardInstance[];
-  /** How many to pick (1 today). */
+  /** How many to pick: 1 for `'chooseCard'`, 0 for a look-only `'reveal'`. */
   pick: number;
 }
 

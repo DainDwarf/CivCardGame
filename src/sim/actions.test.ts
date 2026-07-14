@@ -63,4 +63,23 @@ describe('enumerateActions', () => {
     expect(actions.every((a) => a.kind === 'resolveInteraction')).toBe(true);
     expect(actions.map((a) => (a.kind === 'resolveInteraction' ? a.answer : -1))).toEqual([0, 1]);
   });
+
+  it('collapses a look-only reveal to a single dismiss action, whatever its option count', () => {
+    // A `reveal` (a peek) has no choice — every "answer" just dismisses it — so enumerating one per
+    // option would offer redundant equivalent edges. Assert the single canonical dismiss instead.
+    const G = blankState('test');
+    G.pendingInteraction = {
+      cardId: 'calendar',
+      instanceId: 1,
+      kind: 'reveal',
+      prompt: 'peek',
+      options: [
+        { id: 2, cardId: 'fire' },
+        { id: 3, cardId: 'bow' },
+        { id: 4, cardId: 'dogs' },
+      ],
+      pick: 0,
+    };
+    expect(enumerateActions(G)).toEqual([{ kind: 'resolveInteraction', answer: 0 }]);
+  });
 });

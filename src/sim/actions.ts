@@ -21,7 +21,10 @@ import type { SimAction } from './simulate';
  */
 export function enumerateActions(G: GameState): SimAction[] {
   if (G.pendingInteraction) {
-    const n = Math.max(1, G.pendingInteraction.options.length);
+    // A look-only `'reveal'` has no choice — any answer just dismisses it — so enumerate a single
+    // dismiss; a `'chooseCard'` enumerates one action per revealed option.
+    const n =
+      G.pendingInteraction.kind === 'reveal' ? 1 : Math.max(1, G.pendingInteraction.options.length);
     const out: SimAction[] = [];
     for (let i = 0; i < n; i++) out.push({ kind: 'resolveInteraction', answer: i });
     return out;

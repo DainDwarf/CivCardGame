@@ -60,7 +60,7 @@ export function gainResources(ctx: EffectContext, base: Partial<Resources> | und
  * Suspend the resolving card into a player choice — the one place a resolver opens a
  * `pendingInteraction`. Builds it from `ctx.self` so `moves.ts`'s `resolveInteraction` can reconstruct
  * `self` and re-enter this resolver with `ctx.answer` set. Non-cancelable, so only call it once the
- * reveal has committed (e.g. after `peekTop` lifted the cards).
+ * reveal has committed (e.g. after `peekTop` bumped `revealCount`, clearing the undo stack).
  */
 export function suspendChoice(
   ctx: EffectContext,

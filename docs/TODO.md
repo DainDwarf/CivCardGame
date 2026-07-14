@@ -68,16 +68,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     tutorial → Step 9.4)
   - **6.5 — Restless People** (threat branch) ✅ DONE — col 3, row 0, prereq 6.3. `[shipped]`
     (details in *Done / shipped*; tutorial → Step 9.5)
-  - **6.6 — Science branch: foresight & planning** (working name *"Reading the Seasons"*) —
-    col 3, row +1, prereq 6.3. **Teaches:** the **Science** role — card manipulation / foresight
-    (the debut of the built-but-unused peek family, `deck.ts`'s `peekTop`/`drawInstance`).
-    **Content:** a science-pressure mission (reach a science threshold, or one that rewards
-    seeing/reshaping the draw), leaning on the existing science cards (Fire, Storytelling) to win.
-    **Objective:** a science threshold (TBD — refine once the peek cards exist). **Unlocks:** the
-    **Calendar** card (cf. IDEAS → Stone Age) — the age's foresight entry: agricultural astronomy,
-    a peek/predict-the-draw card, the first to exercise `peekTop`. ~9⭐ (provisional). **Note:** the
-    reward *introduces* peek to the collection (built in later, like Conquest post-6.1); no
-    sequencing constraint, since the objective doesn't require owning Calendar. `[size: M] [?]`
+  - **6.6 — Reading the Seasons** (science branch) ✅ DONE — col 3, row +1, prereq 6.3. `[shipped]`
+    (details in *Done / shipped*; tutorial → a later Step 9 substep)
   - **6.7 — Wonder capstone: Göbekli Tepe** (working name *"The First Temple"*) — col 4, row 0,
     prereq **all** of 6.4 / 6.5 / 6.6. **Teaches:** **wonders** (a building tagged `wonder` —
     distinct banner/flavour, *not* a new kind). **Objective:** **build Göbekli Tepe** (the wonder
@@ -190,6 +182,28 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 6.6 — Reading the Seasons (Science branch + Calendar card)** ✅ — col 3, row +1, prereq 6.3.
+  The **Science** role — card manipulation / foresight — debuting the peek family (`deck.ts`'s
+  `peekTop`) and a new **look-only interaction**. Implementation:
+  - The **`'reveal'` `PendingInteraction` kind** — the view-only sibling of `'chooseCard'`: the player
+    reads the parked options and acknowledges (choosing nothing, `pick: 0`). `enumerateActions` collapses
+    it to a single dismiss; the Board modal renders the cards display-only (no pointer/hover) under a
+    **Continue** button; `resolveInteraction` is the shared resume path unchanged.
+  - The **Calendar** action (reward unlock) — cost **1🔬**, a pure-read peek at the top `CALENDAR_PEEK`
+    (**3**) cards *in order*. `effect` is resolve-only (no declarative `resources` — `resolveInteraction`
+    re-runs the whole effect on resume, which would double-apply a resource field): first pass `peekTop`s
+    + suspends a `'reveal'`, resume clears it (a look keeps nothing). Gated unplayable on an **empty draw
+    pile** (`deck.length === 0`, reusing the pre-wired `emptyDrawPile` reason) — peeking never reshuffles,
+    so that's the right emptiness test, and it avoids parking a zero-option reveal.
+  - The **`reading_seasons`** mission — objective **reach 10🔬 science** (`reading_seasons_goal`,
+    deadline-free); reward **9⭐ + unlocks Calendar**. `rites_rituals` (6.3) now fans **three** ways
+    (Raiders row −1, Restless People row 0, this row +1), all col 3 → Stone Age slice stays `[0,4)`.
+  - `sim/objective.ts` gains a `reading_seasons_goal` gradient (`min(science,10)/10`) so the standard
+    mission is sweepable. Calendar itself is mechanically inert for the sim (a look-only info card that
+    *spends* science) — the fuzzer plays+dismisses it; `assertRunInvariants` is unaffected (it never reads
+    `pendingInteraction.options`, which alias live deck instances). **Balance (10🔬 threshold, 9⭐,
+    winnability with Founding/Tribe) stays provisional — sim sweep + manual feel-check pending.**
 
 - **Card model tech-debt pass** ✅ — a structural refactor of the card/effect/resource model (the
   `tech-debt/cards` branch), no gameplay change. Highlights:

@@ -1255,9 +1255,10 @@
 }
 
 /* --- Interaction modal: a card effect suspended awaiting a player choice (e.g. Storytelling) --- */
-/* Resolve-only by design: NO click-outside / Escape dismiss. The reveal has already committed
-   (cards lifted off the deck, undo stack cleared), so the only exit is picking an option — a
-   dismiss path would soft-lock the run (endTurn blocked, nothing to undo to). */
+/* Resolve-only by design: NO click-outside / Escape dismiss. The interaction has already committed
+   (a peek bumped `revealCount`, clearing the undo stack), so the only exit is resolving it — picking an
+   option (`chooseCard`) or acknowledging the reveal (`reveal`). A dismiss path would soft-lock the run
+   (endTurn blocked, nothing to undo to). */
 .interactionBackdrop {
   position: fixed;
   inset: 0;
@@ -1303,6 +1304,30 @@
 
 .interactionCard:hover {
   transform: translateY(-4px);
+}
+
+/* A look-only revealed card (a `reveal` peek) — display only, so no pointer/hover-lift affordance;
+   the Continue button is the sole exit. */
+.interactionCardStatic {
+  cursor: default;
+}
+
+.interactionContinue {
+  margin-top: 1rem;
+  padding: 0.55rem 1.6rem;
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--badge-bg);
+  color: var(--text-on-accent);
+  transition: background 0.12s ease;
+}
+
+.interactionContinue:hover {
+  background: var(--badge-hover);
 }
 
 /* --- End-of-run overlay --- */

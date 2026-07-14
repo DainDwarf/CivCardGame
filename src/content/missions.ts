@@ -187,6 +187,25 @@ export const MISSIONS: Record<string, MissionDef> = {
     map: { col: 3, row: 0 },
     age: 'stone',
   },
+  reading_seasons: {
+    id: 'reading_seasons',
+    name: 'Reading the Seasons',
+    lore:
+      'The seasons keep their own calendar — the flood, the frost, the return of the herds — and a ' +
+      'people who can read it eats well while others starve. Watch the sky, mark the days, and learn ' +
+      'to see the turning of the year before it arrives.',
+    prereqs: ['rites_rituals'],
+    objectiveCardId: 'reading_seasons_goal',
+    victoryHint: 'Stockpile 10 🔬 science.',
+    failureHint: null,
+    kind: 'standard',
+    // Unlocks the Calendar card — the age's foresight entry, first to exercise the peek family. The
+    // objective doesn't require owning it, so there's no build-what-you-don't-have sequencing bind.
+    // Influence amount provisional (balance pending a sim sweep).
+    reward: { influence: 9, unlockCardIds: ['calendar'] },
+    map: { col: 3, row: 1 },
+    age: 'stone',
+  },
   sandbox: {
     id: 'sandbox',
     name: 'The Long Wander',

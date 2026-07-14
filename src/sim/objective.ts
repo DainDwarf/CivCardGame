@@ -68,6 +68,11 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
   // improving greedy would refuse to play it — stalling forever on a deadline-free mission.
   raiders_at_border_goal: (G) =>
     Math.min(G.removed.filter((c) => c.cardId === 'raider').length, RAIDER_WAVES) / RAIDER_WAVES,
+  // "Reading the Seasons": stockpile 10🔬 science — a raw resource threshold, so the gradient is simply
+  // science capped at 10 and normalized ⇒ 1 exactly at the win, a uniform pull upward. (The reward
+  // Calendar card *spends* science and does nothing to the objective — it's a look-only foresight tool,
+  // not required to win — so no gradient term concerns it.)
+  reading_seasons_goal: (G) => Math.min(G.resources.science, 10) / 10,
 };
 
 /**

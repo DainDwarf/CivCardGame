@@ -2007,27 +2007,41 @@ export function Board({
         </div>
       )}
 
-      {/* A card effect suspended awaiting a choice (e.g. Storytelling's discard choice). Resolve-only: no
-          dismiss path — clicking an option is the only way out (see .interactionBackdrop). */}
-      {G.pendingInteraction && (
-        <div className={styles.interactionBackdrop} role="dialog" aria-modal="true">
-          <div className={styles.interactionPanel}>
-            <h3 className={styles.interactionPrompt}>{G.pendingInteraction.prompt}</h3>
-            <div className={styles.interactionGrid}>
-              {G.pendingInteraction.options.map((opt, i) => (
-                <CardFace
-                  key={opt.id}
-                  card={effectiveCard(CARDS[opt.cardId], opt)}
-                  overrideText={CARDS[opt.cardId].display?.dynamicText?.(G, opt)}
-                  stickerBadge={opt.stickers}
-                  className={styles.interactionCard}
-                  onClick={() => moves.resolveInteraction(i)}
-                />
-              ))}
+      {/* A card effect suspended awaiting resolution: a `chooseCard` picks one revealed option (e.g.
+          Storytelling), a look-only `reveal` (a peek, e.g. Calendar) is acknowledged via Continue.
+          Resolve-only — no click-outside/Escape dismiss (see .interactionBackdrop). Bound as an arg so
+          `pending.kind` narrows inside the options callback. */}
+      {G.pendingInteraction &&
+        ((pending) => {
+          const isReveal = pending.kind === 'reveal';
+          return (
+            <div className={styles.interactionBackdrop} role="dialog" aria-modal="true">
+              <div className={styles.interactionPanel}>
+                <h3 className={styles.interactionPrompt}>{pending.prompt}</h3>
+                <div className={styles.interactionGrid}>
+                  {pending.options.map((opt, i) => (
+                    <CardFace
+                      key={opt.id}
+                      card={effectiveCard(CARDS[opt.cardId], opt)}
+                      overrideText={CARDS[opt.cardId].display?.dynamicText?.(G, opt)}
+                      stickerBadge={opt.stickers}
+                      className={isReveal ? styles.interactionCardStatic : styles.interactionCard}
+                      onClick={isReveal ? undefined : () => moves.resolveInteraction(i)}
+                    />
+                  ))}
+                </div>
+                {isReveal && (
+                  <button
+                    className={styles.interactionContinue}
+                    onClick={() => moves.resolveInteraction(0)}
+                  >
+                    Continue
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          );
+        })(G.pendingInteraction)}
 
       {/* Zoomed card preview, opened by clicking a card. Sits above the pile viewer
           (CardZoomOverlay's backdrop is z-index 80 vs. .pileBackdrop's 75). */}

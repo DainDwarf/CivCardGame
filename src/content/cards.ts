@@ -2,7 +2,7 @@ import { subtractResources, type CoreResources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, suspendChoice } from '../rules/effects';
 import type { CardGate } from '../rules/playability';
-import { recoverFromDiscard } from '../rules/deck';
+import { peekTop, recoverFromDiscard } from '../rules/deck';
 import { cultureLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'event' | 'threat' | 'objective';
@@ -133,6 +133,10 @@ const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm'];
  *  (`content/missions.ts`), the `raiders_at_border_goal` win threshold, and its progress readout. */
 export const RAIDER_WAVES = 3;
 
+/** How many upcoming cards the Calendar reveals — shared by its resolver and its face text so the
+ *  two can't disagree. */
+export const CALENDAR_PEEK = 3;
+
 /**
  * The card catalogue. Numbers are a first pass. Tests install synthetic `test_*` cards on top via
  * `rules/testFixtures.ts`.
@@ -217,6 +221,37 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // Calendar keys its two resolver passes on `ctx.answer === undefined` like Storytelling, but the
+  // reveal is look-only: peeking keeps nothing, so the resume pass just clears the interaction. Its
+  // `effect` is resolve-only (no declarative `resources`) — `resolveInteraction` re-runs the whole
+  // effect on resume, so any resource field would double-apply.
+  calendar: {
+    id: 'calendar', name: 'Calendar', kind: 'action', cost: { science: 1 },
+    display: { art: '📅', description: `Look at the top ${CALENDAR_PEEK} cards of your draw pile.` },
+    // Nothing to reveal from an empty pile — gate it (reusing the peek reason) rather than fizzle for
+    // its cost. Peeking never reshuffles, so `deck.length` (not deck+discard) is the emptiness test.
+    gate: { check: (G) => (G.deck.length === 0 ? { kind: 'emptyDrawPile' } : null) },
+    effect: {
+      resolve: (ctx) => {
+        if (ctx.answer === undefined) {
+          // First pass: pure-read the top cards (peekTop leaves them on the deck) and park a look-only
+          // reveal. The options alias live `G.deck` instances — fine, the reveal never mutates them.
+          const top = peekTop(ctx, CALENDAR_PEEK);
+          if (top.length === 0) return;
+          suspendChoice(ctx, {
+            kind: 'reveal',
+            prompt: 'The next cards you will draw, in order',
+            options: top,
+            pick: 0,
+          });
+          return;
+        }
+        // Resume: a peek keeps nothing — just clear the interaction.
+        ctx.G.pendingInteraction = null;
+      },
+    },
+  },
+
   // — Events —
   raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, display: { art: '🪓' }, upkeep: { resources: { food: -1 } } },
 
@@ -277,6 +312,15 @@ export const CARDS: Record<string, CardDef> = {
         const p = cultureProgress(G.resources.culture);
         return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2`;
       },
+    },
+  },
+
+  reading_seasons_goal: {
+    id: 'reading_seasons_goal', name: 'Reading the Seasons', kind: 'objective', cost: {},
+    objective: (G) => G.resources.science >= 10,
+    display: {
+      description: 'Reach 10 🔬 science',
+      dynamicText: (G) => `🔬 ${G.resources.science}/10`,
     },
   },
 
