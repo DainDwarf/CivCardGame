@@ -90,10 +90,12 @@ export interface MissionDef {
 }
 
 /**
- * The mission catalogue: the endless `sandbox` mission plus the opening of the Stone Age arc. The one
- * non-obvious entry is `sandbox` — its `sandbox_goal` objective never wins and nothing bounds the run
- * (no deadline threat), so it's a no-stakes practice space that ends only on collapse or when the
- * player quits (hence `rewardless`); the simulator doesn't drive it.
+ * The mission catalogue: the opening of the Stone Age arc plus two endless missions. The endless pair
+ * both use a never-winning objective and end only on collapse, but differ in stakes: `ice_age` is a
+ * *scored survival* mission — a deepening food-drain threat (`long_winter`) guarantees eventual famine,
+ * and rounds survived pay out as Influence — while `sandbox` is `rewardless`, a no-stakes practice space
+ * with no bounding threat that ends only on collapse or when the player quits. The simulator drives
+ * neither (a never-winning objective offers it no gradient to climb).
  */
 export const MISSIONS: Record<string, MissionDef> = {
   first_settlement: {
@@ -229,6 +231,23 @@ export const MISSIONS: Record<string, MissionDef> = {
     reward: { influence: 12, unlockCardIds: ['gobekli_tepe'] },
     map: { col: 4, row: 0 },
     age: 'stone',
+  },
+  ice_age: {
+    id: 'ice_age',
+    name: 'Return of the Ice Age',
+    lore:
+      'The temples are raised and the granaries full — but the air has turned. Each season bites deeper ' +
+      'than the last, the herds thin, and the frost creeps down from the north and does not retreat. ' +
+      'There is no winning against a cold that only deepens: there is only holding out, one hungry winter ' +
+      'at a time, and seeing how long a people can endure before the harvest fails for good.',
+    // Opened by the Stone Age capstone — the first endless *survival* mission (a scored infinite, unlike
+    // the rewardless sandbox), so it earns Influence for every round the deepening winter is outlasted.
+    prereqs: ['first_temple'],
+    threats: ['long_winter'],
+    objectiveCardId: 'ice_age_goal',
+    victoryHint: 'No victory to reach — outlast the deepening winter, earning ⭐ Influence for every round survived.',
+    failureHint: 'The Long Winter drains more 🌾 each round than the last — the run ends when the harvest can no longer feed the people.',
+    kind: 'infinite',
   },
   sandbox: {
     id: 'sandbox',

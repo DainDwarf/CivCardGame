@@ -1,5 +1,5 @@
 import { subtractResources, type CoreResources } from '../rules/resources';
-import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
+import { bumpCounter, getCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, suspendChoice } from '../rules/effects';
 import type { CardGate } from '../rules/playability';
 import { peekTop } from '../rules/deck';
@@ -358,6 +358,19 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // Return of the Ice Age is an endless survival mission: like the sandbox its objective never wins (one
+  //   bespoke always-false goal), so the run ends only when the deepening cold (the `long_winter` threat)
+  //   starves the food store. The score is rounds survived, paid as Influence by the infinite-mission payout.
+  ice_age_goal: {
+    id: 'ice_age_goal', name: 'Return of the Ice Age', kind: 'objective', cost: {},
+    goals: [{ icon: '🧊', measure: () => 0, target: 1, met: () => false }],
+    display: {
+      art: '🧊',
+      description: 'No victory to reach — endure the deepening cold as long as you can.',
+      dynamicText: (G) => `Survived ${G.round} rounds`,
+    },
+  },
+
   // — Threats —
   unrest: {
     id: 'unrest', name: 'Unrest', kind: 'threat', cost: {},
@@ -367,6 +380,24 @@ export const CARDS: Record<string, CardDef> = {
         resolve: ({ G }) => {
           subtractResources(G.resources, { money: G.resources.population });
         },
+      },
+    },
+  },
+  // Return of the Ice Age's escalating famine: a cold that deepens each round (−1🌾, then −2, …) via a
+  //   bespoke `upkeep.resolve` reading its own `level` counter, like the escalating threat fixture. The
+  //   drain is unbounded by design — the endless mission ends only when the cold finally outpaces the
+  //   harvest and food collapses. Linear +1/round escalation is provisional (balance pass pending).
+  long_winter: {
+    id: 'long_winter', name: 'The Long Winter', kind: 'threat', cost: {},
+    display: {
+      art: '❄️',
+      description: '−1🌾 every round, worsening',
+      dynamicText: (_G, self) => `−${getCounter(self, 'level') + 1}🌾 next round`,
+    },
+    upkeep: {
+      resolve: ({ G, self }) => {
+        subtractResources(G.resources, { food: getCounter(self, 'level') + 1 });
+        bumpCounter(self, 'level');
       },
     },
   },

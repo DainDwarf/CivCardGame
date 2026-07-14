@@ -314,8 +314,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     for "a card the player builds decks with" (excludes event/threat/objective), used by the
     deck-add reject and the Collection/DeckEditor pickers. The catalogue holds the **Paleolithic
     starting set** (hunter-gatherer actions + work cards) plus the first **Stone Age** structures —
-    the mission-unlocked Farm/Hut/Burial buildings and the Göbekli Tepe wonder (defined but not yet
-    granted by any mission) — and the sandbox mission's own never-winning `objective` card.
+    the mission-unlocked Farm/Hut/Burial buildings and Göbekli Tepe wonder — plus the endless missions'
+    own cards: the two never-winning `objective`s (`sandbox`/`ice_age`) and the `long_winter` escalating
+    food-drain `threat` behind Return of the Ice Age.
   - `decks.ts` — `DeckDef` (a player deck; `cards` is meta instance ids) plus `DeckSeed`/
     `DEFAULT_DECKS` (content authored in plain cardIds, resolved by `buildSeedDecks`). A
     fresh player is meant to start with one editable deck; there's no read-only "built-in" tier.
