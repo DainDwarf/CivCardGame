@@ -42,11 +42,6 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
   farming). 
 - **Pottery** — surplus storage and cooking; a low-cost early building.
 - **Walls** — earliest monumental fortification (Jericho); defensive mission flavor.
-- **Burial site** — ancestor/burial cult; culture output tied to the dead.
-- **Calendar** — the age's **science/foresight** entry. Agricultural astronomy (Warren
-  Field ~8,000 BCE, Nabta Playa): knowing *when* to plant/harvest. Flavor as a
-  prediction/timing mechanic — peek the deck, foresee an event, buff the next harvest.
-  Keep distinct from Burial site: culture (the dead) vs. science (the seasons).
 
 
 > Keep copper/metallurgy and the wheel **out** of this age — both are really
@@ -56,9 +51,15 @@ produce. Sequencing missions along that chain lets the age *teach* the economy.
 
 Centralized, elite-controlled, trade-dependent palace civilizations.
 
+No coins, those are iron age
 For the trade: Wheel for the first trade works? Get a few money producing work, and bronzeworking building that use money to produce prod.
 Issue: Current jewelry card is already strong at making money
-
+Writing
+Sailing
+Tin trade
+Swords
+Chariot (military)
+Masonry (walls, houses)
 Military also important: Defend your trade routes (event that sucks out money?)
 
 Empire board? Should not be too op, what's the drawback?
@@ -72,6 +73,9 @@ Unlock the "Fall of the bronze age" endless mission near the end? (increasing mo
 
 More decentralized, broader-based societies with cheaper metal, wider literacy
 (alphabet), citizen armies, and new political forms — often emerging *after* a collapse.
+coins
+hoplites
+legions
 
 ## Post-classical/medieval/Paper Age? Steel Age? (*crucible* steel, is rare, but was around that period. Paper is a more defining tech, this period widespread the use of paper)
 
