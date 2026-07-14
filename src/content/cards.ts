@@ -349,7 +349,7 @@ export const CARDS: Record<string, CardDef> = {
   //   goal whose `met` is always false), and nothing bounds the run — it lasts until the player quits
   //   or a core resource collapses.
   sandbox_goal: {
-    id: 'sandbox_goal', name: 'The Long Wander', kind: 'objective', cost: {},
+    id: 'sandbox_goal', name: 'Sandbox', kind: 'objective', cost: {},
     goals: [{ icon: '👣', measure: () => 0, target: 1, met: () => false }],
     display: {
       art: '👣',

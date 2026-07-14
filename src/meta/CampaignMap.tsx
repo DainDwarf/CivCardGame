@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { MISSIONS, type MissionDef } from '../content/missions';
+import { MISSIONS, infiniteMissionsInOrder, type MissionDef } from '../content/missions';
 import { ageColSpans } from '../content/ages';
 import { BOARDS, type BoardId } from '../content/boards';
 import { CARDS } from '../content/cards';
@@ -88,9 +88,7 @@ export function CampaignMap({
   // bottom banner instead (rendered below). Like any mission they still gate on prereqs, so an
   // unavailable one is hidden from the banner until its prereqs are met (anti-surprise).
   const missions = Object.values(MISSIONS).filter((m) => m.kind !== 'infinite');
-  const infiniteMissions = Object.values(MISSIONS).filter(
-    (m) => m.kind === 'infinite' && isAvailable(m, mapProgress),
-  );
+  const infiniteMissions = infiniteMissionsInOrder(mapProgress);
   const maxCol = missions.reduce((m, x) => Math.max(m, x.map!.col), 0);
   // Rows are signed offsets from the center axis (0 = middle). The node layer holds the symmetric
   // span [-rowExtent, +rowExtent] so its midpoint is row 0; centering the layer (CSS) centers row 0.

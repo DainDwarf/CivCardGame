@@ -1,4 +1,4 @@
-import { MISSIONS } from '../content/missions';
+import { MISSIONS, infiniteMissionsInOrder } from '../content/missions';
 import { CARDS, isDeckable } from '../content/cards';
 import { RESOURCE_ICON } from '../components/CardFace';
 import type { RunResult } from '../contract';
@@ -36,7 +36,6 @@ export function Stats({
   lifetime: LifetimeStats;
   bestInfinite: Record<string, number>;
 }) {
-  const missions = Object.values(MISSIONS);
   const missionProgress = standardMissionProgress(MISSIONS, mapProgress);
 
   const cardsTotal = Object.values(CARDS).filter(isDeckable).length;
@@ -45,10 +44,11 @@ export function Stats({
   const { runsPlayed, victories, influenceEarned } = lifetime;
   const winRate = runsPlayed > 0 ? Math.round((victories / runsPlayed) * 100) : null;
 
-  const leaderboard = missions
-    .filter((m) => m.kind === 'infinite')
-    .map((m) => ({ id: m.id, name: m.name, best: bestInfinite[m.id] ?? null }))
-    .sort((a, b) => (b.best ?? -1) - (a.best ?? -1));
+  const leaderboard = infiniteMissionsInOrder(mapProgress).map((m) => ({
+    id: m.id,
+    name: m.name,
+    best: bestInfinite[m.id] ?? null,
+  }));
   const topScore = Math.max(1, ...leaderboard.map((row) => row.best ?? 0));
 
   return (

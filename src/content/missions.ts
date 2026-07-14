@@ -1,5 +1,6 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
+import { isAvailable } from '../rules/campaign';
 import { RAIDER_WAVES } from './cards';
 
 /**
@@ -251,7 +252,7 @@ export const MISSIONS: Record<string, MissionDef> = {
   },
   sandbox: {
     id: 'sandbox',
-    name: 'The Long Wander',
+    name: 'Sandbox',
     lore:
       'Before cities, before harvests — only the band, the seasons, and the long walk between them. ' +
       'No clock, no foe, no prize: a quiet place to try a deck or simply watch a civilization grow. ' +
@@ -265,6 +266,18 @@ export const MISSIONS: Record<string, MissionDef> = {
     rewardless: true,
   },
 };
+
+/**
+ * The *available* `'infinite'` missions in canonical display order — prereqs met (an unavailable one
+ * stays hidden, anti-surprise), the rewardless sandbox pinned first (it's the special one), then the
+ * scored survival missions. Shared by the campaign-map banner and the Stats leaderboard so the two
+ * can never disagree on which infinite missions show or in what order.
+ */
+export function infiniteMissionsInOrder(mapProgress: Record<string, true>): MissionDef[] {
+  return Object.values(MISSIONS)
+    .filter((m) => m.kind === 'infinite' && isAvailable(m, mapProgress))
+    .sort((a, b) => Number(b.rewardless ?? false) - Number(a.rewardless ?? false));
+}
 
 /**
  * Inject a mission's declarative `threats`/`events` lists into a fresh run's state — the single
