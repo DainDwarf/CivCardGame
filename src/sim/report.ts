@@ -24,8 +24,8 @@ export interface ScenarioSummary {
    *  CAVEAT: under the **random** policy this is authoritative (a card left unplayed across many random
    *  walks is genuinely hard/impossible to play). Under **greedy/heuristic** it instead means "cards
    *  `sim/value.ts`'s `scoreState` doesn't appreciate" — a card whose payoff the value function is blind
-   *  to (e.g. Storytelling's discard→hand recovery, since hand contents aren't scored; a sub-level
-   *  culture gain, since only integer `cultureLevel` is scored) shows as unplayed though it's perfectly
+   *  to (e.g. a discard→hand recovery, since hand contents aren't scored; a sub-level culture gain,
+   *  since only integer `cultureLevel` is scored) shows as unplayed though it's perfectly
    *  playable. Trust the random policy for playability; read a competent policy's list as a value-fn gap. */
   unplayedCards: string[];
   meanActions: number;

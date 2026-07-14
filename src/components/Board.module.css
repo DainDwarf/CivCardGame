@@ -1254,7 +1254,7 @@
   cursor: pointer;
 }
 
-/* --- Interaction modal: a card effect suspended awaiting a player choice (e.g. Storytelling) --- */
+/* --- Interaction modal: a card effect suspended awaiting a player choice (e.g. Calendar's peek) --- */
 /* Resolve-only by design: NO click-outside / Escape dismiss. The interaction has already committed
    (a peek bumped `revealCount`, clearing the undo stack), so the only exit is resolving it — picking an
    option (`chooseCard`) or acknowledging the reveal (`reveal`). A dismiss path would soft-lock the run

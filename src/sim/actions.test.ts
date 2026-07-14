@@ -48,12 +48,12 @@ describe('enumerateActions', () => {
     // return nothing but `resolveInteraction` — the structural guard against a no-op endTurn deadlock.
     const G = blankState('test');
     G.pendingInteraction = {
-      cardId: 'storytelling',
+      cardId: 'test_recover',
       instanceId: 1,
       kind: 'chooseCard',
       prompt: 'pick',
       options: [
-        { id: 2, cardId: 'fire' },
+        { id: 2, cardId: 'storytelling' },
         { id: 3, cardId: 'bow' },
       ],
       pick: 1,
@@ -74,7 +74,7 @@ describe('enumerateActions', () => {
       kind: 'reveal',
       prompt: 'peek',
       options: [
-        { id: 2, cardId: 'fire' },
+        { id: 2, cardId: 'storytelling' },
         { id: 3, cardId: 'bow' },
         { id: 4, cardId: 'dogs' },
       ],

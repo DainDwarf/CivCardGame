@@ -12,11 +12,10 @@
 export const STARTING_COLLECTION: Record<string, number> = {
   foraging: 4,
   toolmaking: 4,
-  fire: 2,
+  storytelling: 2,
   bow: 2,
   cave_art: 2,
   jewelry: 2,
   bartering: 2,
   dogs: 2,
-  storytelling: 2,
 };

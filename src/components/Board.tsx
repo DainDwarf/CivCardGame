@@ -2007,8 +2007,8 @@ export function Board({
         </div>
       )}
 
-      {/* A card effect suspended awaiting resolution: a `chooseCard` picks one revealed option (e.g.
-          Storytelling), a look-only `reveal` (a peek, e.g. Calendar) is acknowledged via Continue.
+      {/* A card effect suspended awaiting resolution: a `chooseCard` picks one revealed option, a
+          look-only `reveal` (a peek, e.g. Calendar) is acknowledged via Continue.
           Resolve-only — no click-outside/Escape dismiss (see .interactionBackdrop). Bound as an arg so
           `pending.kind` narrows inside the options callback. */}
       {G.pendingInteraction &&

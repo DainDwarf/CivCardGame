@@ -2,7 +2,7 @@ import { subtractResources, type CoreResources } from '../rules/resources';
 import { type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, suspendChoice } from '../rules/effects';
 import type { CardGate } from '../rules/playability';
-import { peekTop, recoverFromDiscard } from '../rules/deck';
+import { peekTop } from '../rules/deck';
 import { cultureLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'event' | 'threat' | 'objective';
@@ -167,7 +167,7 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // — Actions —
-  fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, display: { art: '🔥' }, effect: { resources: { science: 2 } } },
+  storytelling: { id: 'storytelling', name: 'Storytelling', kind: 'work', cost: {}, workers: 1, display: { art: '🗣️' }, produces: { resources: { science: 2 } } },
   bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, display: { art: '🏹' }, effect: { resources: { military: 3 } } },
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
@@ -190,38 +190,7 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // Storytelling keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer).
-  storytelling: {
-    id: 'storytelling', name: 'Storytelling', kind: 'action', cost: { science: 2 },
-    display: { art: '🗣️', description: 'Return a chosen card from discard to hand.' },
-    // Nothing to recover from an empty discard — gate it rather than let it fizzle for its cost.
-    gate: { check: (G) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null) },
-    effect: {
-      resolve: (ctx) => {
-        if (ctx.answer === undefined) {
-          // First pass: suspend with the discard as options. `discardEmpty` is gated unplayable, so
-          // the guard only covers a direct call; the snapshot excludes Storytelling itself (still
-          // held by `playCard`, not yet filed to discard).
-          if (ctx.G.discard.length === 0) return;
-          suspendChoice(ctx, {
-            kind: 'chooseCard',
-            prompt: 'Return one card from the discard to your hand',
-            options: [...ctx.G.discard],
-            pick: 1,
-          });
-          return;
-        }
-        // Resume: `answer` indexes the parked options; `recoverFromDiscard` finds it by instance id.
-        const pending = ctx.G.pendingInteraction;
-        if (!pending) return;
-        const chosen = pending.options[ctx.answer];
-        if (chosen) recoverFromDiscard(ctx, chosen);
-        ctx.G.pendingInteraction = null; // resolver owns clearing the interaction on resume
-      },
-    },
-  },
-
-  // Calendar keys its two resolver passes on `ctx.answer === undefined` like Storytelling, but the
+  // Calendar keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer). The
   // reveal is look-only: peeking keeps nothing, so the resume pass just clears the interaction. Its
   // `effect` is resolve-only (no declarative `resources`) — `resolveInteraction` re-runs the whole
   // effect on resume, so any resource field would double-apply.

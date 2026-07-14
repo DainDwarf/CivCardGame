@@ -133,9 +133,10 @@ export function returnToDeck(ctx: EffectContext, cards: CardInstance[]): void {
 
 /**
  * Return a specific instance from the discard pile to the hand — the discard→hand mover a recovery
- * card (Storytelling) resolves *through* instead of splicing `G.discard` itself (the same discipline
- * that keeps peeking behind `peekTop`). Removes `card` from `G.discard` by id, then delegates to
- * `drawInstance` (push to hand + emit the `draw` event). No-op if the id isn't in the discard.
+ * card resolves *through* instead of splicing `G.discard` itself (the same discipline that keeps peeking
+ * behind `peekTop`). Removes `card` from `G.discard` by id, then delegates to `drawInstance` (push to
+ * hand + emit the `draw` event). No-op if the id isn't in the discard. Like `drawInstance`/`returnToDeck`,
+ * it's a ready primitive with no shipping consumer yet — the recovery card that pairs with it lands later.
  *
  * Reusing `drawInstance` means recovery emits a `draw` event (`source: 'effect'`) — deliberate, so
  * on-draw observers treat a recovered card like any effect-drawn one. Harmless today (no on-draw

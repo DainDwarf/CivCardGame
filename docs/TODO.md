@@ -90,8 +90,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   worker staffing (6.2) · conquest (6.1/6.2) · card+board stickers + Influence/shop/copy-tiers
   (6.2 + post) · culture levels + `cultureLevelReq` gate (6.3) · events (6.4) · **boards / board
   choice** (6.4, Chiefdom) · threats (6.5) · **science card-manipulation / foresight** (6.6,
-  Calendar) · wonders (6.7). Interactive cards (`pendingInteraction`) ride in on the Paleolithic
-  baseline (Storytelling). **Deferred out of the Stone Age (deliberate):**
+  Calendar) · wonders (6.7). Interactive cards (`pendingInteraction`) ride in with the science
+  card-manipulation cards (Calendar's `reveal` peek). **Deferred out of the Stone Age (deliberate):**
   - **Destroy / demolish** — **not** a Stone Age mechanic. Was a fully-built-but-unused engine verb
     (a declarative `effect.destroy` + a `destroyInstanceId` targeting channel), **removed** during the
     card tech-debt pass rather than carried through the refactor unused — it's a card-effect (like the
@@ -336,8 +336,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Step 3 — Starting content (Paleolithic)** ✅ — refilled the minimum coherent slice so the game is
   launchable again, scoped to a **Paleolithic hunter-gatherer** start with **no buildings** in the deck
-  or collection (buildings arrive with the Stone Age arc in Step 6). Authored: 9 base cards in `CARDS`
-  (Foraging/Toolmaking/Cave Art work + Fire/Bow/Jewelry/Bartering/Dogs/Storytelling actions);
+  or collection (buildings arrive with the Stone Age arc in Step 6). Authored: 8 base cards in `CARDS`
+  (Foraging/Toolmaking/Cave Art work + Fire/Bow/Jewelry/Bartering/Dogs actions);
   a 20-card buildingless **Founding** deck (`DEFAULT_DECKS`); the **Tribe** board (`BOARDS`: food 5,
   pop 2, everything else 0 incl. territory); and the baseline **`sandbox`** infinite mission — a
   never-win `sandbox_goal` objective (`() => false`) plus a no-drain `sands_of_time` deadline threat

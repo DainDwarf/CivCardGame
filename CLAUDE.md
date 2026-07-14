@@ -159,9 +159,9 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     *specific* card — the verb `drawCard`'s top-of-deck-only can't
     express — emitting the `draw` event), and `returnToDeck` (shuffle cards back). Each takes the
     `EffectContext` so the family reads uniformly. `peekTop` drives the **Calendar** action (a look-only
-    peek at the top of the pile, suspending a `'reveal'` interaction); `recoverFromDiscard` (the
-    discard→hand counterpart) drives Storytelling. `drawInstance`/`returnToDeck` are in the family but
-    have no shipping consumer yet (the clean peek-and-draw card that pairs them lands later).
+    peek at the top of the pile, suspending a `'reveal'` interaction). `recoverFromDiscard` (the
+    discard→hand counterpart), `drawInstance`, and `returnToDeck` are in the family but have no shipping
+    consumer yet (the recovery / peek-and-draw cards that pair with them land later).
   - `effects.ts` — the **resolver spine**: a **`CardEffect`** is the one "what happens" descriptor,
     carried in four timing slots on `CardDef` — the play-time `effect`, the per-round `produces`, the
     upkeep-boundary `upkeep` (a threat's drain, an unplayed event's disaster, or a staffable's flat maintenance), and each `on.*` handler.
