@@ -168,7 +168,15 @@ export const CARDS: Record<string, CardDef> = {
 
   // — Actions —
   storytelling: { id: 'storytelling', name: 'Storytelling', kind: 'work', cost: {}, workers: 1, display: { art: '🗣️' }, produces: { resources: { science: 2 } } },
-  bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, display: { art: '🏹' }, effect: { resources: { military: 3 } } },
+  bow: {
+    id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 },
+    // The "single use" note is the face's heads-up for the self-removal below — kept in step with it.
+    display: { art: '🏹', note: 'single use' },
+    // A one-shot: grant the military (declarative, folded first) then exile this copy to `removed`
+    // so it never recycles back into the deck. The play choke point skips its usual action→discard
+    // file once the effect has already filed the copy (see `moves.ts`'s `playCard`).
+    effect: { resources: { military: 3 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
+  },
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, display: { art: '🤝' }, effect: { resources: { food: 2 } } },

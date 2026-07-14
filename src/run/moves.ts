@@ -69,11 +69,13 @@ export function playCard(
   }
   // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,
   // filed at end of turn) stay put. An `action` recycles to the **discard** — the same instance
-  // object, carrying whatever counters its resolver just bumped. A voluntarily *played* `event` is
-  // **removed** (banished for good, its recurring `upkeep` never firing), versus an unplayed one,
-  // which auto-resolves and files to discard at end of turn (`upkeep.ts`'s `resolveHandEvents`).
-  // The played-vs-auto split is the event kind's whole point.
-  if (card.kind === 'action') G.discard.push(played);
+  // object, carrying whatever counters its resolver just bumped — unless its own effect already
+  // exiled it (a single-use action like Bow pushing itself to `removed`), in which case leave it be
+  // rather than double-file it into two zones. A voluntarily *played* `event` is **removed**
+  // (banished for good, its recurring `upkeep` never firing), versus an unplayed one, which
+  // auto-resolves and files to discard at end of turn (`upkeep.ts`'s `resolveHandEvents`). The
+  // played-vs-auto split is the event kind's whole point.
+  if (card.kind === 'action' && !G.removed.some((c) => c.id === played.id)) G.discard.push(played);
   else if (card.kind === 'event') G.removed.push(played);
 }
 
