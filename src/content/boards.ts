@@ -55,6 +55,6 @@ export const BOARDS: Record<BoardId, BoardDef> = {
     id: 'chiefdom',
     name: 'Chiefdom',
     description: 'A war-band under a single chief: fewer mouths to feed, but spears ready from the first season.',
-    resources: { food: 4, production: 0, science: 0, military: 4, money: 0, population: 1, territory: 1, culture: 0 },
+    resources: { food: 4, production: 2, science: 0, military: 6, money: 2, population: 1, territory: 3, culture: 0 },
   },
 };
