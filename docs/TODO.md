@@ -67,11 +67,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **6.4 — Raiders at the Border** ✅ DONE — col 3, row -1 (top branch, prereq 6.3). `[shipped]`
     (details in *Done / shipped*; tutorial → Step 9.4)
   - **6.6 — Reading the Seasons** (science branch) ✅ DONE — col 2, row +1, prereq 6.2. `[shipped]`
-    (details in *Done / shipped*; tutorial → a later Step 9 substep)
+    (details in *Done / shipped*; tutorial → Step 9.6)
   - **6.5 — Restless People** (threat branch) ✅ DONE — col 3, row +1, prereq 6.6. `[shipped]`
     (details in *Done / shipped*; tutorial → Step 9.5)
   - **6.7 — Wonder capstone: Göbekli Tepe** ✅ DONE — col 4, row 0, prereq **both** branch tips
-    (6.4 / 6.5). `[shipped]` (details in *Done / shipped*; tutorial → a later Step 9 substep)
+    (6.4 / 6.5). `[shipped]` (details in *Done / shipped*; tutorial → Step 9.7)
 
   **Mechanics coverage — the whole Stone Age arc (the point of the age).** Covered: run loop /
   work+action / draw+food-upkeep (6.1) · deck-building (post-6.1) · buildings + territory +
@@ -123,8 +123,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     Influence/shop** (the reward debuts the Irrigation card sticker + Territory board sticker —
     the sticker-unlock reward kinds).
   - **9.3 — Rites & Rituals tutorial** — teach the **Culture** gauge: culture levels (each raises
-    hand size) and the `cultureLevelReq` play-gate. **Reward:** unlocks Göbekli Tepe (the age's
-    first wonder, culture-gated), owned here so the 6.7 capstone can build it.
+    hand size) and the `cultureLevelReq` play-gate. **Post-clear:** the reward unlocks the **Burial**
+    building — a culture producer (+1🎭 per staffed round). (The Göbekli Tepe wonder is *not* unlocked
+    here; the capstone `first_temple` grants it — see 9.7.)
   - **9.4 — Raiders at the Border tutorial** — teach the **event** card mechanic: mission-injected
     disasters (the raider waves) that auto-resolve from hand each round, draining a resource, and are
     defused for good by *playing* them (paying the cost banishes the card unresolved). **Post-clear:**
@@ -134,6 +135,25 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     Unrest card in the threat zone) that drains 🪙 per population on every deck reshuffle, and the
     culture goal that placates it. **Post-clear:** the reward unlocks the **Beer** work card (costs 2🌾
     to play, then +5🎭 per staffed round).
+  - **9.6 — Reading the Seasons tutorial** — the science branch (mission 6.6, a *parallel* fork off
+    Growing Numbers, so it's played before Restless People / 9.5 despite the higher substep number).
+    Teach the **Science** gauge (🔬): the planning/foresight resource, expressed through **card
+    manipulation** — and take the moment to **recap the flavour of every resource**, now that the arc has
+    surfaced them all (each resource's thematic feel per DESIGN's *Resources* — food = population,
+    production = the build currency, money = the treasury, science = planning, military = power; plus the
+    three strategic gauges). In-mission the objective is simply to **stockpile 10 🔬** (science comes off
+    the Storytelling work card). **Post-clear:** the reward unlocks the **Calendar** action (cost 1🔬,
+    a look-only peek at the top 3 cards) — the first peek-family card, showing what science *does*
+    (foresight + the look-only interaction popup).
+  - **9.7 — Göbekli Tepe tutorial** — the capstone (mission 6.7 / `first_temple`, prereq **both** branch
+    tips). Teach **wonders**: a wonder plays exactly like a building (tableau slot, staffed, produces every
+    round — Göbekli Tepe is the multi-worker one: +1🔨+1🪙+1🎭 *per* staffed worker, culture-level-1
+    gated), but it's the age's capstone monument. Spotlight its **special decking rule**: at most
+    `MAX_WONDERS_PER_DECK` (currently 1) per deck, its own Collection/deck-editor category, **no**
+    shop-bought copies, and **no** stickers. In-mission the objective is the broad end-of-age stockpile
+    (3🧍 pop · 🎭 level 2 · 30🔨 · 30🪙 held at once). **Post-clear:** the reward unlocks the **Göbekli
+    Tepe wonder card** (add it to a deck under the wonder rule) and opens the endless sandbox — the age is
+    mastered.
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*
@@ -144,11 +164,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > A pool to draw from while authoring the age arcs (Steps 5–7); each will land in whichever
 > age's mechanics fit. All `[phase: 4]`.
 
-- **Disasters — expand** — the `event` card mechanic shipped (see `CHANGELOG.md`); grow it out with more disaster types and missions that inject them (first one now slotted as Step 6.4) `[?]`
 - New mission type: "Metropolis" `[?]`
-- ~~New mission: "Build the Wonder"~~ → **shipped as Step 6.7** (Göbekli Tepe capstone — a
-  resource-stockpile objective rather than a build-the-wonder one)
-- Culture-based missions (depend on the Culture resource) → **slotted as Steps 6.3 / 6.5**
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]`
 - Resources transformation? Like a building that transforms production into science for example
 - Card that gives a draw when expanding territory `[?]`
