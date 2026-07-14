@@ -328,6 +328,26 @@ export const CARDS: Record<string, CardDef> = {
     display: { description: 'Reach 10 🔬 science' },
   },
 
+  // The Stone Age capstone: four thresholds met at once. The culture term reads as a *level* (like
+  //   the other culture goals) rather than the raw /30 the generic readout would show.
+  first_temple_goal: {
+    id: 'first_temple_goal', name: 'Göbekli Tepe', kind: 'objective', cost: {},
+    goals: [
+      { icon: '🧍', measure: (G) => G.resources.population, target: 3 },
+      { icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(2) },
+      { icon: '🔨', measure: (G) => G.resources.production, target: 30 },
+      { icon: '🪙', measure: (G) => G.resources.money, target: 30 },
+    ],
+    display: {
+      description: 'Have 3 🧍, 🎭 level 2, 30 🔨, and 30 🪙',
+      dynamicText: (G) =>
+        `🧍 ${Math.min(G.resources.population, 3)}/3 · ` +
+        `🎭 Level ${Math.min(cultureProgress(G.resources.culture).level, 2)}/2 · ` +
+        `🔨 ${Math.min(G.resources.production, 30)}/30 · ` +
+        `🪙 ${Math.min(G.resources.money, 30)}/30`,
+    },
+  },
+
   // Sandbox is an infinite mission: the objective never wins by design (a single bespoke goal whose
   //   `met` is always false); the run is bounded by the deadline threat below.
   sandbox_goal: {

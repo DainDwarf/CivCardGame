@@ -53,10 +53,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   All `age: 'stone'` → the age slice grows to `[0,5)`. The player must clear both branch tips
   (6.4 Raiders and 6.5 Restless People — which in turn require 6.3/6.6) before the capstone unlocks.
 
-  **Cross-cutting sequencing rule** (surfaced while planning 6.7): a mission that *spotlights a
+  **Cross-cutting sequencing rule** (keep for future missions): a mission that *spotlights a
   player-played card* as its objective needs that card **unlocked by an upstream mission** — a
-  reward is granted on clear, so you can't build/play what you don't yet own. This is why the
-  Göbekli Tepe wonder card is *unlocked* upstream (6.3) but *forced* (built) at the capstone (6.7).
+  reward is granted on clear, so you can't build/play what you don't yet own. (No longer exercised
+  by 6.7, which shipped with a resource-stockpile objective, not a build-the-wonder one.)
 
   - **6.1 — First Settlement** ✅ DONE — col 0. `[shipped]` (details in *Done / shipped*;
     tutorial → Step 9.1)
@@ -70,20 +70,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     (details in *Done / shipped*; tutorial → a later Step 9 substep)
   - **6.5 — Restless People** (threat branch) ✅ DONE — col 3, row +1, prereq 6.6. `[shipped]`
     (details in *Done / shipped*; tutorial → Step 9.5)
-  - **6.7 — Wonder capstone: Göbekli Tepe** (working name *"The First Temple"*) — col 4, row 0,
-    prereq **both** branch tips (6.4 / 6.5). **Teaches:** **wonders** (a building tagged `wonder` —
-    distinct banner/flavour, *not* a new kind). **Objective:** **build Göbekli Tepe** (the wonder
-    unlocked back at 6.3) — a culmination forcing territory (a slot), production (its cost), and a
-    culture gate together. **Unlocks:** the first **Influence-rewarding infinite mission** — a
-    real escalating-threat endless node (distinct from the no-drain `sandbox` *baseline*), paying
-    Influence = rounds survived per attempt, as the age's repeatable grind/graduation node.
-    ~12⭐ (provisional, one-time clear reward — separate from the infinite node's per-attempt pay).
-    **Flag — new engine support (build here, as noted):** infinite missions aren't
-    reward-unlockable today — `sandbox` is always-available with no prereqs, and the `reward` type
-    can't unlock a *mission* (only card / card-sticker / board-sticker / — pending 6.4 — board). Needs a
-    **new reward kind (`unlockMissionIds`)** (or gateable infinite missions), wired through
-    `rules/campaign.ts` availability *and* the campaign map's always-available infinite bottom
-    banner (hide until unlocked), plus the infinite mission itself authored. `[size: M] [?]`
+  - **6.7 — Wonder capstone: Göbekli Tepe** ✅ DONE — col 4, row 0, prereq **both** branch tips
+    (6.4 / 6.5). `[shipped]` (details in *Done / shipped*; tutorial → a later Step 9 substep)
 
   **Mechanics coverage — the whole Stone Age arc (the point of the age).** Covered: run loop /
   work+action / draw+food-upkeep (6.1) · deck-building (post-6.1) · buildings + territory +
@@ -154,7 +142,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Disasters — expand** — the `event` card mechanic shipped (see `CHANGELOG.md`); grow it out with more disaster types and missions that inject them (first one now slotted as Step 6.4) `[?]`
 - New mission type: "Metropolis" `[?]`
-- New mission: "Build the Wonder" → **slotted as Step 6.7** (Göbekli Tepe capstone)
+- ~~New mission: "Build the Wonder"~~ → **shipped as Step 6.7** (Göbekli Tepe capstone — a
+  resource-stockpile objective rather than a build-the-wonder one)
 - Culture-based missions (depend on the Culture resource) → **slotted as Steps 6.3 / 6.5**
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]`
 - Resources transformation? Like a building that transforms production into science for example
@@ -186,6 +175,30 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Step 6.7 — Göbekli Tepe (Wonder capstone)** ✅ — col 4, row 0, prereq **both** branch tips
+  (6.4 Raiders + 6.5 Restless People), extending the Stone Age slice to `[0,5)`. The **wonder** role
+  (a `building` tagged `wonder`) and the arc's culminating "you've mastered the age" node.
+  Implementation:
+  - The **`first_temple`** mission — objective a broad end-of-age stockpile held at once: 3 🧍
+    population, 🎭 culture level 2, 30 🔨, and 30 🪙 (`first_temple_goal`, four plain
+    numeric-threshold goals; deadline-free). Reward **12⭐ + unlocks the Göbekli Tepe wonder card**.
+    Mission id `first_temple` (distinct from the `gobekli_tepe` card it unlocks).
+  - The `first_temple_goal` objective card overrides `dynamicText` so the culture term reads as a
+    **level** (🎭 Level N/2), consistent with the other culture goals, not the raw /30 the generic
+    readout would show.
+  - **Gates the existing `sandbox` infinite mission** behind the capstone (`sandbox.prereqs:
+    ['first_temple']`) — the endless sandbox opens once the age is mastered. No new reward kind was
+    needed: prereq-gating already worked for infinite missions. The only wiring was the campaign
+    map's infinite bottom banner, which now **filters by `isAvailable`** so a locked infinite
+    mission is hidden until unlocked (anti-surprise).
+  - **Shipped simpler than the original 6.7 plan:** the objective is a resource stockpile, not
+    "build the wonder" — so the wonder is a pure clear reward (no upstream-unlock + forced-build
+    sequencing), and gating the *existing* sandbox replaced the planned new escalating-threat
+    infinite node + `unlockMissionIds` reward kind.
+  - No `sim/objective.ts` override needed — the four plain-threshold goals feed the generic
+    goals-average gradient directly, so the mission is sweepable out of the box. **Balance
+    (3/L2/30/30 thresholds, 12⭐) stays provisional — sim sweep + manual feel-check pending.**
 
 - **Step 6.6 — Reading the Seasons (Science branch + Calendar card)** ✅ — col 2, row +1, prereq 6.2.
   The **Science** role — card manipulation / foresight — debuting the peek family (`deck.ts`'s

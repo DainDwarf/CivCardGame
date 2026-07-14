@@ -84,10 +84,13 @@ export function CampaignMap({
   uiScale: number;
   onLaunch: (config: RunConfig) => void;
 }) {
-  // 'infinite' missions have no map position and never appear as a timeline node —
-  // they're always available, so they live in the bottom banner instead (rendered below).
+  // 'infinite' missions have no map position and never appear as a timeline node — they live in the
+  // bottom banner instead (rendered below). Like any mission they still gate on prereqs, so an
+  // unavailable one is hidden from the banner until its prereqs are met (anti-surprise).
   const missions = Object.values(MISSIONS).filter((m) => m.kind !== 'infinite');
-  const infiniteMissions = Object.values(MISSIONS).filter((m) => m.kind === 'infinite');
+  const infiniteMissions = Object.values(MISSIONS).filter(
+    (m) => m.kind === 'infinite' && isAvailable(m, mapProgress),
+  );
   const maxCol = missions.reduce((m, x) => Math.max(m, x.map!.col), 0);
   // Rows are signed offsets from the center axis (0 = middle). The node layer holds the symmetric
   // span [-rowExtent, +rowExtent] so its midpoint is row 0; centering the layer (CSS) centers row 0.
@@ -246,11 +249,11 @@ export function CampaignMap({
         </div>
       </div>
 
-      {/* 'infinite' missions never gate on prereqs and are never cleared/locked — they're
-          always available, so they get their own row rather than a timeline node. A `flex: 0 0
-          auto` sibling of .canvas (mirroring .header), never `position: fixed` — the app's
-          transform:scale() wrapper breaks viewport-fixed positioning (see CLAUDE.md's UI-scaling
-          invariants), which is why the map itself scrolls inside .canvas instead. */}
+      {/* 'infinite' missions are never cleared/locked in place — once available they stay so — and
+          get their own row rather than a timeline node. A `flex: 0 0 auto` sibling of .canvas
+          (mirroring .header), never `position: fixed` — the app's transform:scale() wrapper breaks
+          viewport-fixed positioning (see CLAUDE.md's UI-scaling invariants), which is why the map
+          itself scrolls inside .canvas instead. */}
       {infiniteMissions.length > 0 && (
         <div className={styles.infiniteBanner}>
           {infiniteMissions.map((m) => (

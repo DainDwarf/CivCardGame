@@ -72,7 +72,7 @@ export interface MissionDef {
    *  auto-computed — matches the "authored DAG" in docs/DESIGN.md and keeps control over the
    *  narrow tree's shape.
    *  `'infinite'` missions have none — they never appear as a timeline node, only in the
-   *  campaign map's always-available bottom banner. */
+   *  campaign map's bottom banner (shown once their prereqs are met, like any mission). */
   map?: { col: number; row: number };
   /** The historical age (`content/ages.ts`'s `AGES`) this mission lives under — the campaign
    *  map band it sits beneath. Each age *covers a slice of the DAG*: its band + gradient wash
@@ -206,13 +206,33 @@ export const MISSIONS: Record<string, MissionDef> = {
     map: { col: 2, row: 1 },
     age: 'stone',
   },
+  first_temple: {
+    id: 'first_temple',
+    name: 'Göbekli Tepe',
+    lore:
+      'The people have bread, walls, and warriors — everything a settlement needs to endure. What ' +
+      'they raise now they raise for no need at all: a ring of carved stones on the hilltop, hauled ' +
+      'and set by hands that could have been tilling. It feeds no one, yet the whole valley comes to ' +
+      'build it. When the last pillar stands, the Stone Age has given all it can — and a people who ' +
+      'build temples are a people no longer merely surviving.',
+    prereqs: ['raiders_at_border', 'restless_people'],
+    objectiveCardId: 'first_temple_goal',
+    victoryHint: 'Reach 3 🧍 population and 🎭 culture level 2 while holding 30 🔨 and 30 🪙 at once.',
+    failureHint: null,
+    kind: 'standard',
+    // Unlocks the Göbekli Tepe wonder — the age's capstone build. Influence amount provisional.
+    reward: { influence: 12, unlockCardIds: ['gobekli_tepe'] },
+    map: { col: 4, row: 0 },
+    age: 'stone',
+  },
   sandbox: {
     id: 'sandbox',
     name: 'The Long Wander',
     lore:
       'Before cities, before harvests — only the band, the seasons, and the long walk between them. ' +
       'There is nothing here to win. Wander well, and see how long the age carries you.',
-    prereqs: [],
+    // Gated behind the Stone Age capstone: the endless sandbox opens once the age is mastered.
+    prereqs: ['first_temple'],
     threats: ['sands_of_time'],
     objectiveCardId: 'sandbox_goal',
     victoryHint: 'There is no victory — only rounds survived.',
