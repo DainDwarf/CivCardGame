@@ -9,7 +9,6 @@
     { "cardId": "fire", "count": 1 },
     { "cardId": "jewelry", "count": 2 },
     { "cardId": "storytelling", "count": 1 },
-    { "cardId": "cave_art", "count": 1 },
-    { "cardId": "clothing", "count": 1 }
+    { "cardId": "cave_art", "count": 2 }
   ]
 }

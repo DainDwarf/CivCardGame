@@ -283,12 +283,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Simulator: `scoreState` is blind to sub-level culture** ✅ — `sim/value.ts` now scores
   the *fractional* culture level (`cultureProgress`'s `level + ratio`, monotonic and boundary-equal to
   the old integer term) so culture accumulating *within* a band registers, and `sim/objective.ts` has a
-  `rites_rituals_goal` progress gradient so the goal-directed policies steer toward culture level 2.
+  `rites_rituals_goal` progress gradient so the goal-directed policies steer toward culture level 1.
   Both feed the `founding/tribe/rites-rituals` sim scenario.
 
 - **Step 6.3 — Rites & Rituals (Culture mission)** ✅ — col 2, row 0, prereq 6.2. The **Culture**
   gauge: culture *levels* (each raises hand size) and the `cultureLevelReq` play-gate. Objective:
-  reach **culture level 2** (climbed by decking in owned Cave Art/Clothing — the intended lesson; no
+  reach **culture level 1** (climbed by decking in owned Cave Art — the intended lesson; no
   deadline). Unlocks **Göbekli Tepe** — the age's first wonder, itself the culture-gated card (a
   `'wonder'`-tagged building with `cultureLevelReq`), owned here so 6.7 can *build* it. Reward 8⭐.
   Göbekli Tepe is the first **multi-worker / per-worker** building (3-worker capacity, +1🔨+1🪙+1🎭
@@ -331,8 +331,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Step 3 — Starting content (Paleolithic)** ✅ — refilled the minimum coherent slice so the game is
   launchable again, scoped to a **Paleolithic hunter-gatherer** start with **no buildings** in the deck
-  or collection (buildings arrive with the Stone Age arc in Step 6). Authored: 10 base cards in `CARDS`
-  (Foraging/Toolmaking work + Fire/Bow/Cave Art/Clothing/Jewelry/Bartering/Dogs/Storytelling actions);
+  or collection (buildings arrive with the Stone Age arc in Step 6). Authored: 9 base cards in `CARDS`
+  (Foraging/Toolmaking/Cave Art work + Fire/Bow/Jewelry/Bartering/Dogs/Storytelling actions);
   a 20-card buildingless **Founding** deck (`DEFAULT_DECKS`); the **Tribe** board (`BOARDS`: food 5,
   pop 2, everything else 0 incl. territory); and the baseline **`sandbox`** infinite mission — a
   never-win `sandbox_goal` objective (`() => false`) plus a no-drain `sands_of_time` deadline threat

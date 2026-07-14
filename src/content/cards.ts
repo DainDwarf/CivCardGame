@@ -168,8 +168,7 @@ export const CARDS: Record<string, CardDef> = {
   // — Actions —
   fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { production: 1 }, display: { art: '🔥' }, effect: { resources: { science: 2 } } },
   bow: { id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 }, display: { art: '🏹' }, effect: { resources: { military: 3 } } },
-  cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'action', cost: { food: 1 }, display: { art: '🖐️' }, effect: { resources: { culture: 2 } } },
-  clothing: { id: 'clothing', name: 'Clothing', kind: 'action', cost: { production: 1 }, display: { art: '🧥' }, effect: { resources: { culture: 2 } } },
+  cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, display: { art: '🤝' }, effect: { resources: { food: 2 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, display: { art: '🐕' }, effect: { resources: { military: 2 } } },
@@ -281,12 +280,12 @@ export const CARDS: Record<string, CardDef> = {
   //   each level-up and would read confusingly against a level target.
   rites_rituals_goal: {
     id: 'rites_rituals_goal', name: 'Rites & Rituals', kind: 'objective', cost: {},
-    objective: (G) => cultureLevel(G.resources.culture) >= 2,
+    objective: (G) => cultureLevel(G.resources.culture) >= 1,
     display: {
-      description: 'Reach 🎭 level 2',
+      description: 'Reach 🎭 level 1',
       dynamicText: (G) => {
         const p = cultureProgress(G.resources.culture);
-        return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2`;
+        return p.level >= 1 ? '🎭 Level 1/1' : `🎭 Level ${p.level}/1`;
       },
     },
   },
@@ -302,7 +301,8 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // Same win as "Rites & Rituals", but its own card so the objective plaque shows this mission's name.
+  // Its own card so the objective plaque shows this mission's name (a steeper culture bar than
+  // "Rites & Rituals", which only asks for level 1).
   restless_people_goal: {
     id: 'restless_people_goal', name: 'Restless People', kind: 'objective', cost: {},
     objective: (G) => cultureLevel(G.resources.culture) >= 2,

@@ -47,8 +47,7 @@ export const DEFAULT_DECKS: DeckSeed[] = [
       'fire',
       'jewelry', 'jewelry',
       'storytelling',
-      'cave_art',
-      'clothing',
+      'cave_art', 'cave_art',
     ],
   },
 ];

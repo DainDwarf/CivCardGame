@@ -138,7 +138,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'binds the band together. Let the culture of the people rise, and they will remember who they are.',
     prereqs: ['growing_numbers'],
     objectiveCardId: 'rites_rituals_goal',
-    victoryHint: 'Reach 🎭 culture level 2.',
+    victoryHint: 'Reach 🎭 culture level 1.',
     failureHint: null,
     kind: 'standard',
     reward: { influence: 8, unlockCardIds: ['gobekli_tepe'] },

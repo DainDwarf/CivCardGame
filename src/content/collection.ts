@@ -1,8 +1,7 @@
 /**
  * A fresh player's starting ownership counts (`meta/store.ts`'s `emptyStore`, via
  * `rules/collection.ts`'s `collectionFromCounts`) — just enough to build `content/decks.ts`'s
- * Founding deck, plus two cards (Cave Art, Clothing) owned but not
- * pre-decked, for early deckbuilding variety; everything else is unlocked through missions. A plain
+ * Founding deck; everything else is unlocked through missions. A plain
  * `{ cardId: count }` map, not an `OwnedCards` itself: instance identity doesn't exist until granted.
  *
  * Every count is a **copy-tier-attainable** number (the shop's ×1→×2→×4→×8 ladder — 1/2/4/8, never 3),
@@ -16,7 +15,6 @@ export const STARTING_COLLECTION: Record<string, number> = {
   fire: 2,
   bow: 2,
   cave_art: 2,
-  clothing: 2,
   jewelry: 2,
   bartering: 2,
   dogs: 2,

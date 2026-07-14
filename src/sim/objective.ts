@@ -40,19 +40,15 @@ export const PROGRESS: Record<string, (G: GameState) => number> = {
     const built = ['hut', 'farm'].filter((id) => G.tableau.some((b) => b.cardId === id)).length;
     return (built + Math.min(G.resources.territory, 2)) / 4;
   },
-  // "Rites & Rituals": reach 🎭 culture *level 2*. Culture accumulates and is never spent, and the win
-  // is purely a raw-culture threshold — level 2 sits at `cultureForLevel(2)` (30) culture — so the
+  // "Rites & Rituals": reach 🎭 culture *level 1*. Culture accumulates and is never spent, and the win
+  // is purely a raw-culture threshold — level 1 sits at `cultureForLevel(1)` (10) culture — so the
   // gradient tracks *raw culture toward that threshold*, capped and normalized ⇒ 1 exactly at the win.
-  // Deliberately not the *fractional level* (`level + within-band ratio`): because the bands double
-  // (10, then 20), fractional level is non-uniform — it credits the first band twice as steeply as the
-  // wide second one, so a one-ply policy under-values the band-1 climb and can stall mid-band. Raw
-  // points make every culture point worth an equal slice of the goal, a uniform pull straight to it.
   rites_rituals_goal: (G) => {
-    const target = cultureForLevel(2);
+    const target = cultureForLevel(1);
     return Math.min(G.resources.culture, target) / target;
   },
-  // "Restless People": reach 🎭 culture *level 2* to placate the unrest — the identical culture-level
-  // win as "Rites & Rituals", so the same raw-culture-toward-threshold gradient (its own key because the
+  // "Restless People": reach 🎭 culture *level 2* to placate the unrest — the same raw-culture-toward-
+  // threshold gradient shape as "Rites & Rituals" but a steeper level-2 target (its own key because the
   // objective card id differs). The threat's 🪙 drain is a survival cost `scoreState` handles; the goal
   // gradient only needs to pull culture upward.
   restless_people_goal: (G) => {

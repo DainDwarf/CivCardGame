@@ -49,16 +49,15 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
     expect(objectiveProgress(atThreshold)).toBeLessThan(1);
   });
 
-  it('rises with accumulated culture on "Rites & Rituals" and is 1 exactly at level 2', () => {
+  it('rises with accumulated culture on "Rites & Rituals" and is 1 exactly at level 1', () => {
     const p = (culture: number) =>
       objectiveProgress(withObjective('rites_rituals_goal', (G) => (G.resources.culture = culture)));
     expect(p(0)).toBe(0);
     // Sub-level culture registers (a discrete cultureLevel would read 0 all the way to 10).
     expect(p(5)).toBeGreaterThan(p(0));
-    expect(p(10)).toBeGreaterThan(p(5)); // level 1
-    expect(p(20)).toBeGreaterThan(p(10)); // level 1, deeper into the band
-    expect(p(30)).toBe(1); // level 2 = the win
-    expect(p(29)).toBeLessThan(1); // one short of the level still isn't done
+    expect(p(9)).toBeGreaterThan(p(5)); // still short of the level
+    expect(p(9)).toBeLessThan(1); // one short of the level still isn't done
+    expect(p(10)).toBe(1); // level 1 = the win
     // Never spent, so hoarding past the goal earns no more.
     expect(p(70)).toBe(1);
   });
