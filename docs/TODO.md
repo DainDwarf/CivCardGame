@@ -100,6 +100,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 8 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 7, Iron Age
   period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
   `[size: L]` `[?]` `[phase: 4]`
+  - Iron Age mission arcs — structure as 2–3 parallel quest lines (branching DAG paths, echoing how the Stone Age forks Rites & Rituals / Reading the Seasons after Growing Numbers), themed around distinct early civilizations:
+    - Roman Empire — a military/expansion-leaning line
+    - China — a distinct cultural/technological line
+    - Central Arabia (maybe) — a trade/desert line, tentative third branch
 
 - **Step 9 — Tutorial onboarding UI** — the scripted popups/indicators layer over the
   **Stone Age** arc (the sole tutorial age), so new mechanics aren't dumped on the player at
