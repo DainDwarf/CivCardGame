@@ -105,6 +105,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   building here needs 2–3 workers, the `[blocked]` multi-pip staffing UI + bulk-worker-transfer
   items (below) unblock. Balance via simulator. `[size: L]` `[?]` `[phase: 4]`
 
+  **Content ideas (unslotted):**
+  - **Smelting** — mission/unlock granting an early **Forge** building (produces 1🔨). `[?]`
+  - **Bronze tools** — a sticker for production buildings *and* work cards granting **+1🔨**. `[?]`
+
 - **Step 8 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 7, Iron Age
   period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
   `[size: L]` `[?]` `[phase: 4]`
