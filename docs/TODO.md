@@ -93,8 +93,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   building here needs 2–3 workers, the `[blocked]` multi-pip staffing UI + bulk-worker-transfer
   items (below) unblock. Balance via simulator. `[size: L]` `[?]` `[phase: 4]`
 
-  **Content ideas (unslotted):**
-  - **Smelting** — mission/unlock granting an early **Forge** building (produces 1🔨). `[?]`
+First two missions, opened by gobekli:
+  - An expansion mission (get X territories) HO, or expansion events, find the card that has copper? -> unlocks forge
+  - ??? mission -> unlocks the wheel (-1prod cost sticker for buidings/works), and trader (1money building)
+  
+**Content ideas (unslotted):**
+  - **Smelting** — mission/unlock granting an early **Forge** building (produces 1🔨). An expansion mission (get X territories) -> found copper! `[?]`
   - **Bronze tools** — a sticker for production buildings *and* work cards granting **+1🔨**. `[?]`
 
 - **Step 8 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 7, Iron Age
@@ -176,6 +180,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   worker drag still moves one worker at a time. Deferred follow-up from the shipped multi-pip staffing UI. `[?]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]` `[phase: 4]`
 - **Re-polish the victory / gameover screens + flow** — revisit the end-of-run overlay and the transition back to the meta loop now that missions grant real rewards: the win/loss screen should surface what the run earned (Influence, any unlocks) and read well for both outcomes, and the hand-back-to-meta flow should feel finished rather than functional. `[?]` `[phase: 4]`
+- **Destroy placed stickers** — a way to remove/detach a sticker already attached to a card copy or a board (both are currently permanent once bought, capped at 2). Frees a slot to re-sticker; open design question whether it refunds Influence and whether it's per-copy card + board or one shared affordance. `[?]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 
 ## Tech debt / architecture
