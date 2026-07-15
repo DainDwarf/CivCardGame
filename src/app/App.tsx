@@ -7,7 +7,7 @@ import { GameProvider, useGame } from '../run/GameContext';
 import { applyRunResult, loadStore, saveStore, type PlayerStore } from '../meta/store';
 import { MAX_DECKS, MIN_DECK_SIZE } from '../rules/deckBuilder';
 import { buyTier } from '../rules/shop';
-import { buySticker } from '../rules/stickers';
+import { buySticker, removeSticker } from '../rules/stickers';
 import { buyBoardSticker, removeBoardSticker } from '../rules/boardStickers';
 import type { BoardId } from '../content/boards';
 import { MISSIONS } from '../content/missions';
@@ -179,6 +179,16 @@ export function App() {
     persist({ ...store, influence: result.influence, collection: result.collection });
   }
 
+  // Removal's write path — deliberately touches `collection` alone. Attaching a sticker is meant to be
+  // a decision with weight, so destroying one pays nothing back; `removeSticker` returns no Influence
+  // for exactly that reason. It returns null for an unowned copy / out-of-range index, so a rejected
+  // removal is a silent no-op — same backstop as its neighbours.
+  function detachSticker(instanceId: string, index: number) {
+    const collection = removeSticker(store.collection, instanceId, index);
+    if (!collection) return;
+    persist({ ...store, collection });
+  }
+
   // The board-sticker shop's write path: spend Influence to attach a permanent modifier to a board.
   // `buyBoardSticker` is the pure rule (rules/boardStickers.ts) and returns null for an unaffordable /
   // full / inapplicable board, so a rejected buy is a silent no-op here — same backstop as above.
@@ -256,6 +266,7 @@ export function App() {
             onDeleteDeck={deleteDeck}
             onBuyTier={buyCardTier}
             onAttachSticker={attachSticker}
+            onRemoveSticker={detachSticker}
             onBuyBoardSticker={buyBoardStickerAt}
             onRemoveBoardSticker={removeBoardStickerAt}
           />

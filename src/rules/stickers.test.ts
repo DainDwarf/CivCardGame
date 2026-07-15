@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { buySticker, effectiveCard, effectiveCost, effectiveGain, stickerAppliesTo } from './stickers';
-import { collectionFromCounts } from './collection';
+import { buySticker, effectiveCard, effectiveCost, effectiveGain, removeSticker, stickerAppliesTo } from './stickers';
+import { collectionFromCounts, hasSticker, isStickerFull, type OwnedCards } from './collection';
 import type { CardInstance } from './state';
 import { FIXTURE_CARDS, FIXTURE_STICKERS, installFixtures, uninstallFixtures } from './testFixtures';
 
@@ -97,6 +97,86 @@ describe('buySticker', () => {
     const collection = collectionFromCounts({ test_prod: 1 });
     const [a] = collection.instances.map((i) => i.id);
     expect(buySticker(collection, 5, a, 'test_restricted', UNLOCKED)).toBeNull();
+  });
+});
+
+describe('removeSticker', () => {
+  // Build the inputs through the real `buySticker` rather than hand-written arrays, so these fixtures
+  // can't drift from the shape a purchase actually produces. Influence is irrelevant to removal, so
+  // the attach budget is just "enough".
+  function attached(cardId: string, ...stickerIds: string[]): { collection: OwnedCards; id: string } {
+    let collection = collectionFromCounts({ [cardId]: 1 });
+    const id = collection.instances[0].id;
+    for (const s of stickerIds) collection = buySticker(collection, 999, id, s, UNLOCKED)!.collection;
+    return { collection, id };
+  }
+
+  const stickersOn = (collection: OwnedCards, id: string) => collection.instances.find((i) => i.id === id)?.stickers;
+
+  it('removes the sticker at the given index', () => {
+    const { collection, id } = attached('test_food', 'test_addgain', 'test_costcut');
+    expect(stickersOn(removeSticker(collection, id, 0)!, id)).toEqual(['test_costcut']);
+    expect(stickersOn(removeSticker(collection, id, 1)!, id)).toEqual(['test_addgain']);
+  });
+
+  it('removes only one copy of a stacked duplicate', () => {
+    // The reason removal is positional: removing by id would destroy both copies here.
+    const { collection, id } = attached('test_food', 'test_addgain', 'test_addgain');
+    expect(stickersOn(removeSticker(collection, id, 0)!, id)).toEqual(['test_addgain']);
+  });
+
+  it('drops the stickers key when the last sticker goes, returning the copy to the fungible pool', () => {
+    const { collection, id } = attached('test_food', 'test_addgain');
+    const next = removeSticker(collection, id, 0)!;
+    const inst = next.instances.find((i) => i.id === id)!;
+    // Absent, not `[]` — a plain copy carries no `stickers` key at all.
+    expect('stickers' in inst).toBe(false);
+    expect(hasSticker(inst)).toBe(false);
+  });
+
+  it('keeps other copies untouched', () => {
+    let collection = collectionFromCounts({ test_food: 2 });
+    const [a, b] = collection.instances.map((i) => i.id);
+    collection = buySticker(collection, 999, a, 'test_addgain', UNLOCKED)!.collection;
+    collection = buySticker(collection, 999, b, 'test_costcut', UNLOCKED)!.collection;
+    const next = removeSticker(collection, a, 0)!;
+    expect(stickersOn(next, b)).toEqual(['test_costcut']);
+  });
+
+  it('does not mutate the input collection', () => {
+    const { collection, id } = attached('test_food', 'test_addgain', 'test_costcut');
+    removeSticker(collection, id, 0);
+    expect(stickersOn(collection, id)).toEqual(['test_addgain', 'test_costcut']);
+  });
+
+  it('leaves Influence alone — a destroyed sticker refunds nothing', () => {
+    // The signature is the rule: removal returns a bare collection, with no Influence to write back.
+    const { collection, id } = attached('test_food', 'test_addgain');
+    expect(removeSticker(collection, id, 0)).not.toHaveProperty('influence');
+  });
+
+  it('rejects an instance the collection does not own', () => {
+    const { collection } = attached('test_food', 'test_addgain');
+    expect(removeSticker(collection, 'not-owned', 0)).toBeNull();
+  });
+
+  it('rejects a copy with no stickers attached', () => {
+    const collection = collectionFromCounts({ test_food: 1 });
+    expect(removeSticker(collection, collection.instances[0].id, 0)).toBeNull();
+  });
+
+  it('rejects an out-of-range index', () => {
+    const { collection, id } = attached('test_food', 'test_addgain');
+    expect(removeSticker(collection, id, 1)).toBeNull();
+    expect(removeSticker(collection, id, -1)).toBeNull();
+  });
+
+  it('frees a slot at the cap, so the copy can be stickered again', () => {
+    const { collection, id } = attached('test_food', 'test_addgain', 'test_costcut');
+    expect(buySticker(collection, 999, id, 'test_addgain', UNLOCKED)).toBeNull();
+    const freed = removeSticker(collection, id, 0)!;
+    expect(isStickerFull(freed.instances.find((i) => i.id === id)!)).toBe(false);
+    expect(buySticker(freed, 999, id, 'test_addgain', UNLOCKED)).not.toBeNull();
   });
 });
 

@@ -296,7 +296,7 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
 
-/* Removable badge (StickerRow's opt-in `onRemove` — the Board menu only): hovering turns the badge
+/* Removable badge (StickerRow's opt-in `onRemove` — the Board menu / Collection buy surfaces): hovering turns the badge
    into a solid ✕ button. The overlay *covers* the sticker rather than tinting it because a sticker
    icon is colour-emoji, which ignores `color` outright; and the ✕ is the text glyph U+2715, not the
    ❌ emoji, for the same reason — only the text glyph takes `--text-on-accent`. */

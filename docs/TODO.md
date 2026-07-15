@@ -180,7 +180,6 @@ First two missions, opened by gobekli:
   worker drag still moves one worker at a time. Deferred follow-up from the shipped multi-pip staffing UI. `[?]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]` `[phase: 4]`
 - **Re-polish the victory / gameover screens + flow** — revisit the end-of-run overlay and the transition back to the meta loop now that missions grant real rewards: the win/loss screen should surface what the run earned (Influence, any unlocks) and read well for both outcomes, and the hand-back-to-meta flow should feel finished rather than functional. `[?]` `[phase: 4]`
-- **Destroy placed card stickers** — a way to remove/detach a sticker already attached to a *card copy* (still permanent once bought, capped at 2). Frees a slot to re-sticker. The board half shipped: click a placed badge on the Board tab → confirm → destroyed. Two decisions it settled that this should inherit — **removal refunds no Influence** (attaching is meant to be a decision with weight), and the two catalogues get **separate affordances**, not one shared surface. `StickerRow`'s `onRemove` already exists and is index-based; the card side would pass it from `Collection`/`CardInstancePanel` and needs a `removeSticker` rule beside `buySticker`. `[?]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 
 ## Tech debt / architecture
@@ -197,6 +196,18 @@ First two missions, opened by gobekli:
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Destroy placed card stickers** ✅ — the card half of sticker removal, mirroring the board half it
+  inherited its decisions from: **no Influence refunded** (attaching is meant to be a decision with
+  weight), and the two catalogues keep **separate affordances** rather than one shared surface. The
+  Collection detail panel (`CardInstancePanel`) is the only place it's offered — clicking a placed badge
+  → confirm → destroyed, freeing the slot to re-sticker. `rules/stickers.ts`'s new `removeSticker` is the
+  rule beside `buySticker`: positional (a copy may carry the same sticker twice) and returning a bare
+  `OwnedCards`, the refundless signature. It drops the instance's `stickers` key when the last one goes,
+  so the copy rejoins `deckBuilder`'s fungible pool. UI-side it reuses the existing seams — `StickerRow`'s
+  index-based `onRemove`, opted into via a new `CardFace.onRemoveSticker` so only the panel's grid faces
+  are removable; the confirm was copied from `BoardMenu` (a shared confirm component stays its own
+  cleanup, decided on its own merits).
 
 - **Reload game when wiping save** ✅ — a destructive Save-menu action (Clear, Load/import) now
   persists the new store then reloads the app (through the fade transition) instead of swapping React

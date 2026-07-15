@@ -62,6 +62,34 @@ export function buySticker(
 }
 
 /**
+ * Detach the sticker at `index` from `instanceId`, destroying it. Returns `null` (the family's reject
+ * idiom) when the instance isn't owned, carries no sticker, or `index` is out of range. Immutable; the
+ * instance's `stickers` key is *deleted* rather than left as `[]` when its last sticker goes, per
+ * `MetaCardInstance`'s absent-means-plain-copy contract (`collection.ts`) — that's what returns the copy
+ * to the fungible pool `deckBuilder.ts` draws from.
+ *
+ * Removal is **positional**, mirroring `rules/boardStickers.ts`'s `removeBoardSticker`: an instance
+ * legitimately carries the same sticker id twice (`buySticker` appends, and the `effectiveGain`/
+ * `effectiveCost` folds apply it once per copy), so removing by id would destroy both copies of a stack.
+ *
+ * Returning a bare `OwnedCards` rather than a `StickerPurchase` is the point, not an oversight:
+ * **removal refunds nothing**, so there is no Influence for a caller to write back. Attaching a sticker
+ * is meant to be a decision with weight; re-applying one costs full price.
+ */
+export function removeSticker(collection: OwnedCards, instanceId: string, index: number): OwnedCards | null {
+  const inst = findInstance(collection, instanceId);
+  const current = inst?.stickers;
+  if (!inst || !current || index < 0 || index >= current.length) return null;
+  const remaining = current.filter((_, i) => i !== index);
+  const instances = collection.instances.map((i) => {
+    if (i.id !== instanceId) return i;
+    const { stickers: _dropped, ...plain } = i;
+    return remaining.length ? { ...plain, stickers: remaining } : plain;
+  });
+  return { ...collection, instances };
+}
+
+/**
  * Card stickers in the run loop: the two functions below are the *only* place a sticker's actual
  * effect is applied — `rules/effects.ts`'s declarative default resolvers and the two cost sites
  * (`unplayableReason`, `playCard`) all call through here rather than reimplementing the bump, so

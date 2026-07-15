@@ -63,7 +63,7 @@ built; the game is now in its content-and-balance pass — see
     `GameState.threats`
     (`rules/threats.ts`) are persistent, mission-seeded board hazards that escalate and
     drain resources each upkeep (each resolving through the shared resolver spine).
-  - **Card stickers** — permanent per-copy buffs bought with Influence
+  - **Card stickers** — per-copy buffs bought with Influence
     (`content/stickers.ts`, `rules/stickers.ts`); up to 2 per owned instance, stacking.
     A sticker owns its own logic on its `StickerDef` (`appliesTo`/`applyGain`/`applyCost`
     hooks); `effectiveGain`/`effectiveCost`/`effectiveCard` are the only places a sticker
@@ -71,8 +71,14 @@ built; the game is now in its content-and-balance pass — see
     agree. A sticker is **hidden until unlocked** by a mission reward (`PlayerStore.unlockedStickers`,
     fed by `unlockStickerIds`) — `rules/stickers.ts`'s `unlockedStickerDefs` is the single filter seam
     every catalogue *enumeration* (the Collection tray, the upgrade hints) reads through, and
-    `buySticker` re-checks the unlock as its authoritative backstop. The catalogue holds one sticker so
-    far — **Irrigation** (+1 🌾 on a food-producing building), unlocked by the "Growing Numbers" mission.
+    `buySticker` re-checks the unlock as its authoritative backstop. An attached sticker can be
+    **destroyed** to free its slot (`removeSticker`), mirroring the board side in every respect: the
+    Collection detail panel is the only surface that offers it (clicking a placed badge → confirm),
+    removal is **positional** (`removeSticker(collection, instanceId, index)` — a copy may carry the same
+    sticker twice, so an id would destroy both of a stack), and it **refunds nothing** — hence the bare
+    `OwnedCards` return rather than a `StickerPurchase`, and hence the confirm, the one place that cost
+    is stated. The catalogue holds one sticker so far — **Irrigation** (+1 🌾 on a food-producing
+    building), unlocked by the "Growing Numbers" mission.
   - **Board stickers** — the *board* counterpart to card stickers: permanent modifiers bought
     with Influence that tweak a board's *starting* profile (`content/boardStickers.ts`,
     `rules/boardStickers.ts`), attached per board on `PlayerStore.boardStickers` (a board is
@@ -97,8 +103,8 @@ built; the game is now in its content-and-balance pass — see
     attach drag because the confirm — the one place the no-refund cost is stated — sits badly on a drag
     release. Removal is **positional** (`removeBoardSticker(map, boardId, index)`): a board may legitimately
     hold the same sticker twice, so an id would destroy both copies of a stack. The affordance is opt-in
-    (`BoardMini`'s `onRemoveSticker` → `StickerRow`'s `onRemove`), so the read-only board previews and every
-    card-side sticker row stay inert — a *card* sticker is still permanent (see `docs/TODO.md`).
+    (`BoardMini`'s `onRemoveSticker` → `StickerRow`'s `onRemove`, the same seam `CardFace` opts into for the
+    card side), so the read-only previews and the in-run faces stay inert.
     Like card stickers, a board sticker is **hidden until unlocked** (`PlayerStore.unlockedBoardStickers`,
     fed by a mission's `unlockBoardStickerIds`) — `unlockedBoardStickerDefs` gates the tray + hint, and
     `buyBoardSticker` re-checks. The catalogue holds two so far — **Granary** (+6 starting food) and
@@ -280,8 +286,11 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `copiesOwned`/`isOwned` filter instances (an absent cardId = not yet unlocked).
   - `shop.ts` — the copy-tier economy: `TIER_LADDER`, `nextTier`, the immutable `buyTier`,
     and `canBuyTier` (mirrors `buyTier`'s reject — the leaf the upgrade hints fold over).
-  - `stickers.ts` — sticker logic: `buySticker` (meta purchase) and
-    `effectiveGain`/`effectiveCost`/`effectiveCard`, the only places a sticker touches run
+  - `stickers.ts` — sticker logic: `buySticker` (meta purchase), `removeSticker` (destroy the sticker at
+    an *index* on one copy — positional and refundless for the same reasons as its board twin below;
+    drops the instance's `stickers` key when its last one goes, per `collection.ts`'s
+    absent-means-plain-copy contract, which is what returns the copy to `deckBuilder.ts`'s fungible
+    pool), and `effectiveGain`/`effectiveCost`/`effectiveCard`, the only places a sticker touches run
     or display values (each a generic fold over the `StickerDef` hooks; see the convention).
   - `boardStickers.ts` — the board counterpart: `buyBoardSticker` (meta purchase),
     `removeBoardSticker` (destroy the sticker at an *index* — a board may hold the same sticker twice,
@@ -459,8 +468,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     the card. Dragging a badge onto a copy buys+attaches it in one gesture (a hand-rolled
     pointer-drag like `BoardMenu.tsx`, no DnD library — only *valid* targets, `under the cap ·
     affordable`, highlight mid-drag via the single `isValidTarget` predicate; an invalid/missed
-    drop no-ops). Clicking a copy (not dragging
-    onto it) zooms it. Calls back into `App.tsx` (`onBuyTier`/`onAttachSticker`).
+    drop no-ops). An attached sticker is **destroyed** here and only here, exactly as on the Board tab:
+    clicking a placed badge opens a confirm, and accepting frees the slot and refunds nothing. Clicking a
+    copy (not its badge, not dragging onto it) zooms it. Calls back into `App.tsx`
+    (`onBuyTier`/`onAttachSticker`/`onRemoveSticker`).
   - `BoardMenu.tsx` (Board tab) — the board-sticker buy surface: a grid of every *available* board (via
     `availableBoardIds`, so a locked board is hidden) as a `BoardMini`
     beside a right-side sticky tray of sticker boxes (each a draggable sticker

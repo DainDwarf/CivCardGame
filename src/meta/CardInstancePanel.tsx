@@ -40,19 +40,25 @@ interface DragState {
 }
 
 /**
- * The per-card detail view opened from Collection — and, since Step 9.1, that card's *buy/attach*
- * surface (the fused Shop). As of Step 9.2 it renders each owned copy as a real `CardFace` (its
- * sticker-adjusted `effectiveCard` numbers + bottom-left sticker badge) rather than a text row, and
- * stickers are bought+applied by **drag-and-drop**: the applicable stickers sit in a right-side tray
- * (the buy-next-copy-tier button pinned at its top), and dragging a sticker badge out of the tray
- * onto a card face buys and attaches it in one gesture — replacing Step 7.5's separate attach sub-mode.
+ * The per-card detail view opened from Collection — and that card's *buy/attach* surface (the fused
+ * Shop). Each owned copy renders as a real `CardFace` (its sticker-adjusted `effectiveCard` numbers +
+ * bottom-left sticker badge); the applicable stickers sit in a right-side tray, the buy-next-copy-tier
+ * button pinned at its top. Dragging a sticker badge out of the tray onto a card face buys and attaches
+ * it in one gesture: a hand-rolled pointer-drag (like `DeckEditor.tsx` / `BoardMenu.tsx`, no DnD
+ * library) with a single `isValidTarget` predicate gating both the mid-drag highlight and the drop; an
+ * invalid/missed drop no-ops.
  *
- * The anti-surprise core (Step 7.3) survives the visual change: each face carries a caption naming the
- * deck(s) that copy sits in ("1/2 · in Aggro" / "1/2 · unused"), so a sticker still lands on a *known*
- * copy. A hand-rolled pointer-drag (like `DeckEditor.tsx` / `BoardMenu.tsx`, no DnD library) with a
- * single `isValidTarget` predicate gating both the mid-drag highlight and the drop; an invalid/missed
- * drop no-ops. Clicking a face (not dragging onto it) zooms it. Without the `shop` bundle the panel is
- * read-only browse — faces + zoom, no tray.
+ * Each face carries a caption naming the deck(s) that copy sits in ("1/2 · in Aggro" / "1/2 · unused"),
+ * the anti-surprise core: a sticker always lands on — and is destroyed from — a *known* copy.
+ *
+ * This is also the only screen where an *attached* card sticker can be destroyed (the card counterpart
+ * to `BoardMenu`'s board stickers): clicking a badge on a copy opens a confirm, and accepting frees the
+ * slot for nothing back. The gesture is a plain click rather than the inverse of the attach drag because
+ * the confirm — where the no-refund cost is made legible — sits badly on a drag release, and an
+ * accidental drag would burn the Influence silently.
+ *
+ * Clicking a face (not its badge, and not dragging onto it) zooms it. Without the `shop` bundle the
+ * panel is read-only browse — faces + zoom, no tray, inert badges.
  */
 export function CardInstancePanel({
   cardId,
@@ -74,6 +80,10 @@ export function CardInstancePanel({
     unlockedStickers: Record<string, true>;
     onBuyTier: (cardId: string) => void;
     onAttachSticker: (instanceId: string, stickerId: string) => void;
+    /** Destroy the sticker at `index` on one owned copy (`App.tsx`'s `detachSticker`). Refunds
+     *  nothing — the Influence is burned, which is the whole reason this panel confirms first. Keyed
+     *  by position, not sticker id: a copy may carry the same sticker twice. */
+    onRemoveSticker: (instanceId: string, index: number) => void;
   };
   /** Whole-UI scale from settings — the panel renders inside App.tsx's transform:scale() wrapper, so
    *  the drag clone's inline coordinates must be divided by it (visual → local), same as `BoardMenu`.
@@ -86,6 +96,9 @@ export function CardInstancePanel({
   const [zoomInstance, setZoomInstance] = useState<string | null>(null);
   const [drag, setDragState] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  // The removal a player has clicked but not yet confirmed — the destroy is irreversible and unpaid,
+  // so it never fires straight off the click.
+  const [pendingRemoval, setPendingRemoval] = useState<{ instanceId: string; index: number } | null>(null);
   // Each face wrapper's DOM node, registered by callback ref — hit-tested (visual px) on drop.
   const faceEls = useRef(new Map<string, HTMLElement>());
 
@@ -189,6 +202,15 @@ export function CardInstancePanel({
   // The sticker currently being dragged (for the highlight predicate + the clone), null when idle.
   const dragSticker = drag?.active ? STICKERS[drag.stickerId] : undefined;
 
+  // The copy a pending removal targets and the sticker it would destroy — resolved for the confirm's
+  // copy. An instance/sticker that no longer resolves (the collection changed underneath) leaves the
+  // confirm closed.
+  const pendingCopy = pendingRemoval ? instances.findIndex((i) => i.id === pendingRemoval.instanceId) : -1;
+  const pendingSticker =
+    pendingRemoval && pendingCopy >= 0
+      ? STICKERS[(instances[pendingCopy].stickers ?? [])[pendingRemoval.index]]
+      : undefined;
+
   // A wonder can't be upgraded at all — it's unique (one copy, never bought) and takes no stickers —
   // so its detail popup drops the whole face-grid + tray and just shows the single card with its deck
   // usage under a one-line note. (The drag machinery above stays inert; no badge can ever be dragged.)
@@ -241,6 +263,13 @@ export function CardInstancePanel({
                     <CardFace
                       card={effectiveCard(card, inst)}
                       stickerBadge={inst.stickers}
+                      // Removal is the shop surface's affordance, so a read-only browse shows inert
+                      // badges. Suppressed mid-drag (like the tray's own gating): while a badge is in
+                      // the air this face's message is "droppable target", and a ✕ under the cursor
+                      // would contradict it.
+                      onRemoveSticker={
+                        shop && !dragSticker ? (index) => setPendingRemoval({ instanceId: inst.id, index }) : undefined
+                      }
                       onClick={() => setZoomInstance(inst.id)}
                     />
                     <span className={styles.faceCaption}>
@@ -338,6 +367,39 @@ export function CardInstancePanel({
           </div>
         </div>
       </div>
+
+      {/* The destroy confirm. Its three facts — destroyed, not refunded, full price to re-apply —
+          are the only place the cost of removal is stated, so none of them is optional. Its layer
+          clears the panel's own modal backdrop, like the drag layer below. */}
+      {pendingRemoval && pendingSticker && (
+        <div className={styles.confirmLayer} onClick={() => setPendingRemoval(null)}>
+          <div className={styles.confirmPanel} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.confirmTitle}>
+              Remove {pendingSticker.name} from {card.name} {pendingCopy + 1}/{instances.length}?
+            </h3>
+            <p className={styles.confirmText}>
+              This destroys the sticker and frees its slot on that copy. The {pendingSticker.cost} ⭐ you
+              spent is not refunded, and putting another {pendingSticker.name} on a copy later costs the
+              full {pendingSticker.cost} ⭐ again.
+            </p>
+            <div className={styles.confirmActions}>
+              <button
+                type="button"
+                className={styles.confirmDangerBtn}
+                onClick={() => {
+                  shop?.onRemoveSticker(pendingRemoval.instanceId, pendingRemoval.index);
+                  setPendingRemoval(null);
+                }}
+              >
+                Destroy sticker
+              </button>
+              <button type="button" className={styles.confirmCancelBtn} onClick={() => setPendingRemoval(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* The sticker clone following the cursor while it's dragged onto a face — the same round badge
           (bigger than the on-card one) picked up from the tray. Its layer sits above the modal

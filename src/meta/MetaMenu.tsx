@@ -53,6 +53,7 @@ export function MetaMenu({
   onDeleteDeck,
   onBuyTier,
   onAttachSticker,
+  onRemoveSticker,
   onBuyBoardSticker,
   onRemoveBoardSticker,
 }: {
@@ -93,6 +94,9 @@ export function MetaMenu({
   /** Attach a sticker to one chosen owned instance — spends Influence and
    *  mutates that instance in the store (`App.tsx`'s `attachSticker`). */
   onAttachSticker: (instanceId: string, stickerId: string) => void;
+  /** Destroy the sticker at `index` on one owned copy (`App.tsx`'s `detachSticker`) — frees the slot,
+   *  refunds no Influence. */
+  onRemoveSticker: (instanceId: string, index: number) => void;
   /** Attach a board sticker to a board — spends Influence and mutates the store's
    *  `boardStickers` (`App.tsx`'s `buyBoardStickerAt`). */
   onBuyBoardSticker: (boardId: BoardId, stickerId: string) => void;
@@ -167,6 +171,7 @@ export function MetaMenu({
             uiScale={uiScale}
             onBuyTier={onBuyTier}
             onAttachSticker={onAttachSticker}
+            onRemoveSticker={onRemoveSticker}
           />
         )}
         {screen === 'board' && (

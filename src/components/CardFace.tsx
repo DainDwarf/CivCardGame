@@ -57,10 +57,11 @@ export function StickerRow({
    *  renders no hint slots. */
   openSlots?: number;
   /** Opt-in removal affordance: when set, each badge becomes clickable and reveals a ✕ on hover,
-   *  reporting the index the player clicked. Only the Board menu passes it (via `BoardMini`) — every
-   *  card-side caller omits it and renders exactly as before, which is what keeps card stickers
-   *  permanent and keeps the read-only board previews inert. The index (not a sticker id) is the
-   *  handle because a board may hold the same sticker twice; see `rules/boardStickers.ts`. */
+   *  reporting the index the player clicked. Only the two buy surfaces pass it — the Board menu (via
+   *  `BoardMini`) and Collection's `CardInstancePanel` (via `CardFace`'s `onRemoveSticker`); every
+   *  other caller omits it, which is what keeps the read-only previews and in-run faces inert. The
+   *  index (not a sticker id) is the handle because one board/copy may carry the same sticker twice;
+   *  see `rules/boardStickers.ts` / `rules/stickers.ts`. */
   onRemove?: (index: number) => void;
 }) {
   // Card stickers resolve through the card `STICKERS` catalogue; a caller from a different catalogue
@@ -76,7 +77,16 @@ export function StickerRow({
           key={i}
           className={onRemove ? `${styles.sticker} ${styles.stickerRemovable}` : styles.sticker}
           title={onRemove ? `Remove ${c.name ?? 'this sticker'} — destroys it, no Influence back` : c.name}
-          onClick={onRemove && (() => onRemove(i))}
+          // The row sits inside a clickable card face on the Collection side, whose own click zooms
+          // the copy — stop here so asking to destroy a sticker doesn't also open the zoom behind
+          // the confirm.
+          onClick={
+            onRemove &&
+            ((e) => {
+              e.stopPropagation();
+              onRemove(i);
+            })
+          }
         >
           {c.icon}
         </span>
@@ -237,6 +247,11 @@ export interface CardFaceProps extends CardFaceCommonProps {
    *  `CardInstancePanel`) for anything beyond this hover title. Absent/empty for a plain
    *  copy. */
   stickerBadge?: string[];
+  /** Opt-in removal affordance on the `stickerBadge` row: makes each badge clickable (a ✕ on hover),
+   *  reporting which one by index. Only `CardInstancePanel`'s grid faces pass it — every other face
+   *  (the Collection tiles, the zoom, the deck editor, the hand) omits it and renders inert badges, so
+   *  a sticker is destroyed from the one surface that confirms first. See `StickerRow`'s `onRemove`. */
+  onRemoveSticker?: (index: number) => void;
   /** Tints the whole face's border/ring gold to mark that this card has an affordable upgrade
    *  available (a buyable copy tier or an applicable, affordable sticker with room) — the Collection
    *  grid's at-a-glance hint so the player needn't open each card. Pure display; the predicate
@@ -307,7 +322,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
     );
   }
 
-  const { countBadge, alwaysShowBadge, badgeClassName, stickerBadge, upgradeHint } = props;
+  const { countBadge, alwaysShowBadge, badgeClassName, stickerBadge, onRemoveSticker, upgradeHint } = props;
   const text = overrideText ?? describeCard(card);
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
@@ -346,7 +361,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
           ×{countBadge}
         </span>
       )}
-      <StickerRow stickers={stickerBadge} />
+      <StickerRow stickers={stickerBadge} onRemove={onRemoveSticker} />
     </>
   );
 

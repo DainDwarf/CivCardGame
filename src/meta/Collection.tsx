@@ -25,6 +25,7 @@ export function Collection({
   uiScale,
   onBuyTier,
   onAttachSticker,
+  onRemoveSticker,
 }: {
   collection: OwnedCards;
   decks: DeckDef[];
@@ -37,6 +38,9 @@ export function Collection({
   uiScale: number;
   onBuyTier: (cardId: string) => void;
   onAttachSticker: (instanceId: string, stickerId: string) => void;
+  /** Destroy the sticker at `index` on one owned copy — the detail panel's confirm-gated removal
+   *  (`App.tsx`'s `detachSticker`); frees the slot, refunds no Influence. */
+  onRemoveSticker: (instanceId: string, index: number) => void;
 }) {
   const [detail, setDetail] = useState<string | null>(null);
 
@@ -128,7 +132,7 @@ export function Collection({
           cardId={detail}
           collection={collection}
           decks={decks}
-          shop={{ influence, unlockedStickers, onBuyTier, onAttachSticker }}
+          shop={{ influence, unlockedStickers, onBuyTier, onAttachSticker, onRemoveSticker }}
           uiScale={uiScale}
           onClose={() => setDetail(null)}
         />

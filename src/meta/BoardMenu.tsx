@@ -268,7 +268,7 @@ export function BoardMenu({
             </h3>
             <p className={styles.confirmText}>
               This destroys the sticker and frees its slot. The {pendingSticker.cost} ⭐ you spent is not
-              refunded, and putting a {pendingSticker.name} back on a board later costs the full{' '}
+              refunded, and putting another {pendingSticker.name} on a board later costs the full{' '}
               {pendingSticker.cost} ⭐ again.
             </p>
             <div className={styles.confirmActions}>
