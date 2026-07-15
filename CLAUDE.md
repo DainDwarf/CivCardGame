@@ -100,15 +100,22 @@ built; the game is now in its content-and-balance pass — see
 
 - `npm run dev` — Vite dev server.
 - `npm run build` — type-check (`tsc --noEmit`) then produce a production bundle.
-- `npm run typecheck` — type-check only (no emit).
+- `npm run typecheck` — type-check only (no emit): `src` (`tsconfig.json`) then `scripts`
+  (`tsconfig.scripts.json`, the Node-targeted project — the dev scripts import `src`, so a contract
+  change that breaks one surfaces here rather than at the next hand-run).
 - `npm test` — run the Vitest suite once.
 - `npm run test:watch` — Vitest in watch mode.
 - Single test file: `npx vitest run src/rules/scoring.test.ts`
 - Tests matching a name: `npx vitest run -t "victory points"`
-- `npm run seed-save` — dev tool (`scripts/seed-save.ts`, run via `tsx`): folds a list of finished
-  runs through the real `applyRunResult` to write a populated `.civsave` (default `./seed.civsave`,
-  gitignored) for testing the meta screens without grinding. Edit `SEED_RUNS` to change its contents;
-  import it in-game via the Save menu.
+- `npm run seed-save` — dev tool (`scripts/seed-save.ts`, run via `tsx`): walks the campaign DAG and
+  folds one finished run per mission through the real `applyRunResult` to write a populated `.civsave`
+  (default `./seed.civsave`, gitignored) for testing the meta screens without grinding; import it
+  in-game via the Save menu. `--upto <missionId>` stops at that mission's transitive prereqs plus
+  itself, so an off-path branch stays uncleared (seeding a partial-progress save); the default plays
+  every mission except the `rewardless` sandbox. `--influence <n>` overrides the spendable balance
+  (leaving `lifetime.influenceEarned` as earned), `--seed`/`--out` set the stat randomization and the
+  output path. Missions are never hard-coded — the DAG walk and the default target set both derive
+  from `content/missions.ts`.
 - `npm run sim` — balance tool (`scripts/sim.ts`, run via `tsx`): sweeps the headless simulator over a
   mission × deck × board matrix and prints an aggregated report (win rate, turns/defeat-cause/card-play
   stats). The three axes are decoupled: `--scenario <ids>` names mission(s) (looked up live from

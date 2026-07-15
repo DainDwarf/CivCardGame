@@ -1,0 +1,11 @@
+{
+  // The dev scripts run on Node (`tsx`), not in the browser, so they need `types: ["node"]` — but they
+  // import `src/` modules, so DOM stays in `lib` (e.g. `meta/store.ts`'s `exportSave` calls `btoa`).
+  // Their own project because the base config is src-scoped: without it the scripts go unchecked and
+  // rot silently against `src/` contract changes, since `tsx` only strips types.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["scripts"]
+}
