@@ -43,16 +43,24 @@ export interface BoardStickerDef {
  * (`MissionDef.reward.unlockBoardStickerIds`) — purchasable only once
  * `PlayerStore.unlockedBoardStickers` holds its id (see `rules/upgrades.ts` / the Board tray).
  *
- * `territory` is the first, unlocked by the "Growing Numbers" mission: +1 to a board's starting
- * Territory (the gauge that caps tableau size), applied once at run setup.
+ * `granary` and `stockpile` are the first two, both unlocked by the "Growing Numbers" mission: a
+ * fatter starting store of food and of production respectively, applied once at run setup.
  */
 export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
-  territory: {
-    id: 'territory',
-    name: 'Territory',
-    description: '+1 starting Territory',
-    icon: '🌐',
+  granary: {
+    id: 'granary',
+    name: 'Granary',
+    description: '+6 starting Food',
+    icon: '🧺',
     cost: 10,
-    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, territory: b.resources.territory + 1 } }),
+    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, food: b.resources.food + 6 } }),
+  },
+  stockpile: {
+    id: 'stockpile',
+    name: 'Stockpile',
+    description: '+6 starting Production',
+    icon: '🪵',
+    cost: 10,
+    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, production: b.resources.production + 6 } }),
   },
 };

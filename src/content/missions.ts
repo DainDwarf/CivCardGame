@@ -133,7 +133,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Build a 🛖 Hut and a 🌱 Farm.',
     failureHint: null,
     kind: 'standard',
-    reward: { influence: 6, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'] },
+    reward: { influence: 6, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['granary', 'stockpile'] },
     map: { col: 1, row: 0 },
     age: 'stone',
   },

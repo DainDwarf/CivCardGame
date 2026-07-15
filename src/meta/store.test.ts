@@ -149,7 +149,7 @@ function standardMission(): MissionDef {
       influence: 2,
       unlockCardIds: ['granary'],
       unlockStickerIds: ['irrigation'],
-      unlockBoardStickerIds: ['territory'],
+      unlockBoardStickerIds: ['stockpile'],
       unlockBoardIds: ['chiefdom'],
     },
     map: { col: 0, row: 0 },
@@ -214,7 +214,7 @@ describe('applyRunResult', () => {
     const store = sampleStore();
     const next = applyRunResult(store, runResult('std', 'victory', 12), standardMission());
     expect(next.unlockedStickers.irrigation).toBe(true);
-    expect(next.unlockedBoardStickers.territory).toBe(true);
+    expect(next.unlockedBoardStickers.stockpile).toBe(true);
     expect(next.unlockedBoards.chiefdom).toBe(true);
   });
 
@@ -229,11 +229,11 @@ describe('applyRunResult', () => {
   });
 
   it('a board-upgrade reward swaps the board on first clear, carrying its stickers across', () => {
-    const store: PlayerStore = { ...sampleStore(), unlockedBoards: { tribe: true }, boardStickers: { tribe: ['territory'] } };
+    const store: PlayerStore = { ...sampleStore(), unlockedBoards: { tribe: true }, boardStickers: { tribe: ['stockpile'] } };
     const next = applyRunResult(store, runResult('settle', 'victory', 12), boardUpgradeMission());
     expect(next.unlockedBoards.settlement).toBe(true);
     expect(next.unlockedBoards.tribe).toBeUndefined();
-    expect(next.boardStickers.settlement).toEqual(['territory']);
+    expect(next.boardStickers.settlement).toEqual(['stockpile']);
     expect(next.boardStickers.tribe).toBeUndefined();
   });
 
@@ -242,11 +242,11 @@ describe('applyRunResult', () => {
       ...sampleStore(),
       mapProgress: { settle: true },
       unlockedBoards: { tribe: true },
-      boardStickers: { tribe: ['territory'] },
+      boardStickers: { tribe: ['stockpile'] },
     };
     const next = applyRunResult(store, runResult('settle', 'victory', 12), boardUpgradeMission());
     expect(next.unlockedBoards).toEqual({ tribe: true });
-    expect(next.boardStickers).toEqual({ tribe: ['territory'] });
+    expect(next.boardStickers).toEqual({ tribe: ['stockpile'] });
   });
 
   it('a board-upgrade reward does not fire on a defeat', () => {

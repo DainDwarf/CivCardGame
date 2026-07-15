@@ -93,8 +93,8 @@ built; the game is now in its content-and-balance pass — see
     `isValidTarget` predicate gating both the highlight and the drop); an invalid/missed drop no-ops.
     Like card stickers, a board sticker is **hidden until unlocked** (`PlayerStore.unlockedBoardStickers`,
     fed by a mission's `unlockBoardStickerIds`) — `unlockedBoardStickerDefs` gates the tray + hint, and
-    `buyBoardSticker` re-checks. The catalogue holds one so far — **Territory** (+1 starting territory),
-    unlocked by the "Growing Numbers" mission.
+    `buyBoardSticker` re-checks. The catalogue holds two so far — **Granary** (+6 starting food) and
+    **Stockpile** (+6 starting production), both unlocked by the "Growing Numbers" mission.
 
 ## Commands
 

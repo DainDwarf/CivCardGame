@@ -124,8 +124,8 @@ First two missions, opened by gobekli:
     set + military→territory conquest).
   - **9.2 — Growing Numbers tutorial** — teach **buildings, territory, and worker staffing** (and
     the territory squeeze that forces Conquest). **Post-clear:** teach **stickers +
-    Influence/shop** (the reward debuts the Irrigation card sticker + Territory board sticker —
-    the sticker-unlock reward kinds).
+    Influence/shop** (the reward debuts the Irrigation card sticker + the Granary/Stockpile board
+    stickers — the sticker-unlock reward kinds).
   - **9.3 — Rites & Rituals tutorial** — teach the **Culture** gauge: culture levels (each raises
     hand size) and the `cultureLevelReq` play-gate. **Post-clear:** the reward unlocks the **Burial**
     building — a culture producer (+1🎭 per staffed round). (The Göbekli Tepe wonder is *not* unlocked

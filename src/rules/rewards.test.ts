@@ -97,10 +97,10 @@ describe('computeRewards', () => {
 
 describe('computeRewards — sticker & board unlocks', () => {
   it('unions a first clear\'s card- and board-sticker unlocks into the sets', () => {
-    const m = mission({ influence: 0, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'] });
+    const m = mission({ influence: 0, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['stockpile'] });
     const result = computeRewards(m, false, progress());
     expect(result.progress.unlockedStickers).toEqual({ irrigation: true });
-    expect(result.progress.unlockedBoardStickers).toEqual({ territory: true });
+    expect(result.progress.unlockedBoardStickers).toEqual({ stockpile: true });
   });
 
   it('unions a first clear\'s board unlock into the unlocked-boards set', () => {
@@ -122,7 +122,7 @@ describe('computeRewards — sticker & board unlocks', () => {
   });
 
   it('does not unlock on a replay (already-completed passes every set through unchanged)', () => {
-    const m = mission({ influence: 0, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['territory'], unlockBoardIds: ['chiefdom'] });
+    const m = mission({ influence: 0, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['stockpile'], unlockBoardIds: ['chiefdom'] });
     const result = computeRewards(m, true, progress());
     expect(result.progress.unlockedStickers).toEqual({});
     expect(result.progress.unlockedBoardStickers).toEqual({});
@@ -150,12 +150,12 @@ describe('computeRewards — infinite missions', () => {
     const result = computeRewards(
       m,
       false,
-      progress({ collection: before, unlockedStickers: { irrigation: true }, unlockedBoardStickers: { territory: true }, unlockedBoards: { chiefdom: true } }),
+      progress({ collection: before, unlockedStickers: { irrigation: true }, unlockedBoardStickers: { stockpile: true }, unlockedBoards: { chiefdom: true } }),
       3,
     );
     expect(result.progress.collection).toBe(before);
     expect(result.progress.unlockedStickers).toEqual({ irrigation: true });
-    expect(result.progress.unlockedBoardStickers).toEqual({ territory: true });
+    expect(result.progress.unlockedBoardStickers).toEqual({ stockpile: true });
     expect(result.progress.unlockedBoards).toEqual({ chiefdom: true });
   });
 });
