@@ -49,7 +49,7 @@ function Stat({
       className={`${styles.stat}${warn ? ` ${styles.statWarn}` : ''}${className ? ` ${className}` : ''}`}
       tabIndex={0}
     >
-      <span aria-hidden="true">{icon}</span> {value}
+      <span className={styles.statIcon} aria-hidden="true">{icon}</span> {value}
       {delta !== undefined && delta !== 0 && (
         <span className={delta > 0 ? styles.deltaPos : delta < 0 ? styles.deltaNeg : styles.deltaZero}>
           {' '}
@@ -107,28 +107,31 @@ function PopulationTokens({
 }
 
 /**
- * Full-width culture gauge beneath the resource bar. A level bubble on the left; a translucent
- * track that fills pink→purple with progress toward the next level (a fainter ghost segment
- * previews the culture this round's upkeep will add).
+ * The culture gauge — a thermometer standing beside the population tray. Mercury rises pink→purple
+ * through the tube with progress toward the next level (a fainter ghost segment previews the
+ * culture this round's upkeep will add), out of a bulb carrying the current level. Culture is
+ * unbounded and never spent, so the gauge is deliberately the banner's thin secondary instrument;
+ * the levels it crosses are the part that matters.
  */
 function CultureBar({ culture, projected }: { culture: number; projected: number }) {
   const { level, current, needed, ratio } = cultureProgress(culture);
   const ghost = needed > 0 ? Math.min(1, (current + Math.max(0, projected)) / needed) : 0;
   return (
     <div className={styles.cultureBar}>
-      <span className={styles.cultureLevel} tabIndex={0}>
-        <span aria-hidden="true">{RESOURCE_ICON.culture}</span> {level}
-        <span className={styles.tooltip} role="tooltip">
-          <strong>Culture level {level}</strong> — each level raises your hand size and unlocks cards.
-        </span>
-      </span>
-      <div className={styles.cultureTrack} tabIndex={0}>
-        <div className={styles.cultureGhost} style={{ width: `${ghost * 100}%` }} />
-        <div className={styles.cultureFill} style={{ width: `${ratio * 100}%` }} />
+      <span className={styles.cultureCap} aria-hidden="true">{RESOURCE_ICON.culture}</span>
+      <div className={styles.cultureTrack} tabIndex={0} aria-label={`Culture ${current} of ${needed} toward level ${level + 1}`}>
+        <div className={styles.cultureGhost} style={{ height: `${ghost * 100}%` }} />
+        <div className={styles.cultureFill} style={{ height: `${ratio * 100}%` }} />
         <span className={styles.tooltip} role="tooltip">
           {current}/{needed} toward level {level + 1}
         </span>
       </div>
+      <span className={styles.cultureLevel} tabIndex={0} aria-label={`Culture level ${level}`}>
+        {level}
+        <span className={styles.tooltip} role="tooltip">
+          <strong>Culture level {level}</strong> — each level raises your hand size and unlocks cards.
+        </span>
+      </span>
     </div>
   );
 }
@@ -1549,6 +1552,8 @@ export function Board({
           <PopulationTokens population={G.resources.population} idle={idle} onTokenPointerDown={onPopTokenPointerDown} />
         </div>
 
+        <CultureBar culture={G.resources.culture} projected={proj.resources.culture} />
+
         <div className={styles.coreGroup}>
           <Stat
             icon={RESOURCE_ICON.food}
@@ -1591,8 +1596,6 @@ export function Board({
             warn={collapseRisk('science')}
           />
         </div>
-
-        <CultureBar culture={G.resources.culture} projected={proj.resources.culture} />
       </header>
 
       <div

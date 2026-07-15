@@ -11,7 +11,11 @@
   user-select: none;
 }
 
-/* ── Top banner: population tray (left, large) · core resources (right column) · culture (bottom row) ── */
+/* ── Top banner: population tray (top-left) · core resources (bottom-left) · culture (right) ──
+   The core resources are what actually end a run — every collapse cause is one of them going
+   negative — so they get a row to themselves at a size that reads at a glance, and culture
+   (unbounded, never spent) is demoted to a thin gauge. The culture column spans both rows, which
+   is what gives the thermometer the height to read as one. */
 
 .topBanner {
   position: sticky;
@@ -19,24 +23,32 @@
   z-index: 5;
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: 1fr auto;
+  /* 2:1 rows over a definite min-height, so the tray stands twice the resource row's height (fr
+     units need a definite height to divide — without one the tray collapses to the token row, since
+     the culture column spans both rows and props neither open). */
+  grid-template-rows: 2fr 1fr;
+  min-height: 9.5rem;
   grid-template-areas:
-    'population core'
-    'culture    culture';
+    'population culture'
+    'core       culture';
   align-items: stretch;
   gap: 0.4rem 0.8rem;
   font-size: 0.9rem;
   background: var(--surface);
+  /* Narrower than the .app column it sits in: a tray, a thin gauge and five stats stretch thin
+     across the full width. Centered, so it stays on the play column's axis. Border-box so the cap
+     is the real rendered width — there's no global box-sizing reset. */
+  box-sizing: border-box;
+  max-width: 620px;
+  margin: 0 auto 0.25rem;
   padding: 0.6rem 0.8rem;
   border-radius: 8px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
-  margin-bottom: 0.25rem;
-  min-height: 6.5rem;
 }
 
-/* Left, large: the population tray — a visual "slot" where worker pips live and can be dragged
-   from once the idle-worker-pool UI (see docs/TODO.md) lands. Sized to read as a container, not
-   just another stat chip. */
+/* Left: the population tray — a visual "slot" holding one worker token per population, which can
+   be dragged onto a building to staff it. Sized to read as a container, not just another stat
+   chip. */
 .populationTray {
   grid-area: population;
   display: flex;
@@ -82,38 +94,59 @@
   background: rgb(var(--accent-rgb) / 0.12);
 }
 
-/* Right column: core resources (food, production, science, military, money), stacked. */
+/* The bottom row: core resources (food, production, money, military, science) spread beneath the
+   tray. Sized up from the banner's base font — the emoji *is* the art, so one font-size grows
+   glyph and number together. */
 .coreGroup {
   grid-area: core;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0.3rem;
-  padding-left: 0.6rem;
-  border-left: 1px solid var(--border-divider);
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  /* `space-between` pins the last stat flush to the column edge, leaving its number a bare column
+     gap from the culture gauge — a loose digit needs more optical clearance than the tray's border
+     above it does. */
+  padding-right: 1rem;
+  font-size: 1.25rem;
 }
 
-/* Full-width culture gauge: its own row beneath the tray and resource column. */
+/* The glyph carries the at-a-glance read, so it runs slightly ahead of its number. */
+.coreGroup .statIcon {
+  font-size: 1.15em;
+}
+
+/* The culture gauge: a thermometer standing beside the tray — a 🎭 cap, a tube the mercury rises
+   through, and a solid bulb at the base holding the level. */
 .cultureBar {
   grid-area: culture;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  /* No gap: cap, tube and bulb are welded into one continuous instrument. */
+  gap: 0;
+  width: 2.1rem;
 }
 
-/* Round bubble on the left showing the current culture level. Hover for what culture is for. */
+.cultureCap {
+  flex: none;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding-bottom: 0.25rem;
+}
+
+/* The bulb: the tube's base, holding the current culture level. It keeps its own filled background
+   rather than riding on the mercury, so the level stays readable at an empty gauge. Hover for what
+   culture is for. */
 .cultureLevel {
   position: relative;
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.15rem;
-  min-width: 2.1rem;
-  height: 1.6rem;
-  padding: 0 0.4rem;
-  border-radius: 999px;
+  width: 100%;
+  height: 1.4rem;
+  border-radius: 0 0 999px 999px;
   background: linear-gradient(135deg, var(--culture-a), var(--culture-b));
   color: var(--text-on-accent);
   font-size: 0.8rem;
@@ -129,29 +162,37 @@
   outline-offset: 2px;
 }
 
-/* Transparent track the fill advances across. Hover for the numeric progress. */
+/* The tube the mercury rises through. `flex: 1` takes the height the column's full-banner span
+   affords, less the cap and bulb; the min-height is a floor so it stays a tube rather than a stub
+   however short the rows get. Square-bottomed, so it meets the bulb flush. Hover for the numeric
+   progress. */
 .cultureTrack {
   position: relative;
   flex: 1;
-  height: 0.7rem;
-  border-radius: 999px;
-  background: rgb(var(--culture-rgb) / 0.12);
+  width: 100%;
+  min-height: 2rem;
+  border-radius: 999px 999px 0 0;
+  /* Reads as an empty glass tube on both grounds — the Light surface needs the extra alpha to show
+     the tube at all when the gauge is empty. */
+  background: rgb(var(--culture-rgb) / 0.2);
   cursor: help;
   outline: none;
 }
 
+/* Bottom-anchored and grown by height: the mercury rises out of the bulb. The rounded top is the
+   meniscus; the square bottom keeps it flush with the bulb below. */
 .cultureFill,
 .cultureGhost {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.25s ease;
+  width: 100%;
+  border-radius: 999px 999px 0 0;
+  transition: height 0.25s ease;
 }
 
 .cultureFill {
-  background: linear-gradient(90deg, var(--culture-fill-a), var(--culture-b));
+  background: linear-gradient(to top, var(--culture-fill-a), var(--culture-b));
 }
 
 /* Fainter preview of the culture this round's upkeep will add, sitting under the solid fill. */
@@ -167,16 +208,20 @@
   opacity: 1;
 }
 
-/* The bubble sits at the far left, so anchor its tooltip's left edge to the bubble (not centered,
-   which would shoot a 240px tooltip off-screen) and point the arrow up at the bubble. Descendant
-   selector outranks the base `.tooltip` rule regardless of source order. */
-.cultureLevel .tooltip {
-  left: 0;
+/* The gauge stands at the banner's far right, so anchor its tooltips' right edge to it (not
+   centered, which would shoot a 240px tooltip off-screen) and point the arrow up at the gauge.
+   Scoped to the whole bar so the tube's tooltip is covered too — it's just as narrow and just as
+   far right as the bulb's. Descendant selector outranks the base `.tooltip` rule regardless of
+   source order. */
+.cultureBar .tooltip {
+  left: auto;
+  right: 0;
   transform: none;
 }
 
-.cultureLevel .tooltip::after {
-  left: 1rem;
+.cultureBar .tooltip::after {
+  left: auto;
+  right: 1rem;
   transform: none;
 }
 
@@ -268,21 +313,24 @@
   opacity: 1;
 }
 
+/* Sized well under 1em: these only ever render inside `.coreGroup`, whose enlarged font would
+   otherwise balloon the previews along with the values and crowd five stats out of one row. The
+   value is what should carry the emphasis. */
 .deltaPos {
   color: var(--success-alt);
   font-weight: 600;
-  font-size: 0.9em;
+  font-size: 0.65em;
 }
 
 .deltaNeg {
   color: var(--danger);
   font-weight: 600;
-  font-size: 0.9em;
+  font-size: 0.65em;
 }
 
 .deltaZero {
   color: var(--text-ghost);
-  font-size: 0.9em;
+  font-size: 0.65em;
 }
 
 /* --- Civilization (tableau) --- */
