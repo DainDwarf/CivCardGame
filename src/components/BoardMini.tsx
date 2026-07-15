@@ -1,6 +1,7 @@
 import { BOARDS, type BoardId } from '../content/boards';
 import { BOARD_STICKERS } from '../content/boardStickers';
 import { effectiveBoard } from '../rules/boardStickers';
+import { cultureLevel } from '../rules/culture';
 import { RESOURCE_ICON } from './CardFace';
 import { StickerRow } from './CardFace';
 import type { CoreResources } from '../rules/resources';
@@ -70,6 +71,8 @@ export function BoardMini({
             )}
           </div>
 
+          <div className={styles.culture}>{RESOURCE_ICON.culture}</div>
+
           <div className={styles.coreGroup}>
             {coreOrder.map((k) => (
               <span key={k} className={styles.stat}>
@@ -77,8 +80,6 @@ export function BoardMini({
               </span>
             ))}
           </div>
-
-          <div className={styles.culture}>{RESOURCE_ICON.culture}</div>
         </div>
 
         <div className={styles.lockedSlots} />
@@ -112,6 +113,11 @@ export function BoardMini({
           )}
         </div>
 
+        <div className={styles.culture} aria-label={`Culture level ${cultureLevel(b.resources.culture)}`}>
+          <span aria-hidden="true">{RESOURCE_ICON.culture}</span>
+          <span aria-hidden="true">{cultureLevel(b.resources.culture)}</span>
+        </div>
+
         <div className={styles.coreGroup}>
           {coreOrder.map((k) => (
             <span key={k} className={styles.stat}>
@@ -119,8 +125,6 @@ export function BoardMini({
             </span>
           ))}
         </div>
-
-        <div className={styles.culture}>{RESOURCE_ICON.culture} {b.resources.culture}</div>
       </div>
 
       <div className={styles.slotGrid}>
