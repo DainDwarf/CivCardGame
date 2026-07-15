@@ -107,7 +107,7 @@ function PopulationTokens({
 }
 
 /**
- * The culture gauge — a thermometer standing beside the population tray. Mercury rises pink→purple
+ * The culture gauge — a thermometer standing beside the population tray. Mercury rises purple→pink
  * through the tube with progress toward the next level (a fainter ghost segment previews the
  * culture this round's upkeep will add), out of a bulb carrying the current level. Culture is
  * unbounded and never spent, so the gauge is deliberately the banner's thin secondary instrument;
@@ -120,8 +120,10 @@ function CultureBar({ culture, projected }: { culture: number; projected: number
     <div className={styles.cultureBar}>
       <span className={styles.cultureCap} aria-hidden="true">{RESOURCE_ICON.culture}</span>
       <div className={styles.cultureTrack} tabIndex={0} aria-label={`Culture ${current} of ${needed} toward level ${level + 1}`}>
-        <div className={styles.cultureGhost} style={{ height: `${ghost * 100}%` }} />
-        <div className={styles.cultureFill} style={{ height: `${ratio * 100}%` }} />
+        <div className={styles.cultureTube}>
+          <div className={styles.cultureGhost} style={{ height: `${ghost * 100}%` }} />
+          <div className={styles.cultureFill} style={{ height: `${ratio * 100}%` }} />
+        </div>
         <span className={styles.tooltip} role="tooltip">
           {current}/{needed} toward level {level + 1}
         </span>

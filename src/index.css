@@ -124,9 +124,8 @@
   --notice-text: #3d5c3a;
 
   /* ── Culture (purple) ─────────────────────────────── */
-  --culture-a: #d16bd8;          /* level bubble gradient start */
-  --culture-b: #8a4be0;          /* level/fill gradient end */
-  --culture-fill-a: #e56bd8;     /* bar fill gradient start */
+  --culture: #8a4be0;            /* solid level bulb + the fill's base, so the two meet seamlessly */
+  --culture-fill: #e56bd8;       /* the fill's top */
   --culture-rgb: 138 75 224;     /* channel for track bg / glow */
   --culture-ghost: rgba(180, 100, 224, 0.35); /* upkeep-preview fill */
 
@@ -299,9 +298,8 @@
   --notice-text: #a8d0a0;
 
   /* ── Culture (purple) — reads fine on dark, kept ── */
-  --culture-a: #d16bd8;
-  --culture-b: #8a4be0;
-  --culture-fill-a: #e56bd8;
+  --culture: #8a4be0;
+  --culture-fill: #e56bd8;
   --culture-rgb: 138 75 224;
   --culture-ghost: rgba(180, 100, 224, 0.35);
 
@@ -436,9 +434,8 @@
   --notice-text: #00543c;
 
   /* ── Culture (reddish-purple) ── */
-  --culture-a: #cc79a7;
-  --culture-b: #a84e82;
-  --culture-fill-a: #d98cb8;
+  --culture: #a84e82;
+  --culture-fill: #d98cb8;
   --culture-rgb: 204 121 167;
   --culture-ghost: rgba(204, 121, 167, 0.35);
 
@@ -509,9 +506,8 @@
   --notice-text: #00543c;
 
   /* ── Culture (reddish-purple) ── */
-  --culture-a: #d485b0;
-  --culture-b: #b0578c;
-  --culture-fill-a: #de9cc0;
+  --culture: #b0578c;
+  --culture-fill: #de9cc0;
   --culture-rgb: 212 133 176;
   --culture-ghost: rgba(212, 133, 176, 0.35);
 
@@ -562,9 +558,8 @@
   --work-border: #3f9142;
 
   /* ── Culture (violet → magenta) ── */
-  --culture-a: #d9469c;
-  --culture-b: #a02e74;
-  --culture-fill-a: #e56bb0;
+  --culture: #a02e74;
+  --culture-fill: #e56bb0;
   --culture-rgb: 160 46 116;
   --culture-ghost: rgba(160, 46, 116, 0.35);
 
