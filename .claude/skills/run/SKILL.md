@@ -1,13 +1,13 @@
 ---
 name: run
-description: Launch the CivCardGame Vite dev server so the user can test a change in the browser. Use whenever asked to run, start, or check on the app. Checks for an already-running dev server (possibly left over from a previous session) before starting a new one.
+description: Ensure the CivCardGame Vite dev server is up and report its URL. Use whenever asked to run, start, or check on the app. Reuses an already-running server (possibly left from a previous session) rather than starting a duplicate.
 ---
 
 # Run: CivCardGame dev server
 
-This project has no test runner for the UI — the workflow is: start the Vite dev
-server, hand the URL to the user, and let them test manually (no Playwright, no
-screenshots — see project memory on this).
+Get a dev server listening and hand back its URL. That is the whole job — what happens
+in the browser afterwards belongs to whoever asked. To *verify a UI change* in the
+browser, use the `visual-check` skill, which calls this one first.
 
 Vite has no fixed port here (`vite.config.ts` sets no `server.port`), so it binds
 5173 and bumps upward (5174, 5175, ...) if that's taken.
@@ -48,6 +48,3 @@ Vite has no fixed port here (`vite.config.ts` sets no `server.port`), so it bind
    spins forever even after the server is ready — it looks like a hang, not
    an error. If you must use Bash instead of Read, convert to the POSIX form
    first (`/c/Users/...`).
-
-4. Let the user drive the browser and test manually — don't try to screenshot
-   or automate the UI yourself unless explicitly asked.
