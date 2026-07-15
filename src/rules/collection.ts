@@ -6,10 +6,11 @@
  * the run's `population.ts` `nextInstanceId`): granting copies only appends, never renumbers, so a
  * `DeckDef`'s instance-id references never go stale.
  *
- * Carrying *any* sticker makes an instance non-fungible with its siblings — `deckBuilder.ts`'s
- * `addCard`/`removeCard` (default LIFO) only draw from the *unstickered* pool
- * (`unstickeredInstancesOf`); a stickered instance is added/removed only by explicit identity. That's
- * distinct from whether an instance has *room for another* sticker (`isStickerFull`/
+ * Two instances are fungible when they share a cardId *and* a `stickerSignature` — nothing else
+ * distinguishes them, since a sticker is the only per-copy state and equal stickers mean equal
+ * effective stats. That's the pool `deckBuilder.ts`'s `addCard`/`removeCard` (LIFO) draw from and the
+ * unit its display grouping counts by (`variantInstancesOf`); a plain copy is just the empty
+ * signature. Distinct from whether an instance has *room for another* sticker (`isStickerFull`/
  * `stickerableInstancesOf`, which only the shop's attach flow cares about).
  */
 export interface MetaCardInstance {
@@ -47,31 +48,33 @@ export function instancesOf(collection: OwnedCards, cardId: string): MetaCardIns
   return collection.instances.filter((i) => i.cardId === cardId);
 }
 
-/** Whether `instance` carries a sticker — the one predicate `deckBuilder.ts`'s fungible-pool
- *  filtering (and `groupCounts`'s display grouping) checks: any sticker at all, even just one of
- *  `MAX_STICKERS`, already makes an instance worth tracking individually. Distinct from
- *  `isStickerFull`, which asks whether *another* sticker can still be attached. */
-export function hasSticker(instance: MetaCardInstance): boolean {
-  return !!instance.stickers && instance.stickers.length > 0;
+/** A copy's **sticker signature** — its attached stickers normalized to one order-independent key,
+ *  so two copies stickered `[a, b]` and `[b, a]` read as the same variant (attach order is not part
+ *  of a sticker's meaning; the `effectiveGain`/`effectiveCost` folds commute). `''` for a plain copy.
+ *  The equality every fungibility question reduces to — mirrors what `rules/state.ts`'s `contentKey`
+ *  normalizes for a run instance. */
+export function stickerSignature(stickers?: string[]): string {
+  return stickers?.length ? [...stickers].sort().join(',') : '';
 }
 
 /** Whether `instance` already carries `MAX_STICKERS` and can take no more — the shop's
  *  attach-eligibility check (`buySticker`'s reject, `CardInstancePanel`'s disabled attach
- *  button). A once-stickered instance (1 of 2) is not full yet, even though `hasSticker` above
- *  is already true for it. */
+ *  button). A once-stickered instance (1 of 2) is not full yet. */
 export function isStickerFull(instance: MetaCardInstance): boolean {
   return (instance.stickers?.length ?? 0) >= MAX_STICKERS;
 }
 
-/** Owned instances of `cardId` that carry no sticker yet — the fungible pool `addCard`/`removeCard`'s
- *  default LIFO order draws from; a stickered instance is only ever added/removed by explicit identity. */
-export function unstickeredInstancesOf(collection: OwnedCards, cardId: string): MetaCardInstance[] {
-  return instancesOf(collection, cardId).filter((i) => !hasSticker(i));
+/** Owned instances of the `cardId` **variant** carrying `stickers` — the fungible pool
+ *  `addCard`/`removeCard`'s LIFO order draws from, in granted order. Omitting `stickers` asks for
+ *  the plain copies. */
+export function variantInstancesOf(collection: OwnedCards, cardId: string, stickers?: string[]): MetaCardInstance[] {
+  const signature = stickerSignature(stickers);
+  return instancesOf(collection, cardId).filter((i) => stickerSignature(i.stickers) === signature);
 }
 
 /** Owned instances of `cardId` that still have room for another sticker (0 or 1 of `MAX_STICKERS`) —
- *  what the shop checks for an attach target, distinct from `unstickeredInstancesOf`'s stricter "no
- *  sticker at all" (a once-stickered instance can still take a second). */
+ *  what the shop checks for an attach target. Cuts across variants: it asks how *full* a copy is,
+ *  not which variant it belongs to. */
 export function stickerableInstancesOf(collection: OwnedCards, cardId: string): MetaCardInstance[] {
   return instancesOf(collection, cardId).filter((i) => !isStickerFull(i));
 }

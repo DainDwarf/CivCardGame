@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buySticker, effectiveCard, effectiveCost, effectiveGain, removeSticker, stickerAppliesTo } from './stickers';
-import { collectionFromCounts, hasSticker, isStickerFull, type OwnedCards } from './collection';
+import { collectionFromCounts, isStickerFull, stickerSignature, type OwnedCards } from './collection';
 import type { CardInstance } from './state';
 import { FIXTURE_CARDS, FIXTURE_STICKERS, installFixtures, uninstallFixtures } from './testFixtures';
 
@@ -131,7 +131,8 @@ describe('removeSticker', () => {
     const inst = next.instances.find((i) => i.id === id)!;
     // Absent, not `[]` — a plain copy carries no `stickers` key at all.
     expect('stickers' in inst).toBe(false);
-    expect(hasSticker(inst)).toBe(false);
+    // ...so it reads as the empty-signature variant: interchangeable with the never-stickered copies.
+    expect(stickerSignature(inst.stickers)).toBe('');
   });
 
   it('keeps other copies untouched', () => {

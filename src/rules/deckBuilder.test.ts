@@ -2,13 +2,13 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   addCard,
   removeCard,
-  addInstance,
-  removeInstance,
   groupCounts,
+  ownedVariantsOf,
   resolveDeckCards,
   buildSeedDecks,
   decksContaining,
   deckWonderCount,
+  type DeckCard,
 } from './deckBuilder';
 import type { CardDef } from '../content/cards';
 import type { DeckDef, DeckSeed } from '../content/decks';
@@ -42,73 +42,105 @@ function sciId(n: number): string {
   return GENEROUS.instances.filter((i) => i.cardId === 'test_sci')[n].id;
 }
 
-/** `GENEROUS` with `instanceId` mutated to carry a sticker — for Step 7.5's fungible-pool
- *  exclusion tests. */
-function withSticker(instanceId: string): OwnedCards {
+/** The plain `test_food`/`test_sci` variants — the vast majority of these tests only care about the
+ *  cardId, so spell the sticker-bearing variants out inline where they matter. */
+const FOOD: DeckCard = { cardId: 'test_food' };
+const SCI: DeckCard = { cardId: 'test_sci' };
+
+/** `GENEROUS` with `instanceId` mutated to carry `stickers` — the variant-pool tests need copies of
+ *  one cardId that aren't interchangeable with each other. */
+function withStickers(instanceId: string, stickers: string[] = ['test_addgain']): OwnedCards {
   return {
     ...GENEROUS,
-    instances: GENEROUS.instances.map((i) => (i.id === instanceId ? { ...i, stickers: ['test_addgain'] } : i)),
+    instances: GENEROUS.instances.map((i) => (i.id === instanceId ? { ...i, stickers } : i)),
   };
 }
 
 describe('addCard', () => {
   it('appends a valid card', () => {
-    expect(addCard([foodId(0)], 'test_sci', GENEROUS)).toEqual([foodId(0), sciId(0)]);
+    expect(addCard([foodId(0)], SCI, GENEROUS)).toEqual([foodId(0), sciId(0)]);
   });
 
   it('rejects an unknown cardId', () => {
-    expect(addCard([foodId(0)], 'not-a-card', GENEROUS)).toBe('invalid');
+    expect(addCard([foodId(0)], { cardId: 'not-a-card' }, GENEROUS)).toBe('invalid');
   });
 
   it('does not mutate the input', () => {
     const deck = [foodId(0)];
-    addCard(deck, 'test_sci', GENEROUS);
+    addCard(deck, SCI, GENEROUS);
     expect(deck).toEqual([foodId(0)]);
   });
 
   it('works starting from an empty deck', () => {
-    expect(addCard([], 'test_food', GENEROUS)).toEqual([foodId(0)]);
+    expect(addCard([], FOOD, GENEROUS)).toEqual([foodId(0)]);
   });
 
   it('rejects a not-yet-unlocked card', () => {
-    expect(addCard([], 'test_food', collectionFromCounts({}))).toBe('invalid');
+    expect(addCard([], FOOD, collectionFromCounts({}))).toBe('invalid');
   });
 
   it('rejects adding past the owned copy count', () => {
     const owns2 = collectionFromCounts({ test_food: 2 });
     const [a, b] = owns2.instances.map((i) => i.id);
-    expect(addCard([a], 'test_food', owns2)).toEqual([a, b]);
-    expect(addCard([a, b], 'test_food', owns2)).toBe('invalid');
+    expect(addCard([a], FOOD, owns2)).toEqual([a, b]);
+    expect(addCard([a, b], FOOD, owns2)).toBe('invalid');
   });
 
   it('rejects an event card even if somehow "owned"', () => {
     const owns = collectionFromCounts({ test_event: 8 });
-    expect(addCard([], 'test_event', owns)).toBe('invalid');
+    expect(addCard([], { cardId: 'test_event' }, owns)).toBe('invalid');
   });
 
   it('rejects a threat card even if somehow "owned"', () => {
     const owns = collectionFromCounts({ test_threat: 8 });
-    expect(addCard([], 'test_threat', owns)).toBe('invalid');
+    expect(addCard([], { cardId: 'test_threat' }, owns)).toBe('invalid');
   });
 
   it('rejects an objective card even if somehow "owned"', () => {
     const owns = collectionFromCounts({ test_objective: 8 });
-    expect(addCard([], 'test_objective', owns)).toBe('invalid');
+    expect(addCard([], { cardId: 'test_objective' }, owns)).toBe('invalid');
   });
 
-  it('skips a stickered instance — never picked by the fungible LIFO order', () => {
+  it('draws from the requested variant, skipping copies stickered differently', () => {
+    // The lowest-index copy is stickered, so a *plain* add should reach past it for the next one.
+    expect(addCard([], FOOD, withStickers(foodId(0)))).toEqual([foodId(1)]);
+    // ...and asking for the stickered variant picks that copy instead.
+    expect(addCard([], { cardId: 'test_food', stickers: ['test_addgain'] }, withStickers(foodId(0)))).toEqual([foodId(0)]);
+  });
+
+  it('matches a variant by its stickers as a set, not by attach order', () => {
+    const owned = withStickers(foodId(0), ['test_addgain', 'test_costcut']);
+    expect(addCard([], { cardId: 'test_food', stickers: ['test_costcut', 'test_addgain'] }, owned)).toEqual([foodId(0)]);
+  });
+
+  it('rejects once every copy of the variant is in the deck, even with another variant spare', () => {
     const owns2 = collectionFromCounts({ test_food: 2 });
     const [a, b] = owns2.instances.map((i) => i.id);
     const stickered = { ...owns2, instances: owns2.instances.map((i) => (i.id === a ? { ...i, stickers: ['test_addgain'] } : i)) };
-    // The lowest-index instance (a) is stickered, so the add should reach for b instead.
-    expect(addCard([], 'test_food', stickered)).toEqual([b]);
+    expect(addCard([b], FOOD, stickered)).toBe('invalid');
+  });
+});
+
+describe('ownedVariantsOf', () => {
+  it('collapses interchangeable copies into one variant, plain first', () => {
+    expect(ownedVariantsOf(withStickers(foodId(2)), 'test_food')).toEqual([
+      { cardId: 'test_food' },
+      { cardId: 'test_food', stickers: ['test_addgain'] },
+    ]);
   });
 
-  it('rejects once every unstickered copy is in the deck, even with a stickered copy still spare', () => {
-    const owns2 = collectionFromCounts({ test_food: 2 });
-    const [a, b] = owns2.instances.map((i) => i.id);
-    const stickered = { ...owns2, instances: owns2.instances.map((i) => (i.id === a ? { ...i, stickers: ['test_addgain'] } : i)) };
-    expect(addCard([b], 'test_food', stickered)).toBe('invalid');
+  it('splits copies whose stickers differ', () => {
+    let owned = withStickers(foodId(0), ['test_addgain']);
+    owned = { ...owned, instances: owned.instances.map((i) => (i.id === foodId(1) ? { ...i, stickers: ['test_costcut'] } : i)) };
+    expect(ownedVariantsOf(owned, 'test_food')).toEqual([
+      { cardId: 'test_food' },
+      { cardId: 'test_food', stickers: ['test_addgain'] },
+      { cardId: 'test_food', stickers: ['test_costcut'] },
+    ]);
+  });
+
+  it('is empty for a card the player does not own', () => {
+    expect(ownedVariantsOf(GENEROUS, 'test_wonder')).toEqual([]);
   });
 });
 
@@ -123,19 +155,15 @@ describe('one wonder per deck', () => {
   });
 
   it('accepts the first wonder', () => {
-    expect(addCard([], 'test_wonder', owned)).toEqual([wid('test_wonder')]);
+    expect(addCard([], { cardId: 'test_wonder' }, owned)).toEqual([wid('test_wonder')]);
   });
 
   it('rejects a second, *different* wonder once one is already in the deck', () => {
-    expect(addCard([wid('test_wonder')], 'test_wonder2', owned)).toBe('invalid');
+    expect(addCard([wid('test_wonder')], { cardId: 'test_wonder2' }, owned)).toBe('invalid');
   });
 
   it('a non-wonder card is unaffected by the wonder already in the deck', () => {
-    expect(addCard([wid('test_wonder')], 'test_food', owned)).toEqual([wid('test_wonder'), wid('test_food')]);
-  });
-
-  it('addInstance also rejects a second wonder (the by-identity add path)', () => {
-    expect(addInstance([wid('test_wonder')], wid('test_wonder2'), owned)).toBe('invalid');
+    expect(addCard([wid('test_wonder')], FOOD, owned)).toEqual([wid('test_wonder'), wid('test_food')]);
   });
 });
 
@@ -144,54 +172,33 @@ describe('removeCard', () => {
     // foodId(1) sits before foodId(0) in the deck array; the highest-*index* owned
     // instance (foodId(1)) should still be the one that leaves.
     const deck = [foodId(1), sciId(0), foodId(0)];
-    const next = removeCard(deck, 'test_food', GENEROUS);
+    const next = removeCard(deck, FOOD, GENEROUS);
     expect(next).toEqual([sciId(0), foodId(0)]);
   });
 
   it('rejects a cardId not present in the deck', () => {
-    expect(removeCard([foodId(0)], 'test_sci', GENEROUS)).toBe('invalid');
+    expect(removeCard([foodId(0)], SCI, GENEROUS)).toBe('invalid');
   });
 
   it('does not mutate the input', () => {
     const deck = [foodId(0), sciId(0)];
-    removeCard(deck, 'test_food', GENEROUS);
+    removeCard(deck, FOOD, GENEROUS);
     expect(deck).toEqual([foodId(0), sciId(0)]);
   });
 
   it('round-trips with addCard: remove then re-add returns the same instance', () => {
     const deck = [foodId(0), foodId(1)];
-    const removed = removeCard(deck, 'test_food', GENEROUS) as string[];
-    const readded = addCard(removed, 'test_food', GENEROUS) as string[];
+    const removed = removeCard(deck, FOOD, GENEROUS) as string[];
+    const readded = addCard(removed, FOOD, GENEROUS) as string[];
     expect(readded.sort()).toEqual(deck.sort());
   });
 
-  it('never removes a stickered instance, even if it is the highest-index in-deck copy', () => {
-    const stickered = withSticker(foodId(1));
+  it('takes only the requested variant, even when another is the highest-index in-deck copy', () => {
+    const stickered = withStickers(foodId(1));
     const deck = [foodId(0), foodId(1)];
-    // foodId(1) is stickered — the fungible remove must fall back to foodId(0) instead.
-    expect(removeCard(deck, 'test_food', stickered)).toEqual([foodId(1)]);
-  });
-});
-
-describe('addInstance / removeInstance', () => {
-  it('adds a specific instance by identity', () => {
-    expect(addInstance([], foodId(0), GENEROUS)).toEqual([foodId(0)]);
-  });
-
-  it('rejects an instance already in the deck', () => {
-    expect(addInstance([foodId(0)], foodId(0), GENEROUS)).toBe('invalid');
-  });
-
-  it('rejects an instance the collection does not own', () => {
-    expect(addInstance([], 'not-owned', GENEROUS)).toBe('invalid');
-  });
-
-  it('removes a specific instance by identity', () => {
-    expect(removeInstance([foodId(0), foodId(1)], foodId(0))).toEqual([foodId(1)]);
-  });
-
-  it('rejects removing an instance not in the deck', () => {
-    expect(removeInstance([foodId(0)], foodId(1))).toBe('invalid');
+    // foodId(1) is stickered — a plain remove must fall back to foodId(0) instead.
+    expect(removeCard(deck, FOOD, stickered)).toEqual([foodId(1)]);
+    expect(removeCard(deck, { cardId: 'test_food', stickers: ['test_addgain'] }, stickered)).toEqual([foodId(0)]);
   });
 });
 
@@ -218,20 +225,51 @@ describe('groupCounts', () => {
     expect(groupCounts(['stale-id', foodId(0)], GENEROUS)).toEqual([{ cardId: 'test_food', count: 1 }]);
   });
 
-  it('breaks a stickered instance out of the fungible stack into its own entry', () => {
-    const stickered = withSticker(foodId(1));
+  it('splits a stickered copy out of the plain stack', () => {
+    const stickered = withStickers(foodId(1));
     expect(groupCounts([foodId(0), foodId(1)], stickered)).toEqual([
       { cardId: 'test_food', count: 1 },
-      { cardId: 'test_food', count: 1, instanceId: foodId(1), stickers: ['test_addgain'] },
+      { cardId: 'test_food', count: 1, stickers: ['test_addgain'] },
     ]);
   });
 
-  it("sorts a stickered break-out into its card's slot, not globally after the fungibles", () => {
-    const stickered = withSticker(foodId(0));
+  it('counts identically stickered copies as one ×N stack', () => {
+    let owned = withStickers(foodId(0));
+    owned = { ...owned, instances: owned.instances.map((i) => (i.id === foodId(1) ? { ...i, stickers: ['test_addgain'] } : i)) };
+    expect(groupCounts([foodId(0), foodId(1)], owned)).toEqual([
+      { cardId: 'test_food', count: 2, stickers: ['test_addgain'] },
+    ]);
+  });
+
+  it('groups copies whose stickers match as a set, whatever the attach order', () => {
+    let owned = withStickers(foodId(0), ['test_addgain', 'test_costcut']);
+    owned = { ...owned, instances: owned.instances.map((i) => (i.id === foodId(1) ? { ...i, stickers: ['test_costcut', 'test_addgain'] } : i)) };
+    const groups = groupCounts([foodId(0), foodId(1)], owned);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].count).toBe(2);
+  });
+
+  it('keeps copies with different stickers in separate stacks', () => {
+    let owned = withStickers(foodId(0), ['test_addgain']);
+    owned = { ...owned, instances: owned.instances.map((i) => (i.id === foodId(1) ? { ...i, stickers: ['test_costcut'] } : i)) };
+    expect(groupCounts([foodId(0), foodId(1)], owned)).toEqual([
+      { cardId: 'test_food', count: 1, stickers: ['test_addgain'] },
+      { cardId: 'test_food', count: 1, stickers: ['test_costcut'] },
+    ]);
+  });
+
+  it("sorts a stickered stack into its card's slot, not globally after the plain ones", () => {
+    const stickered = withStickers(foodId(0));
     expect(groupCounts([foodId(0), sciId(0)], stickered)).toEqual([
-      { cardId: 'test_food', count: 1, instanceId: foodId(0), stickers: ['test_addgain'] },
+      { cardId: 'test_food', count: 1, stickers: ['test_addgain'] },
       { cardId: 'test_sci', count: 1 },
     ]);
+  });
+
+  it('never aliases the collection\'s live stickers array', () => {
+    const stickered = withStickers(foodId(0));
+    const group = groupCounts([foodId(0)], stickered)[0];
+    expect(group.stickers).not.toBe(stickered.instances.find((i) => i.id === foodId(0))!.stickers);
   });
 });
 
@@ -250,7 +288,7 @@ describe('resolveDeckCards', () => {
   });
 
   it("carries a stickered instance's stickers along, copied rather than aliased", () => {
-    const collection = withSticker(foodId(0));
+    const collection = withStickers(foodId(0));
     const result = resolveDeckCards('a', decks, collection);
     expect(result).toEqual([{ cardId: 'test_food', stickers: ['test_addgain'] }]);
     const stickeredInstance = collection.instances.find((i) => i.id === foodId(0))!;

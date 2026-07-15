@@ -275,15 +275,25 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `run/engine.ts`'s `endTurn` and this file's `projectedDelta` (the UI preview) so the two can
     never drift the way open-coded copies once did.
   - `tableau.ts` — derived stats, including the `territory` cap gating tableau size.
-  - `deckBuilder.ts` — deck *construction*: a `DeckDef.cards` entry is a meta instance id,
-    so `addCard`/`removeCard` resolve through the player's `OwnedCards` (returning
-    `'invalid'` on an unresolvable/capped id); `groupCounts`/`resolveDeckCards` translate
-    instance ids back to cardIds; `buildSeedDecks` turns content `DeckSeed`s into real
-    `DeckDef`s; `MAX_DECKS` is the committed deck-count cap (enforced at `App.saveDeck`).
+  - `deckBuilder.ts` — deck *construction*, in terms of the **`DeckCard`** variant (a cardId +
+    the stickers a copy carries — also `RunConfig.deck`'s element shape, so it's one identity on
+    both sides of the contract). A `DeckDef.cards` entry is a meta instance id, so
+    `addCard`/`removeCard` take a *variant* and resolve it through the player's `OwnedCards`
+    (returning `'invalid'` on an unresolvable/capped one) — the fungible pool they draw from LIFO
+    is `collection.ts`'s `variantInstancesOf`, i.e. **copies matching in cardId *and* stickers**;
+    a plain copy is just the empty-signature variant, so there is no separate by-identity add
+    path. `groupCounts`/`resolveDeckCards` translate instance ids back to variants, `variantKey` is
+    the shared identity string both groupers count into, and `ownedVariantsOf` is the picker's
+    enumeration seam (one ×N tile per variant, not per copy); `buildSeedDecks` turns content
+    `DeckSeed`s into real `DeckDef`s; `MAX_DECKS` is the committed deck-count cap (enforced at
+    `App.saveDeck`).
   - `collection.ts` — `OwnedCards` = `{ instances: MetaCardInstance[], nextId }` (each
     `MetaCardInstance` is `{ id, cardId, stickers? }`). `nextId` is append-only, so
     `grantCopies` never renumbers and a deck's instance-id references never go stale;
-    `copiesOwned`/`isOwned` filter instances (an absent cardId = not yet unlocked).
+    `copiesOwned`/`isOwned` filter instances (an absent cardId = not yet unlocked). Two copies are
+    **fungible** when they share a cardId *and* a `stickerSignature` (their stickers normalized to one
+    order-independent key — attach order isn't part of a sticker's meaning), which is what
+    `variantInstancesOf` pools and every ×N card view counts by.
   - `shop.ts` — the copy-tier economy: `TIER_LADDER`, `nextTier`, the immutable `buyTier`,
     and `canBuyTier` (mirrors `buyTier`'s reject — the leaf the upgrade hints fold over).
   - `stickers.ts` — sticker logic: `buySticker` (meta purchase), `removeSticker` (destroy the sticker at
@@ -495,7 +505,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
   `DeckEditor.tsx` (opened from `Decks.tsx`, not a nav tab) edits one `DeckDef` in place — a
   picker grid (grouped by kind) above a deck banner; cards move by click or the same
   hand-rolled pointer-drag `Board.tsx` uses (no DnD library), through `rules/deckBuilder.ts`.
-  A stickered instance breaks out of its fungible ×N stack into its own addressable tile.
+  Both grids are one ×N tile per **variant** (`ownedVariantsOf`/`groupCounts`): a card's plain copies,
+  then one tile per distinct sticker combination — a differently-stickered copy splits off its own
+  tile, identically-stickered copies stack under one count. A tile carries a `DeckCard`, never an
+  instance id, so click/drag adds or removes one copy of *that* variant.
   `store.ts` persists `PlayerStore` to `localStorage` (`loadStore`/`saveStore`; seeded from
   `content/`'s `DEFAULT_DECKS`/`STARTING_COLLECTION` on a fresh profile); `applyRunResult`
   is the pure fold that records a finished run. Pre-alpha: an unrecognized store shape resets

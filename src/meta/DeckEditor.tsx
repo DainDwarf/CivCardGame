@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CARDS, compareCards, isDeckable, type CardDef } from '../content/cards';
 import type { DeckDef } from '../content/decks';
-import { addCard, removeCard, addInstance, removeInstance, groupCounts, deckWonderCount, MAX_WONDERS_PER_DECK, MIN_DECK_SIZE } from '../rules/deckBuilder';
 import {
-  findInstance,
-  hasSticker,
-  instancesOf,
-  isOwned,
-  unstickeredInstancesOf,
-  type OwnedCards,
-} from '../rules/collection';
+  addCard,
+  removeCard,
+  groupCounts,
+  ownedVariantsOf,
+  variantKey,
+  deckWonderCount,
+  MAX_WONDERS_PER_DECK,
+  MIN_DECK_SIZE,
+  type DeckCard,
+} from '../rules/deckBuilder';
+import { isOwned, variantInstancesOf, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
 import { CardFace } from '../components/CardFace';
 import styles from './DeckEditor.module.css';
@@ -20,13 +23,9 @@ const DRAG_THRESHOLD = 6;
 
 /** A card being dragged between the picker and the deck banner. */
 interface DragState {
-  cardId: string;
-  /** Set only for a *stickered* instance — dragged/clicked by identity rather than
-   *  through `cardId`'s fungible LIFO pool. Absent for a plain copy. */
-  instanceId?: string;
-  /** The dragged instance's attached sticker ids, carried along so the drag clone can show
-   *  the same per-sticker icon badge as the tile it was picked up from. */
-  stickers?: string[];
+  /** The variant the grabbed tile stands for — one copy of it is what a completed drag adds or
+   *  removes, and its stickers are what the drag clone's face and badge show. */
+  card: DeckCard;
   source: 'picker' | 'banner';
   pointerId: number;
   startX: number;
@@ -45,12 +44,12 @@ interface DragState {
 /**
  * Build/edit a single deck. Edits `initialDeck` in place —
  * every deck is player-owned, so there's no "duplicate a built-in" indirection. Cards are
- * the same run-loop `CardFace` used on the board: a main picker area (grouped by kind, same
- * as before) and a bottom banner representing the deck itself, grouped into ×N stacks like
- * the run loop's pile viewer. Click still adds/removes a single copy — the fast path for
- * building a large deck — and dragging a card between the two areas does the same thing
- * more visually, mirroring the hand-rolled pointer-drag convention `Board.tsx` uses for
- * cards, building boxes, and workers (no drag-and-drop library exists in this project).
+ * the same run-loop `CardFace` used on the board: a main picker area (grouped by kind) and a
+ * bottom banner representing the deck itself, both grouped into ×N stacks like the run loop's
+ * pile viewer. Click adds/removes a single copy — the fast path for building a large deck —
+ * and dragging a card between the two areas does the same thing more visually, mirroring the
+ * hand-rolled pointer-drag convention `Board.tsx` uses for cards, building boxes, and workers
+ * (no drag-and-drop library exists in this project).
  */
 export function DeckEditor({
   initialDeck,
@@ -85,73 +84,42 @@ export function DeckEditor({
   const works = cards.filter((c) => c.kind === 'work').sort(compareCards);
   const actions = cards.filter((c) => c.kind === 'action').sort(compareCards);
 
-  // Unstickered copies of `cardId` still available to add — owned (unstickered pool only:
-  // a stickered instance is never part of this fungible tile) minus what's already in the deck.
-  // Shared by `atCap` and the picker's badge so both read the same number. `deck.cards` holds
-  // meta instance ids, so counting "in this deck" means resolving each instance id back to its
-  // cardId via `collection`, not comparing ids directly.
-  function remainingCopies(cardId: string): number {
-    const owned = unstickeredInstancesOf(collection, cardId).length;
-    const inDeck = deck.cards.filter((instanceId) => {
-      const inst = findInstance(collection, instanceId);
-      return inst?.cardId === cardId && !hasSticker(inst);
-    }).length;
-    return Math.max(0, owned - inDeck);
+  // Copies of `card`'s variant still available to add — the owned ones not already in the deck,
+  // exactly the pool `addCard` picks from. Shared by `atCap` and the picker's badge so both read
+  // the same number.
+  function remainingCopies(card: DeckCard): number {
+    return variantInstancesOf(collection, card.cardId, card.stickers).filter((inst) => !deck.cards.includes(inst.id)).length;
   }
 
-  // Whether every owned unstickered copy of `cardId` is already in the deck — mirrors
-  // `addCard`'s cap (rules/deckBuilder.ts) so the fungible picker tile can visually reflect
-  // the same limit rather than just silently no-opping on click/drag. A wonder is *also* capped
-  // once the deck already holds `MAX_WONDERS_PER_DECK` wonders (of any card), so a second distinct
-  // wonder's tile disables instead of silently rejecting — mirrors `addCard`'s wonder guard.
-  function atCap(cardId: string): boolean {
-    if (remainingCopies(cardId) <= 0) return true;
-    if (CARDS[cardId].kind === 'wonder' && deckWonderCount(deck.cards, collection) >= MAX_WONDERS_PER_DECK) return true;
+  // Whether every owned copy of `card`'s variant is already in the deck — mirrors `addCard`'s cap
+  // (rules/deckBuilder.ts) so the picker tile can visually reflect the same limit rather than just
+  // silently no-opping on click/drag. A wonder is *also* capped once the deck already holds
+  // `MAX_WONDERS_PER_DECK` wonders (of any card), so a second distinct wonder's tile disables
+  // instead of silently rejecting — mirrors `addCard`'s wonder guard.
+  function atCap(card: DeckCard): boolean {
+    if (remainingCopies(card) <= 0) return true;
+    if (CARDS[card.cardId].kind === 'wonder' && deckWonderCount(deck.cards, collection) >= MAX_WONDERS_PER_DECK) return true;
     return false;
   }
 
-  // The fungible picker tile's count badge shows *remaining* unstickered copies, not total
-  // owned — how many more of this card can still be added that way. A card with only one
-  // unstickered copy never shows a badge at all (the ×N badge is only meaningful when
-  // there's a stack to distinguish from).
-  function pickerBadge(cardId: string): number | undefined {
-    const owned = unstickeredInstancesOf(collection, cardId).length;
-    if (owned <= 1) return undefined;
-    return remainingCopies(cardId);
+  // A picker tile's badge shows the variant's *remaining* copies, not total owned — how many more
+  // of it can still be added. A variant with only one copy never shows a badge at all (the ×N badge
+  // is only meaningful when there's a stack to distinguish from).
+  function pickerBadge(card: DeckCard): number | undefined {
+    if (variantInstancesOf(collection, card.cardId, card.stickers).length <= 1) return undefined;
+    return remainingCopies(card);
   }
 
-  // Owned, stickered instances of `cardId` not currently in the deck — by-identity picker tiles,
-  // one per instance (never grouped, since a sticker makes each worth distinguishing from its
-  // siblings).
-  function stickeredNotInDeck(cardId: string) {
-    return instancesOf(collection, cardId).filter((inst) => hasSticker(inst) && !deck.cards.includes(inst.id));
-  }
-
-  function handleAdd(cardId: string) {
+  function handleAdd(card: DeckCard) {
     setDeck((d) => {
-      const next = addCard(d.cards, cardId, collection);
+      const next = addCard(d.cards, card, collection);
       return next === 'invalid' ? d : { ...d, cards: next };
     });
   }
 
-  function handleRemove(cardId: string) {
+  function handleRemove(card: DeckCard) {
     setDeck((d) => {
-      const next = removeCard(d.cards, cardId, collection);
-      return next === 'invalid' ? d : { ...d, cards: next };
-    });
-  }
-
-  // By-identity add/remove for a stickered instance — bypasses the fungible LIFO pool entirely.
-  function handleAddInstance(instanceId: string) {
-    setDeck((d) => {
-      const next = addInstance(d.cards, instanceId, collection);
-      return next === 'invalid' ? d : { ...d, cards: next };
-    });
-  }
-
-  function handleRemoveInstance(instanceId: string) {
-    setDeck((d) => {
-      const next = removeInstance(d.cards, instanceId);
+      const next = removeCard(d.cards, card, collection);
       return next === 'invalid' ? d : { ...d, cards: next };
     });
   }
@@ -163,23 +131,13 @@ export function DeckEditor({
     setDragState(d);
   }
 
-  function onTilePointerDown(
-    e: React.PointerEvent<HTMLElement>,
-    cardId: string,
-    source: 'picker' | 'banner',
-    instanceId?: string,
-    stickers?: string[],
-  ) {
+  function onTilePointerDown(e: React.PointerEvent<HTMLElement>, card: DeckCard, source: 'picker' | 'banner') {
     if (e.button !== 0) return;
-    // A capped *fungible* picker tile is inert — same as a disabled button, no drag/click
-    // starts. A stickered picker tile (instanceId set) has no such cap: it's only ever
-    // rendered when it's not already in the deck, so it's always addable.
-    if (source === 'picker' && !instanceId && atCap(cardId)) return;
+    // A capped picker tile is inert — same as a disabled button, no drag/click starts.
+    if (source === 'picker' && atCap(card)) return;
     const r = e.currentTarget.getBoundingClientRect();
     setDrag({
-      cardId,
-      instanceId,
-      stickers,
+      card,
       source,
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -197,20 +155,17 @@ export function DeckEditor({
   /** Resolve a finished drag: a non-drag press is a click (add/remove one copy, the fast
    *  path); a real drag adds/removes only when released over the *other* area — dropping
    *  back where it started is a no-op. Removal always takes exactly one copy, even from a
-   *  ×N banner stack (matches `removeCard`'s one-at-a-time semantics). A stickered tile
-   *  (`d.instanceId` set) always resolves by identity instead of through the fungible pool. */
+   *  ×N banner stack (matches `removeCard`'s one-at-a-time semantics). */
   function finishDrag(d: DragState, releaseY: number) {
     const bannerTop = bannerRef.current?.getBoundingClientRect().top ?? Infinity;
     const overBanner = releaseY >= bannerTop;
-    const add = () => (d.instanceId ? handleAddInstance(d.instanceId) : handleAdd(d.cardId));
-    const remove = () => (d.instanceId ? handleRemoveInstance(d.instanceId) : handleRemove(d.cardId));
     if (!d.active) {
-      if (d.source === 'picker') add();
-      else remove();
+      if (d.source === 'picker') handleAdd(d.card);
+      else handleRemove(d.card);
     } else if (d.source === 'picker' && overBanner) {
-      add();
+      handleAdd(d.card);
     } else if (d.source === 'banner' && !overBanner) {
-      remove();
+      handleRemove(d.card);
     }
     setDrag(null);
   }
@@ -241,39 +196,23 @@ export function DeckEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drag?.pointerId]);
 
-  // A card's picker tiles: the fungible ×N tile (only if at least one unstickered copy is
-  // owned) followed by one tile per owned, not-yet-in-deck *stickered* instance —
-  // each addressable and draggable by its own identity, never folded into the fungible stack.
+  // A card's picker tiles: one ×N tile per owned *variant* — its plain copies, then a tile per
+  // distinct sticker combination owned. Copies of a variant are interchangeable, so a stack of them
+  // is one tile with a count, exactly like the plain copies.
   function pickerTiles(c: CardDef): ReactNode[] {
-    const tiles: ReactNode[] = [];
-    if (unstickeredInstancesOf(collection, c.id).length > 0) {
-      tiles.push(
-        <CardFace
-          key={c.id}
-          as="button"
-          card={c}
-          className={`${styles.pickerTile}${atCap(c.id) ? ` ${styles.pickerTileAtCap}` : ''}`}
-          countBadge={pickerBadge(c.id)}
-          alwaysShowBadge
-          title={atCap(c.id) ? 'All owned copies are already in this deck' : 'Click or drag into the deck to add a copy'}
-          onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker')}
-        />,
-      );
-    }
-    for (const inst of stickeredNotInDeck(c.id)) {
-      tiles.push(
-        <CardFace
-          key={inst.id}
-          as="button"
-          card={effectiveCard(c, inst)}
-          className={styles.pickerTile}
-          stickerBadge={inst.stickers}
-          title="Click or drag into the deck to add this stickered copy"
-          onPointerDown={(e) => onTilePointerDown(e, c.id, 'picker', inst.id, inst.stickers)}
-        />,
-      );
-    }
-    return tiles;
+    return ownedVariantsOf(collection, c.id).map((v) => (
+      <CardFace
+        key={variantKey(v)}
+        as="button"
+        card={effectiveCard(c, v)}
+        className={`${styles.pickerTile}${atCap(v) ? ` ${styles.pickerTileAtCap}` : ''}`}
+        countBadge={pickerBadge(v)}
+        alwaysShowBadge
+        stickerBadge={v.stickers}
+        title={atCap(v) ? 'All owned copies are already in this deck' : 'Click or drag into the deck to add a copy'}
+        onPointerDown={(e) => onTilePointerDown(e, v, 'picker')}
+      />
+    ));
   }
 
   return (
@@ -342,14 +281,14 @@ export function DeckEditor({
         )}
         {groupCounts(deck.cards, collection).map((g) => (
           <CardFace
-            key={g.instanceId ?? g.cardId}
+            key={variantKey(g)}
             as="button"
             card={effectiveCard(CARDS[g.cardId], g)}
             className={styles.bannerTile}
             countBadge={g.count}
             stickerBadge={g.stickers}
-            title={g.instanceId ? 'Click or drag out of the deck to remove this stickered copy' : 'Click or drag out of the deck to remove a copy'}
-            onPointerDown={(e) => onTilePointerDown(e, g.cardId, 'banner', g.instanceId, g.stickers)}
+            title="Click or drag out of the deck to remove a copy"
+            onPointerDown={(e) => onTilePointerDown(e, g, 'banner')}
           />
         ))}
       </div>
@@ -359,9 +298,9 @@ export function DeckEditor({
     {drag?.active && (
       <div className={styles.dragLayer} aria-hidden="true">
         <CardFace
-          card={effectiveCard(CARDS[drag.cardId], { stickers: drag.stickers })}
+          card={effectiveCard(CARDS[drag.card.cardId], drag.card)}
           className={styles.dragClone}
-          stickerBadge={drag.stickers}
+          stickerBadge={drag.card.stickers}
           style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
         />
       </div>

@@ -23,7 +23,7 @@ import { isCompleted } from '../rules/campaign';
 import { computeRewards } from '../rules/rewards';
 import { isOwned, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
-import { sortDeckEntries } from '../rules/deckBuilder';
+import { sortDeckEntries, variantKey } from '../rules/deckBuilder';
 import { CardFace, RESOURCE_ICON, StickerRow, artFor, describeBuilding } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
@@ -236,34 +236,29 @@ function BoardLeftColumn({
   );
 }
 
-/** Collapse a list of card instances into one tile per type with a count, keeping first-seen
- *  order — *except* a card with `dynamicText`, or a stickered instance, neither of which ever
- *  groups: each such copy can carry its own live value or its own sticker-adjusted stats (e.g.
- *  two self-scaling copies with different play counts, or one stickered copy among several plain ones),
- *  so a shared count would either hide that or force picking one copy's value to speak for the
- *  stack. Each stays its own single-count entry, keyed by its stable instance id, carrying the
- *  instance so the caller can compute its current `dynamicText`/`effectiveCard`. */
-function groupCards(insts: CardInstance[]): { key: number | string; cardId: string; inst: CardInstance; count: number; instanceId?: number }[] {
-  const order: string[] = [];
-  const groups = new Map<string, { inst: CardInstance; count: number }>();
-  const singles: { key: number; cardId: string; inst: CardInstance; count: number; instanceId: number }[] = [];
+/** Collapse a list of card instances into one tile per **variant** with a count — copies sharing a
+ *  cardId *and* their stickers are interchangeable (`variantKey`), so one face with a ×N badge says
+ *  everything about the stack. A card with `dynamicText` is the exception and never groups: each copy
+ *  carries its own live value (e.g. two self-scaling copies with different play counts), so a shared
+ *  count would have to pick one copy's value to speak for the rest. Each entry carries a
+ *  representative instance so the caller can compute the tile's `dynamicText`/`effectiveCard` — sound
+ *  for a group precisely because its members are interchangeable. */
+type PileGroup = { key: string; cardId: string; stickers?: string[]; inst: CardInstance; count: number; instanceId?: number };
+
+function groupCards(insts: CardInstance[]): PileGroup[] {
+  const groups = new Map<string, PileGroup>();
+  const singles: PileGroup[] = [];
   for (const inst of insts) {
-    if (CARDS[inst.cardId].display?.dynamicText || inst.stickers?.length) {
-      singles.push({ key: inst.id, cardId: inst.cardId, inst, count: 1, instanceId: inst.id });
+    const entry = { key: variantKey(inst), cardId: inst.cardId, stickers: inst.stickers, inst, count: 1 };
+    if (CARDS[inst.cardId].display?.dynamicText) {
+      singles.push({ ...entry, key: String(inst.id), instanceId: inst.id });
       continue;
     }
-    const g = groups.get(inst.cardId);
-    if (g) g.count += 1;
-    else {
-      groups.set(inst.cardId, { inst, count: 1 });
-      order.push(inst.cardId);
-    }
+    const group = groups.get(entry.key);
+    if (group) group.count += 1;
+    else groups.set(entry.key, entry);
   }
-  const grouped = order.map((cardId) => {
-    const g = groups.get(cardId)!;
-    return { key: cardId, cardId, inst: g.inst, count: g.count };
-  });
-  return sortDeckEntries([...grouped, ...singles]);
+  return sortDeckEntries([...groups.values(), ...singles]);
 }
 
 /** A pile token flanking the hand (deck / discard / removed). Clickable when `onView` is given. */

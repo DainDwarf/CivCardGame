@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { CARDS } from '../content/cards';
 import type { DeckDef } from '../content/decks';
-import { groupCounts } from '../rules/deckBuilder';
+import { groupCounts, variantKey } from '../rules/deckBuilder';
 import type { OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
 import { CardFace } from './CardFace';
@@ -55,7 +55,7 @@ export function DeckTile({
           <span className={styles.stackEmpty}>Empty deck</span>
         ) : (
           groups.map((g, i) => (
-            <span key={g.instanceId ?? g.cardId} className={styles.mini} style={{ '--i': i } as React.CSSProperties}>
+            <span key={variantKey(g)} className={styles.mini} style={{ '--i': i } as React.CSSProperties}>
               <CardFace
                 card={effectiveCard(CARDS[g.cardId], g)}
                 className={styles.miniCard}
@@ -109,7 +109,7 @@ export function DeckListOverlay({
             <div className={styles.listGrid}>
               {groupCounts(deck.cards, collection).map((g) => (
                 <CardFace
-                  key={g.instanceId ?? g.cardId}
+                  key={variantKey(g)}
                   card={effectiveCard(CARDS[g.cardId], g)}
                   className={styles.listCard}
                   countBadge={g.count}
