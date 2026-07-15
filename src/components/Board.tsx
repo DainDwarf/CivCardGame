@@ -3,6 +3,8 @@ import type { BuildingInstance, CardInstance, CoreResources, Resources, WorkInst
 import { useGame } from '../run/GameContext';
 import {
   cultureProgress,
+  FOOD_PER_POP,
+  foodUpkeep,
   freePopulation,
   goalsReadout,
   isOperating,
@@ -79,7 +81,11 @@ function PopulationTokens({
 }) {
   const working = population - idle;
   return (
-    <span className={styles.stat} tabIndex={0} aria-label={`Population ${population}, ${idle} idle`}>
+    <span
+      className={`${styles.stat} ${styles.popTokensWrap}`}
+      tabIndex={0}
+      aria-label={`Population ${population}, ${idle} idle`}
+    >
       <span className={styles.popTokens}>
         {Array.from({ length: population }, (_, i) => {
           const tokenIdle = i < idle;
@@ -101,6 +107,26 @@ function PopulationTokens({
         <strong>Population</strong> — Your people — a pool of workers. Each eats 1 food/round
         whether working or idle. Assign them to buildings to operate them.
         <span className={styles.ttRule}>{working} working · {idle} idle</span>
+      </span>
+    </span>
+  );
+}
+
+/** The food the population eats each round — a **gross** figure. The food stat's own projected
+ *  delta already nets this off against production, so the two legitimately disagree on screen (tray
+ *  −5🌾 beside food (−1)); the tooltip has to say outright that it's already counted. */
+function PopulationUpkeep({ upkeep }: { upkeep: number }) {
+  return (
+    <span
+      className={`${styles.stat} ${styles.popUpkeep}`}
+      tabIndex={0}
+      aria-label={`Food upkeep ${upkeep} per round`}
+    >
+      −{upkeep}
+      {RESOURCE_ICON.food}
+      <span className={styles.tooltip} role="tooltip">
+        <strong>Food upkeep</strong> — your people eat {FOOD_PER_POP} food each round, working or
+        idle. Already counted in the food forecast below.
       </span>
     </span>
   );
@@ -1552,6 +1578,7 @@ export function Board({
           className={`${styles.populationTray}${workerOverTray ? ` ${styles.trayReturnTarget}` : ''}`}
         >
           <PopulationTokens population={G.resources.population} idle={idle} onTokenPointerDown={onPopTokenPointerDown} />
+          <PopulationUpkeep upkeep={foodUpkeep(G)} />
         </div>
 
         <CultureBar culture={G.resources.culture} projected={proj.resources.culture} />

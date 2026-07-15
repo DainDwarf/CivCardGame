@@ -60,6 +60,23 @@
   background: rgba(0, 0, 0, 0.03);
 }
 
+/* Takes the tray's free width, which is what lets `.popUpkeep` hold the right edge while the tokens
+   stay centered in the space left over. */
+.popTokensWrap {
+  flex: 1;
+}
+
+/* The population's food bill, held at the tray's far right — a fixed spot to read it from, rather
+   than a number that slides around as the token row grows. Deliberately the core row's own
+   negative-delta styling (see .deltaNeg): it's a recurring drain, not a pool. */
+.popUpkeep {
+  flex: none;
+  margin-left: 0.6rem;
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
 /* A row of worker tokens, one per population. Reuses .staffEmpty/.staffFull (the same
    classes a building's staffing toggle uses) so idle vs. working reads identically
    wherever a worker appears on the board. */
