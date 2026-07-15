@@ -39,7 +39,7 @@ deck/board is the only variable — a paired comparison).
 
 Examples:
 ```
-npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/growing-numbers.json --board scripts/sim/boards/tribe.json
+npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board scripts/sim/boards/settlement.json
 npm run sim -- --scenario first_settlement,growing_numbers,rites_rituals --deck <file> --board <file> --seeds 500
 npm run sim -- --scenario rites_rituals --deck <file> --board <file> --policies oracle --seeds 20
 ```
@@ -61,10 +61,14 @@ Board — the board plus its board stickers:
 { "board": "tribe", "stickers": ["territory"] }
 ```
 
-The example files under `scripts/sim/` are the standing regression references (e.g.
-`growing-numbers.json` is exactly what a player owns when they can first attempt that mission).
-When new shipped content deserves a standing example, add a file there and commit it — that's
-the equivalent of the old `SCENARIOS` rows.
+The example files under `scripts/sim/` are the standing regression references. Decks are keyed
+by **unlock stage**, not by mission — a stage file is exactly what a player owns on arrival
+(the starting collection plus one copy of every card their cleared prereqs granted), and
+consecutive missions often share one (`settled.json` serves Growing Numbers, Rites & Rituals
+and Reading the Seasons alike). Pair a stage deck with the board that stage actually has:
+First Settlement's reward upgrades Tribe into Settlement, so `tribe.json` is only ever correct
+for First Settlement itself. When new shipped content deserves a standing example, add a file
+there and commit it — that's the equivalent of the old `SCENARIOS` rows.
 
 ## Replay one run — `--seed <i>`
 

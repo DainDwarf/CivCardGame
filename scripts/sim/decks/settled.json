@@ -1,0 +1,16 @@
+{
+  "_comment": "Unlock stage: post-First Settlement — the starting collection plus that mission's card reward (farm/hut/conquest), one copy each. What a player owns arriving at Growing Numbers, Rites & Rituals, or Reading the Seasons. Pair with boards/settlement.json: First Settlement also upgrades Tribe into Settlement, so Tribe is retired by this stage.",
+  "cards": [
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "bartering", "count": 2 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "storytelling", "count": 2 },
+    { "cardId": "jewelry", "count": 2 },
+    { "cardId": "cave_art", "count": 2 },
+    { "cardId": "hut", "count": 1 },
+    { "cardId": "farm", "count": 1 },
+    { "cardId": "conquest", "count": 1 }
+  ]
+}

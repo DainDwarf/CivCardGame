@@ -1,0 +1,19 @@
+{
+  "_comment": "Unlock stage: both branches cleared — every card the Stone Age hands out before its final mission (farm/hut/conquest, burial, calendar, beer), one copy each. What a player owns arriving at Göbekli Tepe, which joins both branches. Göbekli Tepe's own wonder is that mission's reward, not an input, and its objective doesn't require building it. Sweep against boards/settlement.json and boards/chiefdom.json: Raiders unlocks Chiefdom alongside Settlement, so this is the first stage with a board choice.",
+  "cards": [
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "bartering", "count": 2 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "storytelling", "count": 2 },
+    { "cardId": "jewelry", "count": 2 },
+    { "cardId": "cave_art", "count": 2 },
+    { "cardId": "hut", "count": 1 },
+    { "cardId": "farm", "count": 1 },
+    { "cardId": "conquest", "count": 1 },
+    { "cardId": "burial", "count": 1 },
+    { "cardId": "calendar", "count": 1 },
+    { "cardId": "beer", "count": 1 }
+  ]
+}

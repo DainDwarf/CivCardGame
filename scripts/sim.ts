@@ -17,7 +17,7 @@
  * with a small seed count.
  *
  * Usage:
- *   npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/growing-numbers.json --board scripts/sim/boards/tribe.json
+ *   npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board scripts/sim/boards/settlement.json
  *   npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board <file> --seeds 500
  *   npm run sim -- --scenario rites_rituals --deck <file> --board <file> --policies greedy,heuristic
  *   npm run sim -- --scenario growing_numbers --deck <file> --board <file> --format json
