@@ -322,11 +322,15 @@
 /* Empty gold-outlined placeholder slot appended to the sticker row (StickerRow's `openSlots`) — the
    buyable-hint "you have room for a sticker here" affordance (the Board menu shows a board's remaining
    capacity). Same footprint as an attached `.sticker` badge so the row reads as filled + open slots,
-   toned with the gold hint token. */
+   toned with the gold hint token. There's no global box-sizing reset, so the box must be border-box
+   to match the badge's rendered 24px: a taller slot would set the row's height and, since a badge has
+   a definite height and so never stretches, shove the badges off the row's bottom edge whenever the
+   slots come and go. */
 .stickerSlot {
-  width: 22px;
-  height: 22px;
-  border-radius: 11px;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
   border: 3px dashed var(--hint-gold);
   background: rgb(var(--hint-gold-rgb) / 12%);
   box-shadow: 0 0 0 3px rgb(var(--hint-gold-rgb) / 18%);
