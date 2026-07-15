@@ -95,3 +95,31 @@ export function buyBoardSticker(
     boardStickers: { ...boardStickers, [boardId]: [...current, stickerId] },
   };
 }
+
+/**
+ * Detach the sticker at `index` from `boardId`, destroying it. Returns `null` (the family's reject
+ * idiom) when the board has no stickers or `index` is out of range. Immutable; the board's key is
+ * *deleted* rather than left as `[]` when its last sticker goes, per this map's absent-means-none
+ * contract.
+ *
+ * Removal is **positional**: a board legitimately holds the same sticker id twice (`buyBoardSticker`
+ * appends, and `effectiveBoard` applies it once per copy), so removing by id would destroy both
+ * copies of a stack.
+ *
+ * Returning a bare `BoardStickers` rather than a `BoardStickerPurchase` is the point, not an
+ * oversight: **removal refunds nothing**, so there is no Influence for a caller to write back.
+ * Attaching a sticker is meant to be a decision with weight; re-applying one costs full price.
+ */
+export function removeBoardSticker(
+  boardStickers: BoardStickers,
+  boardId: BoardId,
+  index: number,
+): BoardStickers | null {
+  const current = boardStickers[boardId];
+  if (!current || index < 0 || index >= current.length) return null;
+  const next = { ...boardStickers };
+  const remaining = current.filter((_, i) => i !== index);
+  if (remaining.length) next[boardId] = remaining;
+  else delete next[boardId];
+  return next;
+}

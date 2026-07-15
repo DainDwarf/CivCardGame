@@ -195,3 +195,80 @@
   transform-origin: center;
   cursor: grabbing;
 }
+
+/* The destroy-sticker confirm's scrim. Unlike `.dragLayer` this one *does* take pointer events —
+   clicking the scrim dismisses, and it blocks the boards behind while the question is open. */
+.confirmLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Shaped after GameMenu's confirm (.confirmBody/.confirmText/.confirmActions). Copied rather than
+   shared: there's no confirm component in the app yet, and two call sites don't warrant inventing
+   one — a third would. */
+.confirmPanel {
+  width: min(24rem, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.confirmTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.confirmText {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.confirmActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.confirmDangerBtn,
+.confirmCancelBtn {
+  font: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.confirmDangerBtn {
+  background: var(--danger-strong);
+  color: var(--text-on-accent);
+}
+
+.confirmDangerBtn:hover {
+  background: var(--danger-strong-hover);
+}
+
+.confirmCancelBtn {
+  background: var(--btn-soft);
+  border-color: var(--border);
+  color: var(--text-body);
+}
+
+.confirmCancelBtn:hover {
+  background: var(--btn-soft-hover);
+}

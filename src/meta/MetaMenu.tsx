@@ -54,6 +54,7 @@ export function MetaMenu({
   onBuyTier,
   onAttachSticker,
   onBuyBoardSticker,
+  onRemoveBoardSticker,
 }: {
   runHistory: RunResult[];
   decks: DeckDef[];
@@ -95,6 +96,9 @@ export function MetaMenu({
   /** Attach a board sticker to a board — spends Influence and mutates the store's
    *  `boardStickers` (`App.tsx`'s `buyBoardStickerAt`). */
   onBuyBoardSticker: (boardId: BoardId, stickerId: string) => void;
+  /** Destroy the board sticker at `index` on a board (`App.tsx`'s `removeBoardStickerAt`) — frees the
+   *  slot, refunds no Influence. */
+  onRemoveBoardSticker: (boardId: BoardId, index: number) => void;
 }) {
   const [screen, setScreen] = useState<Screen>('mission');
   const [editingDeck, setEditingDeck] = useState<DeckDef | null>(null);
@@ -173,6 +177,7 @@ export function MetaMenu({
             unlockedBoards={unlockedBoards}
             uiScale={uiScale}
             onBuyBoardSticker={onBuyBoardSticker}
+            onRemoveBoardSticker={onRemoveBoardSticker}
           />
         )}
         {screen === 'decks' && (

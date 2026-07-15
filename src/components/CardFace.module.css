@@ -280,6 +280,8 @@
 }
 
 .sticker {
+  /* Containing block for `.stickerRemovable`'s ✕ overlay. */
+  position: relative;
   min-width: 22px;
   height: 22px;
   padding: 0 3px;
@@ -292,6 +294,29 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+/* Removable badge (StickerRow's opt-in `onRemove` — the Board menu only): hovering turns the badge
+   into a solid ✕ button. The overlay *covers* the sticker rather than tinting it because a sticker
+   icon is colour-emoji, which ignores `color` outright; and the ✕ is the text glyph U+2715, not the
+   ❌ emoji, for the same reason — only the text glyph takes `--text-on-accent`. */
+.stickerRemovable {
+  cursor: pointer;
+}
+
+.stickerRemovable:hover::after {
+  content: '\2715';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--danger);
+  color: var(--text-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 /* Empty gold-outlined placeholder slot appended to the sticker row (StickerRow's `openSlots`) — the

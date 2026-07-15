@@ -8,13 +8,15 @@ import type { CoreResources } from '../rules/resources';
 import styles from './BoardMini.module.css';
 
 /**
- * The miniature board widget — a read-only, board-agnostic "here's what this board starts you
+ * The miniature board widget — a board-agnostic "here's what this board starts you
  * with" picture, rendering a government board as the run loop in miniature (tinted ground · a
- * top banner of starting counters · the territory slot grid). Purely presentational: it takes a
+ * top banner of starting counters · the territory slot grid). Presentational: it takes a
  * board id (+ that board's attached sticker ids), reads nothing from `GameContext`, and holds no
- * game logic, moves, or drag handlers — so it's reusable across meta screens (the Board menu now,
- * mission-select later). Its numbers come from `effectiveBoard` (the single sticker fold that
- * `run/setup.ts` also seeds off), so they match exactly what a launched run will start with.
+ * game logic or moves of its own — so it's reusable across meta screens (the Board menu, the
+ * mission-select launch popup). It is read-only unless a caller opts into `onRemoveSticker`, which
+ * only reports a click for that caller to act on. Its numbers come from `effectiveBoard` (the single
+ * sticker fold that `run/setup.ts` also seeds off), so they match exactly what a launched run will
+ * start with.
  */
 export function BoardMini({
   boardId,
@@ -22,6 +24,7 @@ export function BoardMini({
   openSlots = 0,
   locked = false,
   upgrade = false,
+  onRemoveSticker,
   className,
 }: {
   boardId: BoardId;
@@ -42,6 +45,10 @@ export function BoardMini({
    *  upgraded" without revealing the new stats. Once cleared the preview shows the new board plainly
    *  instead, so this is only ever the still-locked upgrade. */
   upgrade?: boolean;
+  /** Opt-in: makes each attached sticker badge clickable (a ✕ on hover), reporting which one by
+   *  index — a board may hold the same sticker twice, so the position is the handle, not the id.
+   *  Only the Board menu passes it; the read-only previews omit it and show inert badges. */
+  onRemoveSticker?: (index: number) => void;
   className?: string;
 }) {
   const board = BOARDS[boardId];
@@ -139,6 +146,7 @@ export function BoardMini({
           name: BOARD_STICKERS[id]?.name,
         }))}
         openSlots={openSlots}
+        onRemove={onRemoveSticker}
       />
     </div>
   );

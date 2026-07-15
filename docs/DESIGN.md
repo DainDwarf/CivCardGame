@@ -288,6 +288,12 @@ of buying copies outright in the shop.
 profile (board stickers *are* the "board modifiers" — one concept, not two). Card stickers
 need per-copy identity — decks reference owned copies by instance id, not bare `CardId[]`.
 
+*Permanent* here means "attached, not consumed per run" — not "irreversible". A **board**
+sticker can be **destroyed** to free its slot (a card sticker can't yet — see `docs/TODO.md`),
+and destroying one **refunds nothing**: the slot comes back, the Influence doesn't. That's
+deliberate. A cap of 2 with a cheap undo would make attaching a sticker a draft rather than a
+decision; burning the cost is what gives the choice weight, and re-applying costs full price.
+
 From **Phase 4** a sticker must first be **unlocked** via a mission reward (the breadth
 channel — `rules/rewards.ts` extends beyond card unlocks to card/board stickers) before the
 shop can sell it: new stickers arrive as you progress the ages, rather than all being buyable

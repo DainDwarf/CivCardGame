@@ -91,6 +91,14 @@ built; the game is now in its content-and-balance pass — see
     hand-rolled pointer-drag like `DeckEditor.tsx` (no DnD library). During a drag only the *valid*
     target boards for that sticker highlight (`applies · under the cap · affordable`, the single
     `isValidTarget` predicate gating both the highlight and the drop); an invalid/missed drop no-ops.
+    An attached board sticker can be **destroyed** here — and only here: clicking a placed badge (a solid
+    ✕ on hover) opens a confirm, and accepting frees the slot and **refunds nothing**, since attaching one
+    is meant to be a decision with weight. The gesture is a plain click rather than the inverse of the
+    attach drag because the confirm — the one place the no-refund cost is stated — sits badly on a drag
+    release. Removal is **positional** (`removeBoardSticker(map, boardId, index)`): a board may legitimately
+    hold the same sticker twice, so an id would destroy both copies of a stack. The affordance is opt-in
+    (`BoardMini`'s `onRemoveSticker` → `StickerRow`'s `onRemove`), so the read-only board previews and every
+    card-side sticker row stay inert — a *card* sticker is still permanent (see `docs/TODO.md`).
     Like card stickers, a board sticker is **hidden until unlocked** (`PlayerStore.unlockedBoardStickers`,
     fed by a mission's `unlockBoardStickerIds`) — `unlockedBoardStickerDefs` gates the tray + hint, and
     `buyBoardSticker` re-checks. The catalogue holds two so far — **Granary** (+6 starting food) and
@@ -276,6 +284,10 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     `effectiveGain`/`effectiveCost`/`effectiveCard`, the only places a sticker touches run
     or display values (each a generic fold over the `StickerDef` hooks; see the convention).
   - `boardStickers.ts` — the board counterpart: `buyBoardSticker` (meta purchase),
+    `removeBoardSticker` (destroy the sticker at an *index* — a board may hold the same sticker twice,
+    so an id would take both; deletes the board's key when its last sticker goes, per this map's
+    absent-means-none contract, and returns a bare `BoardStickers` rather than a `BoardStickerPurchase`
+    because **removal refunds nothing** — the missing `influence` field is the rule, not an oversight),
     `boardStickerAppliesTo`, `canAttachBoardSticker` (applies · under cap · affordable — the leaf
     both `BoardMenu`'s drag `isValidTarget` and the upgrade hints share), and `effectiveBoard` — the
     single fold that applies a board's stickers to its starting profile (`run/setup.ts` seeds off it;

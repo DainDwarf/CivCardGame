@@ -8,7 +8,7 @@ import { applyRunResult, loadStore, saveStore, type PlayerStore } from '../meta/
 import { MAX_DECKS, MIN_DECK_SIZE } from '../rules/deckBuilder';
 import { buyTier } from '../rules/shop';
 import { buySticker } from '../rules/stickers';
-import { buyBoardSticker } from '../rules/boardStickers';
+import { buyBoardSticker, removeBoardSticker } from '../rules/boardStickers';
 import type { BoardId } from '../content/boards';
 import { MISSIONS } from '../content/missions';
 import { applyTheme, loadSettings, saveSettings, type Settings } from '../meta/settings';
@@ -188,6 +188,16 @@ export function App() {
     persist({ ...store, influence: result.influence, boardStickers: result.boardStickers });
   }
 
+  // Removal's write path — deliberately touches `boardStickers` alone. Attaching a sticker is meant
+  // to be a decision with weight, so destroying one pays nothing back; `removeBoardSticker` returns
+  // no Influence for exactly that reason. It returns null for an unknown board / out-of-range index,
+  // so a rejected removal is a silent no-op — same backstop as its neighbours.
+  function removeBoardStickerAt(boardId: BoardId, index: number) {
+    const boardStickers = removeBoardSticker(store.boardStickers, boardId, index);
+    if (!boardStickers) return;
+    persist({ ...store, boardStickers });
+  }
+
   return (
     // Whole-UI scale wrapper — a transform:scale() container so `position: fixed` children
     // (hand bar, burger, deck-editor banner, drag clones) reparent to it and scale as one.
@@ -247,6 +257,7 @@ export function App() {
             onBuyTier={buyCardTier}
             onAttachSticker={attachSticker}
             onBuyBoardSticker={buyBoardStickerAt}
+            onRemoveBoardSticker={removeBoardStickerAt}
           />
         </>
       )}

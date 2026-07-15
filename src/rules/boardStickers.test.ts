@@ -2,8 +2,10 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   boardStickerAppliesTo,
   buyBoardSticker,
+  canAttachBoardSticker,
   effectiveBoard,
   isBoardStickerFull,
+  removeBoardSticker,
   type BoardStickers,
 } from './boardStickers';
 import {
@@ -132,5 +134,70 @@ describe('buyBoardSticker', () => {
     const second = buyBoardSticker(first.boardStickers, first.influence, TEST_BOARD_2_ID, 'test_bs_military', UNLOCKED)!;
     expect(second.boardStickers[TEST_BOARD_ID]).toEqual(['test_bs_food']);
     expect(second.boardStickers[TEST_BOARD_2_ID]).toEqual(['test_bs_military']);
+  });
+});
+
+describe('removeBoardSticker', () => {
+  // Build the inputs through the real `buyBoardSticker` rather than hand-written arrays, so these
+  // fixtures can't drift from the shape a purchase actually produces. Influence is irrelevant to
+  // removal, so the attach budget is just "enough".
+  function attached(boardId: string, ...stickerIds: string[]): BoardStickers {
+    let map: BoardStickers = {};
+    for (const id of stickerIds) map = buyBoardSticker(map, 999, boardId, id, UNLOCKED)!.boardStickers;
+    return map;
+  }
+
+  it('removes the sticker at the given index', () => {
+    const map = attached(TEST_BOARD_ID, 'test_bs_food', 'test_bs_territory');
+    expect(removeBoardSticker(map, TEST_BOARD_ID, 0)![TEST_BOARD_ID]).toEqual(['test_bs_territory']);
+    expect(removeBoardSticker(map, TEST_BOARD_ID, 1)![TEST_BOARD_ID]).toEqual(['test_bs_food']);
+  });
+
+  it('removes only one copy of a stacked duplicate', () => {
+    // The reason removal is positional: removing by id would destroy both copies here.
+    const map = attached(TEST_BOARD_ID, 'test_bs_food', 'test_bs_food');
+    expect(removeBoardSticker(map, TEST_BOARD_ID, 0)![TEST_BOARD_ID]).toEqual(['test_bs_food']);
+  });
+
+  it('deletes the board key when its last sticker goes', () => {
+    const map = attached(TEST_BOARD_ID, 'test_bs_food');
+    const next = removeBoardSticker(map, TEST_BOARD_ID, 0)!;
+    // Absent, not `[]` — a board with no stickers is absent from this map.
+    expect(TEST_BOARD_ID in next).toBe(false);
+    expect(next[TEST_BOARD_ID]).toBeUndefined();
+  });
+
+  it('keeps other boards untouched', () => {
+    let map = attached(TEST_BOARD_ID, 'test_bs_food');
+    map = buyBoardSticker(map, 999, TEST_BOARD_2_ID, 'test_bs_military', UNLOCKED)!.boardStickers;
+    const next = removeBoardSticker(map, TEST_BOARD_ID, 0)!;
+    expect(next[TEST_BOARD_2_ID]).toEqual(['test_bs_military']);
+  });
+
+  it('does not mutate the input map', () => {
+    const map = attached(TEST_BOARD_ID, 'test_bs_food', 'test_bs_territory');
+    removeBoardSticker(map, TEST_BOARD_ID, 0);
+    expect(map[TEST_BOARD_ID]).toEqual(['test_bs_food', 'test_bs_territory']);
+  });
+
+  it('rejects an unknown board', () => {
+    expect(removeBoardSticker(attached(TEST_BOARD_ID, 'test_bs_food'), 'not-a-board', 0)).toBeNull();
+  });
+
+  it('rejects a board with no stickers attached', () => {
+    expect(removeBoardSticker({}, TEST_BOARD_ID, 0)).toBeNull();
+  });
+
+  it('rejects an out-of-range index', () => {
+    const map = attached(TEST_BOARD_ID, 'test_bs_food');
+    expect(removeBoardSticker(map, TEST_BOARD_ID, 1)).toBeNull();
+    expect(removeBoardSticker(map, TEST_BOARD_ID, -1)).toBeNull();
+  });
+
+  it('frees a slot at the cap, so the board can be stickered again', () => {
+    const full = attached(TEST_BOARD_ID, 'test_bs_food', 'test_bs_territory');
+    expect(canAttachBoardSticker(full, 999, TEST_BOARD_ID, FIXTURE_BOARD_STICKERS.test_bs_military)).toBe(false);
+    const freed = removeBoardSticker(full, TEST_BOARD_ID, 0)!;
+    expect(canAttachBoardSticker(freed, 999, TEST_BOARD_ID, FIXTURE_BOARD_STICKERS.test_bs_military)).toBe(true);
   });
 });

@@ -47,6 +47,7 @@ export function StickerRow({
   stickers,
   items,
   openSlots = 0,
+  onRemove,
 }: {
   stickers?: string[];
   items?: { icon: string; name?: string }[];
@@ -55,6 +56,12 @@ export function StickerRow({
    *  capacity). Defaults to 0 so every other caller (a plain card face, the launch-popup BoardMini)
    *  renders no hint slots. */
   openSlots?: number;
+  /** Opt-in removal affordance: when set, each badge becomes clickable and reveals a ✕ on hover,
+   *  reporting the index the player clicked. Only the Board menu passes it (via `BoardMini`) — every
+   *  card-side caller omits it and renders exactly as before, which is what keeps card stickers
+   *  permanent and keeps the read-only board previews inert. The index (not a sticker id) is the
+   *  handle because a board may hold the same sticker twice; see `rules/boardStickers.ts`. */
+  onRemove?: (index: number) => void;
 }) {
   // Card stickers resolve through the card `STICKERS` catalogue; a caller from a different catalogue
   // (e.g. board stickers, `BoardMini`) passes already-resolved `items` so the one visual definition
@@ -65,7 +72,12 @@ export function StickerRow({
   return (
     <span className={styles.stickerRow} aria-hidden="true">
       {chips.map((c, i) => (
-        <span key={i} className={styles.sticker} title={c.name}>
+        <span
+          key={i}
+          className={onRemove ? `${styles.sticker} ${styles.stickerRemovable}` : styles.sticker}
+          title={onRemove ? `Remove ${c.name ?? 'this sticker'} — destroys it, no Influence back` : c.name}
+          onClick={onRemove && (() => onRemove(i))}
+        >
           {c.icon}
         </span>
       ))}

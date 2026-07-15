@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BoardId } from '../content/boards';
+import { BOARDS, type BoardId } from '../content/boards';
 import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
 import { canAttachBoardSticker, unlockedBoardStickerDefs, MAX_BOARD_STICKERS, type BoardStickers } from '../rules/boardStickers';
 import { boardUpgradeAvailable } from '../rules/upgrades';
@@ -40,6 +40,11 @@ interface DragState {
  * gesture (mirroring the card sticker tray) — a hand-rolled pointer-drag like `DeckEditor.tsx` (no
  * DnD library). During a drag only the *valid* target boards for that sticker highlight; an
  * invalid/missed drop no-ops (the clone just disappears).
+ *
+ * This is also the only screen where an *attached* sticker can be destroyed: clicking a badge on a
+ * board opens a confirm, and accepting frees the slot for nothing back. The gesture is a plain click
+ * rather than the inverse of the attach drag because the confirm — where the no-refund cost is made
+ * legible — sits badly on a drag release, and an accidental drag would burn the Influence silently.
  */
 export function BoardMenu({
   boardStickers,
@@ -48,6 +53,7 @@ export function BoardMenu({
   unlockedBoards,
   uiScale,
   onBuyBoardSticker,
+  onRemoveBoardSticker,
 }: {
   /** Board stickers attached per board — shows each board's effective profile and gates which
    *  boards a dragged chip may drop onto (a board already at the per-board cap is not a valid
@@ -69,11 +75,18 @@ export function BoardMenu({
    *  directly, no per-instance picker. Returns void, so the drop can't learn success/failure after
    *  the fact — `isValidTarget` is the pre-drop gate (and `buyBoardSticker` is the rule backstop). */
   onBuyBoardSticker: (boardId: BoardId, stickerId: string) => void;
+  /** Destroy the board sticker at `index` on `boardId` (`App.tsx`'s `removeBoardStickerAt`). Refunds
+   *  nothing — the Influence is burned, which is the whole reason this screen confirms first. Keyed
+   *  by position, not sticker id: a board may hold the same sticker twice. */
+  onRemoveBoardSticker: (boardId: BoardId, index: number) => void;
 }) {
   // See DeckEditor's `px` — convert visual (post-scale) pointer/rect px to local px for the clone.
   const px = (v: number) => v / uiScale;
   const [drag, setDragState] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  // The removal a player has clicked but not yet confirmed — the destroy is irreversible and unpaid,
+  // so it never fires straight off the click.
+  const [pendingRemoval, setPendingRemoval] = useState<{ boardId: BoardId; index: number } | null>(null);
   // Each mini-board wrapper's DOM node, registered by callback ref — hit-tested (visual px) on drop.
   const boardEls = useRef(new Map<BoardId, HTMLElement>());
 
@@ -158,6 +171,12 @@ export function BoardMenu({
   // The dragged chip's sticker (for the highlight predicate + the clone), null when idle.
   const dragSticker = drag?.active ? BOARD_STICKERS[drag.stickerId] : undefined;
 
+  // The sticker a pending removal would destroy — resolved for the confirm's copy. An id that no
+  // longer resolves (or a board whose stickers changed underneath) leaves the confirm closed.
+  const pendingSticker = pendingRemoval
+    ? BOARD_STICKERS[(boardStickers[pendingRemoval.boardId] ?? [])[pendingRemoval.index]]
+    : undefined;
+
   function boardTile(boardId: BoardId) {
     const attached = boardStickers[boardId] ?? [];
     // Highlight only valid targets for the chip currently being dragged.
@@ -179,6 +198,9 @@ export function BoardMenu({
           boardId={boardId}
           stickerIds={attached}
           openSlots={hint ? MAX_BOARD_STICKERS - attached.length : 0}
+          // Suppressed mid-drag (like `hint`): while a chip is in the air the tile's message is
+          // "droppable target", and a ✕ under the cursor would contradict it.
+          onRemoveSticker={dragSticker ? undefined : (index) => setPendingRemoval({ boardId, index })}
         />
       </div>
     );
@@ -235,6 +257,38 @@ export function BoardMenu({
           </aside>
         </div>
       </div>
+
+      {/* The destroy confirm. Its three facts — destroyed, not refunded, full price to re-apply —
+          are the only place the cost of removal is stated, so none of them is optional. */}
+      {pendingRemoval && pendingSticker && (
+        <div className={styles.confirmLayer} onClick={() => setPendingRemoval(null)}>
+          <div className={styles.confirmPanel} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.confirmTitle}>
+              Remove {pendingSticker.name} from {BOARDS[pendingRemoval.boardId]?.name}?
+            </h3>
+            <p className={styles.confirmText}>
+              This destroys the sticker and frees its slot. The {pendingSticker.cost} ⭐ you spent is not
+              refunded, and putting a {pendingSticker.name} back on a board later costs the full{' '}
+              {pendingSticker.cost} ⭐ again.
+            </p>
+            <div className={styles.confirmActions}>
+              <button
+                type="button"
+                className={styles.confirmDangerBtn}
+                onClick={() => {
+                  onRemoveBoardSticker(pendingRemoval.boardId, pendingRemoval.index);
+                  setPendingRemoval(null);
+                }}
+              >
+                Destroy sticker
+              </button>
+              <button type="button" className={styles.confirmCancelBtn} onClick={() => setPendingRemoval(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* The sticker clone following the cursor while it's dragged onto a board — the same round
           badge (bigger than the on-board one) picked up from the tray. */}
