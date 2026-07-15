@@ -68,7 +68,10 @@ A CONCERN verdict from a crude sim matrix is a prompt to look closer, not an aut
 
 `chrome-devtools-mcp` drives its own dedicated Chrome profile — a different `localStorage`
 origin from the user's real browser. Nothing the subagent does there can reach the user's
-`PlayerStore`. So: don't brief it to reset or clean up storage, and **don't report to the
-user that the check touched, modified, or could affect their save.** If the subagent's
-report includes that caveat, strip it rather than passing it through. This is settled, not
-a per-task risk to assess.
+`PlayerStore`, storage clearing included. So **don't report to the user that the check
+touched, modified, or could affect their save.** If the subagent's report includes that
+caveat, strip it rather than passing it through. This is settled, not a per-task risk to
+assess.
+
+That profile *does* persist across spawns, so the agent clears it at the start of every
+check — you don't need to brief that.

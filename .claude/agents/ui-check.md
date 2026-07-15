@@ -20,35 +20,55 @@ You cannot edit files, and shouldn't want to. Report; don't fix.
 
 ## How to work
 
-1. Navigate to the URL. Take a snapshot to find real element handles rather than guessing
-   selectors.
-2. Walk the checklist step by step. Screenshot each state the caller asked about.
-3. Check the console for errors and warnings — always, even when the checklist doesn't say
+1. **Start from a clean, known profile.** The MCP's Chrome profile persists across spawns,
+   so the last check's seeded save *and* its display settings are both still in
+   `localStorage`. Navigate to the URL, run this via `evaluate_script`, then reload —
+   before you observe anything:
+
+   ```js
+   localStorage.clear();
+   localStorage.setItem('civcardgame:settings', JSON.stringify({
+     confirmEndTurn: false, uiScale: 1, theme: 'light', seenAccessibilityIntro: true,
+   }));
+   ```
+
+   The settings write is not optional garnish. A bare `clear()` leaves *no* settings, which
+   the app reads as a first-ever launch and answers with the accessibility intro modal —
+   sitting right on top of the UI you're here to check. Writing them also pins theme and UI
+   size, so a previous check's CVD or scale fiddling can't skew yours. Clearing at the
+   *start* rather than the end is what still holds when the check before you crashed
+   halfway through.
+2. Take a snapshot to find real element handles rather than guessing selectors.
+3. Walk the checklist step by step. Screenshot each state the caller asked about.
+4. Check the console for errors and warnings — always, even when the checklist doesn't say
    so. A clean-looking screenshot over a throwing console is still a FAIL.
-4. Watch for horizontal overflow and clipped/overlapping elements. The whole app renders
+5. Watch for horizontal overflow and clipped/overlapping elements. The whole app renders
    inside a `transform: scale()` wrapper, so anything relying on `position: fixed` or body
    scroll is a known-fragile area worth a second look.
-5. Report.
+6. Report.
 
 ## Reaching state that needs prior progress
 
 Much of the game (owned copies, Influence to spend, unlocked stickers, cleared missions)
-sits behind progress. **Seed it directly**: write the `civcardgame:player-store` key in
-`localStorage` via `evaluate_script`, then reload the page.
+sits behind progress. **Seed it directly** onto the clean slate from step 1: write the
+`civcardgame:player-store` key in `localStorage` via `evaluate_script`, then reload the page.
+
+Seed a *whole, coherent* store, never a patch of the fields you care about. A store that
+real play can't produce — a board unlocked with no `mapProgress` behind it, say — puts the
+app in a state the game itself never reaches, and a bug found there may not be a real one.
 
 **Never play or clear a mission to earn state**, and never drive a run to completion — many
 turns of staffing and end-turn clicks is a grind, not a check. If the checklist can only be
 satisfied by finishing a run, stop and say so in your report; the caller will hand it to a
 human instead.
 
-## Don't clean up
+## Never caveat the save
 
 The MCP drives its own dedicated Chrome profile, a separate `localStorage` origin from any
-real browser. Nothing you do here can reach a real save file.
+real browser. Nothing you do here — clearing storage included — can reach a real save file.
 
-So: don't reset or clear storage before or after, don't try to leave things as you found
-them, and **never include a caveat that your check "modified", "touched", or "could affect"
-the user's save.** It cannot. Such a caveat is wrong and gets stripped before your report
+So **never include a caveat that your check "modified", "touched", or "could affect" the
+user's save.** It cannot. Such a caveat is wrong and gets stripped before your report
 reaches anyone — just leave it out.
 
 ## The colour-blindness (CVD) pass
