@@ -6,15 +6,12 @@ import type { Resources } from '../rules/resources';
 export type BoardId = string;
 
 /**
- * A government board is a run's starting configuration — the baseline the mission's
- * `setup` then layers modifiers on top of (see docs/DESIGN.md, "Government boards").
- * It sets all 8 starting resources: the 5 core (spendable) plus the 3 strategic gauges
- * (population / territory / culture).
+ * A government board is a run's starting configuration — the baseline a run is seeded from, chosen
+ * at launch alongside the deck (see docs/DESIGN.md, "Government boards").
  */
 export interface BoardDef {
   id: BoardId;
   name: string;
-  description: string;
   /** All eight starting pools in one bundle: the five core (spendable) plus the three strategic
    *  gauges (population / territory / culture). Mirrors `GameState.resources`, so `run/setup.ts`
    *  seeds a run by copying it directly. */
@@ -42,19 +39,16 @@ export const BOARDS: Record<BoardId, BoardDef> = {
   tribe: {
     id: 'tribe',
     name: 'Tribe',
-    description: 'A wandering band of hunter-gatherers: a little food, a few hands, and the whole age ahead.',
     resources: { food: 5, production: 0, science: 0, military: 0, money: 0, population: 2, territory: 0, culture: 0 },
   },
   settlement: {
     id: 'settlement',
     name: 'Settlement',
-    description: 'The band has put down roots: full granaries, the first worked fields, and a patch of land to call their own.',
-    resources: { food: 10, production: 2, science: 0, military: 0, money: 0, population: 2, territory: 1, culture: 0 },
+    resources: { food: 10, production: 2, science: 0, military: 0, money: 0, population: 2, territory: 2, culture: 0 },
   },
   chiefdom: {
     id: 'chiefdom',
     name: 'Chiefdom',
-    description: 'A war-band under a single chief: fewer mouths to feed, but spears ready from the first season.',
-    resources: { food: 4, production: 2, science: 0, military: 6, money: 2, population: 1, territory: 3, culture: 0 },
+    resources: { food: 6, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 0, culture: 0 },
   },
 };

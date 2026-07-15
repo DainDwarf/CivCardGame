@@ -7,6 +7,10 @@
    the bottom-left sticker badges (which overhang the corner like a CardFace's, so this box is NOT
    overflow-clipped — the ground rounds its own corners instead, see .ground). */
 .mini {
+  /* A slot's *rendered* height (border included, hence the border-box on .slotEmpty), shared by the
+     slot row and the grid's reserved minimum — the two must stay equal for a landless board to
+     reserve exactly one row (see .slotGrid). */
+  --mini-slot-height: 30px;
   position: relative;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -100,7 +104,7 @@
 /* Stands in for the territory `.slotGrid`: a blank area of the same footprint under the banner, so
    the silhouette height matches a real mini without revealing the territory count. */
 .lockedSlots {
-  min-height: 30px;
+  min-height: var(--mini-slot-height);
   padding: 2px;
 }
 
@@ -194,10 +198,16 @@
   gap: 5px;
   justify-content: center;
   padding: 2px;
+  /* A territory-less board still reserves a row's worth of ground: without this the grid collapses
+     to its padding, so such a board would read as a different, squatter shape than its peers. */
+  min-height: var(--mini-slot-height);
 }
 
 .slotEmpty {
-  height: 26px;
+  /* border-box so the declared height *is* the rendered one — there's no global reset, and the
+     grid's reserved minimum is measured against this. */
+  box-sizing: border-box;
+  height: var(--mini-slot-height);
   border-radius: 4px;
   border: 2px dashed rgb(var(--slot-border-rgb) / 0.35);
   background: rgba(255, 255, 255, 0.08);

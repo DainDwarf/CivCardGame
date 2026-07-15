@@ -41,7 +41,6 @@ export const TEST_BOARD_ID = 'test_board' as BoardId;
 export const TEST_BOARD: BoardDef = {
   id: TEST_BOARD_ID,
   name: 'Test Board',
-  description: 'A synthetic board for tests — distinct values on all 8 starting fields.',
   resources: { food: 5, production: 4, science: 3, military: 2, money: 1, population: 2, territory: 7, culture: 0 },
 };
 
@@ -51,7 +50,6 @@ export const TEST_BOARD_2_ID = 'test_board_2' as BoardId;
 export const TEST_BOARD_2: BoardDef = {
   id: TEST_BOARD_2_ID,
   name: 'Test Board 2',
-  description: 'A second synthetic board for board-independence tests.',
   resources: { food: 2, production: 6, science: 1, military: 4, money: 3, population: 1, territory: 5, culture: 0 },
 };
 
