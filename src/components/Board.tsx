@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { BuildingInstance, CardInstance, CoreResources, Resources, WorkInstance } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
+  COLLAPSE_BY_RESOURCE,
+  CORE_KEYS,
   cultureProgress,
   FOOD_PER_POP,
   foodUpkeep,
@@ -13,6 +15,7 @@ import {
   workerCapOf,
   unplayableReason,
 } from '../rules';
+import type { CollapseReason } from '../rules';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
 import { BOARD_STICKERS } from '../content/boardStickers';
@@ -1375,6 +1378,17 @@ export function Board({
   const hasUnstaffedCapacity = G.tableau.some((b) => !isOperating(b));
   const shouldWarn = idle > 0 && hasUnstaffedCapacity;
 
+  // Ending the round runs upkeep; if the projected next-turn state drives a core pool negative the
+  // run collapses (famine/bankruptcy/…). `collapseKeys` are every such pool — the confirm names the
+  // single one, or counts them when several fail at once. It gates the End Round button so a fatal
+  // end is a deliberate click. The at-risk resource chip already reads `collapseRisk` for its red
+  // `statWarn`, and this reduces to `coreCollapse` on the projected state, so it can't drift from it.
+  const proj = projectedDelta(G);
+  const collapseRisk = (key: keyof CoreResources) => G.resources[key] + proj.resources[key] < 0;
+  const collapseKeys = CORE_KEYS.filter(collapseRisk);
+  const collapseKey = collapseKeys[0]; // first (food-first) collapsing pool; undefined if none
+  const collapseImminent = collapseKeys.length > 0;
+
   // Restore the overlay when a new run starts.
   useEffect(() => {
     if (!gameover) setOverlayMinimized(false);
@@ -1519,12 +1533,12 @@ export function Board({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runGen]);
 
-  // warnEndRound is only meaningful while shouldWarn or confirmEndTurn is true; reset it
-  // if the player staffs all buildings after triggering the dialog (so it can't
-  // ghost-trigger later) — confirmEndTurn doesn't depend on staffing, so it can't go stale.
+  // warnEndRound is only meaningful while a warn/confirm reason holds; drop it if the player
+  // clears every reason after opening the dialog (staffs the idle workers, or plays a card that
+  // lifts the collapse) so it can't ghost-trigger later — confirmEndTurn is a static setting.
   useEffect(() => {
-    if (!shouldWarn && !confirmEndTurn) setWarnEndRound(false);
-  }, [shouldWarn, confirmEndTurn]);
+    if (!collapseImminent && !shouldWarn && !confirmEndTurn) setWarnEndRound(false);
+  }, [collapseImminent, shouldWarn, confirmEndTurn]);
 
   /** In sacrifice-pick mode, a click toggles a card as the discard (or cancels the play). */
   function handlePendingClick(card: HandCard) {
@@ -1559,9 +1573,14 @@ export function Board({
     revolt:     'revolt erupted — your people rose against you.',
   };
 
-  const proj = projectedDelta(G);
-  const collapseRisk = (key: keyof CoreResources) => G.resources[key] + proj.resources[key] < 0;
+  // The short, present-tense name of each collapse, for the pre-collapse End Round confirm (the
+  // past-tense COLLAPSE_MESSAGES above are the gameover epitaph — wrong tense/length for the panel).
+  const COLLAPSE_NOUN: Record<CollapseReason, string> = {
+    famine: 'Famine', ruin: 'Ruin', bankruptcy: 'Bankruptcy', dark_age: 'Dark age', revolt: 'Revolt',
+  };
+
   const canEndRound = !pending && !drag;
+  const needsEndConfirm = collapseImminent || shouldWarn || confirmEndTurn;
 
   return (
     <>
@@ -1842,10 +1861,14 @@ export function Board({
             onView={() => setPileView({ title: 'Removed from deck', cards: G.removed })}
           />
 
-          {warnEndRound && (shouldWarn || confirmEndTurn) ? (
-            <div className={styles.endRoundWarn}>
+          {warnEndRound && needsEndConfirm ? (
+            <div className={`${styles.endRoundWarn}${collapseImminent ? ` ${styles.endRoundWarnDanger}` : ''}`}>
               <span className={styles.endRoundWarnMsg}>
-                {shouldWarn ? (
+                {collapseKeys.length > 1 ? (
+                  <>☠️ Collapse<br />{collapseKeys.length} resources fail</>
+                ) : collapseKey ? (
+                  <>☠️ {COLLAPSE_NOUN[COLLAPSE_BY_RESOURCE[collapseKey]]}<br />{RESOURCE_ICON[collapseKey]} hits {G.resources[collapseKey] + proj.resources[collapseKey]}</>
+                ) : shouldWarn ? (
                   <>{idle} idle 👷<br />unstaffed buildings</>
                 ) : (
                   'End this round?'
@@ -1853,11 +1876,11 @@ export function Board({
               </span>
               <div className={styles.endRoundWarnBtns}>
                 <button
-                  className={styles.endRoundConfirm}
+                  className={`${styles.endRoundConfirm}${collapseImminent ? ` ${styles.endRoundConfirmDanger}` : ''}`}
                   disabled={!canEndRound}
                   onClick={() => { setWarnEndRound(false); endTurn(); }}
                 >
-                  {shouldWarn ? 'End anyway' : 'End round'}
+                  {collapseImminent || shouldWarn ? 'End anyway' : 'End round'}
                 </button>
                 <button
                   className={styles.endRoundCancel}
@@ -1869,12 +1892,12 @@ export function Board({
             </div>
           ) : (
             <button
-              className={styles.endRound}
+              className={`${styles.endRound}${collapseImminent ? ` ${styles.endRoundPeril}` : ''}`}
               disabled={!!gameover || !canEndRound || handHeld}
-              onClick={() => { if (shouldWarn || confirmEndTurn) setWarnEndRound(true); else endTurn(); }}
+              onClick={() => { if (needsEndConfirm) setWarnEndRound(true); else endTurn(); }}
             >
               <span className={styles.endRoundLabel}>End Round</span>
-              <span className={styles.endRoundRound}>Rd {G.round}</span>
+              <span className={styles.endRoundRound}>{collapseImminent ? '⚠ collapse' : `Rd ${G.round}`}</span>
             </button>
           )}
         </div>

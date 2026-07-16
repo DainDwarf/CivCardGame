@@ -20,8 +20,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Next up (tomorrow, first thing)
 
-- **End-of-turn warning for imminent collapse** — warn before ending a round that lands the run in a
-  collapse (the projected delta already knows). `[?]`
 - **Review the codex precisely** — reread `content/codex.ts` line by line against the engine, with
   the user hand-holding Claude through it rather than a solo pass. `[?]`
 - **Prepare for the next version** — manual smoke-test, check + compact the docs, bump the version
@@ -205,6 +203,19 @@ First two missions, opened by gobekli:
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **End-of-round warning for imminent collapse** ✅ — the End Round button now warns before a round
+  that would drive a core resource negative (a run-ending collapse). Two beats: **passive** — when
+  `projectedDelta` shows any core pool going negative, the button turns danger-red, pulses, and its
+  round line reads `⚠ collapse`; **active** — clicking it opens a red confirm (`☠️ Famine / 🌾 hits −1`
+  for one pool, `☠️ Collapse / N resources fail` for several) with a muted *End anyway* + *Cancel*.
+  Collapse outranks the idle-worker warning and always gates (ignores the "confirm before ending"
+  setting — a mis-click shouldn't silently lose the run). No new rule: the detection reduces exactly
+  to `coreCollapse` on the projected state. `rules/collapse.ts` grew a `COLLAPSE_BY_RESOURCE` map (the
+  resource→reason single source `coreCollapse` now walks); everything else is `Board.tsx` + its CSS
+  module. Danger surfaces are a *darkened* danger red (black overlay over `--danger-rgb`, like the
+  sibling `--warn-panel`) so the white text clears AA contrast in every theme incl. the CVD ones
+  (worst case 5.69:1), with the bright glow carrying the alarm.
 
 - **Move event upkeep into the upkeep phase** ✅ — an unplayed `event`'s `upkeep` disaster used to
   fire in `settleEndOfTurn`, *after* `applyUpkeep` and after the round's win/lose verdict; it now

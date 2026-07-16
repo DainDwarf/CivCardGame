@@ -1,19 +1,21 @@
-import type { CoreResources } from './resources';
+import { CORE_KEYS, type CoreResources } from './resources';
 
-const CORE_COLLAPSES = [
-  ['food', 'famine'],
-  ['production', 'ruin'],
-  ['money', 'bankruptcy'],
-  ['science', 'dark_age'],
-  ['military', 'revolt'],
-] as const;
+export type CollapseReason = 'famine' | 'ruin' | 'bankruptcy' | 'dark_age' | 'revolt';
 
-export type CollapseReason = (typeof CORE_COLLAPSES)[number][1];
+/** The collapse a core resource triggers when it runs negative. `coreCollapse` walks it in
+ *  `CORE_KEYS` order, so food's famine is reported first when several pools are negative at once. */
+export const COLLAPSE_BY_RESOURCE: Record<keyof CoreResources, CollapseReason> = {
+  food: 'famine',
+  production: 'ruin',
+  science: 'dark_age',
+  military: 'revolt',
+  money: 'bankruptcy',
+};
 
 /** Returns the collapse reason if any core resource is negative, null otherwise. */
 export function coreCollapse(resources: CoreResources): CollapseReason | null {
-  for (const [resource, reason] of CORE_COLLAPSES) {
-    if (resources[resource] < 0) return reason;
+  for (const key of CORE_KEYS) {
+    if (resources[key] < 0) return COLLAPSE_BY_RESOURCE[key];
   }
   return null;
 }
