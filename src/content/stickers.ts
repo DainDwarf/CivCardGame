@@ -29,7 +29,7 @@ export interface StickerDef {
   icon: string;
   /** Influence price to attach one copy. */
   cost: number;
-  /** Which cards this sticker may attach to. Absent = any owned card (Reinforced, Efficient).
+  /** Which cards this sticker may attach to. Absent = any owned card.
    *  The sticker owns its own eligibility; every site (shop listing/offer, `buySticker`'s
    *  authoritative reject) routes through `rules/stickers.ts`'s `stickerAppliesTo`, never
    *  inspecting a card's `kind`/`produces` itself. */
@@ -37,10 +37,10 @@ export interface StickerDef {
   /** This sticker's contribution to a card's per-copy output, applied *once per attached copy*
    *  — stacking (two of the same) and composing (two different) fall out of the fold in
    *  `rules/stickers.ts`'s `effectiveGain`. `undefined` in → `undefined` out (a card with no
-   *  gain has nothing to bump). Absent = no output change (e.g. Efficient). */
+   *  gain has nothing to bump). Absent = no output change. */
   applyGain?: (base: Partial<Resources> | undefined) => Partial<Resources> | undefined;
   /** This sticker's contribution to play cost, applied *once per attached copy* (fold in
-   *  `effectiveCost`). Absent = no cost change (e.g. Reinforced). */
+   *  `effectiveCost`). Absent = no cost change. */
   applyCost?: (cost: Partial<Resources>) => Partial<Resources>;
 }
 

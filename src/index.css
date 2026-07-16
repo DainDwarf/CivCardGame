@@ -149,7 +149,7 @@
 
   /* ── Board ground tints (per government board — placeholder hues, tune later) ── */
   --board-tribe-ground: #c8a97e;     /* same as --ground: humble/rustic, no change from default */
-  --board-chiefdom-ground: #a9b7c4;  /* cool steel slate-blue — martial (the pre-wipe Monarchy hue) */
+  --board-chiefdom-ground: #a9b7c4;  /* cool steel slate-blue — martial */
 
   /* ── Building states (green) ──────────────────────── */
   --operating-bg: #f1f7ef;
@@ -326,7 +326,7 @@
 
   /* ── Board ground tints ── */
   --board-tribe-ground: #4f4130;     /* same as --ground */
-  --board-chiefdom-ground: #3a4550;  /* the pre-wipe Monarchy dark hue */
+  --board-chiefdom-ground: #3a4550;
 
   /* ── Building states (green) ── */
   --operating-bg: #1f2a1e;
@@ -440,7 +440,7 @@
   --culture-ghost: rgba(204, 121, 167, 0.35);
 
   /* ── Board ground tints ── */
-  --board-chiefdom-ground: #8fa9bd;  /* the pre-wipe Monarchy deuteranopia hue */
+  --board-chiefdom-ground: #8fa9bd;
 
   /* ── Building states (green) ── */
   --operating-bg: #d9f2ea;
@@ -512,7 +512,7 @@
   --culture-ghost: rgba(212, 133, 176, 0.35);
 
   /* ── Board ground tints ── */
-  --board-chiefdom-ground: #8fa9bd;  /* the pre-wipe Monarchy protanopia hue */
+  --board-chiefdom-ground: #8fa9bd;
 
   /* ── Building states (green) ── */
   --operating-bg: #d9f2ea;
@@ -545,9 +545,8 @@
   --card-work-banner: #3f9142;
   --card-work-band: #e0f0df;
   --card-work-condition: #7cb87e;
-  /* Left at Light's near-neighbor of Action's orange in the first pass; a CVD simulation
-     pass showed the two collapsing into the same coral under tritanopia (which doesn't
-     rescue orange-vs-gold the way it rescues red-vs-green), so Wonder is pulled brighter
+  /* Wonder's gold collapses into Action's orange as the same coral under tritanopia (which
+     doesn't rescue orange-vs-gold the way it rescues red-vs-green), so it's pulled brighter
      and more yellow to hold a real lightness/saturation gap from Action. */
   --card-wonder-banner: #e0b400;
   /* Objective → orchid: the inherited violet drifted into Building's indigo/teal here (CVD sim). */
@@ -564,7 +563,7 @@
   --culture-ghost: rgba(160, 46, 116, 0.35);
 
   /* ── Board ground tints ── */
-  --board-chiefdom-ground: #a2a6d0;  /* the pre-wipe Monarchy tritanopia hue */
+  --board-chiefdom-ground: #a2a6d0;
 
   /* ── Building states (green) ── */
   --operating-bg: #e0f0df;

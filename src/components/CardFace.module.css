@@ -265,9 +265,8 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
 
-/* Bottom-left row of per-sticker badges for a stickered meta card instance (Phase 3 Step 7.5,
-   placement + look finalized in Step 7.9) — straddles the bottom edge the way the top-corner
-   countBadge straddles its own corner. One circle per attached sticker id (not one combined
+/* Bottom-left row of per-sticker badges for a stickered meta card instance — straddles the bottom
+   edge the way the top-corner countBadge straddles its own corner. One circle per attached sticker id (not one combined
    pill), so a stacked sticker (a duplicate id) reads as two circles instead of a doubled glyph
    crowded into one badge. Each circle is card-toned (not the accent `--badge-bg`) so it reads as
    "part of the card" rather than a count/notification marker. */

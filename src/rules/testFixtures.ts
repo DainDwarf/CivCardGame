@@ -127,9 +127,8 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     id: 'test_action', name: 'Test Action', kind: 'action',
     cost: { science: 1 }, effect: { resources: { science: 3 } },
   },
-  // Draw action: draws 2 off the top via a bespoke `resolve` (draw is no longer a declarative
-  // CardEffect field — a future draw card uses a closure like this). Each `drawCard` emits a `draw`
-  // event, so on-draw observers still fire.
+  // Draw action: draws 2 off the top via a bespoke `resolve` (a future draw card uses a closure like
+  // this). Each `drawCard` emits a `draw` event, so on-draw observers still fire.
   test_draw: {
     id: 'test_draw', name: 'Test Draw', kind: 'action',
     cost: { money: 1 }, effect: { resolve: (ctx) => { drawCard(ctx.G); drawCard(ctx.G); } },

@@ -13,7 +13,7 @@ describe('DEFAULT_DECKS', () => {
   });
 
   // The seed deck must satisfy the committed minimum-deck-size floor, so a fresh player's
-  // Founding deck is savable/launchable out of the box (the Step 1 → Step 3 gate).
+  // Founding deck is savable/launchable out of the box.
   it('every deck meets the minimum deck size', () => {
     for (const deck of DEFAULT_DECKS) {
       expect(deck.cards.length, `${deck.id} has ${deck.cards.length} cards`).toBeGreaterThanOrEqual(MIN_DECK_SIZE);

@@ -266,7 +266,7 @@ describe('dispatchEvent — endTurn broadcast (production + threat drains)', () 
 });
 
 describe('dispatchEvent — reshuffle broadcast (subject-less, on.reshuffle only)', () => {
-  // The real `unrest` threat drains 1🪙 per 🧍 on every reshuffle — the mechanic Step 6.5 introduces.
+  // The real `unrest` threat drains 1🪙 per 🧍 on every reshuffle.
   it('reaches a threat with on.reshuffle, draining 1🪙 per population point', () => {
     const G = blankState('test');
     G.resources.population = 3;

@@ -33,8 +33,8 @@ interface DragState {
  * The Board screen: spend Influence (⭐) on permanent board stickers — modifiers that tweak a
  * board's *starting* profile (`rules/boardStickers.ts`), attached per board on the store's
  * `boardStickers`. A board is singular (no per-copy identity), so — unlike a card sticker — the buy
- * attaches directly, no instance picker. Each board renders as a `BoardMini` (Step 9.3.2's
- * mini-board); the available stickers sit in a right-side **tray** pinned beside the boards, each a
+ * attaches directly, no instance picker. Each board renders as a `BoardMini`; the available
+ * stickers sit in a right-side **tray** pinned beside the boards, each a
  * box (a sticker badge + name on top, effect + price below). The badge is styled like the on-board
  * sticker but larger, and *it* is the draggable: dragging it onto a board buys+attaches it in one
  * gesture (mirroring the card sticker tray) — a hand-rolled pointer-drag like `DeckEditor.tsx` (no

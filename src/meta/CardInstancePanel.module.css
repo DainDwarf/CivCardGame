@@ -1,4 +1,4 @@
-/* Per-card detail panel (Phase 3 Step 7.3, reworked in Step 9.2). A modal whose body is two columns:
+/* Per-card detail panel. A modal whose body is two columns:
    a grid of real `CardFace`s (one per owned copy) on the left, a sticker tray pinned on the right.
    Dragging a sticker badge out of the tray onto a face buys+attaches it (mirrors BoardMenu's tray +
    hand-rolled pointer-drag). All color via theme tokens; only the allowed white/black scrims are
@@ -27,9 +27,8 @@
   }
 }
 
-/* Wider than the old vertical row list (a two-column card-grid + tray); still capped against the
-   viewport with the /var(--ui-scale) divide (UI-scaling invariant #3) and scrolling *inside* itself
-   (invariant #1 — never grows the body). */
+/* Capped against the viewport with the /var(--ui-scale) divide (UI-scaling invariant #3) and
+   scrolling *inside* itself (invariant #1 — never grows the body). */
 /* Wide enough for a 4-column face grid: 4×128px tracks + 3×0.6rem gaps ≈ 541px, plus the 210px tray,
    the 1rem body gap, and the panel's own 1.1rem side padding ≈ 840px. Still capped against the
    viewport with the /var(--ui-scale) divide so a small screen shrinks it instead of overflowing. */
@@ -110,8 +109,7 @@
   box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 30%);
 }
 
-/* Which deck(s) this copy sits in — the Step 7.3 anti-surprise info, kept as a caption now that the
-   copy renders as a face rather than a text row. */
+/* Which deck(s) this copy sits in — the anti-surprise info, as a caption under the face. */
 .faceCaption {
   max-width: 118px;
   font-size: 0.72rem;

@@ -7,10 +7,8 @@ import { BOARDS } from './boards';
 import { AGES, ageColSpans } from './ages';
 
 // The mission *spine* mechanism (seedMissionCards, objectiveMet/defeatMet, the bus-driven win/loss
-// flags) is asserted on synthetic fixtures in `rules/missionSpine.test.ts` (relocated in Step 2.2).
-// What's left here are the content↔catalogue **coherence iterators**: every mission must name real
-// cards of the right kind. `MISSIONS` was emptied in Step 2.4, so these pass vacuously today and
-// re-arm once Step 3 authors the real missions. EARMARKED FOR REWRITE alongside the mission content.
+// flags) is asserted on synthetic fixtures in `rules/missionSpine.test.ts`. What's left here are the
+// content↔catalogue **coherence iterators**: every mission must name real cards of the right kind.
 
 describe('mission catalogue coherence', () => {
   it('every mission names a real objective card that owns its win logic', () => {
@@ -37,8 +35,8 @@ describe('mission catalogue coherence', () => {
     }
   });
 
-  // Relocated from `rewards.test.ts` (Step 2.4): it's a mission↔card coherence check, not a reward
-  // mechanism test, so it lives with the other mission coherence iterators. A standard mission carries
+  // A mission↔card coherence check, not a reward mechanism test, so it lives with the other mission
+  // coherence iterators. A standard mission carries
   // a reward object (the reward-preview UI renders its Influence), but its unlocks are **all
   // optional** — a mission may grant none (an Influence-only reward). So this is an id-existence
   // check, not a count check: every unlock id a mission *does* name must reference a real catalogue
@@ -70,8 +68,7 @@ describe('mission catalogue coherence', () => {
 
   // Each age covers a slice of the DAG (`ages.ts`'s `ageColSpans`), so a standard mission must be
   // placed (`map`) and tagged with a real age; and ages must not interleave across columns — the
-  // derived slices must tile the timeline gap-free and non-overlapping. Vacuous today (no standard
-  // missions), re-arms with the Step 6 arc.
+  // derived slices must tile the timeline gap-free and non-overlapping.
   it('every standard mission has a map and a valid age', () => {
     const ageIds = new Set(AGES.map((a) => a.id));
     for (const m of Object.values(MISSIONS)) {

@@ -32,8 +32,8 @@ import type { BoardId } from '../content/boards';
  * the divergence (the [[feedback-test-fixtures-share-prod-code-path]] rule applied to assertions).
  *
  * This suite brute-forces the *whole live* sticker/board-sticker catalogue, so it decouples onto the
- * synthetic fixtures (installed for the suite's duration) — with the content catalogues emptied in
- * Step 2.3 the live maps *are* the fixtures, which is exactly what lets the fixture-built oracle agree
+ * synthetic fixtures (installed for the suite's duration) — with the content catalogues emptied the
+ * live maps *are* the fixtures, which is exactly what lets the fixture-built oracle agree
  * with the predicate's live-catalogue walk. `test_food` is a food building (the restricted sticker
  * applies); `test_prod` produces no food (it doesn't). `TEST_BOARD`/`TEST_BOARD_2` stand in for the
  * board list; all fixture board stickers are unrestricted.

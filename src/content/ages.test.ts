@@ -20,7 +20,7 @@ function mk(id: string, age: string, col: number): MissionDef {
 }
 
 describe('ageColSpans', () => {
-  it('returns [] when no standard mission is placed (the dormant state today)', () => {
+  it('returns [] when no standard mission is placed', () => {
     expect(ageColSpans([])).toEqual([]);
     // Infinite missions never contribute a slice even though they exist.
     const infinite: MissionDef = {

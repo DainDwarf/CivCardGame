@@ -27,7 +27,7 @@
 /* Local dirt layer, tinted per government board (BoardMini stamps `data-board`) — the miniature
    counterpart to Board.module.css's `.groundBackdrop`, but positioned inside the widget (absolute,
    not fixed) so it fills only this box. `border-radius: inherit` keeps its corners rounded to the
-   frame now that .mini no longer clips. `--ground` is the fallback for an unrecognized board id. */
+   frame, since `.mini` doesn't clip. `--ground` is the fallback for an unrecognized board id. */
 .ground {
   position: absolute;
   inset: 0;

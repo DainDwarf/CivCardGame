@@ -14,8 +14,7 @@ interface MenuItem {
   label: string;
 }
 
-/** The decided game-menu items (docs/DESIGN.md, Phase 2: "game menu (save, config,
- *  codex)"). All three submenus are populated: Manage Save (backups), Config (device
+/** The game-menu items: Manage Save (backups), Config (device
  *  preferences), Codex (the rules reference — see `Codex.tsx`). */
 const MENU_ITEMS: MenuItem[] = [
   { id: 'save', icon: '💾', label: 'Manage Save' },

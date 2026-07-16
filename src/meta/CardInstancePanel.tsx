@@ -118,7 +118,7 @@ export function CardInstancePanel({
   // Only stickers that apply to *this* card are draggable at all (Irrigation hidden on a non-food
   // building, etc.) — each still re-gated per copy by `isValidTarget`.
   const stickerDefs = shop ? unlockedStickerDefs(shop.unlockedStickers).filter((s) => stickerAppliesTo(s, card)) : [];
-  // A card with every copy already full can't take another sticker of any kind — used to dim badges.
+  // A card with every copy already full can't take another sticker of any kind.
   const anyRoom = stickerableInstancesOf(collection, cardId).length > 0;
 
   // Keep a ref in lockstep with drag state so the window pointer listeners read fresh values.

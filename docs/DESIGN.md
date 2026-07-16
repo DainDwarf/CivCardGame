@@ -42,7 +42,7 @@ Two consequences we deliberately design toward:
   advancement is unlocked on the tree (and grants themed cards), opening new branches.
   **Macro = humanity / persistent; micro = one civ / ephemeral.**
 
-## The contract — the spine between the loops ✅ / 🔧
+## The contract — the spine between the loops ✅
 
 The two loops are different kinds of software (the run is turn-based, driven by
 `src/run/engine.ts`; the meta is plain React, menu/UI-driven). They communicate only
@@ -77,11 +77,11 @@ of them to produce the state a run actually begins from. Two examples already in
   see *Government boards*).
 
 So the meta owns durable choices, the mission owns per-run modifiers, and the contract is
-where the two are merged into one immutable run configuration. 🔧
+where the two are merged into one immutable run configuration. ✅
 
 ## Run loop (the Gauntlet)
 
-### Card kinds ✅ / 🔧 details
+### Card kinds ✅
 
 There are **seven** card kinds — the `CardKind` values in `content/cards.ts`:
 `building`, `wonder`, `action`, `work`, `event`, `threat`, `objective`. The first four differ by how
@@ -153,7 +153,7 @@ leave in hand is counted in that same win/lose verdict. Win/lose isn't a phase: 
 re-derived at *every* step boundary from the objective's `goals` and each threat's `defeat`
 (see *Card kinds*), so the engine only ever reads a flag.
 
-### Determinism & order-independence 🔧
+### Determinism & order-independence ✅
 
 Runs are seeded and deterministic (the foundation for replays + headless simulation).
 On top of raw determinism the engine holds a stronger, deliberately-designed property:
@@ -247,7 +247,7 @@ mission-specific *defeat* belongs on a threat's `defeat` hook, and core-resource
 Same deck, three completely different tests — and the player tailors their deck in
 the meta loop to the mission they pick.
 
-## Meta loop (the Workshop) 🔧
+## Meta loop (the Workshop) ✅
 
 - **Collection** — every card you own (persistent). Starts small, grows over time.
 - **Deck construction** ✅ — build/edit run decks from the collection (`src/meta/DeckEditor.tsx`).
@@ -262,8 +262,8 @@ the meta loop to the mission they pick.
   unlocked/upgraded through mission rewards. See *Government boards* below.
 - **Currency & shop** — completing a mission grants **Influence** (⭐), the meta-currency;
   spend it in the shop on *depth* — extra copies of cards you already own, and permanent
-  **stickers** (card/board modifiers). New cards, boards, wonders — and, from Phase 4, newly
-  unlocked stickers — come from missions, not the shop. See *Economy & progression* below. ✅
+  **stickers** (card/board modifiers). New cards, boards, wonders, and newly unlocked stickers
+  come from missions, not the shop. See *Economy & progression* below. ✅
 - **Campaign map** — a branching tech tree of human history; each node is a
   mission/advancement. You pick your next node along the tree; each shows its
   objective, failure, difficulty, and reward so you can tailor your deck. See
@@ -274,7 +274,7 @@ the meta loop to the mission they pick.
   *Economy & progression* below. ✅
 - **Persistence** — all of the above saved to localStorage/IndexedDB (one profile).
 
-### Economy & progression ✅ (Phase 3)
+### Economy & progression ✅
 
 **Influence (⭐)** is the single meta-currency. Completing a mission for the first time pays
 a fixed, authored amount (*not* scaled by how you played); infinite missions pay by score,
@@ -305,12 +305,12 @@ full price. The two catalogues keep **separate affordances** for it — a card s
 the Collection card's detail panel, a board sticker from the Board tab — each behind a confirm, the one
 place that no-refund cost is spelled out.
 
-From **Phase 4** a sticker must first be **unlocked** via a mission reward (the breadth
-channel — `rules/rewards.ts` extends beyond card unlocks to card/board stickers) before the
-shop can sell it: new stickers arrive as you progress the ages, rather than all being buyable
-from the start. 🔧
+A sticker must first be **unlocked** via a mission reward (the breadth channel —
+`rules/rewards.ts` extends beyond card unlocks to card/board stickers) before the shop can
+sell it: new stickers arrive as you progress the ages, rather than all being buyable from
+the start. ✅
 
-### Campaign map — humanity's tech tree ✅ / 🔧
+### Campaign map — humanity's tech tree ✅
 
 The mission map is a **branching, authored DAG of historical advancements** — e.g.
 Agriculture → Pottery / Animal Husbandry → Writing → Philosophy → … — *not* a
@@ -322,7 +322,7 @@ procedurally generated map.
   tree's shape provides the branching. ✅
 - **Victory unlocks the advancement**: it is marked achieved on the tree, opens the
   next nodes, and grants **card unlocks themed to that advancement** (e.g. clearing
-  *Writing* adds Library/scribe cards to your collection). 🔧 This ties unlock content
+  *Writing* adds Library/scribe cards to your collection). ✅ This ties unlock content
   directly to map position — clean, thematic content growth.
 - **Completion is binary — no rating tiers.** A node is either cleared or not; clearing it
   (once) pays a fixed Influence reward and grants whatever unlocks it carries (possibly none).
@@ -331,8 +331,8 @@ procedurally generated map.
   well you cleared. ✅
 - **Infinite nodes** are a distinct kind: an endlessly escalating threat with no win state —
   you survive for a score, which pays Influence *per attempt* (the only performance-scaled
-  currency source) and tracks a best. 🔧
-- **Ages partition the tree** 🔧 — the DAG is grouped into historical **ages**,
+  currency source) and tracks a best. ✅
+- **Ages partition the tree** ✅ — the DAG is grouped into historical **ages**,
   **Stone Age → Bronze Age → Iron Age** to start (`content/ages.ts`), rendered as bands
   across the map. **Stone Age is the tutorial age**, carrying every core mechanic (buildings,
   territory, conquest, culture); later ages add content, not mechanics. A mission declares its age
@@ -346,7 +346,7 @@ procedurally generated map.
 - Procedural variation (which nodes are offered, per-node modifiers/seeds) can layer
   on later; v1 is authored. 🔧
 
-### Government boards 🔧 `[?]`
+### Government boards ✅
 
 Alongside the deck, a run is launched with a **government board** — the civilization's
 starting configuration. Where the deck is *what you can do*, the board is *where you
@@ -356,24 +356,23 @@ begin*. Themed as a form of government/era (Tribe, Monarchy, Republic, …).
 five *core* resources (Food / Production / Money / Science / Military) and the three
 *strategic* gauges (Population / Territory / Culture). Choosing a board is choosing your
 opening economy: a martial board might open with Military and a lean Population; a
-mercantile one with Money and extra Territory. This is the seed `createInitialState`
-currently hard-codes — it becomes the board's job.
+mercantile one with Money and extra Territory. `createInitialState` seeds a run from
+the chosen board.
 
 **Board vs. mission setup.** The two compose cleanly and keep their existing roles:
 the **board is the baseline** starting state, and the **mission seeds its threat/event
 cards on top**. In `setup.ts`: seed from the board, *then* seed the mission's cards.
 Missions stay a *lens/modifier*; boards own the *baseline*.
 
-**Visual identity.** A board reskins the run loop, not just its numbers — a distinct
-palette/backdrop (and, later, framing) so a run *looks* like the government you are
-playing, rather than the near-uniform look it has today. This is where progression
-becomes visible on screen.
+**Visual identity.** A board reskins the run loop, not just its numbers — the ground
+backdrop tints per board today, with deeper palette/framing later — so a run *looks* like
+the government you are playing. This is where progression becomes visible on screen.
 
 **Progression — earned, not scaled.** Boards do **not** scale continuously with player
 progress. Progress is legible and discrete: **missions grant whole new boards** (breadth),
 while the **shop sells board stickers** — permanent modifiers that tweak a board's starting
-profile (depth; see *Economy & progression*). (An *upgrade* to an owned board — a stronger
-variant — remains a possible mission reward too; open question below.)
+profile (depth; see *Economy & progression*). A board **upgrade** is a further kind of mission
+reward: it retires an owned board for a stronger variant, carrying its stickers across.
 
 So the player *sees* growth — "I unlocked the Republic", "I stuck a +Military modifier on my
 Monarchy" — instead of watching an invisible number climb. This plugs boards into the reward
@@ -385,12 +384,10 @@ on victory the meta loop looks up the mission's rewards (by the `RunResult`'s
 
 **Open questions `[?]`:**
 
-- Does an **upgrade** replace the base board, or coexist as a selectable variant?
-- **Board modifiers are permanent shop-bought stickers** (see *Economy & progression*) —
-  attached to a board, not consumed per run. Whether several **stack** on one board is a
-  balance detail, deferred.
+- The per-board sticker **cap** (provisionally 2) and how freely stickers should stack are
+  balance details, still being tuned.
 
-## Code architecture 🔧
+## Code architecture ✅
 
 Builds on the existing core/shell split. `rules/` and `content/` stay shared and
 framework-free; each loop is its own shell over them.
@@ -431,14 +428,14 @@ not a hook on the card.
   + infinite missions, prereq gating), reward/unlock wiring — plus the card-effect
   **resolver spine** and **event bus** underneath. See *Economy & progression*.
 - **Phase 4 — Content & balance** (in progress): reset all content and rebuild it as the
-  **first three ages — Stone Age, Bronze Age, Iron Age**. **Stone Age is the tutorial age**
-  and introduces every core mechanic (buildings, territory, conquest, culture); Bronze Age +
-  Iron Age add content, not mechanics (their flavor is undecided beyond the historical
-  period). Also lands the deferred **deck-construction constraints** (min deck size, hand
-  limit) and the **headless simulator** (`src/sim/`) used to tune. Boards + card/board
-  stickers are reset alongside the cards; **new stickers now unlock through mission rewards**
-  (breadth), not only the shop. No new resources this phase. See TODO.md for the step
-  breakdown.
+  **first three ages — Stone Age, Bronze Age, Iron Age**. The **Stone Age** — the tutorial
+  age, introducing every core mechanic (buildings, territory, conquest, culture) — is
+  **shipped**, along with the deferred **deck-construction constraints** (min deck size, hand
+  limit) and the **headless simulator** (`src/sim/`) used to tune it; boards and card/board
+  stickers were reset alongside the cards, and **stickers now unlock through mission rewards**
+  (breadth), not only the shop. **Bronze Age + Iron Age remain ahead** — content expansion
+  only, no new mechanics (their flavor is undecided beyond the historical period). No new
+  resources this phase. See TODO.md for the step breakdown.
 
 ## Deferred decisions
 

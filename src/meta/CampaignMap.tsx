@@ -53,8 +53,7 @@ const nodeTop = (row: number, rowExtent: number) => PAD_Y + (row + rowExtent) * 
  * (Stone Age / Bronze Age / Iron Age), each tinted via a `data-age` attribute matched in the CSS
  * module (the `data-board` precedent). Each age *covers its slice of the DAG*: its band + the
  * gradient wash beneath echo the same age colors and span exactly the columns its missions occupy,
- * derived from those missions' `map.col` (`ageColSpans`). With no standard missions placed yet the
- * derivation is dormant — no bands render until the first age's missions land (Step 6).
+ * derived from those missions' `map.col` (`ageColSpans`).
  * Clicking a cleared/available node opens
  * `MissionFlowPopup` on its 'detail' step — lore, explanation, and a reward preview; its "Continue"
  * advances the same popup to its 'launch' step (board picker left, deck picker right), which

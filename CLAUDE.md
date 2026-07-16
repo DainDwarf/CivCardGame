@@ -17,7 +17,8 @@ shop, mission selection — the *only* place decks are edited). See
 [`docs/DESIGN.md`](docs/DESIGN.md) for the full game design and roadmap.
 
 **Progress.** The run loop, the meta shell, and the economy/progression systems are all
-built; the game is now in its content-and-balance pass — see
+built, and the **Stone Age content arc is shipped** — a full tutorial age exercising every core
+mechanic. The content-and-balance pass continues into the Bronze and Iron ages; see
 [`docs/DESIGN.md`](docs/DESIGN.md) for the roadmap. The systems that exist:
 
 - **Run loop** (`src/run/`): hybrid cards (building vs. action), the turn
@@ -201,7 +202,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     place a resolver opens one (built from `ctx.self`) — and re-enters via `moves.resolveInteraction`;
     all plain data, so undo/clone survive. Together with the `deck.ts` primitives this makes the spine
     a **two-way street**: it dispatches a card *and* lends it the vocabulary to affect `G`, so no
-    resolver hand-rolls raw state surgery (the boundary Foresight used to break).
+    resolver hand-rolls raw state surgery.
   - `events.ts` — the **event bus**: the general trigger layer letting a card react to an event
     whose *timing it doesn't own* (a draw, a discard elsewhere, a resource crossing a threshold, the
     draw pile reshuffling, or a round passing) via a `CardDef.on?: { draw?/discard?/resourceChange?/reshuffle?/endTurn? }` map — each
@@ -273,7 +274,7 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     left in hand → discard, so they recur) and `discardWorkZone` (end-of-turn work filing). `settleEndOfTurn` is the single choke
     point that chains resolve-hand-events → recycle-hand → file-work-zone → flush, called by both
     `run/engine.ts`'s `endTurn` and this file's `projectedDelta` (the UI preview) so the two can
-    never drift the way open-coded copies once did.
+    never drift.
   - `tableau.ts` — derived stats, including the `territory` cap gating tableau size.
   - `deckBuilder.ts` — deck *construction*, in terms of the **`DeckCard`** variant (a cardId +
     the stickers a copy carries — also `RunConfig.deck`'s element shape, so it's one identity on
@@ -458,8 +459,8 @@ Keeping that boundary is what keeps game logic unit-testable without spinning up
     an "Objective" violet-banner `CardFace`) pinned as its own distinct plaque flush in the top-left
     **corner** (`.objectiveCorner`, a violet-framed nook — always exactly one card), above a separate
     scrolling **threat zone** (`.threatZone`) of its `G.threats` hazards — all `CardFace`s, reading
-    only `GameState`, never the mission (it replaced the old fixed top-left `MissionWidget`; the
-    objective card now carries the mission name + live progress, its zoom the win-condition text).
+    only `GameState`, never the mission (the objective card carries the mission name + live
+    progress, its zoom the win-condition text).
     The `.groundBackdrop` is tinted per government board via a `data-board`
     attribute matched in `Board.module.css` — a CSS-only edit per board, no component change.
 - `src/meta/` — the meta menu. `MetaMenu.tsx` is the shell: a left nav switches five screens:
@@ -627,13 +628,12 @@ entries — per-card stickers flow through `simConfig`'s widened `(string|DeckCa
 `--seed <i>` switches to a single-run **replay**: it rebuilds the exact `(cfg,pol)` seed pair the batch
 cell `i` used and drives `simulateRun` under an `onStep` observer (fired per action with the states either
 side) to print a per-turn economy/actions trace — the observer keeps the drive loop single-sourced (the
-batch passes none). A synthetic-fixture move-surface fuzz test (building/`discardCost`) is deferred until building
-content exists.
+batch passes none). A synthetic-fixture move-surface fuzz test (building/`discardCost`) is deferred to a
+later fuzz pass.
 
 ## Conventions
 
-- **React version** — on React 18; nothing external pins it (boardgame.io, the
-  original reason, was never actually a dependency), so a bump to 19 is a deliberate
+- **React version** — on React 18; nothing external pins it, so a bump to 19 is a deliberate
   choice, not a blocker. Whatever the version, keep `setState` updaters **pure** — the
   run loop relies on StrictMode's intentional dev double-invoke to catch impurity.
 - **Cards and stickers own their own logic.** A card's effect runs only through

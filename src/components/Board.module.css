@@ -409,8 +409,8 @@
 }
 
 /* The board's left strip: a fixed-width column holding the objective corner (top) above the
-   threat zone. A real, in-flow column (not a floating overlay, which used to creep in front of the
-   slot grid) so the slot grid reflows beside it instead of underneath it. Reads only GameState,
+   threat zone. A real, in-flow column (not a floating overlay) so the slot grid reflows beside it
+   instead of underneath it. Reads only GameState,
    never the mission (see Board.tsx's BoardLeftColumn); not rendered at all when neither exists. */
 .boardLeft {
   flex: 0 0 auto;
@@ -635,8 +635,8 @@
 }
 
 /* The left-column staffing pip stack: one pip per worker capacity slot, filled up to the staffed
-   count. Stretches the full box height, so a single-worker building shows one full-height pip (the
-   old toggle look) and a multi-worker building shows its slots stacked. */
+   count. Stretches the full box height, so a single-worker building shows one full-height pip
+   and a multi-worker building shows its slots stacked. */
 .staffPips {
   flex: 0 0 2.3rem;
   display: flex;
@@ -1295,7 +1295,7 @@
   opacity: 1;
 }
 
-/* --- Pile viewer (the zoom preview itself now lives in CardZoomOverlay.tsx) --- */
+/* --- Pile viewer (the zoom preview itself lives in CardZoomOverlay.tsx) --- */
 
 .pileBackdrop {
   position: fixed;

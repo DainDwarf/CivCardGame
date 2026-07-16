@@ -7,7 +7,7 @@ import type { BoardStickers } from './rules/boardStickers';
 
 // `buildRunConfig`/`reshuffleRunConfig` are pure plumbing (resolve instance ids → cardIds, shuffle):
 // they never touch `CARDS`/`BOARDS`/`MISSIONS`, so this suite runs on a *synthetic* collection + deck
-// seed rather than the (now empty, Phase 4 Step 2.5) content catalogues. The cardIds are arbitrary —
+// seed rather than the real content catalogues. The cardIds are arbitrary —
 // `buildSeedDecks`/`collectionFromCounts` don't validate against `CARDS` — and deliberately varied so
 // a shuffle produces a *different order* across seeds (a single-cardId deck would collide).
 const SEED_COUNTS: Record<string, number> = { a: 3, b: 3, c: 3, d: 3, e: 3, f: 3 };

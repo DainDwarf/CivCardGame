@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { compareCards, type CardDef } from '../content/cards';
 
-// Relocated from `content/cards.test.ts` (Step 2.2) so that file empties cleanly when the card
-// catalogue is reset (Step 2.5). `compareCards` takes `CardDef`s directly — it never looks up `CARDS`
-// — so it's tested on throwaway inline defs, not the shared fixtures: the two subtle assertions (the
-// leading-`'The '` strip and the `'Theater'` guard) need specific names the fixtures don't carry.
+// `compareCards` takes `CardDef`s directly — it never looks up `CARDS` — so it's tested on throwaway
+// inline defs, not the shared fixtures: the two subtle assertions (the leading-`'The '` strip and the
+// `'Theater'` guard) need specific names the fixtures don't carry.
 const card = (name: string, kind: CardDef['kind']): CardDef => ({ id: name, name, kind, cost: {} });
 
 describe('compareCards', () => {

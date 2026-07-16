@@ -6,9 +6,7 @@ import { objectiveProgress } from './objective';
  * first-pass the simulator will re-fit. What's load-bearing is the shape: each band's typical per-step
  * swing dominates the band below it, and bands 3 & 5 **saturate** — once a mid-term safety buffer is met
  * (band 3) or a pool is deep (band 5), that band goes flat and the next priority down leads. That is what
- * lets the greedy secure survival, then commit to the objective, and only hoard when nothing else helps —
- * instead of the old flat "reward every economy stat" shape, which was really a sandbox value function
- * (accumulation and objective progress sat as co-equal tiers).
+ * lets the greedy secure survival, then commit to the objective, and only hoard when nothing else helps.
  */
 const W = {
   /** Band 1 — a met objective ends the run; dwarfs everything below. */

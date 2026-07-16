@@ -7,8 +7,8 @@ import type { RunResult } from '../contract';
 import type { MissionDef } from '../content/missions';
 
 // `applyRunResult` and the save round-trip are pure mechanism — they never validate a cardId against
-// `CARDS` — so this suite runs on a *synthetic* collection + deck seed rather than the (now empty,
-// Phase 4 Step 2.5) `STARTING_COLLECTION`/`DEFAULT_DECKS` catalogues. The cardIds are arbitrary; the
+// `CARDS` — so this suite runs on a *synthetic* collection + deck seed rather than the real
+// `STARTING_COLLECTION`/`DEFAULT_DECKS` catalogues. The cardIds are arbitrary; the
 // `standardMission` below unlocks `granary`, granted straight onto this collection.
 const SEED_COUNTS: Record<string, number> = { farm: 2, workshop: 2, library: 1 };
 const SEED_DECKS: DeckSeed[] = [
@@ -125,7 +125,7 @@ describe('exportSave / importSave', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('rejects a pre-Step-7.2 collection shape (a bare cardId→count map) rather than loading it', () => {
+  it('rejects a malformed collection shape (a bare cardId→count map) rather than loading it', () => {
     const store = sampleStore();
     const bogus = toBase64(
       JSON.stringify({ schemaVersion: 1, store: { ...store, collection: { farm: 2 } } }),

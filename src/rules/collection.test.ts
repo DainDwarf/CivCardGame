@@ -104,7 +104,7 @@ describe('stickerableInstancesOf', () => {
     expect(stickerableInstancesOf(collection, 'farm')).toEqual([]);
   });
 });
-// Content↔content coherence (re-armed in Step 3): the starting collection must own enough copies of
+// Content↔content coherence: the starting collection must own enough copies of
 // every card in every `DEFAULT_DECKS` seed. `buildSeedDecks` *silently drops* any occurrence the
 // collection can't cover, so an under-provisioned collection yields a resolved deck shorter than its
 // seed — which would then fall below the committed `MIN_DECK_SIZE` floor a fresh player launches with.

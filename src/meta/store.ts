@@ -83,7 +83,7 @@ export function emptyStore(): PlayerStore {
  * Shape-check shared by `loadStore` (reading the live localStorage key) and `importSave`
  * (reading a pasted/uploaded save file). Returns `null` if `raw` doesn't parse as a
  * `PlayerStore` — every field is required, with no fallback for a missing/old-shaped one
- * (pre-alpha: no save migration, see docs/TODO.md). This also catches a pre-Step-7.2
+ * (pre-alpha: no save migration, see docs/TODO.md). This also catches a malformed
  * `collection` (a bare `{ cardId: count }` map, not `{ instances, nextId }`): without the
  * nested check it would pass the loose `typeof === 'object'` test and only fail much later,
  * deep inside `copiesOwned`.

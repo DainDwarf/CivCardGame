@@ -17,9 +17,8 @@ const PLACEMENT_BUILDING = {
   },
 };
 
-/** Invoke the move directly with a minimal context (it only reads `G`). Hand cards are now
- *  identity-bearing instances, so look a card up by its `cardId` (first match, like the old
- *  `indexOf`). */
+/** Invoke the move directly with a minimal context (it only reads `G`). Hand cards are
+ *  identity-bearing instances, so look a card up by its `cardId` (first match). */
 function play(G: GameState, cardId: string, discardCardIds: string[] = []) {
   const idx = G.hand.findIndex((c) => c.cardId === cardId);
   if (idx === -1) throw new Error(`play: '${cardId}' not in hand`);
@@ -200,7 +199,7 @@ describe('playCard: cards vs. buildings', () => {
     G.resources.population = 1;
     play(G, 'test_work'); // takes the one idle worker
     play(G, 'test_work_food'); // still allowed, but nothing left to staff it
-    // Instance ids are now unique across *all* zones: when test_work is played, test_work_food
+    // Instance ids are unique across *all* zones: when test_work is played, test_work_food
     // (id 2) is still in hand, so its work box allocates past it (id 3), then test_work_food's box (id 4).
     expect(G.workZone).toEqual([
       { id: 3, cardId: 'test_work', workers: 1 },
@@ -246,7 +245,7 @@ describe('playCard: per-instance card state (a self-scaling card)', () => {
   });
 });
 
-describe('playCard: card stickers in the run loop (Phase 3 Step 7.6)', () => {
+describe('playCard: card stickers in the run loop', () => {
   it("an Efficient-like sticker discounts this exact copy's cost by 1 per resource, floored at 0", () => {
     const G = blankState('test');
     // test_food costs {production: 2} raw; the sticker floors each cost key at -1, so its

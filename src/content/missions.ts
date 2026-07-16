@@ -32,8 +32,8 @@ export interface MissionDef {
   /** The mission's win condition, made into a card. Names a real `content/cards.ts` id of kind
    *  `'objective'` (pinned by a coherence test); `run/setup.ts` seeds it into `GameState.objective`
    *  and the card owns the win (the `objective` predicate) logic plus its live progress readout — so it's the
-   *  objective card, not the mission, that holds the predicate (it used to live here as
-   *  `objective`/`progress`). A mission-specific *defeat* is a threat's job (its own `defeat` hook,
+   *  objective card, not the mission, that holds the predicate. A mission-specific *defeat* is a
+   *  threat's job (its own `defeat` hook,
    *  `rules/threats.ts`'s `evaluateDefeat` into `G.pendingDefeat`). */
   objectiveCardId: string;
   /** One-liner describing the victory condition shown in the mission tooltip. */

@@ -15,7 +15,7 @@ import type { GameState } from './state';
  * `run/engine.ts`'s `checkEndIf` reads that flag — the win counterpart to a threat's own `defeat`
  * predicate feeding `G.pendingDefeat` (`rules/threats.ts`'s `evaluateDefeat`, the same
  * re-derive-at-every-flush shape). A threshold win ("30 science") is thus caught at the same flush
- * where the resource crosses, exactly where the old per-move poll caught it. A defeat a card must
+ * where the resource crosses. A defeat a card must
  * *drive* (a deadline passing, a counter escalating) lives on a threat's `defeat` hook instead;
  * core-resource collapse stays a universal check in `run/engine.ts`.
  */

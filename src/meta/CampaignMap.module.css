@@ -195,7 +195,7 @@
   color: var(--text-secondary);
 }
 
-/* --- Infinite-mission banner (Step 6.2) --- */
+/* --- Infinite-mission banner --- */
 /* flex: 0 0 auto sibling of .canvas, mirroring .header — never position: fixed (the app's
    transform:scale() wrapper breaks viewport-fixed positioning). */
 
@@ -375,7 +375,7 @@
   align-items: start;
 }
 
-/* --- Mission detail panel (Step 5.3) --- */
+/* --- Mission detail panel --- */
 
 .detailBody {
   display: grid;

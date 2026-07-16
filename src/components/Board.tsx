@@ -362,8 +362,7 @@ function boxOutputLabels(produces: Partial<Resources> | undefined, units: number
 /** A column of worker pips — one per capacity slot; filled (🧍) up to the staffed count, empty
  *  below. Click an empty pip to staff one worker, a filled pip to unstaff one; a filled pip is also
  *  the grab handle for dragging a worker out (to the tray or another box). Shared by `BuildingBox`
- *  and `WorkBox`; replaces the old single all-or-nothing staff toggle now that a building can hold
- *  several workers (Göbekli Tepe is the first). The whole column registers as the one fly-target
+ *  and `WorkBox`; a building can hold several workers (Göbekli Tepe is the first). The whole column registers as the one fly-target
  *  element per box, so `flyWorkers`' tray↔box animation is unchanged. */
 function StaffPips({
   inst,

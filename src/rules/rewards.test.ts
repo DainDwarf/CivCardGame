@@ -5,7 +5,7 @@ import type { MissionDef } from '../content/missions';
 
 // Fully synthetic: `computeRewards` grants through `grantCopies`/`isOwned` on the collection and
 // never validates against `CARDS`, so the card-id literals below are inert labels. The
-// mission↔card reward-coherence iterator moved to `content/missions.test.ts` (Step 2.4).
+// mission↔card reward-coherence iterator lives in `content/missions.test.ts`.
 
 function mission(reward: MissionDef['reward']): MissionDef {
   return {

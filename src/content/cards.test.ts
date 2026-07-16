@@ -49,7 +49,7 @@ describe('CARDS', () => {
     }
   });
 
-  // The "Raiders at the Border" (6.4) win: playing a raider event banishes it to `removed` (the only
+  // The "Raiders at the Border" win: playing a raider event banishes it to `removed` (the only
   // path a raider reaches that pile), so the objective is met exactly once RAIDER_WAVES of them sit
   // there — verified through the goal-derived `objectiveMet`, the one check that pins the win
   // end-to-end without a playthrough.

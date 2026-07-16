@@ -13,12 +13,10 @@ import {
 import { seedMissionCards, type MissionDef } from '../content/missions';
 import { installFixtures, uninstallFixtures } from './testFixtures';
 
-// Relocated from `content/missions.test.ts` (Step 2.2): the shipped-number blocks (30 science, 2
-// food/tick, round-12 deadline) are content and were dropped in 2.1-style; the *spine* they drove is
-// re-asserted here on a synthetic mission built inline over the synthetic objective/threat/event
-// fixtures. `seedMissionCards` reads no `MISSIONS` catalogue, so this survives an empty catalogue.
-// `test_threat` drains −2🌾/tick, `test_deadline` owns a `round > 5` defeat, `test_objective` wins at
-// 10🔬, `test_event` is a mission event.
+// The mission spine is asserted on a synthetic mission built inline over the synthetic
+// objective/threat/event fixtures. `seedMissionCards` reads no `MISSIONS` catalogue, so this survives
+// an empty catalogue. `test_threat` drains −2🌾/tick, `test_deadline` owns a `round > 5` defeat,
+// `test_objective` wins at 10🔬, `test_event` is a mission event.
 const mission: MissionDef = {
   id: 'test', name: 'Test Mission', lore: '', prereqs: [],
   threats: ['test_threat'],

@@ -82,7 +82,7 @@ export function applyUpkeep(G: GameState): void {
  * `endOfTurn` discard per card — unplayed events already fired their `upkeep` and left the hand back
  * in `applyUpkeep`), file the work zone, then flush everything those emitted. The single choke point
  * for this sequence, shared by the run loop's `endTurn` and the HUD's `projectedDelta` below, so they
- * can't drift the way they used to.
+ * can't drift.
  */
 export function settleEndOfTurn(G: GameState): void {
   const before = snapshot(G);

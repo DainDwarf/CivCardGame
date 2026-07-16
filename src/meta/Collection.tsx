@@ -29,12 +29,12 @@ export function Collection({
 }: {
   collection: OwnedCards;
   decks: DeckDef[];
-  /** Spendable Influence — forwarded into the detail panel's buy/attach controls (Step 9.1). */
+  /** Spendable Influence — forwarded into the detail panel's buy/attach controls. */
   influence: number;
   /** Unlocked card stickers — gates the detail panel's sticker tray (a locked sticker is hidden) and
    *  the per-tile upgrade hint. */
   unlockedStickers: Record<string, true>;
-  /** Whole-UI scale (settings) — forwarded to the detail panel for its sticker drag-clone math (Step 9.2). */
+  /** Whole-UI scale (settings) — forwarded to the detail panel for its sticker drag-clone math. */
   uiScale: number;
   onBuyTier: (cardId: string) => void;
   onAttachSticker: (instanceId: string, stickerId: string) => void;

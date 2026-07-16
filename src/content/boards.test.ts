@@ -11,7 +11,7 @@ describe('BOARDS', () => {
 
   it('no board starts with a negative resource, population, territory, or culture', () => {
     for (const board of Object.values(BOARDS)) {
-      // `resources` now holds all eight pools (core + strategic), so one loop covers them all.
+      // `resources` holds all eight pools (core + strategic), so one loop covers them all.
       for (const value of Object.values(board.resources)) {
         expect(value).toBeGreaterThanOrEqual(0);
       }
