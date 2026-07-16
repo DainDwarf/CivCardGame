@@ -114,7 +114,7 @@ export interface GameState {
   /** Draw pile. */
   deck: CardInstance[];
   /** Discard pile — the default landing spot once a card is played and resolved (or a Work card's
-   *  turn ends, or an unplayed `event` auto-resolves at end of turn). Reshuffled into the deck when it
+   *  turn ends, or an unplayed `event` auto-resolves at upkeep). Reshuffled into the deck when it
    *  runs dry. Going to `removed` instead is the exception — see `removed`. */
   discard: CardInstance[];
   /**

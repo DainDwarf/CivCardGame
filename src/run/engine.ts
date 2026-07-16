@@ -58,17 +58,18 @@ export function endTurn(state: RunState): RunState {
   if (state.G.pendingInteraction) return state;
   const G = structuredClone(state.G);
   applyUpkeep(G);
-  // Check for collapse/victory before clearing the hand so that the hand is visible for inspection.
+  // Upkeep is the round's whole resolution — production, threat drains, and any unplayed event's
+  // upkeep disaster — so the verdict here is read with all of them counted. Check before the hand
+  // recycles below, so a collapsing hand stays visible for inspection.
   const afterUpkeep = checkEndIf({ ...state, G });
   if (afterUpkeep.gameover) return afterUpkeep;
-  // Events left in hand auto-resolve (firing their upkeep) and file to discard so they recur; the
-  // rest of the hand recycles to discard, and the work zone files — see `settleEndOfTurn`.
+  // Recycle the rest of the hand to discard and file the work zone — see `settleEndOfTurn`.
   settleEndOfTurn(G);
-  // An event may have tripped collapse (a resource going negative) or the objective (e.g. its
-  // win threshold crossed), so re-check before the next turn begins.
-  const afterEvents = checkEndIf({ ...afterUpkeep, G });
-  if (afterEvents.gameover) return afterEvents;
-  return beginTurn(afterEvents);
+  // The end-of-turn discard sweep can itself trip an `on.discard` reaction (a resource drain, an
+  // objective threshold), so re-check before the next turn begins.
+  const afterSettle = checkEndIf({ ...afterUpkeep, G });
+  if (afterSettle.gameover) return afterSettle;
+  return beginTurn(afterSettle);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

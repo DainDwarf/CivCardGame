@@ -91,6 +91,18 @@ describe('applyUpkeep with a threat', () => {
   });
 });
 
+describe('applyUpkeep with an unplayed event in hand', () => {
+  it("fires an unplayed event's upkeep as part of the pass and files it to discard", () => {
+    const G = blankState('test');
+    G.resources.military = 10;
+    G.hand = instancesFromCardIds(['test_event']);
+    applyUpkeep(G);
+    expect(G.resources.military).toBe(8); // the unplayed event's -2 upkeep drain fired during upkeep
+    expect(G.discard.map((c) => c.cardId)).toEqual(['test_event']); // filed to discard so it recurs
+    expect(G.hand).toEqual([]); // left the hand during the upkeep pass, not the later recycle
+  });
+});
+
 describe('applyUpkeep production', () => {
   it('resolves staffed buildings and Work cards through their own production', () => {
     const G = blankState('test');

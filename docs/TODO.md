@@ -20,9 +20,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Next up (tomorrow, first thing)
 
-- **Move event upkeep into the upkeep phase** — an unplayed `event`'s disaster currently fires at
-  end of turn (`upkeep.ts`'s `resolveHandEvents`, after `applyUpkeep`); move it into the upkeep
-  phase proper. Update `DESIGN.md`'s turn structure to match and mark it done there. `[?]`
 - **End-of-turn warning for imminent collapse** — warn before ending a round that lands the run in a
   collapse (the projected delta already knows). `[?]`
 - **Review the codex precisely** — reread `content/codex.ts` line by line against the engine, with
@@ -208,6 +205,18 @@ First two missions, opened by gobekli:
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Move event upkeep into the upkeep phase** ✅ — an unplayed `event`'s `upkeep` disaster used to
+  fire in `settleEndOfTurn`, *after* `applyUpkeep` and after the round's win/lose verdict; it now
+  fires inside `applyUpkeep` alongside the threat drains (both are mission pressure), so the verdict
+  is read with the event counted. The load-bearing consequence (a deliberate design choice, not just
+  a relocation): leaving a hazard in hand can now deny you that turn's win, since its drain lands
+  before the objective is re-derived. Inert in current content (the only event drains 🌾, no
+  objective measures a food stockpile, and `pendingVictory` still beats collapse) — all 528 tests
+  green unchanged. `resolveHandEvents` moved from `settleEndOfTurn` to `applyUpkeep` (before the food
+  eat); DESIGN's turn structure updated to state events tick during Upkeep before the verdict; the
+  `engine.ts` `endTurn` sequence + the scattered "at end of turn" event-timing comments swept to
+  "at upkeep".
 
 - **Destroy placed card stickers** ✅ — the card half of sticker removal, mirroring the board half it
   inherited its decisions from: **no Influence refunded** (attaching is meant to be a decision with

@@ -23,13 +23,13 @@ export function discardWorkZone(G: GameState): void {
 }
 
 /**
- * Resolve any `event` cards *left unplayed* in hand at end of turn: each fires its `upkeep` effect,
+ * Resolve any `event` cards *left unplayed* in hand at upkeep: each fires its `upkeep` effect,
  * then files to the **discard** (so it reshuffles back and can recur — an unplayed event is a recurring
  * hazard). This is the involuntary path where the `upkeep` effect *actually fires*; the voluntary one is
  * `moves.playCard`, which pays the event's cost to banish it to `removed` **unresolved** (its `upkeep`
  * never fires — playing an event is preventive). Non-event cards are left in hand
- * for the caller's normal discard sweep. Partition first, then resolve, so an event's own effect
- * (e.g. a draw) can't reorder the sweep. Shared by `endTurn` and `projectedDelta`.
+ * for the end-of-turn discard sweep. Partition first, then resolve, so an event's own effect
+ * (e.g. a draw) can't reorder the sweep. Called by `applyUpkeep`.
  *
  * Per the **zone order-independence invariant** (see DESIGN.md / the CLAUDE.md convention), the
  * *committed outcome* of this batch must not depend on the hand's order — the fixed iteration is for
@@ -45,9 +45,9 @@ export function resolveHandEvents(G: GameState): void {
   }
   G.hand = kept;
   for (const c of events) {
-    // Events auto-resolve at end of turn with no player present, so their `upkeep` resolvers must be
+    // Events auto-resolve at upkeep with no player present, so their `upkeep` resolvers must be
     // non-interactive (must not set `G.pendingInteraction` — there'd be no UI to answer it). Being
-    // player-playable does not lift this: an event may still fire unplayed at end of turn, so every
+    // player-playable does not lift this: an event may still fire unplayed at upkeep, so every
     // event resolver must stay deterministic.
     resolveUpkeep({ G, self: c });
     G.discard.push(c);
@@ -58,9 +58,10 @@ export function resolveHandEvents(G: GameState): void {
 /**
  * Resolve the resource side of end-of-round upkeep: the `endTurn` broadcast fires per-round behaviour
  * on every operating (staffed) building and Work card (production) and every threat (its drain,
- * escalation included) through the bus's observer walk (`dispatchEvent` → `resolveEndTurn`), then the
- * population eats food. Single source of truth shared by the run loop's `onEnd` and the UI projection
- * below, so they never drift.
+ * escalation included) through the bus's observer walk (`dispatchEvent` → `resolveEndTurn`); then any
+ * `event` left unplayed in hand fires its `upkeep` disaster (`resolveHandEvents`) — mission pressure of
+ * the same kind as a threat drain, so it ticks in this same pass; then the population eats food. Single
+ * source of truth shared by the run loop's `endTurn` and the UI projection below, so they never drift.
  *
  * `endTurn` is dispatched *directly* here (not queued) so production runs at exactly the slot it
  * always has — before `flushEvents` synthesizes the round's net `resourceChange` — leaving the flush /
@@ -71,19 +72,20 @@ export function resolveHandEvents(G: GameState): void {
 export function applyUpkeep(G: GameState): void {
   const before = snapshot(G);
   dispatchEvent(G, { type: 'endTurn' });
+  resolveHandEvents(G);
   G.resources.food -= foodUpkeep(G);
   flushEvents(G, before);
 }
 
 /**
- * Settle the end-of-turn sequence after `applyUpkeep`: resolve any events left in hand, recycle
- * the rest of the hand to discard (emitting an `endOfTurn` discard per card), file the work zone,
- * then flush everything those emitted. The single choke point for this sequence, shared by the run
- * loop's `endTurn` and the HUD's `projectedDelta` below, so they can't drift the way they used to.
+ * Settle the end-of-turn sequence after `applyUpkeep`: recycle the hand to discard (emitting an
+ * `endOfTurn` discard per card — unplayed events already fired their `upkeep` and left the hand back
+ * in `applyUpkeep`), file the work zone, then flush everything those emitted. The single choke point
+ * for this sequence, shared by the run loop's `endTurn` and the HUD's `projectedDelta` below, so they
+ * can't drift the way they used to.
  */
 export function settleEndOfTurn(G: GameState): void {
   const before = snapshot(G);
-  resolveHandEvents(G);
   // The recycled hand files as end-of-turn discards — a distinct reason from a sacrifice, so an
   // `on.discard` handler can ignore the routine recycle.
   for (const c of G.hand) emitEvent(G, { type: 'discard', instanceId: c.id, cardId: c.cardId, reason: 'endOfTurn' });
@@ -111,9 +113,9 @@ export interface ProjectedDelta {
 export function projectNextTurn(G: GameState): GameState {
   const clone = structuredClone(G);
   applyUpkeep(clone);
-  // Events in hand auto-resolve at end of turn too, so fold their impact into the projection the
-  // consumer sees (e.g. a threat's resource drain + its collapse warning) — same sequence `endTurn`
-  // runs for real, via the shared `settleEndOfTurn`.
+  // Recycle the hand and file the work zone too, so any `on.discard` reaction to the end-of-turn
+  // sweep folds into the projection — the same sequence `endTurn` runs for real. (Unplayed events
+  // already drained inside `applyUpkeep` above, so their impact is already in the clone.)
   settleEndOfTurn(clone);
   // The next turn's refill draw fires a `reshuffle` when it empties the deck (see `deck.ts`), and a
   // reshuffle-reacting threat (Unrest's per-🧍 🪙 drain) bleeds a resource the player is about to pay.

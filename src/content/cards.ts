@@ -74,7 +74,7 @@ export interface CardDef {
    *  one-shot play field can never fire every round. */
   produces?: CardEffect;
   /** A recurring per-round effect fired *at the upkeep boundary*, flat (never per-worker-scaled like
-   *  `produces`): a `threat`'s drain, an unplayed `event`'s end-of-turn disaster, or an operating
+   *  `produces`): a `threat`'s drain, an unplayed `event`'s upkeep disaster, or an operating
    *  staffable's maintenance. Composes with `produces` and `on.endTurn` — `resolveEndTurn` runs all
    *  three (`rules/effects.ts`); a card reacting to another trigger uses `on`. */
   upkeep?: CardEffect;

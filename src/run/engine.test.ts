@@ -162,11 +162,11 @@ describe('event resolution', () => {
     let state = run();
     seedObjective(state.G, 'test_survive_obj');
     state.G.removed = instancesFromCardIds(['test_event']); // one banished, one short of the objective
-    state.G.resources.military = 1; // 1 - 2 = -1 when the unplayed event fires at end of turn
+    state.G.resources.military = 1; // 1 - 2 = -1 when the unplayed event fires at upkeep
     state.G.resources.food = 20; // keep famine out of it
     state.G.hand = instancesFromCardIds(['test_event'], 100);
-    // Ending the turn *without* playing the event lets it strike: the drain fires, Military collapses,
-    // and (since the auto-resolve files to discard, not removed) the objective stays one short.
+    // Ending the turn *without* playing the event lets it strike: the drain fires at upkeep, Military
+    // collapses, and (since the auto-resolve files to discard, not removed) the objective stays one short.
     state = endTurn(state);
     expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'revolt' });
   });

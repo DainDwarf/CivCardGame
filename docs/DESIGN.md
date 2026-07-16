@@ -116,7 +116,7 @@ see below). An *effect* can route a card there too — see the building note.
   build with it, but *can play it* once drawn. Its two fates are the mechanic:
   **play it** — pay its cost to banish it to **removed**, resolving its one-shot `effect` (if any)
   but *pre-empting* the recurring disaster (its `upkeep` never fires), so playing is *preventive*; or
-  **leave it** — at end of turn it auto-resolves its `upkeep` for free and goes to **discard**, so it
+  **leave it** — at upkeep it auto-resolves its `upkeep` for free and goes to **discard**, so it
   reshuffles back and *recurs* round after round. Doing nothing lets the disaster keep striking;
   paying to play it pre-empts it for good. (Because an event can fire unplayed with no UI present, its
   `upkeep` must be non-interactive.) → mission *pressure* you pay to end.
@@ -133,23 +133,25 @@ see below). An *effect* can route a card there too — see the building note.
   derive from (bus-driven into `G.pendingVictory`, read by the engine's `checkEndIf`). Never in a hand/pile/deck and excluded everywhere `event`/`threat`
   are (`isDeckable`). → the mission's *goal*.
 
-### Turn structure 🔧
+### Turn structure ✅
 
 A "round" = one turn:
 
 1. **Draw** — draw up to hand size.
 2. **Action** — commit buildings (pay cost) and play action/work cards.
 3. **Upkeep / Produce** — staffed tableau + Work cards generate resources; mission
-   pressure ticks; the population eats.
-4. **End** — any Event still in hand auto-resolves (firing its `upkeep`); the turn's Work
-   cards and the rest of the hand file to **discard**; advance the round.
+   pressure ticks (threat drains *and* any Event left unplayed in hand firing its `upkeep`);
+   the population eats. The round's win/lose verdict is read here, with all of that counted.
+4. **End** — the turn's Work cards and the rest of the hand file to **discard**; advance the round.
 
 Upkeep and End are the two halves of the *end-turn boundary* (`run/engine.ts`'s `endTurn`
 runs `applyUpkeep` then `settleEndOfTurn`, and only then the next `beginTurn`) — so a Work
 card played this turn is collected before the round closes, which is what the HUD's
-end-of-round projection previews. Win/lose isn't a phase: it's re-derived at *every* step
-boundary from the objective's `goals` and each threat's `defeat` (see *Card kinds*), so the
-engine only ever reads a flag.
+end-of-round projection previews. An unplayed Event is *mission pressure*, so it fires in the
+Upkeep pass alongside the threats (not in the later hand-recycle), which is why a hazard you
+leave in hand is counted in that same win/lose verdict. Win/lose isn't a phase: it's
+re-derived at *every* step boundary from the objective's `goals` and each threat's `defeat`
+(see *Card kinds*), so the engine only ever reads a flag.
 
 ### Determinism & order-independence 🔧
 
