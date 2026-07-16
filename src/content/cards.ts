@@ -119,8 +119,10 @@ export function isStaffable(card: CardDef): boolean {
   return isStructure(card) || card.kind === 'work';
 }
 
-/** Display order of card kinds — the primary key of `compareCards`; deckable kinds first. */
-const KIND_RANK: Record<CardKind, number> = {
+/** Display order of card kinds — the primary key of `compareCards`; deckable kinds first. Total over
+ *  `CardKind`, so its keys double as the enumeration of every kind: a new kind cannot type-check
+ *  without landing here. */
+export const KIND_RANK: Record<CardKind, number> = {
   building: 0,
   wonder: 1,
   work: 2,

@@ -4,6 +4,7 @@ import { cultureStep } from '../rules/culture';
 import {
   CODEX_CORE_RESOURCES,
   CODEX_STRATEGIC,
+  CODEX_CARD_KINDS,
   CODEX_GLOSSARY,
 } from '../content/codex';
 import { RESOURCE_ICON } from './CardFace';
@@ -86,27 +87,14 @@ export function Codex() {
         {subject === 'cardTypes' && (
           <section className={styles.topic}>
             <h4 className={styles.topicTitle}>Card types</h4>
+            <p className={styles.lead}>Four kinds you build decks with, and three a mission brings to the table.</p>
             <dl className={styles.defList}>
-              <div className={styles.defRow}>
-                <dt className={styles.defTerm}>Building</dt>
-                <dd className={styles.defDesc}>Pay their cost to place them in your tableau (one territory slot), where they produce every round while staffed. They stay in play for the rest of the run.</dd>
-              </div>
-              <div className={styles.defRow}>
-                <dt className={styles.defTerm}>Wonder</dt>
-                <dd className={styles.defDesc}>Unique monuments. Played and staffed exactly like a building, but a Wonder is one of a kind: you can never buy extra copies, it takes no stickers, and a deck may hold only one Wonder.</dd>
-              </div>
-              <div className={styles.defRow}>
-                <dt className={styles.defTerm}>Action</dt>
-                <dd className={styles.defDesc}>Actions. Repeatable tactics - Resolve their effect, then return to the discard pile.</dd>
-              </div>
-              <div className={styles.defRow}>
-                <dt className={styles.defTerm}>Work</dt>
-                <dd className={styles.defDesc}>Labour cards. Playing one sticks it onto the board as a staffable box. Assign workers to it just like a building; only a staffed Work card produces its output at end of round. Then it returns to the discard pile.</dd>
-              </div>
-              <div className={styles.defRow}>
-                <dt className={styles.defTerm}>Event</dt>
-                <dd className={styles.defDesc}>Disasters injected into your deck by a mission. You cannot play them. An event left in your hand at the end of the round resolves its effect on you.</dd>
-              </div>
+              {CODEX_CARD_KINDS.map((c) => (
+                <div className={styles.defRow} key={c.kind}>
+                  <dt className={styles.defTerm}>{c.name}</dt>
+                  <dd className={styles.defDesc}>{c.definition}</dd>
+                </div>
+              ))}
             </dl>
           </section>
         )}
@@ -118,7 +106,7 @@ export function Codex() {
               <p className={styles.lead}>Buildings don&rsquo;t run themselves — your people staff them.</p>
               <ul className={styles.bullets}>
                 <li>Your population is a pool of workers. Assign them to buildings to make those buildings operate; an unstaffed building produces nothing.</li>
-                <li>Each building needs a set number of workers to run. A building requiring zero workers is self-sufficient and always operates.</li>
+                <li>Each building has a worker capacity — the most it can hold. A single worker is enough to make it operate, and its output scales with every worker you add on top, up to that capacity. A building with a capacity of zero is self-sufficient and always operates.</li>
                 <li>Every unit of population eats {FOOD_PER_POP} food each round, whether working or idle — so a bigger workforce needs a bigger food supply.</li>
                 <li>Work cards stick onto the board as staffable boxes, just like buildings. Staff one to collect its output at end of round; an unstaffed Work card simply does nothing.</li>
               </ul>
@@ -128,11 +116,14 @@ export function Codex() {
               <h4 className={styles.topicTitle}>Turn structure</h4>
               <p className={styles.lead}>Each round runs through four phases.</p>
               <ol className={styles.phases}>
-                <li><span className={styles.phaseName}>Upkeep</span> — staffed buildings produce, the mission&rsquo;s pressure ticks, and your population eats its food.</li>
                 <li><span className={styles.phaseName}>Draw</span> — refill your hand up to its size (raised by your culture level).</li>
                 <li><span className={styles.phaseName}>Action</span> — play your cards and assign your workers.</li>
-                <li><span className={styles.phaseName}>End</span> — Resolve any events left in hand, check the mission&rsquo;s win and lose conditions, discard, and advance the round.</li>
+                <li><span className={styles.phaseName}>Upkeep</span> — staffed buildings and Work cards produce, the mission&rsquo;s pressure ticks, and your population eats its food.</li>
+                <li><span className={styles.phaseName}>End</span> — any events left in your hand strike, your hand and the turn&rsquo;s Work cards file to the discard, and the round advances.</li>
               </ol>
+              <p className={styles.callout}>
+                Upkeep and End both fire when you end the round, so anything you played this turn is collected before the round closes. Your mission&rsquo;s win and lose conditions are checked continuously — not only at the round&rsquo;s end.
+              </p>
             </section>
           </>
         )}

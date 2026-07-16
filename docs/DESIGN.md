@@ -137,12 +137,19 @@ see below). An *effect* can route a card there too — see the building note.
 
 A "round" = one turn:
 
-1. **Upkeep / Produce** — tableau generates resources; mission pressure ticks.
-2. **Draw** — draw up to hand size.
-3. **Action** — commit buildings (pay cost) and play action/work cards.
-4. **End** — evaluate the mission's objective (win?) and failure (lose?); any Event
-   still in hand auto-resolves; the turn's Work cards and the rest of the hand file
-   to **discard**; advance the round.
+1. **Draw** — draw up to hand size.
+2. **Action** — commit buildings (pay cost) and play action/work cards.
+3. **Upkeep / Produce** — staffed tableau + Work cards generate resources; mission
+   pressure ticks; the population eats.
+4. **End** — any Event still in hand auto-resolves (firing its `upkeep`); the turn's Work
+   cards and the rest of the hand file to **discard**; advance the round.
+
+Upkeep and End are the two halves of the *end-turn boundary* (`run/engine.ts`'s `endTurn`
+runs `applyUpkeep` then `settleEndOfTurn`, and only then the next `beginTurn`) — so a Work
+card played this turn is collected before the round closes, which is what the HUD's
+end-of-round projection previews. Win/lose isn't a phase: it's re-derived at *every* step
+boundary from the objective's `goals` and each threat's `defeat` (see *Card kinds*), so the
+engine only ever reads a flag.
 
 ### Determinism & order-independence 🔧
 
