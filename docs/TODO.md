@@ -20,9 +20,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Next up (tomorrow, first thing)
 
-- **Review each mission's lore + description** — pass over every mission's `lore`/description text for
-  quality and consistency, before the version bump.
-
 - **Prepare for the next version** — manual smoke-test, check + compact the docs, bump the version
   number, clean and compact the Claude files (`CLAUDE.md`, memory).
 
@@ -207,6 +204,14 @@ First two missions, opened by gobekli:
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Review each mission's lore + description** ✅ — rewrote every mission's `lore` from scratch in a
+  direct second-person voice (the two forked branches — Rites & Rituals / Reading the Seasons — now
+  share one rough-seasons intro, diverging only on their "priority" line). Renamed the Göbekli Tepe
+  *mission* to **The First Temple** (id `first_temple` and the wonder card it unlocks unchanged).
+  Tightened a few hints (Raiders "drive off", Ice Age / Sandbox trimmed). The rewardless **sandbox**
+  now reads as a bare **"No Reward"** column header (no Influence/unlock lines), and its objective card
+  lost its first description sentence + took a 🏖️ art/goal glyph.
 
 - **Review the codex precisely** ✅ — reworded the Codex as a player-facing gameplay reference rather
   than a DESIGN.md extract, hand-held through it page by page. Dropped engine/implementation terms

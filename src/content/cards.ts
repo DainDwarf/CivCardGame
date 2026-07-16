@@ -352,10 +352,10 @@ export const CARDS: Record<string, CardDef> = {
   //   or a core resource collapses.
   sandbox_goal: {
     id: 'sandbox_goal', name: 'Sandbox', kind: 'objective', cost: {},
-    goals: [{ icon: '👣', measure: () => 0, target: 1, met: () => false }],
+    goals: [{ icon: '🏖️', measure: () => 0, target: 1, met: () => false }],
     display: {
-      art: '👣',
-      description: 'No goal but the wander itself. Build, grow, and stay as long as you like.',
+      art: '🏖️',
+      description: 'Build, grow, and stay as long as you like.',
       dynamicText: (G) => `Round ${G.round}`,
     },
   },
@@ -368,7 +368,7 @@ export const CARDS: Record<string, CardDef> = {
     goals: [{ icon: '🧊', measure: () => 0, target: 1, met: () => false }],
     display: {
       art: '🧊',
-      description: 'No victory to reach — endure the deepening cold as long as you can.',
+      description: 'Endure the deepening cold as long as you can.',
       dynamicText: (G) => `Survived ${G.round} rounds`,
     },
   },

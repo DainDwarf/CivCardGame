@@ -305,7 +305,8 @@ export function CampaignMap({
  * blank but for its name — a deliberate sliver of information, since which card a mission grants
  * otherwise stays a surprise until it's actually cleared; see `rules/rewards.ts`). An `'infinite'`
  * mission has neither a fixed Influence amount nor an unlock — it scores rounds survived every
- * attempt — so it gets its own short "Influence" / "No Unlock" reward line instead.
+ * attempt — so it gets its own short "Influence" / "No Unlock" reward line instead, except the
+ * rewardless sandbox, which pays nothing and shows only a "No Reward" column header.
  *
  * **Launch step** — a board picker on the left, a deck picker on the right (lore/reward already
  * shown in the detail step). Nothing is pre-selected; "Start Mission" stays disabled until the
@@ -448,8 +449,10 @@ function MissionFlowPopup({
                 </div>
 
                 <div className={styles.rewardColumn}>
-                  <h3 className={styles.pickerTitle}>Reward</h3>
-                  {infinite ? (
+                  {/* The rewardless sandbox pays nothing at all — the column header itself says so, with
+                      no Influence/unlock lines beneath. */}
+                  <h3 className={styles.pickerTitle}>{mission.rewardless ? 'No Reward' : 'Reward'}</h3>
+                  {mission.rewardless ? null : infinite ? (
                     <>
                       <p className={styles.rewardInfluence}>⭐ Influence</p>
                       <span className={styles.rewardSubtitle}>No Unlock</span>

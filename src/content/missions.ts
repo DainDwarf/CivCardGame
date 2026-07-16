@@ -103,9 +103,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'first_settlement',
     name: 'The First Settlement',
     lore:
-      'The band has wandered long enough. The valley is fertile, the water clean — here, at last, is a ' +
-      'place worth staying. Gather the stores and raise the spears to defend them, and the first roofs ' +
-      'of a settled people can rise.',
+      'Today your tribe has found a very promising land, one that could sustain us for a long time to ' +
+      'come. Now we must make this place ours — and defend it from anything that would take it from us.',
     prereqs: [],
     objectiveCardId: 'first_settlement_goal',
     victoryHint: 'Stockpile 10 🔨 production and 10 ⚔️ military at once.',
@@ -125,9 +124,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'growing_numbers',
     name: 'Growing Numbers',
     lore:
-      'The stores are safe and the spears are ready — now the people need a place to live and work. A ' +
-      'Hut for shelter, a Farm for bread: raise them both and a wandering band becomes a settlement ' +
-      'that stays.',
+      'Your people have lived in this new place in peace for several seasons now. It is, at last, a ' +
+      'place you could call home. All that remains is to raise a roof over your heads, and to make ' +
+      'sure you never run out of food to eat.',
     prereqs: ['first_settlement'],
     objectiveCardId: 'growing_numbers_goal',
     victoryHint: 'Build a 🛖 Hut and a 🌱 Farm.',
@@ -141,9 +140,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'rites_rituals',
     name: 'Rites & Rituals',
     lore:
-      'A settled people needs more than bread and shelter — it needs meaning. Around the fire the ' +
-      'first rites take shape: the painted hand, the carved bone, the story told and retold until it ' +
-      'binds the band together. Let the culture of the people rise, and they will remember who they are.',
+      'The last few seasons have been rough. The harvest was poor, and your tribe fears it may not ' +
+      'last through the coming winter. The priority now is to calm your people — to remind them that, ' +
+      'whatever comes, they are all part of one community.',
     prereqs: ['growing_numbers'],
     objectiveCardId: 'rites_rituals_goal',
     victoryHint: 'Reach 🎭 culture level 1.',
@@ -157,17 +156,16 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'raiders_at_border',
     name: 'Raiders at the Border',
     lore:
-      'A settled people with full granaries does not go unnoticed. Beyond the ridgeline, hungry ' +
-      'bands have marked the easy pickings, and wave after wave will come for the stores. Spears ' +
-      'alone will not hold them: raise the warriors, meet each raid head-on, and drive the raiders ' +
-      'off for good — or watch the harvest bleed away, season after season.',
+      'Your settlement is stronger than it has ever been — and that has not gone unnoticed. Less ' +
+      'fortunate tribes around your village have grown envious, and now turn to violence to survive. ' +
+      'It is time to defend the food supplies you fought so hard to gather.',
     prereqs: ['rites_rituals'],
     // One `raider` event per wave, tied to the objective's threshold by the shared RAIDER_WAVES const
     // so the mission can't seed a different count than the win asks for. `Array.from` (not `.fill`)
     // for a clean `string[]`.
     events: Array.from({ length: RAIDER_WAVES }, () => 'raider'),
     objectiveCardId: 'raiders_at_border_goal',
-    victoryHint: `Defeat all ${RAIDER_WAVES} raider waves — pay 3 ⚔️ to play (drive off) each one.`,
+    victoryHint: `Defeat all ${RAIDER_WAVES} raider waves — pay 3 ⚔️ to drive off each one.`,
     failureHint: null,
     kind: 'standard',
     // Unlocks the Chiefdom board — the first military-leaning government, so the arc teaches board
@@ -180,10 +178,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'restless_people',
     name: 'Restless People',
     lore:
-      'A people grown large grows restless. The stores are full and the walls are strong, yet a ' +
-      'muttering runs through the settlement — too many mouths, too little meaning, and idle hands ' +
-      'that turn to grievance every time the seasons come round again. Give them rites and revelry ' +
-      'enough to bind them, or watch the coin drain away keeping the peace, season after season.',
+      'Your hard-won knowledge of the seasons carried your people through the harsh winter — but now ' +
+      'the village grows malcontent. They feel their concerns have gone unheard.',
     prereqs: ['reading_seasons'],
     threats: ['unrest'],
     objectiveCardId: 'restless_people_goal',
@@ -199,9 +195,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'reading_seasons',
     name: 'Reading the Seasons',
     lore:
-      'The seasons keep their own calendar — the flood, the frost, the return of the herds — and a ' +
-      'people who can read it eats well while others starve. Watch the sky, mark the days, and learn ' +
-      'to see the turning of the year before it arrives.',
+      'The last few seasons have been rough. The harvest was poor, and your tribe fears it may not ' +
+      'last through the coming winter. The priority now is to plan ahead — to read the turning of the ' +
+      'year and never again be caught starving.',
     prereqs: ['growing_numbers'],
     objectiveCardId: 'reading_seasons_goal',
     victoryHint: 'Stockpile 10 🔬 science.',
@@ -216,13 +212,13 @@ export const MISSIONS: Record<string, MissionDef> = {
   },
   first_temple: {
     id: 'first_temple',
-    name: 'Göbekli Tepe',
+    name: 'The First Temple',
     lore:
-      'The people have bread, walls, and warriors — everything a settlement needs to endure. What ' +
-      'they raise now they raise for no need at all: a ring of carved stones on the hilltop, hauled ' +
-      'and set by hands that could have been tilling. It feeds no one, yet the whole valley comes to ' +
-      'build it. When the last pillar stands, the Stone Age has given all it can — and a people who ' +
-      'build temples are a people no longer merely surviving.',
+      'With the population growing in number and in strength, and the land staying ever fertile and ' +
+      'welcoming, the people begin to raise the greatest communal place they have ever known. On the ' +
+      'hilltop, ring upon ring of towering carved stones takes shape — pillars hauled and set by ' +
+      'hands that could have been tilling, adorned with the beasts of the world around them. It feeds ' +
+      'no one, yet the whole valley comes to build it: the first temple.',
     prereqs: ['raiders_at_border', 'restless_people'],
     objectiveCardId: 'first_temple_goal',
     victoryHint: 'Reach 3 🧍 population and 🎭 culture level 2 while holding 30 🔨 and 30 🪙 at once.',
@@ -237,31 +233,28 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'ice_age',
     name: 'Return of the Ice Age',
     lore:
-      'The temples are raised and the granaries full — but the air has turned. Each season bites deeper ' +
-      'than the last, the herds thin, and the frost creeps down from the north and does not retreat. ' +
-      'There is no winning against a cold that only deepens: there is only holding out, one hungry winter ' +
-      'at a time, and seeing how long a people can endure before the harvest fails for good.',
+      'Food is the most basic need of every civilization. Should a future ice age come and threaten ' +
+      'our crops, how long would we manage to survive?',
     // Opened by the Stone Age capstone — the first endless *survival* mission (a scored infinite, unlike
     // the rewardless sandbox), so it earns Influence for every round the deepening winter is outlasted.
     prereqs: ['first_temple'],
     threats: ['long_winter'],
     objectiveCardId: 'ice_age_goal',
-    victoryHint: 'No victory to reach — outlast the deepening winter, earning ⭐ Influence for every round survived.',
-    failureHint: 'The Long Winter drains more 🌾 each round than the last — the run ends when the harvest can no longer feed the people.',
+    victoryHint: 'Outlast the deepening winter, earning ⭐ Influence for every round survived.',
+    failureHint: 'The Long Winter drains more 🌾 each round than the last.',
     kind: 'infinite',
   },
   sandbox: {
     id: 'sandbox',
     name: 'Sandbox',
     lore:
-      'Before cities, before harvests — only the band, the seasons, and the long walk between them. ' +
-      'No clock, no foe, no prize: a quiet place to try a deck or simply watch a civilization grow. ' +
-      'Wander as long as you like, and end the run whenever you please.',
+      'An idyllic place, where nothing ever seems to threaten or hinder your progress. But without ' +
+      'risk, there can be no glory.',
     // Gated behind the Stone Age capstone: the endless sandbox opens once the age is mastered.
     prereqs: ['first_temple'],
     objectiveCardId: 'sandbox_goal',
-    victoryHint: 'Nothing to win, nothing to earn — a no-pressure space to test decks and enjoy the build.',
-    failureHint: 'The wander never ends on its own — it lasts until a core resource collapses, or you choose to stop.',
+    victoryHint: 'A no-pressure space to test decks and enjoy the build.',
+    failureHint: 'Your civilization lasts until a core resource collapses, or you choose to stop.',
     kind: 'infinite',
     rewardless: true,
   },
