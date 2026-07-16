@@ -23,8 +23,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Review each mission's lore + description** — pass over every mission's `lore`/description text for
   quality and consistency, before the version bump.
 
-- **Board stickers cost 6 instead of 10** — lower the board-sticker price (`content/boardStickers.ts`).
-
 - **Prepare for the next version** — manual smoke-test, check + compact the docs, bump the version
   number, clean and compact the Claude files (`CLAUDE.md`, memory).
 
