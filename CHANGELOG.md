@@ -4,6 +4,45 @@ All notable changes to CivCardGame are documented here. Loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions before 1.0 track
 development phases, not stable public releases.
 
+## [0.0.4] — 2026-07-16 — Phase 4 (part 1): The Stone Age Arc
+
+Phase 4 is content and balance. This release wipes the content to a clean slate,
+builds the headless balance simulator, and ships the **entire Stone Age arc** —
+the tutorial age, a seven-mission branching campaign that introduces every core
+mechanic (buildings, territory, worker staffing, conquest, culture, events,
+threats, science/foresight, wonders) and reconverges on the age's first wonder.
+Under the hood the card/effect/resource model was refactored onto one unified
+spine. The **Bronze and Iron ages, and the tutorial onboarding layer, are still
+to come** — Phase 4 continues past this release.
+
+- **Deck-construction constraints** — a minimum deck size, a per-card copy cap, and the default hand limit lowered from 5 to 4.
+- **Full content reset + test decoupling** — every content catalogue was emptied and the whole rules/run suite rebuilt on shared synthetic fixtures, so game-logic tests no longer depend on shipped content.
+- **Paleolithic starting content** — a buildingless hunter-gatherer start: base cards, the 20-card Founding deck, the Tribe board, and a baseline endless sandbox.
+- **Headless balance simulator** — a no-browser runner over the pure core that drives the real engine under swappable policies (random fuzzer, greedy, heuristic) for statistical answers no human can play enough games to reach.
+- **Goal-directed + oracle policies** — the competent policies steer toward the objective via a sim-local progress gradient, plus a deterministic perfect-information oracle that proves a mission winnable by finding a real winning line.
+- **Simulator batch, reporting & CLI** — a seeded mission × deck × board sweep with aggregated win-rate / turns / defeat-cause reports and a single-run replay trace, driven by the `npm run sim` flag-based CLI and a `/sim` skill.
+- **Order-independent reshuffle** — unordered zones canonicalize by content before shuffling, pinned by a zone-order-invariance invariant, so the simulator can treat those zones as multisets.
+- **Ages map infrastructure** — each age covers its own contiguous slice of the mission DAG, with themed age bands and a colour wash derived from its missions' columns.
+- **The Stone Age arc (7 missions)** — a branching tutorial campaign that forks after Growing Numbers and reconverges on a wonder capstone: First Settlement, Growing Numbers, Rites & Rituals, Raiders at the Border, Reading the Seasons, Restless People, and The First Temple.
+- **Sticker-unlock reward kinds** — a mission clear can now unlock card stickers and board stickers (Growing Numbers debuts Irrigation plus the Granary/Stockpile board stickers).
+- **Board-unlock reward kind** — the fourth symmetric unlock: a mission can unlock a whole government board (Raiders unlocks the military-leaning Chiefdom), teaching board choice at launch.
+- **Board upgrades** — a mission can swap one board for a stronger one, carrying its stickers across (Tribe upgrades to Settlement on first clear).
+- **Optional unlock on a standard clear** — a standard mission may now grant Influence only, with no card/board unlock.
+- **Additional endless missions** — Return of the Ice Age (a scored survival mission) and Sandbox (an endless, rewardless space).
+- **Wonders** — a first-class card kind: a wonder plays like a building but is the age's capstone monument, with its own Collection/deck category, no bought copies, no stickers, and a per-deck cap.
+- **Per-worker staffing** — a building's worker count became a capacity: it operates at one worker and its output scales per worker, surfaced by a multi-pip staffing UI; Göbekli Tepe is the first multi-worker building.
+- **Culture levels** — the culture gauge climbs through levels that each raise hand size, with a culture-level play-gate (Rites & Rituals).
+- **Events redesigned** — mission-injected hazards that auto-resolve from hand each round draining a resource, defused for good by paying to play them (the Raider waves).
+- **Threats + reshuffle bus event** — a persistent board hazard that drains per population on every deck reshuffle, riding a new first-class reshuffle event (Restless People / Unrest).
+- **Science, peek & a look-only interaction** — the science gauge expressed as foresight: the Calendar card peeks at the top of the deck through a new view-only interaction popup, on a pure-read peek primitive.
+- **Goals-derived objectives** — a mission objective derives its win check, its player-facing readout, and its simulator gradient from one declarative goals spec.
+- **Card-model tech-debt pass** — one combined 8-resource bundle (core + strategic), a unified `CardEffect` composing declarative and closure behaviour across four timing slots, extracted `CardGate`/`CardDisplay` descriptors, fail-fast worker declarations, and the unused destroy verb removed.
+- **Run-screen glow-up** — the core resources take the banner's centre stage, the culture thermometer welded into one instrument, the population's food bill shown in the tray, the deck pile openable to view its remaining cards, and the miniboard mirrors the run banner.
+- **End-of-round collapse warning** — the End Round button warns and confirms before a round that would drive a core resource negative and end the run.
+- **Destroy stickers** — a placed card or board sticker can be destroyed to free its slot (no refund).
+- **Meta polish** — identically-stickered copies group into one ×N stack, and Clear/Load now reloads the app so no stale UI state survives.
+- **Codex + mission lore rewrite** — the rules reference reworded to read player-facing rather than as a design extract, and every mission's lore rewritten (the capstone renamed to The First Temple).
+
 ## [0.0.3] — 2026-07-09 — End of Phase 3: Economy & Progression
 
 Phase 3 builds the economy and progression layer on top of the two loops: card
