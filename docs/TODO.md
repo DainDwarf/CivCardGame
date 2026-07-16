@@ -20,6 +20,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Next up (tomorrow, first thing)
 
+- **Review each mission's lore + description** — pass over every mission's `lore`/description text for
+  quality and consistency, before the version bump.
+
+- **Board stickers cost 6 instead of 10** — lower the board-sticker price (`content/boardStickers.ts`).
+
 - **Prepare for the next version** — manual smoke-test, check + compact the docs, bump the version
   number, clean and compact the Claude files (`CLAUDE.md`, memory).
 
@@ -186,6 +191,9 @@ First two missions, opened by gobekli:
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]` `[phase: 4]`
 - **Re-polish the victory / gameover screens + flow** — revisit the end-of-run overlay and the transition back to the meta loop now that missions grant real rewards: the win/loss screen should surface what the run earned (Influence, any unlocks) and read well for both outcomes, and the hand-back-to-meta flow should feel finished rather than functional. `[?]` `[phase: 4]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
+- **Work reordering + insert-at-drop** — let the player reorder placed work cards, and have a newly-played
+  work card insert at the drop position rather than appending. `[?]`
+- **Sticker locked/unlocked visual on mission preview** — rework how a mission's sticker reward reads locked vs. unlocked (currently a generic locked chip → real face). Maybe extract a **shared sticker widget** (the `CardFace`/`BoardMini` counterpart for a single sticker) reused across the mission-detail preview and elsewhere. `[?]`
 
 ## Tech debt / architecture
 
