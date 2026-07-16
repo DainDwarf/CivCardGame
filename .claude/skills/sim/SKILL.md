@@ -58,7 +58,7 @@ entry (want one stickered + the rest plain → two entries). Unknown cardId/stic
 
 Board — the board plus its board stickers:
 ```jsonc
-{ "board": "tribe", "stickers": ["territory"] }
+{ "board": "tribe", "stickers": ["granary"] }
 ```
 
 The example files under `scripts/sim/` are the standing regression references. Decks are keyed
