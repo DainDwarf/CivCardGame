@@ -412,6 +412,18 @@ is a boolean; the sim derives its own gradient). The policies stay mission-agnos
 gradient off the objective card id in one sim-local registry, so a new mission adds an entry there,
 not a hook on the card.
 
+**The seeded oracle proves winnability, and its soundness rests on determinism, not its key.**
+Because `structuredClone(G)` already reveals the whole future draw order, the oracle (`sim/oracle.ts`)
+searches directly for a *winning line of play* rather than rolling out. Four structural bounds keep it
+tractable: it collapses each turn into one search edge, a transposition table keys an ordered `deck` (it
+*is* the future draw sequence) against every other zone as an unordered **multiset** (`sim/oracleKey.ts`,
+resting on the order-independence guarantees above), a deadline + territory cap bounds depth/branching,
+and a `scoreState` beam keeps the top-*W* states per round-depth. Every line it returns is real actions
+replayed through the real engine to an observed `victory` — so a found line is a **sound proof** of
+winnability, and a looser multiset key can only ever *miss* wins (incompleteness), never manufacture a
+false one. `searchWinningLine`/`proveWinnable` are the search APIs; `createOraclePolicy` wraps a found
+line as a scripted policy (greedy2 fallback when none is found, so oracle-wins ⊇ greedy2-wins).
+
 ## Build roadmap 🔧
 
 - **Phase 0 — Skeleton** ✅: a runnable turn-based run with a tiny card set.
