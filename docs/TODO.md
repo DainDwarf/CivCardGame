@@ -20,8 +20,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Next up (tomorrow, first thing)
 
-- **Review the codex precisely** — reread `content/codex.ts` line by line against the engine, with
-  the user hand-holding Claude through it rather than a solo pass. `[?]`
 - **Prepare for the next version** — manual smoke-test, check + compact the docs, bump the version
   number, clean and compact the Claude files (`CLAUDE.md`, memory).
 
@@ -203,6 +201,13 @@ First two missions, opened by gobekli:
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.3 (end of Phase 3)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for Phase 4 onward.
+
+- **Review the codex precisely** ✅ — reworded the Codex as a player-facing gameplay reference rather
+  than a DESIGN.md extract, hand-held through it page by page. Dropped engine/implementation terms
+  (staffable box, territory slot, "made into a card and pinned"), trimmed detail a tutorial will cover,
+  reordered core resources to match the board, moved the collapse warning to lead the Resources page,
+  and added an **Influence** page (earning + spending, stickers). Text-only — `content/codex.ts` +
+  `components/Codex.tsx`, no engine change.
 
 - **End-of-round warning for imminent collapse** ✅ — the End Round button now warns before a round
   that would drive a core resource negative (a run-ending collapse). Two beats: **passive** — when
