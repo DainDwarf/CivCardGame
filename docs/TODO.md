@@ -18,6 +18,18 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Tags (optional): `[size: S/M/L]` rough effort · `[?]` needs design discussion ·
 > `[blocked]` waiting on something else · `[phase: N]` roadmap phase (1 = run loop · 2 = contract + meta shell · 3 = economy & progression · 4 = content & balance).
 
+## Next up (tomorrow, first thing)
+
+- **Move event upkeep into the upkeep phase** — an unplayed `event`'s disaster currently fires at
+  end of turn (`upkeep.ts`'s `resolveHandEvents`, after `applyUpkeep`); move it into the upkeep
+  phase proper. Update `DESIGN.md`'s turn structure to match and mark it done there. `[?]`
+- **End-of-turn warning for imminent collapse** — warn before ending a round that lands the run in a
+  collapse (the projected delta already knows). `[?]`
+- **Review the codex precisely** — reread `content/codex.ts` line by line against the engine, with
+  the user hand-holding Claude through it rather than a solo pass. `[?]`
+- **Prepare for the next version** — manual smoke-test, check + compact the docs, bump the version
+  number, clean and compact the Claude files (`CLAUDE.md`, memory).
+
 ## Phase 4 — planned steps (content & balance)
 
 > Phase 4 is content expansion + balance tuning with the headless simulator (see
