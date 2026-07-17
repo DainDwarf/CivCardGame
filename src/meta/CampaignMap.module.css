@@ -17,13 +17,15 @@
   margin: 0 0 1rem;
 }
 
-/* The scroll canvas — the map pans horizontally inside here (never the document body: a
-   transformed ancestor makes fixed descendants scroll with the body). overflow-y is a
-   fallback so a tall tree never clips; the primary axis is horizontal. */
+/* The pan canvas — the map pans horizontally inside here (never the document body: a
+   transformed ancestor makes fixed descendants scroll with the body). `overflow-x: hidden` drops
+   the scrollbar/wheel entirely: horizontal movement is the pointer-drag only (`scrollLeft` is still
+   settable programmatically under `hidden`). overflow-y stays a fallback so a tall tree never clips. */
 .canvas {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   cursor: grab;
   border-radius: 12px;
   background: var(--surface-sunken);

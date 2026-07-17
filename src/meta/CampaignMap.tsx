@@ -25,9 +25,10 @@ const ROW_H = 150; // vertical gap between row origins
 const PAD_X = 56;
 const PAD_Y = 36;
 
-// Half-width (% of map width) of each age→age color transition in the node-area gradient wash —
-// smaller keeps each age's color solid longer with a tighter blend between them.
-const AGE_BLEND = 2;
+// Half-width (px) of each age→age color transition in the node-area gradient wash — smaller keeps
+// each age's color solid longer with a tighter blend between them. Px, not %, so the blend and its
+// boundary stay anchored to the columns even when the node area stretches past the timeline width.
+const AGE_BLEND = 32;
 
 const nodeLeft = (col: number) => PAD_X + col * COL_W;
 // `row` is a signed offset from the center axis (0 = middle, fanning ±). Positioning is symmetric
@@ -101,23 +102,26 @@ export function CampaignMap({
   const spans = ageColSpans(missions);
   // px left edge of a column on the same grid the nodes use, so bands align over their columns.
   const colX = (col: number) => PAD_X + col * COL_W;
+  // An age boundary belongs in the *gutter* between the two columns it separates, not on the later
+  // column's left edge — otherwise the band/wash edge grazes that column's nodes.
+  const ageBoundaryX = (col: number) => colX(col) - (COL_W - NODE_W) / 2;
 
   // The node area echoes the age bands' colors as a horizontal wash: each age holds its pure color
-  // solid across its slice of the width and blends into the next only over a short strip around each
-  // boundary (`AGE_BLEND` = the transition half-width, %). Boundaries sit at each slice's real column
-  // position (as a % of the timeline width), so the wash lines up under the bands. Built off the same
-  // `--map-age-*-bg` tokens the bands use, so it stays in step and a fourth age needs only its token.
-  // Empty (no missions placed) → a flat fallback tint, since there are no slices to wash.
+  // solid across its slice and blends into the next only over a short strip around each boundary
+  // (`AGE_BLEND` = the transition half-width, px). Boundaries sit at each slice's real gutter px, so
+  // the wash lines up under the bands. Stops are px (not %) so they stay pinned to the columns even
+  // when the node area stretches past `timelineWidth` on a wide viewport — the last color then just
+  // fills the extra width. Built off the same `--map-age-*-bg` tokens the bands use, so it stays in
+  // step and a fourth age needs only its token. Empty (no missions) → a flat fallback tint.
   let ageBackdrop = 'var(--map-age-bg)';
   if (spans.length > 0) {
-    const pct = (col: number) => (100 * colX(col)) / timelineWidth;
-    const stops = [`var(--map-age-${spans[0].age.id}-bg) 0%`];
+    const stops = [`var(--map-age-${spans[0].age.id}-bg) 0`];
     for (let i = 1; i < spans.length; i++) {
-      const boundary = pct(spans[i].startCol);
-      stops.push(`var(--map-age-${spans[i - 1].age.id}-bg) ${(boundary - AGE_BLEND).toFixed(2)}%`);
-      stops.push(`var(--map-age-${spans[i].age.id}-bg) ${(boundary + AGE_BLEND).toFixed(2)}%`);
+      const boundary = ageBoundaryX(spans[i].startCol);
+      stops.push(`var(--map-age-${spans[i - 1].age.id}-bg) ${(boundary - AGE_BLEND).toFixed(1)}px`);
+      stops.push(`var(--map-age-${spans[i].age.id}-bg) ${(boundary + AGE_BLEND).toFixed(1)}px`);
     }
-    stops.push(`var(--map-age-${spans[spans.length - 1].age.id}-bg) 100%`);
+    stops.push(`var(--map-age-${spans[spans.length - 1].age.id}-bg) ${timelineWidth}px`);
     ageBackdrop = `linear-gradient(to right, ${stops.join(', ')})`;
   }
 
@@ -173,20 +177,26 @@ export function CampaignMap({
           {/* One arrow band per age, positioned over its own column slice (`ageColSpans`) rather
               than an equal share — empty until the first age's missions land. */}
           <div className={styles.ageRow}>
-            {spans.map(({ age, startCol, endCol }) => (
-              <div
-                key={age.id}
-                className={styles.ageBand}
-                data-age={age.id}
-                style={{
-                  left: `${colX(startCol)}px`,
-                  // Clamp the last slice's right edge to the timeline (COL_W > NODE_W overruns it slightly).
-                  width: `${Math.min((endCol - startCol) * COL_W, timelineWidth - colX(startCol))}px`,
-                }}
-              >
-                <span className={styles.ageName}>{age.name}</span>
-              </div>
-            ))}
+            {spans.map(({ age, startCol, endCol }, i) => {
+              // Outer edges hug the timeline itself; shared edges sit in the gutter between the two
+              // ages' columns. The last slice's right edge clamps to the timeline (COL_W > NODE_W
+              // overruns it slightly).
+              const left = i === 0 ? colX(startCol) : ageBoundaryX(startCol);
+              const right =
+                i < spans.length - 1
+                  ? ageBoundaryX(endCol)
+                  : Math.min(colX(endCol), timelineWidth);
+              return (
+                <div
+                  key={age.id}
+                  className={styles.ageBand}
+                  data-age={age.id}
+                  style={{ left: `${left}px`, width: `${right - left}px` }}
+                >
+                  <span className={styles.ageName}>{age.name}</span>
+                </div>
+              );
+            })}
           </div>
 
           <div className={styles.nodeArea} style={{ minHeight: `${nodeLayerHeight}px`, background: ageBackdrop }}>
