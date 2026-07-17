@@ -25,28 +25,6 @@
    `cards.ts` is upstream of `missions.ts`, so a card can't import a const *from* the mission;
    the counter thread is the only cycle-free way to give the mission ownership.
 
-## Stone Age
-
-The opening age. Strong through-line is **surplus**: domestication → storage → the
-population and specialists that surplus allows → the culture/monuments specialists
-produce. Sequencing missions along that chain lets the age *teach* the economy.
-
-- **Granary** — storage of surplus through winter. Buffers food against upkeep / Protects against food affecting events
-  - *Storage as a deck-limit lever:* storage techs (and their missions) could raise the
-    **deck limit**.
-  - *Holdover buildings:* buildings that let you **keep cards from being discarded turn
-    to turn** (a card held over instead of recycled at end of turn) — the hand-level
-    mirror of storing surplus.
-- **Domestication** (animals) — herds as a less labor-intensive food/materials source
-  that costs territory. Livestock only here (goats/sheep/cattle — they came *with*
-  farming). 
-- **Pottery** — surplus storage and cooking; a low-cost early building.
-- **Walls** — earliest monumental fortification (Jericho); defensive mission flavor.
-
-
-> Keep copper/metallurgy and the wheel **out** of this age — both are really
-> Chalcolithic/Bronze. Good "graduated the Stone Age" unlocks to bridge to the next age.
-
 ## Bronze Age
 
 Centralized, elite-controlled, trade-dependent palace civilizations.

@@ -58,10 +58,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     trader (1🪙 building). `[?]`
 
 **Content ideas (unslotted):**
+Timeline from claude, unchecked:
+Fishing (actually stone age)
+Sailing (stone age for any floating thing, sails are more close to bronze work)
+Masonry (actually predates copper, most stone work did not use copper, too soft)
+Copperwork
+Accounting
+Wheel (needs copper precision tools to make the wheel+axle)
+Roads
+Horse taming 
+Bronze work (needs long distance tin trade)
+Writing (follows accounting)
+Swords (cannot be made with copper. Copper could have kinfes and daggers, nothing so long as a sword, which needs at least bronze)
+Chariot (*spoked* wheel for lightweight, probably needs bronze itself for precision + horse)
   - **Bronze tools** — a sticker for production buildings *and* work cards granting **+1🔨**. `[?]`
   - **Masonry** - A better house, makes 2 people?
   - **Wall** - A no-worker building with 1prod upkeep that gives 1military
-Don't forget: Mathematics (or accounting), writing, sailing (and fishing?)
+Don't forget: Mathematics (or accounting), writing, sailing (and fishing?), swords, chariot, Empire board, Pyramid of Giza!!, Ziggurat?, Hammurabi code?
 
 - **Step 8 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 7, Iron Age
   period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
