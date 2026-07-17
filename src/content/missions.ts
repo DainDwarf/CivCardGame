@@ -249,7 +249,29 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Opens the Bronze Age: unlocks the Forge, the answer to the very drain this mission inflicts.
     // Influence amount provisional (balance pending a sim sweep).
     reward: { influence: 12, unlockCardIds: ['forge'] },
-    map: { col: 5, row: 0 },
+    map: { col: 5, row: -1 },
+    age: 'bronze',
+  },
+  masonry: {
+    id: 'masonry',
+    name: 'Masonry',
+    lore:
+      'The temple drew your people together; now they mean to stay. Flint and mud give way to dressed, ' +
+      'fitted stone — walls that stand a lifetime, houses that outlast the hands that raised them. Lay ' +
+      'the courses true, and a village becomes a city.',
+    prereqs: ['first_temple'],
+    objectiveCardId: 'masonry_goal',
+    victoryHint: 'Grow your civilization to 6 🧍 population.',
+    failureHint: null,
+    kind: 'standard',
+    // Opens the Bronze government: City Walls (a standing garrison), the House (a bigger population
+    // grant), and the City board that retires the Settlement. Influence amount provisional.
+    reward: {
+      influence: 12,
+      unlockCardIds: ['city_walls', 'house'],
+      boardUpgrade: { from: 'settlement', to: 'city' },
+    },
+    map: { col: 5, row: 1 },
     age: 'bronze',
   },
   ice_age: {

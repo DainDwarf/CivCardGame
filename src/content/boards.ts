@@ -33,7 +33,8 @@ export const ORIGIN_BOARD_ID: BoardId = 'tribe';
  * retires Tribe for the settled version — see `rules/boardUpgrade.ts`). Other boards land through
  * `unlockBoardIds` rewards — `chiefdom`, the first military-leaning government, is unlocked by the
  * "Raiders at the Border" mission, where the arc teaches board choice (Chiefdom vs. the settled
- * government at launch). The `chiefdom`/`settlement` numbers are provisional.
+ * government at launch). `settlement` in turn upgrades into `city` — the Bronze Age government — on
+ * clearing the "Masonry" mission. The `chiefdom`/`settlement`/`city` numbers are provisional.
  */
 export const BOARDS: Record<BoardId, BoardDef> = {
   tribe: {
@@ -50,5 +51,10 @@ export const BOARDS: Record<BoardId, BoardDef> = {
     id: 'chiefdom',
     name: 'Chiefdom',
     resources: { food: 6, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 0, culture: 0 },
+  },
+  city: {
+    id: 'city',
+    name: 'City',
+    resources: { food: 12, production: 6, science: 0, military: 0, money: 2, population: 3, territory: 2, culture: 0 },
   },
 };

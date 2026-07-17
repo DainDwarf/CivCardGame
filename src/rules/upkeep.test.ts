@@ -20,6 +20,14 @@ const LOCAL: Record<string, CardDef> = {
     id: 'test_ondraw', name: 'Test On-Draw', kind: 'building', cost: {}, workers: 0,
     on: { draw: { resolve: (ctx) => gainResources(ctx, { science: 5 }) } },
   },
+  // Self-sufficient building carrying BOTH `produces` and `upkeep` (workers:0, always operating): each
+  // round it yields +1⚔️ and pays −1🔨. Proves the two per-round slots compose in one boundary — the
+  // shape City Walls ships as (a fixture, so a numbers tweak to that card can't break this mechanism test).
+  test_upkeep_producer: {
+    id: 'test_upkeep_producer', name: 'Test Upkeep Producer', kind: 'building', cost: { production: 4 }, workers: 0,
+    produces: { resources: { military: 1 } },
+    upkeep: { resources: { production: -1 } },
+  },
 };
 
 beforeAll(() => {
@@ -111,6 +119,14 @@ describe('applyUpkeep production', () => {
     applyUpkeep(G);
     expect(G.resources.food).toBe(2); // test_food's +2🌾; blankState has 0 population, so none eaten
     expect(G.resources.production).toBe(3); // test_work's +3🔨
+  });
+
+  it('composes a self-sufficient building\'s produces and upkeep in one boundary (+1⚔️, −1🔨)', () => {
+    const G = blankState('test');
+    G.tableau = [{ id: 1, cardId: 'test_upkeep_producer', workers: 0 }];
+    applyUpkeep(G);
+    expect(G.resources.military).toBe(1); // produces fired (workers:0 ⇒ always operating, ×1)
+    expect(G.resources.production).toBe(-1); // upkeep drained flat alongside it
   });
 });
 

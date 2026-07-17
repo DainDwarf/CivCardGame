@@ -180,6 +180,21 @@ export const CARDS: Record<string, CardDef> = {
   // Matches Toolmaking's 2🔨/worker but as a permanent building rather than a work card refiled every
   // round — deliberately obsoleting it, which is what a metallurgy unlock should feel like.
   forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { production: 4 }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
+  // House: the Hut's bigger cousin — a one-shot +2🧍 at placement (on `effect`, like Hut, so it grants
+  //   population once when built rather than every round).
+  house: {
+    id: 'house', name: 'House', kind: 'building', cost: { production: 8 }, workers: 0,
+    display: { art: '🏠', description: 'When built: +2 🧍' },
+    effect: { resources: { population: 2 } },
+  },
+  // City Walls: a standing garrison — self-sufficient (workers:0, always operating), so its per-round
+  //   +1⚔️ `produces` and its −1🔨 maintenance `upkeep` both fire and compose (`resolveEndTurn`).
+  city_walls: {
+    id: 'city_walls', name: 'City Walls', kind: 'building', cost: { production: 4 }, workers: 0,
+    display: { art: '🧱', description: '+1 ⚔️ / round\n−1 🔨 upkeep' },
+    produces: { resources: { military: 1 } },
+    upkeep: { resources: { production: -1 } },
+  },
 
   // — Wonders —
   gobekli_tepe: {
@@ -358,6 +373,13 @@ export const CARDS: Record<string, CardDef> = {
         `🔨 ${Math.min(G.resources.production, 30)}/30 · ` +
         `🪙 ${Math.min(G.resources.money, 30)}/30`,
     },
+  },
+
+  // Masonry's megalopolis goal: a single population threshold — grow the settlement into a city.
+  masonry_goal: {
+    id: 'masonry_goal', name: 'Masonry', kind: 'objective', cost: {},
+    goals: [{ icon: '🧍', measure: (G) => G.resources.population, target: 6 }],
+    display: { description: 'Reach 6 🧍 population' },
   },
 
   // A vein reaches `removed` only by being played, so counting them there counts mined veins.

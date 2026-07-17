@@ -40,7 +40,7 @@ Chariot (military)
 Masonry (walls, houses)
 Military also important: Defend your trade routes (event that sucks out money?)
 
-Empire board? Should not be too op, what's the drawback?
+City board? Should not be too op, what's the drawback?
 
 Ziggurat
 Hammurabi code

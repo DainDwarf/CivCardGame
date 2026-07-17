@@ -68,7 +68,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   more than double the 7-mission Stone Age, all remixing existing mechanics. So author it in **order**,
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see *Done / shipped*).
-  2. **Masonry** (+ optional Pyramid leaf).
+  2. **Masonry** — mechanics DONE (balance pending; see *Done / shipped*). Optional **Pyramid** leaf still to author.
   3. **Accounting → Writing** (+ optional Hammurabi leaf) — the money/literacy spine opens.
   4. **Wheel+roads (×2)** first (it carries the money identity).
   5. **Horse (×2)**, **Naval (×2)**.
@@ -81,10 +81,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   **Per-node reward proposals** (all `[?]` candidates unless marked decided):
 
   - **Copper — DONE** ✅ (shipped + balanced) — see [*Done / shipped*](#done--shipped).
-  - **Masonry** (**reward decided**) — monumental/dressed stone (walls, palaces), *not* the megalith the
-    player already built as Göbekli. Rewards a **City Walls** card + the **Empire/Capital board** (the
-    age's government — still needs a deliberate drawback per IDEAS). Optional leaf **Pyramid** wonder off
-    here (Giza was copper-tooled masonry, predates widespread bronze in Egypt).
+  - **Masonry — mechanics DONE** 🟡 (balance pending) — see [*Done / shipped*](#done--shipped). Shipped
+    the City Walls + House cards and the Settlement → City board upgrade; the City drawback (per
+    IDEAS) and the optional **Pyramid** wonder leaf (Giza was copper-tooled masonry) are still to author.
   - **Accounting** → the money spine opens. Candidate: **Trader** (1🪙 building — relocated from old 7.2).
   - **Writing** → **Library/scribe** (science + hand-size building — DESIGN's worked example). Optional
     leaf **Hammurabi's Code** off here (law/culture — a sticker or stability card, not a wonder).
@@ -98,7 +97,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     (+1🔨 for production buildings *and* work cards).
   - **Sword & chariot** → Sword (military, needs bronze) + Chariot (spoked wheel + horse + bronze).
   - **The Sea Peoples** (capstone, standard) → systems-collapse mission; reward **unlocks the infinite**
-    below (Empire board already granted at Masonry).
+    below (City board already granted at Masonry).
   - **Fall of the Bronze Age** (infinite, scored survival) → escalating money/military/production pressure
     (parallels Ice Age for Stone).
 
@@ -187,6 +186,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
+- **Unsaved-changes warning on leaving the deck editor** — if the player has made edits in `DeckEditor.tsx`
+  that aren't saved, prompt/confirm before discarding them on exit. `[?]` `[phase: 4]`
 - **Pre-Stone-Age chronology gutter** — a purely visual, unreachable band *before* the Stone Age on the
   campaign map (no missions, no nodes — decoration only), so history reads as an ever-extending timeline
   the player emerged out of rather than starting at a hard left edge. Looks only. `[?]` `[phase: 4]`
@@ -218,6 +219,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
 
+- **Step 7 — Masonry** 🟡 (mechanics shipped; **balance/target pending** sim + feel-play) — the Bronze
+  Age's second mission, a *megalopolis* goal: reach 6 🧍 population (provisional target). Forks off gobekli
+  (`prereqs: ['first_temple']`) opposite Copper — bronze col 5, symmetric fork (Copper moved to row -1,
+  Masonry row 1). No threats/events. Unlocks the **House** (building, 8🔨, +2🧍 one-shot like a bigger
+  Hut), the **City Walls** (building, 4🔨, self-sufficient: +1⚔️/round, −1🔨 upkeep — the first standing
+  military producer), and upgrades **Settlement → City** board (12🌾 6🔨 2🪙 3🧍 2🗺️; the age's
+  government, drawback still deferred per IDEAS).
+  - **Balance watch (open):** the in-mission population lever is thin — House and City are *this
+    mission's own rewards*, so while playing it the only population source is **Hut (+1, one-shot,
+    costs a territory slot)**. On Settlement (pop 2 / territory 2) or Chiefdom (pop 3 / territory 0),
+    hitting 6 leans hard on **Conquest** chains (military → territory) to open building slots for more
+    Huts while Farms compete for those same slots and 6 pop eats 6🌾/round. So 6 may be *structurally*
+    steep, not just a high number — verify winnability with a sim sweep before locking the target (or
+    consider unlocking a population producer upstream). Tune target + House/City-Walls costs + Influence
+    (all provisional) from there.
+  - **Optional Pyramid leaf** off Masonry still to author (a wonder — Giza was copper-tooled masonry).
 - **Step 7 — Copper (Finding Copper)** ✅ (shipped + balanced) — the Bronze Age's opening mission,
   opened by gobekli (`prereqs: ['first_temple']`, bronze col 5). Mine all 3 copper-vein events
   (2🔨+5🔬 each, played → `removed`) under the Failing Stone Tools threat (−1🔨 per round per worker

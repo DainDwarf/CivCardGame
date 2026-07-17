@@ -219,7 +219,8 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   `starting` flag: availability is purely membership in `PlayerStore.unlockedBoards`, read through
   `meta/boardDisplay.ts`'s `availableBoardIds` (which falls back to the origin board if the set is ever
   empty, so a player can never be locked out). `unlockBoardIds` **adds**; a `boardUpgrade` **swaps** one
-  for another. Three so far: **Tribe** (the origin), **Settlement** (Tribe's upgrade), **Chiefdom**.
+  for another. Four so far: **Tribe** (the origin), **Settlement** (Tribe's upgrade), **Chiefdom**,
+  **City** (Settlement's upgrade).
 - **`missions.ts`** — `MISSIONS`; each names an `objectiveCardId` (its win card, seeded into
   `G.objective`) plus optional `threats`/`events` card-id lists (seeded via `seedMissionCards`, the
   single injection site, called once by `run/setup.ts`) and `kind`/`prereqs`/`map`/`age`/`reward`/
