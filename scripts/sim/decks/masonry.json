@@ -1,0 +1,15 @@
+{
+  "_comment": "Hand made authored deck for testing Masonry. I won easily with this.",
+  "cards": [
+    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "bartering", "count": 2 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "jewelry", "count": 2 },
+    { "cardId": "cave_art", "count": 2 },
+    { "cardId": "hut", "count": 4 },
+    { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "conquest", "count": 4 },
+    { "cardId": "beer", "count": 1 }
+  ]
+}
