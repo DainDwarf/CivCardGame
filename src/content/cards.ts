@@ -3,6 +3,7 @@ import { bumpCounter, getCounter, type CardInstance, type GameEventType, type Ga
 import { type CardEffect, suspendChoice } from '../rules/effects';
 import type { CardGate } from '../rules/playability';
 import { peekTop } from '../rules/deck';
+import { assignedWorkers } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'event' | 'threat' | 'objective';
@@ -152,6 +153,10 @@ export const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm'];
  *  (`content/missions.ts`), the `raiders_at_border_goal` win threshold, and its progress readout. */
 export const RAIDER_WAVES = 3;
 
+/** How many copper veins "Finding Copper" seeds — shared by the mission's injected event list
+ *  (`content/missions.ts`), the `finding_copper_goal` win threshold, and its progress readout. */
+export const COPPER_VEINS = 3;
+
 /**
  * The card catalogue. Numbers are a first pass. Tests install synthetic `test_*` cards on top via
  * `rules/testFixtures.ts`.
@@ -172,6 +177,9 @@ export const CARDS: Record<string, CardDef> = {
     effect: { resources: { population: 1 } },
   },
   burial: { id: 'burial', name: 'Burial', kind: 'building', cost: { production: 2 }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '⚰️' } },
+  // Matches Toolmaking's 2🔨/worker but as a permanent building rather than a work card refiled every
+  // round — deliberately obsoleting it, which is what a metallurgy unlock should feel like.
+  forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { production: 4 }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
 
   // — Wonders —
   gobekli_tepe: {
@@ -246,6 +254,11 @@ export const CARDS: Record<string, CardDef> = {
 
   // — Events —
   raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, display: { art: '🪓' }, upkeep: { resources: { food: -1 } } },
+  // Paying the cost *is* mining the vein: the play choke point exiles a played event to `removed`, which
+  // is what `finding_copper_goal` counts, so no effect is needed. No `upkeep` either — unlike Raiders,
+  // an unmined vein is not a disaster, it just waits (filing to discard and recurring). The mission's
+  // pressure lives on its threat instead.
+  copper_vein: { id: 'copper_vein', name: 'Copper Vein', kind: 'event', cost: { production: 2, science: 5 }, display: { art: '⛏️' } },
 
   // — Objectives —
   first_settlement_goal: {
@@ -347,6 +360,23 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // A vein reaches `removed` only by being played, so counting them there counts mined veins.
+  finding_copper_goal: {
+    id: 'finding_copper_goal', name: 'Finding Copper', kind: 'objective', cost: {},
+    goals: [
+      {
+        icon: '⛏️',
+        measure: (G) => G.removed.filter((c) => c.cardId === 'copper_vein').length,
+        target: COPPER_VEINS,
+      },
+    ],
+    display: {
+      description: `Mine all ${COPPER_VEINS} copper veins`,
+      dynamicText: (G) =>
+        `⛏️ ${Math.min(G.removed.filter((c) => c.cardId === 'copper_vein').length, COPPER_VEINS)}/${COPPER_VEINS} mined`,
+    },
+  },
+
   // Sandbox is an endless no-stakes mission: the objective never wins by design (a single bespoke
   //   goal whose `met` is always false), and nothing bounds the run — it lasts until the player quits
   //   or a core resource collapses.
@@ -400,6 +430,23 @@ export const CARDS: Record<string, CardDef> = {
       resolve: ({ G, self }) => {
         subtractResources(G.resources, { food: getCounter(self, 'level') + 1 });
         bumpCounter(self, 'level');
+      },
+    },
+  },
+  // Finding Copper's squeeze: stone tools wear out under the buildings they raised, so the drain scales
+  //   with the workers staffed on the *tableau only* — work cards are exempt, taxing permanent
+  //   infrastructure rather than labour. `assignedWorkers` (not `producingUnits`) is the right read: a
+  //   self-sufficient `workers: 0` building like Hut staffs nobody and so wears nothing.
+  failing_stone_tools: {
+    id: 'failing_stone_tools', name: 'Failing Stone Tools', kind: 'threat', cost: {},
+    display: {
+      art: '💥',
+      description: '−1🔨 per worker in a building',
+      dynamicText: (G) => `−${assignedWorkers(G.tableau)}🔨 next round`,
+    },
+    upkeep: {
+      resolve: ({ G }) => {
+        subtractResources(G.resources, { production: assignedWorkers(G.tableau) });
       },
     },
   },

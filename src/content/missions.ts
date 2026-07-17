@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { RAIDER_WAVES } from './cards';
+import { COPPER_VEINS, RAIDER_WAVES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -91,7 +91,7 @@ export interface MissionDef {
 }
 
 /**
- * The mission catalogue: the opening of the Stone Age arc plus two endless missions. The endless pair
+ * The mission catalogue: the Stone Age arc, the opening of the Bronze Age, and two endless missions. The endless pair
  * both use a never-winning objective and end only on collapse, but differ in stakes: `ice_age` is a
  * *scored survival* mission — a deepening food-drain threat (`long_winter`) guarantees eventual famine,
  * and rounds survived pay out as Influence — while `sandbox` is `rewardless`, a no-stakes practice space
@@ -228,6 +228,29 @@ export const MISSIONS: Record<string, MissionDef> = {
     reward: { influence: 12, unlockCardIds: ['gobekli_tepe'] },
     map: { col: 4, row: 0 },
     age: 'stone',
+  },
+  finding_copper: {
+    id: 'finding_copper',
+    name: 'Finding Copper',
+    lore:
+      'The temple stands, and the valley is yours — but the tools that built it are failing you. Flint ' +
+      'chips, stone blunts, and every hand you put to work wears through more of it than the work gives ' +
+      'back. The elders speak of a green-streaked rock in the hills that the fire can soften and the ' +
+      'hammer can shape, and that does not shatter. Find it, and your people will never work in stone again.',
+    prereqs: ['first_temple'],
+    threats: ['failing_stone_tools'],
+    // One `copper_vein` event per vein, tied to the objective's threshold by the shared COPPER_VEINS
+    // const so the mission can't seed a different count than the win asks for.
+    events: Array.from({ length: COPPER_VEINS }, () => 'copper_vein'),
+    objectiveCardId: 'finding_copper_goal',
+    victoryHint: `Mine all ${COPPER_VEINS} copper veins — pay 2 🔨 and 5 🔬 for each.`,
+    failureHint: 'Failing stone tools drain 1 🔨 each round for every worker staffed in a building.',
+    kind: 'standard',
+    // Opens the Bronze Age: unlocks the Forge, the answer to the very drain this mission inflicts.
+    // Influence amount provisional (balance pending a sim sweep).
+    reward: { influence: 12, unlockCardIds: ['forge'] },
+    map: { col: 5, row: 0 },
+    age: 'bronze',
   },
   ice_age: {
     id: 'ice_age',

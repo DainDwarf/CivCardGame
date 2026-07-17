@@ -41,18 +41,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     resolver spine (a `resolve` closure) when a real card wants it — Bronze/Iron, where a built-up
     settlement gives tearing-down its natural context. `[?]`
 
-- **Step 7 — Bronze Age arc** (content expansion; flavor TBD) — new cards + missions themed
-  to the Bronze Age, **no new mechanics**. Continues unlocking cards/stickers through mission
-  rewards. Specific flavor/content **not yet decided** — placeholder until designed. If any
-  building here needs 2–3 workers, the `[blocked]` multi-pip staffing UI + bulk-worker-transfer
-  items (below) unblock. Balance via simulator. `[size: L]` `[?]` `[phase: 4]`
+- **Step 7 — Bronze Age arc** (content expansion) — new cards + missions themed to the Bronze
+  Age, **no new mechanics**. Continues unlocking cards/stickers through mission rewards. Balance
+  via simulator. `[size: L]` `[?]` `[phase: 4]`
 
-First two missions, opened by gobekli:
-  - An expansion mission (get X territories) HO, or expansion events, find the card that has copper? -> unlocks forge
-  - ??? mission -> unlocks the wheel (-1prod cost sticker for buidings/works), and trader (1money building)
-  
+  - **7.1 — Finding Copper — SHIPPED** ✅ (code done, **balance not yet tuned**) — the age's opening
+    mission, opened by gobekli (`prereqs: ['first_temple']`, bronze col 5). Mine all 3 copper-vein
+    events (2🔨+5🔬 each, played → `removed`) under the Failing Stone Tools threat (−1🔨 per round per
+    worker staffed *in a building*; work cards exempt). Unlocks the **Forge** (building, 4🔨, 2🔨/worker
+    — deliberately obsoletes Toolmaking).
+    **Open:** the numbers are a first pass and want a sim sweep + hand-play. Known risk: works are
+    exempt from the drain, so a works-only deck (Toolmaking + Storytelling) can fund the whole vein
+    cost while the threat never fires — the threat only bites a player who wants buildings. Decide
+    whether that's the intended trade or the drain needs to reach further.
+  - **7.2 — the second mission** — unlocks the wheel (−1🔨 cost sticker for buildings/works) and
+    trader (1🪙 building). `[?]`
+
 **Content ideas (unslotted):**
-  - **Smelting** — mission/unlock granting an early **Forge** building (produces 1🔨). An expansion mission (get X territories) -> found copper! `[?]`
   - **Bronze tools** — a sticker for production buildings *and* work cards granting **+1🔨**. `[?]`
   - **Masonry** - A better house, makes 2 people?
   - **Wall** - A no-worker building with 1prod upkeep that gives 1military
