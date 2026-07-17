@@ -28,7 +28,7 @@ npm run sim -- --scenario <ids> --deck <file> --board <file>
   examples live under `scripts/sim/decks/*.json` and `scripts/sim/boards/*.json`.
 - `--seeds` — runs per cell (default 100).
 - `--policies` — comma-separated policy names (default `random,heuristic,greedy`). Also
-  available: `greedy2` and `oracle` (slow — see below).
+  available: `greedy2`, `planner`, and `oracle` (the last two slow — see below).
 - `--format` — `text` (default, the human report) or `json` (the raw summaries, for diffing
   or post-processing).
 - `--seed <i>` — **replay mode** (see below).
@@ -94,8 +94,17 @@ that lost/won in a sweep can be re-run verbatim to see *what happened*.
   `greedy`↔`greedy2` win-rate gap measures how much *worker reassignment* is a lever (large on
   missions where surviving a long build hinges on re-staffing food boxes). It grinds long games,
   so name it explicitly when that's the question.
+- `planner` = the **fair competent** ceiling — a bounded determinized expectimax + beam that plans
+  the multi-turn *conversion chains* the one-ply greedies plateau on (bank a resource this turn to
+  afford a converter next turn, e.g. Masonry's military→territory→population). It samples the deck
+  as a multiset from its own seed (never the real order), so it does **not** cheat like the oracle.
+  Reach for it when a mission is winnable but greedy/greedy2 stall indefinitely (they idle to the
+  10k-action backstop). Opt-in and slower than the greedies but far faster than the oracle; tuned
+  for *good, not perfect* play, so it can drop an occasional winnable seed (raise its
+  determinization count to recover one — a runtime tradeoff).
 - `oracle` = a bounded perfect-information search for a *winning* line — the true ceiling /
-  winnability prover. It runs a whole search per seed, so keep the seed count small.
+  winnability prover. Unlike `planner` it reads the real shuffle, so it *proves* winnability rather
+  than playing fairly. It runs a whole search per seed, so keep the seed count small.
 
 **2. `unplayed cards` means different things per policy.** Under **random** it's authoritative:
 the card is genuinely unplayable. Under **greedy/heuristic** it means "a card `sim/value.ts`'s

@@ -1,3 +1,6 @@
+// Integration suite (`*.integration.test.ts`): both cases drive a full `simulateRun` end-to-end over a
+// real deck/board/mission, so they're slower and balance-sensitive by nature — the win-rate case moves if
+// Masonry's winnability shifts. Run in isolation with `npm run test:integration`.
 import { describe, it, expect } from 'vitest';
 import { simConfig, simulateRun } from './simulate';
 import { createPlannerPolicy } from './plannerPolicy';

@@ -4,7 +4,14 @@ import { simConfig } from './simulate';
 import { deriveEnablers, enablerPotential } from './enablers';
 import { OBJECTIVE_WEIGHT } from './value';
 import { objectiveProgress } from './objective';
+import { CARDS } from '../content/cards';
 import { emptyResources, type GameState } from '../rules';
+
+// The two conversions the Masonry deck rides on, read from content so a Hut/Conquest cost rebalance
+// re-targets these expectations instead of silently breaking on a stale literal — the assertions pin the
+// *relationship* (a resource's cap is its converter's cost), not the number.
+const HUT_PRODUCTION_COST = CARDS.hut.cost.production!;
+const CONQUEST_MILITARY_COST = CARDS.conquest.cost.military!;
 
 // A real Masonry run root (Settlement board), so the enabler model derives through the same path
 // production uses — from the mission's seeded objective and the deck's own conversions (Hut, Conquest).
@@ -31,13 +38,13 @@ function objectiveStep(resource: keyof GameState['resources']): number {
 describe('enabler potential (planner leaf accelerator)', () => {
   it('derives the deck\'s conversion chain toward the Masonry objective', () => {
     const m = deriveEnablers(masonryRoot());
-    // Masonry wins on population, grown by Huts (cost 4🔨) — production is a production→population enabler.
+    // Masonry wins on population, grown by Huts — production (a Hut's cost) is a production→population enabler.
     expect(m.weight.production ?? 0).toBeGreaterThan(0);
-    expect(m.cap.production).toBe(4);
-    // Population also rides on territory (a Hut needs a free slot), grown by Conquest (cost 5⚔️) — the
-    // override makes territory goal-valued, so military is a military→territory enabler.
+    expect(m.cap.production).toBe(HUT_PRODUCTION_COST);
+    // Population also rides on territory (a Hut needs a free slot), grown by Conquest (its military cost) —
+    // the override makes territory goal-valued, so military is a military→territory enabler.
     expect(m.weight.military ?? 0).toBeGreaterThan(0);
-    expect(m.cap.military).toBe(5);
+    expect(m.cap.military).toBe(CONQUEST_MILITARY_COST);
   });
 
   it('credits only the banking resources, not survival pools or the goal resources themselves', () => {
@@ -58,12 +65,12 @@ describe('enabler potential (planner leaf accelerator)', () => {
       return enablerPotential(G, m);
     };
     expect(pot(0, 0)).toBe(0);
-    expect(pot(3, 0)).toBeGreaterThan(pot(0, 0));
-    expect(pot(5, 0)).toBeGreaterThan(pot(3, 0));
-    expect(pot(8, 0)).toBe(pot(5, 0)); // saturates at the Conquest cost (5)
-    expect(pot(0, 2)).toBeGreaterThan(pot(0, 0));
-    expect(pot(0, 4)).toBeGreaterThan(pot(0, 2));
-    expect(pot(0, 9)).toBe(pot(0, 4)); // saturates at the Hut cost (4)
+    expect(pot(CONQUEST_MILITARY_COST - 2, 0)).toBeGreaterThan(pot(0, 0));
+    expect(pot(CONQUEST_MILITARY_COST, 0)).toBeGreaterThan(pot(CONQUEST_MILITARY_COST - 2, 0));
+    expect(pot(CONQUEST_MILITARY_COST + 3, 0)).toBe(pot(CONQUEST_MILITARY_COST, 0)); // saturates at the Conquest cost
+    expect(pot(0, HUT_PRODUCTION_COST - 2)).toBeGreaterThan(pot(0, 0));
+    expect(pot(0, HUT_PRODUCTION_COST)).toBeGreaterThan(pot(0, HUT_PRODUCTION_COST - 2));
+    expect(pot(0, HUT_PRODUCTION_COST + 5)).toBe(pot(0, HUT_PRODUCTION_COST)); // saturates at the Hut cost
   });
 
   it('keeps a full bank worth strictly less than the objective step converting it yields (sound shaping)', () => {

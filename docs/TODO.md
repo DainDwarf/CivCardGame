@@ -202,6 +202,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Tech debt / architecture
 
+- **See if the objective `OVERRIDES` can be removed** — the per-mission progress-gradient overrides in
+  `sim/objective.ts` (e.g. Masonry crediting territory) were kept as a **bring-up safety net** while the
+  planner landed. Now that `sim/enablers.ts` derives conversion slopes mechanically from card `cost`→
+  `produces`, check whether the planner still needs the overrides — retire any the enabler layer subsumes.
+  Watch the structural couplings the overrides encode (Huts need a free territory slot, so
+  territory↔population); confirm nothing regresses via the planner Masonry integration test + a sim sweep. `[size: M] [?] [phase: 4]`
+- **Audit existing tests for the integration split** — the `*.integration.test.ts` convention (end-to-end/
+  balance-sensitive suites that drive a full `simulateRun`; see CLAUDE.md → *Conventions*) so far tags only
+  `plannerPolicy`. Sweep the rest of the suite for tests that belong there too (anything driving whole runs
+  / asserting emergent balance) and rename them, so `npm run test:unit` is a genuinely fast, deterministic
+  inner loop. `[size: S] [phase: 4]`
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit

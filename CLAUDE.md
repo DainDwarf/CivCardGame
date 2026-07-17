@@ -404,6 +404,13 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   across its batch siblings, add it to `sim/zoneOrderInvariance.test.ts`'s fixture** (or the regression
   is silent). See DESIGN.md → *Determinism & order-independence* for the full framing.
 - **Tests import `{ describe, it, expect }` from `vitest` explicitly** (globals are not enabled).
+- **Integration tests are named `*.integration.test.ts`** — the exception, for end-to-end/balance-sensitive
+  suites that drive a full `simulateRun` over a real deck/board/mission (a win-rate assertion that *should*
+  move when content is rebalanced); everything else is a unit test by default. `npm test` runs both;
+  `npm run test:unit` skips the integration files (the fast inner-loop run), `npm run test:integration`
+  runs only them. A unit test may still use real content as a *fixture* (e.g. `enablers.test.ts` derives
+  off a real Masonry root) — pin the *relationship* (a cap equals its converter's `cost`), read from
+  `CARDS`, not a copied literal, so a rebalance re-targets the assertion instead of breaking it.
 - **The UI is mouse-only by design** — no keyboard-activation affordances (e.g. `role="button"` +
   Enter/Space handlers on custom interactive `div`s).
 - **The whole app renders inside a `transform: scale()` wrapper** (`App.tsx` / `App.module.css`, the
