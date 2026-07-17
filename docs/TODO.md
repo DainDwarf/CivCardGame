@@ -54,6 +54,9 @@ First two missions, opened by gobekli:
 **Content ideas (unslotted):**
   - **Smelting** — mission/unlock granting an early **Forge** building (produces 1🔨). An expansion mission (get X territories) -> found copper! `[?]`
   - **Bronze tools** — a sticker for production buildings *and* work cards granting **+1🔨**. `[?]`
+  - **Masonry** - A better house, makes 2 people?
+  - **Wall** - A no-worker building with 1prod upkeep that gives 1military
+Don't forget: Mathematics (or accounting), writing, sailing (and fishing?)
 
 - **Step 8 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 7, Iron Age
   period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
@@ -145,6 +148,10 @@ First two missions, opened by gobekli:
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
   later fuzz pass. `[size: S] [blocked]` `[phase: 4]`
+
+## Misc
+
+- Pet the doggo
 
 ---
 
