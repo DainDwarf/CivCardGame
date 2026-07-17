@@ -42,39 +42,75 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     settlement gives tearing-down its natural context. `[?]`
 
 - **Step 7 — Bronze Age arc** (content expansion) — new cards + missions themed to the Bronze
-  Age, **no new mechanics**. Continues unlocking cards/stickers through mission rewards. Balance
-  via simulator. `[size: L]` `[?]` `[phase: 4]`
+  Age, **no new mechanics**. Continues unlocking cards/stickers/boards through mission rewards.
+  Balance via simulator. `[size: L]` `[?]` `[phase: 4]`
 
-  - **7.1 — Finding Copper — SHIPPED** ✅ (code done, **balance not yet tuned**) — the age's opening
-    mission, opened by gobekli (`prereqs: ['first_temple']`, bronze col 5). Mine all 3 copper-vein
-    events (2🔨+5🔬 each, played → `removed`) under the Failing Stone Tools threat (−1🔨 per round per
-    worker staffed *in a building*; work cards exempt). Unlocks the **Forge** (building, 4🔨, 2🔨/worker
-    — deliberately obsoletes Toolmaking).
-    **Open:** the numbers are a first pass and want a sim sweep + hand-play. Known risk: works are
-    exempt from the drain, so a works-only deck (Toolmaking + Storytelling) can fund the whole vein
-    cost while the threat never fires — the threat only bites a player who wants buildings. Decide
-    whether that's the intended trade or the drain needs to reach further.
-  - **7.2 — the second mission** — unlocks the wheel (−1🔨 cost sticker for buildings/works) and
-    trader (1🪙 building). `[?]`
+  **The arc (DAG).** Göbekli Tepe is the Stone-Age anchor (where we come from), not a Bronze node:
 
-**Content ideas (unslotted):**
-Timeline from claude, unchecked:
-Fishing (actually stone age)
-Sailing (stone age for any floating thing, sails are more close to bronze work)
-Masonry (actually predates copper, most stone work did not use copper, too soft)
-Copperwork
-Accounting
-Wheel (needs copper precision tools to make the wheel+axle)
-Roads
-Horse taming 
-Bronze work (needs long distance tin trade)
-Writing (follows accounting)
-Swords (cannot be made with copper. Copper could have kinfes and daggers, nothing so long as a sword, which needs at least bronze)
-Chariot (*spoked* wheel for lightweight, probably needs bronze itself for precision + horse)
-  - **Bronze tools** — a sticker for production buildings *and* work cards granting **+1🔨**. `[?]`
-  - **Masonry** - A better house, makes 2 people?
-  - **Wall** - A no-worker building with 1prod upkeep that gives 1military
-Don't forget: Mathematics (or accounting), writing, sailing (and fishing?), swords, chariot, Empire board, Pyramid of Giza!!, Ziggurat?, Hammurabi code?
+  ```
+                   ┌─→ Copper ──┐                        ┌─→ Wheel+roads (×2) ─┐
+  Göbekli Tepe ────┤            ├─→ Accounting ─→ Writing ┼─→ Horse (×2) ───────┼─→ Bronze ─→ Sword & chariot ─→ The Sea Peoples
+   (Stone anchor)  └─→ Masonry ─┘                    │    └─→ Naval (×2) ───────┘                                   (capstone)
+                        │                            │                                                                   │
+                   (leaf) Pyramid            (leaf) Hammurabi's Code                                  unlocks infinite → Fall of the Bronze Age
+  ```
+
+  **Decided structure** (with the user):
+  - The three middle branches (**Wheel+roads / Horse / Naval**) are **2 missions each**; Copper and
+    Masonry stay **single** missions.
+  - **Writing** is a node after Accounting (it's the age's defining tech; historically follows accounting).
+  - **Pyramid** and **Hammurabi's Code** are **optional leaves** — off Masonry and Writing respectively.
+  - The capstone is a **standard** collapse mission (*The Sea Peoples*) that **unlocks a matching
+    infinite** survival mission (*Fall of the Bronze Age*, named apart so the two don't both read as
+    "the collapse"). Bridges to the Iron Age ("societies emerge *after* a collapse").
+
+  **Scale — stated plainly, not trimmed:** ≈13 critical nodes + 2 leaves + 1 infinite ≈ **16 missions**,
+  more than double the 7-mission Stone Age, all remixing existing mechanics. So author it in **order**,
+  not as one push (each still balance-swept):
+  1. **Copper** — DONE (see *Done / shipped*).
+  2. **Masonry** (+ optional Pyramid leaf).
+  3. **Accounting → Writing** (+ optional Hammurabi leaf) — the money/literacy spine opens.
+  4. **Wheel+roads (×2)** first (it carries the money identity).
+  5. **Horse (×2)**, **Naval (×2)**.
+  6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
+
+  **Mechanical identity `[?]`:** IDEAS frames the age as "trade-dependent palace civilizations" → the
+  throughline is the **money economy** (underused in the Stone Age). Trade branches produce 🪙; Bronze
+  consumes 🪙 (tin trade) for superior 🔨/⚔️.
+
+  **Per-node reward proposals** (all `[?]` candidates unless marked decided):
+
+  - **Copper — DONE** ✅ (shipped + balanced) — see [*Done / shipped*](#done--shipped).
+  - **Masonry** (**reward decided**) — monumental/dressed stone (walls, palaces), *not* the megalith the
+    player already built as Göbekli. Rewards a **City Walls** card + the **Empire/Capital board** (the
+    age's government — still needs a deliberate drawback per IDEAS). Optional leaf **Pyramid** wonder off
+    here (Giza was copper-tooled masonry, predates widespread bronze in Egypt).
+  - **Accounting** → the money spine opens. Candidate: **Trader** (1🪙 building — relocated from old 7.2).
+  - **Writing** → **Library/scribe** (science + hand-size building — DESIGN's worked example). Optional
+    leaf **Hammurabi's Code** off here (law/culture — a sticker or stability card, not a wonder).
+  - **Wheel+roads (×2)** → **Wheel** −1🔨 cost sticker for buildings/works (relocated from old 7.2), then
+    a land-trade money work (caravan/roads).
+  - **Horse (×2)** → draft/traction (cost/production) then a military-feeder war-horse. Keep mounted
+    cavalry *out* — that's Iron Age.
+  - **Naval (×2)** → a sea-trade money work (sailing ship), then the **tin route** (long-distance trade
+    that enables Bronze). IDEAS' "defend your trade routes" money-drain event/threat fits here.
+  - **Bronze** (convergence) → **Bronzeworking** building (consumes 🪙 → 🔨) + **Bronze tools** sticker
+    (+1🔨 for production buildings *and* work cards).
+  - **Sword & chariot** → Sword (military, needs bronze) + Chariot (spoked wheel + horse + bronze).
+  - **The Sea Peoples** (capstone, standard) → systems-collapse mission; reward **unlocks the infinite**
+    below (Empire board already granted at Masonry).
+  - **Fall of the Bronze Age** (infinite, scored survival) → escalating money/military/production pressure
+    (parallels Ice Age for Stone).
+
+  **Framing notes to honour when authoring:**
+  - The two **convergences** (Accounting, Bronze) are ludic tree-narrowing, *not* historical dependencies —
+    each wants a lore line so the gate feels earned (metal + monumental economies create the surplus
+    Accounting tracks; the trade branches create the tin routes Bronze needs).
+  - **Superseded:** the old 7.2 plan (Wheel + Trader at mission #2) is dropped — Wheel moves to the
+    Wheel+roads branch, Trader to Accounting.
+  - Not-this-age (belong to the Stone Age, already covered or noted): **fishing** and basic **boats**
+    (Stone-Age floating things — sails are the Bronze part); **Ziggurat** (if ever wanted, a mudbrick
+    temple-economy wonder off Writing/Accounting, not Masonry).
 
 - **Step 8 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 7, Iron Age
   period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
@@ -151,6 +187,9 @@ Don't forget: Mathematics (or accounting), writing, sailing (and fishing?), swor
 
 ## UI (`src/components/`)
 
+- **Pre-Stone-Age chronology gutter** — a purely visual, unreachable band *before* the Stone Age on the
+  campaign map (no missions, no nodes — decoration only), so history reads as an ever-extending timeline
+  the player emerged out of rather than starting at a hard left edge. Looks only. `[?]` `[phase: 4]`
 - **Per-pip worker drag** — independent per-pip *drag* (drag a specific pip to another box); box-level
   worker drag still moves one worker at a time. Deferred follow-up from the shipped multi-pip staffing UI. `[?]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]` `[phase: 4]`
@@ -178,3 +217,10 @@ Don't forget: Mathematics (or accounting), writing, sailing (and fishing?), swor
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
+
+- **Step 7 — Copper (Finding Copper)** ✅ (shipped + balanced) — the Bronze Age's opening mission,
+  opened by gobekli (`prereqs: ['first_temple']`, bronze col 5). Mine all 3 copper-vein events
+  (2🔨+5🔬 each, played → `removed`) under the Failing Stone Tools threat (−1🔨 per round per worker
+  staffed *in a building*; work cards exempt). Unlocks the **Forge** (building, 4🔨, 2🔨/worker —
+  deliberately obsoletes Toolmaking). Balance confirmed by simulation + hand-play — the works-are-exempt
+  trade (a works-only deck can dodge the drain) is intended, not a leak.
