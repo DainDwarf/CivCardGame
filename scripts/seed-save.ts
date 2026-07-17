@@ -26,7 +26,7 @@ import { writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { emptyStore, applyRunResult, exportSave, type PlayerStore } from '../src/meta/store';
 import { MISSIONS, type MissionDef } from '../src/content/missions';
-import { isAvailable } from '../src/rules/campaign';
+import { foldOrder, prereqClosure } from '../src/rules/campaign';
 import { CORE_KEYS, STRATEGIC_KEYS, emptyResources, randInt, seededRng } from '../src/rules';
 import type { RunResult } from '../src/contract';
 
@@ -50,43 +50,6 @@ function defaultTargets(): string[] {
   return Object.values(MISSIONS)
     .filter((m) => !(m.kind === 'infinite' && m.rewardless))
     .map((m) => m.id);
-}
-
-/** Every mission that must be played to reach `targetIds`: their transitive prereqs plus themselves,
- *  walked backward through the DAG. */
-function closureOf(targetIds: string[]): Set<string> {
-  const closure = new Set<string>();
-  const visit = (id: string) => {
-    if (closure.has(id)) return;
-    closure.add(id);
-    const mission = MISSIONS[id];
-    if (!mission) fail(`mission '${id}' is named as a prereq but doesn't exist — check content/missions.ts.`);
-    mission.prereqs.forEach(visit);
-  };
-  targetIds.forEach(visit);
-  return closure;
-}
-
-/**
- * `closure` ordered so every mission's prereqs are folded before it. Order is load-bearing:
- * `applyRunResult` doesn't validate prereqs, so folding out of order would pay first-clear rewards
- * for a mission the player couldn't have reached yet and mis-sequence the board upgrade. Tracks its
- * own cleared set rather than reading the store's `mapProgress` — an infinite mission never marks
- * progress there, so it could never satisfy a dependent. Scans in catalogue order, so ties between
- * two ready branches resolve deterministically.
- */
-function foldOrder(closure: Set<string>): MissionDef[] {
-  const pending = Object.values(MISSIONS).filter((m) => closure.has(m.id));
-  const cleared: Record<string, true> = {};
-  const order: MissionDef[] = [];
-  while (pending.length > 0) {
-    const i = pending.findIndex((m) => isAvailable(m, cleared));
-    if (i === -1) fail(`prereqs among [${pending.map((m) => m.id).join(', ')}] can never be satisfied — check content/missions.ts for a cycle.`);
-    const [next] = pending.splice(i, 1);
-    cleared[next.id] = true;
-    order.push(next);
-  }
-  return order;
 }
 
 /**
@@ -137,7 +100,13 @@ if (influence !== undefined && (!Number.isInteger(influence) || influence < 0)) 
 
 const outPath = values.out ?? 'seed.civsave';
 const rng = seededRng(values.seed ?? 'seed-save');
-const missions = foldOrder(closureOf(values.upto !== undefined ? [values.upto] : defaultTargets()));
+// The lifted DAG helpers throw on a bad prereq/cycle; surface that as the same clean one-liner.
+let missions: MissionDef[];
+try {
+  missions = foldOrder(MISSIONS, prereqClosure(MISSIONS, values.upto !== undefined ? [values.upto] : defaultTargets()));
+} catch (e) {
+  fail((e as Error).message);
+}
 
 let store: PlayerStore = emptyStore();
 for (const mission of missions) store = applyRunResult(store, runResult(mission, rng), mission);

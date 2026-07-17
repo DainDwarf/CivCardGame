@@ -62,6 +62,13 @@ surprise, so nothing shows a locked placeholder or a total count.
   (live from `content/missions.ts`), `--deck`/`--board` point at JSON files (examples under
   `scripts/sim/`), with `--seeds`/`--policies`/`--format` (text|json). `--seed <i>` switches to a
   single-run per-turn replay trace. See *Balance tooling*.
+- `npm run economy` — economy tool (`scripts/economy.ts` via `tsx`): pure computation over content (no
+  simulation). Prints the **faucet ledger** (guaranteed Influence granted per standard mission + the
+  cumulative amount arriving at each, via `campaign.ts`'s `cumulativeInfluenceInto`) and the **price
+  list** (copy tiers from `shop.ts`, card/board stickers), in raw Influence. `--format text|json`. The
+  *income* half of a planned meta-progression economy explorer (`docs/ECONOMY-EXPLORER.md`); the
+  *demand* half (what a mission forces you to buy) and a grind-normalized yardstick both need the
+  simulator and would be later phases.
 
 ## Architecture
 
@@ -180,6 +187,9 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   rather than a run of transposable positional args. Append-only; a `boardUpgrade` is a *replacement*,
   handled separately (`boardUpgrade.ts`).
 - **`campaign.ts`** — the prereq-gated mission DAG: availability derived from each mission's `prereqs`.
+  Also the DAG-walk primitives shared by the dev scripts — `prereqClosure` (a target's transitive
+  prereqs), `foldOrder` (topological sort so prereqs fold first), and `cumulativeInfluenceInto` (the
+  guaranteed Influence arriving at a mission); `seed-save.ts` and `economy.ts` both consume these.
 - **`upgrades.ts`** — the **available-upgrade hints**: per-tile `cardUpgradeAvailable`/
   `boardUpgradeAvailable` + nav-badge roll-ups `anyCardUpgradeAvailable`/`anyBoardUpgradeAvailable`,
   each **on ⟺ some real purchase would succeed right now**. They compose the authoritative buy-reject
