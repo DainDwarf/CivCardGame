@@ -1,9 +1,9 @@
 import type { RunConfig } from '../contract';
 import { createRun, endTurn, type RunState } from '../run/engine';
-import { enumerateActions } from './actions';
 import { createGreedy2Policy } from './greedy2Policy';
 import { keyOf } from './oracleKey';
-import { applyAction, type Policy, type SimAction } from './simulate';
+import { type Policy, type SimAction } from './simulate';
+import { expandTurn, reconstruct, type Budget, type SearchNode } from './turnSearch';
 import { scoreState } from './value';
 
 /**
@@ -53,24 +53,6 @@ const DEFAULTS: Required<OracleOptions> = {
   nodeBudget: 3_000_000,
 };
 
-/** A node in the search graph: a run state plus a back-pointer to how it was reached, so a winning
- *  line is recovered by walking parents (kept alive by the winning node's chain even after the beam
- *  prunes them). `h` caches the heuristic so it isn't recomputed during sorting. */
-interface SearchNode {
-  state: RunState;
-  parent: SearchNode | null;
-  /** The action that led from `parent` to this node; `null` only for the root. */
-  action: SimAction | null;
-  key: string;
-  h: number;
-}
-
-/** Mutable search budget, threaded through the within-turn expansion so a global step cap is enforced. */
-interface Budget {
-  steps: number;
-  cap: number;
-}
-
 /**
  * Search for a winning line from `root` (a fresh `RunState`, e.g. from `createRun`). Returns the action
  * sequence that reaches `victory`, or `null` if none is found within the bounds.
@@ -95,7 +77,7 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
   for (let depth = 0; depth < opts.maxRounds; depth++) {
     const successors: SearchNode[] = [];
     for (const node of beam) {
-      const { win, configs } = expandTurn(node, opts, budget);
+      const { win, configs } = expandTurn(node, opts.turnConfigLimit, budget, scoreState);
       if (win) return reconstruct(win);
       for (const cfg of configs) {
         const advanced = endTurn(cfg.state);
@@ -128,68 +110,6 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
     beam = successors.length > opts.beamWidth ? successors.slice(0, opts.beamWidth) : successors;
   }
   return null;
-}
-
-/**
- * The within-turn sub-search from a turn-start `node`: a bounded best-first exploration over the
- * non-`endTurn` actions, collecting the distinct reachable pre-`endTurn` configurations (including the
- * node itself — "play nothing this turn", which many wins need: wait N rounds for production to cross a
- * threshold). Returns early with `win` if any action reaches `victory` mid-turn (a play that crosses the
- * objective threshold). Dedups locally by transposition key; capped by `turnConfigLimit` and the shared
- * step budget. Explored best-first by `scoreState` so the promising branches are kept when the cap bites.
- */
-function expandTurn(
-  node: SearchNode,
-  opts: Required<OracleOptions>,
-  budget: Budget,
-): { win: SearchNode | null; configs: SearchNode[] } {
-  const localSeen = new Set<string>([node.key]);
-  const configs: SearchNode[] = [node];
-  const frontier: SearchNode[] = [node];
-
-  while (frontier.length > 0 && configs.length < opts.turnConfigLimit) {
-    if (budget.steps >= budget.cap) break;
-    const cur = popBest(frontier);
-    for (const action of enumerateActions(cur.state.G)) {
-      if (action.kind === 'endTurn') continue;
-      budget.steps += 1;
-      const next = applyAction(cur.state, action);
-      if (next === cur.state) continue; // engine rejected it (shouldn't happen for an enumerated action)
-      const child: SearchNode = { state: next, parent: cur, action, key: '', h: 0 };
-      if (next.gameover) {
-        if (next.gameover.outcome === 'victory') return { win: child, configs };
-        continue; // a mid-turn defeat (e.g. a sacrifice tipping a resource negative) — dead branch
-      }
-      const k = keyOf(next.G);
-      if (localSeen.has(k)) continue;
-      localSeen.add(k);
-      child.key = k;
-      child.h = scoreState(next.G);
-      configs.push(child);
-      frontier.push(child);
-    }
-  }
-  return { win: null, configs };
-}
-
-/** Remove and return the highest-`h` node from `frontier` (a linear scan — `frontier` is bounded by
- *  `turnConfigLimit`, so a heap would be over-engineering). */
-function popBest(frontier: SearchNode[]): SearchNode {
-  let bestIdx = 0;
-  for (let i = 1; i < frontier.length; i++) if (frontier[i].h > frontier[bestIdx].h) bestIdx = i;
-  const [best] = frontier.splice(bestIdx, 1);
-  return best;
-}
-
-/** Recover the action sequence from the root to `node` by walking parent back-pointers. */
-function reconstruct(node: SearchNode): SimAction[] {
-  const out: SimAction[] = [];
-  let n: SearchNode | null = node;
-  while (n && n.action) {
-    out.push(n.action);
-    n = n.parent;
-  }
-  return out.reverse();
 }
 
 /** An oracle move-policy, plus a `foundLine` flag the caller can read *after* the run to tell a

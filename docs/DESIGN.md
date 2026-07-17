@@ -424,6 +424,21 @@ winnability, and a looser multiset key can only ever *miss* wins (incompleteness
 false one. `searchWinningLine`/`proveWinnable` are the search APIs; `createOraclePolicy` wraps a found
 line as a scripted policy (greedy2 fallback when none is found, so oracle-wins ⊇ greedy2-wins).
 
+**The `planner` is the fair competent policy — the oracle's search made honest and shallow.** The
+one-ply greedies plateau on a mission whose win needs a multi-turn *conversion chain* (bank a resource
+now to afford a play that only pays off later — Masonry is the trigger case), because an intermediate
+banking turn doesn't raise the one-ply heuristic. The `planner` (`sim/plannerPolicy.ts`) searches a few
+turns ahead to see past that, but must not cheat the way the oracle does: it may know only what the
+player knows — the current hand, and the deck as an unordered **multiset**, never the real shuffle. So it
+plays *determinized expectimax* — sample fair worlds (`sim/determinize.ts` reshuffles the hidden deck
+from the policy's own seed stream), search each as the oracle does (reusing the within-turn skeleton
+`sim/turnSearch.ts` and the multiset key), and **average** across worlds (Perfect-Information Monte
+Carlo), re-planning per turn. What keeps the horizon shallow enough to stay cheap is the **enabler
+potential** (`sim/enablers.ts`): a leaf-value term, derived mechanically from card `cost`→`produces`
+data (no per-mission table), that credits a banked resource for the objective progress it *converts
+into* — turning the greedies' flat plateau into a climbable slope. It is tuned for *good*, not perfect,
+play: an occasional winnable seed is lost to sampling optimism, recoverable by raising the world count.
+
 ## Build roadmap 🔧
 
 - **Phase 0 — Skeleton** ✅: a runnable turn-based run with a tiny card set.

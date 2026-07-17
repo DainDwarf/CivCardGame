@@ -340,12 +340,24 @@ answers no human can play enough games to reach. It re-implements **no** game lo
 - **Policies** — `randomPolicy` (random legal move), `greedyPolicy` (a two-phase one-ply optimizer over
   `value.ts`'s survival-first `scoreState`, splitting off the `endTurn` decision), `heuristicPolicy` (a
   cheaper hand-written priority ladder), `greedy2Policy` (greedy + a bounded 2-ply staffing lookahead —
-  the `greedy`↔`greedy2` win-rate gap measures how much worker reassignment is a skill lever), and the
-  **`oracle`** (`oracle.ts` + `oracleKey.ts`) — a bounded, deterministic **graph search** that *proves
-  winnability* by finding a real winning line. The competent policies are **goal-directed** via
-  `sim/objective.ts`'s `objectiveProgress` (a sim-local `[0,1]` gradient the run engine doesn't
-  expose), kept strictly in `sim/` — never a hook on a card/mission. See DESIGN.md → *Code architecture*
-  for the `sim/`-is-a-consumer rule and the oracle's soundness/completeness argument.
+  the `greedy`↔`greedy2` win-rate gap measures how much worker reassignment is a skill lever), the
+  **`planner`** (`plannerPolicy.ts`) — the **fair competent** policy, a bounded determinized
+  expectimax + beam that clears the multi-turn conversion chains the one-ply greedies *plateau* on (e.g.
+  Masonry), and the **`oracle`** (`oracle.ts` + `oracleKey.ts`) — a bounded, deterministic **graph
+  search** that *proves winnability* by finding a real winning line. The competent policies are
+  **goal-directed** via `sim/objective.ts`'s `objectiveProgress` (a sim-local `[0,1]` gradient the run
+  engine doesn't expose), kept strictly in `sim/` — never a hook on a card/mission. See DESIGN.md →
+  *Code architecture* for the `sim/`-is-a-consumer rule and the oracle's soundness/completeness argument.
+- **`planner` internals** — the honest middle between the greedies (too shallow to plan a setup chain)
+  and the oracle (cheats by reading the real shuffle off `structuredClone(G)`). `determinize.ts` samples
+  **fair** worlds — the deck as an unordered multiset (never the real order; v1 shuffles the whole deck,
+  as `revealCount` isn't yet a reliable known-prefix length), from the policy's own seed stream — and the
+  planner averages a shallow beam over them (Perfect-Information Monte Carlo), re-planning per turn.
+  `enablers.ts` is the leaf accelerator that keeps the beam shallow: `enablerPotential`, derived
+  **mechanically from card `cost`→`produces`/`effect`** (reusable by the ECONOMY-EXPLORER demand phase),
+  credits a banked resource for the objective progress it *converts into*, turning the greedies' flat
+  plateau into a slope. `turnSearch.ts` is the within-turn search skeleton (`expandTurn`) the planner
+  and oracle share, parameterized by the ranking heuristic.
 - **Batch + reporting** — `runBatch(scenarios, { seeds })` (`batch.ts`) sweeps a flat `Scenario[]` ×N
   seeds (two deterministic streams per run — `…-cfg-i` shuffle, `…-pol-i` moves — so a batch is
   reproducible); `summarize`/`formatReport` (`report.ts`) fold the `SimOutcome`s (including a per-run

@@ -40,6 +40,11 @@ const W = {
   accumulateCap: 50,
 };
 
+/** The band-4 objective weight, exported so the planner's enabler shaping (`sim/enablers.ts`) scales its
+ *  potential into the same units this scorer credits the objective in — one source, no cross-module
+ *  magic-number drift. */
+export const OBJECTIVE_WEIGHT = W.objective;
+
 /**
  * Net per-turn change from the run's **permanent** economy only — tableau production, threat drains,
  * building maintenance, and population food — with the *transient* contributors dropped: the work zone (a

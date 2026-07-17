@@ -1,0 +1,190 @@
+import { keyOf } from './oracleKey';
+import { endTurn, type RunState } from '../run/engine';
+import { applyAction, type Policy, type SimAction } from './simulate';
+import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
+import { scoreState } from './value';
+import { deriveEnablers, enablerPotential, type EnablerModel } from './enablers';
+import { determinize } from './determinize';
+import { seededRng, type GameState } from '../rules';
+
+/**
+ * A **fair, competent planner** — the honest middle between the one-ply greedies (too shallow to plan the
+ * multi-turn conversion chains the game is built on) and the oracle (perfect-information: it reads the real
+ * shuffle off `structuredClone(G)`, and pays a per-seed winnability-proof cost). Where the greedies stall
+ * on a mission like Masonry — sitting at a survival equilibrium because banking military/production toward
+ * a future Conquest/Hut never raises the one-ply heuristic — this policy searches a few turns ahead and
+ * commits the best line.
+ *
+ * **Bounded determinized expectimax + beam.** The only hidden information is the *draw order*; randomness
+ * resolves only at the turn boundary. So each re-plan samples `determinizations` fair worlds
+ * (`determinize` — sampled deck, real hand), evaluates every candidate line in each, and **averages** the
+ * value across worlds (Perfect-Information Monte Carlo). Within a world the game is deterministic, so each
+ * world is a plain shallow beam over the shared turn-search skeleton (`sim/turnSearch.ts`), with leaves
+ * scored by `scoreState` **plus the enabler potential** (`sim/enablers.ts`) — the shaping that lets the
+ * horizon stay shallow (and thus cheap). Reuses the engine seams verbatim; lives strictly in `sim/`.
+ *
+ * **Online, per information-reveal.** Unlike the oracle it doesn't plan once — sampled worlds differ from
+ * the real future, so it re-plans whenever new information lands. It commits a turn's line into a buffer
+ * and dispenses one action per call, but only **up to the next reveal**: the turn's `endTurn` (a real draw
+ * follows) or any action that parks a `pendingInteraction` (a real peek). After either, the buffer empties
+ * and the next call re-plans on the now-real state. For a deck with no in-turn draw/peek cards this is
+ * simply "plan a turn, play it out, re-plan next turn."
+ *
+ * A **candidate turn line** is enumerated on the *real* state (within-turn plays don't touch the deck for
+ * the current card set, so the set of lines is world-independent) and evaluated in each sampled world by
+ * replaying it (deck-independent) then looking ahead — common random numbers across lines, so the argmax
+ * is low-variance.
+ */
+
+export interface PlannerOptions {
+  /** Turns of look-ahead past the current one. Deeper sees longer chains, at more cost. */
+  depth?: number;
+  /** States kept per look-ahead round in a world's beam. */
+  beamWidth?: number;
+  /** Distinct pre-`endTurn` lines explored within a turn (bounds the within-turn sub-search). */
+  turnConfigLimit?: number;
+  /** Fair worlds sampled per re-plan and averaged over (the PIMC sample count). */
+  determinizations?: number;
+  /** Engine-step backstop per re-plan — aborts the search reporting its best-so-far if exceeded. */
+  nodeBudget?: number;
+  /** Fold the enabler potential into the leaf value (the shaping that steers the conversion chains). Off
+   *  isolates the bare `scoreState` planner — an A/B knob for measuring the shaping's contribution. */
+  enablers?: boolean;
+}
+
+const DEFAULTS: Required<PlannerOptions> = {
+  depth: 1,
+  beamWidth: 4,
+  turnConfigLimit: 8,
+  determinizations: 2,
+  nodeBudget: 100_000,
+  enablers: true,
+};
+
+/** A reachable victory in a sampled world — dominates any heuristic leaf so a winning line is preferred. */
+const VICTORY = 1e9;
+
+function makeNode(state: RunState, h: Heuristic): SearchNode {
+  return { state, parent: null, action: null, key: keyOf(state.G), h: h(state.G) };
+}
+
+function applyActions(state: RunState, actions: SimAction[]): RunState {
+  let s = state;
+  for (const a of actions) s = applyAction(s, a);
+  return s;
+}
+
+/**
+ * Best heuristic value reachable within `depth` further turns from `root` in one (already-sampled) world —
+ * a bounded, deterministic beam. A reachable `victory` short-circuits to `VICTORY`; a defeat branch is
+ * pruned. Each turn's own pre-`endTurn` configs are candidate leaves (so "wait a round" is considered).
+ */
+function beamValue(root: RunState, depth: number, opts: Required<PlannerOptions>, budget: Budget, h: Heuristic): number {
+  let best = h(root.G);
+  let beam: SearchNode[] = [makeNode(root, h)];
+
+  for (let d = 0; d < depth; d++) {
+    const successors: SearchNode[] = [];
+    for (const node of beam) {
+      const { win, configs } = expandTurn(node, opts.turnConfigLimit, budget, h);
+      if (win) return VICTORY;
+      for (const cfg of configs) {
+        if (cfg.h > best) best = cfg.h;
+        const advanced = endTurn(cfg.state);
+        if (advanced === cfg.state) continue; // parked interaction: its resolutions are other configs
+        if (advanced.gameover) {
+          if (advanced.gameover.outcome === 'victory') return VICTORY;
+          continue; // defeat — dead branch
+        }
+        successors.push(makeNode(advanced, h));
+      }
+      if (budget.steps >= budget.cap) return best;
+    }
+    if (successors.length === 0) break;
+    successors.sort((a, b) => b.h - a.h);
+    beam = successors.length > opts.beamWidth ? successors.slice(0, opts.beamWidth) : successors;
+    if (beam[0].h > best) best = beam[0].h;
+  }
+  return best;
+}
+
+/** Value of committing this turn's line `cfg` in one sampled world: end the turn (drawing that world's
+ *  sampled cards) and look `depth` turns further. A parked interaction (unresolvable `endTurn`) is scored
+ *  as the line's own leaf. */
+function evalLine(cfg: RunState, opts: Required<PlannerOptions>, budget: Budget, h: Heuristic): number {
+  const advanced = endTurn(cfg);
+  if (advanced === cfg) return h(cfg.G);
+  if (advanced.gameover) return advanced.gameover.outcome === 'victory' ? VICTORY : h(advanced.G);
+  return beamValue(advanced, opts.depth, opts, budget, h);
+}
+
+/** The action prefix to commit from a chosen turn line: every action up to and including the first that
+ *  parks a `pendingInteraction` (a real reveal to re-plan on), else the whole line plus `endTurn`. */
+function commitPrefix(cfg: SearchNode): SimAction[] {
+  const chain: SearchNode[] = [];
+  for (let n: SearchNode | null = cfg; n; n = n.parent) chain.push(n);
+  chain.reverse();
+  const out: SimAction[] = [];
+  for (const node of chain) {
+    if (!node.action) continue; // the root
+    out.push(node.action);
+    if (node.state.G.pendingInteraction) return out; // stop at the reveal — the rest is re-planned
+  }
+  out.push({ kind: 'endTurn' });
+  return out;
+}
+
+export function createPlannerPolicy(policySeed: string, options: PlannerOptions = {}): Policy {
+  const opts = { ...DEFAULTS, ...options };
+  let model: EnablerModel | null = null;
+  let rngState = seededRng(policySeed).getState();
+  const buffer: SimAction[] = [];
+
+  const replan = (state: RunState): void => {
+    if (!model) model = opts.enablers ? deriveEnablers(state.G) : { weight: {}, cap: {} };
+    const enablers = model;
+    const h: Heuristic = (G: GameState) => scoreState(G) + enablerPotential(G, enablers);
+    const budget: Budget = { steps: 0, cap: opts.nodeBudget };
+
+    // This turn's candidate lines, on the real state (world-independent for the current card set).
+    const root = makeNode(state, h);
+    const { win, configs } = expandTurn(root, opts.turnConfigLimit, budget, h);
+    if (win) {
+      buffer.push(...reconstruct(win)); // a guaranteed within-turn win, deck-independent
+      return;
+    }
+
+    // Fixed sampled worlds (common random numbers across lines → low-variance argmax).
+    const worlds: RunState[] = [];
+    for (let i = 0; i < opts.determinizations; i++) {
+      const d = determinize(state.G, rngState);
+      rngState = d.rngState;
+      worlds.push({ G: d.G, gameover: undefined });
+    }
+
+    let best = configs[0];
+    let bestValue = -Infinity;
+    for (const cfg of configs) {
+      const actions = reconstruct(cfg);
+      let sum = 0;
+      for (const world of worlds) {
+        // Replay the (deck-independent) line into the sampled world, then look ahead in it.
+        const line = applyActions(world, actions);
+        sum += evalLine(line, opts, budget, h);
+      }
+      const value = sum / worlds.length;
+      if (value > bestValue) {
+        bestValue = value;
+        best = cfg;
+      }
+    }
+    buffer.push(...commitPrefix(best));
+  };
+
+  const policy: Policy = (state: RunState): SimAction => {
+    if (buffer.length === 0) replan(state);
+    return buffer.shift() ?? { kind: 'endTurn' };
+  };
+  policy.seed = policySeed;
+  return policy;
+}

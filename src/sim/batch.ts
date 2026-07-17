@@ -6,25 +6,29 @@ import { createGreedyPolicy } from './greedyPolicy';
 import { createGreedy2Policy } from './greedy2Policy';
 import { createHeuristicPolicy } from './heuristicPolicy';
 import { createOraclePolicy } from './oracle';
+import { createPlannerPolicy } from './plannerPolicy';
 
 /** The built-in move policies a sweep can run under, by name — the random fuzzer (floor), the greedy
  *  optimizer, the cheap heuristic baseline (ceiling), `greedy2` (greedy + a bounded staffing lookahead),
- *  and the `oracle` (a bounded seeded-perfect-information search for a *winning* line — the true ceiling).
- *  The CLI sweeps a scenario under several to bracket its difficulty; the `greedy`↔`greedy2` gap is a
- *  standing readout of how much worker reassignment matters in a scenario (see `greedy2Policy`).
- *  `greedy2` grinds long survival games and the `oracle` runs a whole graph search per seed, so both are
- *  slow — `oracle` is excluded from the default sweep (`DEFAULT_POLICY_NAMES`) and must be named. */
+ *  the `planner` (a fair, determinized multi-turn lookahead that clears missions the one-ply greedies
+ *  plateau on — see `plannerPolicy`), and the `oracle` (a bounded seeded-perfect-information search for a
+ *  *winning* line — the true ceiling). The CLI sweeps a scenario under several to bracket its difficulty;
+ *  the `greedy`↔`greedy2` gap is a standing readout of how much worker reassignment matters in a scenario
+ *  (see `greedy2Policy`). `greedy2` grinds long survival games, the `planner` re-plans a search each turn,
+ *  and the `oracle` runs a whole graph search per seed — the last two are slow and excluded from the
+ *  default sweep (`DEFAULT_POLICY_NAMES`), named explicitly to include. */
 export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = {
   random: createRandomPolicy,
   greedy: createGreedyPolicy,
   greedy2: createGreedy2Policy,
   heuristic: createHeuristicPolicy,
+  planner: createPlannerPolicy,
   oracle: createOraclePolicy,
 };
 
-/** The policies a bare `npm run sim` sweeps when none is named — every built-in *except* the `oracle`,
- *  which runs a full search per seed and would turn a default sweep into a multi-hour run. Name `oracle`
- *  explicitly to include it. */
+/** The policies a bare `npm run sim` sweeps when none is named — the fast built-ins. The `planner`
+ *  (a search per turn) and the `oracle` (a full search per seed) are excluded so a default sweep stays
+ *  quick; name either explicitly to include it. */
 export const DEFAULT_POLICY_NAMES = ['random', 'greedy', 'greedy2', 'heuristic'];
 
 /**

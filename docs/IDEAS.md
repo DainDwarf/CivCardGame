@@ -71,12 +71,25 @@ legions
 
 User note: Maybe perfect oracle can be useful for testing various decks?
 
-The headless sim (`src/sim/`) brackets skill with four move policies
-(random · heuristic · greedy · greedy2) plus the **`oracle`** (below, now built).
-Policies are really a *skill ladder* — random pins the floor, the greedies sit at
-"reasonable play," the oracle raises the true ceiling, and the useful signal is the
-**spread** between brackets. Candidate additions that widen or raise that ladder:
+The headless sim (`src/sim/`) brackets skill with five move policies
+(random · heuristic · greedy · greedy2 · **`planner`**, below, now built) plus the
+**`oracle`**. Policies are really a *skill ladder* — random pins the floor, the greedies
+sit at "reasonable play," the planner is competent-but-fair play, the oracle raises the
+true ceiling, and the useful signal is the **spread** between brackets. Candidate
+additions that widen or raise that ladder:
 
+- **`planner` (bounded determinized expectimax + beam)** — *built* (`sim/plannerPolicy.ts`).
+  The honest middle between the one-ply greedies (which plateau on a mission whose win
+  needs a multi-turn conversion chain, e.g. Masonry) and the oracle (which cheats by
+  reading the real shuffle). It samples fair worlds (`sim/determinize.ts` — the deck as
+  an unordered multiset, never the real order), searches a few turns ahead in each, and
+  averages (Perfect-Information Monte Carlo). This **answered the "reuse the same state
+  reducing as the oracle?" question below — yes**: it reuses the oracle's within-turn
+  search skeleton (extracted to `sim/turnSearch.ts`) and multiset key (`sim/oracleKey.ts`).
+  What lets its horizon stay shallow (and cheap) is the **enabler potential**
+  (`sim/enablers.ts`): a leaf-value term, derived mechanically from card data, that
+  credits a banked resource for the objective progress it converts into — so the setup
+  turns the greedies see as worthless become a climbable slope.
 - **MCTS (Monte Carlo Tree Search)** — the standard strong-play policy for this kind
   of game: selectively grow a search tree and spend random rollouts on the promising
   branches (UCB to balance explore/exploit). Would give a near-optimal *"how good can
@@ -84,13 +97,14 @@ Policies are really a *skill ladder* — random pins the floor, the greedies sit
   greedies, at the cost of being the heaviest to build and slowest to run. Needs no
   hand-written score function (it plays rollouts to the end and counts wins), though a
   cheaper **flat Monte Carlo** variant (rollouts per action, no tree) is a lighter
-  first step toward it.
+  first step toward it. (Weaker fit than the `planner` here: the win is a precise
+  multi-play chain, so random rollouts almost never hit it and back up no signal.)
 - **Archetype / persona policies** — scripted *human* play styles rather than optimizers:
   a rusher (race the objective), a turtle (hoard/over-staff), a greedy-economy builder, a
   misplay-prone novice (right idea, frequent small mistakes). These don't try to be good —
   they try to be *representative*, so win-rate numbers reflect real audiences instead of
   only best-case or worst-case play.
 
-> (Discussed but lower-priority: deeper N-ply/expectimax or beam search above greedy2,
-> and evolutionary weight-tuning of the existing heuristic — kept out here to keep the
-> list to the higher-value bets. Can it also reuse the same state reducing than oracle?)
+> (The deeper N-ply/expectimax + beam idea is now the built `planner` above — and yes, it
+> reuses the oracle's state-reducing skeleton (`sim/turnSearch.ts`) and multiset key.
+> Still open: evolutionary weight-tuning of the existing heuristic.)

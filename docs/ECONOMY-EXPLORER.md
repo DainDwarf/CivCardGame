@@ -22,11 +22,18 @@ yardstick, across every mission and age.
 
 ## Decisions locked (from discussion + review)
 
-- **"Works" = competent play wins it.** A deck counts as working when the `greedy2` policy wins it at a
+- **"Works" = competent play wins it.** A deck counts as working when a competent policy wins it at a
   solid rate across seeds (real player-facing difficulty). The **oracle** (`proveWinnable`) runs
   *alongside only as a ceiling check* ("is it even winnable at all"). We do **not** minimize cost
   subject to oracle-winnable — that flags decks only perfect play beats and understates difficulty, and
   pays the oracle's 3M-node exhaustion cost on every bad deck.
+  - **Update:** the competent baseline is now the **`planner`** (`sim/plannerPolicy.ts`), not `greedy2`.
+    `greedy2` is one-ply and *plateaus indefinitely* on any mission needing a multi-turn conversion chain
+    (Masonry was the trigger case — it wins 0%), so it can't stand in for competent play there. The
+    `planner` is a fair (non-oracle), determinized multi-turn lookahead that clears Masonry ~7/8 at
+    ~1–3 s/run; use it as the demand-explorer's inner-loop policy. Its cost is higher than `greedy2` (a
+    search per turn), so the sweep budget must account for it — `PlannerOptions` exposes
+    depth/beam/determinizations to trade competence for speed.
 - **Income first, then demand.** Ship the pure income ledger (no sim) before building the sim-based
   explorer. It may relieve the economics pain on its own, and we learn its shape before committing to
   the heavier half.
