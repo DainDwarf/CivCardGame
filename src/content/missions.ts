@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { COPPER_VEINS, RAIDER_WAVES } from './cards';
+import { COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -272,6 +272,26 @@ export const MISSIONS: Record<string, MissionDef> = {
       boardUpgrade: { from: 'settlement', to: 'city' },
     },
     map: { col: 5, row: 1 },
+    age: 'bronze',
+  },
+  pyramid: {
+    id: 'pyramid',
+    name: 'Pyramid',
+    lore:
+      'The city stands in fitted stone, and its ruler means to be remembered past the span of any reign. ' +
+      'He commands a house for his eternal rest — a mountain raised by hand, dressed with copper-cut ' +
+      'masonry, taller than anything the land has known. But a tomb unfinished when its pharaoh dies is ' +
+      'no tomb at all. Amass the wealth, the labour, and the grandeur to complete it before his reign ends.',
+    prereqs: ['masonry'],
+    threats: ['pharaohs_reign'],
+    objectiveCardId: 'pyramid_goal',
+    victoryHint: "Amass 50 🪙, 40 🔨, and 🎭 culture level 2 before the pharaoh's reign ends.",
+    failureHint: `The tomb must be finished within ${PHARAOH_DEADLINE} rounds, before the pharaoh's reign ends.`,
+    kind: 'standard',
+    // An optional challenge leaf off Masonry — a bigger reward for a harder clear: unlocks the Pyramid
+    // wonder (the culture powerhouse). Influence amount provisional.
+    reward: { influence: 25, unlockCardIds: ['pyramid'] },
+    map: { col: 6, row: 1 },
     age: 'bronze',
   },
   ice_age: {

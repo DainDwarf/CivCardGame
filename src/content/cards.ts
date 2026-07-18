@@ -157,6 +157,12 @@ export const RAIDER_WAVES = 3;
  *  (`content/missions.ts`), the `finding_copper_goal` win threshold, and its progress readout. */
 export const COPPER_VEINS = 3;
 
+/** The round by which the Pyramid tomb must be finished — shared by the `pharaohs_reign` threat's
+ *  `defeat` deadline, its countdown readout, and the Pyramid mission's `failureHint`
+ *  (`content/missions.ts`), so the shown deadline can't drift from the enforced one. Generous by
+ *  design: the Pyramid is an optional challenge leaf, not an impossible one. */
+export const PHARAOH_DEADLINE = 30;
+
 /**
  * The card catalogue. Numbers are a first pass. Tests install synthetic `test_*` cards on top via
  * `rules/testFixtures.ts`.
@@ -202,6 +208,16 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🗿', description: '+1🔨 +1🪙 +1🎭\nper worker.' },
     cost: { production: 8 }, gate: { cultureLevelReq: 1 }, workers: 3,
     produces: { resources: { production: 1, money: 1, culture: 1 } },
+  },
+  // The culture powerhouse — heavy 🎭 per worker where Göbekli is a balanced generalist. The 🌾 upkeep
+  //   is the honest cost of the mortuary priests and labour it commands; the drain is *not* 🪙, which
+  //   would be a false cost against the 🪙 it produces.
+  pyramid: {
+    id: 'pyramid', name: 'Pyramid', kind: 'wonder',
+    display: { art: '🔺', description: '+2🎭 +1🪙 per worker.\n−2🌾 upkeep.' },
+    cost: { production: 10, money: 6 }, gate: { cultureLevelReq: 2 }, workers: 4,
+    produces: { resources: { culture: 2, money: 1 } },
+    upkeep: { resources: { food: -2 } },
   },
 
   // — Actions —
@@ -382,6 +398,25 @@ export const CARDS: Record<string, CardDef> = {
     display: { description: 'Reach 6 🧍 population' },
   },
 
+  // The Pyramid's "wealthy, cultured state" goal — like `first_temple_goal` but money-weighted, for the
+  //   Bronze money economy. The deadline that makes it a challenge is the `pharaohs_reign` threat, not
+  //   this objective (win/lose stay on their own hooks).
+  pyramid_goal: {
+    id: 'pyramid_goal', name: 'Pyramid', kind: 'objective', cost: {},
+    goals: [
+      { icon: '🪙', measure: (G) => G.resources.money, target: 50 },
+      { icon: '🔨', measure: (G) => G.resources.production, target: 40 },
+      { icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(2) },
+    ],
+    display: {
+      description: 'Have 50 🪙, 40 🔨, and 🎭 level 2',
+      dynamicText: (G) =>
+        `🪙 ${Math.min(G.resources.money, 50)}/50 · ` +
+        `🔨 ${Math.min(G.resources.production, 40)}/40 · ` +
+        `🎭 Level ${Math.min(cultureProgress(G.resources.culture).level, 2)}/2`,
+    },
+  },
+
   // A vein reaches `removed` only by being played, so counting them there counts mined veins.
   finding_copper_goal: {
     id: 'finding_copper_goal', name: 'Finding Copper', kind: 'objective', cost: {},
@@ -471,5 +506,17 @@ export const CARDS: Record<string, CardDef> = {
         subtractResources(G.resources, { production: assignedWorkers(G.tableau) });
       },
     },
+  },
+  // The Pyramid's race-the-clock: the tomb must be ready before the pharaoh dies. No drain — the
+  //   pressure is purely the deadline. `round > N` (not `>=`) per the `defeat` contract: the check runs
+  //   at the flush right after `beginTurn` increments the round, so the player gets *through* round N.
+  pharaohs_reign: {
+    id: 'pharaohs_reign', name: "Pharaoh's Reign", kind: 'threat', cost: {},
+    display: {
+      art: '⏳',
+      description: `Complete the tomb within ${PHARAOH_DEADLINE} rounds.`,
+      dynamicText: (G) => `⏳ ${Math.max(0, PHARAOH_DEADLINE - G.round + 1)} rounds left`,
+    },
+    defeat: (G) => G.round > PHARAOH_DEADLINE && 'the pharaoh died before his tomb was ready',
   },
 };

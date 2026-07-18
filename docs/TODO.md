@@ -68,7 +68,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   more than double the 7-mission Stone Age, all remixing existing mechanics. So author it in **order**,
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see *Done / shipped*).
-  2. **Masonry** — mechanics DONE (balance pending; see *Done / shipped*). Optional **Pyramid** leaf still to author.
+  2. **Masonry** — mechanics DONE (balance pending; see *Done / shipped*). Optional **Pyramid** leaf — mechanics DONE (balance pending; see *Done / shipped*).
   3. **Accounting → Writing** (+ optional Hammurabi leaf) — the money/literacy spine opens.
   4. **Wheel+roads (×2)** first (it carries the money identity).
   5. **Horse (×2)**, **Naval (×2)**.
@@ -83,7 +83,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Copper — DONE** ✅ (shipped + balanced) — see [*Done / shipped*](#done--shipped).
   - **Masonry — mechanics DONE** 🟡 (balance pending) — see [*Done / shipped*](#done--shipped). Shipped
     the City Walls + House cards and the Settlement → City board upgrade; the City drawback (per
-    IDEAS) and the optional **Pyramid** wonder leaf (Giza was copper-tooled masonry) are still to author.
+    IDEAS) is still to author. The optional **Pyramid** wonder leaf is mechanics-DONE (see *Done / shipped*).
   - **Accounting** → the money spine opens. Candidate: **Trader** (1🪙 building — relocated from old 7.2).
   - **Writing** → **Library/scribe** (science + hand-size building — DESIGN's worked example). Optional
     leaf **Hammurabi's Code** off here (law/culture — a sticker or stability card, not a wonder).
@@ -198,6 +198,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 - **Work reordering + insert-at-drop** — let the player reorder placed work cards, and have a newly-played
   work card insert at the drop position rather than appending. `[?]`
+- **Change the territory glyph to 🏞️** — swap the 🗺️ territory icon for 🏞️ in `RESOURCE_ICON`
+  (`CardFace.tsx`); sweep face/board text and any tooltips that hardcode the old glyph. `[size: S]`
 - **Sticker locked/unlocked visual on mission preview** — rework how a mission's sticker reward reads locked vs. unlocked (currently a generic locked chip → real face). Maybe extract a **shared sticker widget** (the `CardFace`/`BoardMini` counterpart for a single sticker) reused across the mission-detail preview and elsewhere. `[?]`
 
 ## Tech debt / architecture
@@ -213,6 +215,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `plannerPolicy`. Sweep the rest of the suite for tests that belong there too (anything driving whole runs
   / asserting emergent balance) and rename them, so `npm run test:unit` is a genuinely fast, deterministic
   inner loop. `[size: S] [phase: 4]`
+- **Buildings pay upkeep even when unstaffed** `[?]` — today a staffable's `upkeep` only fires while it's
+  *operating* (staffed), because `resolveEndTurn` runs only on operating boxes (the `isOperating` gate in
+  `events.ts`'s `dispatchEvent`). Make a built-but-idle building still pay its maintenance — an idle
+  structure is a cost, not free. Reverses the documented "idle staffable box never reacts" contract, so
+  decide the scope: upkeep only (production still gated on staffing), or the whole `endTurn` handler?
+  `workers: 0` cards (City Walls) are unaffected (always operating); the Pyramid's −2🌾 would then bleed
+  while idle. `[size: M] [phase: 4]`
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
@@ -230,6 +239,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
 
+- **Step 7 — Pyramid** 🟡 (mechanics shipped; **balance/target pending** sim + feel-play) — the optional
+  challenge leaf off Masonry (`prereqs: ['masonry']`, bronze col 6 row 1). A money-weighted accumulation
+  goal (50🪙 · 40🔨 · 🎭 level 2 held at once) under the **Pharaoh's Reign** deadline threat — the first
+  shipped use of the `defeat` hook (lose if the tomb isn't done by round `PHARAOH_DEADLINE` = 30; no drain,
+  just the clock). Unlocks the **Pyramid** wonder — the culture powerhouse (+2🎭 +1🪙 per worker, 4 workers,
+  culture-L2 gated, −2🌾 upkeep while staffed). Reward influence 25 (challenge → bigger reward). All numbers
+  provisional pending a sim sweep.
 - **Step 7 — Masonry** 🟡 (mechanics shipped; **balance/target pending** sim + feel-play) — the Bronze
   Age's second mission, a *megalopolis* goal: reach 6 🧍 population (provisional target). Forks off gobekli
   (`prereqs: ['first_temple']`) opposite Copper — bronze col 5, symmetric fork (Copper moved to row -1,
@@ -245,7 +261,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     steep, not just a high number — verify winnability with a sim sweep before locking the target (or
     consider unlocking a population producer upstream). Tune target + House/City-Walls costs + Influence
     (all provisional) from there.
-  - **Optional Pyramid leaf** off Masonry still to author (a wonder — Giza was copper-tooled masonry).
 - **Step 7 — Copper (Finding Copper)** ✅ (shipped + balanced) — the Bronze Age's opening mission,
   opened by gobekli (`prereqs: ['first_temple']`, bronze col 5). Mine all 3 copper-vein events
   (2🔨+5🔬 each, played → `removed`) under the Failing Stone Tools threat (−1🔨 per round per worker
