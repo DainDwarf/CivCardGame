@@ -7,10 +7,11 @@ import { objectiveProgress } from './objective';
 import { CARDS } from '../content/cards';
 import { cultureForLevel, emptyResources, type GameState } from '../rules';
 
-// The Hut's cost, read from content so a rebalance re-targets these expectations instead of silently
-// breaking on a stale literal — the assertions pin the *relationship* (a resource's cap is its converter's
-// cost), not the number.
+// The two conversion costs the Masonry deck rides on, read from content so a rebalance re-targets these
+// expectations instead of silently breaking on a stale literal — the assertions pin the *relationship* (a
+// resource's cap is its converter's cost), not the number.
 const HUT_PRODUCTION_COST = CARDS.hut.cost.production!;
+const CONQUEST_MILITARY_COST = CARDS.conquest.cost.military!;
 
 // A real Masonry run root (Settlement board). Masonry wins on population: production is a production→
 // population *consumable* enabler (a Hut's cost), and territory is a *capacity* enabler (the slot the Hut
@@ -44,46 +45,61 @@ describe('consumable enabler (planner leaf accelerator)', () => {
     expect(m.cap.production).toBe(HUT_PRODUCTION_COST);
   });
 
-  it('does not credit military — the military→Conquest→territory chain is two hops, not bridged here', () => {
-    // Conquest turns military into *territory*, which is only enabler-valued (not goal-valued), and the
-    // consumable loop credits a cost solely for a *goal* output. So banking military isn't shaped by this
-    // module — bridging to the territory it eventually yields (credited as capacity below) is the planner's
-    // search, not a one-hop credit.
+  it('chains a core cost through an enabler-valued resource (military→Conquest→territory)', () => {
+    // Territory isn't goal-valued on Masonry, so it's only *enabler*-valued (a capacity weight). Conquest
+    // turns military into territory, and the consumable loop treats that capacity weight as a conversion
+    // target — so banking the military that buys a Conquest is credited, capped at the Conquest's cost.
     const m = deriveEnablers(masonryRoot());
-    expect(m.weight.military ?? 0).toBe(0);
+    expect(m.weight.military ?? 0).toBeGreaterThan(0);
+    expect(m.cap.military).toBe(CONQUEST_MILITARY_COST);
   });
 
   it('credits only the enabler resources, not survival pools or the goal itself', () => {
     const m = deriveEnablers(masonryRoot());
-    // food/science/money feed no goal conversion here; military is the un-bridged two-hop above; population
-    // is the goal, scored directly, not shadowed as its own enabler.
-    for (const k of ['food', 'science', 'money', 'military', 'population'] as const) {
+    // food/science/money feed no valued conversion here; population is the goal, scored directly, not
+    // shadowed as its own enabler.
+    for (const k of ['food', 'science', 'money', 'population'] as const) {
       expect(m.weight[k] ?? 0, k).toBe(0);
     }
   });
 
   it('rises with a banked consumable up to its conversion cost, then saturates', () => {
     const m = deriveEnablers(masonryRoot());
-    const pot = (production: number) => {
+    const pot = (resource: 'production' | 'military', amount: number) => {
       const G = masonryRoot();
       G.resources = emptyResources();
-      G.resources.production = production;
+      G.resources[resource] = amount;
       return enablerPotential(G, m);
     };
-    expect(pot(0)).toBe(0);
-    expect(pot(HUT_PRODUCTION_COST - 2)).toBeGreaterThan(pot(0));
-    expect(pot(HUT_PRODUCTION_COST)).toBeGreaterThan(pot(HUT_PRODUCTION_COST - 2));
-    expect(pot(HUT_PRODUCTION_COST + 5)).toBe(pot(HUT_PRODUCTION_COST)); // saturates at the Hut cost
+    // production → population, saturating at the Hut cost
+    expect(pot('production', 0)).toBe(0);
+    expect(pot('production', HUT_PRODUCTION_COST - 2)).toBeGreaterThan(pot('production', 0));
+    expect(pot('production', HUT_PRODUCTION_COST + 5)).toBe(pot('production', HUT_PRODUCTION_COST));
+    // military → territory (the chained hop), saturating at the Conquest cost
+    expect(pot('military', 0)).toBe(0);
+    expect(pot('military', CONQUEST_MILITARY_COST - 2)).toBeGreaterThan(pot('military', 0));
+    expect(pot('military', CONQUEST_MILITARY_COST + 3)).toBe(pot('military', CONQUEST_MILITARY_COST));
   });
 
-  it('keeps a full consumable bank worth strictly less than the objective step converting it yields', () => {
+  it('keeps a full consumable bank worth strictly less than the value it converts into (sound shaping)', () => {
     const m = deriveEnablers(masonryRoot());
-    const G = masonryRoot();
-    G.resources = emptyResources();
-    G.resources.production = m.cap.production!;
-    // Banking a Hut's worth of production must score below the +1 population that building it yields, so
-    // playing the conversion beats hoarding toward it (sound potential-based shaping).
-    expect(enablerPotential(G, m)).toBeLessThan(objectiveStep('population'));
+    const bankOf = (resource: 'production' | 'military') => {
+      const G = masonryRoot();
+      G.resources = emptyResources();
+      G.resources[resource] = m.cap[resource]!;
+      return enablerPotential(G, m);
+    };
+    // A Hut's worth of production must score below the +1 population it converts into (a goal step)...
+    expect(bankOf('production')).toBeLessThan(objectiveStep('population'));
+    // ...and a Conquest's worth of military below the territory it converts into (that territory's enabler
+    // value), so the search plays the Conquest rather than hoarding military toward it.
+    const territoryValue = (() => {
+      const G = masonryRoot();
+      G.resources = emptyResources();
+      G.resources.territory = CARDS.conquest.produces!.resources!.territory!;
+      return enablerPotential(G, m);
+    })();
+    expect(bankOf('military')).toBeLessThan(territoryValue);
   });
 });
 

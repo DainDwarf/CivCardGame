@@ -1,4 +1,4 @@
-import { CORE_KEYS, cultureLevel, emptyResources, type GameState, type Resources } from '../rules';
+import { CORE_KEYS, STRATEGIC_KEYS, cultureLevel, emptyResources, type GameState, type Resources } from '../rules';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
 import { objectiveProgress } from './objective';
 import { OBJECTIVE_WEIGHT } from './value';
@@ -135,11 +135,14 @@ function canGrowCulture(ids: Set<string>): boolean {
 
 /**
  * Build the enabler model for a run from its seeded objective, in two passes:
- *  - **Consumables** — for each goal-valued resource, scan the run's cards for one that outputs it
- *    (`effect`/`produces`) and credit each core resource in that card's cost the discounted conversion
- *    rate; keep the best per resource.
- *  - **Strategic capacity** — territory / population / culture each credited for the goal-throughput a
- *    slot / worker / gated level unlocks over `CAPACITY_HORIZON`, plus culture's hand-size nudge.
+ *  - **Strategic capacity** first — territory / population / culture each credited for the goal-throughput
+ *    a slot / worker / gated level unlocks over `CAPACITY_HORIZON`, plus culture's hand-size nudge.
+ *  - **Consumables** — for each *valued* resource (goal-valued, or a strategic pool the capacity pass
+ *    weighted) scan the run's cards for one that outputs it (`effect`/`produces`) and credit each core cost
+ *    the discounted conversion rate; keep the best per resource. Chaining through the capacity weights is
+ *    what bridges a two-hop setup (military → Conquest → territory → Hut): territory isn't goal-valued, but
+ *    its capacity weight makes it a conversion target, so banking the military that buys the Conquest is
+ *    finally shaped.
  * A resource already credited directly by the objective is not shadowed as its own enabler.
  */
 export function deriveEnablers(G: GameState): EnablerModel {
@@ -148,28 +151,12 @@ export function deriveEnablers(G: GameState): EnablerModel {
   const weight: EnablerModel['weight'] = {};
   const cap: EnablerModel['cap'] = {};
 
-  for (const card of Object.values(CARDS)) {
-    if (!ids.has(card.id)) continue;
-    for (const [gk, marginal] of Object.entries(goalValued) as [keyof Resources, number][]) {
-      const output = positive(card.effect?.resources?.[gk]) + positive(card.produces?.resources?.[gk]);
-      if (output <= 0) continue;
-      for (const ck of CORE_KEYS) {
-        const costAmt = card.cost[ck] ?? 0;
-        if (costAmt <= 0 || goalValued[ck] !== undefined) continue;
-        const w = HOP_DISCOUNT * (output / costAmt) * (marginal * OBJECTIVE_WEIGHT);
-        if (w > (weight[ck] ?? 0)) {
-          weight[ck] = w;
-          cap[ck] = costAmt;
-        }
-      }
-    }
-  }
-
   // Strategic capacity enablers — territory, population, culture. None is *spent* on a card: each is a
   // durable capacity that unlocks a goal-producer's output every round, credited over `CAPACITY_HORIZON`
   // (not the consumables' one-shot `HOP_DISCOUNT`) and saturated at `CAPACITY_CAP`. Each is skipped when
-  // it is itself goal-valued — the objective scores it directly, the same reason the consumable loop skips
-  // a goal-valued cost resource. Complementarity (a staffed building needs both a slot and a worker) needs
+  // it is itself goal-valued — the objective scores it directly, the same reason the consumable loop below
+  // skips a goal-valued cost resource. Computed first so a capacity weight can itself be a conversion
+  // target for the consumables. Complementarity (a staffed building needs both a slot and a worker) needs
   // no joint model: crediting the *total* pool never falls when one is consumed (strategic pools aren't
   // spent), so the two credits can't deter building what they jointly enable — the payoff materializes only
   // once both pools are grown, and the search grows both.
@@ -204,6 +191,37 @@ export function deriveEnablers(G: GameState): EnablerModel {
     if (best > 0) {
       weight.culture = best * CAPACITY_HORIZON;
       cap.culture = CAPACITY_CAP;
+    }
+  }
+
+  // Consumables. Value each resource worth converting *into* at its score credit per unit — a goal-valued
+  // resource at `marginal · OBJECTIVE_WEIGHT`, a strategic pool the capacity pass weighted at that weight.
+  // Including the strategic weights is the chaining: military isn't goal-valued and Conquest yields only
+  // territory, but territory now carries a capacity weight, so banking the military that buys the Conquest
+  // is credited — one `HOP_DISCOUNT` below the territory it converts into (`< 1`, so playing the conversion
+  // still beats hoarding toward it).
+  const valued: Partial<Record<keyof Resources, number>> = {};
+  for (const [k, marginal] of Object.entries(goalValued) as [keyof Resources, number][]) {
+    valued[k] = marginal * OBJECTIVE_WEIGHT;
+  }
+  for (const k of STRATEGIC_KEYS) {
+    if (weight[k] !== undefined) valued[k] = weight[k]!;
+  }
+
+  for (const card of Object.values(CARDS)) {
+    if (!ids.has(card.id)) continue;
+    for (const [vk, valuePerUnit] of Object.entries(valued) as [keyof Resources, number][]) {
+      const output = positive(card.effect?.resources?.[vk]) + positive(card.produces?.resources?.[vk]);
+      if (output <= 0) continue;
+      for (const ck of CORE_KEYS) {
+        const costAmt = card.cost[ck] ?? 0;
+        if (costAmt <= 0 || goalValued[ck] !== undefined) continue;
+        const w = HOP_DISCOUNT * (output / costAmt) * valuePerUnit;
+        if (w > (weight[ck] ?? 0)) {
+          weight[ck] = w;
+          cap[ck] = costAmt;
+        }
+      }
     }
   }
 
