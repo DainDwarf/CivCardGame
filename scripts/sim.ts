@@ -8,8 +8,10 @@
  * re-implements **no** game logic — it composes `runPolicies` → `summarize` → `formatReport` from `src/sim`.
  *
  * The three axes are decoupled the way the campaign menu presents them: pick the **mission(s)** by id
- * (looked up live from `content/missions.ts` — no copied deck lists), point `--deck`/`--board` at
- * hand-editable JSON files. One invocation sweeps `[missions] × {the deck} × {the board}`; to compare two
+ * (looked up live from `content/missions.ts` — no copied deck lists), point `--deck` at a hand-editable
+ * JSON file, and name the **board** either by its content id (`--board settlement`, no stickers) or with a
+ * board JSON file (needed only to attach board stickers). One invocation sweeps
+ * `[missions] × {the deck} × {the board}`; to compare two
  * decks or boards, edit a file or invoke twice. Each cell is swept under several policies with *identical*
  * seed streams, so the comparison is paired: `random` is the difficulty floor / crash fuzzer, `greedy` /
  * `heuristic` the competent ceiling, and the gap tells you how much skill a scenario rewards. `greedy2`
@@ -17,13 +19,15 @@
  * with a small seed count.
  *
  * Usage:
- *   npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board scripts/sim/boards/settlement.json
+ *   npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board settlement
+ *   npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board scripts/sim/boards/city-stockpiled.json
  *   npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board <file> --seeds 500
  *   npm run sim -- --scenario rites_rituals --deck <file> --board <file> --policies greedy,heuristic
  *   npm run sim -- --scenario growing_numbers --deck <file> --board <file> --format json
  *   npm run sim -- --scenario growing_numbers --deck <file> --board <file> --policies greedy --seed 3   # replay one run
  *
- * Flags: `--scenario` (required, one or more mission ids), `--deck`/`--board` (required, JSON file paths),
+ * Flags: `--scenario` (required, one or more mission ids), `--deck` (required, deck JSON path), `--board`
+ * (required, a content board id or a board JSON path),
  * `--seeds` (default 100), `--policies` (default random,heuristic,greedy), `--format` (text|json),
  * `--max-rounds <n>` (stall cutoff — a policy idling past round `n` without winning/collapsing is recorded
  * as a `stall` defeat rather than ground to the action wall; default 200), and `--seed <i>` which switches
@@ -32,7 +36,8 @@
  *
  * File schemas — a deck file is `{ "cards": [{ "cardId", "count"?, "stickers"? }, ...] }` (count expands
  * to that many copies; stickers ride on every copy of the entry); a board file is
- * `{ "board": "<id>", "stickers"?: [...] }`. Ready-made examples live under `scripts/sim/`.
+ * `{ "board": "<id>", "stickers"?: [...] }` (only needed to attach board stickers — a bare `--board <id>`
+ * skips it). Ready-made examples live under `scripts/sim/`.
  */
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -107,8 +112,16 @@ function loadDeck(path: string): DeckCard[] {
   return deck;
 }
 
+/** Resolve `--board` into a board id + its board-sticker ids. A bare content board id (a key of
+ *  `BOARDS`) resolves directly with no stickers — a fixture file is only needed to attach some; anything
+ *  that isn't a known board id is treated as a path to a board JSON file (the stickered case). */
+function resolveBoard(arg: string): { board: string; stickers: string[] } {
+  if (BOARDS[arg]) return { board: arg, stickers: [] };
+  return loadBoardFile(arg);
+}
+
 /** Load + validate a board file into a board id + its board-sticker ids. */
-function loadBoard(path: string): { board: string; stickers: string[] } {
+function loadBoardFile(path: string): { board: string; stickers: string[] } {
   const raw = readJson(path);
   if (!raw || typeof raw.board !== 'string') fail(`board file '${path}' must be an object with a 'board' id.`);
   if (!BOARDS[raw.board]) fail(`board file '${path}': unknown board '${raw.board}'. Known: ${Object.keys(BOARDS).join(', ')}.`);
@@ -141,7 +154,7 @@ try {
 
 if (!values.scenario) fail('--scenario is required (one or more mission ids, comma-separated).');
 if (!values.deck) fail('--deck is required (path to a deck JSON file).');
-if (!values.board) fail('--board is required (path to a board JSON file).');
+if (!values.board) fail('--board is required (a content board id, or a path to a board JSON file).');
 
 const missionIds = csv(values.scenario);
 for (const id of missionIds) {
@@ -169,7 +182,7 @@ if (maxRounds !== undefined && (!Number.isInteger(maxRounds) || maxRounds <= 0))
 const simOpts = maxRounds !== undefined ? { maxRounds } : undefined;
 
 const deck = loadDeck(values.deck);
-const board = loadBoard(values.board);
+const board = resolveBoard(values.board);
 const boardLabel = `${board.board}${board.stickers.length ? ` +${board.stickers.join(',')}` : ''}`;
 
 // ---- Replay mode: re-run one exact cell with a per-turn trace ----------------------------------------

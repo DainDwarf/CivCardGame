@@ -12,20 +12,24 @@ per-card play counts. It re-implements **no** game logic; it composes the real e
 
 The whole tool is the `npm run sim` CLI (`scripts/sim.ts`) — **no scratchpad scripts.**
 The three axes are decoupled the way the campaign menu presents them: pick the
-mission(s) by id, point `--deck`/`--board` at JSON files.
+mission(s) by id, point `--deck` at a JSON file, and name the `--board` by its content
+id (a JSON file only when it carries stickers).
 
 ## The CLI
 
 ```
-npm run sim -- --scenario <ids> --deck <file> --board <file>
+npm run sim -- --scenario <ids> --deck <file> --board <id|file>
                [--seeds 100] [--policies random,heuristic,greedy] [--format text] [--max-rounds 200] [--seed <i>]
 ```
 
 - `--scenario` (**required**) — one or more mission ids (comma-separated), looked up live
   from `content/missions.ts`. This is the scenario axis; a bad id fails fast listing the
   known missions.
-- `--deck` / `--board` (**required**) — paths to JSON files (schemas below). Ready-made
-  examples live under `scripts/sim/decks/*.json` and `scripts/sim/boards/*.json`.
+- `--deck` (**required**) — path to a deck JSON file (schema below). Ready-made examples live
+  under `scripts/sim/decks/*.json`.
+- `--board` (**required**) — a content board id (`--board city`, no stickers) **or** a path to a
+  board JSON file (needed only to attach board stickers). Stickered examples live under
+  `scripts/sim/boards/*.json`.
 - `--seeds` — runs per cell (default 100).
 - `--policies` — comma-separated policy names (default `random,heuristic,greedy`). Also
   available: `greedy2`, `planner`, and `oracle` (the last two slow — see below).
@@ -42,9 +46,9 @@ deck/board is the only variable — a paired comparison).
 
 Examples:
 ```
-npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board scripts/sim/boards/settlement.json
-npm run sim -- --scenario first_settlement,growing_numbers,rites_rituals --deck <file> --board <file> --seeds 500
-npm run sim -- --scenario rites_rituals --deck <file> --board <file> --policies oracle --seeds 20
+npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board settlement
+npm run sim -- --scenario first_settlement,growing_numbers,rites_rituals --deck <file> --board <board> --seeds 500
+npm run sim -- --scenario rites_rituals --deck <file> --board <board> --policies oracle --seeds 20
 ```
 
 ## File schemas (JSON)
@@ -59,19 +63,20 @@ Deck — the deck plus per-card stickers:
 `count` expands to that many copies; `stickers` (optional) rides on **every** copy of the
 entry (want one stickered + the rest plain → two entries). Unknown cardId/sticker fails fast.
 
-Board — the board plus its board stickers:
+Board file — the board plus its board stickers (only needed for the stickered case; a
+sticker-less board is just `--board <id>`):
 ```jsonc
-{ "board": "tribe", "stickers": ["granary"] }
+{ "board": "city", "stickers": ["stockpile", "stockpile"] }
 ```
 
 The example files under `scripts/sim/` are the standing regression references. Decks are keyed
 by **unlock stage**, not by mission — a stage file is exactly what a player owns on arrival
 (the starting collection plus one copy of every card their cleared prereqs granted), and
 consecutive missions often share one (`settled.json` serves Growing Numbers, Rites & Rituals
-and Reading the Seasons alike). Pair a stage deck with the board that stage actually has:
-First Settlement's reward upgrades Tribe into Settlement, so `tribe.json` is only ever correct
-for First Settlement itself. When new shipped content deserves a standing example, add a file
-there and commit it — that's the equivalent of the old `SCENARIOS` rows.
+and Reading the Seasons alike). Pair a stage deck with the board that stage actually has,
+naming the board directly (`--board settlement`); a board fixture is only worth a file when it
+carries stickers. When new shipped content deserves a standing example, add a file there and
+commit it — that's the equivalent of the old `SCENARIOS` rows.
 
 ## Replay one run — `--seed <i>`
 
@@ -80,7 +85,7 @@ run and prints a **per-turn trace** — each turn's starting economy (resources 
 territory · culture), the accepted moves that turn, and the final outcome line. Needs exactly one
 `--scenario` and one `--policies`:
 ```
-npm run sim -- --scenario growing_numbers --deck <file> --board <file> --policies greedy --seed 3
+npm run sim -- --scenario growing_numbers --deck <file> --board <board> --policies greedy --seed 3
 ```
 The index `i` matches the batch's seed stream (`<mission>-cfg-i` / `<mission>-pol-i`), so a cell
 that lost/won in a sweep can be re-run verbatim to see *what happened*.

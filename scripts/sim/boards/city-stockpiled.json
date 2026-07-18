@@ -1,0 +1,5 @@
+{
+  "_comment": "A stickered-board example — the sticker-less case is now just `--board <id>`, so a fixture earns its own file only to attach stickers. City (Settlement's upgrade) maxed out with two Stockpiles (+12 starting Production).",
+  "board": "city",
+  "stickers": ["stockpile", "stockpile"]
+}
