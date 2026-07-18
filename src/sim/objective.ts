@@ -1,5 +1,5 @@
 import { goalProgress, type GameState } from '../rules';
-import { CARDS, COPPER_VEINS, GROWING_NUMBERS_BUILDINGS } from '../content/cards';
+import { CARDS, COPPER_VEINS } from '../content/cards';
 
 /**
  * A **sim-local progress gradient** toward a mission's objective — the signal the balance policies
@@ -22,27 +22,6 @@ import { CARDS, COPPER_VEINS, GROWING_NUMBERS_BUILDINGS } from '../content/cards
  * a mistyped/renamed key would silently fall back to the generic gradient and drop the steering term.
  */
 export const OVERRIDES: Record<string, (G: GameState) => number> = {
-  // "Growing Numbers": stand up a Hut and a Farm — each needs a free territory *slot*, and the Tribe
-  // board starts at territory 0. Territory (grown via Conquest) is thus a genuine prerequisite the win
-  // predicate never mentions. Blending it in as a sub-goal is what steers a one-ply policy to play
-  // Conquest at all — a flat building-count gradient never rewards it, since Conquest raises no building
-  // on its own turn. Both terms cap at 2 and average ⇒ 1 exactly at the win (two buildings occupy two
-  // slots, so territory ≥ 2).
-  growing_numbers_goal: (G) => {
-    const built = GROWING_NUMBERS_BUILDINGS.filter((id) => G.tableau.some((b) => b.cardId === id)).length;
-    return (built + Math.min(G.resources.territory, 2)) / 4;
-  },
-
-  // "Masonry": reach 6 🧍 population — grown only by Huts (+1 each), and every Hut is a building needing a
-  // free territory slot. Settlement starts at territory 2 (room for a Hut or two beside its Farms), so the
-  // rest of the population must ride on territory grown by Conquest — a prerequisite the population-only win
-  // predicate never mentions, and one a flat population gradient never rewards (Conquest raises no
-  // population on its own turn). Blending capped territory in as a co-equal sub-goal is what steers a one-ply
-  // policy to play Conquest at all. Both terms cap at 6 (the deck's territory ceiling: 2 start + 4 Conquest)
-  // and average ⇒ 1 once population is met on a fully-conquered board.
-  masonry_goal: (G) =>
-    (Math.min(G.resources.population, 6) + Math.min(G.resources.territory, 6)) / 12,
-
   // "Finding Copper": mine every vein — but a vein costs 2🔨 + 5🔬, and the win predicate counts only
   // *mined* veins. That term moves solely on the turn a vein is played, so a one-ply policy sees no
   // reward for the several turns of banking science that make the play legal at all, and never stockpiles

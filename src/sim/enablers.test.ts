@@ -5,16 +5,17 @@ import { deriveEnablers, enablerPotential } from './enablers';
 import { OBJECTIVE_WEIGHT } from './value';
 import { objectiveProgress } from './objective';
 import { CARDS } from '../content/cards';
-import { emptyResources, type GameState } from '../rules';
+import { cultureForLevel, emptyResources, type GameState } from '../rules';
 
-// The two conversions the Masonry deck rides on, read from content so a Hut/Conquest cost rebalance
-// re-targets these expectations instead of silently breaking on a stale literal — the assertions pin the
-// *relationship* (a resource's cap is its converter's cost), not the number.
+// The Hut's cost, read from content so a rebalance re-targets these expectations instead of silently
+// breaking on a stale literal — the assertions pin the *relationship* (a resource's cap is its converter's
+// cost), not the number.
 const HUT_PRODUCTION_COST = CARDS.hut.cost.production!;
-const CONQUEST_MILITARY_COST = CARDS.conquest.cost.military!;
 
-// A real Masonry run root (Settlement board), so the enabler model derives through the same path
-// production uses — from the mission's seeded objective and the deck's own conversions (Hut, Conquest).
+// A real Masonry run root (Settlement board). Masonry wins on population: production is a production→
+// population *consumable* enabler (a Hut's cost), and territory is a *capacity* enabler (the slot the Hut
+// needs). Territory is not goal-valued here (the sim override that once blended it in is gone), so it rides
+// the capacity probe — the exact case the generalization exists to cover.
 function masonryRoot(): GameState {
   const config = simConfig({
     deckCardIds: ['hut', 'hut', 'conquest', 'conquest', 'toolmaking', 'toolmaking', 'dogs', 'dogs', 'farm', 'farm'],
@@ -35,55 +36,84 @@ function objectiveStep(resource: keyof GameState['resources']): number {
   return (objectiveProgress(G) - before) * OBJECTIVE_WEIGHT;
 }
 
-describe('enabler potential (planner leaf accelerator)', () => {
-  it('derives the deck\'s conversion chain toward the Masonry objective', () => {
+describe('consumable enabler (planner leaf accelerator)', () => {
+  it('derives the deck\'s production→population conversion toward the Masonry objective', () => {
     const m = deriveEnablers(masonryRoot());
     // Masonry wins on population, grown by Huts — production (a Hut's cost) is a production→population enabler.
     expect(m.weight.production ?? 0).toBeGreaterThan(0);
     expect(m.cap.production).toBe(HUT_PRODUCTION_COST);
-    // Population also rides on territory (a Hut needs a free slot), grown by Conquest (its military cost) —
-    // the override makes territory goal-valued, so military is a military→territory enabler.
-    expect(m.weight.military ?? 0).toBeGreaterThan(0);
-    expect(m.cap.military).toBe(CONQUEST_MILITARY_COST);
   });
 
-  it('credits only the banking resources, not survival pools or the goal resources themselves', () => {
+  it('does not credit military — the military→Conquest→territory chain is two hops, not bridged here', () => {
+    // Conquest turns military into *territory*, which is only enabler-valued (not goal-valued), and the
+    // consumable loop credits a cost solely for a *goal* output. So banking military isn't shaped by this
+    // module — bridging to the territory it eventually yields (credited as capacity below) is the planner's
+    // search, not a one-hop credit.
     const m = deriveEnablers(masonryRoot());
-    // food only feeds military (Dogs) — a second hop, not credited by the one-hop model; science/money
-    // feed nothing here; population/territory are credited directly by the objective, not as enablers.
-    for (const k of ['food', 'science', 'money', 'population', 'territory'] as const) {
+    expect(m.weight.military ?? 0).toBe(0);
+  });
+
+  it('credits only the enabler resources, not survival pools or the goal itself', () => {
+    const m = deriveEnablers(masonryRoot());
+    // food/science/money feed no goal conversion here; military is the un-bridged two-hop above; population
+    // is the goal, scored directly, not shadowed as its own enabler.
+    for (const k of ['food', 'science', 'money', 'military', 'population'] as const) {
       expect(m.weight[k] ?? 0, k).toBe(0);
     }
   });
 
-  it('rises with a banked enabler up to its conversion cost, then saturates', () => {
+  it('rises with a banked consumable up to its conversion cost, then saturates', () => {
     const m = deriveEnablers(masonryRoot());
-    const pot = (military: number, production: number) => {
+    const pot = (production: number) => {
       const G = masonryRoot();
-      G.resources.military = military;
+      G.resources = emptyResources();
       G.resources.production = production;
       return enablerPotential(G, m);
     };
-    expect(pot(0, 0)).toBe(0);
-    expect(pot(CONQUEST_MILITARY_COST - 2, 0)).toBeGreaterThan(pot(0, 0));
-    expect(pot(CONQUEST_MILITARY_COST, 0)).toBeGreaterThan(pot(CONQUEST_MILITARY_COST - 2, 0));
-    expect(pot(CONQUEST_MILITARY_COST + 3, 0)).toBe(pot(CONQUEST_MILITARY_COST, 0)); // saturates at the Conquest cost
-    expect(pot(0, HUT_PRODUCTION_COST - 2)).toBeGreaterThan(pot(0, 0));
-    expect(pot(0, HUT_PRODUCTION_COST)).toBeGreaterThan(pot(0, HUT_PRODUCTION_COST - 2));
-    expect(pot(0, HUT_PRODUCTION_COST + 5)).toBe(pot(0, HUT_PRODUCTION_COST)); // saturates at the Hut cost
+    expect(pot(0)).toBe(0);
+    expect(pot(HUT_PRODUCTION_COST - 2)).toBeGreaterThan(pot(0));
+    expect(pot(HUT_PRODUCTION_COST)).toBeGreaterThan(pot(HUT_PRODUCTION_COST - 2));
+    expect(pot(HUT_PRODUCTION_COST + 5)).toBe(pot(HUT_PRODUCTION_COST)); // saturates at the Hut cost
   });
 
-  it('keeps a full bank worth strictly less than the objective step converting it yields (sound shaping)', () => {
+  it('keeps a full consumable bank worth strictly less than the objective step converting it yields', () => {
     const m = deriveEnablers(masonryRoot());
-    const fullBank = (resource: 'military' | 'production') => {
+    const G = masonryRoot();
+    G.resources = emptyResources();
+    G.resources.production = m.cap.production!;
+    // Banking a Hut's worth of production must score below the +1 population that building it yields, so
+    // playing the conversion beats hoarding toward it (sound potential-based shaping).
+    expect(enablerPotential(G, m)).toBeLessThan(objectiveStep('population'));
+  });
+});
+
+describe('territory capacity enabler', () => {
+  it('credits territory when it is not goal-valued, scanning a structure\'s effect (not only produces)', () => {
+    // The slot a Hut needs unlocks the Hut's one-shot `effect` grant of the goal population — so the probe
+    // must read `effect`, which a produces-only scan would miss.
+    const m = deriveEnablers(masonryRoot());
+    expect(m.weight.territory ?? 0).toBeGreaterThan(0);
+  });
+
+  it('is a durable multi-round credit, worth more than one round of the building\'s throughput', () => {
+    const m = deriveEnablers(masonryRoot());
+    // One Hut grants +1 population; the credit is worth several rounds of it (a slot keeps hosting a
+    // producer), not a single one-shot hop.
+    const oneRound = CARDS.hut.effect!.resources!.population! * objectiveStep('population');
+    expect(m.weight.territory!).toBeGreaterThan(oneRound);
+  });
+
+  it('rises with banked territory then saturates at the cap', () => {
+    const m = deriveEnablers(masonryRoot());
+    const pot = (territory: number) => {
       const G = masonryRoot();
       G.resources = emptyResources();
-      G.resources[resource] = m.cap[resource]!;
+      G.resources.territory = territory;
       return enablerPotential(G, m);
     };
-    // Banking 5⚔️ must score below the +1 territory a Conquest turns it into, so playing beats hoarding.
-    expect(fullBank('military')).toBeLessThan(objectiveStep('territory'));
-    expect(fullBank('production')).toBeLessThan(objectiveStep('population'));
+    expect(pot(0)).toBe(0);
+    expect(pot(5)).toBeGreaterThan(pot(0));
+    expect(pot(100)).toBe(pot(50)); // saturates at the capacity cap — hoarding territory past it earns nothing
   });
 });
 
@@ -140,9 +170,58 @@ describe('population capacity enabler', () => {
   });
 
   it('does not double-credit population when it is itself the objective (Masonry)', () => {
-    // Masonry's win *is* population (a sim override makes it goal-valued), so it's scored directly, not as an
-    // enabler — the same skip the spend-a-resource enablers apply to a goal-valued cost resource.
+    // Masonry's win *is* population, so it's scored directly, not as an enabler — the same skip the
+    // spend-a-resource enablers apply to a goal-valued cost resource.
     const m = deriveEnablers(masonryRoot());
     expect(m.weight.population ?? 0).toBe(0);
+  });
+});
+
+describe('culture enabler', () => {
+  // First Settlement wins on production/military; culture is *not* goal-valued, so a producer gated behind a
+  // culture level makes reaching that level an enabler. Göbekli Tepe is gated at culture level 1 and produces
+  // production (a goal resource here).
+  function firstSettlementRoot(deckCardIds: string[]): GameState {
+    const config = simConfig({ deckCardIds, board: 'tribe', missionId: 'first_settlement', seed: 'enablers-culture' });
+    return createRun(config).G;
+  }
+
+  // Rites & Rituals wins *at* a culture level, so culture is goal-valued there — used to pin the gate-unlock
+  // skip and, contrastingly, the hand-size credit that survives it.
+  function ritesRoot(deckCardIds: string[]): GameState {
+    const config = simConfig({ deckCardIds, board: 'settlement', missionId: 'rites_rituals', seed: 'enablers-culture-skip' });
+    return createRun(config).G;
+  }
+
+  it('credits the culture level that ungates a goal producer, when culture is not goal-valued', () => {
+    const m = deriveEnablers(firstSettlementRoot(['gobekli_tepe', 'toolmaking', 'bow', 'bow']));
+    expect(m.weight.culture ?? 0).toBeGreaterThan(0);
+    expect(m.cap.culture ?? 0).toBeGreaterThan(0);
+  });
+
+  it('skips the gate-unlock when culture is itself the objective', () => {
+    // Reaching the level *is* the win on Rites, scored directly — so the gated producer isn't a separate enabler.
+    const m = deriveEnablers(ritesRoot(['gobekli_tepe', 'burial', 'burial']));
+    expect(m.weight.culture ?? 0).toBe(0);
+  });
+
+  it('credits hand-size throughput per culture level even when culture is goal-valued', () => {
+    // A bigger hand helps every goal, not the one the level might be — so unlike the gate-unlock it rides no
+    // skip. Level-based (not linear in raw culture): flat within a level, a step up at each new level.
+    const m = deriveEnablers(ritesRoot(['burial', 'burial', 'foraging']));
+    expect(m.handsizePerLevel ?? 0).toBeGreaterThan(0);
+    const pot = (culture: number) => {
+      const G = ritesRoot(['burial', 'burial', 'foraging']);
+      G.resources = emptyResources();
+      G.resources.culture = culture;
+      return enablerPotential(G, m);
+    };
+    expect(pot(cultureForLevel(1))).toBeGreaterThan(pot(0));
+    expect(pot(cultureForLevel(2))).toBeGreaterThan(pot(cultureForLevel(1)));
+  });
+
+  it('sets no hand-size credit when the deck cannot grow culture', () => {
+    const m = deriveEnablers(pyramidRoot(['toolmaking', 'toolmaking', 'foraging', 'foraging']));
+    expect(m.handsizePerLevel).toBeUndefined();
   });
 });

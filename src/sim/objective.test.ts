@@ -118,23 +118,31 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
     expect(cult(5)).toBe(Math.min(5, cultureForLevel(1)) / cultureForLevel(1)); // old: min(culture,target)/target
   });
 
-  // "Growing Numbers" keeps a sim-only override (its territory steering term isn't in the win
-  // predicate), which must still equal the pre-refactor formula: (buildingsBuilt + min(territory,2)) / 4.
-  it('preserves the growing_numbers territory-steering override', () => {
-    const gn = (huts: boolean, farm: boolean, territory: number) =>
+  // Territory is no longer blended into growing_numbers/masonry as a steering override — both ride the
+  // generic goals average now (building count / population), with territory valued only as a capacity
+  // enabler in `sim/enablers.ts`. So the gradient must respond to the real goal, not territory.
+  it('growing_numbers/masonry ride the generic goals gradient, not a territory override', () => {
+    const gn = (huts: boolean, farm: boolean) =>
       objectiveProgress(
         withObjective('growing_numbers_goal', (G) => {
-          G.resources.territory = territory;
+          G.resources.territory = 5; // ignored now — only built buildings move the gradient
           G.tableau = [
             ...(huts ? [{ id: 1, cardId: 'hut', workers: 0 }] : []),
             ...(farm ? [{ id: 2, cardId: 'farm', workers: 0 }] : []),
           ];
         }),
       );
-    const expected = (built: number, terr: number) => (built + Math.min(terr, 2)) / 4;
-    expect(gn(false, false, 0)).toBe(expected(0, 0));
-    expect(gn(true, false, 1)).toBe(expected(1, 1));
-    expect(gn(true, true, 2)).toBe(expected(2, 2)); // the win: both built, two slots ⇒ territory ≥ 2
+    expect(gn(false, false)).toBe(0); // territory alone no longer contributes
+    expect(gn(true, false)).toBe(0.5);
+    expect(gn(true, true)).toBe(1);
+
+    const mas = (population: number, territory: number) =>
+      objectiveProgress(withObjective('masonry_goal', (G) => {
+        G.resources.population = population;
+        G.resources.territory = territory;
+      }));
+    expect(mas(3, 5)).toBe(mas(3, 0)); // territory doesn't move the masonry gradient
+    expect(mas(6, 0)).toBe(1);
   });
 
   // Coherence, never deferred (see the data-coherence-vs-balance convention): a mistyped/renamed
