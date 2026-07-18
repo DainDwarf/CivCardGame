@@ -1,0 +1,16 @@
+{
+  "_comment": "Hand made authored deck for testing Accounting (City board). Bronze money-spine convergence. Tuned to c2d2: +2 cave_art (reach culture 10 to unlock Gobekli's money pump) and +2 dogs (catch the thieves envy breeds off held gold) over the first-pass deck. 28 cards.",
+  "cards": [
+    { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "forge", "count": 2 },
+    { "cardId": "house", "count": 2 },
+    { "cardId": "gobekli_tepe", "count": 1 },
+    { "cardId": "beer", "count": 1 },
+    { "cardId": "cave_art", "count": 4 },
+    { "cardId": "conquest", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "dogs", "count": 4 },
+    { "cardId": "jewelry", "count": 2 }
+  ]
+}
