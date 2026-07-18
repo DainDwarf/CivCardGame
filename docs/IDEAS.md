@@ -72,25 +72,13 @@ legions
 
 User note: Maybe perfect oracle can be useful for testing various decks?
 
-The headless sim (`src/sim/`) brackets skill with five move policies
-(random · heuristic · greedy · greedy2 · **`planner`**, below, now built) plus the
-**`oracle`**. Policies are really a *skill ladder* — random pins the floor, the greedies
+The headless sim (`src/sim/`) brackets skill with several move policies, from dumber to
+more competent: random · heuristic · greedy · greedy2 · planner · oracle.
+Policies are really a *skill ladder* — random pins the floor, the greedies
 sit at "reasonable play," the planner is competent-but-fair play, the oracle raises the
 true ceiling, and the useful signal is the **spread** between brackets. Candidate
 additions that widen or raise that ladder:
 
-- **`planner` (bounded determinized expectimax + beam)** — *built* (`sim/plannerPolicy.ts`).
-  The honest middle between the one-ply greedies (which plateau on a mission whose win
-  needs a multi-turn conversion chain, e.g. Masonry) and the oracle (which cheats by
-  reading the real shuffle). It samples fair worlds (`sim/determinize.ts` — the deck as
-  an unordered multiset, never the real order), searches a few turns ahead in each, and
-  averages (Perfect-Information Monte Carlo). This **answered the "reuse the same state
-  reducing as the oracle?" question below — yes**: it reuses the oracle's within-turn
-  search skeleton (extracted to `sim/turnSearch.ts`) and multiset key (`sim/oracleKey.ts`).
-  What lets its horizon stay shallow (and cheap) is the **enabler potential**
-  (`sim/enablers.ts`): a leaf-value term, derived mechanically from card data, that
-  credits a banked resource for the objective progress it converts into — so the setup
-  turns the greedies see as worthless become a climbable slope.
 - **MCTS (Monte Carlo Tree Search)** — the standard strong-play policy for this kind
   of game: selectively grow a search tree and spend random rollouts on the promising
   branches (UCB to balance explore/exploit). Would give a near-optimal *"how good can

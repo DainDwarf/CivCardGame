@@ -188,9 +188,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > A pool to draw from while authoring the age arcs (Steps 5–7); each will land in whichever
 > age's mechanics fit. All `[phase: 4]`.
 
-- New mission type: "Metropolis" `[?]`
 - Building that changes hand size (e.g. +1 card drawn per round) `[?]`
-- Resources transformation? Like a building that transforms production into science for example
 - Card that gives a draw when expanding territory `[?]`
 - Card effects that trigger on discard / on draw, to enable combos `[?]`
 
