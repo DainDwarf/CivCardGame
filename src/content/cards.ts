@@ -161,7 +161,7 @@ export const COPPER_VEINS = 3;
  *  `defeat` deadline, its countdown readout, and the Pyramid mission's `failureHint`
  *  (`content/missions.ts`), so the shown deadline can't drift from the enforced one. Generous by
  *  design: the Pyramid is an optional challenge leaf, not an impossible one. */
-export const PHARAOH_DEADLINE = 30;
+export const PHARAOH_DEADLINE = 40;
 
 /**
  * The card catalogue. Numbers are a first pass. Tests install synthetic `test_*` cards on top via

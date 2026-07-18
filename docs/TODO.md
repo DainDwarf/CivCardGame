@@ -242,7 +242,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 7 — Pyramid** 🟡 (mechanics shipped; **balance/target pending** sim + feel-play) — the optional
   challenge leaf off Masonry (`prereqs: ['masonry']`, bronze col 6 row 1). A money-weighted accumulation
   goal (50🪙 · 40🔨 · 🎭 level 2 held at once) under the **Pharaoh's Reign** deadline threat — the first
-  shipped use of the `defeat` hook (lose if the tomb isn't done by round `PHARAOH_DEADLINE` = 30; no drain,
+  shipped use of the `defeat` hook (lose if the tomb isn't done by round `PHARAOH_DEADLINE` = 40; no drain,
   just the clock). Unlocks the **Pyramid** wonder — the culture powerhouse (+2🎭 +1🪙 per worker, 4 workers,
   culture-L2 gated, −2🌾 upkeep while staffed). Reward influence 25 (challenge → bigger reward). All numbers
   provisional pending a sim sweep.
