@@ -29,6 +29,20 @@ const HOP_DISCOUNT = 0.5;
 
 const PROBE = 1;
 
+/** Rounds of throughput a unit of population is credited for — the durable-capacity analogue of the
+ *  consumable enablers' one-shot `HOP_DISCOUNT`. Population isn't *spent*: staffed onto a per-worker
+ *  producer it yields that producer's output *every* round, so its potential is a few rounds of that
+ *  output, not a single hop. Kept static and modest (deliberately not the real deadline — the module
+ *  stays draw/round-agnostic): large enough to clear the production-cost hump of the building that grants
+ *  the population, small enough that `scoreState`'s real costs (food drain, spent production, territory)
+ *  still bound over-building. Tuned against the win-rate metric, not derived analytically. */
+const POPULATION_HORIZON = 2;
+
+/** Saturation cap on credited population — a generous constant so the slope rewards growth well past the
+ *  starting pool without binding at realistic deck sizes; over-building is bounded by `scoreState`'s real
+ *  costs, not this. */
+const POPULATION_CAP = 12;
+
 /** A per-run enabler model, derived once from the seeded objective and reused at every leaf. */
 export interface EnablerModel {
   /** Per-unit score credit for banking an enabler (core) resource. */
@@ -98,6 +112,28 @@ export function deriveEnablers(G: GameState): EnablerModel {
       }
     }
   }
+
+  // Population as a *capacity* enabler, not a consumable one. A unit of population isn't spent on a card;
+  // staffed onto a per-worker producer (`workers >= 1`) it yields that producer's goal output every round.
+  // So its conversion is "staff the best goal-producing box," credited over `POPULATION_HORIZON` rounds
+  // rather than the one-shot `HOP_DISCOUNT` the spend-a-resource enablers use. Skipped when population is
+  // itself goal-valued (a mission whose win *is* population, via a `sim/objective.ts` override) — then the
+  // objective already scores it directly, the same reason the loop above skips a goal-valued cost resource.
+  if (goalValued.population === undefined) {
+    let best = 0;
+    for (const card of Object.values(CARDS)) {
+      if (!ids.has(card.id) || card.workers === undefined || card.workers < 1) continue;
+      for (const [gk, marginal] of Object.entries(goalValued) as [keyof Resources, number][]) {
+        const perWorker = positive(card.produces?.resources?.[gk]);
+        if (perWorker > 0) best = Math.max(best, perWorker * (marginal * OBJECTIVE_WEIGHT));
+      }
+    }
+    if (best > 0) {
+      weight.population = best * POPULATION_HORIZON;
+      cap.population = POPULATION_CAP;
+    }
+  }
+
   return { weight, cap };
 }
 

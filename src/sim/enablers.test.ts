@@ -86,3 +86,63 @@ describe('enabler potential (planner leaf accelerator)', () => {
     expect(fullBank('production')).toBeLessThan(objectiveStep('population'));
   });
 });
+
+// Pyramid wins on *resource thresholds* (money/prod/culture), so population isn't goal-valued here — it's a
+// pure enabler: staffing a per-worker producer (Toolmaking → production, a goal resource) converts a unit of
+// population into goal output every round. A real Pyramid run root, so the model derives through the same
+// path production uses.
+function pyramidRoot(deckCardIds: string[]): GameState {
+  const config = simConfig({ deckCardIds, board: 'city', missionId: 'pyramid', seed: 'enablers-pop-test' });
+  return createRun(config).G;
+}
+
+describe('population capacity enabler', () => {
+  it('credits population as a durable, multi-round enabler when it is not itself goal-valued', () => {
+    const deck = ['toolmaking', 'toolmaking', 'foraging', 'foraging', 'farm', 'farm', 'jewelry', 'jewelry'];
+    const m = deriveEnablers(pyramidRoot(deck));
+
+    // One round of the deck's best goal producer (Toolmaking: 2🔨/worker) credited through the objective —
+    // read from content, so a Toolmaking/objective rebalance re-targets the relationship, not a stale number.
+    const stepPerProduction = (() => {
+      const G = pyramidRoot(deck);
+      G.resources = emptyResources();
+      const before = objectiveProgress(G);
+      G.resources.production += 1;
+      return (objectiveProgress(G) - before) * OBJECTIVE_WEIGHT;
+    })();
+    const oneRoundThroughput = CARDS.toolmaking.produces!.resources!.production! * stepPerProduction;
+
+    expect(m.weight.population ?? 0).toBeGreaterThan(0);
+    // Durable-capacity semantics: worth *more* than a single round's throughput (a consumable one-hop credit
+    // would be worth at most one round), since a staffed worker produces every round it's staffed.
+    expect(m.weight.population!).toBeGreaterThan(oneRoundThroughput);
+  });
+
+  it('scales the credit with the deck\'s best goal producer', () => {
+    // Beer (5🎭/worker) is a stronger culture producer than Cave Art (2🎭/worker); the population credit
+    // tracks the best staffable, so a deck holding Beer earns more per population than one without it.
+    const withBeer = deriveEnablers(pyramidRoot(['cave_art', 'beer', 'foraging', 'foraging']));
+    const caveArtOnly = deriveEnablers(pyramidRoot(['cave_art', 'foraging', 'foraging']));
+    expect(withBeer.weight.population!).toBeGreaterThan(caveArtOnly.weight.population!);
+  });
+
+  it('rises with banked population then saturates at the cap', () => {
+    const m = deriveEnablers(pyramidRoot(['toolmaking', 'toolmaking', 'foraging', 'foraging']));
+    const pot = (population: number) => {
+      const G = pyramidRoot(['toolmaking', 'toolmaking', 'foraging', 'foraging']);
+      G.resources = emptyResources();
+      G.resources.population = population;
+      return enablerPotential(G, m);
+    };
+    expect(pot(0)).toBe(0);
+    expect(pot(5)).toBeGreaterThan(pot(0));
+    expect(pot(100)).toBe(pot(50)); // saturates at the cap — hoarding population past it earns nothing
+  });
+
+  it('does not double-credit population when it is itself the objective (Masonry)', () => {
+    // Masonry's win *is* population (a sim override makes it goal-valued), so it's scored directly, not as an
+    // enabler — the same skip the spend-a-resource enablers apply to a goal-valued cost resource.
+    const m = deriveEnablers(masonryRoot());
+    expect(m.weight.population ?? 0).toBe(0);
+  });
+});

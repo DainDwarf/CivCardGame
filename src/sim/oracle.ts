@@ -3,8 +3,9 @@ import { createRun, endTurn, type RunState } from '../run/engine';
 import { createGreedy2Policy } from './greedy2Policy';
 import { keyOf } from './oracleKey';
 import { type Policy, type SimAction } from './simulate';
-import { expandTurn, reconstruct, type Budget, type SearchNode } from './turnSearch';
+import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
 import { scoreState } from './value';
+import { deriveEnablers, enablerPotential } from './enablers';
 
 /**
  * A **seeded perfect-information oracle** over the headless sim: a bounded, heuristic-guided,
@@ -26,10 +27,12 @@ import { scoreState } from './value';
  * cost *completeness* (miss a win) but never manufacture a false one. Because the beam is bounded, failing
  * to find a line is *evidence* of unwinnability, not a proof.
  *
- * Reuses the existing seams verbatim — `enumerateActions` / `applyAction` / `endTurn` for transitions and
- * `sim/value.ts`'s `scoreState` (which folds in the mission's `objectiveProgress` gradient) as the search
- * heuristic — so the oracle stays **mission-agnostic** and adds *no* hook to any card/mission/rule file
- * (per [[sim-logic-stays-in-sim]]). It lives strictly in `sim/`.
+ * Reuses the existing seams verbatim — `enumerateActions` / `applyAction` / `endTurn` for transitions and,
+ * as the search heuristic, `sim/value.ts`'s `scoreState` folded with the enabler potential
+ * (`sim/enablers.ts`) — the same leaf value the planner ranks by, so the beam keeps the multi-turn growth
+ * lines a bare `scoreState` would prune (population is invisible to it). So the oracle stays
+ * **mission-agnostic** and adds *no* hook to any card/mission/rule file (per [[sim-logic-stays-in-sim]]). It
+ * lives strictly in `sim/`.
  */
 export interface OracleOptions {
   /** States kept per round-depth in the main beam. Larger ⇒ more complete, more expensive. The primary
@@ -44,6 +47,10 @@ export interface OracleOptions {
   /** Total-engine-step backstop across the whole search — aborts (reporting no line) if exceeded, so a
    *  pathological branching factor can't run unbounded. */
   nodeBudget?: number;
+  /** Fold the enabler potential (`sim/enablers.ts`) into the search heuristic so the beam keeps the growth
+   *  lines a bare `scoreState` prunes. On by default; off recovers the pure-`scoreState` oracle (an A/B knob
+   *  isolating the shaping's effect — mirrors the planner's same-named option). */
+  enablers?: boolean;
 }
 
 const DEFAULTS: Required<OracleOptions> = {
@@ -51,6 +58,7 @@ const DEFAULTS: Required<OracleOptions> = {
   turnConfigLimit: 32,
   maxRounds: 50,
   nodeBudget: 3_000_000,
+  enablers: true,
 };
 
 /**
@@ -61,7 +69,8 @@ const DEFAULTS: Required<OracleOptions> = {
  * runs a bounded within-turn sub-search (`expandTurn`) enumerating the distinct reachable *pre-`endTurn`*
  * configurations, then advances each with one `endTurn`. This cuts the main-search depth from hundreds of
  * micro-actions to ~rounds. A **level-synchronized beam** keeps the top-`beamWidth` successors per round
- * by `scoreState`; a global transposition set dedups turn-start states across the whole search. Setting
+ * by the heuristic (`scoreState` + enabler potential); a global transposition set dedups turn-start states
+ * across the whole search. Setting
  * `beamWidth`/`turnConfigLimit` to very large values approaches the plan's *exact* (complete-within-
  * deadline) mode, tractable only on short/small missions.
  */
@@ -69,15 +78,20 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
   const opts = { ...DEFAULTS, ...options };
   if (root.gameover) return root.gameover.outcome === 'victory' ? [] : null;
 
+  // Same leaf value the planner ranks by: fold in the enabler potential so the beam doesn't prune the
+  // multi-turn growth lines `scoreState` alone undervalues. Derived once from the root; pure over `G`.
+  const model = opts.enablers ? deriveEnablers(root.G) : null;
+  const h: Heuristic = model ? (G) => scoreState(G) + enablerPotential(G, model) : scoreState;
+
   const budget: Budget = { steps: 0, cap: opts.nodeBudget };
-  const rootNode: SearchNode = { state: root, parent: null, action: null, key: keyOf(root.G), h: scoreState(root.G) };
+  const rootNode: SearchNode = { state: root, parent: null, action: null, key: keyOf(root.G), h: h(root.G) };
   let beam: SearchNode[] = [rootNode];
   const seen = new Set<string>([rootNode.key]);
 
   for (let depth = 0; depth < opts.maxRounds; depth++) {
     const successors: SearchNode[] = [];
     for (const node of beam) {
-      const { win, configs } = expandTurn(node, opts.turnConfigLimit, budget, scoreState);
+      const { win, configs } = expandTurn(node, opts.turnConfigLimit, budget, h);
       if (win) return reconstruct(win);
       for (const cfg of configs) {
         const advanced = endTurn(cfg.state);
@@ -99,7 +113,7 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
         if (seen.has(k)) continue;
         seen.add(k);
         child.key = k;
-        child.h = scoreState(advanced.G);
+        child.h = h(advanced.G);
         successors.push(child);
       }
       if (budget.steps >= budget.cap) return null;
