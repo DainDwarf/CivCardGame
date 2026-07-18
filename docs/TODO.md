@@ -206,8 +206,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 - **Work reordering + insert-at-drop** — let the player reorder placed work cards, and have a newly-played
   work card insert at the drop position rather than appending. `[?]`
-- **Change the territory glyph to 🏞️** — swap the 🗺️ territory icon for 🏞️ in `RESOURCE_ICON`
-  (`CardFace.tsx`); sweep face/board text and any tooltips that hardcode the old glyph. `[size: S]`
 - **Sticker locked/unlocked visual on mission preview** — rework how a mission's sticker reward reads locked vs. unlocked (currently a generic locked chip → real face). Maybe extract a **shared sticker widget** (the `CardFace`/`BoardMini` counterpart for a single sticker) reused across the mission-detail preview and elsewhere. `[?]`
 
 ## Tech debt / architecture
@@ -269,7 +267,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   (`prereqs: ['first_temple']`) opposite Copper — bronze col 5, symmetric fork (Copper moved to row -1,
   Masonry row 1). No threats/events. Unlocks the **House** (building, 8🔨, +2🧍 one-shot like a bigger
   Hut), the **City Walls** (building, 4🔨, self-sufficient: +1⚔️/round, −1🔨 upkeep — the first standing
-  military producer), and upgrades **Settlement → City** board (12🌾 6🔨 2🪙 3🧍 2🗺️; the age's
+  military producer), and upgrades **Settlement → City** board (12🌾 6🔨 2🪙 3🧍 2🏞️; the age's
   government, drawback still deferred per IDEAS).
   - **Balance watch (open):** the in-mission population lever is thin — House and City are *this
     mission's own rewards*, so while playing it the only population source is **Hut (+1, one-shot,

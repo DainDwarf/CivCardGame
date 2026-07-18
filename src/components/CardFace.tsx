@@ -17,7 +17,7 @@ export const RESOURCE_ICON: Record<keyof Resources, string> = {
   money: '🪙',
   population: '🧍',
   culture: '🎭',
-  territory: '⊞',
+  territory: '🏞️',
 };
 
 /** Per-kind fallback "art" glyph — the face glyph a card shows when its def sets no `art` of its
