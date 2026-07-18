@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { summarize } from './report';
 import { runBatch, type Scenario, type ScenarioRuns } from './batch';
-import { simConfig, simulateRun, createRandomPolicy, type SimOutcome } from './index';
+import { simConfig, simulateRun, createRandomPolicy, STALL_REASON, type SimOutcome } from './index';
 import { blankState } from '../rules';
 import { emptyResources, type Resources } from '../rules/resources';
 import { installFixtures, uninstallFixtures, TEST_BOARD_ID } from '../rules/testFixtures';
@@ -133,5 +133,17 @@ describe('simulateRun cardPlays instrumentation', () => {
     expect(total).toBeGreaterThan(0); // the policy plays cards during a run
     expect(total).toBeLessThanOrEqual(o.actionsApplied); // never more plays than actions dispatched
     for (const id of Object.keys(o.cardPlays)) expect(deck.has(id)).toBe(true); // only cards from the deck
+  });
+
+  // A policy that idles a driven run's rounds upward forever must be recorded as a `stall` defeat, not
+  // throw — so one stuck seed costs one loss instead of aborting the whole sweep. `maxRounds: 0` trips the
+  // cutoff on entry (the run is already at round 1 post-setup), pinning the mechanism deterministically
+  // without depending on when a fixture would otherwise collapse.
+  it('records a stall defeat (not a throw) when a run exceeds maxRounds', () => {
+    const config = simConfig({ deckCardIds: FIXTURE_DECK, board: TEST_BOARD_ID, missionId: 'test_unwinnable', seed: 'cfg-0' });
+    const o = simulateRun(config, createRandomPolicy('pol-0'), { maxRounds: 0 });
+    expect(o.result.outcome).toBe('defeat');
+    expect(o.gameover.reason).toBe(STALL_REASON);
+    expect(o.result.stats.turnsTaken).toBe(o.finalState.round); // built through the real toRunResult
   });
 });

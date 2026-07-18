@@ -14,9 +14,10 @@ export interface ScenarioSummary {
   turns: { min: number; mean: number; median: number; max: number };
   /** Mean of each `RunResult.stats.finalResources` pool at run end — all eight (core + strategic). */
   meanResources: Resources;
-  /** How defeats ended, grouped by the authoritative `gameover.reason` (a `CollapseReason` like
-   *  `famine`, or a threat cause like the sandbox deadline) — never re-derived from resources, since a
-   *  deadline defeat leaves no negative pool. Victories are omitted. The "food economy too tight?" cue. */
+  /** How defeats ended, grouped by the authoritative `gameover.reason` (a `CollapseReason` like `famine`,
+   *  a threat cause like the sandbox deadline, or the sim's own `stall` — a policy that idled past
+   *  `maxRounds` without winning or collapsing) — never re-derived from resources, since a deadline defeat
+   *  leaves no negative pool. Victories are omitted. The "food economy too tight? / policy plateaus?" cue. */
   defeatCauses: Record<string, number>;
   /** Total accepted `playCard` count per cardId, summed across runs. */
   cardPlays: Record<string, number>;

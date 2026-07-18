@@ -18,7 +18,7 @@ mission(s) by id, point `--deck`/`--board` at JSON files.
 
 ```
 npm run sim -- --scenario <ids> --deck <file> --board <file>
-               [--seeds 100] [--policies random,heuristic,greedy] [--format text] [--seed <i>]
+               [--seeds 100] [--policies random,heuristic,greedy] [--format text] [--max-rounds 200] [--seed <i>]
 ```
 
 - `--scenario` (**required**) — one or more mission ids (comma-separated), looked up live
@@ -31,6 +31,9 @@ npm run sim -- --scenario <ids> --deck <file> --board <file>
   available: `greedy2`, `planner`, and `oracle` (the last two slow — see below).
 - `--format` — `text` (default, the human report) or `json` (the raw summaries, for diffing
   or post-processing).
+- `--max-rounds <n>` — stall cutoff (default 200). A policy that idles past round `n` without
+  winning or collapsing is recorded as a `stall` defeat rather than ground to the action wall —
+  see *Reading the report*. Lower it for a faster sweep when you expect stalls.
 - `--seed <i>` — **replay mode** (see below).
 
 One invocation sweeps `[missions] × {the one deck} × {the one board}`. To **compare two
@@ -98,10 +101,10 @@ that lost/won in a sweep can be re-run verbatim to see *what happened*.
   the multi-turn *conversion chains* the one-ply greedies plateau on (bank a resource this turn to
   afford a converter next turn, e.g. Masonry's military→territory→population). It samples the deck
   as a multiset from its own seed (never the real order), so it does **not** cheat like the oracle.
-  Reach for it when a mission is winnable but greedy/greedy2 stall indefinitely (they idle to the
-  10k-action backstop). Opt-in and slower than the greedies but far faster than the oracle; tuned
-  for *good, not perfect* play, so it can drop an occasional winnable seed (raise its
-  determinization count to recover one — a runtime tradeoff).
+  Reach for it when a mission is winnable but greedy/greedy2 stall indefinitely (they idle their rounds
+  upward and are cut off at `--max-rounds`, recorded as a `stall` defeat — see below). Opt-in and slower
+  than the greedies but far faster than the oracle; tuned for *good, not perfect* play, so it can drop an
+  occasional winnable seed (raise its determinization count to recover one — a runtime tradeoff).
 - `oracle` = a bounded perfect-information search for a *winning* line — the true ceiling /
   winnability prover. Unlike `planner` it reads the real shuffle, so it *proves* winnability rather
   than playing fairly. It runs a whole search per seed, so keep the seed count small.
@@ -115,6 +118,14 @@ Trust random for *playability*; read a competent policy's unplayed list as a *va
 Also in the report: `win rate` (winnable?), `turns` + `defeat causes` (is the economy too tight? —
 the histogram is the authoritative `gameover.reason`, not re-derived from resources), `card plays`
 (is a card ever played?).
+
+**`stall` in the defeat histogram is a policy signal, not a balance one.** A `stall: N` bucket means a
+policy idled `N` runs' rounds upward without ever winning or collapsing — a one-ply greedy stuck on a
+multi-turn conversion chain it can't cross (classic on Masonry, where greedy/greedy2/heuristic all
+stall). It's recorded as a loss and counts against that policy's win rate; it does **not** mean the
+mission is unwinnable — reach for `planner`/`oracle` to see the real ceiling. The cutoff is
+`--max-rounds` (default 200, well above any real game's length); lower it for a faster sweep when you
+expect stalls, raise it if a legitimately long mission is being cut short.
 
 ## Seed count
 

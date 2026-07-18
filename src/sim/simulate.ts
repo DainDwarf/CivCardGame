@@ -62,13 +62,28 @@ export interface SimOutcome {
   cardPlays: Record<string, number>;
 }
 
+/** The synthetic `gameover.reason` recorded when a run is cut off for exceeding {@link SimOptions.maxRounds}
+ *  — a headless policy idling a driven run's rounds upward forever (a one-ply greedy plateauing on a
+ *  multi-turn conversion chain it can't cross, e.g. Masonry) rather than a real collapse. It surfaces as
+ *  its own `defeatCauses` bucket in the report, counts as a non-win, and costs one seed — not the whole
+ *  sweep the way the thrown action backstop does. */
+export const STALL_REASON = 'stall';
+
 /** Options for {@link simulateRun}. */
 export interface SimOptions {
   /** Assert structural invariants after every action (the fuzzer teeth). Default `true`. */
   check?: boolean;
-  /** Hard backstop against a non-terminating run — a run that never reaches gameover is itself a bug,
-   *  so exceeding this **throws**. Default 10_000; a mission's deadline (or resource collapse) is meant
-   *  to end a run well below it. The endless sandbox has no deadline, so the sim doesn't drive it. */
+  /** Round cutoff for a **stalled** run — a headless policy can idle a driven run's rounds upward forever
+   *  without ever winning or collapsing (a one-ply greedy that can't cross a multi-turn conversion chain,
+   *  e.g. Masonry). Past this round the run is recorded as a `stall` defeat ({@link STALL_REASON}) instead
+   *  of ground out to the far larger `maxActions` wall thousands of rounds later. Default 200 — well above
+   *  any real game's length (a winnable run ends in tens of rounds), so it never cuts a legitimate run
+   *  short. Set `Infinity` to disable and lean on the action backstop alone. */
+  maxRounds?: number;
+  /** Hard backstop against a run stuck **within a turn** — actions piling up without the round advancing
+   *  is a real engine bug (an effect loop), so exceeding this **throws** with the seed pair as the repro
+   *  key. A policy merely idling round-over-round is caught far earlier and recorded as a stall (see
+   *  {@link maxRounds}), so this fires only on genuine non-termination. Default 10_000. */
   maxActions?: number;
   /** Optional observer fired after every dispatched action with the action, the states either side of
    *  it (`prev` before, `next` after), and whether the engine accepted it (`accepted: false` = a
@@ -105,12 +120,14 @@ export function applyAction(state: RunState, action: SimAction): RunState {
 /**
  * Play one headless run of `config` to completion under `policy`, returning its {@link SimOutcome}.
  * The whole balance tool: a thin loop over the real engine (`createRun` → drive actions → `toRunResult`)
- * that re-implements no game logic. Terminates because every finished run sets `gameover`; the
- * `maxActions` backstop throws if one never does.
+ * that re-implements no game logic. Terminates because every finished run sets `gameover`; a policy that
+ * merely idles is cut off at `maxRounds` and recorded as a `stall` defeat, and the `maxActions` backstop
+ * throws only on a genuinely non-advancing run.
  */
 export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions = {}): SimOutcome {
   const check = opts.check ?? true;
   const maxActions = opts.maxActions ?? 10_000;
+  const maxRounds = opts.maxRounds ?? 200;
   const ctx = { configSeed: config.seed, policySeed: policy.seed };
 
   let state = createRun(config);
@@ -119,6 +136,14 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
   let actionsApplied = 0;
   const cardPlays: Record<string, number> = {};
   while (!state.gameover) {
+    if (state.G.round > maxRounds) {
+      // A driven run's rounds climb this high only when the policy is stalled (idling a plateau it can't
+      // cross, e.g. a one-ply greedy on Masonry's multi-turn chain) — a real game ends in tens of rounds.
+      // Record it as a first-class `stall` defeat so one stuck seed costs one loss, not the whole sweep,
+      // and stop short of grinding to the `maxActions` wall thousands of rounds later.
+      const gameover: Gameover = { outcome: 'defeat', reason: STALL_REASON, missionId: state.G.missionId };
+      return { result: toRunResult(state.G, gameover), gameover, finalState: state.G, actionsApplied, cardPlays };
+    }
     if (actionsApplied >= maxActions) {
       throw new Error(
         `simulateRun exceeded ${maxActions} actions without reaching gameover ` +

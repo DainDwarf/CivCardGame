@@ -24,9 +24,11 @@
  *   npm run sim -- --scenario growing_numbers --deck <file> --board <file> --policies greedy --seed 3   # replay one run
  *
  * Flags: `--scenario` (required, one or more mission ids), `--deck`/`--board` (required, JSON file paths),
- * `--seeds` (default 100), `--policies` (default random,heuristic,greedy), `--format` (text|json), and
- * `--seed <i>` which switches to **replay mode** — re-run the single (mission, policy, index) cell the
- * batch would have run and print a per-turn trace (needs exactly one scenario and one policy).
+ * `--seeds` (default 100), `--policies` (default random,heuristic,greedy), `--format` (text|json),
+ * `--max-rounds <n>` (stall cutoff — a policy idling past round `n` without winning/collapsing is recorded
+ * as a `stall` defeat rather than ground to the action wall; default 200), and `--seed <i>` which switches
+ * to **replay mode** — re-run the single (mission, policy, index) cell the batch would have run and print a
+ * per-turn trace (needs exactly one scenario and one policy).
  *
  * File schemas — a deck file is `{ "cards": [{ "cardId", "count"?, "stickers"? }, ...] }` (count expands
  * to that many copies; stickers ride on every copy of the entry); a board file is
@@ -118,7 +120,7 @@ function loadBoard(path: string): { board: string; stickers: string[] } {
 
 // Wrap `parseArgs` so an unknown flag or stray positional (strict mode throws a raw `TypeError`) surfaces
 // as the same clean `sim: …` one-liner as every other user mistake, not a stack trace.
-let values: { scenario?: string; deck?: string; board?: string; seeds?: string; policies?: string; format?: string; seed?: string };
+let values: { scenario?: string; deck?: string; board?: string; seeds?: string; policies?: string; format?: string; seed?: string; 'max-rounds'?: string };
 try {
   ({ values } = parseArgs({
     options: {
@@ -129,6 +131,7 @@ try {
       policies: { type: 'string' },
       format: { type: 'string' },
       seed: { type: 'string' },
+      'max-rounds': { type: 'string' },
     },
     allowPositionals: false,
   }));
@@ -155,6 +158,15 @@ for (const p of policies) {
 
 const format = values.format ?? 'text';
 if (format !== 'text' && format !== 'json') fail(`--format must be 'text' or 'json', got '${format}'.`);
+
+// Stall cutoff: a policy that idles a run's rounds upward forever (a one-ply greedy stuck on a multi-turn
+// chain) is recorded as a `stall` defeat past this round rather than ground to the action wall. Omitted →
+// `simulateRun`'s default (200), well above any real game's length.
+const maxRounds = values['max-rounds'] !== undefined ? Number(values['max-rounds']) : undefined;
+if (maxRounds !== undefined && (!Number.isInteger(maxRounds) || maxRounds <= 0)) {
+  fail(`--max-rounds must be a positive integer, got '${values['max-rounds']}'.`);
+}
+const simOpts = maxRounds !== undefined ? { maxRounds } : undefined;
 
 const deck = loadDeck(values.deck);
 const board = loadBoard(values.board);
@@ -231,6 +243,7 @@ function replay(missionId: string, policyName: string, idx: number): void {
   let outcome: ReturnType<typeof simulateRun>;
   try {
     outcome = simulateRun(config, policy, {
+      ...simOpts,
       onStep: ({ action, prev, next, accepted }) => {
         // Turn 1's starting economy is the very first call's `prev` (the post-setup state); every later
         // turn's start is the state right after the endTurn that closed the previous one.
@@ -282,7 +295,7 @@ const scenarios: Scenario[] = missionIds.map((missionId) => ({
   boardStickers: board.stickers,
 }));
 
-const summaries = runPolicies(scenarios, policies, { seeds }).map(summarize);
+const summaries = runPolicies(scenarios, policies, { seeds, sim: simOpts }).map(summarize);
 
 if (format === 'json') {
   console.log(JSON.stringify(summaries, null, 2));
