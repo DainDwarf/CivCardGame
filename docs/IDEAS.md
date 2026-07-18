@@ -9,6 +9,7 @@
 
 ## Random Ideas
 
+ - Give the military boards a +1 territory per conquest/territory giving cards?
  - Decreasing effectiveness of old cards? (If card comes from 2 ages ago, output -1, -2, etc?)
  - **Parameterized objective/threat cards** — today an "N-of-something" mission
    (`raiders_at_border`) needs an exported tuning const in `content/cards.ts`

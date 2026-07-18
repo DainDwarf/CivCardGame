@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES } from './cards';
+import { COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, THIEVES_PER_GOLD } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -292,6 +292,31 @@ export const MISSIONS: Record<string, MissionDef> = {
     // wonder (the culture powerhouse). Influence amount provisional.
     reward: { influence: 25, unlockCardIds: ['pyramid'] },
     map: { col: 6, row: 1 },
+    age: 'bronze',
+  },
+  accounting: {
+    id: 'accounting',
+    name: 'Accounting',
+    lore:
+      'Copper flows from the hills and the city rises in dressed stone, and with them comes a surplus ' +
+      'your grandfathers never dreamed of — granaries too full to count by eye, storehouses no elder ' +
+      'can hold in memory. And what no one tracks, someone takes. A tally pressed into wet clay, a mark ' +
+      'for every measure in and every measure out, is the only wall that keeps your wealth from walking ' +
+      'off in the night. Learn to keep the books, or watch the surplus vanish into other hands.',
+    // The convergence: Accounting demands both the metal branch and the monumental one — the surplus that
+    // must be tracked exists only once you have both the copper to make it and the city to store it.
+    prereqs: ['finding_copper', 'masonry'],
+    threats: ['envious_population'],
+    objectiveCardId: 'accounting_goal',
+    victoryHint: 'Amass 40 🪙. The richer you grow, the more thieves envy breeds — pay ⚔️ to catch them.',
+    failureHint: `Each reshuffle, envy adds a thief to your deck for every ${THIEVES_PER_GOLD} 🪙 you hold; an uncaught thief skims 🪙 and 🔨 every round.`,
+    kind: 'standard',
+    // Opens the money spine: unlocks the Trader (a 🪙 faucet) and the Opulence board sticker (a starting
+    // treasury). Influence amount provisional.
+    reward: { influence: 12, unlockCardIds: ['trader'], unlockBoardStickerIds: ['opulence'] },
+    // Mainline convergence rejoining the centre axis (like first_temple); the pyramid leaf sits below at
+    // col 6 row 1.
+    map: { col: 6, row: 0 },
     age: 'bronze',
   },
   ice_age: {

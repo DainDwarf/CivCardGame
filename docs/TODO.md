@@ -69,7 +69,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see *Done / shipped*).
   2. **Masonry** — mechanics DONE (balance pending; see *Done / shipped*). Optional **Pyramid** leaf — mechanics DONE (balance pending; see *Done / shipped*).
-  3. **Accounting → Writing** (+ optional Hammurabi leaf) — the money/literacy spine opens.
+  3. **Accounting** — mechanics DONE (balance pending; see *Done / shipped*). **Writing** (+ optional
+     Hammurabi leaf) remains — the literacy half of the spine.
   4. **Wheel+roads (×2)** first (it carries the money identity).
   5. **Horse (×2)**, **Naval (×2)**.
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
@@ -84,7 +85,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Masonry — mechanics DONE** 🟡 (balance pending) — see [*Done / shipped*](#done--shipped). Shipped
     the City Walls + House cards and the Settlement → City board upgrade; the City drawback (per
     IDEAS) is still to author. The optional **Pyramid** wonder leaf is mechanics-DONE (see *Done / shipped*).
-  - **Accounting** → the money spine opens. Candidate: **Trader** (1🪙 building — relocated from old 7.2).
+  - **Accounting — mechanics DONE** 🟡 (balance pending) — see [*Done / shipped*](#done--shipped). Shipped
+    the **Trader** (work card, 3🪙/worker — *not* the old "1🪙 building" note) + the **Opulence** board
+    sticker (+10 starting 🪙).
   - **Writing** → **Library/scribe** (science + hand-size building — DESIGN's worked example). Optional
     leaf **Hammurabi's Code** off here (law/culture — a sticker or stability card, not a wonder).
   - **Wheel+roads (×2)** → **Wheel** −1🔨 cost sticker for buildings/works (relocated from old 7.2), then
@@ -239,6 +242,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
 
+- **Step 7 — Accounting** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the Bronze
+  Age's money-spine convergence: `prereqs: ['finding_copper', 'masonry']` (the first two-prereq gate — both
+  branches required), bronze col 6 row 0, rejoining the centre axis. A single 🪙-stockpile goal (40, provisional)
+  fought against a **theft economy**: the **Envious Population** threat mints **Thief** events into the deck
+  each reshuffle, `floor(money / THIEVES_PER_GOLD)` of them (=10, provisional) — so a fat treasury floods your
+  own draws. An unpaid Thief skims 🪙+🔨 and recurs; paying its ⚔️ cost catches it (→ `removed`). First use of
+  the new **`spawnIntoDeck`** primitive (cards breeding cards mid-run). Unlocks the **Trader** (work, free,
+  3🪙/staffed worker) + the **Opulence** board sticker (+10 starting 🪙, the first money board sticker).
+  Reward influence 12 (provisional). Copper→Forge→🔨→Jewelry is the income; Masonry→City Walls is the ⚔️ that
+  catches thieves — each prereq feeds one half of the fight.
 - **Step 7 — Pyramid** 🟡 (mechanics shipped; **balance/target pending** sim + feel-play) — the optional
   challenge leaf off Masonry (`prereqs: ['masonry']`, bronze col 6 row 1). A money-weighted accumulation
   goal (50🪙 · 40🔨 · 🎭 level 2 held at once) under the **Pharaoh's Reign** deadline threat — the first

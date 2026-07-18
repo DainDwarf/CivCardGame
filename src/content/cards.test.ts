@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CARDS, COPPER_VEINS, isDeckable, isStaffable, RAIDER_WAVES } from './cards';
+import { CARDS, COPPER_VEINS, isDeckable, isStaffable, RAIDER_WAVES, THIEVES_PER_GOLD } from './cards';
 import { STARTING_COLLECTION } from './collection';
 import { DEFAULT_DECKS } from './decks';
-import { blankState, dispatchEvent, objectiveMet, seedObjective } from '../rules';
+import { blankState, dispatchEvent, objectiveMet, resolveUpkeep, seedObjective } from '../rules';
 
 // Internal coherence of the CARDS catalogue (mirrors `boards.test.ts`'s id-check), plus the
 // cross-catalogue invariant that everything a player can *own* or *deck* is actually a deckable
@@ -77,6 +77,59 @@ describe('CARDS', () => {
     expect(withVeins(COPPER_VEINS - 1)).toBe(false);
     expect(withVeins(COPPER_VEINS)).toBe(true);
     expect(withVeins(COPPER_VEINS + 1)).toBe(true);
+  });
+
+  // The "Accounting" win: a single money threshold, same goal-derived check as the raiders/copper ones
+  // above but on a live resource rather than a count in `removed`.
+  it('accounting_goal is met at its 🪙 target, not one short', () => {
+    const withMoney = (money: number) => {
+      const G = blankState('accounting');
+      seedObjective(G, 'accounting_goal');
+      G.resources.money = money;
+      return objectiveMet(G);
+    };
+    const target = CARDS.accounting_goal.goals![0].target;
+    expect(withMoney(target - 1)).toBe(false);
+    expect(withMoney(target)).toBe(true);
+    expect(withMoney(target + 1)).toBe(true);
+  });
+});
+
+// Accounting's thief skims the treasury while it sits unplayed — its `upkeep` disaster (the path an
+// unpaid event fires at end of turn) drains 🪙 and "stock" (🔨). Driven straight through `resolveUpkeep`,
+// the same resolver a real unplayed-event tick uses.
+describe('thief', () => {
+  it('drains money and production when left unplayed', () => {
+    const G = blankState('accounting');
+    G.resources.money = 5;
+    G.resources.production = 5;
+    resolveUpkeep({ G, self: { id: 1, cardId: 'thief' } });
+    expect(G.resources.money).toBe(3);
+    expect(G.resources.production).toBe(4);
+  });
+});
+
+// The Envious Population threat breeds thieves in proportion to the hoard: each reshuffle mints
+// `floor(money / THIEVES_PER_GOLD)` `thief` events into the deck. Ticked via the `reshuffle` broadcast,
+// the same path a real deck-fold takes. Counts are pinned to the shared const so a rebalance re-targets
+// them instead of breaking the test.
+describe('envious_population', () => {
+  const spawnCount = (money: number) => {
+    const G = blankState('accounting');
+    G.resources.money = money;
+    G.threats = [{ id: 99, cardId: 'envious_population' }];
+    dispatchEvent(G, { type: 'reshuffle' });
+    return G.deck.filter((c) => c.cardId === 'thief').length;
+  };
+
+  it('spawns one thief per THIEVES_PER_GOLD stockpiled money', () => {
+    expect(spawnCount(3 * THIEVES_PER_GOLD)).toBe(3);
+    expect(spawnCount(3 * THIEVES_PER_GOLD + THIEVES_PER_GOLD - 1)).toBe(3); // floors, doesn't round up
+  });
+
+  it('spawns nothing below the threshold', () => {
+    expect(spawnCount(THIEVES_PER_GOLD - 1)).toBe(0);
+    expect(spawnCount(0)).toBe(0);
   });
 });
 

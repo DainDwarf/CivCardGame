@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { drawUpTo, peekTop, drawInstance, returnToDeck, recoverFromDiscard } from './deck';
+import { drawUpTo, peekTop, drawInstance, returnToDeck, recoverFromDiscard, spawnIntoDeck } from './deck';
 import { blankState, instancesFromCardIds, type CardInstance, type GameState } from './state';
 import type { EffectContext } from './effects';
 
@@ -156,5 +156,30 @@ describe('recoverFromDiscard', () => {
     expect(G.hand).toEqual([]);
     expect(G.discard.map((c) => c.cardId)).toEqual(['a', 'b']); // untouched
     expect(G.events).toEqual([]);
+  });
+});
+
+describe('spawnIntoDeck', () => {
+  it('mints fresh instances into the deck with ids unique across every zone', () => {
+    const G = blankState('enlightenment');
+    G.deck = instancesFromCardIds(['a'], 5);
+    G.discard = instancesFromCardIds(['b'], 12); // highest live id is 12
+    const before = G.rngState;
+    spawnIntoDeck(ctxFor(G), 'thief', 3);
+    const thieves = G.deck.filter((c) => c.cardId === 'thief');
+    expect(thieves).toHaveLength(3);
+    const ids = G.deck.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length); // no collisions with the existing id 5 or the discard's 12
+    expect(Math.min(...thieves.map((t) => t.id))).toBeGreaterThan(12);
+    expect(G.rngState).not.toEqual(before); // shuffled in via the RNG stream
+  });
+
+  it('is a no-op for a non-positive count — no gratuitous reshuffle', () => {
+    const G = blankState('enlightenment');
+    G.deck = instancesFromCardIds(['a', 'b', 'c']);
+    const before = G.rngState;
+    spawnIntoDeck(ctxFor(G), 'thief', 0);
+    expect(G.deck.map((c) => c.cardId)).toEqual(['a', 'b', 'c']); // untouched
+    expect(G.rngState).toEqual(before); // stream not advanced
   });
 });

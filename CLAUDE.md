@@ -100,8 +100,10 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   primitives a peek/draw card resolves *through* instead of touching zones directly (the deck
   counterpart to `gainResources`, each taking `EffectContext`): `peekTop` (a **pure read** of the top
   N — never reshuffles; bumps `revealCount` so undo treats the peek as a boundary; drives the
-  **Calendar** action), `drawInstance` (draw one *specific* card, emits `draw`), `returnToDeck`, and
-  `recoverFromDiscard`. The last three are wired but have no shipping consumer yet.
+  **Calendar** action), `drawInstance` (draw one *specific* card, emits `draw`), `returnToDeck`,
+  `recoverFromDiscard`, and `spawnIntoDeck` (mint N *fresh* copies of a cardId and shuffle them in — the
+  only primitive that introduces new instances mid-run; the **Envious Population** threat breeds Thieves
+  through it). `drawInstance` and `recoverFromDiscard` are wired but have no shipping consumer yet.
 - **`effects.ts`** — the **resolver spine**. A `CardEffect` is the one "what happens" descriptor,
   carried in four `CardDef` timing slots: play-time `effect`, per-round `produces`, upkeep-boundary
   `upkeep` (a threat drain / unplayed-event disaster / staffable maintenance), and each `on.*` handler.

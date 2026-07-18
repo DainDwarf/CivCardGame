@@ -63,4 +63,12 @@ export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
     cost: 6,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, production: b.resources.production + 6 } }),
   },
+  opulence: {
+    id: 'opulence',
+    name: 'Opulence',
+    description: '+10 starting Money',
+    icon: '💎',
+    cost: 10,
+    applyToBoard: (b) => ({ ...b, resources: { ...b.resources, money: b.resources.money + 10 } }),
+  },
 };

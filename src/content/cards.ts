@@ -2,7 +2,7 @@ import { subtractResources, type CoreResources } from '../rules/resources';
 import { bumpCounter, getCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, suspendChoice } from '../rules/effects';
 import type { CardGate } from '../rules/playability';
-import { peekTop } from '../rules/deck';
+import { peekTop, spawnIntoDeck } from '../rules/deck';
 import { assignedWorkers } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
 
@@ -163,6 +163,11 @@ export const COPPER_VEINS = 3;
  *  design: the Pyramid is an optional challenge leaf, not an impossible one. */
 export const PHARAOH_DEADLINE = 40;
 
+/** How much stockpiled 🪙 breeds one extra Thief — shared by the `envious_population` threat's
+ *  reshuffle spawn math and its readout, so the shown rate can't drift from the enforced one.
+ *  Provisional (balance pending a sim sweep). */
+export const THIEVES_PER_GOLD = 10;
+
 /**
  * The card catalogue. Numbers are a first pass. Tests install synthetic `test_*` cards on top via
  * `rules/testFixtures.ts`.
@@ -172,6 +177,7 @@ export const CARDS: Record<string, CardDef> = {
   foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, produces: { resources: { food: 3 } } },
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 2 } } },
   beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { food: 2 }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 5 } } },
+  trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
 
   // — Buildings —
   farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { resources: { food: 1 } }, workers: 1, display: { art: '🌱' } },
@@ -290,6 +296,15 @@ export const CARDS: Record<string, CardDef> = {
   // an unmined vein is not a disaster, it just waits (filing to discard and recurring). The mission's
   // pressure lives on its threat instead.
   copper_vein: { id: 'copper_vein', name: 'Copper Vein', kind: 'event', cost: { production: 2, science: 5 }, display: { art: '⛏️' } },
+  // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
+  //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
+  //   discard); paid off with ⚔️ (catching it) the play choke exiles it to `removed` for good. Costs and
+  //   drain provisional (balance pending).
+  thief: {
+    id: 'thief', name: 'Thief', kind: 'event', cost: { military: 2 },
+    display: { art: '🦹' },
+    upkeep: { resources: { money: -2, production: -1 } },
+  },
 
   // — Objectives —
   first_settlement_goal: {
@@ -396,6 +411,17 @@ export const CARDS: Record<string, CardDef> = {
     id: 'masonry_goal', name: 'Masonry', kind: 'objective', cost: {},
     goals: [{ icon: '🧍', measure: (G) => G.resources.population, target: 6 }],
     display: { description: 'Reach 6 🧍 population' },
+  },
+
+  // Accounting's ledger goal: a single money threshold. The fight isn't the number — it's holding it
+  //   against the thieves the treasury itself breeds (`envious_population`). Target provisional.
+  accounting_goal: {
+    id: 'accounting_goal', name: 'Accounting', kind: 'objective', cost: {},
+    goals: [{ icon: '🪙', measure: (G) => G.resources.money, target: 40 }],
+    display: {
+      description: 'Amass 40 🪙',
+      dynamicText: (G) => `🪙 ${Math.min(G.resources.money, 40)}/40`,
+    },
   },
 
   // The Pyramid's "wealthy, cultured state" goal — like `first_temple_goal` but money-weighted, for the
@@ -518,5 +544,22 @@ export const CARDS: Record<string, CardDef> = {
       dynamicText: (G) => `⏳ ${Math.max(0, PHARAOH_DEADLINE - G.round + 1)} rounds left`,
     },
     defeat: (G) => G.round > PHARAOH_DEADLINE && 'the pharaoh died before his tomb was ready',
+  },
+  // Accounting's engine: envy breeds thieves in proportion to the untracked hoard. Each reshuffle mints
+  //   `floor(money / THIEVES_PER_GOLD)` `thief` events into the deck (via `spawnIntoDeck`, so the mint
+  //   ids stay unique and the shuffle-in is deterministic) — so a fat treasury floods your own draws,
+  //   the pressure that stops the player sitting on a pile. Reacts on `reshuffle` like `unrest`.
+  envious_population: {
+    id: 'envious_population', name: 'Envious Population', kind: 'threat', cost: {},
+    display: {
+      art: '👀',
+      description: `Reshuffles add one 🦹 per ${THIEVES_PER_GOLD} stockpiled 🪙`,
+      dynamicText: (G) => `+${Math.floor(G.resources.money / THIEVES_PER_GOLD)} 🦹 next shuffle`,
+    },
+    on: {
+      reshuffle: {
+        resolve: (ctx) => spawnIntoDeck(ctx, 'thief', Math.floor(ctx.G.resources.money / THIEVES_PER_GOLD)),
+      },
+    },
   },
 };

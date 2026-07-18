@@ -1,7 +1,8 @@
 import { effectiveHandSize } from './culture';
 import { shuffleFromState } from './rng';
 import { emitEvent } from './events';
-import { contentKey, type CardInstance, type DrawSource, type GameState } from './state';
+import { contentKey, instancesFromCardIds, type CardInstance, type DrawSource, type GameState } from './state';
+import { nextInstanceId } from './population';
 import type { EffectContext } from './effects';
 
 /**
@@ -148,4 +149,18 @@ export function recoverFromDiscard(ctx: EffectContext, card: CardInstance): void
   if (idx === -1) return;
   ctx.G.discard.splice(idx, 1);
   drawInstance(ctx, card);
+}
+
+/**
+ * Mint `count` fresh copies of `cardId` and shuffle them into the draw pile — the only primitive that
+ * introduces *new* card instances mid-run (`returnToDeck` and friends only move existing ones), for a
+ * card that breeds cards (an escalating threat spawning its own hazards). Ids come from
+ * `nextInstanceId` so the mints stay unique across every zone; the shuffle-in reuses `returnToDeck`,
+ * so it advances `G.rngState` deterministically and emits nothing — safe to call from an `on.reshuffle`
+ * handler mid-dispatch without opening an event cascade. A non-positive `count` is a no-op.
+ */
+export function spawnIntoDeck(ctx: EffectContext, cardId: string, count: number): void {
+  if (count <= 0) return;
+  const minted = instancesFromCardIds(Array.from({ length: count }, () => cardId), nextInstanceId(ctx.G));
+  returnToDeck(ctx, minted);
 }
