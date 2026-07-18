@@ -98,6 +98,63 @@
   letter-spacing: 0.12em;
 }
 
+/* --- Nomadic Age gutter (decorative pre-Stone band) --- */
+
+/* A green age-slice with no nodes, parked off the timeline's left edge (inline negative `left`) so
+   it's clipped by `.canvas` at rest and revealed only when the left elastic-overscroll translates
+   the timeline rightward (see CampaignMap.tsx). Spans the full height so it reads as an age slice;
+   `pointer-events:none` — pure decoration. Redefines `--map-age-text` (inherited by the `.ageName`
+   below) to the paleo pair, mirroring the `.ageBand[data-age=…]` colour hooks. */
+.paleoGutter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  --map-age-text: var(--map-age-paleo-text);
+}
+
+/* The green wash below the band, aligned with `.nodeArea`'s wash (its top = `.ageRow` height 68 +
+   `.nodeArea` margin-top 12). The green is a left-fading gradient (not a mask — masks read faintly
+   and are browser-flaky): solid under the right-side title, dissolving to transparent toward the
+   deep past, so the trailing edge mists into the ground at any pull depth rather than hard-stopping.
+   The rightmost 64px then blends green → `--map-age-stone-bg`, landing on stone at the boundary so it
+   meets `.nodeArea`'s wash (which starts solid stone at the same x) with the soft join the age-to-age
+   washes have — one-sided (the blend stays left of the boundary), since the stone side is visible at
+   rest and mustn't carry any green. The arrow band above keeps its sharp chevron join, mirroring how
+   the stone/bronze *bands* meet sharply while their *washes* blend. */
+.paleoGutterWash {
+  position: absolute;
+  top: 80px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to right,
+    transparent 0,
+    var(--map-age-paleo-bg) calc(100% - 150px),
+    var(--map-age-paleo-bg) calc(100% - 64px),
+    var(--map-age-stone-bg) 100%
+  );
+}
+
+/* The chevron band — matches `.ageBand`'s geometry/shape, but right-aligns its title so the label
+   lands on the gutter's right (Stone-Age) edge: the part revealed first on a small pull, and clear
+   of the left fade. `padding-right` clears the 30px clip-path point. Same left-fading green as the
+   wash, so band and wash dissolve together. */
+.paleoGutterBand {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 44px;
+  background: linear-gradient(to right, transparent 0, var(--map-age-paleo-bg) calc(100% - 150px));
+  clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 50%, calc(100% - 30px) 100%, 0 100%);
+}
+
 /* --- Node area (the DAG) --- */
 
 /* The `background` is set inline (`ageBackdrop` in CampaignMap.tsx): a left→right gradient wash

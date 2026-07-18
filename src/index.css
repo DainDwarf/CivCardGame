@@ -184,13 +184,15 @@
      rather than needing per-deficiency overrides (there's a non-color backup). */
   --map-age-bg: #cbb994;             /* warm parchment arrow band (fallback for an unmatched age) */
   --map-age-text: #453a24;
+  --map-age-paleo-bg: #aec19a;       /* moss green — the Nomadic Age, the decorative pre-Stone gutter */
+  --map-age-paleo-text: #2d3b22;
   --map-age-stone-bg: #cdccc6;       /* light stone gray */
   --map-age-stone-text: #3d3d3a;
   --map-age-bronze-bg: #c9a86a;      /* warm bronze/amber */
   --map-age-bronze-text: #4a3820;
   --map-age-iron-bg: #a2b2bf;        /* cool steel/slate */
   --map-age-iron-text: #303c46;
-  --map-edge: #b0a894;               /* prereq connector lines */
+  --map-edge: #544a36;               /* prereq connector lines — dark enough to clear the 3:1 graphical-contrast floor over both the stone-grey and bronze-brown washes (bronze is the binding case) */
   --map-node-cleared: #e4f1e6;       /* done — green */
   --map-node-cleared-border: #7cb98a;
   --map-node-available: #e7f0fc;     /* playable now — blue (matches --accent-bg) */
@@ -358,13 +360,15 @@
   /* ── Campaign map ── */
   --map-age-bg: #4a4130;
   --map-age-text: #e8ddc8;
+  --map-age-paleo-bg: #34402d;
+  --map-age-paleo-text: #ccd9ba;
   --map-age-stone-bg: #42423d;
   --map-age-stone-text: #dcdbd4;
   --map-age-bronze-bg: #5a4326;
   --map-age-bronze-text: #ecd9b8;
   --map-age-iron-bg: #38454f;
   --map-age-iron-text: #d4dee6;
-  --map-edge: #55524a;
+  --map-edge: #bcae8d;               /* light tan — dark theme's washes are dark, so the line contrasts by going lighter, not darker (bronze-dark is the binding case) */
   --map-node-cleared: #1f2a1e;
   --map-node-cleared-border: #4f7d54;
   --map-node-available: #1e3350;

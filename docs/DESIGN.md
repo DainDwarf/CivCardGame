@@ -339,10 +339,12 @@ procedurally generated map.
   (`MissionDef.age`) and each age *covers its slice of the DAG* — its band + gradient wash span
   exactly the columns its missions occupy, derived from their `map.col` (`content/ages.ts`'s
   `ageColSpans`).
-  The **Paleolithic** sits *before* this tree, not as a band on it: it's the always-owned
+  The **Nomadic Age** (the Paleolithic) sits *before* this tree: it's the always-owned
   pre-game baseline — a small hunter-gatherer starting collection (buildingless actions + work
   cards) and the **Tribe** board — that a fresh player begins with, out of which the Stone Age
-  (the first campaign age, where buildings/territory/conquest/culture are unlocked) grows.
+  (the first campaign age, where buildings/territory/conquest/culture are unlocked) grows. It carries
+  no missions, so it isn't one of the mission-derived age bands; the campaign map echoes it only as a
+  purely decorative green gutter off the left edge, revealed when you elastic-overscroll leftward.
 - Procedural variation (which nodes are offered, per-node modifiers/seeds) can layer
   on later; v1 is authored. 🔧
 

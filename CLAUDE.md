@@ -241,8 +241,10 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   same lists, so the display can't drift from what a run seeds.
 - **`ages.ts`** — `AGES` (Stone → Bronze → Iron) plus `ageColSpans`, which derives each age's
   contiguous DAG **column slice** from its missions' `map.col`. `CampaignMap` positions each age's band
-  + wash over its slice. Stone Age is live (cols 0–3); Bronze/Iron stay dormant until their missions
-  land.
+  + wash over its slice — purely mission-derived, so an age with no placed missions renders no band. The
+  decorative pre-Stone **Nomadic Age** gutter is the deliberate exception: no missions, drawn
+  CampaignMap-locally (not an `AGES` entry), parked off the left edge and revealed by the map's left
+  elastic-overscroll.
 
 ### Shell — run loop (`src/run/`)
 

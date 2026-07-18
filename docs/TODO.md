@@ -196,9 +196,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Unsaved-changes warning on leaving the deck editor** — if the player has made edits in `DeckEditor.tsx`
   that aren't saved, prompt/confirm before discarding them on exit. `[?]` `[phase: 4]`
-- **Pre-Stone-Age chronology gutter** — a purely visual, unreachable band *before* the Stone Age on the
-  campaign map (no missions, no nodes — decoration only), so history reads as an ever-extending timeline
-  the player emerged out of rather than starting at a hard left edge. Looks only. `[?]` `[phase: 4]`
 - **Per-pip worker drag** — independent per-pip *drag* (drag a specific pip to another box); box-level
   worker drag still moves one worker at a time. Deferred follow-up from the shipped multi-pip staffing UI. `[?]` `[phase: 4]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]` `[phase: 4]`

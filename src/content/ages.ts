@@ -7,10 +7,12 @@ import type { MissionDef } from './missions';
  * its columns, with a matching gradient wash behind the DAG nodes beneath.
  *
  * The content target is the first three campaign ages — **Stone Age → Bronze Age →
- * Iron Age** — each rendered as its own themed arrow band (the Paleolithic sits *before* the
- * tree as the always-owned starting baseline, not as a band; see docs/DESIGN.md). The eventual
- * product extends this sequence further (… → Information Age); adding an age is a data change
- * here plus its color tokens in `index.css`.
+ * Iron Age** — each rendered as its own themed arrow band. The pre-Stone **Nomadic Age** is *not*
+ * one of these entries: it carries no missions, so it can't ride the mission-derived `ageColSpans`.
+ * It's a purely decorative gutter drawn CampaignMap-locally — parked off the left edge and revealed
+ * by the map's left elastic-overscroll (see `meta/CampaignMap.tsx` and docs/DESIGN.md). The eventual
+ * product extends this sequence further (… → Information Age); adding a real age is a data change here
+ * plus its color tokens in `index.css`.
  *
  * **Each age covers its slice of the DAG.** A mission declares which age it belongs to
  * (`MissionDef.age`), and an age's slice of the timeline is *derived* from its missions'

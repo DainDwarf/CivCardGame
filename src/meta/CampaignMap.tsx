@@ -30,6 +30,25 @@ const PAD_Y = 36;
 // boundary stay anchored to the columns even when the node area stretches past the timeline width.
 const AGE_BLEND = 32;
 
+// The decorative pre-Stone "Nomadic Age" gutter: a green band carrying no missions, parked off the
+// timeline's left edge so it's hidden at rest (col 0 sits at the left edge) and revealed only by the
+// left elastic-overscroll below. Width ≥ OVERSCROLL_MAX so a full pull lands within the gutter's
+// mist-fade rather than dragging past its hard edge into the bare ground.
+const GUTTER_W = 340;
+// Elastic overscroll (dragging past either end): the damped translate asymptotes to OVERSCROLL_MAX px
+// of give, then springs back over SPRING_MS on release. A left pull reveals the Nomadic Age gutter; a
+// right pull is an empty bounce past the last age.
+const OVERSCROLL_MAX = 320;
+const SPRING_MS = 500;
+const SPRING_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+// Sign-preserving diminishing-returns damping (the iOS-style rubber band): grows toward OVERSCROLL_MAX
+// but never reaches it, so resistance rises the further past the edge you drag.
+function rubberBand(overshoot: number): number {
+  const a = Math.abs(overshoot);
+  return Math.sign(overshoot) * OVERSCROLL_MAX * (1 - 1 / (a / OVERSCROLL_MAX + 1));
+}
+
 const nodeLeft = (col: number) => PAD_X + col * COL_W;
 // `row` is a signed offset from the center axis (0 = middle, fanning ±). Positioning is symmetric
 // around row 0: given the tree's `rowExtent` (the largest |row|), the node layer is sized to hold
@@ -135,6 +154,7 @@ export function CampaignMap({
   // Drag-to-pan: grabbing empty canvas scrolls it horizontally. Nodes stopPropagation on
   // their own pointerdown so a pan never starts from a node (avoids click/drag ambiguity).
   const canvasRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<{ startX: number; startScroll: number } | null>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -144,19 +164,33 @@ export function CampaignMap({
     panRef.current = { startX: e.clientX, startScroll: canvas.scrollLeft };
     canvas.setPointerCapture(e.pointerId);
     setDragging(true);
+    // Track the pointer 1:1 while dragging — the spring is armed only on release (endPan).
+    if (timelineRef.current) timelineRef.current.style.transition = 'none';
   }
   function movePan(e: React.PointerEvent) {
     const canvas = canvasRef.current;
     const pan = panRef.current;
     if (!canvas || !pan) return;
     // clientX is visual (post-scale) px; scrollLeft is layout px inside the scaled wrapper.
-    canvas.scrollLeft = pan.startScroll - (e.clientX - pan.startX) / uiScale;
+    const desired = pan.startScroll - (e.clientX - pan.startX) / uiScale;
+    const max = Math.max(0, canvas.scrollWidth - canvas.clientWidth);
+    const clamped = Math.max(0, Math.min(max, desired));
+    canvas.scrollLeft = clamped;
+    // Past an edge, scrollLeft can't follow — carry the overshoot as a damped translate on the
+    // timeline instead (a left pull reveals the Nomadic Age gutter; a right pull is an empty bounce).
+    // Same layout-px space as scrollLeft, so no second /uiScale (the translate rides the scaled wrapper).
+    if (timelineRef.current) timelineRef.current.style.transform = `translateX(${-rubberBand(desired - clamped)}px)`;
   }
   function endPan(e: React.PointerEvent) {
     const canvas = canvasRef.current;
     if (panRef.current && canvas) canvas.releasePointerCapture(e.pointerId);
     panRef.current = null;
     setDragging(false);
+    // Spring any overshoot back to rest.
+    if (timelineRef.current) {
+      timelineRef.current.style.transition = `transform ${SPRING_MS}ms ${SPRING_EASE}`;
+      timelineRef.current.style.transform = 'translateX(0)';
+    }
   }
 
   return (
@@ -173,15 +207,34 @@ export function CampaignMap({
         onPointerUp={endPan}
         onPointerCancel={endPan}
       >
-        <div className={styles.timeline} style={{ width: `${timelineWidth}px` }}>
+        <div ref={timelineRef} className={styles.timeline} style={{ width: `${timelineWidth}px` }}>
+          {/* The decorative pre-Stone "Nomadic Age" gutter — no missions, parked off the left edge
+              (negative `left`) so it's clipped at rest and slid into view only by the left elastic-
+              overscroll. Its title sits on the right (the part revealed first as you pull); the far
+              left dissolves via the CSS mist mask. Purely presentational — deliberately not an
+              `AGES`/`ageColSpans` entry, since those are derived from missions and it has none. */}
+          <div
+            className={styles.paleoGutter}
+            data-age="paleo"
+            aria-hidden="true"
+            style={{ width: `${GUTTER_W}px`, left: `${-GUTTER_W}px` }}
+          >
+            <div className={styles.paleoGutterWash} />
+            <div className={styles.paleoGutterBand}>
+              <span className={styles.ageName}>Nomadic Age</span>
+            </div>
+          </div>
+
           {/* One arrow band per age, positioned over its own column slice (`ageColSpans`) rather
               than an equal share — empty until the first age's missions land. */}
           <div className={styles.ageRow}>
             {spans.map(({ age, startCol, endCol }, i) => {
-              // Outer edges hug the timeline itself; shared edges sit in the gutter between the two
-              // ages' columns. The last slice's right edge clamps to the timeline (COL_W > NODE_W
-              // overruns it slightly).
-              const left = i === 0 ? colX(startCol) : ageBoundaryX(startCol);
+              // The first band starts at the timeline origin (0) so it butts flush against the
+              // Nomadic Age gutter's arrow point, mirroring how a later band butts against the
+              // previous one's arrow at their shared boundary; shared edges sit in the gutter
+              // between the two ages' columns. The last slice's right edge clamps to the timeline
+              // (COL_W > NODE_W overruns it slightly).
+              const left = i === 0 ? 0 : ageBoundaryX(startCol);
               const right =
                 i < spans.length - 1
                   ? ageBoundaryX(endCol)
