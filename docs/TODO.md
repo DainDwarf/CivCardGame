@@ -74,6 +74,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   4. **Wheel+roads (×2)** first (it carries the money identity).
   5. **Horse (×2)**, **Naval (×2)**.
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
+  7. **Golden scenarios — simulator trust harness** (end-of-arc, once Bronze content is stable) — author a
+     small set of hand-verified `(deck, mission)` fixtures where the true answer is known (winnable/not, rough
+     competent win rate), as regression pins for the *instrument* — decoupling "policy too weak" from "content
+     too hard". Soundness only: a found win is fact; a *not*-found win is only "not within budget", never a
+     mission verdict. Aim human playtests at these fixtures (the sole non-circular calibration for policy
+     strength). Prime the oracle first (safer oracle = better-spent time than tuning the greedies). Ties into
+     the oracle-gap difficulty readout idea + the ECONOMY-EXPLORER demand phase. `[size: M] [?] [phase: 4]`
 
   **Mechanical identity `[?]`:** IDEAS frames the age as "trade-dependent palace civilizations" → the
   throughline is the **money economy** (underused in the Stone Age). Trade branches produce 🪙; Bronze
