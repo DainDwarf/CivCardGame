@@ -235,8 +235,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Misc
 
-- Pet the doggo
-
 ---
 
 ## Done / shipped
@@ -245,6 +243,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
 
+- **Pet the doggo** ✅ — "can you pet the dog?" easter egg: clicking the Dogs card's art band in the
+  zoom overlay puffs floating *pet* *pet* text + a woof! bubble instead of closing. Lives in
+  `CardZoomOverlay` (gated on `cardId === 'dogs'`) via a new `CardFace` `onArtClick` prop, so it works
+  on every zoom surface.
 - **Step 7 — Accounting** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the Bronze
   Age's money-spine convergence: `prereqs: ['finding_copper', 'masonry']` (the first two-prereq gate — both
   branches required), bronze col 6 row 0, rejoining the centre axis. A single 🪙-stockpile goal (40, provisional)

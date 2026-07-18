@@ -215,6 +215,10 @@ interface CardFaceCommonProps {
   overrideText?: string;
   onPointerDown?: (e: React.PointerEvent<HTMLElement>) => void;
   onClick?: (e: React.MouseEvent<HTMLElement>) => void;
+  /** A click handler on *just* the art-glyph band (not the whole face). Sole consumer is the zoom's
+   *  "pet the dog" easter egg — it stops propagation there so petting doesn't reach the whole-face /
+   *  backdrop click. Also lights the band's pointer cursor. */
+  onArtClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
 export interface CardFaceProps extends CardFaceCommonProps {
@@ -273,7 +277,7 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
   props,
   ref,
 ) {
-  const { className, style, as = 'div', title, overrideText, onPointerDown, onClick, card, missionLocked } = props;
+  const { className, style, as = 'div', title, overrideText, onPointerDown, onClick, onArtClick, card, missionLocked } = props;
 
   if (missionLocked) {
     const rootClassName = `${styles.card} ${styles.faceDown}${className ? ` ${className}` : ''}`;
@@ -350,7 +354,11 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
             ))}
           </span>
         )}
-        <div className={styles.cardArt} aria-hidden="true">
+        <div
+          className={`${styles.cardArt}${onArtClick ? ` ${styles.cardArtPetable}` : ''}`}
+          aria-hidden="true"
+          onClick={onArtClick}
+        >
           {artFor(card)}
         </div>
       </div>

@@ -151,6 +151,12 @@
   line-height: 1;
 }
 
+/* The art band takes a click of its own (only when a caller wires `onArtClick` — the zoom's
+   pet-the-dog easter egg), so hint it's clickable. */
+.cardArtPetable {
+  cursor: pointer;
+}
+
 /* Extra conditions for play (culture level, reserved population, discard cost) — a darker band
    sitting directly above the description footer, so the player reads "this is a requirement,
    not an effect" at a glance. */
