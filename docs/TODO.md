@@ -253,9 +253,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   on every zoom surface.
 - **Step 7 — Writing** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the Bronze
   Age's literacy node (`prereqs: ['accounting']`, bronze col 7 row 0, staying on the centre axis). Five
-  **Clay Tablet** events (3🔨+2🌾 each) seeded into the deck; recording one exiles it to `removed`, which
-  the goal counts. An unrecorded tablet loses 1🔬 the round it's drawn and files to discard, so it comes
-  back around — and since 🔬 is a core pool, letting too much slip collapses the run into a **dark age**.
+  **Clay Tablet** events (6🔨+2🌾 each) seeded into the deck; recording one exiles it to `removed`, which
+  the goal counts. An unrecorded tablet files to discard and comes back around, its 🔬 drain **worsening
+  each time it fires** (−0, then −1, −2, … per copy, off a per-instance `level` counter) — and since 🔬 is
+  a core pool, letting too much slip collapses the run into a **dark age**.
   No threat card: the events *are* the pressure (like Raiders). Deliberately costs 🔨/🌾 rather than 🔬,
   since Storytelling is the only science faucet until this mission's own reward lands. Unlocks the
   **Archives** (building, 4🔨, 2🔬/worker — the Forge's science twin, obsoleting Storytelling) and the
@@ -288,7 +289,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Step 7 — Masonry** 🟡 (mechanics shipped; **balance/target pending** sim + feel-play) — the Bronze
   Age's second mission, a *megalopolis* goal: reach 6 🧍 population (provisional target). Forks off gobekli
   (`prereqs: ['first_temple']`) opposite Copper — bronze col 5, symmetric fork (Copper moved to row -1,
-  Masonry row 1). No threats/events. Unlocks the **House** (building, 8🔨, +2🧍 one-shot like a bigger
+  Masonry row 1). No threats/events. Unlocks the **House** (building, 6🔨, +2🧍 one-shot like a bigger
   Hut), the **City Walls** (building, 4🔨, self-sufficient: +1⚔️/round, −1🔨 upkeep — the first standing
   military producer), and upgrades **Settlement → City** board (12🌾 6🔨 2🪙 3🧍 2🏞️; the age's
   government, drawback still deferred per IDEAS).

@@ -188,7 +188,7 @@ export const CARDS: Record<string, CardDef> = {
   // Hut: a one-shot *placement* grant (+1 population when built) — on `effect`, not `produces`, so it
   //   fires once at placement rather than every round.
   hut: {
-    id: 'hut', name: 'Hut', kind: 'building', cost: { production: 4 }, workers: 0,
+    id: 'hut', name: 'Hut', kind: 'building', cost: { production: 3 }, workers: 0,
     display: { art: '🛖', description: 'When built: +1 🧍' },
     effect: { resources: { population: 1 } },
   },
@@ -202,7 +202,7 @@ export const CARDS: Record<string, CardDef> = {
   // House: the Hut's bigger cousin — a one-shot +2🧍 at placement (on `effect`, like Hut, so it grants
   //   population once when built rather than every round).
   house: {
-    id: 'house', name: 'House', kind: 'building', cost: { production: 8 }, workers: 0,
+    id: 'house', name: 'House', kind: 'building', cost: { production: 6 }, workers: 0,
     display: { art: '🏠', description: 'When built: +2 🧍' },
     effect: { resources: { population: 2 } },
   },
@@ -330,7 +330,20 @@ export const CARDS: Record<string, CardDef> = {
 
   // — Events —
   raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, display: { art: '🪓' }, upkeep: { resources: { food: -1 } } },
-  clay_tablet: { id: 'clay_tablet', name: 'Clay Tablet', kind: 'event', cost: { production: 3, food: 2 }, display: { art: '📜' }, upkeep: { resources: { science: -1 } } },
+  clay_tablet: {
+    id: 'clay_tablet', name: 'Clay Tablet', kind: 'event', cost: { production: 6, food: 2 },
+    display: {
+      art: '📜',
+      description: '−🔬 at end of round, worsening',
+      dynamicText: (_G, self) => `−${getCounter(self, 'level')}🔬 next round`,
+    },
+    upkeep: {
+      resolve: ({ G, self }) => {
+        subtractResources(G.resources, { science: getCounter(self, 'level') });
+        bumpCounter(self, 'level');
+      },
+    },
+  },
   // Paying the cost *is* mining the vein: the play choke point exiles a played event to `removed`, which
   // is what `finding_copper_goal` counts, so no effect is needed. No `upkeep` either — unlike Raiders,
   // an unmined vein is not a disaster, it just waits (filing to discard and recurring). The mission's
