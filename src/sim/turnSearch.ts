@@ -68,7 +68,12 @@ export function expandTurn(
   heuristic: Heuristic,
 ): { win: SearchNode | null; configs: SearchNode[] } {
   const localSeen = new Set<string>([node.key]);
-  const configs: SearchNode[] = [node];
+  // A parked-interaction *root* is not a legal pre-`endTurn` config — `endTurn` no-ops while one is set,
+  // so "commit nothing and end the turn" here is a no-op the planner would emit forever (it re-plans on
+  // the real parked state after a peek). Exclude it from `configs` while still *expanding* it (frontier
+  // below) to reach its resolutions. A parked *child* stays a config on purpose: it's the legit "commit up
+  // to the reveal" point the planner re-plans after, and the oracle skips it at its own `endTurn`.
+  const configs: SearchNode[] = node.state.G.pendingInteraction ? [] : [node];
   const frontier: SearchNode[] = [node];
 
   while (frontier.length > 0 && configs.length < turnConfigLimit) {

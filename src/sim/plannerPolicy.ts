@@ -153,6 +153,13 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
       buffer.push(...reconstruct(win)); // a guaranteed within-turn win, deck-independent
       return;
     }
+    // A parked-interaction root yields no do-nothing config (`expandTurn` excludes it); if resolving it
+    // also collected no continuation (a chooseCard whose every option ends the run), fall back to a bare
+    // dismiss so the interaction still clears rather than deadlocking on `commitPrefix(undefined)`.
+    if (configs.length === 0) {
+      buffer.push({ kind: 'resolveInteraction', answer: 0 });
+      return;
+    }
 
     // Fixed sampled worlds (common random numbers across lines → low-variance argmax).
     const worlds: RunState[] = [];

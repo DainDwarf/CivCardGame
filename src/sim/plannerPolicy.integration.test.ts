@@ -54,3 +54,30 @@ describe('planner clears Masonry', () => {
     expect(a.actionsApplied).toBe(b.actionsApplied);
   }, 120_000);
 });
+
+// A deck with a **peek** card (Calendar, a look-only `reveal`) parks a `pendingInteraction` mid-turn. The
+// planner re-plans on that parked state; before the `expandTurn` root-exclusion fix it kept "do nothing"
+// as the highest-value line (a parked `endTurn` no-ops, so it dodged food upkeep) and emitted a no-op
+// `endTurn` forever until the action cap threw. This pins that the peek is always resolved and the run
+// terminates normally — regardless of win/lose, which is a separate balance question.
+describe('planner resolves a parked peek instead of deadlocking', () => {
+  const CALENDAR_DECK: (string | DeckCard)[] = [
+    ...Array<string>(4).fill('foraging'),
+    ...Array<string>(4).fill('toolmaking'),
+    ...Array<string>(2).fill('bartering'),
+    ...Array<string>(2).fill('jewelry'),
+    ...Array<string>(2).fill('storytelling'),
+    'calendar',
+  ];
+  it('reaches a real gameover well under the action cap', () => {
+    const config = simConfig({
+      deckCardIds: CALENDAR_DECK,
+      board: 'settlement',
+      missionId: 'finding_copper',
+      seed: 'finding_copper-cfg-0',
+    });
+    const out = simulateRun(config, createPlannerPolicy('finding_copper-pol-0'));
+    expect(['victory', 'defeat']).toContain(out.gameover.outcome);
+    expect(out.actionsApplied).toBeLessThan(2000);
+  }, 120_000);
+});
