@@ -2,7 +2,7 @@ import { subtractResources, type CoreResources } from '../rules/resources';
 import { bumpCounter, getCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, suspendChoice } from '../rules/effects';
 import type { CardGate } from '../rules/playability';
-import { peekTop, spawnIntoDeck } from '../rules/deck';
+import { peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
 import { assignedWorkers } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
 
@@ -157,6 +157,10 @@ export const RAIDER_WAVES = 3;
  *  (`content/missions.ts`), the `finding_copper_goal` win threshold, and its progress readout. */
 export const COPPER_VEINS = 3;
 
+/** How many clay tablets "Writing" seeds — shared by the mission's injected event list
+ *  (`content/missions.ts`), the `writing_goal` win threshold, and its progress readout. */
+export const CLAY_TABLETS = 5;
+
 /** The round by which the Pyramid tomb must be finished — shared by the `pharaohs_reign` threat's
  *  `defeat` deadline, its countdown readout, and the Pyramid mission's `failureHint`
  *  (`content/missions.ts`), so the shown deadline can't drift from the enforced one. Generous by
@@ -192,6 +196,9 @@ export const CARDS: Record<string, CardDef> = {
   // Matches Toolmaking's 2🔨/worker but as a permanent building rather than a work card refiled every
   // round — deliberately obsoleting it, which is what a metallurgy unlock should feel like.
   forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { production: 4 }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
+  // The science counterpart of the Forge: matches Storytelling's 2🔬/worker as a permanent building
+  // rather than a work card refiled every round, deliberately obsoleting it.
+  archives: { id: 'archives', name: 'Archives', kind: 'building', cost: { production: 4 }, produces: { resources: { science: 2 } }, workers: 1, display: { art: '🏛️' } },
   // House: the Hut's bigger cousin — a one-shot +2🧍 at placement (on `effect`, like Hut, so it grants
   //   population once when built rather than every round).
   house: {
@@ -289,8 +296,41 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // Keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer). Resolve-only
+  // (no declarative `resources`) like Calendar: `resolveInteraction` re-runs the whole effect on
+  // resume, so any resource field would double-apply.
+  writing: {
+    id: 'writing', name: 'Writing', kind: 'action', cost: { science: 2 },
+    display: { art: '✍️', description: 'Return a chosen card from your discard to your hand.' },
+    // A zero-option `chooseCard` would park a modal with no options and no dismiss, soft-locking the
+    // run — so an empty discard is gated unplayable rather than left to fizzle for its cost.
+    gate: { check: (G) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null) },
+    effect: {
+      resolve: (ctx) => {
+        if (ctx.answer === undefined) {
+          // The snapshot excludes this card itself: `playCard` still holds it, unfiled to discard.
+          if (ctx.G.discard.length === 0) return;
+          suspendChoice(ctx, {
+            kind: 'chooseCard',
+            prompt: 'Return one card from your discard to your hand',
+            options: [...ctx.G.discard],
+            pick: 1,
+          });
+          return;
+        }
+        // Resume: `answer` indexes the parked options; `recoverFromDiscard` finds it by instance id.
+        const pending = ctx.G.pendingInteraction;
+        if (!pending) return;
+        const chosen = pending.options[ctx.answer];
+        if (chosen) recoverFromDiscard(ctx, chosen);
+        ctx.G.pendingInteraction = null;
+      },
+    },
+  },
+
   // — Events —
   raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, display: { art: '🪓' }, upkeep: { resources: { food: -1 } } },
+  clay_tablet: { id: 'clay_tablet', name: 'Clay Tablet', kind: 'event', cost: { production: 3, food: 2 }, display: { art: '📜' }, upkeep: { resources: { science: -1 } } },
   // Paying the cost *is* mining the vein: the play choke point exiles a played event to `removed`, which
   // is what `finding_copper_goal` counts, so no effect is needed. No `upkeep` either — unlike Raiders,
   // an unmined vein is not a disaster, it just waits (filing to discard and recurring). The mission's
@@ -457,6 +497,23 @@ export const CARDS: Record<string, CardDef> = {
       description: `Mine all ${COPPER_VEINS} copper veins`,
       dynamicText: (G) =>
         `⛏️ ${Math.min(G.removed.filter((c) => c.cardId === 'copper_vein').length, COPPER_VEINS)}/${COPPER_VEINS} mined`,
+    },
+  },
+
+  // A tablet reaches `removed` only by being played, so counting them there counts recorded tablets.
+  writing_goal: {
+    id: 'writing_goal', name: 'Writing', kind: 'objective', cost: {},
+    goals: [
+      {
+        icon: '📜',
+        measure: (G) => G.removed.filter((c) => c.cardId === 'clay_tablet').length,
+        target: CLAY_TABLETS,
+      },
+    ],
+    display: {
+      description: `Record all ${CLAY_TABLETS} clay tablets`,
+      dynamicText: (G) =>
+        `📜 ${Math.min(G.removed.filter((c) => c.cardId === 'clay_tablet').length, CLAY_TABLETS)}/${CLAY_TABLETS} recorded`,
     },
   },
 

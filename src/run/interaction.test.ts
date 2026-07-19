@@ -7,11 +7,11 @@ import { type CardDef } from '../content/cards';
 import { suspendChoice } from '../rules/effects';
 import { recoverFromDiscard } from '../rules/deck';
 
-// A local fixture for the `chooseCard` interaction path + the `recoverFromDiscard` primitive (no
-// shipping card exercises them). It reproduces the canonical shape — suspend a choice over the discard,
-// then return the chosen card to hand — so the interaction *engine* (suspend/resume, blocking guards,
-// clone-safety) and the recovery mover both stay covered. An interactive-`suspendChoice` card is exactly
-// the kind of one-file fixture that stays local (see `rules/testFixtures.ts`), installed via `installCards`.
+// A local fixture for the `chooseCard` interaction path + the `recoverFromDiscard` primitive, kept
+// synthetic so the interaction *engine* (suspend/resume, blocking guards, clone-safety) and the recovery
+// mover stay covered independently of whatever content happens to use them — the shipping Writing action
+// is free to be rebalanced or retired without taking this coverage with it. An interactive-`suspendChoice`
+// card is exactly the kind of one-file fixture that stays local (see `rules/testFixtures.ts`).
 const FIXTURE: Record<string, CardDef> = {
   test_recover: {
     id: 'test_recover', name: 'Test Recover', kind: 'action', cost: { science: 2 },

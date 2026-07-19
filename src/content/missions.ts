@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, THIEVES_PER_GOLD } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, THIEVES_PER_GOLD } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -317,6 +317,30 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Mainline convergence rejoining the centre axis (like first_temple); the pyramid leaf sits below at
     // col 6 row 1.
     map: { col: 6, row: 0 },
+    age: 'bronze',
+  },
+  writing: {
+    id: 'writing',
+    name: 'Writing',
+    lore:
+      'Your scribes can tally what the storehouses hold, but nothing holds what your people know. The ' +
+      'oldest potter dies and her glaze dies with her; a flood comes a generation after the last one ' +
+      'and no one living recalls how high the water rose. Tallies were only the beginning — press the ' +
+      'stories, the measures, and the laws into wet clay, and your civilization will outlive the ' +
+      'memory of any single elder.',
+    prereqs: ['accounting'],
+    // One `clay_tablet` per record, tied to the objective's threshold by the shared CLAY_TABLETS const
+    // so the mission can't seed a different count than the win asks for.
+    events: Array.from({ length: CLAY_TABLETS }, () => 'clay_tablet'),
+    objectiveCardId: 'writing_goal',
+    victoryHint: `Record all ${CLAY_TABLETS} clay tablets — pay 3 🔨 and 2 🌾 for each.`,
+    failureHint:
+      'A tablet you draw and leave unrecorded loses 1 🔬 that round; let too much knowledge slip and a dark age ends the run.',
+    kind: 'standard',
+    // Opens the literacy half of the Bronze spine: the Archives (the first science *building*) and the
+    // Writing action. Influence amount provisional (balance pending a sim sweep).
+    reward: { influence: 12, unlockCardIds: ['archives', 'writing'] },
+    map: { col: 7, row: 0 },
     age: 'bronze',
   },
   ice_age: {

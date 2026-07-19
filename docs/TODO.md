@@ -69,8 +69,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see *Done / shipped*).
   2. **Masonry** — mechanics DONE (balance pending; see *Done / shipped*). Optional **Pyramid** leaf — mechanics DONE (balance pending; see *Done / shipped*).
-  3. **Accounting** — mechanics DONE (balance pending; see *Done / shipped*). **Writing** (+ optional
-     Hammurabi leaf) remains — the literacy half of the spine.
+  3. **Accounting** — mechanics DONE (balance pending; see *Done / shipped*). **Writing** — mechanics
+     DONE (balance pending; see *Done / shipped*). The optional **Hammurabi's Code** leaf off Writing
+     remains — the last piece of the literacy half.
   4. **Wheel+roads (×2)** first (it carries the money identity).
   5. **Horse (×2)**, **Naval (×2)**.
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
@@ -95,8 +96,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **Accounting — mechanics DONE** 🟡 (balance pending) — see [*Done / shipped*](#done--shipped). Shipped
     the **Trader** (work card, 3🪙/worker — *not* the old "1🪙 building" note) + the **Opulence** board
     sticker (+10 starting 🪙).
-  - **Writing** → **Library/scribe** (science + hand-size building — DESIGN's worked example). Optional
-    leaf **Hammurabi's Code** off here (law/culture — a sticker or stability card, not a wonder).
+  - **Writing — mechanics DONE** 🟡 (balance pending) — see [*Done / shipped*](#done--shipped). Shipped
+    the **Archives** building + the **Writing** action (superseding the old "Library/scribe hand-size
+    building" note). Optional leaf **Hammurabi's Code** off here (law/culture — a sticker or stability
+    card, not a wonder) still to author.
   - **Wheel+roads (×2)** → **Wheel** −1🔨 cost sticker for buildings/works (relocated from old 7.2), then
     a land-trade money work (caravan/roads).
   - **Horse (×2)** → draft/traction (cost/production) then a military-feeder war-horse. Keep mounted
@@ -248,6 +251,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   zoom overlay puffs floating *pet* *pet* text + a woof! bubble instead of closing. Lives in
   `CardZoomOverlay` (gated on `cardId === 'dogs'`) via a new `CardFace` `onArtClick` prop, so it works
   on every zoom surface.
+- **Step 7 — Writing** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the Bronze
+  Age's literacy node (`prereqs: ['accounting']`, bronze col 7 row 0, staying on the centre axis). Five
+  **Clay Tablet** events (3🔨+2🌾 each) seeded into the deck; recording one exiles it to `removed`, which
+  the goal counts. An unrecorded tablet loses 1🔬 the round it's drawn and files to discard, so it comes
+  back around — and since 🔬 is a core pool, letting too much slip collapses the run into a **dark age**.
+  No threat card: the events *are* the pressure (like Raiders). Deliberately costs 🔨/🌾 rather than 🔬,
+  since Storytelling is the only science faucet until this mission's own reward lands. Unlocks the
+  **Archives** (building, 4🔨, 2🔬/worker — the Forge's science twin, obsoleting Storytelling) and the
+  **Writing** action (2🔬, return a chosen card from discard to hand) — the first shipping consumers of
+  the `chooseCard` interaction, `recoverFromDiscard`, and the `discardEmpty` gate. Reward influence 12.
+  - **Balance watch (open):** the 🔬 drain is the design's load-bearing number, not just its most
+    movable one — it is the mission's *only* pressure. An unrecorded tablet fires upkeep **once** then
+    files to discard, so at −1 the total bleed (≈−5🔬 per full deck cycle) may be too slight to force
+    the record-early-or-bleed decision, leaving the mission a softer *Finding Copper*. Too high and an
+    opening-hand tablet on a low-science board can dark-age before the player can act. The sim question
+    is whether a value exists inside that window; if not, scale the drain by tablets *in hand*, add a
+    grace round, or introduce a light threat.
 - **Step 7 — Accounting** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the Bronze
   Age's money-spine convergence: `prereqs: ['finding_copper', 'masonry']` (the first two-prereq gate — both
   branches required), bronze col 6 row 0, rejoining the centre axis. A single 🪙-stockpile goal (40, provisional)
