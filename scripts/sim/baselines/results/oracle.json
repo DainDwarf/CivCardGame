@@ -1,0 +1,447 @@
+[
+  {
+    "label": "accounting",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 24,
+      "mean": 28.8,
+      "median": 28.5,
+      "max": 37
+    },
+    "meanResources": {
+      "food": 6.1,
+      "production": 26.5,
+      "science": 0,
+      "military": 5.1,
+      "money": 40.2,
+      "population": 5,
+      "culture": 34.7,
+      "territory": 5.3
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "bow": 20,
+      "toolmaking": 85,
+      "beer": 11,
+      "jewelry": 119,
+      "farm": 19,
+      "cave_art": 63,
+      "dogs": 130,
+      "conquest": 33,
+      "thief": 52,
+      "gobekli_tepe": 9,
+      "house": 15,
+      "forge": 8
+    },
+    "unplayedCards": [],
+    "meanActions": 93.6
+  },
+  {
+    "label": "finding_copper",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 14,
+      "mean": 17.3,
+      "median": 17,
+      "max": 21
+    },
+    "meanResources": {
+      "food": 11.5,
+      "production": 2.9,
+      "science": 1.8,
+      "military": 7.9,
+      "money": 4.8,
+      "population": 2.1,
+      "culture": 1.2,
+      "territory": 2
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "storytelling": 85,
+      "toolmaking": 72,
+      "foraging": 96,
+      "jewelry": 44,
+      "bartering": 40,
+      "bow": 13,
+      "copper_vein": 30,
+      "dogs": 20,
+      "cave_art": 6,
+      "hut": 1
+    },
+    "unplayedCards": [
+      "conquest"
+    ],
+    "meanActions": 57.4
+  },
+  {
+    "label": "first_settlement",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 10,
+      "mean": 10.5,
+      "median": 10,
+      "max": 13
+    },
+    "meanResources": {
+      "food": 6.5,
+      "production": 10.4,
+      "science": 4.8,
+      "military": 11,
+      "money": 2.5,
+      "population": 2,
+      "culture": 0,
+      "territory": 0
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "foraging": 72,
+      "storytelling": 24,
+      "dogs": 37,
+      "toolmaking": 78,
+      "bow": 12,
+      "jewelry": 24,
+      "bartering": 23
+    },
+    "unplayedCards": [
+      "cave_art"
+    ],
+    "meanActions": 37.7
+  },
+  {
+    "label": "first_temple",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 37,
+      "mean": 41.2,
+      "median": 41.5,
+      "max": 46
+    },
+    "meanResources": {
+      "food": 8.3,
+      "production": 30.5,
+      "science": 7.2,
+      "military": 6.6,
+      "money": 30.5,
+      "population": 3,
+      "culture": 35.9,
+      "territory": 3
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "farm": 10,
+      "dogs": 34,
+      "cave_art": 83,
+      "foraging": 261,
+      "toolmaking": 298,
+      "jewelry": 183,
+      "storytelling": 38,
+      "bartering": 61,
+      "bow": 16,
+      "hut": 10,
+      "conquest": 10,
+      "burial": 9,
+      "beer": 30
+    },
+    "unplayedCards": [
+      "calendar"
+    ],
+    "meanActions": 160.2
+  },
+  {
+    "label": "growing_numbers",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 3,
+      "mean": 6.6,
+      "median": 6.5,
+      "max": 10
+    },
+    "meanResources": {
+      "food": 9.1,
+      "production": 1.4,
+      "science": 3,
+      "military": 5.4,
+      "money": 2.5,
+      "population": 3,
+      "culture": 0.2,
+      "territory": 2
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "dogs": 21,
+      "toolmaking": 35,
+      "jewelry": 16,
+      "foraging": 35,
+      "storytelling": 15,
+      "bow": 4,
+      "farm": 10,
+      "bartering": 7,
+      "hut": 10,
+      "cave_art": 1
+    },
+    "unplayedCards": [
+      "conquest"
+    ],
+    "meanActions": 23.1
+  },
+  {
+    "label": "masonry",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 18,
+      "mean": 21.1,
+      "median": 21,
+      "max": 25
+    },
+    "meanResources": {
+      "food": 18.9,
+      "production": 8.1,
+      "science": 0,
+      "military": 4,
+      "money": 8,
+      "population": 6,
+      "culture": 18,
+      "territory": 6
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "dogs": 90,
+      "toolmaking": 166,
+      "farm": 20,
+      "bow": 20,
+      "conquest": 40,
+      "jewelry": 67,
+      "hut": 40,
+      "cave_art": 46,
+      "bartering": 54,
+      "beer": 18
+    },
+    "unplayedCards": [],
+    "meanActions": 77.6
+  },
+  {
+    "label": "pyramid",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 9,
+    "winRate": 0.9,
+    "turns": {
+      "min": 26,
+      "mean": 33.3,
+      "median": 32.5,
+      "max": 41
+    },
+    "meanResources": {
+      "food": 7.5,
+      "production": 38.9,
+      "science": 0,
+      "military": 4.6,
+      "money": 53.1,
+      "population": 4.2,
+      "culture": 32.1,
+      "territory": 4.4
+    },
+    "defeatCauses": {
+      "the pharaoh died before his tomb was ready": 1
+    },
+    "cardPlays": {
+      "cave_art": 98,
+      "dogs": 59,
+      "foraging": 64,
+      "toolmaking": 93,
+      "farm": 12,
+      "trader": 148,
+      "beer": 29,
+      "hut": 12,
+      "jewelry": 47,
+      "bow": 16,
+      "conquest": 24,
+      "forge": 10,
+      "house": 5
+    },
+    "unplayedCards": [
+      "gobekli_tepe"
+    ],
+    "meanActions": 101.9
+  },
+  {
+    "label": "raiders_at_border",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 7,
+      "mean": 10.7,
+      "median": 10.5,
+      "max": 16
+    },
+    "meanResources": {
+      "food": 10.6,
+      "production": 3.5,
+      "science": 4,
+      "military": 1.2,
+      "money": 4,
+      "population": 2.1,
+      "culture": 0,
+      "territory": 2
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "foraging": 60,
+      "toolmaking": 49,
+      "bow": 16,
+      "jewelry": 28,
+      "dogs": 27,
+      "storytelling": 21,
+      "bartering": 16,
+      "raider": 30,
+      "farm": 9,
+      "hut": 1
+    },
+    "unplayedCards": [
+      "cave_art",
+      "conquest",
+      "burial"
+    ],
+    "meanActions": 38.8
+  },
+  {
+    "label": "reading_seasons",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 11,
+      "mean": 13,
+      "median": 13,
+      "max": 15
+    },
+    "meanResources": {
+      "food": 9.6,
+      "production": 4.6,
+      "science": 10,
+      "military": 9.6,
+      "money": 5.4,
+      "population": 3,
+      "culture": 1,
+      "territory": 2
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "jewelry": 42,
+      "toolmaking": 71,
+      "bow": 10,
+      "foraging": 76,
+      "storytelling": 50,
+      "bartering": 30,
+      "farm": 10,
+      "dogs": 33,
+      "hut": 10,
+      "cave_art": 5
+    },
+    "unplayedCards": [
+      "conquest"
+    ],
+    "meanActions": 50.2
+  },
+  {
+    "label": "restless_people",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 33,
+      "mean": 34.8,
+      "median": 34.5,
+      "max": 37
+    },
+    "meanResources": {
+      "food": 10.4,
+      "production": 7.4,
+      "science": 11.4,
+      "military": 18.4,
+      "money": 3.8,
+      "population": 3,
+      "culture": 30,
+      "territory": 2.2
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "foraging": 225,
+      "storytelling": 64,
+      "toolmaking": 141,
+      "dogs": 67,
+      "jewelry": 134,
+      "cave_art": 154,
+      "bartering": 35,
+      "bow": 20,
+      "farm": 10,
+      "hut": 10,
+      "conquest": 2
+    },
+    "unplayedCards": [
+      "calendar"
+    ],
+    "meanActions": 127.9
+  },
+  {
+    "label": "rites_rituals",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 11,
+      "mean": 11.9,
+      "median": 11,
+      "max": 16
+    },
+    "meanResources": {
+      "food": 8.6,
+      "production": 4.1,
+      "science": 5.4,
+      "military": 7.6,
+      "money": 4.2,
+      "population": 3,
+      "culture": 10,
+      "territory": 2.1
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "jewelry": 35,
+      "foraging": 73,
+      "storytelling": 27,
+      "cave_art": 50,
+      "bartering": 28,
+      "toolmaking": 64,
+      "dogs": 27,
+      "hut": 10,
+      "farm": 9,
+      "bow": 9,
+      "conquest": 1
+    },
+    "unplayedCards": [],
+    "meanActions": 48.5
+  }
+]
