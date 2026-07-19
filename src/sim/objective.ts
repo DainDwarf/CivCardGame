@@ -1,5 +1,5 @@
 import { goalProgress, type GameState } from '../rules';
-import { CARDS, COPPER_VEINS } from '../content/cards';
+import { CARDS } from '../content/cards';
 
 /**
  * A **sim-local progress gradient** toward a mission's objective — the signal the balance policies
@@ -21,24 +21,7 @@ import { CARDS, COPPER_VEINS } from '../content/cards';
  * Exported for the coherence test (`objective.test.ts`) that pins every key to a real objective card —
  * a mistyped/renamed key would silently fall back to the generic gradient and drop the steering term.
  */
-export const OVERRIDES: Record<string, (G: GameState) => number> = {
-  // "Finding Copper": mine every vein — but a vein costs 2🔨 + 5🔬, and the win predicate counts only
-  // *mined* veins. That term moves solely on the turn a vein is played, so a one-ply policy sees no
-  // reward for the several turns of banking science that make the play legal at all, and never stockpiles
-  // toward it. Blending in capped progress toward one vein's cost gives those turns a gradient to climb.
-  // The cost term is worth less than a mined vein (a fractional share of one vein's weight), so paying it
-  // to mine always scores higher than hoarding it.
-  finding_copper_goal: (G) => {
-    const mined = Math.min(G.removed.filter((c) => c.cardId === 'copper_vein').length, COPPER_VEINS);
-    const cost = CARDS.copper_vein.cost;
-    const banked =
-      (Math.min(G.resources.production, cost.production ?? 0) / (cost.production || 1) +
-        Math.min(G.resources.science, cost.science ?? 0) / (cost.science || 1)) /
-      2;
-    // The banked term only steers *between* mined veins, so it stops counting once the last one lands.
-    return mined === COPPER_VEINS ? 1 : (mined + banked) / COPPER_VEINS;
-  },
-};
+export const OVERRIDES: Record<string, (G: GameState) => number> = {};
 
 /**
  * Progress in roughly `[0, 1]` toward the seeded objective (`1` once met). A `sim/` steering `OVERRIDE`
