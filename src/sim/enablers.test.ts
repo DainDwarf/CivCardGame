@@ -193,6 +193,54 @@ describe('population capacity enabler', () => {
   });
 });
 
+describe('intrinsic strategic floor', () => {
+  // Growing Numbers wins on a *building count*, so no resource moves `objectiveProgress` and every
+  // objective-derived credit is zero — the case the floor exists for.
+  function cardCountRoot(): GameState {
+    const config = simConfig({
+      deckCardIds: ['hut', 'hut', 'farm', 'farm', 'foraging', 'foraging', 'toolmaking', 'toolmaking'],
+      board: 'settlement',
+      missionId: 'growing_numbers',
+      seed: 'enablers-intrinsic',
+    });
+    return createRun(config).G;
+  }
+
+  it('credits all three strategic pools on an objective that names no resource', () => {
+    const m = deriveEnablers(cardCountRoot());
+    for (const k of ['territory', 'population', 'culture'] as const) {
+      expect(m.weight[k] ?? 0, k).toBeGreaterThan(0);
+      expect(m.cap[k], k).toBeDefined();
+    }
+  });
+
+  it('rises with a held strategic pool where the derived model alone would be flat', () => {
+    const m = deriveEnablers(cardCountRoot());
+    const pot = (population: number) => {
+      const G = cardCountRoot();
+      G.resources = emptyResources();
+      G.resources.population = population;
+      return enablerPotential(G, m);
+    };
+    expect(pot(3)).toBeGreaterThan(pot(0));
+  });
+
+  it('does not downgrade a pool the objective genuinely runs through', () => {
+    // Masonry's territory carries a real derived throughput credit (the slot a Hut needs); composing the
+    // floor as a `max` must leave that strictly above the bare floor.
+    const derived = deriveEnablers(masonryRoot()).weight.territory!;
+    expect(derived).toBeGreaterThan(deriveEnablers(cardCountRoot()).weight.territory!);
+  });
+
+  it('stays below a goal step, so engine never outbids the objective it serves', () => {
+    // The floor is a growth nudge, not a competing goal: a fully saturated strategic pool must score under a
+    // single unit of objective progress.
+    const m = deriveEnablers(cardCountRoot());
+    const saturated = m.weight.population! * m.cap.population!;
+    expect(saturated).toBeLessThan(OBJECTIVE_WEIGHT);
+  });
+});
+
 describe('culture enabler', () => {
   // First Settlement wins on production/military; culture is *not* goal-valued, so a producer gated behind a
   // culture level makes reaching that level an enabler. Göbekli Tepe is gated at culture level 1 and produces

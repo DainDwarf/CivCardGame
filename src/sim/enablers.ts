@@ -17,7 +17,8 @@ import { OBJECTIVE_WEIGHT } from './value';
  * - **Strategic capacity.** The three strategic resources all *grow the production engine* rather than
  *   being spent: territory is building slots, population is worker slots, culture is cards-per-turn and
  *   card gates. None is a cost, so none converts in a single hop; each is credited for the durable
- *   goal-throughput it *unlocks* over a horizon (build/staff/gate a goal-producer), saturated at a cap.
+ *   goal-throughput it *unlocks* over a horizon (build/staff/gate a goal-producer), saturated at a cap, and
+ *   floored at a small intrinsic credit so an objective naming no resource still yields a growth slope.
  *
  * Derived **mechanically from card data**, not a per-mission table: probe which resources move
  * `objectiveProgress` (the goal-valued set), then read each card's `cost → effect/produces` (consumables)
@@ -47,6 +48,16 @@ const CAPACITY_HORIZON = 2;
  *  past the starting pool without binding at realistic deck sizes; over-building is bounded by
  *  `scoreState`'s real costs, not this. */
 const CAPACITY_CAP = 12;
+
+/** Baseline per-unit credit for holding a strategic pool, independent of any objective-derived throughput.
+ *  `scoreState`'s band 5 already grants *core* pools a small unconditional accumulation credit while the
+ *  strategic pools — the ones that actually compound — get none, so an objective that names no resource
+ *  (a card-count goal) leaves the whole model empty and the planner unshaped. A bigger engine is worth
+ *  something on any mission; how much is affordable is already priced by `scoreState`'s costs. Composed as
+ *  `max(floor, derived)` so a pool the objective genuinely runs through is never downgraded by adding a
+ *  floor. Uniform across the three pools: population's upkeep is the one asymmetry, and it lands as food
+ *  drain in bands 2–3 rather than needing a smaller credit here. Tuned against win-rate, not derived. */
+const INTRINSIC_CAPACITY_CREDIT = 0.01 * OBJECTIVE_WEIGHT;
 
 /** Per-culture-level credit for the bigger hand each level draws (`rules/culture.ts`'s `effectiveHandSize`
  *  adds one card per level). Unlike the other capacity credits this is *not* objective-directed — more
@@ -153,8 +164,8 @@ export function deriveEnablers(G: GameState): EnablerModel {
 
   // Strategic capacity enablers — territory, population, culture. None is *spent* on a card: each is a
   // durable capacity that unlocks a goal-producer's output every round, credited over `CAPACITY_HORIZON`
-  // (not the consumables' one-shot `HOP_DISCOUNT`) and saturated at `CAPACITY_CAP`. Each is skipped when
-  // it is itself goal-valued — the objective scores it directly, the same reason the consumable loop below
+  // (not the consumables' one-shot `HOP_DISCOUNT`) and saturated at `CAPACITY_CAP`, never below the
+  // objective-independent `INTRINSIC_CAPACITY_CREDIT`. Each is skipped when it is itself goal-valued — the objective scores it directly, the same reason the consumable loop below
   // skips a goal-valued cost resource. Computed first so a capacity weight can itself be a conversion
   // target for the consumables. Complementarity (a staffed building needs both a slot and a worker) needs
   // no joint model: crediting the *total* pool never falls when one is consumed (strategic pools aren't
@@ -166,20 +177,16 @@ export function deriveEnablers(G: GameState): EnablerModel {
   // `produces`) alike.
   if (goalValued.territory === undefined) {
     const best = bestGoalThroughput(ids, goalValued, isStructure, true);
-    if (best > 0) {
-      weight.territory = best * CAPACITY_HORIZON;
-      cap.territory = CAPACITY_CAP;
-    }
+    weight.territory = Math.max(INTRINSIC_CAPACITY_CREDIT, best * CAPACITY_HORIZON);
+    cap.territory = CAPACITY_CAP;
   }
 
   // Population is the worker for a per-worker producer (`workers >= 1`); the staffing yields the output, so
   // it reads `produces` only, not the card's one-shot play `effect`.
   if (goalValued.population === undefined) {
     const best = bestGoalThroughput(ids, goalValued, (c) => (c.workers ?? 0) >= 1, false);
-    if (best > 0) {
-      weight.population = best * CAPACITY_HORIZON;
-      cap.population = CAPACITY_CAP;
-    }
+    weight.population = Math.max(INTRINSIC_CAPACITY_CREDIT, best * CAPACITY_HORIZON);
+    cap.population = CAPACITY_CAP;
   }
 
   // Culture's gate-unlock: reaching a level ungates a producer (a `cultureLevelReq` card), so raw culture
@@ -188,10 +195,8 @@ export function deriveEnablers(G: GameState): EnablerModel {
   // no-skip nudge below.
   if (goalValued.culture === undefined) {
     const best = bestGoalThroughput(ids, goalValued, (c) => !!c.gate?.cultureLevelReq, true);
-    if (best > 0) {
-      weight.culture = best * CAPACITY_HORIZON;
-      cap.culture = CAPACITY_CAP;
-    }
+    weight.culture = Math.max(INTRINSIC_CAPACITY_CREDIT, best * CAPACITY_HORIZON);
+    cap.culture = CAPACITY_CAP;
   }
 
   // Consumables. Value each resource worth converting *into* at its score credit per unit — a goal-valued

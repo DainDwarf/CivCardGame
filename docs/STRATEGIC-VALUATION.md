@@ -153,3 +153,32 @@ counts) and diff against the committed results:
 
 A win-rate gain on the affected group bought with a regression on the other eight means the constant is
 too generous; that is the expected failure mode and the reason both groups are baselined.
+
+### Measured
+
+`INTRINSIC_CAPACITY_CREDIT = 0.01 · OBJECTIVE_WEIGHT`, uniform, composed as `max(floor, derived)`. Planner
+@ 100 seeds; greedy came back bit-identical on all eleven cells, so the planner is the only variable.
+
+- **Unaffected eight — no regression.** `masonry` +0.05 (0.87 → 0.92), `finding_copper` +0.01,
+  `reading_seasons` −0.01, `restless_people` −0.04, the rest flat. The acceptance test passes.
+- **Affected four — no gain available.** Three sit at the planner ceiling already (`growing_numbers` 1.00,
+  `raiders_at_border` 0.99, `finding_copper` 0.96) and are unchanged. Only `writing` had headroom, and it
+  did **not** improve: 0.29 → 0.23 (~1σ at 100 seeds), against an oracle ceiling of 1.00.
+
+Writing's baseline, captured ad-hoc at this SHA (`scripts/sim/decks/writing.json`, City board, no fixture
+yet per Phase 0): greedy 0.03 · planner 0.29 · oracle 1.00 — the widest planner-to-oracle gap in the set.
+
+### Why the floor cannot fix `writing`
+
+Structural, not a magnitude to tune. A card-count objective makes `goalValuedResources` return `{}`, so
+production — which *is* `clay_tablet`'s cost — is never goal-valued. The floor weights the strategic pools,
+the consumables loop then reads those weights into `valued`, and production gets credited toward
+`Hut → population` and `Beer → culture`: engine sinks that **compete** with the production the tablet needs.
+The seed-0 trace shows exactly that — where the pre-change run banked food and played no tablet, the
+post-change run built culture 0 → 15 (Beer ×2), unassigned a worker, and died three rounds *earlier*.
+Raising the constant strengthens the competition, so magnitude is the wrong lever.
+
+What `writing` needs is the deferred card-introspection layer: band 4 already rewards *playing* a tablet
+(`objectiveProgress` reads the removed count), but the turns spent banking 6🔨 toward one are flat, and only
+a probe that identifies the goal-advancing **card** and reads its cost can slope them. The two layers remain
+non-exclusive — the floor stands on the band-5 asymmetry argument, independent of this.
