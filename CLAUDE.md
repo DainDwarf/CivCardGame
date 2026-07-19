@@ -62,6 +62,15 @@ surprise, so nothing shows a locked placeholder or a total count.
   (live from `content/missions.ts`), `--deck`/`--board` point at JSON files (examples under
   `scripts/sim/`), with `--seeds`/`--policies`/`--format` (text|json). `--seed <i>` switches to a
   single-run per-turn replay trace. See *Balance tooling*.
+- `npm run sim:profile` — the same sweep under `@platformatic/flame`, which writes a **markdown**
+  hotspot report (annotated call tree + per-function callers/callees) beside an HTML flamegraph, into
+  the gitignored `cpu-profile-*`/`heap-profile-*` in the CWD. Markdown so the report is readable
+  without a browser. Takes every `npm run sim` flag. Three load-bearing details: `--delay=none`
+  (`scripts/sim.ts` is fully synchronous, so the default deferred start arms the profiler *after* the
+  sweep has already finished and captures nothing); `--node-options="--import tsx"` (plain `tsx` can
+  put the work in a child process the profiler never samples); and the pinned version (the tool floats
+  its own deps, and an unpinned profiler that breaks is worse than none). Use ~20 seeds — tsx's
+  compile startup is a fixed cost that badly skews a short run.
 - `npm run economy` — economy tool (`scripts/economy.ts` via `tsx`): pure computation over content (no
   simulation). Prints the **faucet ledger** (guaranteed Influence granted per standard mission + the
   cumulative amount arriving at each, via `campaign.ts`'s `cumulativeInfluenceInto`) and the **price

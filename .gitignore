@@ -7,6 +7,10 @@ dist-ssr
 # Generated dev saves (npm run seed-save)
 *.civsave
 
+# Profiler output (npm run sim:profile) — flame writes into the CWD
+cpu-profile-*
+heap-profile-*
+
 # Editor / OS
 .DS_Store
 .idea
