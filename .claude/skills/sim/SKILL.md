@@ -10,6 +10,22 @@ under a move policy. One run answers little; sweeping one cell over many seeds g
 balance answers no human can grind — win rate, turn/defeat-cause distribution,
 per-card play counts. It re-implements **no** game logic; it composes the real engine.
 
+## Report the numbers, not a diagnosis
+
+**Unless the user asks for analysis, don't analyze.** Run the sweep and hand back what the
+tool printed — win rate, turns, defeat-cause histogram, unplayed cards, the deltas between
+two runs. Then stop. No "this suggests the economy is too tight", no guess at *why* a card
+went unplayed, no balance recommendation, no proposed fix.
+
+The reason is empirical: the sim reports *what* happened, and a causal story about *why*
+takes evidence the report doesn't contain. Volunteered interpretations have overwhelmingly
+been stabs in the dark, and a confident wrong one is worse than none — it sends the balance
+pass chasing a phantom.
+
+If the numbers look surprising and you want to say something, say the surprising number and
+offer the next *measurement* ("`--seed 3` would replay that loss"), not a conclusion. The
+sections below on reading the report are reference material for when the user does ask.
+
 The whole tool is the `npm run sim` CLI (`scripts/sim.ts`) — **no scratchpad scripts.**
 The three axes are decoupled the way the campaign menu presents them: pick the
 mission(s) by id, point `--deck` at a JSON file, and name the `--board` by its content
@@ -90,7 +106,7 @@ npm run sim -- --scenario growing_numbers --deck <file> --board <board> --polici
 The index `i` matches the batch's seed stream (`<mission>-cfg-i` / `<mission>-pol-i`), so a cell
 that lost/won in a sweep can be re-run verbatim to see *what happened*.
 
-## Reading the report — the two things that go wrong
+## Reference: reading the report (when asked) — the two things that go wrong
 
 **1. Policies are a bracket, not one number.** Each cell is swept under paired seeds across policies:
 - `random` = the difficulty **floor** / a playability + crash fuzzer. If a card is never played
@@ -159,7 +175,7 @@ Two kinds of variable:
      `git status --porcelain src/content/<file>.ts` must print nothing. If it prints anything, the
      rollback failed — say so loudly and stop; do not report the comparison as if the tree were clean.
      (This repo commits directly to `main`; a stray content edit would be swept into the next commit.)
-  6. **Compare** and present the deltas that matter — win rate, turns (min/median/mean/max),
-     defeat-cause histogram — not the raw dumps.
+  6. **Compare** and present the deltas — win rate, turns (min/median/mean/max), defeat-cause
+     histogram — not the raw dumps, and not a verdict on whether the edit is an improvement.
 
   The player never sees the edit: it exists only between steps 3 and 5.
