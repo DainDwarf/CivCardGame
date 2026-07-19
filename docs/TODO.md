@@ -194,6 +194,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
+- **Fix Pyramid wonder card overflow** — the Pyramid's effect text is too long; the bottom text overflows and the card extends past its fixed size. `[?]` `[phase: 4]`
 - **Unsaved-changes warning on leaving the deck editor** — if the player has made edits in `DeckEditor.tsx`
   that aren't saved, prompt/confirm before discarding them on exit. `[?]` `[phase: 4]`
 - **Per-pip worker drag** — independent per-pip *drag* (drag a specific pip to another box); box-level
