@@ -97,7 +97,10 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   `getCounter`/`bumpCounter`), the tableau (`PlacedCard` = `CardInstance` + `workers`), `workZone`
   (played `work` awaiting staffing), `threats`, `objective`, and `pendingInteraction` (a suspended
   card effect; while set, `endTurn` no-ops and undo is blocked). `instancesFromCardIds` mints;
-  `blankState()` builds an empty one. Instance ids are unique across *all* zones. `G.events` is always
+  `blankState()` builds an empty one; `cloneState()` is the snapshot primitive every move, undo entry
+  and projection copies through (a plain-data deep walk — `G` has no Maps/Sets/cycles/functions, so
+  `structuredClone`'s generality bought nothing and cost ~12× the time).
+  Instance ids are unique across *all* zones. `G.events` is always
   drained to `[]` in any committed/undo-visible state — undo, clone, and determinism depend on it.
 - **`resources.ts`** — the three resource types and their arithmetic: `CoreResources` (5 spendable —
   food/production/science/military/money), `StrategicResources` (population/culture/territory), and
@@ -264,7 +267,7 @@ logic that rides on it. **A building card *is* the building** — there's no sep
 - **`engine.ts`** — the turn state machine. `RunState = { G, gameover }`. `createRun` bootstraps
   (`createInitialState` → first `beginTurn`). `endTurn` runs `applyUpkeep`, checks win/loss, hands off
   to `settleEndOfTurn`, re-checks, then starts the next turn. `applyMove(state, moveFn, ...)` clones `G`
-  with `structuredClone`, runs the move, checks win/loss. `toRunResult(G, gameover)` promotes a
+  with `cloneState`, runs the move, checks win/loss. `toRunResult(G, gameover)` promotes a
   finished run into the `RunResult`.
 - **`moves.ts`** — the moves, the **only** place `G` may change: validate, mutate the plain-object `G`
   draft, delegate computation to `src/rules/`, return `'invalid'` to reject. `playCard` pays costs then
@@ -363,7 +366,7 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   engine doesn't expose), kept strictly in `sim/` — never a hook on a card/mission. See DESIGN.md →
   *Code architecture* for the `sim/`-is-a-consumer rule and the oracle's soundness/completeness argument.
 - **`planner` internals** — the honest middle between the greedies (too shallow to plan a setup chain)
-  and the oracle (cheats by reading the real shuffle off `structuredClone(G)`). `determinize.ts` samples
+  and the oracle (cheats by reading the real shuffle off `cloneState(G)`). `determinize.ts` samples
   **fair** worlds — the deck as an unordered multiset (never the real order; v1 shuffles the whole deck,
   as `revealCount` isn't yet a reliable known-prefix length), from the policy's own seed stream — and the
   planner averages a shallow beam over them (Perfect-Information Monte Carlo), re-planning per turn.
@@ -405,7 +408,7 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   since it's usually a sign the logic landed in the wrong place; keep a mechanism's explanation where
   the mechanism lives, and from elsewhere use a bare pointer).
 - **All state changes flow through `applyMove` / `endTurn` in `engine.ts`** — moves receive a
-  `structuredClone` of `G` and mutate it directly; never mutate `G` elsewhere.
+  `cloneState` copy of `G` and mutate it directly; never mutate `G` elsewhere.
 - **Game logic is deterministic — never `Math.random`.** Runs are seeded so they're reproducible
   (replays + headless simulation); all randomness goes through the seeded RNG (`src/rules/rng.ts`),
   threaded as `GameState.rngState` and advanced by `deck.ts`'s draw/reshuffle. `config.deck` reaches

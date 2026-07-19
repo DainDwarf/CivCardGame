@@ -1,4 +1,4 @@
-import { CORE_KEYS, applyUpkeep, isOperating, projectNextTurn, subtractResources, type GameState, type Resources } from '../rules';
+import { CORE_KEYS, applyUpkeep, cloneState, isOperating, projectNextTurn, subtractResources, type GameState, type Resources } from '../rules';
 import { objectiveProgress } from './objective';
 
 /**
@@ -55,7 +55,7 @@ export const OBJECTIVE_WEIGHT = W.objective;
  * depends on future draws. Reuses the real upkeep math via a stripped clone rather than re-deriving it.
  */
 function permanentDelta(G: GameState): Resources {
-  const clone = structuredClone(G);
+  const clone = cloneState(G);
   clone.workZone = []; // drop this-turn-only work-box production before running upkeep
   applyUpkeep(clone); // tableau production − threat drains − building maintenance − population food
   return subtractResources(clone.resources, G.resources); // settleEndOfTurn skipped: no hand events

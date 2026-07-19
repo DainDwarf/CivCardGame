@@ -74,7 +74,7 @@ export interface ValueSnapshot {
 
 /**
  * A game event dispatched to card `on` handlers (`rules/events.ts`). Plain data so it rides on `G`
- * and survives structuredClone/undo. Three flavours ride the same union: **discrete** events name a
+ * and survives cloning/undo. Three flavours ride the same union: **discrete** events name a
  * subject instance (`draw`/`discard`) and are *emitted* at their semantic site as a step runs;
  * **value** events (`resourceChange`) carry a before-snapshot and are *synthesized* by the flush
  * boundary via diff (resource writes have no single choke point); and **broadcast** events name no
@@ -145,7 +145,7 @@ export interface GameState {
   /** Which mission this run is playing (looked up in the MISSIONS registry). */
   missionId: string;
   /** Persisted state of the run's RNG stream (`rules/rng.ts`), advanced on each reshuffle. Setup
-   *  seeds it from `RunConfig.seed`; from there it's just data, carried by undo/structuredClone. */
+   *  seeds it from `RunConfig.seed`; from there it's just data, carried by undo/cloning. */
   rngState: readonly number[];
   /** A card effect suspended awaiting a player choice, or `null` when none is pending. While set,
    *  `endTurn` no-ops and undo is blocked until it resolves (see `PendingInteraction`). */
@@ -154,7 +154,7 @@ export interface GameState {
    * The event bus's transient queue (`rules/events.ts`). Sites *emit* by pushing here as a step runs
    * (a cheap append, safe mid-mutation — never dispatch from a mutation site); the step boundary then
    * *flushes* it, draining every event to its `on` handlers. **Invariant: empty (`[]`) in every
-   * committed / undo-visible state** — every `flushEvents` leaves it drained, so structuredClone/undo
+   * committed / undo-visible state** — every `flushEvents` leaves it drained, so clone/undo
    * only ever snapshot `[]`. It lives on `G` (not a side channel) so it's plain serializable data
    * like `pendingInteraction`, but nothing lasting is ever stored in it. */
   events: GameEvent[];
@@ -192,7 +192,7 @@ export interface GameState {
 
 /**
  * A card effect suspended mid-resolution, waiting on a player choice. Plain data on `GameState` so
- * it survives structuredClone/undo: the resolver reveals options, parks them here, and returns; the
+ * it survives cloning/undo: the resolver reveals options, parks them here, and returns; the
  * UI renders a prompt from this; `run/moves.ts`'s `resolveInteraction` re-enters the same card's
  * resolver with the chosen index, completing the effect and clearing this back to `null`.
  * **Non-cancelable** — the reveal has already committed (a peek bumps `revealCount`, clearing the undo
@@ -238,6 +238,31 @@ export function blankState(missionId: string): GameState {
     reshuffleCount: 0,
     revealCount: 0,
   };
+}
+
+/**
+ * A deep copy of a run state — the snapshot primitive every move, undo entry, and projection is built
+ * on (`run/engine.ts`, `rules/upkeep.ts`'s `projectNextTurn`).
+ *
+ * `GameState` is plain serializable data by construction — nested objects, arrays, and primitives, with
+ * no Maps/Sets/Dates/cycles and no functions (a card's behaviour lives on its `CardDef`, never on an
+ * instance). So this recursive walk is exhaustive, and it is ~12× faster than `structuredClone`, whose
+ * generality none of the state uses. `state.test.ts` pins the no-shared-references guarantee.
+ */
+export function cloneState(G: GameState): GameState {
+  return deepClone(G);
+}
+
+function deepClone<T>(v: T): T {
+  if (v === null || typeof v !== 'object') return v;
+  if (Array.isArray(v)) {
+    const out = new Array(v.length);
+    for (let i = 0; i < v.length; i++) out[i] = deepClone(v[i]);
+    return out as unknown as T;
+  }
+  const out: Record<string, unknown> = {};
+  for (const k in v) out[k] = deepClone((v as Record<string, unknown>)[k]);
+  return out as T;
 }
 
 /**

@@ -25,7 +25,7 @@ export interface CardEffect {
 /**
  * The context a resolver runs against — the seam that makes an effect aware of *who* is resolving and
  * *what* they target, which a bare `(G, effect)` signature can't express. Plain data + `G`: nothing is
- * stored in `GameState`, so structuredClone undo and the projection HUD stay untouched.
+ * stored in `GameState`, so clone/undo and the projection HUD stay untouched.
  */
 export interface EffectContext {
   G: GameState;

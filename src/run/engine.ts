@@ -1,5 +1,5 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, coreCollapse, drawUpTo, flushEvents, settleEndOfTurn, snapshot, type CollapseReason, type GameState } from '../rules';
+import { applyUpkeep, cloneState, coreCollapse, drawUpTo, flushEvents, settleEndOfTurn, snapshot, type CollapseReason, type GameState } from '../rules';
 import type { RunConfig, RunResult } from '../contract';
 
 export type Gameover = { outcome: 'victory' | 'defeat'; reason?: CollapseReason | string; missionId: string };
@@ -25,7 +25,7 @@ function checkEndIf(state: RunState): RunState {
 }
 
 function beginTurn(state: RunState): RunState {
-  const G = structuredClone(state.G);
+  const G = cloneState(state.G);
   const before = snapshot(G);
   G.round += 1;
   drawUpTo(G);
@@ -56,7 +56,7 @@ export function endTurn(state: RunState): RunState {
   // A pending interaction pauses the run — the turn can't end until the player answers it, or the
   // parked (revealed) cards would be stranded and the choice would leak across the turn boundary.
   if (state.G.pendingInteraction) return state;
-  const G = structuredClone(state.G);
+  const G = cloneState(state.G);
   applyUpkeep(G);
   // Upkeep is the round's whole resolution — production, threat drains, and any unplayed event's
   // upkeep disaster — so the verdict here is read with all of them counted. Check before the hand
@@ -75,7 +75,7 @@ export function endTurn(state: RunState): RunState {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function applyMove(state: RunState, moveFn: (G: GameState, ...args: any[]) => 'invalid' | void, ...args: unknown[]): RunState {
   if (state.gameover) return state;
-  const G = structuredClone(state.G);
+  const G = cloneState(state.G);
   const before = snapshot(G);
   if (moveFn(G, ...args) === 'invalid') return state;
   // The move emitted its events (a sacrifice discard, a card-effect draw); dispatch them plus the

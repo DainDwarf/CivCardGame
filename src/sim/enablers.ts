@@ -1,4 +1,4 @@
-import { CORE_KEYS, STRATEGIC_KEYS, cultureLevel, emptyResources, type GameState, type Resources } from '../rules';
+import { CORE_KEYS, STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, type GameState, type Resources } from '../rules';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
 import { objectiveProgress } from './objective';
 import { OBJECTIVE_WEIGHT } from './value';
@@ -74,7 +74,7 @@ export interface EnablerModel {
  *  clone so the objective's caps (e.g. `min(population, 6)`) don't hide the slope. Non-resource goals
  *  (buildings/removed cards) don't register here; the enabler layer only shapes resource-threshold wins. */
 function goalValuedResources(G: GameState): Partial<Record<keyof Resources, number>> {
-  const probe = structuredClone(G);
+  const probe = cloneState(G);
   probe.resources = emptyResources();
   const base = objectiveProgress(probe);
   const out: Partial<Record<keyof Resources, number>> = {};

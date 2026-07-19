@@ -15,7 +15,7 @@ import { deriveEnablers, enablerPotential } from './enablers';
  * plan (`docs/…/seeded-oracle-plan.md`) set out to deliver.
  *
  * **Why an oracle is cheap here (the enabling finding).** `G.deck` is a fully materialized ordered array
- * and `G.rngState` lives *inside* `G`, so `structuredClone(G)` (what `applyAction`/`endTurn` already do)
+ * and `G.rngState` lives *inside* `G`, so `cloneState(G)` (what `applyAction`/`endTurn` already do)
  * hands any rollout the entire future draw order for free. The future is *already revealed* — the oracle
  * gets the omniscient answer by direct search instead of spending thousands of determinized rollouts to
  * approximate it (the reason this is the natural tool over MCTS in this engine).

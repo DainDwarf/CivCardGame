@@ -10,7 +10,7 @@ import { seededRng, type GameState } from '../rules';
 /**
  * A **fair, competent planner** — the honest middle between the one-ply greedies (too shallow to plan the
  * multi-turn conversion chains the game is built on) and the oracle (perfect-information: it reads the real
- * shuffle off `structuredClone(G)`, and pays a per-seed winnability-proof cost). Where the greedies stall
+ * shuffle off `cloneState(G)`, and pays a per-seed winnability-proof cost). Where the greedies stall
  * on a mission like Masonry — sitting at a survival equilibrium because banking military/production toward
  * a future Conquest/Hut never raises the one-ply heuristic — this policy searches a few turns ahead and
  * commits the best line.

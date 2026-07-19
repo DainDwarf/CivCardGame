@@ -4,7 +4,7 @@ import { willReshuffleOnRefill } from './deck';
 import { resolveUpkeep } from './effects';
 import { dispatchEvent, emitEvent, flushEvents, snapshot } from './events';
 import { CARDS } from '../content/cards';
-import type { CardInstance, GameState } from './state';
+import { cloneState, type CardInstance, type GameState } from './state';
 
 /**
  * File every Work card played this turn to the discard pile and clear the workZone. Called by
@@ -111,7 +111,7 @@ export interface ProjectedDelta {
  * toward a goal — Conquest's territory, Beer's culture — lands at upkeep, so it's only visible here).
  */
 export function projectNextTurn(G: GameState): GameState {
-  const clone = structuredClone(G);
+  const clone = cloneState(G);
   applyUpkeep(clone);
   // Recycle the hand and file the work zone too, so any `on.discard` reaction to the end-of-turn
   // sweep folds into the projection — the same sequence `endTurn` runs for real. (Unplayed events

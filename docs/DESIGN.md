@@ -415,7 +415,7 @@ gradient off the objective card id in one sim-local registry, so a new mission a
 not a hook on the card.
 
 **The seeded oracle proves winnability, and its soundness rests on determinism, not its key.**
-Because `structuredClone(G)` already reveals the whole future draw order, the oracle (`sim/oracle.ts`)
+Because `cloneState(G)` already reveals the whole future draw order, the oracle (`sim/oracle.ts`)
 searches directly for a *winning line of play* rather than rolling out. Four structural bounds keep it
 tractable: it collapses each turn into one search edge, a transposition table keys an ordered `deck` (it
 *is* the future draw sequence) against every other zone as an unordered **multiset** (`sim/oracleKey.ts`,
