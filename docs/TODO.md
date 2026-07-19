@@ -307,3 +307,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   staffed *in a building*; work cards exempt). Unlocks the **Forge** (building, 4🔨, 2🔨/worker —
   deliberately obsoletes Toolmaking). Balance confirmed by simulation + hand-play — the works-are-exempt
   trade (a works-only deck can dodge the drain) is intended, not a leak.
+
+## Jot — Writing tablet cost mismatch (needs a call: which side is authoritative?)
+
+`missions.ts` `writing.victoryHint` promises "pay 3 🔨 and 2 🌾 for each" tablet, but `cards.ts`'s
+`clay_tablet` costs `{ production: 6, food: 2 }`. Over `CLAY_TABLETS` = 5 that is 30🔨 vs the 15🔨 the
+player is told to budget. Either the hint went stale when the tablet escalated, or 6 is the typo —
+unknown which, so no fix applied. Found while baselining `writing` for the strategic-valuation work
+(the mission is mid-balance and has no committed baseline fixture yet).
