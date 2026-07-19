@@ -208,12 +208,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Tech debt / architecture
 
-- **See if the objective `OVERRIDES` can be removed** — the per-mission progress-gradient overrides in
-  `sim/objective.ts` (e.g. Masonry crediting territory) were kept as a **bring-up safety net** while the
-  planner landed. Now that `sim/enablers.ts` derives conversion slopes mechanically from card `cost`→
-  `produces`, check whether the planner still needs the overrides — retire any the enabler layer subsumes.
-  Watch the structural couplings the overrides encode (Huts need a free territory slot, so
-  territory↔population); confirm nothing regresses via the planner Masonry integration test + a sim sweep. `[size: M] [?] [phase: 4]`
 - **Audit existing tests for the integration split** — the `*.integration.test.ts` convention (end-to-end/
   balance-sensitive suites that drive a full `simulateRun`; see CLAUDE.md → *Conventions*) so far tags only
   `plannerPolicy`. Sweep the rest of the suite for tests that belong there too (anything driving whole runs
@@ -241,6 +235,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
 
+- **Retire the objective `OVERRIDES` seam** ✅ — the per-mission progress-gradient overrides in
+  `sim/objective.ts` were a bring-up safety net; `sim/enablers.ts` now derives the between-thresholds
+  conversion slope mechanically from card `cost`, subsuming them. Finding Copper was the last entry
+  (Masonry/Growing Numbers already gone). A 100-seed sweep (stone-age deck / settlement) showed it was
+  net-*harmful*: its "bank 🔨/🔬 toward the next vein" gradient drove policies to hoard and starve —
+  removing it took greedy 99→100% and planner 85→99% (famine deaths 15→1). Dropped the override, then
+  folded `objectiveProgress`/`hasObjectiveGradient` down to the goals-average path and deleted the vacated
+  coherence test. (En route: fixed a planner deadlock where a parked look-only peek — Calendar — was never
+  resolved, looping a no-op `endTurn` to the action wall.)
 - **Pet the doggo** ✅ — "can you pet the dog?" easter egg: clicking the Dogs card's art band in the
   zoom overlay puffs floating *pet* *pet* text + a woof! bubble instead of closing. Lives in
   `CardZoomOverlay` (gated on `cardId === 'dogs'`) via a new `CardFace` `onArtClick` prop, so it works

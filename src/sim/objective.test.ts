@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { objectiveProgress, hasObjectiveGradient, OVERRIDES } from './objective';
+import { objectiveProgress, hasObjectiveGradient } from './objective';
 import { blankState, seedObjective, cultureForLevel, type GameState } from '../rules';
-import { CARDS } from '../content/cards';
 
 /** A zeroed state carrying the given objective card, tweaked per case. */
 function withObjective(cardId: string, mut: (G: GameState) => void = () => {}): GameState {
@@ -143,15 +142,5 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
       }));
     expect(mas(3, 5)).toBe(mas(3, 0)); // territory doesn't move the masonry gradient
     expect(mas(6, 0)).toBe(1);
-  });
-
-  // Coherence, never deferred (see the data-coherence-vs-balance convention): a mistyped/renamed
-  // override key would silently drop its steering term, surfacing only as a drifted sweep.
-  it('every OVERRIDES key names a real objective card', () => {
-    for (const cardId of Object.keys(OVERRIDES)) {
-      const card = CARDS[cardId];
-      expect(card, `OVERRIDES key '${cardId}' has no card`).toBeDefined();
-      expect(card.kind, `OVERRIDES key '${cardId}' is not an objective card`).toBe('objective');
-    }
   });
 });
