@@ -165,12 +165,35 @@ too generous; that is the expected failure mode and the reason both groups are b
   `raiders_at_border` 0.99, `finding_copper` 0.96) and are unchanged. Only `writing` had headroom, and it
   did **not** improve: 0.29 → 0.23 (~1σ at 100 seeds), against an oracle ceiling of 1.00.
 
+Win rate is the wrong instrument for this change, though — every baselined mission already has an objective
+gradient dominating the leaf value, so a floor that only fills a vacuum has nothing to move. The isolating
+measurement is **`sandbox`**, whose objective never wins: `goalValued` is empty, so the floor is the *only*
+term in the model. Planner @ 20 seeds, `scripts/sim/decks/sandbox-engine.json` on City, mean end state:
+
+| | no floor | with floor |
+| --- | --- | --- |
+| population | 2.30 | 6.40 |
+| territory | 2.45 | 8.45 |
+| culture | 0.75 | 69.60 |
+| production | 28.6 | 254.2 |
+| food | 200.3 | 141.7 |
+
+Defeat causes are identical across the two arms (17 stall · 3 famine), so the engine growth costs nothing in
+survival — the "bounded by `scoreState`'s real costs" claim, measured. Card plays move the same way (houses
+3 → 44, conquest 9 → 129, Göbekli Tepe never-played → played). Without the floor the planner banks 200 food
+that does nothing; with it, that food becomes a compounding engine.
+
+So the change is **neutral where an objective gradient already leads, decisive where there is none** — the
+intended shape. A flat win rate on the baselines is that neutrality, not inertness.
+
 Writing's baseline, captured ad-hoc at this SHA (`scripts/sim/decks/writing.json`, City board, no fixture
 yet per Phase 0): greedy 0.03 · planner 0.29 · oracle 1.00 — the widest planner-to-oracle gap in the set.
 
 ### Why the floor cannot fix `writing`
 
-Structural, not a magnitude to tune. A card-count objective makes `goalValuedResources` return `{}`, so
+Structural, not a magnitude to tune — and a different regime from `sandbox` above: writing *has* a gradient
+(step-wise, one jump per recorded tablet), so the floor competes with it instead of filling a vacuum.
+A card-count objective makes `goalValuedResources` return `{}`, so
 production — which *is* `clay_tablet`'s cost — is never goal-valued. The floor weights the strategic pools,
 the consumables loop then reads those weights into `valued`, and production gets credited toward
 `Hut → population` and `Beer → culture`: engine sinks that **compete** with the production the tablet needs.

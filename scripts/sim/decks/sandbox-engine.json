@@ -1,0 +1,16 @@
+{
+  "cards": [
+    { "cardId": "farm", "count": 4, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "forge", "count": 2 },
+    { "cardId": "archives", "count": 2 },
+    { "cardId": "house", "count": 4 },
+    { "cardId": "conquest", "count": 10 },
+    { "cardId": "gobekli_tepe", "count": 1 },
+    { "cardId": "beer", "count": 1 },
+    { "cardId": "foraging", "count": 2 },
+    { "cardId": "toolmaking", "count": 2 },
+    { "cardId": "trader", "count": 4 },
+    { "cardId": "bow", "count": 4 },
+    { "cardId": "dogs", "count": 4 }
+  ]
+}
