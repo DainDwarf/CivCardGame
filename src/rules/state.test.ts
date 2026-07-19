@@ -30,6 +30,11 @@ function livedState(): GameState {
   // Optional per-copy state the zones don't otherwise carry — a clone that drops either would alias it.
   G.hand[0].counters = { plays: 2 };
   G.hand[0].stickers = ['irrigation'];
+  // The one nested shape a settled turn leaves empty: a parked choice holding its own instances.
+  G.pendingInteraction = {
+    cardId: 'test_action', instanceId: G.hand[0].id, kind: 'chooseCard',
+    prompt: 'pick one', options: [{ ...G.deck[0] }], pick: 1,
+  };
   return G;
 }
 
