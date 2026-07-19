@@ -27,25 +27,30 @@ offer the next *measurement* ("`--seed 3` would replay that loss"), not a conclu
 sections below on reading the report are reference material for when the user does ask.
 
 The whole tool is the `npm run sim` CLI (`scripts/sim.ts`) — **no scratchpad scripts.**
-The three axes are decoupled the way the campaign menu presents them: pick the
-mission(s) by id, point `--deck` at a JSON file, and name the `--board` by its content
-id (a JSON file only when it carries stickers).
+A sweep names its cells one of two mutually-exclusive ways: **`--baseline`** loads
+self-contained fixtures (the committed standing set — reach for this first), or the
+**ad-hoc trio** decouples the three axes the way the campaign menu presents them —
+mission(s) by id, `--deck` at a JSON file, `--board` by its content id (a JSON file only
+when it carries stickers).
 
 ## The CLI
 
 ```
+npm run sim -- --baseline <paths|dir>
 npm run sim -- --scenario <ids> --deck <file> --board <id|file>
                [--seeds 100] [--policies random,heuristic,greedy] [--format text] [--max-rounds 200] [--seed <i>]
 ```
 
-- `--scenario` (**required**) — one or more mission ids (comma-separated), looked up live
-  from `content/missions.ts`. This is the scenario axis; a bad id fails fast listing the
-  known missions.
-- `--deck` (**required**) — path to a deck JSON file (schema below). Ready-made examples live
-  under `scripts/sim/decks/*.json`.
-- `--board` (**required**) — a content board id (`--board city`, no stickers) **or** a path to a
-  board JSON file (needed only to attach board stickers). Stickered examples live under
-  `scripts/sim/boards/*.json`.
+- `--baseline` — comma-separated baseline fixture paths, or a **directory** of them
+  (`--baseline scripts/sim/baselines` sweeps the whole committed set). Each fixture owns its
+  own mission, deck and board, so one sweep can span cells that share none of the three.
+  Mutually exclusive with the trio below — combining them fails fast.
+- `--scenario` (**required** without `--baseline`) — one or more mission ids (comma-separated),
+  looked up live from `content/missions.ts`. A bad id fails fast listing the known missions.
+- `--deck` (**required** without `--baseline`) — path to a deck JSON file (schema below).
+- `--board` (**required** without `--baseline`) — a content board id (`--board city`, no stickers)
+  **or** a path to a board JSON file (needed only to attach board stickers). Stickered examples
+  live under `scripts/sim/boards/*.json`.
 - `--seeds` — runs per cell (default 100).
 - `--policies` — comma-separated policy names (default `random,heuristic,greedy`). Also
   available: `greedy2`, `planner`, and `oracle` (the last two slow — see below).
@@ -62,9 +67,10 @@ deck/board is the only variable — a paired comparison).
 
 Examples:
 ```
-npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board settlement
+npm run sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100
+npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies oracle --seeds 20
+npm run sim -- --scenario growing_numbers --deck <file> --board settlement
 npm run sim -- --scenario first_settlement,growing_numbers,rites_rituals --deck <file> --board <board> --seeds 500
-npm run sim -- --scenario rites_rituals --deck <file> --board <board> --policies oracle --seeds 20
 ```
 
 ## File schemas (JSON)
@@ -85,26 +91,48 @@ sticker-less board is just `--board <id>`):
 { "board": "city", "stickers": ["stockpile", "stockpile"] }
 ```
 
-The example files under `scripts/sim/` are the standing regression references. Decks are keyed
-by **unlock stage**, not by mission — a stage file is exactly what a player owns on arrival
-(the starting collection plus one copy of every card their cleared prereqs granted), and
-consecutive missions often share one (`settled.json` serves Growing Numbers, Rites & Rituals
-and Reading the Seasons alike). Pair a stage deck with the board that stage actually has,
-naming the board directly (`--board settlement`); a board fixture is only worth a file when it
-carries stickers. When new shipped content deserves a standing example, add a file there and
-commit it — that's the equivalent of the old `SCENARIOS` rows.
+Baseline — a whole cell in one file:
+```jsonc
+{
+  "id": "masonry",              // the report row label, and the seed-stream key
+  "mission": "masonry",         // a real content/missions.ts id
+  "note": "why this deck",      // free text, for the reader
+  "board": "settlement",        // a board id, or { "board": "city", "stickers": [...] }
+  "deck": [ { "cardId": "hut", "count": 4 } ]   // the deck file's `cards` array, same shape
+}
+```
+
+## The standing set — `scripts/sim/baselines/`
+
+The committed baselines are the standing regression references (the equivalent of the old
+`SCENARIOS` rows). One per mission, First Settlement → Accounting, each pinning the deck and
+board a player actually has **arriving** at it:
+
+- **Stone Age baselines are deliberately minimal** — the starting collection plus one copy of
+  every card the cleared prereqs granted, **no bought copies and no stickers**. `ice_age` (the
+  only grindable Influence faucet) doesn't unlock until First Temple, so a Stone Age mission
+  that *needs* the shop is a softlock trap, and these fixtures are what would expose it.
+- **Bronze baselines may buy** — bought copies and stickers are fair game from Finding Copper on.
+- An optional challenge **leaf** (Pyramid) is revisitable, so its pool is *not* its prereq
+  closure — it may use anything the campaign eventually fields.
+
+Measured results live under `baselines/results/`; committing them *is* the record of which
+content SHA they were taken at. When new shipped content deserves a standing cell, add a
+fixture and commit it. `--deck`/`--board` remain for hand-written ad-hoc decks.
 
 ## Replay one run — `--seed <i>`
 
-Passing `--seed <i>` re-runs the single `(mission, policy, index)` cell the batch would have
-run and prints a **per-turn trace** — each turn's starting economy (resources · pop assigned/total ·
-territory · culture), the accepted moves that turn, and the final outcome line. Needs exactly one
-`--scenario` and one `--policies`:
+Passing `--seed <i>` re-runs the single `(cell, policy, index)` the batch would have run and prints
+a **per-turn trace** — each turn's starting economy (resources · pop assigned/total · territory ·
+culture), the accepted moves that turn, and the final outcome line. Needs exactly one cell and one
+`--policies`, from either input style:
 ```
+npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies planner --seed 3
 npm run sim -- --scenario growing_numbers --deck <file> --board <board> --policies greedy --seed 3
 ```
-The index `i` matches the batch's seed stream (`<mission>-cfg-i` / `<mission>-pol-i`), so a cell
-that lost/won in a sweep can be re-run verbatim to see *what happened*.
+The index `i` matches the batch's seed stream (`<label>-cfg-i` / `<label>-pol-i`, where the label is
+the mission id ad-hoc or the fixture's `id` for a baseline), so a cell that lost/won in a sweep can be
+re-run verbatim to see *what happened*.
 
 ## Reference: reading the report (when asked) — the two things that go wrong
 

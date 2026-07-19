@@ -1,0 +1,22 @@
+{
+  "id": "pyramid",
+  "mission": "pyramid",
+  "note": "Purchased — an optional challenge leaf, so its pool is not its prereq closure: the player comes back to it after progressing further, and Forge and Trader are both fair game. The goal wants 50🪙 + 40🔨 + culture level 2 held at once inside the Pharaoh's deadline, so the deck runs three engines in parallel — Trader/Jewelry for money, Forge for production, Cave Art/Beer/Göbekli for culture — with Houses and Conquest widening the worker base that feeds all three. The Pyramid wonder itself is this mission's reward, so Göbekli is the deck's one wonder.",
+  "board": "city",
+  "deck": [
+    { "cardId": "trader", "count": 4 },
+    { "cardId": "forge", "count": 2 },
+    { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "house", "count": 2 },
+    { "cardId": "hut", "count": 2 },
+    { "cardId": "gobekli_tepe", "count": 1 },
+    { "cardId": "conquest", "count": 4 },
+    { "cardId": "cave_art", "count": 4 },
+    { "cardId": "beer", "count": 1 },
+    { "cardId": "toolmaking", "count": 2 },
+    { "cardId": "jewelry", "count": 2 },
+    { "cardId": "foraging", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "bow", "count": 2 }
+  ]
+}

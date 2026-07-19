@@ -6,7 +6,7 @@ import { simConfig, simulateRun } from './simulate';
 import { createPlannerPolicy } from './plannerPolicy';
 import type { DeckCard } from '../rules/deckBuilder';
 
-// The hand-authored Masonry deck (`scripts/sim/decks/masonry.json`) that a human wins easily but the
+// The hand-authored Masonry deck (`scripts/sim/baselines/masonry.json`) that a human wins easily but the
 // one-ply greedies plateau on — the exact case this planner exists to close.
 const MASONRY_DECK: (string | DeckCard)[] = [
   ...Array<string>(4).fill('toolmaking'),

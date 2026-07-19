@@ -1,0 +1,18 @@
+{
+  "id": "finding_copper",
+  "mission": "finding_copper",
+  "note": "Purchased — ice_age opens at First Temple, so Influence can be ground from here on. Pool is the Stone Age set + Göbekli Tepe (the Forge is this mission's own reward). Works-leaning on purpose: the Failing Stone Tools threat drains 1🔨 per round per worker staffed in a *building*, and work cards are exempt, so Foraging/Toolmaking/Storytelling carry the economy and Huts (workers: 0) add population without feeding the drain.",
+  "board": "settlement",
+  "deck": [
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "storytelling", "count": 4 },
+    { "cardId": "hut", "count": 2 },
+    { "cardId": "conquest", "count": 2 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "jewelry", "count": 2 },
+    { "cardId": "bartering", "count": 2 },
+    { "cardId": "cave_art", "count": 2 }
+  ]
+}

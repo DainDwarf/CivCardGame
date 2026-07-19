@@ -7,41 +7,44 @@
  * defeat-cause histogram), is a card ever played (per-card play counts + the unplayed-cards list). This
  * re-implements **no** game logic — it composes `runPolicies` → `summarize` → `formatReport` from `src/sim`.
  *
- * The three axes are decoupled the way the campaign menu presents them: pick the **mission(s)** by id
- * (looked up live from `content/missions.ts` — no copied deck lists), point `--deck` at a hand-editable
- * JSON file, and name the **board** either by its content id (`--board settlement`, no stickers) or with a
- * board JSON file (needed only to attach board stickers). One invocation sweeps
- * `[missions] × {the deck} × {the board}`; to compare two
- * decks or boards, edit a file or invoke twice. Each cell is swept under several policies with *identical*
- * seed streams, so the comparison is paired: `random` is the difficulty floor / crash fuzzer, `greedy` /
- * `heuristic` the competent ceiling, and the gap tells you how much skill a scenario rewards. `greedy2`
- * (greedy + a staffing lookahead) and the `oracle` (a winnability prover) are nameable but slow — opt in
- * with a small seed count.
+ * A sweep names its cells one of two ways. **Ad-hoc**, the three axes are decoupled the way the campaign
+ * menu presents them: pick the **mission(s)** by id (looked up live from `content/missions.ts` — no copied
+ * deck lists), point `--deck` at a hand-editable JSON file, and name the **board** either by its content id
+ * (`--board settlement`, no stickers) or with a board JSON file (needed only to attach board stickers) —
+ * sweeping `[missions] × {the deck} × {the board}`. **`--baseline`** instead loads *self-contained* fixtures
+ * that each own their own mission, deck and board, so one sweep can span cells that share none of the three
+ * (`scripts/sim/baselines/`, the committed standing set). The two are mutually exclusive.
+ *
+ * Each cell is swept under several policies with *identical* seed streams, so the comparison is paired:
+ * `random` is the difficulty floor / crash fuzzer, `greedy` / `heuristic` the competent ceiling, and the gap
+ * tells you how much skill a scenario rewards. `greedy2` (greedy + a staffing lookahead), the `planner` and
+ * the `oracle` (a winnability prover) are nameable but slow — opt in with a small seed count.
  *
  * Usage:
- *   npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board settlement
- *   npm run sim -- --scenario growing_numbers --deck scripts/sim/decks/settled.json --board scripts/sim/boards/city-stockpiled.json
+ *   npm run sim -- --scenario growing_numbers --deck <file> --board settlement
+ *   npm run sim -- --scenario growing_numbers --deck <file> --board scripts/sim/boards/city-stockpiled.json
  *   npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board <file> --seeds 500
  *   npm run sim -- --scenario rites_rituals --deck <file> --board <file> --policies greedy,heuristic
- *   npm run sim -- --scenario growing_numbers --deck <file> --board <file> --format json
- *   npm run sim -- --scenario growing_numbers --deck <file> --board <file> --policies greedy --seed 3   # replay one run
+ *   npm run sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100 --format json
+ *   npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies planner --seed 3   # replay one run
  *
- * Flags: `--scenario` (required, one or more mission ids), `--deck` (required, deck JSON path), `--board`
- * (required, a content board id or a board JSON path),
- * `--seeds` (default 100), `--policies` (default random,heuristic,greedy), `--format` (text|json),
- * `--max-rounds <n>` (stall cutoff — a policy idling past round `n` without winning/collapsing is recorded
- * as a `stall` defeat rather than ground to the action wall; default 200), and `--seed <i>` which switches
- * to **replay mode** — re-run the single (mission, policy, index) cell the batch would have run and print a
- * per-turn trace (needs exactly one scenario and one policy).
+ * Flags: `--scenario` + `--deck` + `--board` (the ad-hoc trio — one or more mission ids, a deck JSON path,
+ * and a content board id or board JSON path) **or** `--baseline` (comma-separated fixture paths, or a
+ * directory of them); `--seeds` (default 100), `--policies` (default random,heuristic,greedy), `--format`
+ * (text|json), `--max-rounds <n>` (stall cutoff — a policy idling past round `n` without winning/collapsing
+ * is recorded as a `stall` defeat rather than ground to the action wall; default 200), and `--seed <i>` which
+ * switches to **replay mode** — re-run the single (cell, policy, index) the batch would have run and print a
+ * per-turn trace (needs exactly one cell and one policy).
  *
  * File schemas — a deck file is `{ "cards": [{ "cardId", "count"?, "stickers"? }, ...] }` (count expands
  * to that many copies; stickers ride on every copy of the entry); a board file is
  * `{ "board": "<id>", "stickers"?: [...] }` (only needed to attach board stickers — a bare `--board <id>`
- * skips it). Ready-made examples live under `scripts/sim/`.
+ * skips it); a baseline file is `{ "id", "mission", "note"?, "board", "deck" }`, where `board` takes either
+ * form and `deck` takes the deck file's `cards` array directly. Ready-made examples live under `scripts/sim/`.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { basename } from 'node:path';
+import { basename, join } from 'node:path';
 import {
   runPolicies,
   summarize,
@@ -91,25 +94,31 @@ function readJson(path: string): any {
   }
 }
 
-/** Load + validate a deck file into a run-ready `DeckCard[]`, expanding each `{ cardId, count, stickers }`
+/** Validate a card-entry array into a run-ready `DeckCard[]`, expanding each `{ cardId, count, stickers }`
  *  entry into `count` copies. Every cardId/sticker id is checked against the real catalogues — an unknown
- *  id fails fast (a data-coherence check, like the deck editor's own rejects). */
-function loadDeck(path: string): DeckCard[] {
-  const raw = readJson(path);
-  if (!raw || !Array.isArray(raw.cards)) fail(`deck file '${path}' must be an object with a 'cards' array.`);
+ *  id fails fast (a data-coherence check, like the deck editor's own rejects). Takes the array rather than
+ *  a path so a deck file's `cards` and a baseline fixture's `deck` are validated by the same code. */
+function readCards(path: string, entries: unknown[]): DeckCard[] {
   const deck: DeckCard[] = [];
-  for (const entry of raw.cards) {
+  for (const entry of entries as any[]) {
     const cardId = entry?.cardId;
     const count = entry?.count ?? 1;
     const stickers: string[] | undefined = entry?.stickers;
-    if (typeof cardId !== 'string' || !CARDS[cardId]) fail(`deck file '${path}': unknown cardId '${cardId}'.`);
-    if (!Number.isInteger(count) || count < 1) fail(`deck file '${path}': card '${cardId}' has invalid count ${count}.`);
-    if (stickers !== undefined && !Array.isArray(stickers)) fail(`deck file '${path}': 'stickers' on '${cardId}' must be an array.`);
-    for (const s of stickers ?? []) if (!STICKERS[s]) fail(`deck file '${path}': unknown sticker '${s}' on '${cardId}'.`);
+    if (typeof cardId !== 'string' || !CARDS[cardId]) fail(`file '${path}': unknown cardId '${cardId}'.`);
+    if (!Number.isInteger(count) || count < 1) fail(`file '${path}': card '${cardId}' has invalid count ${count}.`);
+    if (stickers !== undefined && !Array.isArray(stickers)) fail(`file '${path}': 'stickers' on '${cardId}' must be an array.`);
+    for (const s of stickers ?? []) if (!STICKERS[s]) fail(`file '${path}': unknown sticker '${s}' on '${cardId}'.`);
     for (let i = 0; i < count; i++) deck.push({ cardId, ...(stickers?.length ? { stickers: [...stickers] } : {}) });
   }
-  if (deck.length === 0) fail(`deck file '${path}' has no cards.`);
+  if (deck.length === 0) fail(`file '${path}' has no cards.`);
   return deck;
+}
+
+/** Load + validate a deck file into a run-ready `DeckCard[]`. */
+function loadDeck(path: string): DeckCard[] {
+  const raw = readJson(path);
+  if (!raw || !Array.isArray(raw.cards)) fail(`deck file '${path}' must be an object with a 'cards' array.`);
+  return readCards(path, raw.cards);
 }
 
 /** Resolve `--board` into a board id + its board-sticker ids. A bare content board id (a key of
@@ -120,26 +129,96 @@ function resolveBoard(arg: string): { board: string; stickers: string[] } {
   return loadBoardFile(arg);
 }
 
+/** One swept cell: a mission + the exact deck and board it is played with. The ad-hoc trio expands into
+ *  one per `--scenario` mission (all sharing the one deck/board); `--baseline` yields one per fixture, each
+ *  carrying its *own* deck and board. Everything downstream — batch and replay alike — reads only this, so
+ *  neither path is a special case. `source` names where the deck came from, for the replay header. */
+interface Cell {
+  label: string;
+  missionId: string;
+  deck: DeckCard[];
+  board: { board: string; stickers: string[] };
+  source: string;
+}
+
+/** A cell's board rendered for the report header — the id, plus any stickers it carries. */
+function boardLabelOf(cell: Cell): string {
+  return `${cell.board.board}${cell.board.stickers.length ? ` +${cell.board.stickers.join(',')}` : ''}`;
+}
+
+/** Load + validate a self-contained baseline fixture. `deck` and `board` reuse the deck/board loaders
+ *  wholesale, so a fixture's card list is validated exactly like a deck file's. */
+function loadBaseline(path: string): Cell {
+  const raw = readJson(path);
+  if (!raw || typeof raw.id !== 'string') fail(`baseline file '${path}' must be an object with an 'id'.`);
+  if (typeof raw.mission !== 'string' || !MISSIONS[raw.mission]) {
+    fail(`baseline file '${path}': unknown mission '${raw.mission}'. Known: ${Object.keys(MISSIONS).join(', ')}.`);
+  }
+  if (!Array.isArray(raw.deck)) fail(`baseline file '${path}' must have a 'deck' array.`);
+  if (raw.board === undefined) fail(`baseline file '${path}' must have a 'board'.`);
+  const board = typeof raw.board === 'string' ? resolveBoardId(path, raw.board) : readBoard(path, raw.board);
+  const deck = readCards(path, raw.deck);
+  return {
+    label: raw.id,
+    missionId: raw.mission,
+    deck,
+    board,
+    source: `${basename(path)} (${deck.length} cards)`,
+  };
+}
+
+/** Expand each `--baseline` argument: a directory yields every `.json` directly inside it (so the
+ *  committed set sweeps by naming its folder), a file yields itself. Sorted, so a batch's cell order —
+ *  and therefore its report — is stable across machines. */
+function expandBaselinePaths(args: string[]): string[] {
+  const paths = args.flatMap((arg) => {
+    let isDir: boolean;
+    try {
+      isDir = statSync(arg).isDirectory();
+    } catch {
+      return fail(`cannot read baseline path '${arg}'.`);
+    }
+    if (!isDir) return [arg];
+    const found = readdirSync(arg).filter((f) => f.endsWith('.json')).sort().map((f) => join(arg, f));
+    if (found.length === 0) fail(`baseline directory '${arg}' contains no .json fixtures.`);
+    return found;
+  });
+  if (paths.length === 0) fail('--baseline needs at least one fixture path.');
+  return paths;
+}
+
+/** Resolve a bare board id against the real catalogue, reporting against the file that named it. */
+function resolveBoardId(path: string, id: string): { board: string; stickers: string[] } {
+  if (!BOARDS[id]) fail(`file '${path}': unknown board '${id}'. Known: ${Object.keys(BOARDS).join(', ')}.`);
+  return { board: id, stickers: [] };
+}
+
+/** Validate a `{ board, stickers? }` object. Takes the object rather than a path so a board file and a
+ *  baseline fixture's inline board are validated by the same code. */
+function readBoard(path: string, raw: any): { board: string; stickers: string[] } {
+  if (!raw || typeof raw.board !== 'string') fail(`file '${path}': board must be an object with a 'board' id.`);
+  if (!BOARDS[raw.board]) fail(`file '${path}': unknown board '${raw.board}'. Known: ${Object.keys(BOARDS).join(', ')}.`);
+  const stickers = raw.stickers ?? [];
+  if (!Array.isArray(stickers)) fail(`file '${path}': 'stickers' must be an array.`);
+  for (const s of stickers) if (!BOARD_STICKERS[s]) fail(`file '${path}': unknown board sticker '${s}'.`);
+  return { board: raw.board, stickers };
+}
+
 /** Load + validate a board file into a board id + its board-sticker ids. */
 function loadBoardFile(path: string): { board: string; stickers: string[] } {
-  const raw = readJson(path);
-  if (!raw || typeof raw.board !== 'string') fail(`board file '${path}' must be an object with a 'board' id.`);
-  if (!BOARDS[raw.board]) fail(`board file '${path}': unknown board '${raw.board}'. Known: ${Object.keys(BOARDS).join(', ')}.`);
-  const stickers = raw.stickers ?? [];
-  if (!Array.isArray(stickers)) fail(`board file '${path}': 'stickers' must be an array.`);
-  for (const s of stickers) if (!BOARD_STICKERS[s]) fail(`board file '${path}': unknown board sticker '${s}'.`);
-  return { board: raw.board, stickers };
+  return readBoard(path, readJson(path));
 }
 
 // Wrap `parseArgs` so an unknown flag or stray positional (strict mode throws a raw `TypeError`) surfaces
 // as the same clean `sim: …` one-liner as every other user mistake, not a stack trace.
-let values: { scenario?: string; deck?: string; board?: string; seeds?: string; policies?: string; format?: string; seed?: string; 'max-rounds'?: string };
+let values: { scenario?: string; deck?: string; board?: string; baseline?: string; seeds?: string; policies?: string; format?: string; seed?: string; 'max-rounds'?: string };
 try {
   ({ values } = parseArgs({
     options: {
       scenario: { type: 'string' },
       deck: { type: 'string' },
       board: { type: 'string' },
+      baseline: { type: 'string' },
       seeds: { type: 'string' },
       policies: { type: 'string' },
       format: { type: 'string' },
@@ -152,13 +231,18 @@ try {
   fail((e as Error).message);
 }
 
-if (!values.scenario) fail('--scenario is required (one or more mission ids, comma-separated).');
-if (!values.deck) fail('--deck is required (path to a deck JSON file).');
-if (!values.board) fail('--board is required (a content board id, or a path to a board JSON file).');
-
-const missionIds = csv(values.scenario);
-for (const id of missionIds) {
-  if (!MISSIONS[id]) fail(`unknown --scenario mission '${id}'. Known: ${Object.keys(MISSIONS).join(', ')}.`);
+// The two ways to name cells are mutually exclusive: a baseline fixture already owns the mission, deck
+// and board, so pairing it with any of the ad-hoc trio would mean silently ignoring one of them.
+const adHocFlags = (['scenario', 'deck', 'board'] as const).filter((f) => values[f] !== undefined);
+if (values.baseline !== undefined) {
+  if (adHocFlags.length) fail(`--baseline cannot be combined with ${adHocFlags.map((f) => `--${f}`).join('/')} — a baseline already carries its own mission, deck and board.`);
+} else {
+  if (!values.scenario) fail('--scenario is required (one or more mission ids, comma-separated), or use --baseline.');
+  if (!values.deck) fail('--deck is required (path to a deck JSON file).');
+  if (!values.board) fail('--board is required (a content board id, or a path to a board JSON file).');
+  for (const id of csv(values.scenario)) {
+    if (!MISSIONS[id]) fail(`unknown --scenario mission '${id}'. Known: ${Object.keys(MISSIONS).join(', ')}.`);
+  }
 }
 
 const seeds = values.seeds !== undefined ? Number(values.seeds) : 100;
@@ -181,9 +265,22 @@ if (maxRounds !== undefined && (!Number.isInteger(maxRounds) || maxRounds <= 0))
 }
 const simOpts = maxRounds !== undefined ? { maxRounds } : undefined;
 
-const deck = loadDeck(values.deck);
-const board = resolveBoard(values.board);
-const boardLabel = `${board.board}${board.stickers.length ? ` +${board.stickers.join(',')}` : ''}`;
+// The one place the two input styles converge. Ad-hoc: one deck/board shared across every named mission.
+// Baselines: one self-contained fixture per cell.
+const cells: Cell[] =
+  values.baseline !== undefined
+    ? expandBaselinePaths(csv(values.baseline)).map(loadBaseline)
+    : (() => {
+        const deck = loadDeck(values.deck!);
+        const board = resolveBoard(values.board!);
+        return csv(values.scenario!).map((missionId) => ({
+          label: missionId,
+          missionId,
+          deck,
+          board,
+          source: `${basename(values.deck!)} (${deck.length} cards)`,
+        }));
+      })();
 
 // ---- Replay mode: re-run one exact cell with a per-turn trace ----------------------------------------
 
@@ -230,15 +327,17 @@ function formatAction(action: SimAction, G: GameState): string {
   }
 }
 
-function replay(missionId: string, policyName: string, idx: number): void {
+function replay(cell: Cell, policyName: string, idx: number): void {
+  // The seed keys must be built from the cell *label*, exactly as `runBatch` does — that's what makes a
+  // replay re-run the same shuffle and moves as the batch cell it is reproducing.
   const config = simConfig({
-    deckCardIds: deck,
-    board: board.board,
-    boardStickers: board.stickers,
-    missionId,
-    seed: `${missionId}-cfg-${idx}`,
+    deckCardIds: cell.deck,
+    board: cell.board.board,
+    boardStickers: cell.board.stickers,
+    missionId: cell.missionId,
+    seed: `${cell.label}-cfg-${idx}`,
   });
-  const policy = POLICY_FACTORIES[policyName](`${missionId}-pol-${idx}`);
+  const policy = POLICY_FACTORIES[policyName](`${cell.label}-pol-${idx}`);
 
   const lines: string[] = [];
   let turnStart = '';
@@ -251,7 +350,7 @@ function replay(missionId: string, policyName: string, idx: number): void {
     turnActions = [];
   };
 
-  const header = `# Replay — ${MISSIONS[missionId].name} · ${policyName} · seed ${idx}\n#   deck: ${basename(values.deck!)} (${deck.length} cards) · board: ${boardLabel}\n`;
+  const header = `# Replay — ${MISSIONS[cell.missionId].name} · ${policyName} · seed ${idx}\n#   deck: ${cell.source} · board: ${boardLabelOf(cell)}\n`;
 
   let outcome: ReturnType<typeof simulateRun>;
   try {
@@ -292,20 +391,20 @@ function replay(missionId: string, policyName: string, idx: number): void {
 if (values.seed !== undefined) {
   const idx = Number(values.seed);
   if (!Number.isInteger(idx) || idx < 0) fail(`--seed must be a non-negative integer index, got '${values.seed}'.`);
-  if (missionIds.length !== 1) fail(`replay (--seed) needs exactly one --scenario mission, got ${missionIds.length}.`);
+  if (cells.length !== 1) fail(`replay (--seed) needs exactly one cell, got ${cells.length}.`);
   if (policies.length !== 1) fail(`replay (--seed) needs exactly one --policies policy, got ${policies.length}.`);
-  replay(missionIds[0], policies[0], idx);
+  replay(cells[0], policies[0], idx);
   process.exit(0);
 }
 
 // ---- Batch mode ---------------------------------------------------------------------------------------
 
-const scenarios: Scenario[] = missionIds.map((missionId) => ({
-  label: missionId,
-  deckCardIds: deck,
-  board: board.board,
-  missionId,
-  boardStickers: board.stickers,
+const scenarios: Scenario[] = cells.map((cell) => ({
+  label: cell.label,
+  deckCardIds: cell.deck,
+  board: cell.board.board,
+  missionId: cell.missionId,
+  boardStickers: cell.board.stickers,
 }));
 
 const summaries = runPolicies(scenarios, policies, { seeds, sim: simOpts }).map(summarize);
@@ -314,7 +413,11 @@ if (format === 'json') {
   console.log(JSON.stringify(summaries, null, 2));
 } else {
   console.log(`# Simulator batch — ${seeds} seed(s) per cell · policies: ${policies.join(', ')}`);
-  console.log(`#   deck: ${basename(values.deck)} (${deck.length} cards) · board: ${boardLabel}`);
-  console.log(`#   scenarios: ${missionIds.join(', ')}\n`);
+  // One line per cell: with baselines each carries its own deck and board, so a single shared header
+  // would be a lie about every row but the first.
+  for (const cell of cells) {
+    console.log(`#   ${cell.label} — ${cell.missionId} · ${cell.deck.length} cards · board: ${boardLabelOf(cell)}`);
+  }
+  console.log('');
   console.log(formatReport(summaries));
 }

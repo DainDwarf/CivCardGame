@@ -1,6 +1,9 @@
 {
-  "_comment": "Hand made authored deck for testing Masonry. I won easily with this.",
-  "cards": [
+  "id": "masonry",
+  "mission": "masonry",
+  "note": "Purchased — hand-authored and hand-verified as a comfortable clear. House and the City board are this mission's own rewards, so population runs through Huts, with Conquest opening the territory slots they need.",
+  "board": "settlement",
+  "deck": [
     { "cardId": "toolmaking", "count": 4 },
     { "cardId": "bartering", "count": 2 },
     { "cardId": "bow", "count": 2 },

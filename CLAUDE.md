@@ -57,10 +57,16 @@ surprise, so nothing shows a locked placeholder or a total count.
   <missionId>` stops at that mission's transitive prereqs + itself; `--influence <n>` overrides the
   spendable balance; `--seed`/`--out` set randomization and output path. The DAG walk and default
   target set derive from `content/missions.ts` — missions are never hard-coded.
-- `npm run sim` — balance tool (`scripts/sim.ts` via `tsx`): sweeps the headless simulator over a
-  mission × deck × board matrix and prints an aggregated report. `--scenario <ids>` names missions
-  (live from `content/missions.ts`), `--deck`/`--board` point at JSON files (examples under
-  `scripts/sim/`), with `--seeds`/`--policies`/`--format` (text|json). `--seed <i>` switches to a
+- `npm run sim` — balance tool (`scripts/sim.ts` via `tsx`): sweeps the headless simulator and prints an
+  aggregated report. Cells are named one of two mutually-exclusive ways. **Ad-hoc**, over a mission ×
+  deck × board matrix: `--scenario <ids>` names missions (live from `content/missions.ts`),
+  `--deck`/`--board` point at JSON files (examples under `scripts/sim/`). **`--baseline <paths|dir>`**
+  loads *self-contained* fixtures that each own their own mission, deck and board — so one sweep spans
+  cells sharing none of the three. `scripts/sim/baselines/` is the committed standing set (First
+  Settlement → Accounting; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
+  Influence can be ground before `ice_age` unlocks — a mission needing the shop there would be a
+  softlock), with measured results under `baselines/results/`, whose commit *is* their content-SHA
+  record. Both styles take `--seeds`/`--policies`/`--format` (text|json); `--seed <i>` switches to a
   single-run per-turn replay trace. See *Balance tooling*.
 - `npm run sim:profile` — the same sweep under `@platformatic/flame`, which writes a **markdown**
   hotspot report (annotated call tree + per-function callers/callees) beside an HTML flamegraph, into

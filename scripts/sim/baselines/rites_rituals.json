@@ -1,6 +1,9 @@
 {
-  "_comment": "Unlock stage: post-Reading the Seasons (the lower branch) — settled.json plus Seasons' card reward, Calendar. What a player owns arriving at Restless People. No Burial: that's the parallel upper branch's reward, which the DAG doesn't require to get here.",
-  "cards": [
+  "id": "rites_rituals",
+  "mission": "rites_rituals",
+  "note": "Minimal: same stage as Growing Numbers — Rites forks off it, so its own reward (Burial) is not yet owned.",
+  "board": "settlement",
+  "deck": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
     { "cardId": "bartering", "count": 2 },
@@ -11,7 +14,6 @@
     { "cardId": "cave_art", "count": 2 },
     { "cardId": "hut", "count": 1 },
     { "cardId": "farm", "count": 1 },
-    { "cardId": "conquest", "count": 1 },
-    { "cardId": "calendar", "count": 1 }
+    { "cardId": "conquest", "count": 1 }
   ]
 }

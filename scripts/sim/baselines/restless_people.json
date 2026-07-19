@@ -1,6 +1,9 @@
 {
-  "_comment": "Unlock stage: post-Rites & Rituals (the upper branch) — settled.json plus Rites' card reward, Burial. What a player owns arriving at Raiders at the Border. No Calendar: that's the parallel lower branch's reward, which the DAG doesn't require to get here.",
-  "cards": [
+  "id": "restless_people",
+  "mission": "restless_people",
+  "note": "Minimal: the lower branch — Growing Numbers' stage + Reading the Seasons' reward (Calendar). No Burial: that is the parallel upper branch's reward, which the DAG doesn't require to get here — so the culture-2 goal has to come off Cave Art alone.",
+  "board": "settlement",
+  "deck": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
     { "cardId": "bartering", "count": 2 },
@@ -12,6 +15,6 @@
     { "cardId": "hut", "count": 1 },
     { "cardId": "farm", "count": 1 },
     { "cardId": "conquest", "count": 1 },
-    { "cardId": "burial", "count": 1 }
+    { "cardId": "calendar", "count": 1 }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "_comment": "The buildingless Founding deck (content/decks.ts DEFAULT_DECKS[0]). The bare starting deck for early-mission sweeps.",
-  "cards": [
+  "id": "first_settlement",
+  "mission": "first_settlement",
+  "note": "Minimal: the bare starting collection (content/collection.ts) on the origin board. Nothing is unlocked yet, so this is the only deck a player can bring.",
+  "board": "tribe",
+  "deck": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
     { "cardId": "bartering", "count": 2 },
