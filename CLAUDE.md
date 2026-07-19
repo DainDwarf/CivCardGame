@@ -375,7 +375,8 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   credits a banked consumable for the objective progress it *converts into* and a held strategic resource
   (territory/population/culture) for the goal-throughput its capacity *unlocks*, turning the greedies' flat
   plateau into a slope. `turnSearch.ts` is the within-turn search skeleton (`expandTurn`) the planner
-  and oracle share, parameterized by the ranking heuristic.
+  and oracle share, parameterized by the ranking heuristic — which it hands the node's transposition key
+  alongside `G`, a memo hint the planner caches its (expensive, projection-based) leaf value on.
 - **Batch + reporting** — `runBatch(scenarios, { seeds })` (`batch.ts`) sweeps a flat `Scenario[]` ×N
   seeds (two deterministic streams per run — `…-cfg-i` shuffle, `…-pol-i` moves — so a batch is
   reproducible); `summarize`/`formatReport` (`report.ts`) fold the `SimOutcome`s (including a per-run

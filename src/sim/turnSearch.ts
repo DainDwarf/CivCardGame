@@ -31,8 +31,10 @@ export interface Budget {
 }
 
 /** A leaf/ranking heuristic — higher is better (`scoreState` for the oracle, a shaped value for the
- *  planner). */
-export type Heuristic = (G: GameState) => number;
+ *  planner). `key` is the caller's already-computed transposition key for `G`, passed only where the
+ *  search has one to hand: a pure memo hint an implementation may cache on or ignore, never an input to
+ *  the value. */
+export type Heuristic = (G: GameState, key?: string) => number;
 
 /** Recover the action sequence from the root to `node` by walking parent back-pointers. */
 export function reconstruct(node: SearchNode): SimAction[] {
@@ -93,7 +95,7 @@ export function expandTurn(
       if (localSeen.has(k)) continue;
       localSeen.add(k);
       child.key = k;
-      child.h = heuristic(next.G);
+      child.h = heuristic(next.G, k);
       configs.push(child);
       frontier.push(child);
     }

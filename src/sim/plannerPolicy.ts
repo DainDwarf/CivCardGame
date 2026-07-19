@@ -65,7 +65,8 @@ const DEFAULTS: Required<PlannerOptions> = {
 const VICTORY = 1e9;
 
 function makeNode(state: RunState, h: Heuristic): SearchNode {
-  return { state, parent: null, action: null, key: keyOf(state.G), h: h(state.G) };
+  const key = keyOf(state.G);
+  return { state, parent: null, action: null, key, h: h(state.G, key) };
 }
 
 function applyActions(state: RunState, actions: SimAction[]): RunState {
@@ -80,8 +81,9 @@ function applyActions(state: RunState, actions: SimAction[]): RunState {
  * pruned. Each turn's own pre-`endTurn` configs are candidate leaves (so "wait a round" is considered).
  */
 function beamValue(root: RunState, depth: number, opts: Required<PlannerOptions>, budget: Budget, h: Heuristic): number {
-  let best = h(root.G);
-  let beam: SearchNode[] = [makeNode(root, h)];
+  const rootNode = makeNode(root, h);
+  let best = rootNode.h;
+  let beam: SearchNode[] = [rootNode];
 
   for (let d = 0; d < depth; d++) {
     const successors: SearchNode[] = [];
@@ -140,10 +142,25 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
   let rngState = seededRng(policySeed).getState();
   const buffer: SimAction[] = [];
 
+  /** Leaf values already computed this run, keyed by the transposition key plus the one field the value
+   *  reads that `keyOf` drops (`pendingVictory` — derived, so it *would* follow from the key, but pinning
+   *  it here costs a character and removes the argument). `objective`/`missionId`, also dropped, are
+   *  constant within a run and this cache never outlives one. Worth it because the beam and the sampled
+   *  worlds re-score ~25% of states, each score costing two upkeep projections — far more than a lookup. */
+  const leafCache = new Map<string, number>();
+
   const replan = (state: RunState): void => {
     if (!model) model = opts.enablers ? deriveEnablers(state.G) : { weight: {}, cap: {} };
     const enablers = model;
-    const h: Heuristic = (G: GameState) => scoreState(G) + enablerPotential(G, enablers);
+    const h: Heuristic = (G: GameState, key?: string) => {
+      if (key === undefined) return scoreState(G) + enablerPotential(G, enablers);
+      const cacheKey = G.pendingVictory ? `w|${key}` : key;
+      const hit = leafCache.get(cacheKey);
+      if (hit !== undefined) return hit;
+      const value = scoreState(G) + enablerPotential(G, enablers);
+      leafCache.set(cacheKey, value);
+      return value;
+    };
     const budget: Budget = { steps: 0, cap: opts.nodeBudget };
 
     // This turn's candidate lines, on the real state (world-independent for the current card set).
