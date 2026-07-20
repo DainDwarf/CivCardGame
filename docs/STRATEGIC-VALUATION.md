@@ -205,3 +205,169 @@ What `writing` needs is the deferred card-introspection layer: band 4 already re
 (`objectiveProgress` reads the removed count), but the turns spent banking 6🔨 toward one are flat, and only
 a probe that identifies the goal-advancing **card** and reads its cost can slope them. The two layers remain
 non-exclusive — the floor stands on the band-5 asymmetry argument, independent of this.
+
+# Durable producer valuation (planner)
+
+A **second, separate** hole, found while surveying for others. Independent of both the intrinsic strategic
+floor above and the deferred card-introspection layer: it would remain after either ships.
+
+## The hole
+
+The planner runs at `depth: 1` (`plannerPolicy.ts`), with leaf value `scoreState(G) + enablerPotential(G,
+enablers)`. Nothing in that leaf amortizes a **capital cost against a per-turn return**, so a permanent
+producer is priced only by what its *current staffing* yields on the projected turn.
+
+Two consequences, in ascending order of severity:
+
+- A building the run cannot staff *this* turn is worth **zero**. An unstaffed structure is not `isOperating`,
+  so it contributes nothing to `permanentDelta`, nothing to `projectNextTurn`, and nothing to the flat
+  `operating` credit — while the production it cost would have scored in band 5 had it gone unspent. Building
+  one is a scored loss.
+- Even a building staffed the turn it is built cannot pay back inside the horizon. A Forge is 4🔨 for
+  2🔨/worker/round: two rounds to break even, and round two is past `depth: 1`. The `operating` credit does
+  not discriminate — a staffed Toolmaking box earns the same 2 for free.
+
+The mispricing is *relative to work cards*, which is what makes it invisible in the catalogue's own terms:
+Forge and Toolmaking both yield 2🔨/worker, so a leaf that sees one turn sees two equivalent options, one of
+which costs 4🔨 and a territory slot more. Forge's whole advantage — that it keeps producing without a
+redraw, and can be **re-staffed at will** — lives entirely beyond the horizon.
+
+`scoreState`'s band 3 is the only term distinguishing permanent from transient income (`permanentDelta` drops
+the work zone). It enters as `drain = max(0, -perm[k])` and penalises only shortfall, so it credits permanent
+income *up to break-even only*, and is inert whenever the pool is not in deficit. On a deck with no production
+upkeep it does nothing for a production building.
+
+### Relation to the two other gaps
+
+- **The strategic floor** (above) credits territory/population/culture. Its sandbox measurement showed
+  territory 2.45 → 8.45 and production 28.6 → 254.2 — buildings got built once something else paid for the
+  *slots*, never because their income stream was valued. The floor routes around this hole; it does not close it.
+- **Card introspection** (deferred) would slope the turns spent banking toward a goal card. It makes production
+  goal-valued on a card-count mission, which *raises* the opportunity cost of spending 4🔨 on a Forge. It does
+  not teach the leaf to amortize.
+
+## Evidence
+
+Ad-hoc at `8ca62c9` (`writing` has no baseline fixture per Phase 0). Cells are `scripts/sim/decks/writing.json`
+on City and two edits of it; planner @ 30 seeds, oracle @ 15.
+
+| cell | policy | win rate | median turns | forge plays | clay_tablet plays |
+| --- | --- | --- | --- | --- | --- |
+| writing.json (2 forge + 2 toolmaking, 23) | planner | 23.3% (7/30) | 21.5 | 9 | 67 |
+| A — Toolmaking removed (2 forge, 21) | planner | 20.0% (6/30) | 19.0 | 11 | 41 |
+| B — Toolmaking→Forge (4 forge, 23) | planner | 33.3% (10/30) | 20.0 | 15 | 66 |
+| A — Toolmaking removed (2 forge, 21) | oracle | 93.3% (14/15) | 25.0 | 14 | 70 |
+
+**The win rates are not usable** — at 30 seeds σ on a ~25% rate is ~8pp, so baseline-vs-B is ~1.3σ. The play
+counts carry the finding.
+
+**Substitution is ruled out.** Baseline → A holds Forge at 2 copies and removes its free substitute entirely;
+Forge plays go 9 → 11, i.e. flat. The planner does not reach for the permanent producer even when it becomes
+the deck's only production source — while tablets fall 67 → 41 and median run length 21.5 → 19, so the
+production starvation is real and uncompensated.
+
+**The oracle discriminates.** On variant A it plays Forge 14 times across 15 runs against the planner's 11
+across 30 — 0.93 vs 0.37 per run, still 1.9× after normalising for its longer runs — while *under*-playing
+Conquest 1.8×. So this is not a generic search-depth artifact spread evenly across the catalogue.
+
+**Seed-0 replay, variant A, same shuffle.** The planner plays Bow on turn 1 (prod 6 → 4), passes turn 2, plays
+Farm on turn 3 — and production sits at exactly **2 for the next fourteen turns**, permanently below Forge's
+4🔨. Forge never built, no tablet ever played, `dark_age` at round 16. The oracle passes turn 1 to preserve
+prod 6, builds Forge on turn 2, and climbs 4 → 6 → 8 → 10 by turn 9; victory at round 27 with five tablets.
+The hands diverge at turn 1, so this is not a same-hand counterfactual — the aggregate above is what carries
+the claim; the replay shows its shape.
+
+**What the oracle actually exploits.** On turns 5, 12, 14, 17, 23 and 24 it *transfers* its single worker
+between Forge and Storytelling, and unassigns Forge outright at 23 — banking production when a tablet is
+close and science when `dark_age` looms. It is using the Forge as a **re-staffable option**, not an income
+stream. That option requires only *ownership*, and ownership is exactly what the leaf prices at zero.
+
+## The proposal
+
+Confine to `sim/enablers.ts` — the durable-core-producer analogue of `CAPACITY_HORIZON`, which already
+amortizes a *strategic* pool's output over several rounds at the leaf so the shallow beam need not search it.
+Sketch, not settled:
+
+- Credit each owned staffable structure for a few rounds of its `produces` output, at the per-unit weights the
+  model already carries.
+- Credit **ownership, not current staffing** — the re-staffable option above. An unstaffed structure must not
+  be worth zero.
+- Credit only the **tail beyond the projected turn**: a staffed building's next-turn output already lands in
+  `scoreState`'s projection, and crediting it again double-counts.
+- Saturate at a cap, with over-building bounded by `scoreState`'s real costs (production spent) and the
+  territory slot, the way the module already bounds the capacity credits.
+
+### Why enablers rather than scoreState
+
+The defect is arguably in `scoreState`, and confining the fix to `enablers.ts` leaves the greedies blind to
+capital investment permanently. That is the intended outcome, not a compromise: the greedies are the one-ply
+difficulty **floor**, and "cannot plan a two-turn capital investment" is an accurate characterisation of a
+one-ply policy rather than a bug in it. Making the floor smarter changes what the floor measures. Multi-turn
+capital planning is the planner's job, and `enablerPotential` is the leaf accelerator that exists to price
+what `depth: 1` cannot search.
+
+The operational reason is the same one that governed the floor: `scoreState` feeds greedy, greedy2, heuristic
+and the oracle beam, so a change there puts all eleven baselines at risk, where the floor's confinement to
+`enablers.ts` returned greedy bit-identical on every cell.
+
+This is an **intrinsic amortization constant**, not `HOP_DISCOUNT`-style potential shaping — it carries
+`INTRINSIC_CAPACITY_CREDIT`'s risk profile ("too generous and the planner builds engine it never converts"),
+bounded by a cap rather than provably optimum-preserving. It should not be presented as sound shaping.
+
+### Shipped
+
+`PRODUCER_TAIL_HORIZON = 4` rounds, at `PRODUCER_CREDIT_CAP = 0.5 · OBJECTIVE_WEIGHT`, keyed per cardId in
+the model and summed over `G.tableau` at the leaf. Three of the open decisions below fall out of one
+formulation — crediting the tail **beyond** the projected turn, uniformly, with no staffing branch:
+
+- **Ownership vs. staffing** needs no discount constant. `scoreState` credits an operating building's next
+  round through its projection and the enabler never adds that turn, so staffed still strictly beats
+  unstaffed while an unstaffed structure keeps its re-staffable option value.
+- **One unit, not capacity.** `produces.resources` is per-worker; crediting full worker capacity would
+  re-charge for the population that staffs it, which the capacity pass already weights. Magnitude rides on
+  the horizon instead.
+- **Wonders and one-shot buildings** confirmed to need no handling: the credit is `produces`-derived, so
+  Hut/House score zero here and the population they grant is credited once, where it lands.
+
+Per-unit worth is `max(valued, weight)` — a producer of the *goal* resource carries its value in the
+goal-valued map, never in `weight` (the consumables loop skips a goal-valued cost), so a `weight`-only
+credit would have priced the most important producers at zero. On `first_settlement` a Forge derives 120
+(production goal-valued at 15/unit); on `writing` it derives 4, against the ~2.8 the 4🔨 spend costs in
+band 5 plus the production weight — thin, and the reason the cap is loose enough not to bind on the first
+building.
+
+**Unmeasured.** The sweep below has not been run; these constants are a first guess.
+
+## Open decisions
+
+- **Magnitude and horizon.** A tuned constant with no analytical derivation, like `CAPACITY_HORIZON` before it.
+- **Interaction with the strategic floor.** Since the floor shipped, the consumables loop credits production
+  toward `Hut → population` and `Beer → culture`. A durable-producer credit competes directly with those
+  sinks for the same banked production, so the two constants must be tuned against each other, not
+  independently.
+- **Unstaffed discount.** A building with no prospect of ever being staffed (no free population, no path to
+  it) is genuinely worth less than one about to be worked. Whether the credit is flat on ownership or scaled
+  by staffing prospect is unresolved.
+- **Wonders and one-shot buildings.** Hut/House grant population via a one-shot placement `effect`, not
+  `produces`; a `produces`-derived credit would miss them, and the floor already credits the population they
+  grant. Confirm this needs no separate handling rather than assuming it.
+- **Deadline blindness.** Inherited from `CAPACITY_HORIZON` — engine that cannot be converted before a
+  mission's deadline is wasted, and no constant here knows the round budget.
+
+## Measuring it
+
+**Win rate on `writing` is the wrong instrument**, and for a different reason than the floor's neutrality: it
+is confounded by the card-introspection gap, since banking 6🔨 toward a tablet is unsloped whether or not the
+Forge that produced it was correctly valued. A correctly-built engine can leave win% flat.
+
+The behavioural signals instead:
+
+1. **Forge play count** on variant A — does it rise from ~11/30 toward the oracle's rate.
+2. **The variant-A seed-0 replay** — does the planner now build Forge in the opening turns rather than
+   stranding itself at prod 2.
+3. **The sandbox end-state diff**, the isolating instrument the floor used: `sandbox`'s objective never wins,
+   so nothing competes with the credit. Watch tableau size and production against the committed no-floor /
+   with-floor columns above.
+
+Phase 0's baseline discipline applies unchanged for regression: the eleven committed fixtures must not regress,
+and that is the acceptance test.

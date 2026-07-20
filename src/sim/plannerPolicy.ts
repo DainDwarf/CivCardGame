@@ -150,7 +150,7 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
   const leafCache = new Map<string, number>();
 
   const replan = (state: RunState): void => {
-    if (!model) model = opts.enablers ? deriveEnablers(state.G) : { weight: {}, cap: {} };
+    if (!model) model = opts.enablers ? deriveEnablers(state.G) : { weight: {}, cap: {}, producerCredit: {} };
     const enablers = model;
     const h: Heuristic = (G: GameState, key?: string) => {
       if (key === undefined) return scoreState(G) + enablerPotential(G, enablers);

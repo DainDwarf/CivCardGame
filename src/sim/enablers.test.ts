@@ -5,7 +5,7 @@ import { deriveEnablers, enablerPotential } from './enablers';
 import { OBJECTIVE_WEIGHT } from './value';
 import { objectiveProgress } from './objective';
 import { CARDS } from '../content/cards';
-import { cultureForLevel, emptyResources, type GameState } from '../rules';
+import { addBuilding, cultureForLevel, emptyResources, type GameState } from '../rules';
 
 // The two conversion costs the Masonry deck rides on, read from content so a rebalance re-targets these
 // expectations instead of silently breaking on a stale literal — the assertions pin the *relationship* (a
@@ -238,6 +238,58 @@ describe('intrinsic strategic floor', () => {
     const m = deriveEnablers(cardCountRoot());
     const saturated = m.weight.population! * m.cap.population!;
     expect(saturated).toBeLessThan(OBJECTIVE_WEIGHT);
+  });
+});
+
+describe('durable producer credit', () => {
+  // First Settlement wins on production, so the Forge produces the goal resource directly — the case whose
+  // per-unit worth lives in the goal-valued map and never in `weight` (the consumables loop skips a
+  // goal-valued cost), and so the one a `weight`-only credit would silently price at zero.
+  function producerRoot(): GameState {
+    const config = simConfig({
+      deckCardIds: ['forge', 'forge', 'archives', 'archives', 'hut', 'hut', 'bow', 'bow'],
+      board: 'tribe',
+      missionId: 'first_settlement',
+      seed: 'enablers-durable',
+    });
+    return createRun(config).G;
+  }
+
+  /** The model's potential with `cardId` owned once, at the given staffing. */
+  function withBuilding(cardId: string, workers: number): number {
+    const G = producerRoot();
+    const m = deriveEnablers(G);
+    addBuilding(G, cardId);
+    G.tableau[G.tableau.length - 1]!.workers = workers;
+    return enablerPotential(G, m);
+  }
+
+  it('credits a producer of the goal resource', () => {
+    expect(deriveEnablers(producerRoot()).producerCredit.forge ?? 0).toBeGreaterThan(0);
+  });
+
+  it('rates a goal-resource producer above one whose output nothing values', () => {
+    const m = deriveEnablers(producerRoot());
+    expect(m.producerCredit.forge!).toBeGreaterThan(m.producerCredit.archives ?? 0);
+  });
+
+  it('credits ownership, not staffing — an unstaffed structure is still a re-staffable option', () => {
+    const bare = enablerPotential(producerRoot(), deriveEnablers(producerRoot()));
+    expect(withBuilding('forge', 0)).toBeGreaterThan(bare);
+    expect(withBuilding('forge', 0)).toBe(withBuilding('forge', 1));
+  });
+
+  it('credits nothing for a one-shot placement grant', () => {
+    // Hut grants population on `effect`, not `produces` — not durable income, and the strategic weights
+    // already credit the population it lands.
+    expect(deriveEnablers(producerRoot()).producerCredit.hut).toBeUndefined();
+  });
+
+  it('saturates, so a tableau of engine never outbids the objective it serves', () => {
+    const G = producerRoot();
+    const m = deriveEnablers(G);
+    for (let i = 0; i < 40; i++) addBuilding(G, 'forge');
+    expect(enablerPotential(G, m)).toBeLessThan(OBJECTIVE_WEIGHT);
   });
 });
 

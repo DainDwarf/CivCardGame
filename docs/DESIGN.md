@@ -438,8 +438,8 @@ from the policy's own seed stream), search each as the oracle does (reusing the 
 Carlo), re-planning per turn. What keeps the horizon shallow enough to stay cheap is the **enabler
 potential** (`sim/enablers.ts`): a leaf-value term, derived mechanically from card `cost`→`produces`
 data (no per-mission table), that credits a banked consumable for the objective progress it *converts
-into* and a held strategic resource for the production capacity it *unlocks* — turning the greedies' flat
-plateau into a climbable slope. It is tuned for *good*, not perfect,
+into*, a held strategic resource for the production capacity it *unlocks*, and an owned building for the
+rounds of output that fall past the horizon — turning the greedies' flat plateau into a climbable slope. It is tuned for *good*, not perfect,
 play: an occasional winnable seed is lost to sampling optimism, recoverable by raising the world count.
 
 ## Build roadmap 🔧

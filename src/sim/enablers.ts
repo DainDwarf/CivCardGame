@@ -19,6 +19,9 @@ import { OBJECTIVE_WEIGHT } from './value';
  *   card gates. None is a cost, so none converts in a single hop; each is credited for the durable
  *   goal-throughput it *unlocks* over a horizon (build/staff/gate a goal-producer), saturated at a cap, and
  *   floored at a small intrinsic credit so an objective naming no resource still yields a growth slope.
+ * - **Durable producers.** A structure is a capital cost bought against income spread over the rest of the
+ *   run, so the one-turn leaf prices it below a free work box of the same yield and never builds it. Each
+ *   *owned* structure is credited the rounds of its `produces` output that fall beyond the projected turn.
  *
  * Derived **mechanically from card data**, not a per-mission table: probe which resources move
  * `objectiveProgress` (the goal-valued set), then read each card's `cost → effect/produces` (consumables)
@@ -67,6 +70,23 @@ const INTRINSIC_CAPACITY_CREDIT = 0.01 * OBJECTIVE_WEIGHT;
 const HANDSIZE_LEVEL_CREDIT = 0.03 * OBJECTIVE_WEIGHT;
 const HANDSIZE_LEVEL_CAP = 6;
 
+/** Rounds of a durable producer's output credited at the leaf, counted **beyond** the projected turn.
+ *  `scoreState` reads the projection, so a staffed building's *next* round already scores there; crediting
+ *  it again would double-count, and the tail is exactly what `depth: 1` cannot see. A structure costs
+ *  production now against income spread over the rest of the run, so a leaf that prices only one turn rates
+ *  a 4🔨 Forge below a free Toolmaking box of equal yield. The credit rides on **ownership**, not staffing —
+ *  a built-but-unstaffed structure is a re-staffable option worth more than nothing — and staffed still
+ *  strictly beats unstaffed, since only the staffed one also collects the projected turn. */
+const PRODUCER_TAIL_HORIZON = 4;
+
+/** Saturation cap on the summed durable-producer credit, held under a won objective so a tableau of engine
+ *  can never outbid the goal it exists to serve. This is the primary bound on over-building: unlike
+ *  `HOP_DISCOUNT`'s conversion slope it is an intrinsic amortization constant, not sound potential shaping,
+ *  so nothing but the cap and `scoreState`'s real costs stops a runaway. Loose enough that a *second*
+ *  producer of the goal resource still scores — a cap binding on the first building would flatten exactly
+ *  the slope this credit exists to create. */
+const PRODUCER_CREDIT_CAP = 0.5 * OBJECTIVE_WEIGHT;
+
 /** A per-run enabler model, derived once from the seeded objective and reused at every leaf. */
 export interface EnablerModel {
   /** Per-unit score credit for holding an enabler resource — a consumable banked toward a conversion, or
@@ -79,6 +99,9 @@ export interface EnablerModel {
   /** Non-keyed credit for culture's hand-size throughput (see `HANDSIZE_LEVEL_CREDIT`): level-based, not
    *  linear in raw culture, and folded in `enablerPotential` regardless of whether culture is goal-valued. */
   handsizePerLevel?: number;
+  /** Per-**cardId** credit for owning one of that durable producer, keyed rather than recomputed per leaf
+   *  because the planner evaluates this on every beam node. Only structures with a `produces` appear. */
+  producerCredit: Partial<Record<string, number>>;
 }
 
 /** Which resources move the objective gradient, and by how much per unit — probed from a zeroed-resource
@@ -230,7 +253,29 @@ export function deriveEnablers(G: GameState): EnablerModel {
     }
   }
 
-  const model: EnablerModel = { weight, cap };
+  // Durable producers. Value one round of a structure's `produces` at the per-unit worth the model already
+  // carries — `valued` for a goal resource (whose core weight the consumables loop deliberately leaves
+  // unset), `weight` for one that is only a conversion input — then credit `PRODUCER_TAIL_HORIZON` of them.
+  // Read at **one worker's** output (`produces.resources` is per-worker): crediting full capacity would
+  // re-charge for the population that staffs it, which the capacity pass above already weights.
+  const unitValue: Partial<Record<keyof Resources, number>> = {};
+  for (const k of Object.keys(emptyResources()) as (keyof Resources)[]) {
+    const v = Math.max(valued[k] ?? 0, weight[k] ?? 0);
+    if (v > 0) unitValue[k] = v;
+  }
+  const producerCredit: EnablerModel['producerCredit'] = {};
+  for (const card of Object.values(CARDS)) {
+    if (!ids.has(card.id) || !isStructure(card) || !card.produces) continue;
+    let perRound = 0;
+    for (const [k, v] of Object.entries(unitValue) as [keyof Resources, number][]) {
+      perRound += positive(card.produces.resources?.[k]) * v;
+    }
+    // A one-shot placement grant (Hut's population, on `effect`) is not durable income and earns nothing
+    // here; it lands once in the resource pool, where the strategic weights already credit it.
+    if (perRound > 0) producerCredit[card.id] = perRound * PRODUCER_TAIL_HORIZON;
+  }
+
+  const model: EnablerModel = { weight, cap, producerCredit };
   if (canGrowCulture(ids)) model.handsizePerLevel = HANDSIZE_LEVEL_CREDIT;
   return model;
 }
@@ -246,5 +291,8 @@ export function enablerPotential(G: GameState, model: EnablerModel): number {
   if (model.handsizePerLevel) {
     s += model.handsizePerLevel * Math.min(cultureLevel(G.resources.culture), HANDSIZE_LEVEL_CAP);
   }
+  let durable = 0;
+  for (const placed of G.tableau) durable += model.producerCredit[placed.cardId] ?? 0;
+  s += Math.min(durable, PRODUCER_CREDIT_CAP);
   return s;
 }
