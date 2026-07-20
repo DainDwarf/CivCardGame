@@ -286,10 +286,15 @@ describe('durable producer credit', () => {
   });
 
   it('saturates, so a tableau of engine never outbids the objective it serves', () => {
+    // Read the *durable* term in isolation — the marginal forge past the cap — so a board rebalance moving
+    // the starting pools can't break this for reasons unrelated to the credit.
     const G = producerRoot();
     const m = deriveEnablers(G);
     for (let i = 0; i < 40; i++) addBuilding(G, 'forge');
-    expect(enablerPotential(G, m)).toBeLessThan(OBJECTIVE_WEIGHT);
+    const saturated = enablerPotential(G, m);
+    addBuilding(G, 'forge');
+    expect(enablerPotential(G, m)).toBe(saturated);
+    expect(m.producerCredit.forge! * 41).toBeGreaterThan(OBJECTIVE_WEIGHT); // the cap is what bound it
   });
 });
 

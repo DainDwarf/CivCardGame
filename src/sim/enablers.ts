@@ -76,7 +76,9 @@ const HANDSIZE_LEVEL_CAP = 6;
  *  production now against income spread over the rest of the run, so a leaf that prices only one turn rates
  *  a 4🔨 Forge below a free Toolmaking box of equal yield. The credit rides on **ownership**, not staffing —
  *  a built-but-unstaffed structure is a re-staffable option worth more than nothing — and staffed still
- *  strictly beats unstaffed, since only the staffed one also collects the projected turn. */
+ *  strictly beats unstaffed, since only the staffed one also collects the projected turn. Flat on
+ *  ownership: a structure with no prospect of ever being staffed is genuinely worth less than one about to
+ *  be worked, and this credits both the same. */
 const PRODUCER_TAIL_HORIZON = 4;
 
 /** Saturation cap on the summed durable-producer credit, held under a won objective so a tableau of engine
