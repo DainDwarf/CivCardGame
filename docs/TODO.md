@@ -18,6 +18,36 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Tags (optional): `[size: S/M/L]` rough effort · `[?]` needs design discussion ·
 > `[blocked]` waiting on something else · `[phase: N]` roadmap phase (1 = run loop · 2 = contract + meta shell · 3 = economy & progression · 4 = content & balance).
 
+## Next session — planner calibration follow-ups
+
+> Context (2026-07-20, uncommitted — the sweep outputs live only in a scratchpad): the planner's
+> search knobs had **never been measured**. Calibrating three of them (`determinizations` 2 → 8,
+> `turnConfigLimit` 8 → 16, `depth` 1 → 2) beats the shipped planner on every cell tested —
+> pyramid 0.23 → 0.82, accounting 0.54 → 0.88, writing-A 0.20 → 0.73, masonry 0.92 → 0.96,
+> restless_people 0.59 → 0.96 — against an oracle ceiling of 0.90 / 1.00 / 0.93 / 1.00 / 1.00.
+> `nodeBudget` never binds (peak ~2.9k steps against a 100k cap); `beamWidth` is inert at
+> `depth: 1` by construction.
+
+- **Split the enabler shaping into separately-togglable mechanisms** — one boolean per term on
+  `PlannerOptions` instead of today's single `enablers` flag. At calibrated search settings the
+  shaping is **+0.22 pyramid · +0.18 accounting · +0.06 masonry** but **−0.34 restless_people ·
+  −0.10 writing-A**, so it can't be shipped or dropped wholesale, and one boolean over five
+  mechanisms (consumable conversions · strategic capacity · intrinsic floor · hand-size ·
+  durable producer) can't say which one causes the restless_people collapse. The conversion term
+  is the only one with a soundness argument; the floors are unconditional value assertions.
+  `[size: S]` `[phase: 4]`
+
+- **Profile the calibrated planner** — the winning config costs **~45× the shipped planner**
+  (~36 s/run on pyramid, the *fastest* cell), which makes further calibration and every future
+  deck sweep painful. A depth-1 re-plan touches only ~340 engine steps, so **per-step cost
+  dominates, not search size**. Prime suspect: `scoreState` runs a full `cloneState` + upkeep
+  simulation **twice** per leaf (`projectNextTurn` + `permanentDelta`), with the planner's leaf
+  cache reclaiming ~25%. Use the `profile` skill. `[size: M]` `[phase: 4]`
+
+- Also outstanding: `beamWidth` 2/6 at `depth: 2` (sweep was still running), and re-running the
+  eleven-fixture baseline at whatever config is chosen. Consider a per-cell progress line on
+  stderr — a multi-hour sweep currently prints nothing until it finishes.
+
 ## Phase 4 — planned steps (content & balance)
 
 > Phase 4 is content expansion + balance tuning with the headless simulator (see
