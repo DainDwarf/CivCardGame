@@ -79,15 +79,19 @@ const HANDSIZE_LEVEL_CAP = 6;
  *  strictly beats unstaffed, since only the staffed one also collects the projected turn. Flat on
  *  ownership: a structure with no prospect of ever being staffed is genuinely worth less than one about to
  *  be worked, and this credits both the same. */
-const PRODUCER_TAIL_HORIZON = 4;
+const PRODUCER_TAIL_HORIZON = 2;
 
-/** Saturation cap on the summed durable-producer credit, held under a won objective so a tableau of engine
- *  can never outbid the goal it exists to serve. This is the primary bound on over-building: unlike
- *  `HOP_DISCOUNT`'s conversion slope it is an intrinsic amortization constant, not sound potential shaping,
- *  so nothing but the cap and `scoreState`'s real costs stops a runaway. Loose enough that a *second*
- *  producer of the goal resource still scores — a cap binding on the first building would flatten exactly
- *  the slope this credit exists to create. */
-const PRODUCER_CREDIT_CAP = 0.5 * OBJECTIVE_WEIGHT;
+/** Saturation cap on the summed durable-producer credit — the primary bound on over-building, since unlike
+ *  `HOP_DISCOUNT`'s conversion slope this is an intrinsic amortization constant, not sound potential
+ *  shaping, so nothing but the cap and `scoreState`'s real costs stops a runaway.
+ *
+ *  It is the load-bearing constant of the two, and the horizon is nearly inert where it binds: a producer of
+ *  a **goal-valued** resource derives a credit far above this cap (a Forge on a production-threshold mission
+ *  is ~60 at horizon 2, against a cap of 15), so its whole tableau saturates here and scaling the horizon
+ *  changes nothing. Where the goal names no resource the credit is a fraction of the cap and the horizon
+ *  alone sets the slope. Tuned to the point where a long conversion mission stops regressing — see
+ *  docs/STRATEGIC-VALUATION.md for the measured frontier. */
+const PRODUCER_CREDIT_CAP = 0.05 * OBJECTIVE_WEIGHT;
 
 /** A per-run enabler model, derived once from the seeded objective and reused at every leaf. */
 export interface EnablerModel {

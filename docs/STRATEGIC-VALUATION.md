@@ -316,7 +316,7 @@ bounded by a cap rather than provably optimum-preserving. It should not be prese
 
 ### Shipped
 
-`PRODUCER_TAIL_HORIZON = 4` rounds, at `PRODUCER_CREDIT_CAP = 0.5 · OBJECTIVE_WEIGHT`, keyed per cardId in
+`PRODUCER_TAIL_HORIZON = 2` rounds, at `PRODUCER_CREDIT_CAP = 0.05 · OBJECTIVE_WEIGHT`, keyed per cardId in
 the model and summed over `G.tableau` at the leaf. Three of the open decisions below fall out of one
 formulation — crediting the tail **beyond** the projected turn, uniformly, with no staffing branch:
 
@@ -331,12 +331,45 @@ formulation — crediting the tail **beyond** the projected turn, uniformly, wit
 
 Per-unit worth is `max(valued, weight)` — a producer of the *goal* resource carries its value in the
 goal-valued map, never in `weight` (the consumables loop skips a goal-valued cost), so a `weight`-only
-credit would have priced the most important producers at zero. On `first_settlement` a Forge derives 120
-(production goal-valued at 15/unit); on `writing` it derives 4, against the ~2.8 the 4🔨 spend costs in
-band 5 plus the production weight — thin, and the reason the cap is loose enough not to bind on the first
-building.
+credit would have priced the most important producers at zero.
 
-**Unmeasured.** The sweep below has not been run; these constants are a first guess.
+### The two constants divide the mission set
+
+They are not two dials on one slope; each governs a disjoint group, which is why the first tuning attempt
+(halving the horizon) did nothing.
+
+A producer of a **goal-valued** resource derives a credit far above the cap — a Forge is ~60 at horizon 2
+where the cap is 15 — so on a resource-threshold mission the tableau **saturates** and the horizon is inert.
+Where the objective names no resource the credit is a fraction of the cap (a Forge on `writing` derives 2),
+the cap never binds, and the horizon alone sets the slope. So the **cap bounds over-building on the missions
+that already have a gradient**, and the **horizon supplies the slope on the ones that don't**.
+
+### Measured frontier
+
+Planner @ 100 seeds against the committed baselines (Δ win rate; σ ≈ 5pp), plus `writing` variant A @ 30
+seeds (Forge plays across 30 runs, against 11 before and the oracle's 14-in-15). Greedy returned
+**11/11 bit-identical** at the shipped arm, so the planner is the only variable throughout.
+
+| horizon · cap | accounting | pyramid | first_temple | writing forge |
+| --- | --- | --- | --- | --- |
+| 4 · 0.50 | **−0.24** | +0.12 | +0.01 | 15 |
+| 2 · 0.50 | **−0.25** | +0.17 | +0.01 | 14 |
+| 2 · 0.10 | **−0.08** | +0.17 | +0.01 | 14 |
+| **2 · 0.05** (shipped) | **−0.04** | +0.07 | +0.01 | 14 |
+
+`accounting` is the binding cell: at the first arm it lost 24pp (~5σ) with stalls 5 → 36 and median turns
+40 → 93 — the doc's own predicted "builds engine it never converts" failure. It is insensitive to the
+horizon and recovers only on the cap. `pyramid`, `first_temple` and `writing` came back byte-identical
+across the 0.50 → 0.10 cap drop, confirming their credit sits below it; `pyramid` is where the cap finally
+bites, halving its gain at 0.05.
+
+The shipped arm is the one that regresses nothing, per the acceptance test below. `2 · 0.10` keeps pyramid's
+full +0.17 and was rejected only because accounting's −0.08 (~1.6σ) could not be called noise at 100 seeds —
+re-measuring that cell at 300 seeds is the open question if pyramid's extra 10pp is ever wanted.
+
+**Still unmeasured:** the full eleven-fixture sweep at the shipped constants. The six cells that were
+bit-identical at `4 · 0.50` are expected to stay so under a strictly smaller credit, but that is an
+inference, not a measurement.
 
 ## Open decisions
 
