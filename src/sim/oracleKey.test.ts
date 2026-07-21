@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { blankState, type GameState } from '../rules';
+import { CARDS } from '../content/cards';
 import { keyOf } from './oracleKey';
 
 /**
@@ -113,5 +114,36 @@ describe('oracle transposition key', () => {
     const withCounter = structuredClone(G);
     withCounter.deck[0].counters = { plays: 3 };
     expect(keyOf(withCounter)).not.toBe(keyOf(G));
+  });
+
+  it('folds a card instance’s stickers into its token, order-independently', () => {
+    const G = baseState();
+    const stickered = structuredClone(G);
+    stickered.deck[0].stickers = ['irrigation', 'terrace'];
+    expect(keyOf(stickered)).not.toBe(keyOf(G));
+
+    const reordered = structuredClone(stickered);
+    reordered.deck[0].stickers = ['terrace', 'irrigation'];
+    expect(keyOf(reordered)).toBe(keyOf(stickered));
+  });
+
+  it('treats empty counters / stickers as bare content', () => {
+    const G = baseState();
+    const empties = structuredClone(G);
+    empties.deck[0].counters = {};
+    empties.hand[0].stickers = [];
+    expect(keyOf(empties)).toBe(keyOf(G));
+  });
+});
+
+/**
+ * `keyOf` tokenizes a bare instance by its raw `cardId` and a decorated one (counters/stickers) by its
+ * full `contentKey`. The two token spaces stay disjoint only because a `contentKey` always contains `#`
+ * and a cardId never does — so a `#` in a cardId would let a bare and a decorated instance collide,
+ * silently merging two distinct states.
+ */
+describe('cardId / content-key separator coherence', () => {
+  it('no cardId contains the contentKey separator', () => {
+    for (const cardId of Object.keys(CARDS)) expect(cardId).not.toContain('#');
   });
 });

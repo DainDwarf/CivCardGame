@@ -25,8 +25,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > `turnConfigLimit` 8 → 16, `depth` 1 → 2) beats the shipped planner on every cell tested —
 > pyramid 0.23 → 0.82, accounting 0.54 → 0.88, writing-A 0.20 → 0.73, masonry 0.92 → 0.96,
 > restless_people 0.59 → 0.96 — against an oracle ceiling of 0.90 / 1.00 / 0.93 / 1.00 / 1.00.
-> `nodeBudget` never binds (peak ~2.9k steps against a 100k cap); `beamWidth` is inert at
-> `depth: 1` by construction.
+> `nodeBudget` never binds (0% aborts against a 100k cap); `beamWidth` is inert at
+> `depth: 1` by construction. The step counts recorded during that sweep (peak ~2.9k) do **not** hold
+> for the calibrated config — `bareBest` on pyramid measures mean 17.8k / max 31.7k steps per re-plan
+> (see *Done / shipped*). Treat the ~2.9k figure as superseded, whatever its origin.
 
 - **Split the enabler shaping into separately-togglable mechanisms** — one boolean per term on
   `PlannerOptions` instead of today's single `enablers` flag. At calibrated search settings the
@@ -37,12 +39,19 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   is the only one with a soundness argument; the floors are unconditional value assertions.
   `[size: S]` `[phase: 4]`
 
-- **Profile the calibrated planner** — the winning config costs **~45× the shipped planner**
-  (~36 s/run on pyramid, the *fastest* cell), which makes further calibration and every future
-  deck sweep painful. A depth-1 re-plan touches only ~340 engine steps, so **per-step cost
-  dominates, not search size**. Prime suspect: `scoreState` runs a full `cloneState` + upkeep
-  simulation **twice** per leaf (`projectNextTurn` + `permanentDelta`), with the planner's leaf
-  cache reclaiming ~25%. Use the `profile` skill. `[size: M]` `[phase: 4]`
+- **Cut the planner's search size** — the measured lever on the ~45× cost. `plannerPolicy.ts` replays
+  every candidate line into every sampled world (`applyActions`), i.e. `turnConfigLimit` × `determinizations`
+  = **16 × 8 = 128 line-replays per turn**, which is what drives the ~17.8k engine steps per re-plan.
+  Replaying the deck-independent prefix **once** and combining it with each world's deck attacks the step
+  count itself rather than per-step cost. Verify the deck-independence assumption against within-turn deck
+  readers (Calendar/peek) before relying on it. Sim-local. `[size: M]` `[phase: 4]`
+
+- **Drop esbuild's `keepNames` (~14.1% of sim runtime)** — `__name` + `__defProp` on `.name`, fired
+  because `dispatchEvent` builds a per-call closure (`events.ts`). Pure dev-tooling overhead: no game
+  logic changes and no behaviour moves. **Unverified that `tsx` exposes a toggle** — may need
+  precompilation or a custom loader, so confirm the fix exists before banking the 14%. Hoisting the
+  closure instead would be a core `rules/events.ts` change with no player-felt benefit (the run loop
+  dispatches at human speed), so it does not clear the core-change bar. `[size: S]` `[phase: 4]`
 
 - Also outstanding: `beamWidth` 2/6 at `depth: 2` (sweep was still running), and re-running the
   eleven-fixture baseline at whatever config is chosen. Consider a per-cell progress line on
@@ -267,6 +276,31 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
+
+- **Profile the calibrated planner** ✅ — measured on pyramid · `bareBest` · 10 seeds (372.6 s,
+  1,613 samples, `profile` skill). **Both premises of the original ticket were wrong.** A `bareBest`
+  re-plan touches **mean 17.8k engine steps (max 31.7k)**, not ~340 — that figure was a *depth-1*
+  number that did not transfer to `depth: 2`, so what grew is **search size**, not per-step cost.
+  `nodeBudget` still never binds (0% aborts), which now says the cap is loose rather than the search
+  small. Where the time goes: `deepClone` **23.3%** self · `keyOf` **21.5%** cum · esbuild `keepNames`
+  (`__name` + `set metrics`) **~14.1%** · engine advancement **~35.7%** (hand-summed from the call
+  tree; flame truncates caller lists). The ticket's prime suspect — `scoreState` running
+  `cloneState`+upkeep twice per leaf (`projectNextTurn` + `permanentDelta`) — is **exonerated**: the
+  *duplicated* clone is worth ~2.6%, and the engine path outweighs it ≈4.7 : 1. Follow-ups split into
+  the two open items above.
+  - **Tried and reverted: interning content keys to ints in `oracleKey.ts`.** Correctness was exact —
+    byte-identical sweep JSON and identical `replans`/`meanSteps`/`maxSteps`, confirming the token
+    scheme preserved the key's merge classes — but performance was a **wash**: `keyOf` 21.5% → **22.8%**
+    cum, wall clock 372.6 → **380.7 s**. The numeric sort worked as designed (`multiset` 8.2% → 5.4%
+    self, `contentKey` 4.4% → 3.3%), but the new per-instance `Map` lookup cost **6.6%** self, more
+    than the ~5.2% saved across the other frames — and `join()` re-stringifies every int anyway, so
+    string materialization was moved rather than removed. **The generalizable lesson: `keyOf`'s cost is
+    per-instance work + string materialization, not comparison order** — so a count/multiset
+    representation (which only shrinks the sort) would not rescue it either. Any future attempt must
+    eliminate the per-instance touch or the final string. Kept the four invariant tests it motivated
+    (stickers folded order-independently, empty `counters`/`stickers` treated as bare, no `#` in any
+    cardId — the separator the `contentKey` format depends on), all passing against the unchanged
+    implementation.
 
 - **Retire the objective `OVERRIDES` seam** ✅ — the per-mission progress-gradient overrides in
   `sim/objective.ts` were a bring-up safety net; `sim/enablers.ts` now derives the between-thresholds
