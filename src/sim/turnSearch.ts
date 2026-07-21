@@ -1,7 +1,7 @@
 import type { GameState } from '../rules';
 import type { RunState } from '../run/engine';
 import { enumerateActions } from './actions';
-import { keyOf } from './oracleKey';
+import { hashOf } from './oracleKey';
 import { applyAction, type SimAction } from './simulate';
 
 /**
@@ -10,7 +10,7 @@ import { applyAction, type SimAction } from './simulate';
  * configurations. Both searches collapse a turn into a single edge and differ only in their *beam-level*
  * loop (the oracle drives to a `victory`; the planner does a shallow, determinized expectimax) and in the
  * **heuristic** they rank by — so that heuristic is a parameter here, keeping this piece mission- and
- * policy-agnostic. Reuses the engine seams verbatim (`enumerateActions`/`applyAction`/`keyOf`).
+ * policy-agnostic. Reuses the engine seams verbatim (`enumerateActions`/`applyAction`/`hashOf`).
  */
 
 /** A node in a search: a run state, a back-pointer to how it was reached (so an action line is recovered
@@ -20,7 +20,7 @@ export interface SearchNode {
   parent: SearchNode | null;
   /** The action that led from `parent` to this node; `null` only for a root. */
   action: SimAction | null;
-  key: string;
+  key: number;
   h: number;
 }
 
@@ -34,7 +34,7 @@ export interface Budget {
  *  planner). `key` is the caller's already-computed transposition key for `G`, passed only where the
  *  search has one to hand: a pure memo hint an implementation may cache on or ignore, never an input to
  *  the value. */
-export type Heuristic = (G: GameState, key?: string) => number;
+export type Heuristic = (G: GameState, key?: number) => number;
 
 /** Recover the action sequence from the root to `node` by walking parent back-pointers. */
 export function reconstruct(node: SearchNode): SimAction[] {
@@ -69,7 +69,7 @@ export function expandTurn(
   budget: Budget,
   heuristic: Heuristic,
 ): { win: SearchNode | null; configs: SearchNode[] } {
-  const localSeen = new Set<string>([node.key]);
+  const localSeen = new Set<number>([node.key]);
   // A parked-interaction *root* is not a legal pre-`endTurn` config — `endTurn` no-ops while one is set,
   // so "commit nothing and end the turn" here is a no-op the planner would emit forever (it re-plans on
   // the real parked state after a peek). Exclude it from `configs` while still *expanding* it (frontier
@@ -86,12 +86,12 @@ export function expandTurn(
       budget.steps += 1;
       const next = applyAction(cur.state, action);
       if (next === cur.state) continue; // engine rejected it (shouldn't happen for an enumerated action)
-      const child: SearchNode = { state: next, parent: cur, action, key: '', h: 0 };
+      const child: SearchNode = { state: next, parent: cur, action, key: 0, h: 0 };
       if (next.gameover) {
         if (next.gameover.outcome === 'victory') return { win: child, configs };
         continue; // a mid-turn defeat (e.g. a sacrifice tipping a resource negative) — dead branch
       }
-      const k = keyOf(next.G);
+      const k = hashOf(next.G);
       if (localSeen.has(k)) continue;
       localSeen.add(k);
       child.key = k;

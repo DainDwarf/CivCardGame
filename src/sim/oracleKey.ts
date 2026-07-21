@@ -1,9 +1,10 @@
 import { contentKey, type CardInstance, type GameState, type PendingInteraction, type PlacedCard } from '../rules';
 
 /**
- * A **canonical transposition key** for a run state — the string the oracle search (`sim/oracle.ts`)
- * hashes to merge duplicate states and collapse the action-ordering explosion. Two states with an
- * *equal* key are treated as the same search node.
+ * The **canonical transposition key** for a run state: the explicit, readable statement of when two states
+ * count as the same search node, which is what lets duplicates merge and collapses the action-ordering
+ * explosion. `hashOf` below is the fingerprint the searches actually index by; this defines the relation
+ * that fingerprint realizes, and the reasoning here is what governs both.
  *
  * The primary claim the oracle makes — *a returned winning line is a real, replayable win* — does **not**
  * depend on this key at all: every line the search returns is a sequence of actions it actually applied
@@ -82,4 +83,154 @@ function placedMultiset(list: readonly PlacedCard[]): string {
 function pendingToken(p: PendingInteraction | null): string {
   if (!p) return '';
   return `${p.cardId}#${p.kind}#${p.pick}#${p.options.map(contentKey).join(';')}`;
+}
+
+/**
+ * A 53-bit **fingerprint** standing in for `keyOf` as the searches' transposition key: it realizes the same
+ * equivalence relation, and is what every consumer actually indexes by.
+ *
+ * The speedup comes from an unordered zone folding **commutatively** (a sum), so its order is erased *by
+ * construction* — no sort, no intermediate array, no joined string, where `keyOf` pays all three. The deck
+ * keeps a position-dependent fold, its order being the future draw sequence. Additive rather than xor on
+ * purpose: xor self-cancels a pair of identical cards, and a duplicate-heavy discard is where that bites.
+ *
+ * **This is a hash, so a collision merges two distinct states rather than being detected.** That is a
+ * deliberate trade, and it is affordable only because of where the risk lands:
+ * - It costs **completeness, never soundness**. A merge can only make a search *miss* a line; the oracle's
+ *   returned lines are still replayed through the real engine (see `keyOf` above for the full argument).
+ * - The population at risk is **one structure, not one sweep**: a `localSeen` lives for a single
+ *   `expandTurn` and a `leafCache` for a single re-plan — ~10⁴ states against 2⁵³, so ~10⁻⁸ each.
+ * - Determinism is untouched: the same seed hashes the same way, so a run stays exactly reproducible.
+ *
+ * Verifying collisions instead was measured and is *slower than not hashing at all* — the check fires on
+ * every cache **hit**, not on the rare collision, and hits are the common case.
+ */
+export function hashOf(G: GameState): number {
+  const r = G.resources;
+  laneA = OFFSET_A;
+  laneB = OFFSET_B;
+  mixScalar(G.round);
+  mixScalar(r.food);
+  mixScalar(r.production);
+  mixScalar(r.science);
+  mixScalar(r.military);
+  mixScalar(r.money);
+  mixScalar(r.population);
+  mixScalar(r.territory);
+  mixScalar(r.culture);
+  mixScalar(G.handSize);
+  foldOrdered(G.deck);
+  foldMultiset(G.discard);
+  foldMultiset(G.hand);
+  foldPlaced(G.tableau);
+  foldPlaced(G.workZone);
+  foldMultiset(G.threats);
+  foldMultiset(G.removed);
+  for (const n of G.rngState) mixScalar(n);
+  foldPending(G.pendingInteraction);
+  // 32 high bits from one lane, 21 from the other: the widest exact integer JS carries, so consumers stay
+  // plain number-keyed Maps instead of nesting or re-stringifying a pair.
+  return (laneA >>> 0) * 0x200000 + (laneB >>> 11);
+}
+
+const OFFSET_A = 0x811c9dc5;
+const OFFSET_B = 0x9e3779b1;
+const PRIME_A = 0x01000193;
+const PRIME_B = 0x85ebca6b;
+const MIX_A = 0x7feb352d;
+const MIX_B = 0x846ca68b;
+
+/** The two lanes live at module scope rather than being returned as a pair because `hashOf` is the sim's
+ *  hottest leaf, and a per-zone tuple allocation there is precisely the cost this fingerprint exists to
+ *  avoid. Safe because the fold is synchronous and non-reentrant. */
+let laneA = 0;
+let laneB = 0;
+
+/** Distinct content tokens are few and endlessly repeated across states, so each is walked once. */
+const TOKEN_HASH = new Map<string, number>();
+
+function mixScalar(n: number): void {
+  laneA = Math.imul(laneA ^ n, PRIME_A) | 0;
+  laneB = Math.imul(laneB ^ ((n << 13) | (n >>> 19)), PRIME_B) | 0;
+}
+
+/** Fold one already-combined zone summary into the lanes, positionally — so two zones holding the same
+ *  cards stay distinguishable. */
+function mixPair(a: number, b: number): void {
+  laneA = Math.imul(laneA ^ a, PRIME_A) | 0;
+  laneB = Math.imul(laneB ^ b, PRIME_B) | 0;
+}
+
+function hashString(s: string): number {
+  let h = OFFSET_A;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), PRIME_A);
+  return h | 0;
+}
+
+/** An instance's content token, hashed. Mirrors `keyOf`'s tokenization — a bare instance keys on its raw
+ *  `cardId`, so the common path builds no string at all. */
+function tokenHash(inst: CardInstance): number {
+  const decorated =
+    (inst.stickers !== undefined && inst.stickers.length > 0) ||
+    (inst.counters !== undefined && Object.keys(inst.counters).length > 0);
+  const token = decorated ? contentKey(inst) : inst.cardId;
+  let h = TOKEN_HASH.get(token);
+  if (h === undefined) TOKEN_HASH.set(token, (h = hashString(token)));
+  return h;
+}
+
+function foldOrdered(list: readonly CardInstance[]): void {
+  let a = OFFSET_A;
+  let b = OFFSET_B;
+  for (const inst of list) {
+    const t = tokenHash(inst);
+    a = Math.imul(a ^ t, PRIME_A) | 0;
+    b = Math.imul(b ^ t, PRIME_B) | 0;
+  }
+  mixPair(a, b);
+}
+
+/**
+ * An element's contribution to a **summed** (commutative) fold. The two lanes must not be linearly related:
+ * a sum distributes over multiplication, so a lane built as `Σ imul(tᵢ, K)` is exactly `imul(Σtᵢ, K)` — it
+ * would carry no information the other lane lacks, silently halving the fingerprint's real width. An
+ * avalanche is non-linear over addition, so the two sums stay genuinely independent.
+ */
+function avalanche(x: number, k: number): number {
+  let v = Math.imul(x ^ (x >>> 16), k);
+  v = Math.imul(v ^ (v >>> 13), 0xc2b2ae35);
+  return (v ^ (v >>> 16)) | 0;
+}
+
+function foldMultiset(list: readonly CardInstance[]): void {
+  let a = 0;
+  let b = 0;
+  for (const inst of list) {
+    const t = tokenHash(inst);
+    a = (a + avalanche(t, MIX_A)) | 0;
+    b = (b + avalanche(t, MIX_B)) | 0;
+  }
+  mixPair(a, b);
+}
+
+function foldPlaced(list: readonly PlacedCard[]): void {
+  let a = 0;
+  let b = 0;
+  for (const c of list) {
+    const t = tokenHash(c) ^ Math.imul(c.workers + 1, PRIME_A);
+    a = (a + avalanche(t, MIX_A)) | 0;
+    b = (b + avalanche(t, MIX_B)) | 0;
+  }
+  mixPair(a, b);
+}
+
+function foldPending(p: PendingInteraction | null): void {
+  if (!p) {
+    mixScalar(0);
+    return;
+  }
+  mixScalar(hashString(p.cardId));
+  mixScalar(hashString(p.kind));
+  mixScalar(p.pick);
+  for (const opt of p.options) mixScalar(tokenHash(opt));
 }

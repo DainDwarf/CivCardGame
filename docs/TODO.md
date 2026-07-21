@@ -277,6 +277,18 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
 
+- **Hash the transposition key** ✅ — the answer to the interning attempt's challenge below (*eliminate
+  the per-instance touch or the final string*): `hashOf` does both, folding each unordered zone
+  **commutatively** into a 53-bit fingerprint so the sort, the intermediate array and the join all
+  disappear rather than move. `keyOf` stays as the readable statement of the equivalence relation and
+  as the test oracle the hash is checked against. Measured on pyramid · `oracle` · 20 seeds under the
+  profiler: key cost **18.8% → 9.9%** cum (~26 s → ~12 s), accounting for essentially the whole
+  139.9 → 124.7 s drop; `deepClone`'s sample count was flat (88 → 87), so its larger *share* is
+  dilution, not a regression. Sweep output identical (win rate, turns, actions, end resources).
+  A collision now merges two distinct states — affordable because it costs **completeness, never
+  soundness**, over ~10⁴ live states against 2⁵³. No clean unprofiled A/B was run, so the ~11%
+  wall-clock figure is indicative only.
+
 - **Profile the calibrated planner** ✅ — measured on pyramid · `bareBest` · 10 seeds (372.6 s,
   1,613 samples, `profile` skill). **Both premises of the original ticket were wrong.** A `bareBest`
   re-plan touches **mean 17.8k engine steps (max 31.7k)**, not ~340 — that figure was a *depth-1*

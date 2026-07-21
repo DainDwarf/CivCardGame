@@ -1,7 +1,7 @@
 import type { RunConfig } from '../contract';
 import { createRun, endTurn, type RunState } from '../run/engine';
 import { createGreedy2Policy } from './greedy2Policy';
-import { keyOf } from './oracleKey';
+import { hashOf } from './oracleKey';
 import { type Policy, type SimAction } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
 import { scoreState } from './value';
@@ -84,9 +84,9 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
   const h: Heuristic = model ? (G) => scoreState(G) + enablerPotential(G, model) : scoreState;
 
   const budget: Budget = { steps: 0, cap: opts.nodeBudget };
-  const rootNode: SearchNode = { state: root, parent: null, action: null, key: keyOf(root.G), h: h(root.G) };
+  const rootNode: SearchNode = { state: root, parent: null, action: null, key: hashOf(root.G), h: h(root.G) };
   let beam: SearchNode[] = [rootNode];
-  const seen = new Set<string>([rootNode.key]);
+  const seen = new Set<number>([rootNode.key]);
 
   for (let depth = 0; depth < opts.maxRounds; depth++) {
     const successors: SearchNode[] = [];
@@ -102,14 +102,14 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
           state: advanced,
           parent: cfg,
           action: { kind: 'endTurn' },
-          key: '', // filled below only for the states we actually keep
+          key: 0, // filled below only for the states we actually keep
           h: 0,
         };
         if (advanced.gameover) {
           if (advanced.gameover.outcome === 'victory') return reconstruct(child);
           continue; // defeat this round — a dead branch
         }
-        const k = keyOf(advanced.G);
+        const k = hashOf(advanced.G);
         if (seen.has(k)) continue;
         seen.add(k);
         child.key = k;

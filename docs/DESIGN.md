@@ -423,7 +423,9 @@ resting on the order-independence guarantees above), a deadline + territory cap 
 and a `scoreState` beam keeps the top-*W* states per round-depth. Every line it returns is real actions
 replayed through the real engine to an observed `victory` — so a found line is a **sound proof** of
 winnability, and a looser multiset key can only ever *miss* wins (incompleteness), never manufacture a
-false one. `searchWinningLine`/`proveWinnable` are the search APIs; `createOraclePolicy` wraps a found
+false one. That headroom is what lets the searches index by a 53-bit **fingerprint** of the key
+(`hashOf`) rather than the key itself: a collision merges two genuinely distinct states, which is one
+more way to miss a line and no way at all to fake one. `searchWinningLine`/`proveWinnable` are the search APIs; `createOraclePolicy` wraps a found
 line as a scripted policy (greedy2 fallback when none is found, so oracle-wins ⊇ greedy2-wins).
 
 **The `planner` is the fair competent policy — the oracle's search made honest and shallow.** The

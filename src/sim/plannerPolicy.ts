@@ -1,4 +1,4 @@
-import { keyOf } from './oracleKey';
+import { hashOf } from './oracleKey';
 import { endTurn, type RunState } from '../run/engine';
 import { applyAction, type Policy, type SimAction } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
@@ -65,7 +65,7 @@ const DEFAULTS: Required<PlannerOptions> = {
 const VICTORY = 1e9;
 
 function makeNode(state: RunState, h: Heuristic): SearchNode {
-  const key = keyOf(state.G);
+  const key = hashOf(state.G);
   return { state, parent: null, action: null, key, h: h(state.G, key) };
 }
 
@@ -155,23 +155,24 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
   let rngState = seededRng(policySeed).getState();
   const buffer: SimAction[] = [];
 
-  /** Leaf values already computed this run, keyed by the transposition key plus the one field the value
-   *  reads that `keyOf` drops (`pendingVictory` — derived, so it *would* follow from the key, but pinning
-   *  it here costs a character and removes the argument). `objective`/`missionId`, also dropped, are
-   *  constant within a run and this cache never outlives one. Worth it because the beam and the sampled
+  /** Leaf values already computed this run, keyed by the transposition fingerprint — split across two maps
+   *  by the one field the value reads that the fingerprint drops (`pendingVictory` — derived, so it *would*
+   *  follow from the key, but splitting on it removes the argument). `objective`/`missionId`, also dropped,
+   *  are constant within a run and this cache never outlives one. Worth it because the beam and the sampled
    *  worlds re-score ~25% of states, each score costing two upkeep projections — far more than a lookup. */
-  const leafCache = new Map<string, number>();
+  const leafCache = new Map<number, number>();
+  const leafCacheVictory = new Map<number, number>();
 
   const replan = (state: RunState): void => {
     if (!model) model = opts.enablers ? deriveEnablers(state.G) : { weight: {}, cap: {}, producerCredit: {} };
     const enablers = model;
-    const h: Heuristic = (G: GameState, key?: string) => {
+    const h: Heuristic = (G: GameState, key?: number) => {
       if (key === undefined) return scoreState(G) + enablerPotential(G, enablers);
-      const cacheKey = G.pendingVictory ? `w|${key}` : key;
-      const hit = leafCache.get(cacheKey);
+      const cache = G.pendingVictory ? leafCacheVictory : leafCache;
+      const hit = cache.get(key);
       if (hit !== undefined) return hit;
       const value = scoreState(G) + enablerPotential(G, enablers);
-      leafCache.set(cacheKey, value);
+      cache.set(key, value);
       return value;
     };
     const budget: Budget = { steps: 0, cap: opts.nodeBudget };

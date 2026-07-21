@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { blankState, type GameState } from '../rules';
 import { CARDS } from '../content/cards';
-import { keyOf } from './oracleKey';
+import { hashOf, keyOf } from './oracleKey';
 
 /**
  * `keyOf` is a pure serialization of a `GameState` — it never looks a card up in the catalogue — so these
@@ -145,5 +145,74 @@ describe('oracle transposition key', () => {
 describe('cardId / content-key separator coherence', () => {
   it('no cardId contains the contentKey separator', () => {
     for (const cardId of Object.keys(CARDS)) expect(cardId).not.toContain('#');
+  });
+});
+
+/**
+ * `hashOf` is a lossy stand-in for `keyOf`, so the two directions are not equally serious. **Splitting** an
+ * equivalence class is a real defect — it silently costs every merge in that class, and no collision check
+ * exists to catch it. **Separating** distinct states is only best-effort: a collision is legal by design
+ * (it costs completeness, never soundness), so these pin the cases the commutative fold could plausibly
+ * lose outright rather than any general injectivity.
+ */
+describe('state fingerprint', () => {
+  it('never splits an equivalence class the canonical key merges', () => {
+    const G = baseState();
+    const equivalent = structuredClone(G);
+    for (const zoneList of [equivalent.deck, equivalent.hand, equivalent.discard, equivalent.tableau]) {
+      for (const c of zoneList) c.id += 1000;
+    }
+    equivalent.hand.reverse();
+    equivalent.objective = { id: 999, cardId: 'obj' };
+    equivalent.pendingVictory = true;
+    equivalent.revealCount += 3;
+    expect(keyOf(equivalent)).toBe(keyOf(G)); // the premise: the canonical key calls these one state
+    expect(hashOf(equivalent)).toBe(hashOf(G));
+  });
+
+  it('does not cancel a duplicated card out of an unordered zone', () => {
+    const G = baseState();
+    const paired = structuredClone(G);
+    paired.hand = [
+      { id: 4, cardId: 'c' },
+      { id: 5, cardId: 'c' },
+    ];
+    const empty = structuredClone(G);
+    empty.hand = [];
+    expect(hashOf(paired)).not.toBe(hashOf(empty));
+  });
+
+  it('does not let one zone masquerade as another holding the same cards', () => {
+    const G = baseState();
+    const moved = structuredClone(G);
+    moved.discard = [...moved.hand];
+    moved.hand = [];
+    expect(hashOf(moved)).not.toBe(hashOf(G));
+  });
+
+  it('stays sensitive to deck order, staffing, scalars, and the rng state', () => {
+    const G = baseState();
+    const reordered = structuredClone(G);
+    [reordered.deck[0], reordered.deck[1]] = [reordered.deck[1], reordered.deck[0]];
+    expect(hashOf(reordered)).not.toBe(hashOf(G));
+
+    const staffed = structuredClone(G);
+    staffed.tableau[0].workers += 1;
+    expect(hashOf(staffed)).not.toBe(hashOf(G));
+
+    const richer = structuredClone(G);
+    richer.resources.production += 1;
+    expect(hashOf(richer)).not.toBe(hashOf(G));
+
+    const rng = structuredClone(G);
+    rng.rngState = [1, 2, 4];
+    expect(hashOf(rng)).not.toBe(hashOf(G));
+  });
+
+  it('is an exact integer, so a number-keyed Map can index it', () => {
+    const G = baseState();
+    const h = hashOf(G);
+    expect(Number.isSafeInteger(h)).toBe(true);
+    expect(hashOf(structuredClone(G))).toBe(h); // and stable across calls
   });
 });

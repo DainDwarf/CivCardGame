@@ -9,7 +9,7 @@ import {
 } from '../rules';
 import { installFixtures, uninstallFixtures } from '../rules/testFixtures';
 import { endTurn, type RunState } from '../run/engine';
-import { keyOf } from './oracleKey';
+import { hashOf, keyOf } from './oracleKey';
 
 /**
  * Enforces the **zone order-independence invariant** (see DESIGN.md / the CLAUDE.md convention): no card
@@ -81,13 +81,17 @@ describe('zone order-independence invariant', () => {
     const baseState: RunState = { G: structuredClone(base), gameover: undefined };
     const baseAfter = endTurn(baseState);
     const baseKey = keyOf(baseAfter.G);
+    const baseHash = hashOf(baseAfter.G);
 
     for (const perm of permutations(base)) {
       const after = endTurn({ G: perm, gameover: undefined });
       // Resources: a non-commutative production/drain would move a scalar here.
       expect(after.G.resources).toEqual(baseAfter.G.resources);
-      // The multiset abstraction the oracle keys on must agree regardless of input order.
+      // The multiset abstraction the oracle keys on must agree regardless of input order — on the
+      // canonical key and on the fingerprint the searches actually index by, which erases zone order by a
+      // different mechanism (a commutative fold rather than a sort) and so can fail independently.
       expect(keyOf(after.G)).toBe(baseKey);
+      expect(hashOf(after.G)).toBe(baseHash);
     }
   });
 });
