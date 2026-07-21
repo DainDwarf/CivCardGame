@@ -51,13 +51,15 @@ surprise, so nothing shows a locked placeholder or a total count.
   that breaks one surfaces here).
 - `npm test` — run the Vitest suite once. `npm run test:watch` — watch mode.
 - Single file: `npx vitest run src/rules/scoring.test.ts` · by name: `npx vitest run -t "victory points"`.
-- `npm run seed-save` — dev tool (`scripts/seed-save.ts` via `tsx`): walks the campaign DAG and folds
+- `npm run seed-save` — dev tool (`scripts/seed-save.ts`, bundled to plain ESM by `scripts/bundle.mjs`
+  and run under bare `node` — as are `sim`/`economy`, so no dev script rides `tsx`, whose `keepNames`
+  transform otherwise taxes a sweep ~15%): walks the campaign DAG and folds
   one finished run per mission through the real `applyRunResult` to write a populated `.civsave`
   (default `./seed.civsave`, gitignored) for testing the meta screens without grinding. `--upto
   <missionId>` stops at that mission's transitive prereqs + itself; `--influence <n>` overrides the
   spendable balance; `--seed`/`--out` set randomization and output path. The DAG walk and default
   target set derive from `content/missions.ts` — missions are never hard-coded.
-- `npm run sim` — balance tool (`scripts/sim.ts` via `tsx`): sweeps the headless simulator and prints an
+- `npm run sim` — balance tool (`scripts/sim.ts`): sweeps the headless simulator and prints an
   aggregated report. Cells are named one of two mutually-exclusive ways. **Ad-hoc**, over a mission ×
   deck × board matrix: `--scenario <ids>` names missions (live from `content/missions.ts`),
   `--deck`/`--board` point at JSON files (examples under `scripts/sim/`). **`--baseline <paths|dir>`**
@@ -71,13 +73,12 @@ surprise, so nothing shows a locked placeholder or a total count.
 - `npm run sim:profile` — the same sweep under `@platformatic/flame`, which writes a **markdown**
   hotspot report (annotated call tree + per-function callers/callees) beside an HTML flamegraph, into
   the gitignored `cpu-profile-*`/`heap-profile-*` in the CWD. Markdown so the report is readable
-  without a browser. Takes every `npm run sim` flag. Three load-bearing details: `--delay=none`
-  (`scripts/sim.ts` is fully synchronous, so the default deferred start arms the profiler *after* the
-  sweep has already finished and captures nothing); `--node-options="--import tsx"` (plain `tsx` can
-  put the work in a child process the profiler never samples); and the pinned version (the tool floats
-  its own deps, and an unpinned profiler that breaks is worse than none). Use ~20 seeds — tsx's
-  compile startup is a fixed cost that badly skews a short run.
-- `npm run economy` — economy tool (`scripts/economy.ts` via `tsx`): pure computation over content (no
+  without a browser. Takes every `npm run sim` flag. It profiles the prebuilt `scripts/.bundle/sim.mjs`
+  directly, so two details are load-bearing: `--delay=none` (`scripts/sim.ts` is fully synchronous, so
+  the default deferred start arms the profiler *after* the sweep has already finished and captures
+  nothing) and the pinned version (the tool floats its own deps, and an unpinned profiler that breaks is
+  worse than none). Use ~20 seeds so the captured run is long enough for the sampler.
+- `npm run economy` — economy tool (`scripts/economy.ts`): pure computation over content (no
   simulation). Prints the **faucet ledger** (guaranteed Influence granted per standard mission + the
   cumulative amount arriving at each, via `campaign.ts`'s `cumulativeInfluenceInto`) and the **price
   list** (copy tiers from `shop.ts`, card/board stickers), in raw Influence. `--format text|json`. The

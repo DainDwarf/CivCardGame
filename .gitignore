@@ -11,6 +11,9 @@ dist-ssr
 cpu-profile-*
 heap-profile-*
 
+# Bundled dev scripts (rebuilt on every npm run by scripts/bundle.mjs)
+scripts/.bundle/
+
 # Editor / OS
 .DS_Store
 .idea

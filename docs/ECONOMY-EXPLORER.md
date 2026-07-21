@@ -51,9 +51,9 @@ yardstick, across every mission and age.
 > "build now" / future-tense phrasing and the seed-save line numbers are as-planned, not outstanding
 > work. What actually shipped is under *The report* and *Reframing after Phase A*.
 
-A new dev script, same pattern as `scripts/sim.ts` / `scripts/seed-save.ts` (run via `tsx`, `parseArgs`,
-clean `economy: …` one-line errors, `--format text|json`). No simulation — pure computation over
-content, so it runs instantly.
+A new dev script, same pattern as `scripts/sim.ts` / `scripts/seed-save.ts` (bundled by
+`scripts/bundle.mjs` and run under `node`, `parseArgs`, clean `economy: …` one-line errors,
+`--format text|json`). No simulation — pure computation over content, so it runs instantly.
 
 ### Reuse / refactor first (unify, don't duplicate)
 

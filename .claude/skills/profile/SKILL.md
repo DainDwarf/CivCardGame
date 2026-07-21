@@ -15,23 +15,29 @@ genuinely doesn't, say what's missing and ask — a bespoke script produces numb
 ## Measure before optimizing — always
 
 A profile is cheap and intuitions about hot code are usually wrong. Before touching anything for
-performance, profile it. In this repo the planner's cost turned out to be ~62% `structuredClone`,
-which no reading of the search code would have predicted.
+performance, profile it. In this repo the planner's cost turned out to be dominated by **state
+cloning**, not the search logic — which no reading of the search code would have predicted.
 
 ## The run must be long enough — the one rule that invalidates everything
 
-`tsx` compiles TypeScript on every start. That's a **fixed multi-second cost** that lands inside
-the profile and inflates every startup frame at the expense of the real work.
+A too-short capture doesn't fail loudly, **it silently lies**: a fixed startup cost lands inside the
+profile and inflates every startup frame at the expense of the real work, and too few samples can't
+resolve the hot frames apart.
 
-Measured on the same code, same tool, same hotspot:
+The dev scripts now run as a **prebuilt esbuild bundle** under bare `node` (`scripts/bundle.mjs`), so
+their startup is just the ~tens-of-ms bundle step. The rule still stands, for two reasons: the sampler
+needs enough samples to be trustworthy regardless, and another entry point you profile may carry its
+own startup. How badly dilution *can* bite was measured on the sim under the old `tsx` path (which
+recompiled every start — a multi-second cost the bundle removed), same code, same clone hotspot (then
+`structuredClone`, since replaced by the faster `deepClone` — so these absolute shares are of that
+older frame; the *ratio* between the two rows is the point):
 
-| Sweep length | Reported `structuredClone` share |
+| Sweep length | Reported clone-hotspot share |
 |---|---|
 | 4 seeds (~3s) | **23.0%** |
 | 12 seeds (~12s) | **61.7%** |
 
-Neither number is a bug — the short run is just mostly startup. **A too-short capture doesn't fail
-loudly, it silently lies.**
+Neither number was a bug — the short run was just mostly startup.
 
 So:
 
@@ -59,21 +65,24 @@ number, but for different reasons.
 
 ## Profiling anything else
 
-The `sim:profile` script is just `npm run sim` under flame. Any other Node entry point profiles the
-same way — the pattern, for a future meta-explorer, a new script, or an ad-hoc harness:
+The `sim:profile` script bundles the sim (`scripts/bundle.mjs`) and runs flame over the resulting
+`scripts/.bundle/sim.mjs`. Any other Node entry point profiles the same way — bundle it to plain ESM
+first, then flame the bundle (the pattern, for a future meta-explorer, a new script, or an ad-hoc
+harness):
 
 ```
-npx -y @platformatic/flame@1.7.0 run --delay=none --md-format=detailed \
-  --node-options="--import tsx" scripts/<entry>.ts -- <the script's own args>
+node scripts/bundle.mjs && npx -y @platformatic/flame@1.7.0 run --delay=none --md-format=detailed \
+  scripts/.bundle/<entry>.mjs -- <the script's own args>
 ```
 
 Four load-bearing pieces — omit one and you get a silently useless profile:
 
+- **profile the bundle, not the `.ts`** — running the source needs `tsx`, whose `keepNames` transform
+  wraps every closure with an `__name` call that shows up as a hot frame worth ~15% of a sim sweep. A
+  default esbuild bundle omits it, so the profile reads real work only.
 - **`--delay=none`** — flame otherwise defers arming until after the first event-loop tick. Our
   scripts are **fully synchronous**, so they finish before that and the profile captures nothing but
   flame's own shutdown (a 2-sample, 0.0s report). If a report looks absurd, check this first.
-- **`--node-options="--import tsx"`** — the loader must run in the *same* process. Invoking `tsx`
-  directly can put the work in a child the profiler never samples.
 - **`--`** before the script's own args — flame parses argv itself and will reject unknown flags.
 - **the pinned version** — flame floats its own dependencies. A profiler that breaks when you need
   it is worse than none.
@@ -98,9 +107,10 @@ with high cum% and ~0 self% is just a passthrough.
 
 **Known limitations — state these rather than working around them:**
 
-- **No line numbers.** Frames report `value.ts:1` regardless of the real line, because tsx doesn't
-  emit line info flame can use. You get **function-level** attribution only; never quote a line
-  number off a profile.
+- **Line numbers point into the bundle, not the source.** Frames report `sim.mjs:879` — a real,
+  distinct line in the concatenated `scripts/.bundle/*.mjs`, but not in `value.ts`, and with no
+  sourcemap it doesn't map back. So you still get **function-level** source attribution only; never
+  quote a source line number off a profile.
 - **Caller lists are truncated** — `Callers: endTurn, beginTurn, applyMove (+3 more)`, with no
   per-caller percentages. To apportion one hot leaf across its callers, read the **Call Tree** and
   sum its paths. Say plainly that the split was summed by hand from the tree.
@@ -116,8 +126,8 @@ deliverable — don't stop at the table and wait to be asked.
   from the tree.
 - **Then interpret**: what the shape of the profile implies, and the candidate optimizations ranked
   by expected impact against the cost and risk of each.
-- **Keep measured and inferred visibly separate.** "62% is `structuredClone`" is measured. "Caching
-  `scoreState` would cut that roughly in half" is a hypothesis — say which is which, in those terms.
+- **Keep measured and inferred visibly separate.** "`deepClone` is 33% self" is measured. "A
+  shape-specialized clone would cut that by a third" is a hypothesis — say which is which, in those terms.
   The analysis is welcome; passing off a guess as a reading of the profile is not.
 - Name the **next measurement** that would confirm or kill each hypothesis, so a wrong theory is
   cheap to discard rather than something the work chases.

@@ -12,10 +12,10 @@
     "test:watch": "vitest",
     "test:unit": "vitest run --exclude \"**/*.integration.test.ts\"",
     "test:integration": "vitest run integration.test",
-    "seed-save": "tsx scripts/seed-save.ts",
-    "sim": "tsx scripts/sim.ts",
-    "sim:profile": "npx -y @platformatic/flame@1.7.0 run --delay=none --md-format=detailed --node-options=\"--import tsx\" scripts/sim.ts --",
-    "economy": "tsx scripts/economy.ts"
+    "seed-save": "node scripts/bundle.mjs && node scripts/.bundle/seed-save.mjs",
+    "sim": "node scripts/bundle.mjs && node scripts/.bundle/sim.mjs",
+    "sim:profile": "node scripts/bundle.mjs && npx -y @platformatic/flame@1.7.0 run --delay=none --md-format=detailed scripts/.bundle/sim.mjs --",
+    "economy": "node scripts/bundle.mjs && node scripts/.bundle/economy.mjs"
   },
   "dependencies": {
     "pure-rand": "^8.4.1",
@@ -27,6 +27,7 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.0.3",
+    "esbuild": "^0.28.1",
     "tsx": "^4.23.0",
     "typescript": "^6.0.3",
     "vite": "^8.1.0",

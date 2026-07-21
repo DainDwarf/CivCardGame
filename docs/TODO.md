@@ -46,13 +46,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   count itself rather than per-step cost. Verify the deck-independence assumption against within-turn deck
   readers (Calendar/peek) before relying on it. Sim-local. `[size: M]` `[phase: 4]`
 
-- **Drop esbuild's `keepNames` (~14.1% of sim runtime)** — `__name` + `__defProp` on `.name`, fired
-  because `dispatchEvent` builds a per-call closure (`events.ts`). Pure dev-tooling overhead: no game
-  logic changes and no behaviour moves. **Unverified that `tsx` exposes a toggle** — may need
-  precompilation or a custom loader, so confirm the fix exists before banking the 14%. Hoisting the
-  closure instead would be a core `rules/events.ts` change with no player-felt benefit (the run loop
-  dispatches at human speed), so it does not clear the core-change bar. `[size: S]` `[phase: 4]`
-
 - Also outstanding: `beamWidth` 2/6 at `depth: 2` (sweep was still running), and re-running the
   eleven-fixture baseline at whatever config is chosen. Consider a per-cell progress line on
   stderr — a multi-hour sweep currently prints nothing until it finishes.
@@ -276,6 +269,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
+
+- **Drop `tsx`'s `keepNames` from the sim run path** ✅ — the dev scripts (`sim`/`seed-save`/`economy`)
+  now run as a plain esbuild bundle under bare `node` (`scripts/bundle.mjs`, rebuilt each `npm run`)
+  instead of through `tsx`, whose default `keepNames` transform wrapped every closure with an `__name`
+  call. Confirmed the premise structurally first: two bundles from one esbuild invocation differing
+  only in `--keep-names`, profiled back to back — `__name` + `set metrics` (~15% self combined) don't
+  shrink, they **vanish** when off, and the `run` dispatch closure reappears at its real ~4.8% self.
+  `tsx` can't toggle it (CLI exposes only `--no-cache`/`--tsconfig`; dist hardcodes `keepNames: true`),
+  and Node's native type-stripping chokes on the codebase's directory imports — so bundling is the
+  route. `deepClone` is now the unambiguous top cost (~33% self). Pure dev-tooling: no `src/` change,
+  identical sweep output. `esbuild` added as a direct devDep; `tsx` kept for ad-hoc use.
 
 - **Hash the transposition key** ✅ — the answer to the interning attempt's challenge below (*eliminate
   the per-instance touch or the final string*): `hashOf` does both, folding each unordered zone

@@ -189,9 +189,10 @@ Two kinds of variable:
   **file** and re-run, or keep two files and run both. No rebuild needed; each `npm run sim` reads
   the file fresh.
 - **A content change** (an objective threshold, a card's `produces`, a board's starting resources)
-  lives in `src/content/*.ts`. Here the two runs **must be separate `npm run sim` processes**:
-  tsx/ESM caches the content module on first import, so a single process can never see an edit made
-  after it started. Do it as an automated baseline → edit → variant → rollback → compare sequence:
+  lives in `src/content/*.ts`. Here the two runs **must be separate `npm run sim` processes**: each
+  run bundles the then-current `src/` at startup and ESM caches the module thereafter, so a single
+  process can never see an edit made after it started. Do it as an automated baseline → edit → variant
+  → rollback → compare sequence:
 
   1. Fix the `--scenario` / `--deck` / `--board` / `--seeds` so both runs are a paired comparison
      (same seeds → identical shuffles → the content edit is the only variable). Use a policy that
