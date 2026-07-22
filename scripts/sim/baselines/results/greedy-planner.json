@@ -549,42 +549,42 @@
     "label": "finding_copper",
     "policyName": "planner",
     "runs": 100,
-    "wins": 97,
-    "winRate": 0.97,
+    "wins": 96,
+    "winRate": 0.96,
     "turns": {
       "min": 8,
-      "mean": 21.62,
-      "median": 22,
-      "max": 33
+      "mean": 21.35,
+      "median": 21,
+      "max": 30
     },
     "meanResources": {
-      "food": 7.37,
-      "production": 4.73,
-      "science": 2.26,
-      "military": 4.97,
-      "money": 3.96,
-      "population": 2.07,
-      "culture": 7.84,
-      "territory": 2.24
+      "food": 7.17,
+      "production": 4.28,
+      "science": 2.35,
+      "military": 5.17,
+      "money": 3.73,
+      "population": 2.04,
+      "culture": 7,
+      "territory": 2.2
     },
     "defeatCauses": {
-      "famine": 3
+      "famine": 4
     },
     "cardPlays": {
-      "storytelling": 848,
-      "toolmaking": 758,
+      "storytelling": 850,
+      "toolmaking": 726,
       "dogs": 115,
-      "foraging": 1096,
-      "jewelry": 376,
-      "bartering": 356,
+      "foraging": 1065,
+      "jewelry": 368,
+      "bartering": 363,
       "bow": 129,
-      "cave_art": 392,
-      "copper_vein": 294,
-      "hut": 7,
-      "conquest": 24
+      "cave_art": 350,
+      "copper_vein": 293,
+      "conquest": 20,
+      "hut": 4
     },
     "unplayedCards": [],
-    "meanActions": 64.6
+    "meanActions": 63.22
   },
   {
     "label": "first_settlement",
@@ -673,38 +673,38 @@
     "wins": 100,
     "winRate": 1,
     "turns": {
-      "min": 2,
-      "mean": 7.28,
-      "median": 7,
+      "min": 3,
+      "mean": 7.6,
+      "median": 8,
       "max": 14
     },
     "meanResources": {
-      "food": 6.79,
-      "production": 0.89,
-      "science": 2.5,
-      "military": 3.52,
-      "money": 1.98,
+      "food": 6.81,
+      "production": 0.94,
+      "science": 2.62,
+      "military": 3.57,
+      "money": 1.96,
       "population": 3,
-      "culture": 1.86,
+      "culture": 1.94,
       "territory": 2
     },
     "defeatCauses": {},
     "cardPlays": {
-      "toolmaking": 284,
-      "jewelry": 111,
-      "foraging": 236,
-      "storytelling": 125,
-      "dogs": 125,
-      "bow": 34,
+      "toolmaking": 282,
+      "jewelry": 108,
+      "foraging": 245,
+      "storytelling": 131,
+      "dogs": 132,
+      "bow": 31,
       "farm": 100,
-      "cave_art": 93,
+      "cave_art": 97,
       "hut": 100,
-      "bartering": 24
+      "bartering": 20
     },
     "unplayedCards": [
       "conquest"
     ],
-    "meanActions": 18.7
+    "meanActions": 19.21
   },
   {
     "label": "masonry",
@@ -795,45 +795,45 @@
     "label": "raiders_at_border",
     "policyName": "planner",
     "runs": 100,
-    "wins": 99,
-    "winRate": 0.99,
+    "wins": 98,
+    "winRate": 0.98,
     "turns": {
       "min": 4,
-      "mean": 14.06,
-      "median": 14,
-      "max": 27
+      "mean": 13.33,
+      "median": 13,
+      "max": 26
     },
     "meanResources": {
-      "food": 6.04,
-      "production": 3.59,
-      "science": 4.04,
-      "military": 0.9,
-      "money": 2.86,
+      "food": 5.69,
+      "production": 3.46,
+      "science": 3.66,
+      "military": 0.85,
+      "money": 2.89,
       "population": 2,
-      "culture": 3.7,
-      "territory": 2.01
+      "culture": 3.26,
+      "territory": 2
     },
     "defeatCauses": {
-      "famine": 1
+      "famine": 2
     },
     "cardPlays": {
-      "foraging": 596,
-      "storytelling": 202,
-      "dogs": 265,
-      "jewelry": 223,
-      "bartering": 160,
-      "toolmaking": 433,
-      "raider": 298,
-      "cave_art": 160,
+      "foraging": 561,
+      "storytelling": 183,
+      "dogs": 257,
+      "jewelry": 218,
+      "bartering": 147,
+      "toolmaking": 421,
+      "raider": 296,
+      "cave_art": 143,
       "bow": 153,
-      "farm": 67,
-      "burial": 22,
-      "conquest": 1
+      "farm": 66,
+      "burial": 20
     },
     "unplayedCards": [
-      "hut"
+      "hut",
+      "conquest"
     ],
-    "meanActions": 39.14
+    "meanActions": 37.16
   },
   {
     "label": "reading_seasons",
@@ -961,42 +961,42 @@
     "label": "writing",
     "policyName": "planner",
     "runs": 100,
-    "wins": 36,
-    "winRate": 0.36,
+    "wins": 61,
+    "winRate": 0.61,
     "turns": {
-      "min": 10,
-      "mean": 21.89,
-      "median": 22,
-      "max": 34
+      "min": 6,
+      "mean": 20.94,
+      "median": 21,
+      "max": 32
     },
     "meanResources": {
-      "food": 17.91,
-      "production": 2.51,
-      "science": 0.2,
-      "military": 8.1,
+      "food": 10.28,
+      "production": 3.03,
+      "science": 1.88,
+      "military": 9.12,
       "money": 2,
-      "population": 2.35,
-      "culture": 7.6,
-      "territory": 2.82
+      "population": 2.09,
+      "culture": 4.45,
+      "territory": 2.44
     },
     "defeatCauses": {
-      "dark_age": 63,
-      "famine": 1
+      "dark_age": 35,
+      "famine": 4
     },
     "cardPlays": {
-      "bow": 116,
-      "beer": 152,
-      "farm": 136,
-      "toolmaking": 361,
-      "dogs": 436,
-      "storytelling": 733,
-      "forge": 48,
-      "clay_tablet": 268,
-      "foraging": 312,
-      "conquest": 82,
-      "hut": 35
+      "bow": 102,
+      "toolmaking": 282,
+      "farm": 109,
+      "dogs": 413,
+      "storytelling": 533,
+      "forge": 75,
+      "clay_tablet": 376,
+      "foraging": 175,
+      "beer": 89,
+      "conquest": 44,
+      "hut": 9
     },
     "unplayedCards": [],
-    "meanActions": 51.27
+    "meanActions": 45.85
   }
 ]

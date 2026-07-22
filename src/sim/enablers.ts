@@ -23,11 +23,13 @@ import { OBJECTIVE_WEIGHT } from './value';
  *   run, so the one-turn leaf prices it below a free work box of the same yield and never builds it. Each
  *   *owned* structure is credited the rounds of its `produces` output that fall beyond the projected turn.
  *
- * Derived **mechanically from card data**, not a per-mission table: probe which resources move
- * `objectiveProgress` (the goal-valued set), then read each card's `cost → effect/produces` (consumables)
- * or `effect/produces` under its capacity role (strategic). So "production matters because 4🔨 builds a
- * Hut that yields +1 population" falls out of `CARDS` alone. Lives strictly in `sim/` (per
- * [[sim-logic-stays-in-sim]]); no hook on any card/mission/rule.
+ * Derived **mechanically from card data**, not a per-mission table: probe what moves
+ * `objectiveProgress` — each resource directly (the goal-valued set), and each run card injected into
+ * the zones a goal might count (a card-count goal's cost, banked toward directly) — then read each
+ * card's `cost → effect/produces` (consumables) or `effect/produces` under its capacity role
+ * (strategic). So "production matters because 4🔨 builds a Hut that yields +1 population" falls out of
+ * `CARDS` alone. Lives strictly in `sim/` (per [[sim-logic-stays-in-sim]]); no hook on any
+ * card/mission/rule.
  */
 
 /** Discount per conversion hop. Strictly `< 1` is what makes the shaping *sound*: the potential a bank of
@@ -54,8 +56,8 @@ const CAPACITY_CAP = 12;
 
 /** Baseline per-unit credit for holding a strategic pool, independent of any objective-derived throughput.
  *  `scoreState`'s band 5 already grants *core* pools a small unconditional accumulation credit while the
- *  strategic pools — the ones that actually compound — get none, so an objective that names no resource
- *  (a card-count goal) leaves the whole model empty and the planner unshaped. A bigger engine is worth
+ *  strategic pools — the ones that actually compound — get none, so an objective neither probe registers
+ *  (a never-winning sandbox goal) leaves the whole model empty and the planner unshaped. A bigger engine is worth
  *  something on any mission; how much is affordable is already priced by `scoreState`'s costs. Composed as
  *  `max(floor, derived)` so a pool the objective genuinely runs through is never downgraded by adding a
  *  floor. Uniform across the three pools: population's upkeep is the one asymmetry, and it lands as food
@@ -111,8 +113,8 @@ export interface EnablerModel {
 }
 
 /** Which resources move the objective gradient, and by how much per unit — probed from a zeroed-resource
- *  clone so the objective's caps (e.g. `min(population, 6)`) don't hide the slope. Non-resource goals
- *  (buildings/removed cards) don't register here; the enabler layer only shapes resource-threshold wins. */
+ *  clone so the objective's caps (e.g. `min(population, 6)`) don't hide the slope. Goals measured in
+ *  *cards* rather than resources register through `goalValuedCardCosts` instead. */
 function goalValuedResources(G: GameState): Partial<Record<keyof Resources, number>> {
   const probe = cloneState(G);
   probe.resources = emptyResources();
@@ -129,6 +131,49 @@ function goalValuedResources(G: GameState): Partial<Record<keyof Resources, numb
 
 function positive(x: number | undefined): number {
   return x !== undefined && x > 0 ? x : 0;
+}
+
+/** The card-count counterpart of `goalValuedResources`: which core resources fund a card the objective
+ *  *counts*, probed by injecting a synthetic instance of each run card into the zones a goal can measure
+ *  (`removed` for a played event, `tableau` for a building) and diffing `objectiveProgress`. A card that
+ *  moves the gradient makes its `cost` bankable: paying it *is* the goal step. The per-card progress
+ *  delta is attributed **proportionally** over the card's total core cost — one shared per-unit marginal,
+ *  so a full multi-resource bank sums to `HOP_DISCOUNT · delta`, keeping the shaping sound (a per-key
+ *  `delta/costAmt` split would let the joint bank equal the step it converts into). Probed on an unzeroed
+ *  clone: resource terms cancel in the diff, and a goal already at target correctly reads zero. Like the
+ *  resource probe this runs once at the run root, so a goal card satisfied mid-run doesn't drop out of the
+ *  model until the next derive. Exported for the tests that pin a resource-threshold mission's model as
+ *  untouched by this probe (it must return `{}` there). */
+export function goalValuedCardCosts(
+  G: GameState,
+): Partial<Record<keyof Resources, { marginal: number; costAmt: number }>> {
+  const probe = cloneState(G);
+  const base = objectiveProgress(probe);
+  const out: Partial<Record<keyof Resources, { marginal: number; costAmt: number }>> = {};
+  for (const cardId of runCardIds(G)) {
+    const card = CARDS[cardId];
+    if (!card) continue;
+    let totalCost = 0;
+    for (const ck of CORE_KEYS) totalCost += positive(card.cost[ck]);
+    if (totalCost <= 0) continue; // a free card needs no banking, so its costs can't be enablers
+    // Not filtered by kind: actions can self-exile via `resolve`, so any card may be what `removed` counts.
+    probe.removed.push({ id: -1, cardId });
+    const removedDelta = objectiveProgress(probe) - base;
+    probe.removed.pop();
+    probe.tableau.push({ id: -2, cardId, workers: 0 });
+    const tableauDelta = objectiveProgress(probe) - base;
+    probe.tableau.pop();
+    const delta = Math.max(removedDelta, tableauDelta);
+    if (delta <= 0) continue;
+    const marginal = delta / totalCost;
+    for (const ck of CORE_KEYS) {
+      const costAmt = positive(card.cost[ck]);
+      if (costAmt <= 0) continue;
+      const prev = out[ck];
+      if (!prev || marginal > prev.marginal) out[ck] = { marginal, costAmt };
+    }
+  }
+  return out;
 }
 
 /** Every card id present anywhere in the run — the conversions actually available to this deck. Scanning
@@ -174,8 +219,14 @@ function canGrowCulture(ids: Set<string>): boolean {
 }
 
 /**
- * Build the enabler model for a run from its seeded objective, in two passes:
- *  - **Strategic capacity** first — territory / population / culture each credited for the goal-throughput
+ * Build the enabler model for a run from its seeded objective:
+ *  - **Card-cost goals** first — a resource funding a card the objective counts is banked toward
+ *    directly, one `HOP_DISCOUNT` below the goal step paying it yields. The direct weight is what a
+ *    *real* goal-valued resource never needs: `scoreState`'s objective band scores a resource threshold
+ *    as it accumulates, but a card-count goal moves only when the card lands, so the banking turns are
+ *    flat without it. Confined to that slope (plus the producer credit it implies) — see the pass for
+ *    why it must not light up the capacity machinery.
+ *  - **Strategic capacity** — territory / population / culture each credited for the goal-throughput
  *    a slot / worker / gated level unlocks over `CAPACITY_HORIZON`, plus culture's hand-size nudge.
  *  - **Consumables** — for each *valued* resource (goal-valued, or a strategic pool the capacity pass
  *    weighted) scan the run's cards for one that outputs it (`effect`/`produces`) and credit each core cost
@@ -190,6 +241,24 @@ export function deriveEnablers(G: GameState): EnablerModel {
   const ids = runCardIds(G);
   const weight: EnablerModel['weight'] = {};
   const cap: EnablerModel['cap'] = {};
+
+  // Card-cost goals: a direct banking slope on the goal card's cost resources, capped at one
+  // conversion's worth like the consumables loop (the search cycles bank → play → re-bank, so a
+  // multi-card target needs no scaled cap), plus — through `unitValue` below — the durable credit of
+  // that cost's producers. Deliberately **not** merged into `goalValued`: the capacity passes credit a
+  // pool at its producer's full per-round slope, which is calibrated against a gradient that *accrues*
+  // every round a resource is held, while a card-count gradient only steps when the card lands — fed
+  // this marginal they price engine several goal steps above the goal itself, and the engine sinks
+  // out-compete the very banking this slope exists to reward. The resource probe wins a collision (its
+  // marginal is the objective's own slope, not an attribution).
+  for (const [ck, e] of Object.entries(goalValuedCardCosts(G)) as [
+    keyof Resources,
+    { marginal: number; costAmt: number },
+  ][]) {
+    if (goalValued[ck] !== undefined) continue;
+    weight[ck] = HOP_DISCOUNT * e.marginal * OBJECTIVE_WEIGHT;
+    cap[ck] = e.costAmt;
+  }
 
   // Strategic capacity enablers — territory, population, culture. None is *spent* on a card: each is a
   // durable capacity that unlocks a goal-producer's output every round, credited over `CAPACITY_HORIZON`

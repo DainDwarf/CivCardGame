@@ -379,9 +379,11 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   planner averages a shallow beam over them (Perfect-Information Monte Carlo), re-planning per turn.
   `enablers.ts` is the leaf accelerator that keeps the beam shallow: `enablerPotential`, derived
   **mechanically from card `cost`→`produces`/`effect`** (reusable by the ECONOMY-EXPLORER demand phase),
-  credits a banked consumable for the objective progress it *converts into*, a held strategic resource
-  (territory/population/culture) for the goal-throughput its capacity *unlocks*, and an owned durable
-  producer for the output rounds past the projected turn, turning the greedies' flat plateau into a slope. `turnSearch.ts` is the within-turn search skeleton (`expandTurn`) the planner
+  credits a banked consumable for the objective progress it *converts into* (including the cost of a
+  card the objective *counts*, probed by injecting run cards into the goal-measured zones), a held
+  strategic resource (territory/population/culture) for the goal-throughput its capacity *unlocks*, and
+  an owned durable producer for the output rounds past the projected turn, turning the greedies' flat
+  plateau into a slope. `turnSearch.ts` is the within-turn search skeleton (`expandTurn`) the planner
   and oracle share, parameterized by the ranking heuristic — which it hands the node's transposition key
   alongside `G`, a memo hint the planner caches its (expensive, projection-based) leaf value on.
 - **Batch + reporting** — `runBatch(scenarios, { seeds })` (`batch.ts`) sweeps a flat `Scenario[]` ×N

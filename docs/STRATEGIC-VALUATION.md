@@ -78,7 +78,8 @@ its cost, which would make production goal-valued on `writing` and light up the 
 unchanged. It was set aside as the heavier option: a goal's `measure` is an opaque closure with no
 structural field naming the card, so it needs a card-probe (inject each deck cardId into `removed` /
 tableau, see what moves the gradient) and gets fragile for unusual measures. It remains a viable
-*later* layer on top of the intrinsic floor — the two are not exclusive.
+*later* layer on top of the intrinsic floor — the two are not exclusive. *(Since shipped — see
+§ Card-cost goal valuation.)*
 
 ## Open decisions
 
@@ -117,7 +118,7 @@ Steps:
    optional challenge *leaf* (Pyramid) is revisitable, so its pool is not its prereq closure.
    The first capture covers First Settlement → Accounting. **Writing has no baseline yet** — its numbers
    are the ones this document was written to explain, and its content is still mid-balance, so it gets a
-   fixture once its drain settles.
+   fixture once its drain settles. *(Since captured, in the refreshed sweep below.)*
 2. Sweep and commit the JSON under `scripts/sim/baselines/results/`. **The commit is the SHA record** —
    committing results into the same repo pins what content they were measured at more reliably than a
    copied string, so nothing embeds `git rev-parse HEAD`.
@@ -369,7 +370,8 @@ re-measuring that cell at 300 seeds is the open question if pyramid's extra 10pp
 
 **Still unmeasured:** the full eleven-fixture sweep at the shipped constants. The six cells that were
 bit-identical at `4 · 0.50` are expected to stay so under a strictly smaller credit, but that is an
-inference, not a measurement.
+inference, not a measurement. *(Since closed: the baseline re-capture for the card-cost layer below is
+that sweep — every fixture, greedy+planner @ 100 and oracle @ 10, at the shipped constants.)*
 
 ## Open decisions
 
@@ -404,3 +406,72 @@ The behavioural signals instead:
 
 Phase 0's baseline discipline applies unchanged for regression: the eleven committed fixtures must not regress,
 and that is the acceptance test.
+
+# Card-cost goal valuation (planner + oracle)
+
+The card-introspection layer the first section deferred, shipped as `sim/enablers.ts`'s
+`goalValuedCardCosts`: the zone analogue of the resource probe. Each run card is injected as a synthetic
+instance into the zones a goal can measure (`removed` for a played event, `tableau` for a building) and
+`objectiveProgress` diffed; a card that moves the gradient makes its cost bankable. No structural field
+on the goal names the card — the probe is what keeps the measure opaque and the layer mechanical. Both
+the planner and the oracle consume the model, so both move.
+
+## Shipped shape
+
+- **Proportional attribution.** The per-card progress delta is spread over the card's total core cost as
+  one shared per-unit marginal (`m = delta / totalCost`), so a full multi-resource bank sums to
+  `HOP_DISCOUNT · delta` — strictly below the step it converts into. A per-key `delta / costAmt` split
+  would let clay_tablet's joint bank *equal* its step at `HOP_DISCOUNT = 0.5`, breaking soundness.
+- **Direct slope, capped at one card's cost.** `weight[ck] = HOP_DISCOUNT · m · OBJECTIVE_WEIGHT`,
+  `cap[ck] = costAmt` — the consumables-loop shape. This direct entry is what a *real* goal-valued
+  resource never needs: `scoreState`'s objective band scores a resource threshold as it accumulates,
+  but a card-count gradient only steps when the card lands, so the banking turns are flat without it.
+  A multi-card target needs no scaled cap — the search cycles bank → play → re-bank.
+- **Confined to that slope** (plus the durable credit it implies: `unitValue = max(valued, weight)`
+  reads the new weight, so a Forge is finally priced on `writing`). The marginal is **not** merged into
+  `goalValued` — measured below as the difference between a 25pp gain and a 16pp regression.
+- Best marginal per resource across registering cards (`growing_numbers`: Farm at 2🔨 beats Hut at 3🔨).
+- On every mission whose goals read only `G.resources` the probe provably returns `{}` — pinned by a
+  unit test over all eight baselined resource missions, which is what guarantees their models (and so
+  every planner/oracle trajectory there) are untouched by this layer.
+
+## Measured
+
+Against the refreshed baseline (greedy 0.03 / planner 0.36 / oracle 1.00 on the new `writing` fixture).
+Planner @ 100 seeds, oracle @ 10; greedy bit-identical 12/12 in every arm, and the eight
+resource-threshold missions bit-identical for planner *and* oracle in both arms, as the probe-emptiness
+test predicts.
+
+**The rejected arm — marginal merged into `goalValued`** ("light up the existing machinery unchanged",
+the first section's sketch): writing planner 0.36 → **0.20**, oracle 1.00 → **0.80**. Hut plays 35 → 113,
+Conquest 82 → 146, tablets **fell** 268 → 187, Forge 48 → 31, `dark_age` deaths 63 → 78; the seed-0
+replay builds engine for 19 rounds and never plays a tablet. The mechanism: the capacity passes credit a
+pool at its best producer's full per-round output × marginal — calibrated against a gradient that
+*accrues* every round the resource is held, but a card-count gradient doesn't accrue, it steps. Fed the
+tablet marginal they priced population/territory at ~30/unit against a whole tablet step of 60, so a
+saturated engine outbid the objective six to one — the intrinsic floor's `writing` failure mode,
+amplified tenfold. Even the oracle's beam was misled inside its node budget.
+
+**The shipped arm — the confined slope**: writing planner 0.36 → **0.61** (~5σ), oracle 1.00 held with
+the median win a round faster. Tablets 268 → 376, Forge 48 → 75 (toward the oracle's rate — the
+durable-producer credit finally has a valued output on this mission), the engine sinks collapse
+(Hut 35 → 9, Conquest 82 → 44, Beer 152 → 89), `dark_age` deaths 63 → 35. The seed-0 replay converts:
+victory at round 20 with all five tablets, banking production in waves and transferring its worker
+Farm ↔ Storytelling against the science drain — the oracle's own pattern. The ceiling missions held
+within noise (growing_numbers 1.00 → 1.00, raiders 0.99 → 0.98, finding_copper 0.97 → 0.96; oracle 1.00
+across all three).
+
+The residual planner-to-oracle gap on `writing` (0.61 vs 1.00) is now mostly the science-drain
+management the oracle's worker choreography handles — `dark_age` still causes 35 of the 39 losses — not
+goal blindness.
+
+## Open decisions
+
+- **Chaining depth.** The confined slope values banking the cost itself; it does not make the cost a
+  conversion *target* (banking food toward a Toolmaking that produces the cost is unsloped). The
+  rejected arm shows the danger of wiring that carelessly; if it's ever wanted, it needs its own
+  discounted term, not the capacity passes.
+- **Deadline blindness.** Inherited unchanged — the slope doesn't know the round budget.
+- **Staleness.** Like the resource probe, derived once at the run root by both consumers: a goal card
+  already satisfied mid-run keeps its credit until the next derive. Pre-existing shape, noted on the
+  probe.

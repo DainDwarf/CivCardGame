@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createRun } from '../run/engine';
 import { simConfig } from './simulate';
-import { deriveEnablers, enablerPotential } from './enablers';
+import { deriveEnablers, enablerPotential, goalValuedCardCosts } from './enablers';
 import { OBJECTIVE_WEIGHT } from './value';
 import { objectiveProgress } from './objective';
 import { CARDS } from '../content/cards';
@@ -194,20 +194,21 @@ describe('population capacity enabler', () => {
 });
 
 describe('intrinsic strategic floor', () => {
-  // Growing Numbers wins on a *building count*, so no resource moves `objectiveProgress` and every
-  // objective-derived credit is zero — the case the floor exists for.
-  function cardCountRoot(): GameState {
+  // Sandbox never wins (`met: () => false`, measure pinned at 0), so neither probe registers and every
+  // objective-derived credit is zero — the case the floor exists for. (A card-count goal no longer
+  // qualifies: the card probe derives real credits there.)
+  function floorOnlyRoot(): GameState {
     const config = simConfig({
       deckCardIds: ['hut', 'hut', 'farm', 'farm', 'foraging', 'foraging', 'toolmaking', 'toolmaking'],
       board: 'settlement',
-      missionId: 'growing_numbers',
+      missionId: 'sandbox',
       seed: 'enablers-intrinsic',
     });
     return createRun(config).G;
   }
 
-  it('credits all three strategic pools on an objective that names no resource', () => {
-    const m = deriveEnablers(cardCountRoot());
+  it('credits all three strategic pools on an objective that values nothing', () => {
+    const m = deriveEnablers(floorOnlyRoot());
     for (const k of ['territory', 'population', 'culture'] as const) {
       expect(m.weight[k] ?? 0, k).toBeGreaterThan(0);
       expect(m.cap[k], k).toBeDefined();
@@ -215,9 +216,9 @@ describe('intrinsic strategic floor', () => {
   });
 
   it('rises with a held strategic pool where the derived model alone would be flat', () => {
-    const m = deriveEnablers(cardCountRoot());
+    const m = deriveEnablers(floorOnlyRoot());
     const pot = (population: number) => {
-      const G = cardCountRoot();
+      const G = floorOnlyRoot();
       G.resources = emptyResources();
       G.resources.population = population;
       return enablerPotential(G, m);
@@ -229,15 +230,137 @@ describe('intrinsic strategic floor', () => {
     // Masonry's territory carries a real derived throughput credit (the slot a Hut needs); composing the
     // floor as a `max` must leave that strictly above the bare floor.
     const derived = deriveEnablers(masonryRoot()).weight.territory!;
-    expect(derived).toBeGreaterThan(deriveEnablers(cardCountRoot()).weight.territory!);
+    expect(derived).toBeGreaterThan(deriveEnablers(floorOnlyRoot()).weight.territory!);
   });
 
   it('stays below a goal step, so engine never outbids the objective it serves', () => {
     // The floor is a growth nudge, not a competing goal: a fully saturated strategic pool must score under a
     // single unit of objective progress.
-    const m = deriveEnablers(cardCountRoot());
+    const m = deriveEnablers(floorOnlyRoot());
     const saturated = m.weight.population! * m.cap.population!;
     expect(saturated).toBeLessThan(OBJECTIVE_WEIGHT);
+  });
+});
+
+describe('card-cost goal valuation', () => {
+  // Writing wins on a *card count* (clay tablets in `removed`), so no resource moves `objectiveProgress`
+  // directly — the card probe is what makes the tablet's cost bankable. The mission itself seeds the
+  // tablets into the deck, so the probe finds them through the real injection path.
+  function writingRoot(): GameState {
+    const config = simConfig({
+      deckCardIds: ['forge', 'forge', 'toolmaking', 'toolmaking', 'farm', 'bow', 'storytelling', 'storytelling'],
+      board: 'city',
+      missionId: 'writing',
+      seed: 'enablers-card-cost',
+    });
+    return createRun(config).G;
+  }
+
+  /** The score credit one recorded tablet yields — the goal step the banked cost converts into. */
+  function tabletStep(): number {
+    const G = writingRoot();
+    const before = objectiveProgress(G);
+    G.removed.push({ id: -1, cardId: 'clay_tablet' });
+    return (objectiveProgress(G) - before) * OBJECTIVE_WEIGHT;
+  }
+
+  it('banks each of the goal card\'s cost resources, capped at one card\'s worth', () => {
+    const m = deriveEnablers(writingRoot());
+    expect(m.weight.production ?? 0).toBeGreaterThan(0);
+    expect(m.cap.production).toBe(CARDS.clay_tablet.cost.production!);
+    expect(m.weight.food ?? 0).toBeGreaterThan(0);
+    expect(m.cap.food).toBe(CARDS.clay_tablet.cost.food!);
+  });
+
+  it('attributes the goal step proportionally: one shared per-unit marginal across the cost keys', () => {
+    const m = deriveEnablers(writingRoot());
+    expect(m.weight.production).toBe(m.weight.food);
+  });
+
+  it('keeps a full cost bank worth strictly less than the goal step it converts into (sound shaping)', () => {
+    const m = deriveEnablers(writingRoot());
+    const fullBank = m.weight.production! * m.cap.production! + m.weight.food! * m.cap.food!;
+    expect(fullBank).toBeGreaterThan(0);
+    expect(fullBank).toBeLessThan(tabletStep());
+  });
+
+  it('rises with the banked cost then saturates at the card\'s cost', () => {
+    const m = deriveEnablers(writingRoot());
+    const pot = (production: number) => {
+      const G = writingRoot();
+      G.resources = emptyResources();
+      G.resources.production = production;
+      return enablerPotential(G, m);
+    };
+    const cost = CARDS.clay_tablet.cost.production!;
+    expect(pot(cost - 2)).toBeGreaterThan(pot(0));
+    expect(pot(cost + 5)).toBe(pot(cost));
+  });
+
+  it('prices the cost\'s producers durably but leaves the capacity passes at the floor (confinement)', () => {
+    const m = deriveEnablers(writingRoot());
+    // Forge produces production — a banked-toward resource — so the durable credit prices owning one...
+    expect(m.producerCredit.forge ?? 0).toBeGreaterThan(0);
+    // ...but the strategic pools stay at the same floor a gradient-free objective leaves: the capacity
+    // passes price engine at a per-round accrual this stepped gradient never pays, so feeding them the
+    // card marginal makes engine sinks out-compete the banking itself.
+    const sandboxSame = deriveEnablers(
+      createRun(
+        simConfig({
+          deckCardIds: ['forge', 'forge', 'toolmaking', 'toolmaking', 'farm', 'bow', 'storytelling', 'storytelling'],
+          board: 'city',
+          missionId: 'sandbox',
+          seed: 'enablers-card-cost',
+        }),
+      ).G,
+    );
+    expect(m.weight.population).toBe(sandboxSame.weight.population);
+    expect(m.weight.territory).toBe(sandboxSame.weight.territory);
+  });
+
+  it('probes the tableau for a building-presence goal, keeping the best marginal per resource', () => {
+    // Growing Numbers counts hut+farm *present in the tableau* — the tableau injection, not `removed`.
+    // Both cost only production and move the goal equally, so the cheaper card carries the higher
+    // per-unit marginal and its cost sets the cap.
+    const config = simConfig({
+      deckCardIds: ['hut', 'hut', 'farm', 'farm', 'foraging', 'foraging', 'toolmaking', 'toolmaking'],
+      board: 'settlement',
+      missionId: 'growing_numbers',
+      seed: 'enablers-card-cost',
+    });
+    const m = deriveEnablers(createRun(config).G);
+    expect(m.weight.production ?? 0).toBeGreaterThan(0);
+    expect(m.cap.production).toBe(CARDS.farm.cost.production!);
+  });
+
+  it('registers nothing on a resource-threshold objective, so those missions\' models are untouched', () => {
+    // The guarantee the acceptance sweep leans on: on every mission whose goals read only `G.resources`,
+    // the probe is provably a no-op, so `deriveEnablers` output — and hence every planner/oracle
+    // trajectory — is unchanged by this layer. A broad deck widens the candidate pool the probe injects.
+    const resourceMissions = [
+      'first_settlement', 'rites_rituals', 'restless_people', 'reading_seasons',
+      'first_temple', 'masonry', 'accounting', 'pyramid',
+    ];
+    const deckCardIds = [
+      'hut', 'farm', 'forge', 'toolmaking', 'conquest', 'beer',
+      'storytelling', 'bow', 'dogs', 'foraging', 'jewelry', 'cave_art',
+    ];
+    for (const missionId of resourceMissions) {
+      const G = createRun(simConfig({ deckCardIds, board: 'settlement', missionId, seed: 'enablers-card-cost' })).G;
+      expect(goalValuedCardCosts(G), missionId).toEqual({});
+    }
+  });
+
+  it('values a mission-seeded event\'s cost through the `removed` count it feeds', () => {
+    const config = simConfig({
+      deckCardIds: ['bow', 'bow', 'dogs', 'dogs', 'foraging', 'foraging'],
+      board: 'settlement',
+      missionId: 'raiders_at_border',
+      seed: 'enablers-card-cost',
+    });
+    const m = deriveEnablers(createRun(config).G);
+    expect(m.weight.military ?? 0).toBeGreaterThan(0);
+    expect(m.cap.military).toBe(CARDS.raider.cost.military!);
   });
 });
 
