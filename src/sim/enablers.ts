@@ -30,6 +30,11 @@ import { OBJECTIVE_WEIGHT } from './value';
  * (strategic). So "production matters because 4🔨 builds a Hut that yields +1 population" falls out of
  * `CARDS` alone. Lives strictly in `sim/` (per [[sim-logic-stays-in-sim]]); no hook on any
  * card/mission/rule.
+ *
+ * Each mechanism is separately ablatable via `EnablerTerms` — the shaping's aggregate effect is
+ * mission-dependent in *sign*, so measurement needs per-term attribution, not one on/off switch. A term
+ * that is off never enters the model; the terms left on price through whatever model the others built
+ * (no synthetic "as if" cross-terms).
  */
 
 /** Discount per conversion hop. Strictly `< 1` is what makes the shaping *sound*: the potential a bank of
@@ -94,6 +99,31 @@ const PRODUCER_TAIL_HORIZON = 2;
  *  alone sets the slope. Tuned to the point where a long conversion mission stops regressing — see
  *  docs/STRATEGIC-VALUATION.md for the measured frontier. */
 const PRODUCER_CREDIT_CAP = 0.05 * OBJECTIVE_WEIGHT;
+
+/** Per-term ablation toggles for the enabler model. A missing key means **on** — you name what you switch
+ *  off, so `{}` is the full model. Only the `conversions` term carries a soundness argument (bounded
+ *  potential shaping); the others are tuned value assertions, which is exactly why they ablate separately. */
+export interface EnablerTerms {
+  /** Consumable conversions — a banked core resource credited for the valued output it converts into
+   *  (`HOP_DISCOUNT`). */
+  conversions?: boolean;
+  /** Strategic capacity — territory/population/culture credited for the goal-throughput a slot/worker/
+   *  gated level unlocks (`CAPACITY_HORIZON`). */
+  capacity?: boolean;
+  /** The intrinsic strategic floor (`INTRINSIC_CAPACITY_CREDIT`) — the unconditional per-unit credit a
+   *  strategic pool keeps even when no objective-derived throughput exists. */
+  floor?: boolean;
+  /** Culture's per-level hand-size credit (`HANDSIZE_LEVEL_CREDIT`). */
+  handSize?: boolean;
+  /** Durable producers — owned structures credited `PRODUCER_TAIL_HORIZON` rounds of tail output. */
+  producers?: boolean;
+}
+
+/** Normalize a policy's `enablers` option: `false` → `null` (no model at all), `true` → every term on,
+ *  an `EnablerTerms` object → itself. Shared by the planner and oracle so the two can't drift. */
+export function enablerTermsOf(enablers: boolean | EnablerTerms): EnablerTerms | null {
+  return enablers === false ? null : enablers === true ? {} : enablers;
+}
 
 /** A per-run enabler model, derived once from the seeded objective and reused at every leaf. */
 export interface EnablerModel {
@@ -236,7 +266,8 @@ function canGrowCulture(ids: Set<string>): boolean {
  *    finally shaped.
  * A resource already credited directly by the objective is not shadowed as its own enabler.
  */
-export function deriveEnablers(G: GameState): EnablerModel {
+export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerModel {
+  const { conversions = true, capacity = true, floor = true, handSize = true, producers = true } = terms;
   const goalValued = goalValuedResources(G);
   const ids = runCardIds(G);
   const weight: EnablerModel['weight'] = {};
@@ -260,10 +291,17 @@ export function deriveEnablers(G: GameState): EnablerModel {
     cap[ck] = e.costAmt;
   }
 
+  // A strategic pool's weight composes its two independent terms as a `max` — the derived throughput
+  // (`capacity`) and the unconditional floor (`floor`) — so ablating either leaves the other intact; with
+  // both off (or a zero derivation and no floor) the pool gets no weight at all.
+  const strategicWeight = (bestThroughput: number): number =>
+    Math.max(floor ? INTRINSIC_CAPACITY_CREDIT : 0, bestThroughput * CAPACITY_HORIZON);
+
   // Strategic capacity enablers — territory, population, culture. None is *spent* on a card: each is a
   // durable capacity that unlocks a goal-producer's output every round, credited over `CAPACITY_HORIZON`
-  // (not the consumables' one-shot `HOP_DISCOUNT`) and saturated at `CAPACITY_CAP`, never below the
-  // objective-independent `INTRINSIC_CAPACITY_CREDIT`. Each is skipped when it is itself goal-valued — the objective scores it directly, the same reason the consumable loop below
+  // (not the consumables' one-shot `HOP_DISCOUNT`), saturated at `CAPACITY_CAP`, and floored per
+  // `strategicWeight`. Each is skipped when it is itself goal-valued — the objective scores it directly,
+  // the same reason the consumable loop below
   // skips a goal-valued cost resource. Computed first so a capacity weight can itself be a conversion
   // target for the consumables. Complementarity (a staffed building needs both a slot and a worker) needs
   // no joint model: crediting the *total* pool never falls when one is consumed (strategic pools aren't
@@ -274,17 +312,21 @@ export function deriveEnablers(G: GameState): EnablerModel {
   // structures — a self-sufficient grant (Hut/House, on `effect`) or a staffed producer (Farm/Forge, on
   // `produces`) alike.
   if (goalValued.territory === undefined) {
-    const best = bestGoalThroughput(ids, goalValued, isStructure, true);
-    weight.territory = Math.max(INTRINSIC_CAPACITY_CREDIT, best * CAPACITY_HORIZON);
-    cap.territory = CAPACITY_CAP;
+    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, isStructure, true) : 0);
+    if (w > 0) {
+      weight.territory = w;
+      cap.territory = CAPACITY_CAP;
+    }
   }
 
   // Population is the worker for a per-worker producer (`workers >= 1`); the staffing yields the output, so
   // it reads `produces` only, not the card's one-shot play `effect`.
   if (goalValued.population === undefined) {
-    const best = bestGoalThroughput(ids, goalValued, (c) => (c.workers ?? 0) >= 1, false);
-    weight.population = Math.max(INTRINSIC_CAPACITY_CREDIT, best * CAPACITY_HORIZON);
-    cap.population = CAPACITY_CAP;
+    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, (c) => (c.workers ?? 0) >= 1, false) : 0);
+    if (w > 0) {
+      weight.population = w;
+      cap.population = CAPACITY_CAP;
+    }
   }
 
   // Culture's gate-unlock: reaching a level ungates a producer (a `cultureLevelReq` card), so raw culture
@@ -292,9 +334,11 @@ export function deriveEnablers(G: GameState): EnablerModel {
   // reaching the level *is* the objective, already scored). Its hand-size throughput is the separate,
   // no-skip nudge below.
   if (goalValued.culture === undefined) {
-    const best = bestGoalThroughput(ids, goalValued, (c) => !!c.gate?.cultureLevelReq, true);
-    weight.culture = Math.max(INTRINSIC_CAPACITY_CREDIT, best * CAPACITY_HORIZON);
-    cap.culture = CAPACITY_CAP;
+    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, (c) => !!c.gate?.cultureLevelReq, true) : 0);
+    if (w > 0) {
+      weight.culture = w;
+      cap.culture = CAPACITY_CAP;
+    }
   }
 
   // Consumables. Value each resource worth converting *into* at its score credit per unit — a goal-valued
@@ -311,18 +355,20 @@ export function deriveEnablers(G: GameState): EnablerModel {
     if (weight[k] !== undefined) valued[k] = weight[k]!;
   }
 
-  for (const card of Object.values(CARDS)) {
-    if (!ids.has(card.id)) continue;
-    for (const [vk, valuePerUnit] of Object.entries(valued) as [keyof Resources, number][]) {
-      const output = positive(card.effect?.resources?.[vk]) + positive(card.produces?.resources?.[vk]);
-      if (output <= 0) continue;
-      for (const ck of CORE_KEYS) {
-        const costAmt = card.cost[ck] ?? 0;
-        if (costAmt <= 0 || goalValued[ck] !== undefined) continue;
-        const w = HOP_DISCOUNT * (output / costAmt) * valuePerUnit;
-        if (w > (weight[ck] ?? 0)) {
-          weight[ck] = w;
-          cap[ck] = costAmt;
+  if (conversions) {
+    for (const card of Object.values(CARDS)) {
+      if (!ids.has(card.id)) continue;
+      for (const [vk, valuePerUnit] of Object.entries(valued) as [keyof Resources, number][]) {
+        const output = positive(card.effect?.resources?.[vk]) + positive(card.produces?.resources?.[vk]);
+        if (output <= 0) continue;
+        for (const ck of CORE_KEYS) {
+          const costAmt = card.cost[ck] ?? 0;
+          if (costAmt <= 0 || goalValued[ck] !== undefined) continue;
+          const w = HOP_DISCOUNT * (output / costAmt) * valuePerUnit;
+          if (w > (weight[ck] ?? 0)) {
+            weight[ck] = w;
+            cap[ck] = costAmt;
+          }
         }
       }
     }
@@ -333,25 +379,27 @@ export function deriveEnablers(G: GameState): EnablerModel {
   // unset), `weight` for one that is only a conversion input — then credit `PRODUCER_TAIL_HORIZON` of them.
   // Read at **one worker's** output (`produces.resources` is per-worker): crediting full capacity would
   // re-charge for the population that staffs it, which the capacity pass above already weights.
-  const unitValue: Partial<Record<keyof Resources, number>> = {};
-  for (const k of Object.keys(emptyResources()) as (keyof Resources)[]) {
-    const v = Math.max(valued[k] ?? 0, weight[k] ?? 0);
-    if (v > 0) unitValue[k] = v;
-  }
   const producerCredit: EnablerModel['producerCredit'] = {};
-  for (const card of Object.values(CARDS)) {
-    if (!ids.has(card.id) || !isStructure(card) || !card.produces) continue;
-    let perRound = 0;
-    for (const [k, v] of Object.entries(unitValue) as [keyof Resources, number][]) {
-      perRound += positive(card.produces.resources?.[k]) * v;
+  if (producers) {
+    const unitValue: Partial<Record<keyof Resources, number>> = {};
+    for (const k of Object.keys(emptyResources()) as (keyof Resources)[]) {
+      const v = Math.max(valued[k] ?? 0, weight[k] ?? 0);
+      if (v > 0) unitValue[k] = v;
     }
-    // A one-shot placement grant (Hut's population, on `effect`) is not durable income and earns nothing
-    // here; it lands once in the resource pool, where the strategic weights already credit it.
-    if (perRound > 0) producerCredit[card.id] = perRound * PRODUCER_TAIL_HORIZON;
+    for (const card of Object.values(CARDS)) {
+      if (!ids.has(card.id) || !isStructure(card) || !card.produces) continue;
+      let perRound = 0;
+      for (const [k, v] of Object.entries(unitValue) as [keyof Resources, number][]) {
+        perRound += positive(card.produces.resources?.[k]) * v;
+      }
+      // A one-shot placement grant (Hut's population, on `effect`) is not durable income and earns nothing
+      // here; it lands once in the resource pool, where the strategic weights already credit it.
+      if (perRound > 0) producerCredit[card.id] = perRound * PRODUCER_TAIL_HORIZON;
+    }
   }
 
   const model: EnablerModel = { weight, cap, producerCredit };
-  if (canGrowCulture(ids)) model.handsizePerLevel = HANDSIZE_LEVEL_CREDIT;
+  if (handSize && canGrowCulture(ids)) model.handsizePerLevel = HANDSIZE_LEVEL_CREDIT;
   return model;
 }
 

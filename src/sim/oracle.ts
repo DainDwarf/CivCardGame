@@ -5,7 +5,7 @@ import { hashOf } from './oracleKey';
 import { type Policy, type SimAction } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
 import { scoreState } from './value';
-import { deriveEnablers, enablerPotential } from './enablers';
+import { deriveEnablers, enablerPotential, enablerTermsOf, type EnablerTerms } from './enablers';
 
 /**
  * A **seeded perfect-information oracle** over the headless sim: a bounded, heuristic-guided,
@@ -48,9 +48,10 @@ export interface OracleOptions {
    *  pathological branching factor can't run unbounded. */
   nodeBudget?: number;
   /** Fold the enabler potential (`sim/enablers.ts`) into the search heuristic so the beam keeps the growth
-   *  lines a bare `scoreState` prunes. On by default; off recovers the pure-`scoreState` oracle (an A/B knob
-   *  isolating the shaping's effect — mirrors the planner's same-named option). */
-  enablers?: boolean;
+   *  lines a bare `scoreState` prunes. On by default; off recovers the pure-`scoreState` oracle, and an
+   *  `EnablerTerms` object ablates individual mechanisms (an A/B knob isolating the shaping's effect —
+   *  mirrors the planner's same-named option). */
+  enablers?: boolean | EnablerTerms;
 }
 
 const DEFAULTS: Required<OracleOptions> = {
@@ -80,7 +81,8 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
 
   // Same leaf value the planner ranks by: fold in the enabler potential so the beam doesn't prune the
   // multi-turn growth lines `scoreState` alone undervalues. Derived once from the root; pure over `G`.
-  const model = opts.enablers ? deriveEnablers(root.G) : null;
+  const terms = enablerTermsOf(opts.enablers);
+  const model = terms ? deriveEnablers(root.G, terms) : null;
   const h: Heuristic = model ? (G) => scoreState(G) + enablerPotential(G, model) : scoreState;
 
   const budget: Budget = { steps: 0, cap: opts.nodeBudget };

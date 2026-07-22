@@ -81,6 +81,13 @@ describe('consumable enabler (planner leaf accelerator)', () => {
     expect(pot('military', CONQUEST_MILITARY_COST + 3)).toBe(pot('military', CONQUEST_MILITARY_COST));
   });
 
+  it('conversions: false removes the conversion weights but not the capacity credits', () => {
+    const m = deriveEnablers(masonryRoot(), { conversions: false });
+    expect(m.weight.production ?? 0).toBe(0);
+    expect(m.weight.military ?? 0).toBe(0);
+    expect(m.weight.territory ?? 0).toBeGreaterThan(0);
+  });
+
   it('keeps a full consumable bank worth strictly less than the value it converts into (sound shaping)', () => {
     const m = deriveEnablers(masonryRoot());
     const bankOf = (resource: 'production' | 'military') => {
@@ -117,6 +124,15 @@ describe('territory capacity enabler', () => {
     // producer), not a single one-shot hop.
     const oneRound = CARDS.hut.effect!.resources!.population! * objectiveStep('population');
     expect(m.weight.territory!).toBeGreaterThan(oneRound);
+  });
+
+  it('capacity: false falls back to the intrinsic floor; with floor also off the credit vanishes', () => {
+    const full = deriveEnablers(masonryRoot()).weight.territory!;
+    const floorOnly = deriveEnablers(masonryRoot(), { capacity: false });
+    expect(floorOnly.weight.territory ?? 0).toBeGreaterThan(0);
+    expect(floorOnly.weight.territory!).toBeLessThan(full);
+    const neither = deriveEnablers(masonryRoot(), { capacity: false, floor: false });
+    expect(neither.weight.territory ?? 0).toBe(0);
   });
 
   it('rises with banked territory then saturates at the cap', () => {
@@ -239,6 +255,19 @@ describe('intrinsic strategic floor', () => {
     const m = deriveEnablers(floorOnlyRoot());
     const saturated = m.weight.population! * m.cap.population!;
     expect(saturated).toBeLessThan(OBJECTIVE_WEIGHT);
+  });
+
+  it('floor: false leaves a no-resource objective with no strategic credit at all', () => {
+    // With nothing goal-valued the derived throughput is zero everywhere, so ablating the floor empties the
+    // whole strategic layer — the isolation that lets a sweep measure the floor alone.
+    const m = deriveEnablers(floorOnlyRoot(), { floor: false });
+    for (const k of ['territory', 'population', 'culture'] as const) {
+      expect(m.weight[k] ?? 0, k).toBe(0);
+    }
+  });
+
+  it('floor: false keeps a genuinely derived credit intact', () => {
+    expect(deriveEnablers(masonryRoot(), { floor: false }).weight.territory ?? 0).toBeGreaterThan(0);
   });
 });
 
@@ -408,6 +437,11 @@ describe('durable producer credit', () => {
     expect(deriveEnablers(producerRoot()).producerCredit.hut).toBeUndefined();
   });
 
+  it('producers: false credits no structure', () => {
+    expect(deriveEnablers(producerRoot()).producerCredit.forge ?? 0).toBeGreaterThan(0); // otherwise credited
+    expect(Object.keys(deriveEnablers(producerRoot(), { producers: false }).producerCredit)).toHaveLength(0);
+  });
+
   it('saturates, so a tableau of engine never outbids the objective it serves', () => {
     // Read the *durable* term in isolation — the marginal forge past the cap — so a board rebalance moving
     // the starting pools can't break this for reasons unrelated to the credit.
@@ -467,5 +501,37 @@ describe('culture enabler', () => {
   it('sets no hand-size credit when the deck cannot grow culture', () => {
     const m = deriveEnablers(pyramidRoot(['toolmaking', 'toolmaking', 'foraging', 'foraging']));
     expect(m.handsizePerLevel).toBeUndefined();
+  });
+
+  it('handSize: false sets no hand-size credit even when the deck grows culture', () => {
+    const m = deriveEnablers(ritesRoot(['burial', 'burial', 'foraging']), { handSize: false });
+    expect(m.handsizePerLevel).toBeUndefined();
+  });
+});
+
+describe('enabler term toggles', () => {
+  it('every term on is exactly the default model', () => {
+    const explicit = deriveEnablers(masonryRoot(), {
+      conversions: true,
+      capacity: true,
+      floor: true,
+      handSize: true,
+      producers: true,
+    });
+    expect(explicit).toEqual(deriveEnablers(masonryRoot()));
+  });
+
+  it('every term off is the empty model — the `enablers: false` endpoint', () => {
+    const m = deriveEnablers(masonryRoot(), {
+      conversions: false,
+      capacity: false,
+      floor: false,
+      handSize: false,
+      producers: false,
+    });
+    expect(m).toEqual({ weight: {}, cap: {}, producerCredit: {} });
+    const G = masonryRoot();
+    addBuilding(G, 'farm');
+    expect(enablerPotential(G, m)).toBe(0);
   });
 });

@@ -3,7 +3,7 @@ import { endTurn, type RunState } from '../run/engine';
 import { applyAction, type Policy, type SimAction } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
 import { scoreState } from './value';
-import { deriveEnablers, enablerPotential, type EnablerModel } from './enablers';
+import { deriveEnablers, enablerPotential, enablerTermsOf, type EnablerModel, type EnablerTerms } from './enablers';
 import { determinize } from './determinize';
 import { seededRng, type GameState } from '../rules';
 
@@ -48,8 +48,9 @@ export interface PlannerOptions {
   /** Engine-step backstop per re-plan — aborts the search reporting its best-so-far if exceeded. */
   nodeBudget?: number;
   /** Fold the enabler potential into the leaf value (the shaping that steers the conversion chains). Off
-   *  isolates the bare `scoreState` planner — an A/B knob for measuring the shaping's contribution. */
-  enablers?: boolean;
+   *  isolates the bare `scoreState` planner — an A/B knob for measuring the shaping's contribution. An
+   *  `EnablerTerms` object ablates individual mechanisms instead (per-term attribution). */
+  enablers?: boolean | EnablerTerms;
 }
 
 const DEFAULTS: Required<PlannerOptions> = {
@@ -164,7 +165,10 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
   const leafCacheVictory = new Map<number, number>();
 
   const replan = (state: RunState): void => {
-    if (!model) model = opts.enablers ? deriveEnablers(state.G) : { weight: {}, cap: {}, producerCredit: {} };
+    if (!model) {
+      const terms = enablerTermsOf(opts.enablers);
+      model = terms ? deriveEnablers(state.G, terms) : { weight: {}, cap: {}, producerCredit: {} };
+    }
     const enablers = model;
     const h: Heuristic = (G: GameState, key?: number) => {
       if (key === undefined) return scoreState(G) + enablerPotential(G, enablers);

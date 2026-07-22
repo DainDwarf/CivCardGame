@@ -30,14 +30,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > for the calibrated config — `bareBest` on pyramid measures mean 17.8k / max 31.7k steps per re-plan
 > (see *Done / shipped*). Treat the ~2.9k figure as superseded, whatever its origin.
 
-- **Split the enabler shaping into separately-togglable mechanisms** — one boolean per term on
-  `PlannerOptions` instead of today's single `enablers` flag. At calibrated search settings the
-  shaping is **+0.22 pyramid · +0.18 accounting · +0.06 masonry** but **−0.34 restless_people ·
-  −0.10 writing-A**, so it can't be shipped or dropped wholesale, and one boolean over five
-  mechanisms (consumable conversions · strategic capacity · intrinsic floor · hand-size ·
-  durable producer) can't say which one causes the restless_people collapse. The conversion term
-  is the only one with a soundness argument; the floors are unconditional value assertions.
-  `[size: S]` `[phase: 4]`
+- **Choose the planner/oracle default enabler-term set** — the per-term ablation (see *Done / shipped*)
+  says the aggregate can't ship as-is: **capacity + producers carry the benefit** (each alone ≈ the full
+  all-on win rate on masonry / pyramid), the **floor is the one clean liability** (the whole writing-A
+  harm) yet is the *only* shaping a no-resource-objective mission gets, and restless_people's −20 is
+  **emergent stacking** (no single term necessary or sufficient). Before changing `DEFAULTS`: sweep a
+  floor-less candidate (e.g. capacity+producers, ± conversions) across the full baseline set —
+  *including* a card-count cell like growing_numbers, the case the floor was built for and the one
+  these four cells don't cover. `[size: S]` `[phase: 4]`
 
 - **Cut the planner's search size** — the measured lever on the ~45× cost. `plannerPolicy.ts` replays
   every candidate line into every sampled world (`applyActions`), i.e. `turnConfigLimit` × `determinizations`
@@ -270,6 +270,29 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
 
+- **Split the enabler shaping into separately-togglable terms** ✅ — `EnablerTerms` on both
+  `PlannerOptions`/`OracleOptions` (`enablers: boolean | EnablerTerms`; a missing key = on): `conversions` ·
+  `capacity` · `floor` · `handSize` · `producers`, ablated at model *derivation* (`deriveEnablers(G, terms)`).
+  The floor/capacity `max` is now orthogonal (`strategicWeight`), and each enabled term prices through
+  whatever model the other enabled terms built — no synthetic cross-terms. All-on is exactly the old model
+  (test-pinned; the post-split planner reproduced writing-A 7/30 verbatim). New `batch.ts` policies:
+  `plannerNo*`/`plannerOnly*` ×5 and `bareOracle`. **Measured** (shipped planner, 30 paired seeds per cell;
+  endpoints = `planner`/`bareW2`; writing-A = `scripts/sim/decks/writing-variant-a.json` on `city`, the
+  recovered calibration cell):
+  - **Endpoints**: masonry 83↔20 · pyramid 27↔7 · restless_people 63↔83 · writing-A 23↔33 (shaped↔bare).
+    The oracle (beam 64) only feels the shaping on masonry (100 vs 87 bare); elsewhere ≤1 seed.
+  - **writing-A** (card-count goal): the **floor is the whole harm** — necessary (NoFloor = bare 33%) *and*
+    sufficient (OnlyFloor 20%; every other single term = bare). Nothing is goal-valued there, so the derived
+    terms are empty and only the unconditional floor acts.
+  - **restless_people**: the −20 is **emergent stacking** — no single removal recovers more than +7, and
+    every term alone is ≈ harmless (Only\* 77–83% vs bare 83%).
+  - **masonry**: **capacity alone ≈ the whole benefit** (OnlyCap 80% vs all-on 83%, bare 20%); conversions
+    alone partial (33%); every leave-one-out ≥ 80%, so the terms are redundant here. OnlyFloor lands *below*
+    bare (10%, 22/30 stalls).
+  - **pyramid**: **producers alone = all-on** (27%) and capacity near it (23%); conversions/hand-size alone
+    = bare (7%), and *removing* either from the full model helps (NoConv +10, NoHand +7).
+  Follow-up: the default-term-set decision (open item above).
+
 - **Drop `tsx`'s `keepNames` from the sim run path** ✅ — the dev scripts (`sim`/`seed-save`/`economy`)
   now run as a plain esbuild bundle under bare `node` (`scripts/bundle.mjs`, rebuilt each `npm run`)
   instead of through `tsx`, whose default `keepNames` transform wrapped every closure with an `__name`
@@ -387,6 +410,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   staffed *in a building*; work cards exempt). Unlocks the **Forge** (building, 4🔨, 2🔨/worker —
   deliberately obsoletes Toolmaking). Balance confirmed by simulation + hand-play — the works-are-exempt
   trade (a works-only deck can dodge the drain) is intended, not a leak.
+
+## Jot — `permanentDelta` comment/code mismatch (which side is authoritative?)
+
+`sim/value.ts`'s `permanentDelta` comment says it drops the *transient* contributors — "the work zone
+… **and the hand** (an unplayed event's drain is hand-contingent, not permanent)" — but the code only
+sets `clone.workZone = []`. It still runs `applyUpkeep`, whose `resolveHandEvents` fires any unplayed
+`event`'s `upkeep`, so a hand event's drain **does** land in the band-3 permanent buffer. Either the
+comment is stale (add `clone.hand = []` to match it) or the code is intended and the comment is wrong.
+A band-3 (survival-buffer) question, not a perf one — decide which is authoritative. Found while
+profiling the oracle's clone cost (the two `scoreState` projections).
 
 ## Jot — Writing tablet cost mismatch (needs a call: which side is authoritative?)
 
