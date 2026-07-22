@@ -465,6 +465,12 @@ The residual planner-to-oracle gap on `writing` (0.61 vs 1.00) is now mostly the
 management the oracle's worker choreography handles — `dark_age` still causes 35 of the 39 losses — not
 goal blindness.
 
+The slope also **composes with search depth** rather than substituting for it: `shapedBest`
+(determinizations 8 · turnConfigLimit 16 · depth 2) on the writing fixture @ 20 paired seeds went
+0.65 → **0.95** (one `dark_age` loss left, tablets ~5/run, Forge 1/run, zero budget aborts in either
+arm). Depth 2 alone was worth +29pp over the default planner and the slope stacks another +30pp on top,
+so the two levers are complementary.
+
 ## Open decisions
 
 - **Chaining depth.** The confined slope values banking the cost itself; it does not make the cost a
