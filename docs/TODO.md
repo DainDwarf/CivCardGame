@@ -33,12 +33,25 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Cut the planner's search size** — the measured lever on the ~45× cost. `plannerPolicy.ts` replays
   every candidate line into every sampled world (`applyActions`), i.e. `turnConfigLimit` × `determinizations`
   = **16 × 8 = 128 line-replays per turn**, which is what drives the ~17.8k engine steps per re-plan.
-  Replaying the deck-independent prefix **once** and combining it with each world's deck attacks the step
-  count itself rather than per-step cost. Verify the deck-independence assumption against within-turn deck
-  readers (Calendar/peek) before relying on it. Sim-local. `[size: M]` `[phase: 4]`
+  `expandTurn` already computed each line's end state on the real state (`cfg.state`), so **graft** each
+  world onto it — splice in that world's deck + `rngState` — instead of replaying; the draws and lookahead
+  (the genuinely per-world part) stay as they are. Valid because within-turn play never touches the deck
+  for the current card set. Sim-local. `[size: M]` `[phase: 4]`
 
-- Also outstanding: `beamWidth` 2/6 at `depth: 2` (sweep was still running). Consider a per-cell
-  progress line on stderr — a multi-hour sweep currently prints nothing until it finishes.
+  **Future-proofing — the reveal-boundary design** (decided; needed only when a card that draws/reads the
+  deck *mid-turn* first ships, e.g. the idea pool's draw-on-expand / on-draw combo cards): don't detect
+  deck-touching lines and fall back to full replay — instead make any deck-touching action **terminate the
+  candidate line**, the same rule `commitPrefix` already applies to a parked peek. The line becomes a
+  chance node valued per-world (resolve the draw with that world's deck, continue the turn in-world, look
+  ahead, average) — so every candidate line is deck-independent *by construction* and the graft stays valid
+  forever. Costs are per-world post-draw continuation search + shorter commit horizons (more re-plans), not
+  correctness. Bonus fix folded in: today a line parked at a peek is valued as its **bare leaf**
+  (`evalLine`'s no-op-`endTurn` path) with no in-world continuation, undervaluing information moves — the
+  chance-node valuation is the refinement that fixes that too.
+
+- `beamWidth` 2/6 at `depth: 2` — measured since: no significant change either way, so the default
+  (4) stands. Still open: a per-cell progress line on stderr — a multi-hour sweep currently prints
+  nothing until it finishes.
 
 ## Phase 4 — planned steps (content & balance)
 
