@@ -1,6 +1,7 @@
 import { hashOf } from './oracleKey';
 import { endTurn, type RunState } from '../run/engine';
-import type { Policy, SimAction } from './simulate';
+import { enumerateActions } from './actions';
+import { applyAction, type Policy, type SimAction } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
 import { scoreState } from './value';
 import {
@@ -117,11 +118,29 @@ function beamValue(root: RunState, depth: number, opts: Required<PlannerOptions>
 }
 
 /** Value of committing this turn's line `cfg` in one sampled world: end the turn (drawing that world's
- *  sampled cards) and look `depth` turns further. A parked interaction (unresolvable `endTurn`) is scored
- *  as the line's own leaf. */
+ *  sampled cards) and look `depth` turns further. A parked interaction (unresolvable `endTurn`) is valued
+ *  through its answers — the re-plan that follows the real reveal picks one, so the line is worth the best
+ *  answer's continuation (resolve, then end the turn into the world), not its bare leaf. A bare leaf would
+ *  undervalue commit-at-the-reveal lines against fully-played ones; note it still can't make an
+ *  information-only peek *attractive* — inside a sampled world the lookahead already knows the deck, so a
+ *  reveal has no modeled upside there (the PIMC strategy-fusion ceiling). */
 function evalLine(cfg: RunState, opts: Required<PlannerOptions>, budget: Budget, h: Heuristic): number {
   const advanced = endTurn(cfg);
-  if (advanced === cfg) return h(cfg.G);
+  if (advanced === cfg) {
+    let best = -Infinity;
+    for (const action of enumerateActions(cfg.G)) {
+      budget.steps += 1;
+      const resolved = applyAction(cfg, action);
+      if (resolved === cfg) continue;
+      if (resolved.gameover) {
+        if (resolved.gameover.outcome === 'victory') return VICTORY;
+        continue; // a defeat answer — dead branch
+      }
+      const value = evalLine(resolved, opts, budget, h);
+      if (value > best) best = value;
+    }
+    return best === -Infinity ? h(cfg.G) : best;
+  }
   if (advanced.gameover) return advanced.gameover.outcome === 'victory' ? VICTORY : h(advanced.G);
   return beamValue(advanced, opts.depth, opts, budget, h);
 }

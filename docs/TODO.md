@@ -38,13 +38,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   already applies to a parked peek. The line becomes a chance node valued per-world (resolve the draw
   with that world's deck, continue the turn in-world, look ahead, average) — so every candidate line is
   deck-independent *by construction* and the graft stays valid forever. Costs are per-world post-draw
-  continuation search + shorter commit horizons (more re-plans), not correctness. Bonus fix folded in:
-  today a line parked at a peek is valued as its **bare leaf** (`evalLine`'s no-op-`endTurn` path) with
-  no in-world continuation, undervaluing information moves — the chance-node valuation fixes that too.
-  One gap the line-termination rule does *not* cover: an effect that **reads** deck contents without
-  touching them (e.g. a "deck holds N of X" goal) — a deck-dependent state with no deck-touching action
-  to terminate on. No current content does this; it would need its own treatment. `[size: M]` `[blocked]`
-  `[phase: 4]` Bonus fix folded in: today a line parked at a peek is valued as its **bare leaf**
+  continuation search + shorter commit horizons (more re-plans), not correctness. (The parked-line half
+  of this — valuing a line that ends at a reveal through its answers instead of its bare leaf — shipped
+  ahead of the rest; see *Done / shipped*. What stays blocked on content is the draw-as-chance-node
+  machinery itself.) One gap the line-termination rule does *not* cover: an effect that **reads** deck
+  contents without touching them (e.g. a "deck holds N of X" goal) — a deck-dependent state with no
+  deck-touching action to terminate on. No current content does this; it would need its own treatment.
+  And a ceiling to keep expectations honest: **PIMC cannot value information prospectively** — inside a
+  sampled world the lookahead already knows that world's deck, so an information-only action (a peek)
+  has no modeled upside in any world and its play cost is pure downside (strategy fusion). No leaf-
+  valuation surgery changes that; making the planner *seek* reveals would need an explicit information
+  bonus, a separate (hackier) design. `[size: M]` `[blocked]` `[phase: 4]`
+  **Behavioral baseline** (re-pinned 2026-07-23 after the parked-line valuation shipped): on the
+  committed `restless_people` fixture × 10 sweep seeds, Calendar is played only by **seed 9 under both
+  shapedBest and bareBest** (turn 8, mid-line, healthy run — incidental near-tie), winRate 0.8 / 0.9
+  (replay via `--baseline scripts/sim/baselines/restless_people.json --policies <p> --seed <i>`). The
+  pre-valuation baseline (shapedBest 6/7/8, bareBest 1/7 — late desperation plays in dying runs) is
+  superseded; this is the reference point for the draw-era chance-node work. Bonus fix folded in: today a line parked at a peek is valued as its **bare leaf**
   (`evalLine`'s no-op-`endTurn` path) with no in-world continuation, undervaluing information moves — the
   chance-node valuation is the refinement that fixes that too.
 
@@ -271,6 +281,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
+
+- **Value parked planner lines through their answers** ✅ — the parked-line half of the reveal-boundary
+  design (above), shipped ahead of the content that needs the rest: `evalLine` no longer scores a line
+  that ends at a parked interaction as its **bare leaf** — it takes the best answer's continuation
+  (resolve, then end the turn into the sampled world), so commit-at-the-reveal lines are valued through
+  the same future as every other line. **Measured effect was the opposite sign of "peeks now valued
+  fairly"**: the bare leaf had been *over*valuing parked lines in collapsing positions (present-state
+  score vs. every real continuation being valued through the incoming famine — a freeze-frame illusion),
+  so the change *removed* Calendar desperation plays: restless_people 10-seed sweep, plays 3→1
+  (shapedBest) / 2→1 (bareBest), the survivors' old late-game dying-run plays (seeds 6/7/8 · 1/7) all
+  gone, one healthy mid-game near-tie play (seed 9, both policies) appearing instead; win rates
+  unchanged (0.8/0.9), pyramid/masonry byte-identical (control). The planner still never *seeks* a peek
+  — the PIMC strategy-fusion ceiling (noted above) stands, as predicted; the desperation-play removal
+  was the part no one predicted, which is why the test ran.
 
 - **Graft sampled worlds onto planner line states** ✅ — `plannerPolicy.ts` no longer replays each
   candidate line into each sampled world (`applyActions`, 16 × 8 = 128 replays per re-plan): `expandTurn`
