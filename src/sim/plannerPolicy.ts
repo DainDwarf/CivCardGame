@@ -1,6 +1,6 @@
 import { hashOf } from './oracleKey';
 import { endTurn, type RunState } from '../run/engine';
-import { applyAction, type Policy, type SimAction } from './simulate';
+import type { Policy, SimAction } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
 import { scoreState } from './value';
 import {
@@ -38,9 +38,12 @@ import { seededRng, type GameState } from '../rules';
  * simply "plan a turn, play it out, re-plan next turn."
  *
  * A **candidate turn line** is enumerated on the *real* state (within-turn plays don't touch the deck for
- * the current card set, so the set of lines is world-independent) and evaluated in each sampled world by
- * replaying it (deck-independent) then looking ahead — common random numbers across lines, so the argmax
- * is low-variance.
+ * the current card set, so both the set of lines *and* each line's end state are world-independent) and
+ * evaluated in each sampled world by **grafting** the world onto its already-computed end state — splicing
+ * in that world's deck + rngState instead of replaying the line — then looking ahead. Common random
+ * numbers across lines, so the argmax is low-variance. If a card that draws or reads the deck mid-turn
+ * ever ships, the graft's premise breaks with the enumeration's — the reveal-boundary design (TODO.md)
+ * is the plan for that day.
  */
 
 export interface PlannerOptions {
@@ -76,12 +79,6 @@ const VICTORY = 1e9;
 function makeNode(state: RunState, h: Heuristic): SearchNode {
   const key = hashOf(state.G);
   return { state, parent: null, action: null, key, h: h(state.G, key) };
-}
-
-function applyActions(state: RunState, actions: SimAction[]): RunState {
-  let s = state;
-  for (const a of actions) s = applyAction(s, a);
-  return s;
 }
 
 /**
@@ -216,11 +213,15 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
     let best = configs[0];
     let bestValue = -Infinity;
     for (const cfg of configs) {
-      const actions = reconstruct(cfg);
       let sum = 0;
       for (const world of worlds) {
-        // Replay the (deck-independent) line into the sampled world, then look ahead in it.
-        const line = applyActions(world, actions);
+        // Graft the world onto the line's already-computed end state: the line never touched the deck,
+        // so its state in this world differs from `cfg.state` only in deck + rngState. Shallow copy is
+        // enough — `endTurn` clones `G` before mutating, so the shared arrays stay pristine.
+        const line: RunState = {
+          G: { ...cfg.state.G, deck: world.G.deck, rngState: world.G.rngState },
+          gameover: undefined,
+        };
         sum += evalLine(line, opts, budget, h);
       }
       const value = sum / worlds.length;

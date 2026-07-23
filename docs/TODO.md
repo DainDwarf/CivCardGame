@@ -30,22 +30,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > for the calibrated config — `bareBest` on pyramid measures mean 17.8k / max 31.7k steps per re-plan
 > (see *Done / shipped*). Treat the ~2.9k figure as superseded, whatever its origin.
 
-- **Cut the planner's search size** — the measured lever on the ~45× cost. `plannerPolicy.ts` replays
-  every candidate line into every sampled world (`applyActions`), i.e. `turnConfigLimit` × `determinizations`
-  = **16 × 8 = 128 line-replays per turn**, which is what drives the ~17.8k engine steps per re-plan.
-  `expandTurn` already computed each line's end state on the real state (`cfg.state`), so **graft** each
-  world onto it — splice in that world's deck + `rngState` — instead of replaying; the draws and lookahead
-  (the genuinely per-world part) stay as they are. Valid because within-turn play never touches the deck
-  for the current card set. Sim-local. `[size: M]` `[phase: 4]`
-
-  **Future-proofing — the reveal-boundary design** (decided; needed only when a card that draws/reads the
-  deck *mid-turn* first ships, e.g. the idea pool's draw-on-expand / on-draw combo cards): don't detect
-  deck-touching lines and fall back to full replay — instead make any deck-touching action **terminate the
-  candidate line**, the same rule `commitPrefix` already applies to a parked peek. The line becomes a
-  chance node valued per-world (resolve the draw with that world's deck, continue the turn in-world, look
-  ahead, average) — so every candidate line is deck-independent *by construction* and the graft stays valid
-  forever. Costs are per-world post-draw continuation search + shorter commit horizons (more re-plans), not
-  correctness. Bonus fix folded in: today a line parked at a peek is valued as its **bare leaf**
+- **The reveal-boundary design** (decided; dormant until a card that draws/reads the deck *mid-turn*
+  first ships, e.g. the idea pool's draw-on-expand / on-draw combo cards — such a card breaks the
+  within-turn-play-never-touches-the-deck invariant the planner's shared line enumeration *and* the
+  shipped world-graft both rest on): don't detect deck-touching lines and fall back to full replay —
+  instead make any deck-touching action **terminate the candidate line**, the same rule `commitPrefix`
+  already applies to a parked peek. The line becomes a chance node valued per-world (resolve the draw
+  with that world's deck, continue the turn in-world, look ahead, average) — so every candidate line is
+  deck-independent *by construction* and the graft stays valid forever. Costs are per-world post-draw
+  continuation search + shorter commit horizons (more re-plans), not correctness. Bonus fix folded in:
+  today a line parked at a peek is valued as its **bare leaf** (`evalLine`'s no-op-`endTurn` path) with
+  no in-world continuation, undervaluing information moves — the chance-node valuation fixes that too.
+  One gap the line-termination rule does *not* cover: an effect that **reads** deck contents without
+  touching them (e.g. a "deck holds N of X" goal) — a deck-dependent state with no deck-touching action
+  to terminate on. No current content does this; it would need its own treatment. `[size: M]` `[blocked]`
+  `[phase: 4]` Bonus fix folded in: today a line parked at a peek is valued as its **bare leaf**
   (`evalLine`'s no-op-`endTurn` path) with no in-world continuation, undervaluing information moves — the
   chance-node valuation is the refinement that fixes that too.
 
@@ -272,6 +271,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
+
+- **Graft sampled worlds onto planner line states** ✅ — `plannerPolicy.ts` no longer replays each
+  candidate line into each sampled world (`applyActions`, 16 × 8 = 128 replays per re-plan): `expandTurn`
+  already computed every line's end state on the *real* state, and within-turn play never touches the
+  deck, so each world is **grafted** on — a shallow `G` copy with the world's `deck` + `rngState`
+  spliced in (safe because `endTurn` clones `G` before mutating, so the shared arrays stay pristine).
+  Output verified **byte-identical** (sweep JSON + stderr budget stats; restless_people/pyramid/masonry
+  × shapedBest,bareBest × 10 seeds — restless_people's Calendar exercising the parked-peek path, the
+  one field-divergent case: a grafted parked line carries the *real* peeked `pendingInteraction.options`
+  where a replay would carry the world's, and nothing downstream reads them). Measured ~**6% wall
+  clock** by min-of-3 interleaved A/B reps on pyramid (means unusable — the machine was under game
+  load, spread 310–601 s; min is sound since interference only adds time). **The ticket's premise was
+  wrong**: the 128 replays were never part of the ~17.8k measured steps — `budget.steps` counts only
+  `expandTurn` expansions, so the real cost is the 128 independent per-(line,world) lookahead beams and
+  their uncounted `endTurn`s, which the graft can't touch. That's the follow-up lever if the calibrated
+  config ever needs a real speedup; the reveal-boundary design (above) is the plan for content that
+  touches the deck mid-turn.
 
 - **Ship the lean enabler-term set as the planner default** ✅ — `DEFAULT_ENABLER_TERMS` =
   capacity + producers + cardCosts (conversions/floor/handSize off), now `PlannerOptions.enablers`'s
