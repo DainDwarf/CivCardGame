@@ -38,16 +38,18 @@ export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = 
   bareBestB6: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16, depth: 2, beamWidth: 6 }),
   // Per-term ablations of the enabler shaping (`sim/enablers.ts`'s `EnablerTerms`), at the shipped planner's
   // settings: leave-one-out (attribution — which term causes a cell's collapse) and only-one (sufficiency).
+  plannerNoCardCost: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false } }),
   plannerNoConv: (s) => createPlannerPolicy(s, { enablers: { conversions: false } }),
   plannerNoCap: (s) => createPlannerPolicy(s, { enablers: { capacity: false } }),
   plannerNoFloor: (s) => createPlannerPolicy(s, { enablers: { floor: false } }),
   plannerNoHand: (s) => createPlannerPolicy(s, { enablers: { handSize: false } }),
   plannerNoProd: (s) => createPlannerPolicy(s, { enablers: { producers: false } }),
-  plannerOnlyConv: (s) => createPlannerPolicy(s, { enablers: { capacity: false, floor: false, handSize: false, producers: false } }),
-  plannerOnlyCap: (s) => createPlannerPolicy(s, { enablers: { conversions: false, floor: false, handSize: false, producers: false } }),
-  plannerOnlyFloor: (s) => createPlannerPolicy(s, { enablers: { conversions: false, capacity: false, handSize: false, producers: false } }),
-  plannerOnlyHand: (s) => createPlannerPolicy(s, { enablers: { conversions: false, capacity: false, floor: false, producers: false } }),
-  plannerOnlyProd: (s) => createPlannerPolicy(s, { enablers: { conversions: false, capacity: false, floor: false, handSize: false } }),
+  plannerOnlyCardCost: (s) => createPlannerPolicy(s, { enablers: { conversions: false, capacity: false, floor: false, handSize: false, producers: false } }),
+  plannerOnlyConv: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, capacity: false, floor: false, handSize: false, producers: false } }),
+  plannerOnlyCap: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, conversions: false, floor: false, handSize: false, producers: false } }),
+  plannerOnlyFloor: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, conversions: false, capacity: false, handSize: false, producers: false } }),
+  plannerOnlyHand: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, conversions: false, capacity: false, floor: false, producers: false } }),
+  plannerOnlyProd: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, conversions: false, capacity: false, floor: false, handSize: false } }),
   oracle: createOraclePolicy,
   bareOracle: (s) => createOraclePolicy(s, { enablers: false }),
 };

@@ -347,6 +347,17 @@ describe('card-cost goal valuation', () => {
     expect(m.weight.territory).toBe(sandboxSame.weight.territory);
   });
 
+  it('cardCosts: false derives a card-count goal like one naming no resource', () => {
+    // Nothing else values production/food on Writing, so ablating the probe empties the banking slope
+    // *and* the producer credit it implied (Forge's output is only worth what the bank pays), leaving
+    // just the intrinsic strategic floors.
+    const m = deriveEnablers(writingRoot(), { cardCosts: false });
+    expect(m.weight.production ?? 0).toBe(0);
+    expect(m.weight.food ?? 0).toBe(0);
+    expect(m.producerCredit.forge).toBeUndefined();
+    expect(m.weight.territory ?? 0).toBeGreaterThan(0);
+  });
+
   it('probes the tableau for a building-presence goal, keeping the best marginal per resource', () => {
     // Growing Numbers counts hut+farm *present in the tableau* — the tableau injection, not `removed`.
     // Both cost only production and move the goal equally, so the cheaper card carries the higher
@@ -512,6 +523,7 @@ describe('culture enabler', () => {
 describe('enabler term toggles', () => {
   it('every term on is exactly the default model', () => {
     const explicit = deriveEnablers(masonryRoot(), {
+      cardCosts: true,
       conversions: true,
       capacity: true,
       floor: true,
@@ -523,6 +535,7 @@ describe('enabler term toggles', () => {
 
   it('every term off is the empty model — the `enablers: false` endpoint', () => {
     const m = deriveEnablers(masonryRoot(), {
+      cardCosts: false,
       conversions: false,
       capacity: false,
       floor: false,

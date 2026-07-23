@@ -101,9 +101,13 @@ const PRODUCER_TAIL_HORIZON = 2;
 const PRODUCER_CREDIT_CAP = 0.05 * OBJECTIVE_WEIGHT;
 
 /** Per-term ablation toggles for the enabler model. A missing key means **on** — you name what you switch
- *  off, so `{}` is the full model. Only the `conversions` term carries a soundness argument (bounded
- *  potential shaping); the others are tuned value assertions, which is exactly why they ablate separately. */
+ *  off, so `{}` is the full model. Only the `cardCosts`/`conversions` slopes carry a soundness argument
+ *  (bounded potential shaping); the others are tuned value assertions, which is exactly why they ablate
+ *  separately. */
 export interface EnablerTerms {
+  /** Card-cost goals — a resource funding a card the objective *counts* banked toward directly
+   *  (`goalValuedCardCosts`). Off, a card-count objective derives like one naming no resource. */
+  cardCosts?: boolean;
   /** Consumable conversions — a banked core resource credited for the valued output it converts into
    *  (`HOP_DISCOUNT`). */
   conversions?: boolean;
@@ -267,7 +271,8 @@ function canGrowCulture(ids: Set<string>): boolean {
  * A resource already credited directly by the objective is not shadowed as its own enabler.
  */
 export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerModel {
-  const { conversions = true, capacity = true, floor = true, handSize = true, producers = true } = terms;
+  const { cardCosts = true, conversions = true, capacity = true, floor = true, handSize = true, producers = true } =
+    terms;
   const goalValued = goalValuedResources(G);
   const ids = runCardIds(G);
   const weight: EnablerModel['weight'] = {};
@@ -282,13 +287,15 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // this marginal they price engine several goal steps above the goal itself, and the engine sinks
   // out-compete the very banking this slope exists to reward. The resource probe wins a collision (its
   // marginal is the objective's own slope, not an attribution).
-  for (const [ck, e] of Object.entries(goalValuedCardCosts(G)) as [
-    keyof Resources,
-    { marginal: number; costAmt: number },
-  ][]) {
-    if (goalValued[ck] !== undefined) continue;
-    weight[ck] = HOP_DISCOUNT * e.marginal * OBJECTIVE_WEIGHT;
-    cap[ck] = e.costAmt;
+  if (cardCosts) {
+    for (const [ck, e] of Object.entries(goalValuedCardCosts(G)) as [
+      keyof Resources,
+      { marginal: number; costAmt: number },
+    ][]) {
+      if (goalValued[ck] !== undefined) continue;
+      weight[ck] = HOP_DISCOUNT * e.marginal * OBJECTIVE_WEIGHT;
+      cap[ck] = e.costAmt;
+    }
   }
 
   // A strategic pool's weight composes its two independent terms as a `max` — the derived throughput

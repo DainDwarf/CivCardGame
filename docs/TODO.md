@@ -291,7 +291,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     bare (10%, 22/30 stalls).
   - **pyramid**: **producers alone = all-on** (27%) and capacity near it (23%); conversions/hand-size alone
     = bare (7%), and *removing* either from the full model helps (NoConv +10, NoHand +7).
-  Follow-up: the default-term-set decision (open item above).
+  Follow-up: the default-term-set decision (open item above). Since the measurement, the card-cost probe
+  landed as a sixth term (`cardCosts`, with `plannerNoCardCost`/`plannerOnlyCardCost`) — unmeasured; note
+  the writing-A numbers above predate it, so its floor finding needs re-checking with the probe in play.
 
 - **Drop `tsx`'s `keepNames` from the sim run path** ✅ — the dev scripts (`sim`/`seed-save`/`economy`)
   now run as a plain esbuild bundle under bare `node` (`scripts/bundle.mjs`, rebuilt each `npm run`)
