@@ -59,8 +59,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   chance-node valuation is the refinement that fixes that too.
 
 - `beamWidth` 2/6 at `depth: 2` — measured since: no significant change either way, so the default
-  (4) stands. Still open: a per-cell progress line on stderr — a multi-hour sweep currently prints
-  nothing until it finishes.
+  (4) stands.
 
 ## Phase 4 — planned steps (content & balance)
 
@@ -281,6 +280,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Completed items move here (newest first) so the backlog stays current but nothing
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
+
+- **Per-cell progress line on stderr** ✅ — a multi-hour sweep no longer prints nothing until it
+  finishes: `runBatch` fires an optional `onProgress` after every run (the sim library writes no I/O
+  itself — tests stay quiet), and `scripts/sim.ts` renders a `\r`-updated stderr line tracking the whole
+  sweep (`runsDone/runsTotal` across every policy × scenario cell, plus the active policy/scenario).
+  stdout (report / JSON) stays clean.
 
 - **Value parked planner lines through their answers** ✅ — the parked-line half of the reveal-boundary
   design (above), shipped ahead of the content that needs the rest: `evalLine` no longer scores a line

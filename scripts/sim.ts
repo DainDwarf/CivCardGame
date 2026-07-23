@@ -407,7 +407,18 @@ const scenarios: Scenario[] = cells.map((cell) => ({
   boardStickers: cell.board.stickers,
 }));
 
-const summaries = runPolicies(scenarios, policies, { seeds, sim: simOpts }).map(summarize);
+// Progress on stderr (stdout stays clean for the report / JSON): a multi-hour sweep is otherwise
+// silent until it finishes. `runsTotal` here is the whole sweep, not one cell.
+const runsTotal = policies.length * scenarios.length * seeds;
+let runsDone = 0;
+const onProgress = ({ policyName, scenarioLabel }: { policyName: string; scenarioLabel: string }) => {
+  runsDone += 1;
+  const pct = ((100 * runsDone) / runsTotal).toFixed(0);
+  process.stderr.write(`\r[sim] ${String(runsDone).padStart(String(runsTotal).length)}/${runsTotal} (${pct}%) · ${policyName} · ${scenarioLabel}`.padEnd(72));
+  if (runsDone === runsTotal) process.stderr.write('\n');
+};
+
+const summaries = runPolicies(scenarios, policies, { seeds, sim: simOpts, onProgress }).map(summarize);
 
 if (format === 'json') {
   console.log(JSON.stringify(summaries, null, 2));

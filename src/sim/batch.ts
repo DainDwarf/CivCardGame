@@ -97,6 +97,9 @@ export interface BatchOptions {
   policyName?: string;
   /** Pass-through to each `simulateRun` (invariant checks, action cap). */
   sim?: SimOptions;
+  /** Fired after every completed run, so a caller can report progress on an otherwise-silent
+   *  multi-hour sweep. The library never writes I/O itself — the CLI supplies the renderer. */
+  onProgress?: (info: { policyName: string; scenarioLabel: string; runsDone: number; runsTotal: number }) => void;
 }
 
 /** Every run of one scenario, outcomes kept whole so the report layer can reach `gameover.reason`
@@ -132,6 +135,7 @@ export function runBatch(scenarios: Scenario[], opts: BatchOptions): ScenarioRun
         seed: `${scenario.label}-cfg-${i}`,
       });
       outcomes.push(simulateRun(config, policyFactory(`${scenario.label}-pol-${i}`), opts.sim));
+      opts.onProgress?.({ policyName, scenarioLabel: scenario.label, runsDone: i + 1, runsTotal: opts.seeds });
     }
     return { scenario, policyName, outcomes };
   });
