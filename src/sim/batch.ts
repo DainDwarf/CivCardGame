@@ -36,8 +36,11 @@ export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = 
   shapedBest: (s) => createPlannerPolicy(s, { determinizations: 8, turnConfigLimit: 16, depth: 2 }),
   bareBestB2: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16, depth: 2, beamWidth: 2 }),
   bareBestB6: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16, depth: 2, beamWidth: 6 }),
-  // Per-term ablations of the enabler shaping (`sim/enablers.ts`'s `EnablerTerms`), at the shipped planner's
-  // settings: leave-one-out (attribution — which term causes a cell's collapse) and only-one (sufficiency).
+  // Per-term ablations of the enabler shaping (`sim/enablers.ts`'s `EnablerTerms`), all **relative to
+  // the full all-on model** (`plannerFull`), not the lean default the bare `planner` now ships with:
+  // leave-one-out (attribution — which term causes a cell's collapse) and only-one (sufficiency).
+  plannerFull: (s) => createPlannerPolicy(s, { enablers: true }),
+  plannerLeanConv: (s) => createPlannerPolicy(s, { enablers: { floor: false, handSize: false } }),
   plannerNoCardCost: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false } }),
   plannerNoConv: (s) => createPlannerPolicy(s, { enablers: { conversions: false } }),
   plannerNoCap: (s) => createPlannerPolicy(s, { enablers: { capacity: false } }),
@@ -52,6 +55,8 @@ export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = 
   plannerOnlyProd: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, conversions: false, capacity: false, floor: false, handSize: false } }),
   oracle: createOraclePolicy,
   bareOracle: (s) => createOraclePolicy(s, { enablers: false }),
+  leanOracle: (s) => createOraclePolicy(s, { enablers: { conversions: false, floor: false, handSize: false } }),
+  leanConvOracle: (s) => createOraclePolicy(s, { enablers: { floor: false, handSize: false } }),
 };
 
 /** The policies a bare `npm run sim` sweeps when none is named — the fast built-ins. The `planner`

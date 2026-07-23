@@ -383,7 +383,11 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   card the objective *counts*, probed by injecting run cards into the goal-measured zones), a held
   strategic resource (territory/population/culture) for the goal-throughput its capacity *unlocks*, and
   an owned durable producer for the output rounds past the projected turn, turning the greedies' flat
-  plateau into a slope. `turnSearch.ts` is the within-turn search skeleton (`expandTurn`) the planner
+  plateau into a slope. Each mechanism is a separately-ablatable `EnablerTerms` toggle: the planner
+  ships the measured lean subset (`DEFAULT_ENABLER_TERMS` — capacity/producers/cardCosts), the oracle
+  the full all-on model (it proves winnability, and the full model finds strictly more wins — the
+  decision record is `docs/STRATEGIC-VALUATION.md` → *The default term set*). `turnSearch.ts` is the
+  within-turn search skeleton (`expandTurn`) the planner
   and oracle share, parameterized by the ranking heuristic — which it hands the node's transposition key
   alongside `G`, a memo hint the planner caches its (expensive, projection-based) leaf value on.
 - **Batch + reporting** — `runBatch(scenarios, { seeds })` (`batch.ts`) sweeps a flat `Scenario[]` ×N

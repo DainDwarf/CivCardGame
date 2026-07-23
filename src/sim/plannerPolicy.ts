@@ -3,7 +3,14 @@ import { endTurn, type RunState } from '../run/engine';
 import { applyAction, type Policy, type SimAction } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
 import { scoreState } from './value';
-import { deriveEnablers, enablerPotential, enablerTermsOf, type EnablerModel, type EnablerTerms } from './enablers';
+import {
+  DEFAULT_ENABLER_TERMS,
+  deriveEnablers,
+  enablerPotential,
+  enablerTermsOf,
+  type EnablerModel,
+  type EnablerTerms,
+} from './enablers';
 import { determinize } from './determinize';
 import { seededRng, type GameState } from '../rules';
 
@@ -47,9 +54,10 @@ export interface PlannerOptions {
   determinizations?: number;
   /** Engine-step backstop per re-plan — aborts the search reporting its best-so-far if exceeded. */
   nodeBudget?: number;
-  /** Fold the enabler potential into the leaf value (the shaping that steers the conversion chains). Off
-   *  isolates the bare `scoreState` planner — an A/B knob for measuring the shaping's contribution. An
-   *  `EnablerTerms` object ablates individual mechanisms instead (per-term attribution). */
+  /** Fold the enabler potential into the leaf value (the shaping that steers the conversion chains).
+   *  Defaults to `DEFAULT_ENABLER_TERMS` (the measured lean set); `true` is the full all-on model, off
+   *  isolates the bare `scoreState` planner, and an `EnablerTerms` object ablates individual mechanisms
+   *  (per-term attribution). */
   enablers?: boolean | EnablerTerms;
 }
 
@@ -59,7 +67,7 @@ const DEFAULTS: Required<PlannerOptions> = {
   turnConfigLimit: 8,
   determinizations: 2,
   nodeBudget: 100_000,
-  enablers: true,
+  enablers: DEFAULT_ENABLER_TERMS,
 };
 
 /** A reachable victory in a sampled world — dominates any heuristic leaf so a winning line is preferred. */

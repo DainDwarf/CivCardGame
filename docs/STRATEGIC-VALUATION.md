@@ -481,3 +481,50 @@ so the two levers are complementary.
 - **Staleness.** Like the resource probe, derived once at the run root by both consumers: a goal card
   already satisfied mid-run keeps its credit until the next derive. Pre-existing shape, noted on the
   probe.
+
+# The default term set (planner + oracle)
+
+With every mechanism separately ablatable (`EnablerTerms`), the shipped default became a measured
+decision rather than "all of it". The per-term attribution (recorded in TODO.md's shipped log) named
+**capacity + producers** the carriers, the **floor** the one clean liability, and conversions/hand-size
+never load-bearing — so the candidate was the two carriers plus the confined **card-cost** slope, with
+conversions / floor / hand-size off (the *lean* set). Swept against the full model over the whole
+baseline set:
+
+| planner @ 100 paired seeds | full | lean | lean+conversions |
+| --- | --- | --- | --- |
+| pyramid | 30 | **44** | 32 |
+| restless_people | 59 | **74** | 67 |
+| writing | 61 | **71** | **71** |
+| masonry | **92** | 87 | 87 |
+| first_temple | **100** | 94 | **100** |
+| accounting | **50** | 44 | 49 |
+| six remaining cells | = | = | = |
+
+Aggregate: lean **+23pp**, lean+conversions +15pp. Adding conversions back repairs the two grind cells
+but returns most of pyramid's and half of restless's gain — no arm dominates at depth 1. The tiebreaker
+is the tuned depth-2 config (`shapedBest` settings, 10 paired seeds; bare / full / lean): masonry
+9/10/**10** · writing 7/10/**10** · pyramid 6/**10**/9 · restless 9/6/**8** · first_temple 10/10/10 ·
+accounting 8/9/**9** — totals 49 / 55 / **56** of 60. The lean set's depth-1 losses on the grind cells
+are **shallow-search artifacts** (gone at depth 2) while its hard-cell gains persist; the one term
+effect stable across both depths is restless_people's bare > lean > full ordering — the
+emergent-stacking harm, shrunk but not closed by lean.
+
+So `DEFAULT_ENABLER_TERMS` (`sim/enablers.ts`, test-pinned) ships the lean set as the **planner**
+default; `enablers: true` remains the full model (the `plannerFull` batch arm), and the ablation arms
+stay defined relative to it. The **oracle deliberately keeps the full all-on model**: its job is proving
+winnability, and at 10 seeds × 12 cells the full model proved 120/120 where lean dropped accounting to
+8/10 (stalls) and lean+conversions dropped accounting *and* pyramid to 9/10. Guidance that finds more
+wins beats guidance that plays fairer — fairness is the planner's constraint, not the oracle's.
+
+## Open decisions
+
+- **The floor's original case is now uncovered.** A run whose objective derives nothing (sandbox, the
+  infinite missions) gets no strategic shaping at all under the lean default. Win rate can't measure
+  that case; if it's ever revisited, the yardstick is a sandbox end-state resource diff, and the
+  candidate is a floor applied *only when the rest of the model is empty*, not the unconditional one
+  the measurement rejected.
+- **restless_people's residual gap.** Lean recovers most of the full model's harm (59 → 74 @ 100
+  seeds; 6 → 8 of 10 at depth 2) but the bare planner still leads in every paired look (83% @ 30
+  seeds; 9/10 at depth 2); the harm is emergent stacking with no single-term attribution, so closing
+  it is a re-measurement, not a toggle.

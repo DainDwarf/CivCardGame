@@ -30,15 +30,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > for the calibrated config — `bareBest` on pyramid measures mean 17.8k / max 31.7k steps per re-plan
 > (see *Done / shipped*). Treat the ~2.9k figure as superseded, whatever its origin.
 
-- **Choose the planner/oracle default enabler-term set** — the per-term ablation (see *Done / shipped*)
-  says the aggregate can't ship as-is: **capacity + producers carry the benefit** (each alone ≈ the full
-  all-on win rate on masonry / pyramid), the **floor is the one clean liability** (the whole writing-A
-  harm) yet is the *only* shaping a no-resource-objective mission gets, and restless_people's −20 is
-  **emergent stacking** (no single term necessary or sufficient). Before changing `DEFAULTS`: sweep a
-  floor-less candidate (e.g. capacity+producers, ± conversions) across the full baseline set —
-  *including* a card-count cell like growing_numbers, the case the floor was built for and the one
-  these four cells don't cover. `[size: S]` `[phase: 4]`
-
 - **Cut the planner's search size** — the measured lever on the ~45× cost. `plannerPolicy.ts` replays
   every candidate line into every sampled world (`applyActions`), i.e. `turnConfigLimit` × `determinizations`
   = **16 × 8 = 128 line-replays per turn**, which is what drives the ~17.8k engine steps per re-plan.
@@ -46,9 +37,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   count itself rather than per-step cost. Verify the deck-independence assumption against within-turn deck
   readers (Calendar/peek) before relying on it. Sim-local. `[size: M]` `[phase: 4]`
 
-- Also outstanding: `beamWidth` 2/6 at `depth: 2` (sweep was still running), and re-running the
-  eleven-fixture baseline at whatever config is chosen. Consider a per-cell progress line on
-  stderr — a multi-hour sweep currently prints nothing until it finishes.
+- Also outstanding: `beamWidth` 2/6 at `depth: 2` (sweep was still running), and re-capturing
+  `baselines/results/greedy-planner.json` under the shipped lean default (the committed planner
+  numbers were taken at the old full model; greedy is enabler-blind and stays valid). Consider a
+  per-cell progress line on stderr — a multi-hour sweep currently prints nothing until it finishes.
 
 ## Phase 4 — planned steps (content & balance)
 
@@ -270,6 +262,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
 
+- **Ship the lean enabler-term set as the planner default** ✅ — `DEFAULT_ENABLER_TERMS` =
+  capacity + producers + cardCosts (conversions/floor/handSize off), now `PlannerOptions.enablers`'s
+  default; `enablers: true` remains the full all-on model (`plannerFull`), and the **oracle keeps the
+  full model** — its job is proving winnability and the full model finds strictly more wins.
+  Measured (full baseline set, paired seeds; full → lean → lean+conversions):
+  - **Planner @ 100 seeds**: pyramid 30→**44**→32 · restless_people 59→**74**→67 · writing
+    61→**71**→71 · masonry 92→87→87 · first_temple 100→94→**100** · accounting 50→44→49; the six
+    easy cells unchanged. Aggregate **+23pp** (lean) / +15pp (lean+conv) over full.
+  - **Tuned depth-2 config @ 10 seeds** (bare/full/lean): masonry 9/10/**10** · writing 7/10/**10** ·
+    pyramid 6/**10**/9 · restless 9/6/**8** · first_temple 10/10/10 · accounting 8/9/**9** — totals
+    49/55/**56** of 60. The lean set's depth-1 stall-cell regressions (first_temple/accounting) are
+    shallow-search artifacts; restless's bare > lean > full ordering is the one term effect stable
+    across depths.
+  - **Oracle @ 10 seeds**: full 12×10/10 · lean drops accounting to 8/10 · lean+conv drops accounting
+    and pyramid to 9/10 — hence the oracle's full-model default.
+  Decision + tables in [`STRATEGIC-VALUATION.md`](STRATEGIC-VALUATION.md) → *The default term set*;
+  the shipped set is test-pinned in `enablers.test.ts`.
+
 - **Split the enabler shaping into separately-togglable terms** ✅ — `EnablerTerms` on both
   `PlannerOptions`/`OracleOptions` (`enablers: boolean | EnablerTerms`; a missing key = on): `conversions` ·
   `capacity` · `floor` · `handSize` · `producers`, ablated at model *derivation* (`deriveEnablers(G, terms)`).
@@ -291,9 +301,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     bare (10%, 22/30 stalls).
   - **pyramid**: **producers alone = all-on** (27%) and capacity near it (23%); conversions/hand-size alone
     = bare (7%), and *removing* either from the full model helps (NoConv +10, NoHand +7).
-  Follow-up: the default-term-set decision (open item above). Since the measurement, the card-cost probe
-  landed as a sixth term (`cardCosts`, with `plannerNoCardCost`/`plannerOnlyCardCost`) — unmeasured; note
-  the writing-A numbers above predate it, so its floor finding needs re-checking with the probe in play.
+  Follow-up: the default-term-set decision (since made — see the lean-default entry above). The card-cost
+  probe later landed as a sixth term (`cardCosts`, with `plannerNoCardCost`/`plannerOnlyCardCost`); the
+  writing-A numbers above predate it. Re-measured with the probe in play (30 seeds): all-on 33% = bare
+  33% (the probe is what closed the old −10), NoFloor jumps to **60%**, OnlyFloor stays 20% — the floor's
+  liability sharpened rather than washed out.
 
 - **Drop `tsx`'s `keepNames` from the sim run path** ✅ — the dev scripts (`sim`/`seed-save`/`economy`)
   now run as a plain esbuild bundle under bare `node` (`scripts/bundle.mjs`, rebuilt each `npm run`)

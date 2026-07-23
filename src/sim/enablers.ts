@@ -129,6 +129,15 @@ export function enablerTermsOf(enablers: boolean | EnablerTerms): EnablerTerms |
   return enablers === false ? null : enablers === true ? {} : enablers;
 }
 
+/** The **planner's shipped term set** — the two carriers (capacity, producers) plus the confined
+ *  card-cost slope; conversions/floor/handSize off. Measured against the full model over the whole
+ *  baseline set (planner @ 100 paired seeds, the tuned depth-2 config @ 10): never worse than ~1 seed
+ *  anywhere, +10..+15pp on the three hardest cells (pyramid/restless_people/writing), and the full
+ *  model's depth-1 stall-cell edge (first_temple/accounting) vanishes at depth 2 — see
+ *  docs/STRATEGIC-VALUATION.md → *The default term set*. The oracle deliberately does **not** use this:
+ *  its job is proving winnability, and the all-on model finds strictly more wins there (12×10/10). */
+export const DEFAULT_ENABLER_TERMS: EnablerTerms = { conversions: false, floor: false, handSize: false };
+
 /** A per-run enabler model, derived once from the seeded objective and reused at every leaf. */
 export interface EnablerModel {
   /** Per-unit score credit for holding an enabler resource — a consumable banked toward a conversion, or

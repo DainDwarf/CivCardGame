@@ -48,9 +48,10 @@ export interface OracleOptions {
    *  pathological branching factor can't run unbounded. */
   nodeBudget?: number;
   /** Fold the enabler potential (`sim/enablers.ts`) into the search heuristic so the beam keeps the growth
-   *  lines a bare `scoreState` prunes. On by default; off recovers the pure-`scoreState` oracle, and an
-   *  `EnablerTerms` object ablates individual mechanisms (an A/B knob isolating the shaping's effect —
-   *  mirrors the planner's same-named option). */
+   *  lines a bare `scoreState` prunes. Defaults to the **full all-on model** — deliberately *not* the
+   *  planner's `DEFAULT_ENABLER_TERMS`: the oracle's job is proving winnability, and the full model
+   *  measured strictly more wins found (the lean set drops seeds to stalls). Off recovers the
+   *  pure-`scoreState` oracle; an `EnablerTerms` object ablates individual mechanisms. */
   enablers?: boolean | EnablerTerms;
 }
 
