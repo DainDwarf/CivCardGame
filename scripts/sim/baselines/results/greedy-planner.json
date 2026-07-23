@@ -628,45 +628,46 @@
     "label": "first_temple",
     "policyName": "planner",
     "runs": 100,
-    "wins": 94,
-    "winRate": 0.94,
+    "wins": 95,
+    "winRate": 0.95,
     "turns": {
-      "min": 59,
-      "mean": 114.36,
-      "median": 111,
+      "min": 61,
+      "mean": 114.26,
+      "median": 109,
       "max": 201
     },
     "meanResources": {
-      "food": 3.83,
-      "production": 30.53,
-      "science": 4.38,
-      "military": 4.55,
-      "money": 30.41,
-      "population": 2.94,
-      "culture": 74.57,
-      "territory": 2.85
+      "food": 4.1,
+      "production": 30.51,
+      "science": 5.34,
+      "military": 4.61,
+      "money": 30.34,
+      "population": 2.95,
+      "culture": 76.88,
+      "territory": 2.88
     },
     "defeatCauses": {
-      "stall": 6
+      "stall": 5
     },
     "cardPlays": {
-      "bow": 144,
-      "cave_art": 502,
-      "foraging": 5476,
-      "toolmaking": 2956,
-      "jewelry": 2111,
-      "storytelling": 270,
-      "bartering": 1181,
+      "bow": 151,
+      "cave_art": 499,
+      "foraging": 5541,
+      "toolmaking": 2973,
+      "jewelry": 2124,
+      "storytelling": 267,
+      "bartering": 1214,
       "farm": 100,
       "dogs": 224,
-      "hut": 94,
-      "beer": 186,
-      "conquest": 85,
-      "burial": 89,
-      "calendar": 102
+      "hut": 95,
+      "beer": 180,
+      "conquest": 88,
+      "burial": 92
     },
-    "unplayedCards": [],
-    "meanActions": 253.92
+    "unplayedCards": [
+      "calendar"
+    ],
+    "meanActions": 252.94
   },
   {
     "label": "growing_numbers",
@@ -880,43 +881,44 @@
     "label": "restless_people",
     "policyName": "planner",
     "runs": 100,
-    "wins": 74,
-    "winRate": 0.74,
+    "wins": 71,
+    "winRate": 0.71,
     "turns": {
       "min": 7,
-      "mean": 37.49,
-      "median": 40.5,
-      "max": 60
+      "mean": 37.53,
+      "median": 41,
+      "max": 53
     },
     "meanResources": {
-      "food": 8.59,
-      "production": 5.7,
-      "science": 7.98,
-      "military": 9.49,
-      "money": 0.9,
-      "population": 2.82,
-      "culture": 25.7,
-      "territory": 2.17
+      "food": 8.36,
+      "production": 5.49,
+      "science": 8.52,
+      "military": 9.25,
+      "money": 0.73,
+      "population": 2.77,
+      "culture": 25.76,
+      "territory": 2.23
     },
     "defeatCauses": {
-      "bankruptcy": 26
+      "bankruptcy": 29
     },
     "cardPlays": {
-      "foraging": 1948,
-      "storytelling": 448,
-      "dogs": 322,
-      "jewelry": 1148,
-      "cave_art": 1286,
-      "toolmaking": 1110,
-      "bow": 130,
+      "foraging": 1910,
+      "storytelling": 426,
+      "dogs": 334,
+      "jewelry": 1126,
+      "cave_art": 1288,
+      "toolmaking": 1076,
+      "bow": 124,
       "bartering": 273,
-      "calendar": 98,
-      "farm": 98,
-      "hut": 82,
-      "conquest": 17
+      "conquest": 23,
+      "farm": 99,
+      "hut": 77
     },
-    "unplayedCards": [],
-    "meanActions": 108.3
+    "unplayedCards": [
+      "calendar"
+    ],
+    "meanActions": 105.25
   },
   {
     "label": "rites_rituals",

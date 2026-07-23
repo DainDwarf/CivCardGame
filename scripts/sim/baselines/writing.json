@@ -1,7 +1,7 @@
 {
   "id": "writing",
   "mission": "writing",
-  "note": "Purchased — the scripts/sim/decks/writing.json cell the strategic-valuation investigation measured ad-hoc, promoted to a fixture once the escalating clay_tablet drain settled. Forge is the deck's permanent production line for tablet costs; Storytelling banks the science the tablets drain.",
+  "note": "Purchased — a City-board deck promoted to a fixture once the escalating clay_tablet drain settled. Forge is the deck's permanent production line for tablet costs; Storytelling banks the science the tablets drain.",
   "board": "city",
   "deck": [
     { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },

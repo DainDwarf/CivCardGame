@@ -65,7 +65,7 @@ surprise, so nothing shows a locked placeholder or a total count.
   `--deck`/`--board` point at JSON files (examples under `scripts/sim/`). **`--baseline <paths|dir>`**
   loads *self-contained* fixtures that each own their own mission, deck and board — so one sweep spans
   cells sharing none of the three. `scripts/sim/baselines/` is the committed standing set (First
-  Settlement → Accounting; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
+  Settlement → Writing; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
   Influence can be ground before `ice_age` unlocks — a mission needing the shop there would be a
   softlock), with measured results under `baselines/results/`, whose commit *is* their content-SHA
   record. Both styles take `--seeds`/`--policies`/`--format` (text|json); `--seed <i>` switches to a
@@ -386,7 +386,7 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   plateau into a slope. Each mechanism is a separately-ablatable `EnablerTerms` toggle: the planner
   ships the measured lean subset (`DEFAULT_ENABLER_TERMS` — capacity/producers/cardCosts), the oracle
   the full all-on model (it proves winnability, and the full model finds strictly more wins — the
-  decision record is `docs/STRATEGIC-VALUATION.md` → *The default term set*). `turnSearch.ts` is the
+  decision is recorded on `DEFAULT_ENABLER_TERMS` in `sim/enablers.ts`). `turnSearch.ts` is the
   within-turn search skeleton (`expandTurn`) the planner
   and oracle share, parameterized by the ranking heuristic — which it hands the node's transposition key
   alongside `G`, a memo hint the planner caches its (expensive, projection-based) leaf value on.

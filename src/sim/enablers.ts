@@ -96,8 +96,7 @@ const PRODUCER_TAIL_HORIZON = 2;
  *  a **goal-valued** resource derives a credit far above this cap (a Forge on a production-threshold mission
  *  is ~60 at horizon 2, against a cap of 15), so its whole tableau saturates here and scaling the horizon
  *  changes nothing. Where the goal names no resource the credit is a fraction of the cap and the horizon
- *  alone sets the slope. Tuned to the point where a long conversion mission stops regressing — see
- *  docs/STRATEGIC-VALUATION.md for the measured frontier. */
+ *  alone sets the slope. Tuned to the point where a long conversion mission stops regressing. */
 const PRODUCER_CREDIT_CAP = 0.05 * OBJECTIVE_WEIGHT;
 
 /** Per-term ablation toggles for the enabler model. A missing key means **on** — you name what you switch
@@ -133,9 +132,9 @@ export function enablerTermsOf(enablers: boolean | EnablerTerms): EnablerTerms |
  *  card-cost slope; conversions/floor/handSize off. Measured against the full model over the whole
  *  baseline set (planner @ 100 paired seeds, the tuned depth-2 config @ 10): never worse than ~1 seed
  *  anywhere, +10..+15pp on the three hardest cells (pyramid/restless_people/writing), and the full
- *  model's depth-1 stall-cell edge (first_temple/accounting) vanishes at depth 2 — see
- *  docs/STRATEGIC-VALUATION.md → *The default term set*. The oracle deliberately does **not** use this:
- *  its job is proving winnability, and the all-on model finds strictly more wins there (12×10/10). */
+ *  model's depth-1 stall-cell edge (first_temple/accounting) vanishes at depth 2. The oracle
+ *  deliberately does **not** use this: its job is proving winnability, and the all-on model finds
+ *  strictly more wins there (12×10/10). */
 export const DEFAULT_ENABLER_TERMS: EnablerTerms = { conversions: false, floor: false, handSize: false };
 
 /** A per-run enabler model, derived once from the seeded objective and reused at every leaf. */

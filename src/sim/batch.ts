@@ -23,43 +23,11 @@ export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = 
   greedy2: createGreedy2Policy,
   heuristic: createHeuristicPolicy,
   planner: createPlannerPolicy,
-  plannerD2: (s) => createPlannerPolicy(s, { depth: 2 }),
-  bareW2: (s) => createPlannerPolicy(s, { enablers: false }),
-  bareW4: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 4 }),
-  bareW8: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8 }),
-  shapedW8: (s) => createPlannerPolicy(s, { determinizations: 8 }),
-  shapedW8D2: (s) => createPlannerPolicy(s, { determinizations: 8, depth: 2 }),
-  bareW8B8: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, beamWidth: 8 }),
-  bareW8C16: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16 }),
-  bareW8B8C16: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, beamWidth: 8, turnConfigLimit: 16 }),
-  bareBest: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16, depth: 2 }),
   // The deep-analysis tier of the planner: the shipped `planner`'s lean enabler brain run with the
   // calibrated search knobs (determinizations 8 · turnConfigLimit 16 · depth 2). Far slower per re-plan
   // (~17.8k engine steps vs the default's shallow search), so it's for a few selected seeds, not a sweep.
   deepPlanner: (s) => createPlannerPolicy(s, { determinizations: 8, turnConfigLimit: 16, depth: 2 }),
-  bareBestB2: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16, depth: 2, beamWidth: 2 }),
-  bareBestB6: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16, depth: 2, beamWidth: 6 }),
-  // Per-term ablations of the enabler shaping (`sim/enablers.ts`'s `EnablerTerms`), all **relative to
-  // the full all-on model** (`plannerFull`), not the lean default the bare `planner` now ships with:
-  // leave-one-out (attribution — which term causes a cell's collapse) and only-one (sufficiency).
-  plannerFull: (s) => createPlannerPolicy(s, { enablers: true }),
-  plannerLeanConv: (s) => createPlannerPolicy(s, { enablers: { floor: false, handSize: false } }),
-  plannerNoCardCost: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false } }),
-  plannerNoConv: (s) => createPlannerPolicy(s, { enablers: { conversions: false } }),
-  plannerNoCap: (s) => createPlannerPolicy(s, { enablers: { capacity: false } }),
-  plannerNoFloor: (s) => createPlannerPolicy(s, { enablers: { floor: false } }),
-  plannerNoHand: (s) => createPlannerPolicy(s, { enablers: { handSize: false } }),
-  plannerNoProd: (s) => createPlannerPolicy(s, { enablers: { producers: false } }),
-  plannerOnlyCardCost: (s) => createPlannerPolicy(s, { enablers: { conversions: false, capacity: false, floor: false, handSize: false, producers: false } }),
-  plannerOnlyConv: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, capacity: false, floor: false, handSize: false, producers: false } }),
-  plannerOnlyCap: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, conversions: false, floor: false, handSize: false, producers: false } }),
-  plannerOnlyFloor: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, conversions: false, capacity: false, handSize: false, producers: false } }),
-  plannerOnlyHand: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, conversions: false, capacity: false, floor: false, producers: false } }),
-  plannerOnlyProd: (s) => createPlannerPolicy(s, { enablers: { cardCosts: false, conversions: false, capacity: false, floor: false, handSize: false } }),
   oracle: createOraclePolicy,
-  bareOracle: (s) => createOraclePolicy(s, { enablers: false }),
-  leanOracle: (s) => createOraclePolicy(s, { enablers: { conversions: false, floor: false, handSize: false } }),
-  leanConvOracle: (s) => createOraclePolicy(s, { enablers: { floor: false, handSize: false } }),
 };
 
 /** The policies a bare `npm run sim` sweeps when none is named — the fast built-ins. The `planner`

@@ -53,7 +53,7 @@ npm run sim -- --scenario <ids> --deck <file> --board <id|file>
   live under `scripts/sim/boards/*.json`.
 - `--seeds` — runs per cell (default 100).
 - `--policies` — comma-separated policy names (default `random,heuristic,greedy`). Also
-  available: `greedy2`, `planner`, and `oracle` (the last two slow — see below).
+  available: `greedy2`, `planner`, `deepPlanner`, and `oracle` (the last three slow — see below).
 - `--format` — `text` (default, the human report) or `json` (the raw summaries, for diffing
   or post-processing).
 - `--max-rounds <n>` — stall cutoff (default 200). A policy that idles past round `n` without
@@ -105,7 +105,7 @@ Baseline — a whole cell in one file:
 ## The standing set — `scripts/sim/baselines/`
 
 The committed baselines are the standing regression references (the equivalent of the old
-`SCENARIOS` rows). One per mission, First Settlement → Accounting, each pinning the deck and
+`SCENARIOS` rows). One per mission, First Settlement → Writing, each pinning the deck and
 board a player actually has **arriving** at it:
 
 - **Stone Age baselines are deliberately minimal** — the starting collection plus one copy of
@@ -154,6 +154,10 @@ re-run verbatim to see *what happened*.
   upward and are cut off at `--max-rounds`, recorded as a `stall` defeat — see below). Opt-in and slower
   than the greedies but far faster than the oracle; tuned for *good, not perfect* play, so it can drop an
   occasional winnable seed (raise its determinization count to recover one — a runtime tradeoff).
+- `deepPlanner` = the **deep-analysis tier** of `planner` — the same fair search run with the calibrated
+  deep knobs (more sampled worlds, a wider within-turn search, a 2-turn lookahead). It recovers seeds the
+  default `planner` drops, but each re-plan is far heavier: budget **~30–60s per run**, so it's for a
+  handful of selected seeds (or a `--seed` replay), never a full sweep.
 - `oracle` = a bounded perfect-information search for a *winning* line — the true ceiling /
   winnability prover. Unlike `planner` it reads the real shuffle, so it *proves* winnability rather
   than playing fairly. It runs a whole search per seed, so keep the seed count small.

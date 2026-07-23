@@ -523,7 +523,7 @@ describe('culture enabler', () => {
 describe('enabler term toggles', () => {
   it('the shipped default is the measured lean set: capacity + producers + cardCosts', () => {
     // Pins the planner's default terms against silent drift — changing this is a re-measured decision
-    // (docs/STRATEGIC-VALUATION.md → *The default term set*), not a refactor.
+    // (see `DEFAULT_ENABLER_TERMS`), not a refactor.
     expect(DEFAULT_ENABLER_TERMS).toEqual({ conversions: false, floor: false, handSize: false });
   });
 

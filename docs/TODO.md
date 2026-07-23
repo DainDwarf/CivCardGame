@@ -18,49 +18,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > Tags (optional): `[size: S/M/L]` rough effort · `[?]` needs design discussion ·
 > `[blocked]` waiting on something else · `[phase: N]` roadmap phase (1 = run loop · 2 = contract + meta shell · 3 = economy & progression · 4 = content & balance).
 
-## Next session — planner calibration follow-ups
-
-> Context (2026-07-20, uncommitted — the sweep outputs live only in a scratchpad): the planner's
-> search knobs had **never been measured**. Calibrating three of them (`determinizations` 2 → 8,
-> `turnConfigLimit` 8 → 16, `depth` 1 → 2) beats the shipped planner on every cell tested —
-> pyramid 0.23 → 0.82, accounting 0.54 → 0.88, writing-A 0.20 → 0.73, masonry 0.92 → 0.96,
-> restless_people 0.59 → 0.96 — against an oracle ceiling of 0.90 / 1.00 / 0.93 / 1.00 / 1.00.
-> `nodeBudget` never binds (0% aborts against a 100k cap); `beamWidth` is inert at
-> `depth: 1` by construction. The step counts recorded during that sweep (peak ~2.9k) do **not** hold
-> for the calibrated config — `bareBest` on pyramid measures mean 17.8k / max 31.7k steps per re-plan
-> (see *Done / shipped*). Treat the ~2.9k figure as superseded, whatever its origin.
-
-- **The reveal-boundary design** (decided; dormant until a card that draws/reads the deck *mid-turn*
-  first ships, e.g. the idea pool's draw-on-expand / on-draw combo cards — such a card breaks the
-  within-turn-play-never-touches-the-deck invariant the planner's shared line enumeration *and* the
-  shipped world-graft both rest on): don't detect deck-touching lines and fall back to full replay —
-  instead make any deck-touching action **terminate the candidate line**, the same rule `commitPrefix`
-  already applies to a parked peek. The line becomes a chance node valued per-world (resolve the draw
-  with that world's deck, continue the turn in-world, look ahead, average) — so every candidate line is
-  deck-independent *by construction* and the graft stays valid forever. Costs are per-world post-draw
-  continuation search + shorter commit horizons (more re-plans), not correctness. (The parked-line half
-  of this — valuing a line that ends at a reveal through its answers instead of its bare leaf — shipped
-  ahead of the rest; see *Done / shipped*. What stays blocked on content is the draw-as-chance-node
-  machinery itself.) One gap the line-termination rule does *not* cover: an effect that **reads** deck
-  contents without touching them (e.g. a "deck holds N of X" goal) — a deck-dependent state with no
-  deck-touching action to terminate on. No current content does this; it would need its own treatment.
-  And a ceiling to keep expectations honest: **PIMC cannot value information prospectively** — inside a
-  sampled world the lookahead already knows that world's deck, so an information-only action (a peek)
-  has no modeled upside in any world and its play cost is pure downside (strategy fusion). No leaf-
-  valuation surgery changes that; making the planner *seek* reveals would need an explicit information
-  bonus, a separate (hackier) design. `[size: M]` `[blocked]` `[phase: 4]`
-  **Behavioral baseline** (re-pinned 2026-07-23 after the parked-line valuation shipped): on the
-  committed `restless_people` fixture × 10 sweep seeds, Calendar is played only by **seed 9 under both
-  deepPlanner and bareBest** (turn 8, mid-line, healthy run — incidental near-tie), winRate 0.8 / 0.9
-  (replay via `--baseline scripts/sim/baselines/restless_people.json --policies <p> --seed <i>`). The
-  pre-valuation baseline (deepPlanner 6/7/8, bareBest 1/7 — late desperation plays in dying runs) is
-  superseded; this is the reference point for the draw-era chance-node work. Bonus fix folded in: today a line parked at a peek is valued as its **bare leaf**
-  (`evalLine`'s no-op-`endTurn` path) with no in-world continuation, undervaluing information moves — the
-  chance-node valuation is the refinement that fixes that too.
-
-- `beamWidth` 2/6 at `depth: 2` — measured since: no significant change either way, so the default
-  (4) stands.
-
 ## Phase 4 — planned steps (content & balance)
 
 > Phase 4 is content expansion + balance tuning with the headless simulator (see
@@ -281,6 +238,49 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > silently vanishes. Everything through **v0.0.4 (Stone Age arc)** has been moved to
 > [`CHANGELOG.md`](../CHANGELOG.md); this section restarts empty for the rest of Phase 4.
 
+- **Calibrate the planner's search knobs** ✅ — the planner's search knobs had **never been measured**.
+  Calibrating three of them (`determinizations` 2 → 8, `turnConfigLimit` 8 → 16, `depth` 1 → 2) beats the
+  shipped planner on every cell tested — pyramid 0.23 → 0.82, accounting 0.54 → 0.88, writing-A 0.20 → 0.73,
+  masonry 0.92 → 0.96, restless_people 0.59 → 0.96 — against an oracle ceiling of 0.90 / 1.00 / 0.93 /
+  1.00 / 1.00, and shipped as the `deepPlanner` tier. `nodeBudget` never binds (0% aborts against a 100k
+  cap); `beamWidth` is inert at `depth: 1` by construction. The step counts recorded during that sweep
+  (peak ~2.9k) do **not** hold for the calibrated config — `bareBest` on pyramid measures mean 17.8k /
+  max 31.7k steps per re-plan (see the profile entry below). Treat the ~2.9k figure as superseded,
+  whatever its origin.
+
+  - `beamWidth` 2/6 at `depth: 2` — measured since: no significant change either way, so the default
+    (4) stands.
+
+  - **The reveal-boundary design** (decided; dormant until a card that draws/reads the deck *mid-turn*
+    first ships, e.g. the idea pool's draw-on-expand / on-draw combo cards — such a card breaks the
+    within-turn-play-never-touches-the-deck invariant the planner's shared line enumeration *and* the
+    shipped world-graft both rest on): don't detect deck-touching lines and fall back to full replay —
+    instead make any deck-touching action **terminate the candidate line**, the same rule `commitPrefix`
+    already applies to a parked peek. The line becomes a chance node valued per-world (resolve the draw
+    with that world's deck, continue the turn in-world, look ahead, average) — so every candidate line is
+    deck-independent *by construction* and the graft stays valid forever. Costs are per-world post-draw
+    continuation search + shorter commit horizons (more re-plans), not correctness. (The parked-line half
+    of this — valuing a line that ends at a reveal through its answers instead of its bare leaf — shipped
+    ahead of the rest; see the *Value parked planner lines through their answers* entry below. What stays
+    blocked on content is the draw-as-chance-node machinery itself.) One gap the line-termination rule
+    does *not* cover: an effect that **reads** deck contents without touching them (e.g. a "deck holds N
+    of X" goal) — a deck-dependent state with no deck-touching action to terminate on. No current content
+    does this; it would need its own treatment. And a ceiling to keep expectations honest: **PIMC cannot
+    value information prospectively** — inside a sampled world the lookahead already knows that world's
+    deck, so an information-only action (a peek) has no modeled upside in any world and its play cost is
+    pure downside (strategy fusion). No leaf-valuation surgery changes that; making the planner *seek*
+    reveals would need an explicit information bonus, a separate (hackier) design. `[size: M]` `[blocked]`
+    `[phase: 4]`
+    **Behavioral baseline** (re-pinned 2026-07-23 after the parked-line valuation shipped): on the
+    committed `restless_people` fixture × 10 sweep seeds, Calendar is played only by **seed 9 under both
+    deepPlanner and bareBest** (turn 8, mid-line, healthy run — incidental near-tie), winRate 0.8 / 0.9
+    (replay via `--baseline scripts/sim/baselines/restless_people.json --policies <p> --seed <i>`). The
+    pre-valuation baseline (deepPlanner 6/7/8, bareBest 1/7 — late desperation plays in dying runs) is
+    superseded; this is the reference point for the draw-era chance-node work. Bonus fix folded in: today a
+    line parked at a peek is valued as its **bare leaf** (`evalLine`'s no-op-`endTurn` path) with no
+    in-world continuation, undervaluing information moves — the chance-node valuation is the refinement
+    that fixes that too.
+
 - **Per-cell progress line on stderr** ✅ — a multi-hour sweep no longer prints nothing until it
   finishes: `runBatch` fires an optional `onProgress` after every run (the sim library writes no I/O
   itself — tests stay quiet), and `scripts/sim.ts` renders a `\r`-updated stderr line tracking the whole
@@ -333,8 +333,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     across depths.
   - **Oracle @ 10 seeds**: full 12×10/10 · lean drops accounting to 8/10 · lean+conv drops accounting
     and pyramid to 9/10 — hence the oracle's full-model default.
-  Decision + tables in [`STRATEGIC-VALUATION.md`](STRATEGIC-VALUATION.md) → *The default term set*;
-  the shipped set is test-pinned in `enablers.test.ts`.
+  The shipped set is recorded on `DEFAULT_ENABLER_TERMS` in `sim/enablers.ts` and test-pinned in
+  `enablers.test.ts`.
 
 - **Split the enabler shaping into separately-togglable terms** ✅ — `EnablerTerms` on both
   `PlannerOptions`/`OracleOptions` (`enablers: boolean | EnablerTerms`; a missing key = on): `conversions` ·
