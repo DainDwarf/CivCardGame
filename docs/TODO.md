@@ -37,10 +37,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   count itself rather than per-step cost. Verify the deck-independence assumption against within-turn deck
   readers (Calendar/peek) before relying on it. Sim-local. `[size: M]` `[phase: 4]`
 
-- Also outstanding: `beamWidth` 2/6 at `depth: 2` (sweep was still running), and re-capturing
-  `baselines/results/greedy-planner.json` under the shipped lean default (the committed planner
-  numbers were taken at the old full model; greedy is enabler-blind and stays valid). Consider a
-  per-cell progress line on stderr — a multi-hour sweep currently prints nothing until it finishes.
+- Also outstanding: `beamWidth` 2/6 at `depth: 2` (sweep was still running). Consider a per-cell
+  progress line on stderr — a multi-hour sweep currently prints nothing until it finishes.
 
 ## Phase 4 — planned steps (content & balance)
 
