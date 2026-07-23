@@ -161,21 +161,8 @@ function commitPrefix(cfg: SearchNode): SimAction[] {
   return out;
 }
 
-// TEMP budget instrumentation — remove after the calibration measurement.
-const BUDGET_STATS = new Map<string, { replans: number; aborts: number; sumSteps: number; maxSteps: number }>();
-process.on('exit', () => {
-  for (const [label, s] of [...BUDGET_STATS].sort((a, b) => a[0].localeCompare(b[0]))) {
-    process.stderr.write(
-      `[budget] ${label.padEnd(18)} replans=${String(s.replans).padStart(6)} aborts=${String(s.aborts).padStart(6)}` +
-      ` (${((100 * s.aborts) / s.replans).toFixed(1)}%) meanSteps=${(s.sumSteps / s.replans).toFixed(0)} maxSteps=${s.maxSteps}\n`,
-    );
-  }
-});
-
 export function createPlannerPolicy(policySeed: string, options: PlannerOptions = {}): Policy {
   const opts = { ...DEFAULTS, ...options };
-  const statKey = policySeed.replace(/-pol-\d+$/, '');
-  let lastBudget: Budget | null = null;
   let model: EnablerModel | null = null;
   let rngState = seededRng(policySeed).getState();
   const buffer: SimAction[] = [];
@@ -204,7 +191,6 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
       return value;
     };
     const budget: Budget = { steps: 0, cap: opts.nodeBudget };
-    lastBudget = budget;
 
     // This turn's candidate lines, on the real state (world-independent for the current card set).
     const root = makeNode(state, h);
@@ -253,18 +239,7 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
   };
 
   const policy: Policy = (state: RunState): SimAction => {
-    if (buffer.length === 0) {
-      replan(state);
-      if (lastBudget) {
-        let s = BUDGET_STATS.get(statKey);
-        if (!s) BUDGET_STATS.set(statKey, (s = { replans: 0, aborts: 0, sumSteps: 0, maxSteps: 0 }));
-        s.replans += 1;
-        s.sumSteps += lastBudget.steps;
-        if (lastBudget.steps >= lastBudget.cap) s.aborts += 1;
-        if (lastBudget.steps > s.maxSteps) s.maxSteps = lastBudget.steps;
-        lastBudget = null;
-      }
-    }
+    if (buffer.length === 0) replan(state);
     return buffer.shift() ?? { kind: 'endTurn' };
   };
   policy.seed = policySeed;
