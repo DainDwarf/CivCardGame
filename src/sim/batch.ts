@@ -33,7 +33,10 @@ export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = 
   bareW8C16: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16 }),
   bareW8B8C16: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, beamWidth: 8, turnConfigLimit: 16 }),
   bareBest: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16, depth: 2 }),
-  shapedBest: (s) => createPlannerPolicy(s, { determinizations: 8, turnConfigLimit: 16, depth: 2 }),
+  // The deep-analysis tier of the planner: the shipped `planner`'s lean enabler brain run with the
+  // calibrated search knobs (determinizations 8 · turnConfigLimit 16 · depth 2). Far slower per re-plan
+  // (~17.8k engine steps vs the default's shallow search), so it's for a few selected seeds, not a sweep.
+  deepPlanner: (s) => createPlannerPolicy(s, { determinizations: 8, turnConfigLimit: 16, depth: 2 }),
   bareBestB2: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16, depth: 2, beamWidth: 2 }),
   bareBestB6: (s) => createPlannerPolicy(s, { enablers: false, determinizations: 8, turnConfigLimit: 16, depth: 2, beamWidth: 6 }),
   // Per-term ablations of the enabler shaping (`sim/enablers.ts`'s `EnablerTerms`), all **relative to

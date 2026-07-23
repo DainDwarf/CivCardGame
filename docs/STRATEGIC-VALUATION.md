@@ -465,7 +465,7 @@ The residual planner-to-oracle gap on `writing` (0.61 vs 1.00) is now mostly the
 management the oracle's worker choreography handles — `dark_age` still causes 35 of the 39 losses — not
 goal blindness.
 
-The slope also **composes with search depth** rather than substituting for it: `shapedBest`
+The slope also **composes with search depth** rather than substituting for it: `deepPlanner`
 (determinizations 8 · turnConfigLimit 16 · depth 2) on the writing fixture @ 20 paired seeds went
 0.65 → **0.95** (one `dark_age` loss left, tablets ~5/run, Forge 1/run, zero budget aborts in either
 arm). Depth 2 alone was worth +29pp over the default planner and the slope stacks another +30pp on top,
@@ -503,7 +503,7 @@ baseline set:
 
 Aggregate: lean **+23pp**, lean+conversions +15pp. Adding conversions back repairs the two grind cells
 but returns most of pyramid's and half of restless's gain — no arm dominates at depth 1. The tiebreaker
-is the tuned depth-2 config (`shapedBest` settings, 10 paired seeds; bare / full / lean): masonry
+is the tuned depth-2 config (`deepPlanner` settings, 10 paired seeds; bare / full / lean): masonry
 9/10/**10** · writing 7/10/**10** · pyramid 6/**10**/9 · restless 9/6/**8** · first_temple 10/10/10 ·
 accounting 8/9/**9** — totals 49 / 55 / **56** of 60. The lean set's depth-1 losses on the grind cells
 are **shallow-search artifacts** (gone at depth 2) while its hard-cell gains persist; the one term

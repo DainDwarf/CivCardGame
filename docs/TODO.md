@@ -51,9 +51,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   bonus, a separate (hackier) design. `[size: M]` `[blocked]` `[phase: 4]`
   **Behavioral baseline** (re-pinned 2026-07-23 after the parked-line valuation shipped): on the
   committed `restless_people` fixture × 10 sweep seeds, Calendar is played only by **seed 9 under both
-  shapedBest and bareBest** (turn 8, mid-line, healthy run — incidental near-tie), winRate 0.8 / 0.9
+  deepPlanner and bareBest** (turn 8, mid-line, healthy run — incidental near-tie), winRate 0.8 / 0.9
   (replay via `--baseline scripts/sim/baselines/restless_people.json --policies <p> --seed <i>`). The
-  pre-valuation baseline (shapedBest 6/7/8, bareBest 1/7 — late desperation plays in dying runs) is
+  pre-valuation baseline (deepPlanner 6/7/8, bareBest 1/7 — late desperation plays in dying runs) is
   superseded; this is the reference point for the draw-era chance-node work. Bonus fix folded in: today a line parked at a peek is valued as its **bare leaf**
   (`evalLine`'s no-op-`endTurn` path) with no in-world continuation, undervaluing information moves — the
   chance-node valuation is the refinement that fixes that too.
