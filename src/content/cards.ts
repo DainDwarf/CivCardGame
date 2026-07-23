@@ -161,6 +161,10 @@ export const COPPER_VEINS = 3;
  *  (`content/missions.ts`), the `writing_goal` win threshold, and its progress readout. */
 export const CLAY_TABLETS = 5;
 
+/** How many road segments "Roads" seeds — shared by the mission's injected event list
+ *  (`content/missions.ts`), the `roads_goal` win threshold, and its progress readout. */
+export const ROADWORKS = 4;
+
 /** The round by which the Pyramid tomb must be finished — shared by the `pharaohs_reign` threat's
  *  `defeat` deadline, its countdown readout, and the Pyramid mission's `failureHint`
  *  (`content/missions.ts`), so the shown deadline can't drift from the enforced one. Generous by
@@ -265,6 +269,21 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // Road: Conquest's economic twin — the same one-shot +1 territory and self-removal, paid in 🪙+🔨
+  //   instead of ⚔️, so expansion has a trade route as well as a war party. Structure mirrors Conquest
+  //   exactly (see its note above for the self-removal contract).
+  road: {
+    id: 'road', name: 'Road', kind: 'work', cost: { money: 3, production: 3 }, workers: 1,
+    display: { art: '🛣️', note: 'single use' },
+    produces: {
+      resources: { territory: 1 },
+      resolve: (ctx) => {
+        ctx.G.workZone = ctx.G.workZone.filter((w) => w.id !== ctx.self.id);
+        ctx.G.removed.push({ id: ctx.self.id, cardId: ctx.self.cardId });
+      },
+    },
+  },
+
   // Calendar keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer). The
   // reveal is look-only: peeking keeps nothing, so the resume pass just clears the interaction. Its
   // `effect` is resolve-only (no declarative `resources`) — `resolveInteraction` re-runs the whole
@@ -349,6 +368,15 @@ export const CARDS: Record<string, CardDef> = {
   // an unmined vein is not a disaster, it just waits (filing to discard and recurring). The mission's
   // pressure lives on its threat instead.
   copper_vein: { id: 'copper_vein', name: 'Copper Vein', kind: 'event', cost: { production: 2, science: 5 }, display: { art: '⛏️' } },
+  // Roadwork: paving a segment (paying its 🔨) exiles the played event to `removed`, which `roads_goal`
+  //   counts. Unlike the copper vein, a segment left in hand *is* a disaster — an unfinished road cuts a
+  //   settlement off, bleeding a flat 🌾 each round it goes unpaved (no per-instance escalation, unlike
+  //   the clay tablet). The events are the whole pressure, so the mission seeds no threat.
+  roadwork: {
+    id: 'roadwork', name: 'Roadwork', kind: 'event', cost: { production: 4 },
+    display: { art: '🚧', description: '−2 🌾 at end of round while unpaved' },
+    upkeep: { resources: { food: -2 } },
+  },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
   //   discard); paid off with ⚔️ (catching it) the play choke exiles it to `removed` for good. Costs and
@@ -527,6 +555,23 @@ export const CARDS: Record<string, CardDef> = {
       description: `Record all ${CLAY_TABLETS} clay tablets`,
       dynamicText: (G) =>
         `📜 ${Math.min(G.removed.filter((c) => c.cardId === 'clay_tablet').length, CLAY_TABLETS)}/${CLAY_TABLETS} recorded`,
+    },
+  },
+
+  // A segment reaches `removed` only by being played, so counting them there counts paved segments.
+  roads_goal: {
+    id: 'roads_goal', name: 'Roads', kind: 'objective', cost: {},
+    goals: [
+      {
+        icon: '🚧',
+        measure: (G) => G.removed.filter((c) => c.cardId === 'roadwork').length,
+        target: ROADWORKS,
+      },
+    ],
+    display: {
+      description: `Pave all ${ROADWORKS} road segments`,
+      dynamicText: (G) =>
+        `🚧 ${Math.min(G.removed.filter((c) => c.cardId === 'roadwork').length, ROADWORKS)}/${ROADWORKS} paved`,
     },
   },
 

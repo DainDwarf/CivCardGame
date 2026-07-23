@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, THIEVES_PER_GOLD } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -341,6 +341,29 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Writing action. Influence amount provisional (balance pending a sim sweep).
     reward: { influence: 12, unlockCardIds: ['archives', 'writing'] },
     map: { col: 7, row: 0 },
+    age: 'bronze',
+  },
+  roads: {
+    id: 'roads',
+    name: 'Roads',
+    lore:
+      'Your settlements sit scattered across the valley, each an island reached only by the tracks your ' +
+      'feet have worn — impassable in the rains, and every haul of grain a day lost to the mud. Cut the ' +
+      'roadbed, lay the stone, and bind your holdings into one. What the road reaches, your people can ' +
+      'feed and defend; what it cannot, the wilderness keeps.',
+    prereqs: ['writing'],
+    // One `roadwork` per segment, tied to the objective's threshold by the shared ROADWORKS const so the
+    // mission can't seed a different count than the win asks for. No threat: the segments are the pressure.
+    events: Array.from({ length: ROADWORKS }, () => 'roadwork'),
+    objectiveCardId: 'roads_goal',
+    victoryHint: `Pave all ${ROADWORKS} road segments — pay 4 🔨 for each.`,
+    failureHint:
+      'Each unpaved segment you hold drains 2 🌾 at end of round — let your settlements starve and the run ends.',
+    kind: 'standard',
+    // Opens the expansion branch: unlocks the Road, Conquest's economic twin (🪙+🔨 → +1 territory), the
+    // tool the Wheel mission's territory goal is built around. Influence amount provisional.
+    reward: { influence: 12, unlockCardIds: ['road'] },
+    map: { col: 8, row: -1 },
     age: 'bronze',
   },
   ice_age: {

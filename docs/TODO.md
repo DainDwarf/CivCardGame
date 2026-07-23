@@ -72,7 +72,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   3. **Accounting** — mechanics DONE (balance pending; see *Done / shipped*). **Writing** — mechanics
      DONE (balance pending; see *Done / shipped*). The optional **Hammurabi's Code** leaf off Writing
      remains — the last piece of the literacy half.
-  4. **Wheel+roads (×2)** first (it carries the money identity).
+  4. **Wheel+roads (×2)** first (now the **expansion/territory** branch — repositioned from the money
+     identity; see the reward proposal below). **Roads** — mechanics DONE (balance pending; see *Done /
+     shipped*). **Wheel** remains.
   5. **Horse (×2)**, **Naval (×2)**.
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
   7. **Golden scenarios — simulator trust harness** (end-of-arc, once Bronze content is stable) — author a
@@ -85,7 +87,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
   **Mechanical identity `[?]`:** IDEAS frames the age as "trade-dependent palace civilizations" → the
   throughline is the **money economy** (underused in the Stone Age). Trade branches produce 🪙; Bronze
-  consumes 🪙 (tin trade) for superior 🔨/⚔️.
+  consumes 🪙 (tin trade) for superior 🔨/⚔️. (Update: **Wheel+roads** has since been repositioned to
+  *expansion/territory* rather than a 🪙 faucet — Naval + Trader carry the trade-money supply; see its
+  reward proposal below.)
 
   **Per-node reward proposals** (all `[?]` candidates unless marked decided):
 
@@ -100,8 +104,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     the **Archives** building + the **Writing** action (superseding the old "Library/scribe hand-size
     building" note). Optional leaf **Hammurabi's Code** off here (law/culture — a sticker or stability
     card, not a wonder) still to author.
-  - **Wheel+roads (×2)** → **Wheel** −1🔨 cost sticker for buildings/works (relocated from old 7.2), then
-    a land-trade money work (caravan/roads).
+  - **Wheel+roads (×2)** — authored **Roads → Wheel** (engine-then-modifier order; the historical
+    chronology is genuinely ambiguous, so gameplay decides). This branch has been **repositioned from
+    money to expansion/territory** — territory is a mechanic *no* shipped mission uses as a goal, and
+    the only way to gain it today is the military **Conquest** (5⚔️ → +1 territory, single-use). Naval +
+    Trader carry the age's trade-money supply instead.
+    - **Roads — mechanics DONE** 🟡 (balance pending; see *Done / shipped*) → **goal:** pave all 4
+      **Roadwork** segments (seeded events, played → `removed`, like Copper/Writing). **Pressure:** each
+      unpaved segment held in hand bleeds a flat −2🌾/round (an unfinished road starves a cut-off
+      settlement) — no threat, the segments *are* the pressure. **Reward:** the single-use **Road** card —
+      3🪙+3🔨 → +1 territory (Conquest's *economic* twin, military vs. economic expansion).
+    - **Wheel** (second) → **goal:** reach N territory (a resource-threshold objective, reachable through
+      the player's own deck — **Conquest *and* the road card**, both unlocked upstream by the time they
+      get here). **Pressure:** an **overextension** threat draining **🔨
+      scaled by territory** (road upkeep — the wider the realm, the costlier to hold; the final push to N
+      happens under the heaviest drain, so you can't out-expand your economy). **Reward:** the **−1🔨**
+      cost sticker for buildings/works (relocated from old 7.2). Reads as the *resolution* of the sprawl
+      roads bring — push through the 🔨 crisis, earn the 🔨 relief.
   - **Horse (×2)** → draft/traction (cost/production) then a military-feeder war-horse. Keep mounted
     cavalry *out* — that's Iron Age.
   - **Naval (×2)** → a sea-trade money work (sailing ship), then the **tin route** (long-distance trade
@@ -424,6 +443,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   zoom overlay puffs floating *pet* *pet* text + a woof! bubble instead of closing. Lives in
   `CardZoomOverlay` (gated on `cardId === 'dogs'`) via a new `CardFace` `onArtClick` prop, so it works
   on every zoom surface.
+- **Step 7 — Roads** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the first
+  node of the expansion/territory branch (`prereqs: ['writing']`, bronze col 8 row -1). Four **Roadwork**
+  events (4🔨 each) seeded into the deck; paving one exiles it to `removed`, which the goal counts (the
+  Copper/Writing seeded-completion pattern). No threat card — the segments *are* the pressure: each
+  unpaved copy held in hand bleeds a **flat −2🌾** at end of round (an unfinished road starves a cut-off
+  settlement), then files to discard and recurs. The drain is a *different* currency than the build cost
+  (🔨) on purpose — otherwise "pave now or pay 🔨 later" is a weak decision; the food bleed makes it a real
+  🔨-to-pave vs. 🌾-to-survive squeeze. Signatures across the three siblings: Copper drains 🔨 (threat),
+  Writing 🔬 (escalating), Roads 🌾 (flat). Unlocks the **Road** (work card, 3🪙+3🔨 → +1 territory,
+  single-use — Conquest's economic twin, structurally identical self-removal), the tool the Wheel
+  mission's territory goal is built around. Reward influence 12 (matches the standard Bronze nodes).
+  - **Balance watch (open):** the −2🌾 drain is the mission's *only* pressure and its load-bearing number.
+    An unpaved segment fires upkeep only while in hand, so with a small deck the typical bleed is −2 to
+    −4🌾/round — and Roads runs on the City board (12🌾 start + a food economy), so it may still be too
+    soft (the *Writing was too soft at −1* lesson, one board richer). First lever if so: hold −2 and raise
+    the count to 5; if too brutal (an opening hand full of segments dark-ages before you can pave), drop to
+    −1. Also unpinned until Wheel exists: the Road's 3🪙+3🔨 cost (parity with Conquest's 5⚔️ is the intent).
 - **Step 7 — Writing** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the Bronze
   Age's literacy node (`prereqs: ['accounting']`, bronze col 7 row 0, staying on the centre axis). Five
   **Clay Tablet** events (6🔨+2🌾 each) seeded into the deck; recording one exiles it to `removed`, which
