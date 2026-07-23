@@ -42,9 +42,11 @@ import { seededRng, type GameState } from '../rules';
  * the current card set, so both the set of lines *and* each line's end state are world-independent) and
  * evaluated in each sampled world by **grafting** the world onto its already-computed end state — splicing
  * in that world's deck + rngState instead of replaying the line — then looking ahead. Common random
- * numbers across lines, so the argmax is low-variance. If a card that draws or reads the deck mid-turn
- * ever ships, the graft's premise breaks with the enumeration's — the reveal-boundary design (TODO.md)
- * is the plan for that day.
+ * numbers across lines, so the argmax is low-variance. A mid-turn *peek* (Calendar) is compatible — it's
+ * look-only, so the deck the graft splices in stays the sole difference. A card that *drew* mid-turn would
+ * break the premise (the line pulled real cards off the real deck, so a full sampled deck double-counts),
+ * as would a peek whose resolution consumes what it saw — the reveal-boundary design (TODO.md) is the plan
+ * for that day.
  */
 
 export interface PlannerOptions {
@@ -138,6 +140,7 @@ function evalLine(cfg: RunState, opts: Required<PlannerOptions>, budget: Budget,
       }
       const value = evalLine(resolved, opts, budget, h);
       if (value > best) best = value;
+      if (budget.steps >= budget.cap) break; // same node-budget backstop as beamValue/expandTurn
     }
     return best === -Infinity ? h(cfg.G) : best;
   }
@@ -220,9 +223,11 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
     for (const cfg of configs) {
       let sum = 0;
       for (const world of worlds) {
-        // Graft the world onto the line's already-computed end state: the line never touched the deck,
-        // so its state in this world differs from `cfg.state` only in deck + rngState. Shallow copy is
-        // enough — `endTurn` clones `G` before mutating, so the shared arrays stay pristine.
+        // Graft the world onto the line's already-computed end state: the line only ever *peeked* the deck
+        // (look-only), so its state in this world differs from `cfg.state` only in deck + rngState. Shallow
+        // copy is enough — `endTurn` clones `G` before mutating, so the shared arrays stay pristine. A
+        // parked interaction keeps its `options` snapshot from the pre-graft deck; harmless because a peek's
+        // resolution ignores them and `commitPrefix` stops to re-plan at the real reveal.
         const line: RunState = {
           G: { ...cfg.state.G, deck: world.G.deck, rngState: world.G.rngState },
           gameover: undefined,

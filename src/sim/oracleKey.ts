@@ -98,8 +98,13 @@ function pendingToken(p: PendingInteraction | null): string {
  * deliberate trade, and it is affordable only because of where the risk lands:
  * - It costs **completeness, never soundness**. A merge can only make a search *miss* a line; the oracle's
  *   returned lines are still replayed through the real engine (see `keyOf` above for the full argument).
- * - The population at risk is **one structure, not one sweep**: a `localSeen` lives for a single
- *   `expandTurn` and a `leafCache` for a single re-plan — ~10⁴ states against 2⁵³, so ~10⁻⁸ each.
+ * - Population at risk, by structure. The planner's `localSeen` lives for one `expandTurn`; its `leafCache`
+ *   for a whole run of re-plans. The oracle's `seen` is the outlier — one set deduping turn-starts across
+ *   the *entire* search, so it grows largest (~10⁵: `beamWidth`×`turnConfigLimit`×`maxRounds`, ultimately
+ *   capped by `nodeBudget`) for a ~10⁻⁶ birthday-bound chance of *any* collision against 2⁵³; the
+ *   smaller/shorter-lived caches sit nearer ~10⁻⁸. A `seen`/`localSeen` collision only prunes a
+ *   genuinely-new turn-start (a completeness cost, per the bullet above); a `leafCache` collision merely
+ *   mis-values one (a ranking wobble) — either way, never soundness.
  * - Determinism is untouched: the same seed hashes the same way, so a run stays exactly reproducible.
  *
  * Verifying collisions instead was measured and is *slower than not hashing at all* — the check fires on
