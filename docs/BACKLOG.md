@@ -60,7 +60,8 @@
   | Hammurabi's Code *(leaf)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Roads | ✅ | ✅ | ✅ | ⬜ | [roads](missions/roads.md) |
   | Wheel | ✅ | ✅ | 🟡 | ⬜ | [wheel](missions/wheel.md) |
-  | Horse (×2) | 🟡 | ⬜ | ⬜ | ⬜ | — |
+  | Horse taming | ✅ | ⬜ | ⬜ | ⬜ | [horse-taming](missions/horse-taming.md) |
+  | Raiding | ✅ | ⬜ | ⬜ | ⬜ | [raiding](missions/raiding.md) |
   | Naval (×2) | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Bronze *(convergence)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Sword & chariot | 🟡 | ⬜ | ⬜ | ⬜ | — |
@@ -100,8 +101,13 @@
 
   - **Hammurabi's Code** (optional leaf off Writing) → law/culture: a sticker or stability card, not a
     wonder. Still to author.
-  - **Horse (×2)** → draft/traction (cost/production) then a military-feeder war-horse. Keep mounted
-    cavalry *out* — that's Iron Age.
+  - **Horse taming → Raiding (×2, military branch)** — the **predatory money faucet** (military→money via
+    raiding; Naval's aggressive twin). M1 rewards the **War Horse** (work, staffed → +⚔️/round) + the
+    **Raiding** action (⚔️→🪙); M2 rewards the **Chiefdom → Warband** board upgrade (military+money,
+    Chiefdom's low-territory/high-pop shape; needs a Chiefdom rebalance first). Draft/traction horse
+    dropped; mounted cavalry stays *out* (Iron Age). Both missions' goal + pressure are now converged
+    (design-complete). See [`missions/horse-taming.md`](missions/horse-taming.md) +
+    [`missions/raiding.md`](missions/raiding.md).
   - **Naval (×2)** → a sea-trade money work (sailing ship), then the **tin route** (long-distance trade
     that enables Bronze). IDEAS' "defend your trade routes" money-drain event/threat fits here.
   - **Bronze** (convergence) → **Bronzeworking** building (consumes 🪙 → 🔨) + **Bronze tools** sticker
