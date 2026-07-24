@@ -480,6 +480,45 @@
     "meanActions": 60.1
   },
   {
+    "label": "wheel",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 9,
+    "winRate": 0.9,
+    "turns": {
+      "min": 8,
+      "mean": 21.1,
+      "median": 20.5,
+      "max": 29
+    },
+    "meanResources": {
+      "food": 7.1,
+      "production": 0.9,
+      "science": 0,
+      "military": 4,
+      "money": 11.3,
+      "population": 4.2,
+      "culture": 0,
+      "territory": 7.5
+    },
+    "defeatCauses": {
+      "ruin": 1
+    },
+    "cardPlays": {
+      "dogs": 90,
+      "foraging": 79,
+      "toolmaking": 79,
+      "farm": 12,
+      "house": 11,
+      "trader": 60,
+      "conquest": 28,
+      "forge": 18,
+      "road": 27
+    },
+    "unplayedCards": [],
+    "meanActions": 64.1
+  },
+  {
     "label": "writing",
     "policyName": "oracle",
     "runs": 10,

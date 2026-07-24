@@ -1,17 +1,17 @@
 {
   "id": "wheel",
   "mission": "wheel",
-  "note": "Hand-made City-board deck (Wheel follows Roads), the mission's balance reference: reach 6 territory under the Overextension threat (-1 production per territory each round). Road (money+production) and Conquest (military) are the territory faucets; Forge fights the production drain, Trader funds Road's money, City Walls feeds Conquest's military. Target and drain provisional pending the sweep.",
+  "note": "City-board deck (Wheel follows Roads), the mission's balance reference. The goal/threat scale on territory *gained* since setup, so on the City board (starts at 2) the win is 8 absolute and the Overextension drain is toll-free on the opening 2. Road (money+production) and Conquest (military) are the territory faucets; Dogs feeds Conquest's military, Trader funds Road's money, Forge and the foraging/toolmaking works keep food and production ahead of the drain. ~60% under the planner, oracle-winnable 100% — a solid fair-play band. (The Chiefdom board starts at 0 territory and is far harder; that gap is a board-level issue, left open.)",
   "board": "city",
   "deck": [
     { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
     { "cardId": "forge", "count": 4 },
     { "cardId": "house", "count": 2 },
     { "cardId": "trader", "count": 4 },
-    { "cardId": "city_walls", "count": 2 },
+    { "cardId": "dogs", "count": 4 },
     { "cardId": "road", "count": 4 },
     { "cardId": "conquest", "count": 4 },
-    { "cardId": "foraging", "count": 2 },
-    { "cardId": "toolmaking", "count": 2 }
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 }
   ]
 }

@@ -500,6 +500,47 @@
     "meanActions": 147.9
   },
   {
+    "label": "wheel",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 0,
+    "winRate": 0,
+    "turns": {
+      "min": 6,
+      "mean": 36.48,
+      "median": 12,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 45.99,
+      "production": 35.58,
+      "science": 0,
+      "military": 7.45,
+      "money": 11.57,
+      "population": 2.06,
+      "culture": 0,
+      "territory": 3.36
+    },
+    "defeatCauses": {
+      "ruin": 82,
+      "famine": 5,
+      "stall": 13
+    },
+    "cardPlays": {
+      "dogs": 505,
+      "foraging": 407,
+      "toolmaking": 297,
+      "farm": 82,
+      "trader": 402,
+      "road": 83,
+      "conquest": 53,
+      "forge": 22,
+      "house": 3
+    },
+    "unplayedCards": [],
+    "meanActions": 54.89
+  },
+  {
     "label": "writing",
     "policyName": "greedy",
     "runs": 100,
@@ -1040,6 +1081,47 @@
       "house"
     ],
     "meanActions": 55.1
+  },
+  {
+    "label": "wheel",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 54,
+    "winRate": 0.54,
+    "turns": {
+      "min": 5,
+      "mean": 40.22,
+      "median": 34,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 10.73,
+      "production": 1.72,
+      "science": 0,
+      "military": 4.17,
+      "money": 21.92,
+      "population": 5.04,
+      "culture": 0,
+      "territory": 6.31
+    },
+    "defeatCauses": {
+      "famine": 32,
+      "ruin": 13,
+      "stall": 1
+    },
+    "cardPlays": {
+      "dogs": 736,
+      "foraging": 1063,
+      "toolmaking": 1178,
+      "house": 152,
+      "farm": 131,
+      "trader": 885,
+      "conquest": 211,
+      "forge": 152,
+      "road": 221
+    },
+    "unplayedCards": [],
+    "meanActions": 90.18
   },
   {
     "label": "writing",

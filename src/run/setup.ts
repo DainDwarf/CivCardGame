@@ -14,6 +14,7 @@ export function createInitialState(config: RunConfig): GameState {
   const board = effectiveBoard(BOARDS[config.board], config.boardStickers);
   const G = blankState(config.missionId);
   G.resources = { ...board.resources };
+  G.startResources = { ...board.resources };
   // The shuffled `RunConfig.deck` carries each card's cardId and any permanent sticker; mint each
   // into an identity-bearing instance (ids 1..N), stickers riding along, so per-copy state (and a
   // sticker's bonus) can ride with it. Any later mint (a mission's injected cards, a card played)

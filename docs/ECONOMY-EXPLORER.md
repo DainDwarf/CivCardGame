@@ -147,6 +147,55 @@ existing sim pipeline — it is already deck-agnostic, so **no core-engine chang
 - **Output:** per config — greedy2 win-rate, oracle-winnable?, mean turns, defeat causes, and influence
   cost vs. `cumulativeInfluenceInto(M)`. The margin is the mission's meta-difficulty.
 
+## Manual pilot of the demand sweep (Wheel, 2026-07-24) — where the signal is, and isn't
+
+Before building B's automated sweep, we ran it **by hand**: the Wheel mission (goal/threat scale on
+*gained* territory, City board start 2 → reach 8), `planner`, 100 seeds/cell, sweeping deck edits and
+reading win rate + turns + defeat causes + per-card plays. The point was to learn whether an automated
+win-rate search can clear statistical noise. The blunt answer: **only at the structural granularity,
+not the fine-tuning one.** Details, because they should shape B's scope:
+
+- **Small levers (±1–2 copies of a card) are below the noise floor.** Six such edits landed in a
+  50–61% band around a 60% baseline — an ~11-pt spread that is essentially all noise. At 100 seeds a
+  win-rate estimate carries ~±10pt of binomial error (√(0.6·0.4/100)·2), and the planner's own
+  determinization sampling adds more on top. Pulling the minimum detectable effect under ~5pt needs
+  ~500 seeds (~4.5 min/cell at the cost below), and a real search visits candidates combinatorially. **A
+  loop that diffs win rates over small deck edits is not affordable and will not separate signal** —
+  treat fine count-tuning as unmeasurable, not just expensive.
+- **Whole-type levers (add/remove a card entirely) *do* give clear, often noise-free signal.** Removing
+  Dogs → **0% win, Conquest played 0×** (it strands the military→territory route — a structural fact, no
+  seed count needed); removing House → **0%, ruin 97/100** (no workers to staff the economy); removing
+  Foraging → 33%, famine 59. These are the reads an income-vs-demand tool actually needs ("is this
+  configuration viable / what is load-bearing"), and they sit well above the noise.
+- **Two secondary signals are lower-variance than win rate** because they're not binary, and moved
+  cleanly where win rate stayed flat: the **defeat-cause composition** (a famine↔ruin tradeoff shifted
+  visibly across nearly every cell as food/production was traded away) and **mean end-state resources**.
+  Prefer these as the continuous "which way is it failing / how much margin" gradient.
+- **The oracle is a cheap, crisp ceiling at low seeds** — 20 seeds gave clean winnability reads (20/20
+  baseline vs 18/20 for a diluted deck) *and* proved a mechanism by watching the line it played: on a
+  Cave-Art deck the oracle climbed culture to level 1 and played Cave Art 83–116×/100 runs to bank the
+  `effectiveHandSize` +1-card draw, confirming **culture→draw is a real lever even on a territory
+  mission**. It didn't raise this mission's ceiling (already 100% winnable, ~25 turns — too short for a
+  culture engine to repay its dilution), but the oracle *pursued* it.
+- **The `planner` is blind to whole synergy classes.** `DEFAULT_ENABLER_TERMS` ships with
+  `handSize`/`conversions`/`floor` **off** (`sim/enablers.ts`), so the fair-play policy never builds
+  toward culture→draw, a money→food conversion chain, etc. On the same Cave-Art decks the planner left
+  culture ≈0 and Cave Art was pure dilution (60→48→45%). **Consequence for B: an automated search using
+  the default planner will systematically miss draw/tempo/conversion decks** — either enable the
+  relevant terms for the sweep (a code toggle today, not CLI-exposed) or read those levers with the
+  oracle.
+- **Cost, measured.** Bundle build is ~0.1s (amortizable). A healthy 100-seed planner cell is **~54s**
+  (the per-candidate price a search pays). But **broken decks are the expensive ones**: cells that
+  neither win nor collapse fast grind to `--max-rounds` (a −dogs cell averaged 122 turns), and a
+  6-cell sweep containing two such cells took **11m** vs **6m** for a healthy 7-cell one — ~3–4× per
+  candidate. **A search needs an early-abort / lowered `--max-rounds` guard**, or it spends most of its
+  budget on its worst candidates.
+
+**Net scoping steer for B:** aim the tool at *structural viability and the demand margin* (oracle
+winnability as the yes/no ceiling + defeat-cause/end-resource gradients as the continuous signal), and
+declare fine win-rate optimization over small levers **out of scope** as below the measurable floor.
+That is a narrower tool than "automated deck discovery," but it's the half that matched the evidence.
+
 ## Phase C — Empirical search + campaign roll-up — *deferred, only if B earns it*
 
 - Empirical local search (mutate a deck/stickers, keep winners) to discover non-resource synergies the

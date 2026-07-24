@@ -378,9 +378,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     prereqs: ['roads'],
     threats: ['overextension'],
     objectiveCardId: 'wheel_goal',
-    victoryHint: `Expand to ${WHEEL_TERRITORY} territory — build Roads (🪙+🔨) and conquer (⚔️).`,
+    victoryHint: `Gain ${WHEEL_TERRITORY} territory — build Roads (🪙+🔨) and conquer (⚔️).`,
     failureHint:
-      'Every territory you hold drains 🔨 in upkeep each round; overreach your economy and the run falls to ruin.',
+      'Every territory you gain drains 🔨 in upkeep each round; overreach your economy and the run falls to ruin.',
     kind: 'standard',
     // Closes the expansion branch: unlocks the Wheel sticker (−1🔨 on buildings/works), the 🔨 relief
     // that resolves the mission's own 🔨 crisis. Influence amount provisional.

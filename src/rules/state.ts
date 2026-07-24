@@ -109,6 +109,12 @@ export interface GameState {
    *  each eat food every round), `territory` (caps the tableau size), and `culture` (a civilization
    *  gauge some cards gate on). Reached as `resources.population` etc. */
   resources: Resources;
+  /** The starting resource profile this run was set up with (the board's, stickers folded in),
+   *  snapshotted once at setup and never written thereafter. Lets a goal or threat scale on
+   *  *gained* resources (`resources.X − startResources.X`) rather than the absolute pool — so the
+   *  same "gain 6 territory" win reads identically off a board that starts at 0 and one that starts
+   *  at 2. */
+  startResources: Resources;
   /** Cards in hand. */
   hand: CardInstance[];
   /** Draw pile. */
@@ -221,6 +227,7 @@ export function blankState(missionId: string): GameState {
   return {
     round: 0,
     resources: { ...emptyResources(), territory: 6 },
+    startResources: { ...emptyResources(), territory: 6 },
     hand: [],
     deck: [],
     discard: [],
