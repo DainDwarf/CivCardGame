@@ -57,6 +57,7 @@ export function DeckEditor({
   collection,
   onSave,
   onCancel,
+  onDirtyChange,
 }: {
   initialDeck: DeckDef;
   /** Whole-UI scale from settings — the editor renders inside App.tsx's transform:scale()
@@ -68,6 +69,9 @@ export function DeckEditor({
   collection: OwnedCards;
   onSave: (deck: DeckDef) => void;
   onCancel: () => void;
+  /** Reports whether the working deck differs from `initialDeck` — `MetaMenu` guards every exit
+   *  (Cancel and the nav tabs) on this, prompting before a dirty deck's edits are discarded. */
+  onDirtyChange: (dirty: boolean) => void;
 }) {
   const [deck, setDeck] = useState<DeckDef>(initialDeck);
   // See Board.tsx's `px` — convert visual (post-scale) pointer/rect px to local px for the clone.
@@ -75,6 +79,15 @@ export function DeckEditor({
   const [drag, setDragState] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
+
+  // Content signature for the dirty check: the name plus each variant group and its count, in
+  // `groupCounts`' stable order. Compared by variant (not raw instance id) so removing a card and
+  // re-adding the same variant — which `addCard`'s LIFO pool may hand back under a different id —
+  // doesn't read as a spurious edit.
+  const signatureOf = (d: DeckDef) =>
+    `${d.name}\n${groupCounts(d.cards, collection).map((g) => `${variantKey(g)}x${g.count}`).join('|')}`;
+  const dirty = signatureOf(deck) !== signatureOf(initialDeck);
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   // Mission-injected cards (event/threat/objective) can never be added to a deck; the picker
   // only offers deckable cards the player has actually unlocked.

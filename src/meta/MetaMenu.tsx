@@ -106,15 +106,30 @@ export function MetaMenu({
 }) {
   const [screen, setScreen] = useState<Screen>('mission');
   const [editingDeck, setEditingDeck] = useState<DeckDef | null>(null);
+  // Whether the open deck editor holds unsaved edits (reported up by `DeckEditor`), and the leave
+  // action parked behind the discard-confirm while that's true.
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
 
   function openEditor(deck: DeckDef) {
     setEditingDeck(deck);
+    setEditorDirty(false);
     setScreen('deckEditor');
   }
 
   function closeEditor() {
     setEditingDeck(null);
+    setEditorDirty(false);
     setScreen('decks');
+  }
+
+  // Every path out of the deck editor funnels through here — Cancel and the nav tabs alike — so a
+  // dirty deck's edits can't be dropped silently. When there's nothing at stake the leave runs
+  // immediately; otherwise it's parked behind the discard-confirm. The functional-updater form stores
+  // the closure itself (React would otherwise call a bare function as an updater).
+  function attemptLeave(proceed: () => void) {
+    if (screen === 'deckEditor' && editorDirty) setPendingLeave(() => proceed);
+    else proceed();
   }
 
   // At-a-glance nav badges: mark the tabs whose buy surface has an affordable upgrade available, so
@@ -139,7 +154,7 @@ export function MetaMenu({
             key={n.screen}
             type="button"
             className={`${styles.navBtn}${screen === n.screen ? ` ${styles.navBtnActive}` : ''}`}
-            onClick={() => setScreen(n.screen)}
+            onClick={() => attemptLeave(() => setScreen(n.screen))}
             aria-pressed={screen === n.screen}
           >
             <span className={styles.navIcon} aria-hidden="true">
@@ -213,10 +228,38 @@ export function MetaMenu({
               onSaveDeck(deck);
               closeEditor();
             }}
-            onCancel={closeEditor}
+            onCancel={() => attemptLeave(closeEditor)}
+            onDirtyChange={setEditorDirty}
           />
         )}
       </div>
+
+      {pendingLeave && (
+        // Backdrop-click keeps editing (the escape hatch); the card stops the click so only its
+        // own buttons resolve. Discard runs the parked leave; Keep editing just dismisses.
+        <div className={styles.confirmBackdrop} onClick={() => setPendingLeave(null)}>
+          <div className={styles.confirmPanel} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.confirmTitle}>Discard unsaved changes?</h3>
+            <p className={styles.confirmText}>This deck has edits that haven’t been saved.</p>
+            <div className={styles.confirmActions}>
+              <button
+                type="button"
+                className={styles.confirmDangerBtn}
+                onClick={() => {
+                  const go = pendingLeave;
+                  setPendingLeave(null);
+                  go();
+                }}
+              >
+                Discard
+              </button>
+              <button type="button" className={styles.confirmCancelBtn} onClick={() => setPendingLeave(null)}>
+                Keep editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -23,8 +23,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- **Unsaved-changes warning on leaving the deck editor** — if the player has made edits in `DeckEditor.tsx`
-  that aren't saved, prompt/confirm before discarding them on exit. `[?]`
+- **Danger-button text contrast (app-wide)** — the `--danger-strong` / white pairing on danger
+  buttons (GameMenu's Clear/Replace confirms, the deck-editor discard confirm, etc.) measures
+  ~3.74:1 white-on-red — short of WCAG AA (4.5:1) for its bold ~15.7px size, in both light and dark.
+  A transversal color-token decision (darken `--danger-strong` or bump the label size), not a
+  per-dialog fix — touch it once so every danger button stays consistent. `[size: S] [?]`
 - **Per-pip worker drag** — independent per-pip *drag* (drag a specific pip to another box); box-level
   worker drag still moves one worker at a time. Deferred follow-up from the shipped multi-pip staffing UI. `[?]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]`
@@ -65,6 +68,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Unsaved-changes warning on leaving the deck editor** ✅ — leaving the editor mid-edit with unsaved
+  changes now prompts before discarding. `DeckEditor` reports a `dirty` flag up (variant-grouped
+  content + name vs. `initialDeck`, so a remove-then-re-add of the same variant doesn't false-flag);
+  `MetaMenu` funnels every exit — Cancel *and* the nav tabs (previously a fully silent discard) —
+  through one `attemptLeave` choke point that parks the leave behind a "Discard / Keep editing" confirm.
+  Backdrop-click keeps editing. Dialog reuses GameMenu's confirm styling.
 - **Golden scenarios — simulator trust harness** ✅ — landed as the committed **baseline fixture
   system** (`scripts/sim/baselines/`): self-contained `(mission, deck, board)` fixtures that each own
   their three axes, swept via `npm run sim -- --baseline`, with measured results committed under

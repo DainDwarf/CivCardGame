@@ -103,3 +103,78 @@
   padding: 2rem 2rem 4rem;
   overflow-y: auto;
 }
+
+/* Discard-unsaved-changes confirm — the guard on every exit from the deck editor. Mirrors
+   GameMenu's confirm dialog (centered scrim + raised card, theme tokens only); z-index clears the
+   meta shell's own overlays (≤85). */
+.confirmBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(var(--scrim-rgb) / 0.6);
+  cursor: pointer;
+}
+
+.confirmPanel {
+  width: 280px;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-radius: 14px;
+  background: var(--surface-raised);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  cursor: default;
+}
+
+.confirmTitle {
+  margin: 0 0 0.6rem;
+  font-size: 1.15rem;
+  color: var(--text-strong);
+}
+
+.confirmText {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.confirmActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.confirmDangerBtn {
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-on-accent);
+  background: var(--danger-strong);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.confirmDangerBtn:hover {
+  background: var(--danger-strong-hover);
+}
+
+.confirmCancelBtn {
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-body);
+  background: var(--item-bg);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.confirmCancelBtn:hover {
+  background: var(--item-hover);
+}
