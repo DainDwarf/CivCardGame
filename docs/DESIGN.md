@@ -467,7 +467,7 @@ play: an occasional winnable seed is lost to sampling optimism, recoverable by r
   stickers were reset alongside the cards, and **stickers now unlock through mission rewards**
   (breadth), not only the shop. **Bronze Age + Iron Age remain ahead** — content expansion
   only, no new mechanics (their flavor is undecided beyond the historical period). No new
-  resources this phase. See TODO.md for the step breakdown.
+  resources this phase. See BACKLOG.md for the step breakdown.
 
 ## Deferred decisions
 

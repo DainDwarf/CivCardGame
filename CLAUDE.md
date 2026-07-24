@@ -9,6 +9,15 @@ civilization solo — there is **no AI or human opponent**. Stack: TypeScript ·
 Vitest. See [`docs/DESIGN.md`](docs/DESIGN.md) for the full game design, the *why* behind every
 system below, and the roadmap.
 
+**Planning docs.** [`docs/BACKLOG.md`](docs/BACKLOG.md) is the Phase 4 **content** roadmap — a
+status board tracking each mission through Design → Implement → Balance → Polish, over per-mission
+dossiers in [`docs/missions/`](docs/missions/) (each dossier is one mission's live working state).
+[`docs/TODO.md`](docs/TODO.md) is the **transversal** bug/feature planner (not content);
+[`docs/IDEAS.md`](docs/IDEAS.md) holds unpolished candidates. All three are transient scratchpads —
+`DESIGN.md` holds the *decided* design and `CHANGELOG.md` the *durable* history, so nothing durable
+should cite an item in them. A shipped mission's `CHANGELOG` line is drawn from its dossier; a shipped
+transversal item's from TODO's *Done / shipped*.
+
 Two loops:
 
 - **Run loop** (`src/run/`) — play a *locked* pre-built deck against a mission. Hybrid cards

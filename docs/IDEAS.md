@@ -3,7 +3,8 @@
 > A scratch list of **unpolished ideas** — mission/campaign flavor, and now also
 > tooling/simulator directions — caught during design research. *Not* committed
 > content: anything here is a candidate, not a promise. Decided, designed work lives
-> in [`DESIGN.md`](DESIGN.md); mechanics-level idea jots live in [`TODO.md`](TODO.md).
+> in [`DESIGN.md`](DESIGN.md); content idea jots live in [`BACKLOG.md`](BACKLOG.md)'s idea pool,
+> transversal ones in [`TODO.md`](TODO.md).
 > This file collects the *narrative/age framing* we might build missions around, plus
 > longer-horizon tooling bets, before any of it is real.
 

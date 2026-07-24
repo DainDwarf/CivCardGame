@@ -39,7 +39,7 @@ export const DEFAULT_POLICY_NAMES = ['random', 'greedy', 'greedy2', 'heuristic']
  * One cell of a batch sweep: a deck / board / mission (plus optional board stickers) to run many
  * seeded times. Deliberately a flat list rather than a cartesian DSL — there is one deck/board/mission
  * of real content today, so the value now is aggregation *over seeds*; more `Scenario`s drop in as the
- * age arcs (TODO.md Steps 5–8) add content. Built from plain cardIds so a sweep needs no meta
+ * age arcs (BACKLOG.md Steps 5–8) add content. Built from plain cardIds so a sweep needs no meta
  * collection (the sim counterpart to a player's resolved deck; see `simConfig`).
  */
 export interface Scenario {
