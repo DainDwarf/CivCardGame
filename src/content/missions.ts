@@ -356,7 +356,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // mission can't seed a different count than the win asks for. No threat: the segments are the pressure.
     events: Array.from({ length: ROADWORKS }, () => 'roadwork'),
     objectiveCardId: 'roads_goal',
-    victoryHint: `Pave all ${ROADWORKS} road segments — pay 4 🔨 for each.`,
+    victoryHint: `Pave all ${ROADWORKS} road segments — pay 8 🔨 for each.`,
     failureHint:
       'Each unpaved segment you hold drains 2 🌾 at end of round — let your settlements starve and the run ends.',
     kind: 'standard',

@@ -1,0 +1,17 @@
+{
+  "id": "roads",
+  "mission": "roads",
+  "note": "Hand-made City-board deck (Roads follows Writing), tuned alongside the mission as its balance reference: 6 segments, 8 production each, -2 food per unpaved segment at end of round.",
+  "board": "city",
+  "deck": [
+    { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "forge", "count": 2 },
+    { "cardId": "house", "count": 2 },
+    { "cardId": "cave_art", "count": 2 },
+    { "cardId": "conquest", "count": 4 },
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "dogs", "count": 4 }
+  ]
+}

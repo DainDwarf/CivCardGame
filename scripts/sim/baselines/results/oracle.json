@@ -439,6 +439,47 @@
     "meanActions": 48.5
   },
   {
+    "label": "roads",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 9,
+    "winRate": 0.9,
+    "turns": {
+      "min": 4,
+      "mean": 27.5,
+      "median": 30,
+      "max": 34
+    },
+    "meanResources": {
+      "food": 8.7,
+      "production": 0.2,
+      "science": 0,
+      "military": 11.1,
+      "money": 2,
+      "population": 2,
+      "culture": 7,
+      "territory": 2.6
+    },
+    "defeatCauses": {
+      "famine": 1
+    },
+    "cardPlays": {
+      "cave_art": 35,
+      "forge": 9,
+      "toolmaking": 28,
+      "farm": 9,
+      "foraging": 36,
+      "dogs": 57,
+      "roadwork": 55,
+      "bow": 9,
+      "conquest": 6
+    },
+    "unplayedCards": [
+      "house"
+    ],
+    "meanActions": 60.1
+  },
+  {
     "label": "writing",
     "policyName": "oracle",
     "runs": 10,

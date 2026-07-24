@@ -109,7 +109,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     money to expansion/territory** — territory is a mechanic *no* shipped mission uses as a goal, and
     the only way to gain it today is the military **Conquest** (5⚔️ → +1 territory, single-use). Naval +
     Trader carry the age's trade-money supply instead.
-    - **Roads — mechanics DONE** 🟡 (balance pending; see *Done / shipped*) → **goal:** pave all 4
+    - **Roads — DONE** ✅ (balanced; see *Done / shipped*) → **goal:** pave all 6
       **Roadwork** segments (seeded events, played → `removed`, like Copper/Writing). **Pressure:** each
       unpaved segment held in hand bleeds a flat −2🌾/round (an unfinished road starves a cut-off
       settlement) — no threat, the segments *are* the pressure. **Reward:** the single-use **Road** card —
@@ -443,9 +443,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   zoom overlay puffs floating *pet* *pet* text + a woof! bubble instead of closing. Lives in
   `CardZoomOverlay` (gated on `cardId === 'dogs'`) via a new `CardFace` `onArtClick` prop, so it works
   on every zoom surface.
-- **Step 7 — Roads** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the first
-  node of the expansion/territory branch (`prereqs: ['writing']`, bronze col 8 row -1). Four **Roadwork**
-  events (4🔨 each) seeded into the deck; paving one exiles it to `removed`, which the goal counts (the
+- **Step 7 — Roads** ✅ (mechanics shipped; **balanced** via sim + feel-play) — the first
+  node of the expansion/territory branch (`prereqs: ['writing']`, bronze col 8 row -1). Six **Roadwork**
+  events (8🔨 each) seeded into the deck; paving one exiles it to `removed`, which the goal counts (the
   Copper/Writing seeded-completion pattern). No threat card — the segments *are* the pressure: each
   unpaved copy held in hand bleeds a **flat −2🌾** at end of round (an unfinished road starves a cut-off
   settlement), then files to discard and recurs. The drain is a *different* currency than the build cost
@@ -454,12 +454,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   Writing 🔬 (escalating), Roads 🌾 (flat). Unlocks the **Road** (work card, 3🪙+3🔨 → +1 territory,
   single-use — Conquest's economic twin, structurally identical self-removal), the tool the Wheel
   mission's territory goal is built around. Reward influence 12 (matches the standard Bronze nodes).
-  - **Balance watch (open):** the −2🌾 drain is the mission's *only* pressure and its load-bearing number.
-    An unpaved segment fires upkeep only while in hand, so with a small deck the typical bleed is −2 to
-    −4🌾/round — and Roads runs on the City board (12🌾 start + a food economy), so it may still be too
-    soft (the *Writing was too soft at −1* lesson, one board richer). First lever if so: hold −2 and raise
-    the count to 5; if too brutal (an opening hand full of segments dark-ages before you can pave), drop to
-    −1. Also unpinned until Wheel exists: the Road's 3🪙+3🔨 cost (parity with Conquest's 5⚔️ is the intent).
+  - **Balance settled:** 6 segments · 8🔨 each · −2🌾 per unpaved segment. On the standing baseline (26-card
+    City deck) this lands oracle 9/10 · planner 85% · greedy 31% — tight but winnable, the intended squeeze.
+    Still unpinned until Wheel exists: the Road's 3🪙+3🔨 cost (parity with Conquest's 5⚔️ is the intent).
 - **Step 7 — Writing** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the Bronze
   Age's literacy node (`prereqs: ['accounting']`, bronze col 7 row 0, staying on the centre axis). Five
   **Clay Tablet** events (6🔨+2🌾 each) seeded into the deck; recording one exiles it to `removed`, which

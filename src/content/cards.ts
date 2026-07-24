@@ -163,7 +163,7 @@ export const CLAY_TABLETS = 5;
 
 /** How many road segments "Roads" seeds — shared by the mission's injected event list
  *  (`content/missions.ts`), the `roads_goal` win threshold, and its progress readout. */
-export const ROADWORKS = 4;
+export const ROADWORKS = 6;
 
 /** The round by which the Pyramid tomb must be finished — shared by the `pharaohs_reign` threat's
  *  `defeat` deadline, its countdown readout, and the Pyramid mission's `failureHint`
@@ -373,7 +373,7 @@ export const CARDS: Record<string, CardDef> = {
   //   settlement off, bleeding a flat 🌾 each round it goes unpaved (no per-instance escalation, unlike
   //   the clay tablet). The events are the whole pressure, so the mission seeds no threat.
   roadwork: {
-    id: 'roadwork', name: 'Roadwork', kind: 'event', cost: { production: 4 },
+    id: 'roadwork', name: 'Roadwork', kind: 'event', cost: { production: 8 },
     display: { art: '🚧', description: '−2 🌾 at end of round while unpaved' },
     upkeep: { resources: { food: -2 } },
   },
