@@ -74,7 +74,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
      remains — the last piece of the literacy half.
   4. **Wheel+roads (×2)** first (now the **expansion/territory** branch — repositioned from the money
      identity; see the reward proposal below). **Roads** — mechanics DONE (balance pending; see *Done /
-     shipped*). **Wheel** remains.
+     shipped*). **Wheel** — mechanics DONE (balance pending; see *Done / shipped*).
   5. **Horse (×2)**, **Naval (×2)**.
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
   7. **Golden scenarios — simulator trust harness** (end-of-arc, once Bronze content is stable) — author a
@@ -114,7 +114,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
       unpaved segment held in hand bleeds a flat −2🌾/round (an unfinished road starves a cut-off
       settlement) — no threat, the segments *are* the pressure. **Reward:** the single-use **Road** card —
       3🪙+3🔨 → +1 territory (Conquest's *economic* twin, military vs. economic expansion).
-    - **Wheel** (second) → **goal:** reach N territory (a resource-threshold objective, reachable through
+    - **Wheel — mechanics DONE** 🟡 (balance pending; see *Done / shipped*) (second) → **goal:** reach N
+      territory (a resource-threshold objective, reachable through
       the player's own deck — **Conquest *and* the road card**, both unlocked upstream by the time they
       get here). **Pressure:** an **overextension** threat draining **🔨
       scaled by territory** (road upkeep — the wider the realm, the costlier to hold; the final push to N
@@ -443,6 +444,26 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   zoom overlay puffs floating *pet* *pet* text + a woof! bubble instead of closing. Lives in
   `CardZoomOverlay` (gated on `cardId === 'dogs'`) via a new `CardFace` `onArtClick` prop, so it works
   on every zoom surface.
+- **Step 7 — Wheel** 🟡 (mechanics shipped; **balance/numbers pending** sim + feel-play) — the closing
+  node of the expansion/territory branch (`prereqs: ['roads']`, bronze col 9 row -1). A single
+  territory-threshold goal: reach `WHEEL_TERRITORY` (=6, provisional) — measured off the `territory`
+  *resource* (the realm-size cap, not buildings placed), climbed through the player's own **Road**
+  (🪙+🔨, from Roads) and **Conquest** (⚔️, from First Settlement). The pressure is the **Overextension**
+  threat draining **−1🔨 per territory** each round (road upkeep — the wider the realm, the costlier to
+  hold), which reads the just-gained territory the same turn (threats tick after the workZone production
+  pass), so the final push happens under the heaviest drain. No `defeat` hook — the drain runs production
+  to the universal `'ruin'` collapse, the loss. Verified in-engine: `checkEndIf` checks victory *before*
+  collapse, so hitting the target on the drain-bankruptcy turn still wins. Unlocks the **Wheel** card
+  sticker (−1🔨 on any building/work paying 🔨, floored at 0 — the first `applyCost` sticker), the 🔨
+  relief that resolves the mission's own 🔨 crisis. Reward influence 12 (provisional). Zone-order
+  invariance pinned for the territory-scaled drain (`sim/zoneOrderInvariance.test.ts`, synthetic
+  fixtures); the `applyCost` fold + floor is already covered by the `test_costcut` fixture, so no new
+  sticker test.
+  - **Balance watch (open):** target and drain are both untuned. The raw `territory` multiplier is the
+    design intent ("heaviest drain at the final push") but may be unwinnable — first levers, in order:
+    `WHEEL_TERRITORY`, then softening the drain to a grace band (`max(0, territory − K)`) or a divisor.
+    Feel-play watch: staging several Road/Conquest in the workZone to spike territory in one turn can dodge
+    the escalating drain — staffing + cost are the only limiters. Sweep on `scripts/sim/baselines/wheel.json`.
 - **Step 7 — Roads** ✅ (mechanics shipped; **balanced** via sim + feel-play) — the first
   node of the expansion/territory branch (`prereqs: ['writing']`, bronze col 8 row -1). Six **Roadwork**
   events (8🔨 each) seeded into the deck; paving one exiles it to `removed`, which the goal counts (the

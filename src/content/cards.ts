@@ -165,6 +165,10 @@ export const CLAY_TABLETS = 5;
  *  (`content/missions.ts`), the `roads_goal` win threshold, and its progress readout. */
 export const ROADWORKS = 6;
 
+/** Territory the player must reach to win "The Wheel" — shared by the `wheel_goal` win threshold, its
+ *  progress readout, and the mission's `victoryHint` (`content/missions.ts`). */
+export const WHEEL_TERRITORY = 6;
+
 /** The round by which the Pyramid tomb must be finished — shared by the `pharaohs_reign` threat's
  *  `defeat` deadline, its countdown readout, and the Pyramid mission's `failureHint`
  *  (`content/missions.ts`), so the shown deadline can't drift from the enforced one. Generous by
@@ -575,6 +579,17 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // Reads the territory *resource* (the realm's size), not `usedTerritory` — building slots occupy
+  //   territory but don't lower the count, and Road/Conquest raise it, so this measures expansion.
+  wheel_goal: {
+    id: 'wheel_goal', name: 'The Wheel', kind: 'objective', cost: {},
+    goals: [{ icon: '🗺️', measure: (G) => G.resources.territory, target: WHEEL_TERRITORY }],
+    display: {
+      description: `Reach ${WHEEL_TERRITORY} territory`,
+      dynamicText: (G) => `🗺️ ${Math.min(G.resources.territory, WHEEL_TERRITORY)}/${WHEEL_TERRITORY}`,
+    },
+  },
+
   // Sandbox is an endless no-stakes mission: the objective never wins by design (a single bespoke
   //   goal whose `met` is always false), and nothing bounds the run — it lasts until the player quits
   //   or a core resource collapses.
@@ -645,6 +660,22 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: {
       resolve: ({ G }) => {
         subtractResources(G.resources, { production: assignedWorkers(G.tableau) });
+      },
+    },
+  },
+  // The Wheel's squeeze: road upkeep on the realm's size, draining 🔨 by the territory *cap* (the
+  //   resource, unaffected by how many slots are built). Threats tick after the workZone production
+  //   pass (`events.ts` dispatch order), so a Road/Conquest played this turn is already counted.
+  overextension: {
+    id: 'overextension', name: 'Overextension', kind: 'threat', cost: {},
+    display: {
+      art: '🛤️',
+      description: '−1🔨 per territory',
+      dynamicText: (G) => `−${G.resources.territory}🔨 next round`,
+    },
+    upkeep: {
+      resolve: ({ G }) => {
+        subtractResources(G.resources, { production: G.resources.territory });
       },
     },
   },

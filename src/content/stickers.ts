@@ -63,4 +63,15 @@ export const STICKERS: Record<string, StickerDef> = {
     appliesTo: (c) => c.kind === 'building' && (c.produces?.resources?.food ?? 0) > 0,
     applyGain: (base) => (base ? { ...base, food: (base.food ?? 0) + 1 } : base),
   },
+  wheel: {
+    id: 'wheel',
+    name: 'Wheel',
+    description: '−1 🔨',
+    icon: '🛞',
+    cost: 5,
+    // Only a building/work that actually pays 🔨 (so it can't be wasted on a card it can't help);
+    // wonders are excluded globally by `stickerAppliesTo`. `applyCost` owns its own floor at 0.
+    appliesTo: (c) => (c.kind === 'building' || c.kind === 'work') && (c.cost?.production ?? 0) > 0,
+    applyCost: (cost) => ({ ...cost, production: Math.max(0, (cost.production ?? 0) - 1) }),
+  },
 };

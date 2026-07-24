@@ -1,15 +1,34 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   addBuilding,
+  addThreat,
   addWork,
   blankState,
   instancesFromCardIds,
   shuffle,
+  subtractResources,
   type GameState,
 } from '../rules';
-import { installFixtures, uninstallFixtures } from '../rules/testFixtures';
+import type { CardDef } from '../content/cards';
+import { installCards, installFixtures, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { endTurn, type RunState } from '../run/engine';
 import { hashOf, keyOf } from './oracleKey';
+
+// Local fixtures for the territory-drain case (the Overextension shape): a work card that lands +1
+// territory at end of turn and a threat that drains 🔨 by the current territory. The threat reads a
+// resource its workZone batch siblings mutate in the *same* end-of-turn dispatch — the exact "reads
+// across its batch siblings" case this suite must pin. Kept local (only this file needs them) and
+// synthetic (decoupled from the shipped Road/Conquest/Overextension numbers).
+const LOCAL_CARDS: Record<string, CardDef> = {
+  test_terr_work: {
+    id: 'test_terr_work', name: 'Test Territory Work', kind: 'work',
+    cost: {}, workers: 1, produces: { resources: { territory: 1 } },
+  },
+  test_terr_threat: {
+    id: 'test_terr_threat', name: 'Test Territory Threat', kind: 'threat', cost: {},
+    upkeep: { resolve: ({ G }) => { subtractResources(G.resources, { production: G.resources.territory }); } },
+  },
+};
 
 /**
  * Enforces the **zone order-independence invariant** (see DESIGN.md / the CLAUDE.md convention): no card
@@ -30,17 +49,24 @@ import { hashOf, keyOf } from './oracleKey';
  * oracle actually relies on).
  */
 function producingState(): GameState {
-  const G = blankState('test'); // mission label only — no objective/threats seeded here
-  G.resources.population = 6;
+  const G = blankState('test'); // mission label only — no objective seeded here
+  G.resources.population = 8;
   G.resources.food = 50; // amply fed, so nothing collapses over the tested rounds
+  G.resources.production = 10; // buffered so the territory drain can't run production negative
   // Several producing siblings emitting to different pools — two duplicate food buildings, a multi-output
-  // building (production + military), and two work boxes (production, food) — each auto-staffed from the
-  // idle pool (6 pop → 5 staffed, 1 idle), so a non-commutative production would move a scalar.
+  // building (production + military), two work boxes (production, food), and two territory work boxes —
+  // each auto-staffed from the idle pool (8 pop → 7 staffed, 1 idle), so a non-commutative production
+  // would move a scalar. The two territory boxes let the drain threat below read a mutated sibling pool.
   addBuilding(G, 'test_food');
   addBuilding(G, 'test_food');
   addBuilding(G, 'test_multi');
   addWork(G, 'test_work');
   addWork(G, 'test_work_food');
+  addWork(G, 'test_terr_work');
+  addWork(G, 'test_terr_work');
+  // The territory-scaled drain: it ticks after the workZone production pass, so it reads the +2 territory
+  // the two work boxes just landed — pinning that the committed drain is order-independent regardless.
+  addThreat(G, 'test_terr_threat');
   // A few non-event hand cards + a stocked deck/discard, so the end-of-turn recycle and a possible
   // reshuffle both run and their ordering can't leak into the result.
   G.hand = instancesFromCardIds(['test_work', 'test_action', 'test_settlers'], 200);
@@ -73,8 +99,14 @@ function permutations(G: GameState): GameState[] {
 }
 
 describe('zone order-independence invariant', () => {
-  beforeAll(installFixtures);
-  afterAll(uninstallFixtures);
+  beforeAll(() => {
+    installFixtures();
+    installCards(LOCAL_CARDS);
+  });
+  afterAll(() => {
+    uninstallCards(LOCAL_CARDS);
+    uninstallFixtures();
+  });
 
   it('endTurn is commutative under any permutation of the unordered zones', () => {
     const base = producingState();

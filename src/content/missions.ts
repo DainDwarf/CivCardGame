@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -364,6 +364,28 @@ export const MISSIONS: Record<string, MissionDef> = {
     // tool the Wheel mission's territory goal is built around. Influence amount provisional.
     reward: { influence: 12, unlockCardIds: ['road'] },
     map: { col: 8, row: -1 },
+    age: 'bronze',
+  },
+  wheel: {
+    id: 'wheel',
+    name: 'The Wheel',
+    lore:
+      'The road is laid, but the realm it binds now strains to hold together — every league of stone ' +
+      'demands hands to mend it, and the farther your borders reach, the more the roadbed eats. The ' +
+      'potter\'s wheel turns, and turned on its side it carries what a hundred bearers could not. Fit the ' +
+      'axle, spoke the rim, and let the cart do the hauling — expand until the valley is yours, and pray ' +
+      'your fields can feed the roads that made it one.',
+    prereqs: ['roads'],
+    threats: ['overextension'],
+    objectiveCardId: 'wheel_goal',
+    victoryHint: `Expand to ${WHEEL_TERRITORY} territory — build Roads (🪙+🔨) and conquer (⚔️).`,
+    failureHint:
+      'Every territory you hold drains 🔨 in upkeep each round; overreach your economy and the run falls to ruin.',
+    kind: 'standard',
+    // Closes the expansion branch: unlocks the Wheel sticker (−1🔨 on buildings/works), the 🔨 relief
+    // that resolves the mission's own 🔨 crisis. Influence amount provisional.
+    reward: { influence: 12, unlockStickerIds: ['wheel'] },
+    map: { col: 9, row: -1 },
     age: 'bronze',
   },
   ice_age: {
