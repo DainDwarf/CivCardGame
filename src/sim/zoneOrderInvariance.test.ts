@@ -28,6 +28,28 @@ const LOCAL_CARDS: Record<string, CardDef> = {
     id: 'test_terr_threat', name: 'Test Territory Threat', kind: 'threat', cost: {},
     upkeep: { resolve: ({ G }) => { subtractResources(G.resources, { production: G.resources.territory }); } },
   },
+  // The removed-count case (the Tamed Horses shape): a threat scaling off how many copies of one
+  // cardId sit in `removed` — a *zone-membership* read, where the pair above is a scalar-pool read. The
+  // distinction matters because self-removing work cards push into `removed` from inside the same
+  // production batch, so the zone's contents change mid-dispatch under whatever order the batch runs in.
+  test_exile_work: {
+    id: 'test_exile_work', name: 'Test Exiling Work', kind: 'work', cost: {}, workers: 1,
+    produces: {
+      resources: { money: 1 },
+      resolve: (ctx) => {
+        ctx.G.workZone = ctx.G.workZone.filter((w) => w.id !== ctx.self.id);
+        ctx.G.removed.push({ id: ctx.self.id, cardId: ctx.self.cardId });
+      },
+    },
+  },
+  test_removed_threat: {
+    id: 'test_removed_threat', name: 'Test Removed-Count Threat', kind: 'threat', cost: {},
+    upkeep: {
+      resolve: ({ G }) => {
+        subtractResources(G.resources, { food: G.removed.filter((c) => c.cardId === 'test_exile_work').length });
+      },
+    },
+  },
 };
 
 /**
@@ -50,13 +72,14 @@ const LOCAL_CARDS: Record<string, CardDef> = {
  */
 function producingState(): GameState {
   const G = blankState('test'); // mission label only — no objective seeded here
-  G.resources.population = 8;
+  G.resources.population = 9;
   G.resources.food = 50; // amply fed, so nothing collapses over the tested rounds
   G.resources.production = 10; // buffered so the territory drain can't run production negative
   // Several producing siblings emitting to different pools — two duplicate food buildings, a multi-output
-  // building (production + military), two work boxes (production, food), and two territory work boxes —
-  // each auto-staffed from the idle pool (8 pop → 7 staffed, 1 idle), so a non-commutative production
-  // would move a scalar. The two territory boxes let the drain threat below read a mutated sibling pool.
+  // building (production + military), two work boxes (production, food), two territory work boxes, and a
+  // self-exiling one — each auto-staffed from the idle pool (9 pop → 8 staffed, 1 idle), so a
+  // non-commutative production would move a scalar. The territory boxes let the drain threat below read a
+  // mutated sibling *pool*; the exiling box lets the second one read a mutated sibling *zone*.
   addBuilding(G, 'test_food');
   addBuilding(G, 'test_food');
   addBuilding(G, 'test_multi');
@@ -64,9 +87,15 @@ function producingState(): GameState {
   addWork(G, 'test_work_food');
   addWork(G, 'test_terr_work');
   addWork(G, 'test_terr_work');
+  addWork(G, 'test_exile_work');
   // The territory-scaled drain: it ticks after the workZone production pass, so it reads the +2 territory
   // the two work boxes just landed — pinning that the committed drain is order-independent regardless.
   addThreat(G, 'test_terr_threat');
+  // Same pinning for a zone-membership read: the exiling work box above lands itself in `removed` during
+  // that production pass, and this drain counts it — with a pre-seeded copy already there, so the count
+  // is non-zero either way and a mis-ordered read would move the scalar.
+  addThreat(G, 'test_removed_threat');
+  G.removed = instancesFromCardIds(['test_exile_work'], 500);
   // A few non-event hand cards + a stocked deck/discard, so the end-of-turn recycle and a possible
   // reshuffle both run and their ordering can't leak into the result.
   G.hand = instancesFromCardIds(['test_work', 'test_action', 'test_settlers'], 200);

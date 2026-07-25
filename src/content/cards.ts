@@ -165,6 +165,17 @@ export const CLAY_TABLETS = 5;
  *  (`content/missions.ts`), the `roads_goal` win threshold, and its progress readout. */
 export const ROADWORKS = 6;
 
+/** How many wild horses "Horse Taming" seeds — shared by the mission's injected event list
+ *  (`content/missions.ts`), the `horse_taming_goal` win threshold, and its progress readout. */
+export const WILD_HORSES = 5;
+
+/** Horses already tamed: a wild horse reaches `removed` only by being played (paying its ⚔️), so the
+ *  count there *is* the tally. Shared by the win threshold, its readout, and the `tamed_horses` drain,
+ *  so the herd the threat feeds can't differ from the herd the goal counts. */
+function tamedHorses(G: GameState): number {
+  return G.removed.filter((c) => c.cardId === 'wild_horse').length;
+}
+
 /** Territory the player must *gain* over the board's starting size to win "The Wheel" — shared by the
  *  `wheel_goal` win threshold, its progress readout, and the mission's `victoryHint`
  *  (`content/missions.ts`). Measured against `startResources` so it reads the same on a board that
@@ -192,6 +203,9 @@ export const CARDS: Record<string, CardDef> = {
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 2 } } },
   beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { food: 2 }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 5 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
+  // The first recurring ⚔️ producer from a work box — free to play like Foraging/Trader, so the worker
+  // it occupies is its whole cost. Rate beats Dogs (1🌾 → 2⚔️), which is what makes it worth a worker.
+  war_horse: { id: 'war_horse', name: 'War Horse', kind: 'work', cost: {}, workers: 1, display: { art: '🏇' }, produces: { resources: { military: 4 } } },
 
   // — Buildings —
   farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { resources: { food: 1 } }, workers: 1, display: { art: '🌱' } },
@@ -258,6 +272,7 @@ export const CARDS: Record<string, CardDef> = {
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, display: { art: '🤝' }, effect: { resources: { food: 2 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, display: { art: '🐕' }, effect: { resources: { military: 2 } } },
+  raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { military: 3 }, display: { art: '🔥' }, effect: { resources: { money: 6 } } },
   conquest: {
     id: 'conquest', name: 'Conquest', kind: 'work', cost: { military: 5 }, workers: 1,
     // The "single use" note is the face's heads-up for the self-removal below — kept in step with it.
@@ -382,6 +397,15 @@ export const CARDS: Record<string, CardDef> = {
     id: 'roadwork', name: 'Roadwork', kind: 'event', cost: { production: 8 },
     display: { art: '🚧', description: '−2 🌾 at end of round while unpaved' },
     upkeep: { resources: { food: -2 } },
+  },
+  // Wild Horse: paying the ⚔️ *is* taming it — the play choke exiles the played event to `removed`,
+  //   which `horse_taming_goal` counts, so no effect is needed. Left in hand it eats into the season's
+  //   labour (a flat 🔨, like the roadwork's 🌾) and recurs; the drain is a *different* currency than the
+  //   ⚔️ tame cost, so passing a horse up is a real trade rather than deferred change.
+  wild_horse: {
+    id: 'wild_horse', name: 'Wild Horse', kind: 'event', cost: { military: 6 },
+    display: { art: '🐎', description: '−1 🔨 at end of round while untamed' },
+    upkeep: { resources: { production: -1 } },
   },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
@@ -581,6 +605,15 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  horse_taming_goal: {
+    id: 'horse_taming_goal', name: 'Horse Taming', kind: 'objective', cost: {},
+    goals: [{ icon: '🐎', measure: tamedHorses, target: WILD_HORSES }],
+    display: {
+      description: `Tame all ${WILD_HORSES} wild horses`,
+      dynamicText: (G) => `🐎 ${Math.min(tamedHorses(G), WILD_HORSES)}/${WILD_HORSES} tamed`,
+    },
+  },
+
   // Measures territory *gained* since setup (`resources − startResources`), not the absolute realm
   //   size: building slots occupy territory but don't lower the resource, and Road/Conquest raise it,
   //   so the difference is pure expansion — and reads the same win on every board regardless of its
@@ -682,6 +715,22 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: {
       resolve: ({ G }) => {
         subtractResources(G.resources, { production: Math.max(0, G.resources.territory - G.startResources.territory) });
+      },
+    },
+  },
+  // Horse Taming's squeeze: the goal is its own pressure — every horse tamed is a permanent mouth, so
+  //   the herd you have won drains 🌾 by its own size and the last horse is tamed under the heaviest
+  //   drain. Reads the removed pile through `tamedHorses`, the same tally the goal counts.
+  tamed_horses: {
+    id: 'tamed_horses', name: 'Tamed Horses', kind: 'threat', cost: {},
+    display: {
+      art: '🐴',
+      description: '−1🌾 per tamed horse',
+      dynamicText: (G) => `−${tamedHorses(G)}🌾 next round`,
+    },
+    upkeep: {
+      resolve: ({ G }) => {
+        subtractResources(G.resources, { food: tamedHorses(G) });
       },
     },
   },

@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -341,6 +341,32 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Writing action. Influence amount provisional (balance pending a sim sweep).
     reward: { influence: 12, unlockCardIds: ['archives', 'writing'] },
     map: { col: 7, row: 0 },
+    age: 'bronze',
+  },
+  horse_taming: {
+    id: 'horse_taming',
+    name: 'Horse Taming',
+    lore:
+      'Out past the last ploughed field the grass runs on without end, and the herds run with it — ' +
+      'faster than any runner, stronger than any ox, and answering to no one. Your riders have watched ' +
+      'them at the watering places for a season now, learning where they drink and how they startle. ' +
+      'Take them, and no war party on the steppe will match you. But a horse is not a harvest: every one ' +
+      'you break to the halter must be fed for the rest of its life, out of the same fields that feed you.',
+    prereqs: ['writing'],
+    threats: ['tamed_horses'],
+    // One `wild_horse` per horse, tied to the objective's threshold by the shared WILD_HORSES const so
+    // the mission can't seed a different count than the win asks for.
+    events: Array.from({ length: WILD_HORSES }, () => 'wild_horse'),
+    objectiveCardId: 'horse_taming_goal',
+    victoryHint: `Tame all ${WILD_HORSES} wild horses — pay 6 ⚔️ for each.`,
+    failureHint:
+      'Every horse you tame eats 1 🌾 each round for the rest of the run; starve the herd and the run ends.',
+    kind: 'standard',
+    // Opens the military branch: unlocks the War Horse (the first recurring ⚔️ work box) and Raiding
+    // (⚔️ → 🪙, the predatory money faucet) — the pair the next mission is built around. Influence
+    // amount provisional.
+    reward: { influence: 12, unlockCardIds: ['war_horse', 'raiding'] },
+    map: { col: 8, row: 0 },
     age: 'bronze',
   },
   roads: {

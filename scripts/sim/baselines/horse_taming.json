@@ -1,0 +1,17 @@
+{
+  "id": "horse_taming",
+  "mission": "horse_taming",
+  "note": "City-board deck, the mission's balance reference. Road is deliberately absent — Roads is a *sibling* branch off Writing, so it is not owned at this node (do not copy wheel.json's pool). The whole run is a military-vs-food squeeze: City Walls is the only sustainable ⚔️ faucet (+1⚔️/round for a slot, 4🔨 and −1🔨 upkeep), Dogs the repeatable one, Bow a single-use burst; and Dogs buys its ⚔️ *with food*, the same currency the tamed herd eats, so both ends of the mission pull on the harvest. Conquest ×2 is here only to open territory slots for the buildings (City starts at 2) — it competes for the very ⚔️ the taming needs, which is the intended tension, not an oversight.",
+  "board": "city",
+  "deck": [
+    { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "forge", "count": 2 },
+    { "cardId": "house", "count": 2 },
+    { "cardId": "city_walls", "count": 2 },
+    { "cardId": "conquest", "count": 2 },
+    { "cardId": "dogs", "count": 4 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 }
+  ]
+}

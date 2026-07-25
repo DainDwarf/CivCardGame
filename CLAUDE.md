@@ -73,10 +73,10 @@ surprise, so nothing shows a locked placeholder or a total count.
   deck × board matrix: `--scenario <ids>` names missions (live from `content/missions.ts`),
   `--deck`/`--board` point at JSON files (examples under `scripts/sim/`). **`--baseline <paths|dir>`**
   loads *self-contained* fixtures that each own their own mission, deck and board — so one sweep spans
-  cells sharing none of the three. `scripts/sim/baselines/` is the committed standing set (First
-  Settlement → Writing; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
+  cells sharing none of the three. `scripts/sim/baselines/` is the committed standing set — one per
+  shipped standard mission; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
   Influence can be ground before `ice_age` unlocks — a mission needing the shop there would be a
-  softlock), with measured results under `baselines/results/`, whose commit *is* their content-SHA
+  softlock. Measured results live under `baselines/results/`, whose commit *is* their content-SHA
   record. Both styles take `--seeds`/`--policies`/`--format` (text|json); `--seed <i>` switches to a
   single-run per-turn replay trace. See *Balance tooling*.
 - `npm run sim:profile` — the same sweep under `@platformatic/flame`, which writes a **markdown**
