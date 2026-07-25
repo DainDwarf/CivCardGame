@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ⬜ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
 **Branch:** Bronze — the **military** branch's first node (Horse taming → [Raiding](raiding.md)), a `×2`
 branch parallel to Wheel+roads (expansion) and Naval (trade). Prereq **Writing**; the branch converges
 into **Bronze**.
@@ -66,7 +66,25 @@ all on the existing spine.
   self-exiling work card mutates that zone inside the same production batch — the existing fixture only
   covered a threat reading a scalar *pool*.
 
-## Balance ⬜ — watch items
+## Balance 🟡 — first sweep taken, no knob turned yet
+
+**Baseline replaced.** The fixture that shipped with the implement commit was a design sketch nobody had
+swept; it measures **45% greedy / 55% planner**. It is replaced by the deck below, which is what the
+mission actually rewards.
+
+- **Reference deck:** 2 irrigated Farms · Dogs ×8 · Foraging ×6 · Toolmaking ×4 (20 cards, City, 25⭐).
+- **Measured:** greedy **96%** (median 18 turns, 4 ruin) · planner **100%** (median 19) · oracle
+  **100%** (median 12). In `baselines/results/`.
+- **Every other ⚔️ line loses.** Same 20-card floor, same seeds: Bow ×8 + Forge ×2 (🔨-sourced ⚔️) **8%**,
+  famine 49 / ruin 31; Conquest ×2 for a third and fourth building box **42%**. Only Dogs converts fast
+  enough — and 30⚔️ is only 15🌾 in total, so what is scarce is *drawing* 15 Dogs, not affording them.
+- **Population never grows** (`pop 2.0` mean in every winning cell). City opens at 2 territory and a
+  Hut/House would cost one of the two Farm slots, so the deck that wins is 4 card types wide. That
+  flatness — one viable ⚔️ source, one viable build — is the live balance question, not the win rate.
+- Turtling did **not** appear in two greedy replays (tames at rounds 3/6/10/14/15 and 4/6/8/13): horses
+  are taken as drawn and affordable, with a small ⚔️ bank at the tail. n=2 — see watch item 1.
+
+## Watch items
 
 1. **Urgency to tame promptly.** Without the let-pass 🔨 drain, the optimal line is to turtle (tame one,
    grow the Farm economy for many turns until X-food is affordable, tame the next — never letting X outrun
@@ -83,8 +101,9 @@ all on the existing spine.
    a source, so it competes with taming for the same pool.
 3. **The food double-bind.** Dogs buys its ⚔️ *with food*, and the mission's pressure *is* a food drain —
    so the harvest is squeezed from both ends: the currency that buys taming is the one the tamed herd
-   eats. Thematically ideal, and probably the mission's real difficulty; the sweep should look for it
-   specifically before any knob is turned.
+   eats. Thematically ideal — but the first sweep says the bind does **not** bite: the whole goal is 15🌾
+   of Dogs, small against a 6🌾/round two-Farm harvest, so the deck pays it and the herd drain out of the
+   same surplus without a real squeeze. If a knob is turned, this is what it should be aimed at.
 4. **First levers, in order:** `WILD_HORSES` → the tame ⚔️ cost → the drain coefficient → the let-pass 🔨
    bleed. Peak sustained drain is `(N−1) × coefficient` (the Nth horse wins on the move), so at 5 × 1 the
    heaviest round is −4🌾; if that never bites, raise **N before the coefficient** — a longer ramp is the

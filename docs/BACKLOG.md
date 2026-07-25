@@ -60,7 +60,7 @@
   | Hammurabi's Code *(leaf)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Roads | ✅ | ✅ | ✅ | ⬜ | [roads](missions/roads.md) |
   | Wheel | ✅ | ✅ | 🟡 | ⬜ | [wheel](missions/wheel.md) |
-  | Horse taming | ✅ | ✅ | ⬜ | ⬜ | [horse-taming](missions/horse-taming.md) |
+  | Horse taming | ✅ | ✅ | 🟡 | ⬜ | [horse-taming](missions/horse-taming.md) |
   | Raiding | ✅ | ⬜ | ⬜ | ⬜ | [raiding](missions/raiding.md) |
   | Naval (×2) | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Bronze *(convergence)* | 🟡 | ⬜ | ⬜ | ⬜ | — |

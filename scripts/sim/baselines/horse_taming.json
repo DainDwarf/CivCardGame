@@ -1,17 +1,12 @@
 {
   "id": "horse_taming",
   "mission": "horse_taming",
-  "note": "City-board deck, the mission's balance reference. Road is deliberately absent — Roads is a *sibling* branch off Writing, so it is not owned at this node (do not copy wheel.json's pool). The whole run is a military-vs-food squeeze: City Walls is the only sustainable ⚔️ faucet (+1⚔️/round for a slot, 4🔨 and −1🔨 upkeep), Dogs the repeatable one, Bow a single-use burst; and Dogs buys its ⚔️ *with food*, the same currency the tamed herd eats, so both ends of the mission pull on the harvest. Conquest ×2 is here only to open territory slots for the buildings (City starts at 2) — it competes for the very ⚔️ the taming needs, which is the intended tension, not an oversight.",
+  "note": "City-board deck, the mission's balance reference. Sits on the 20-card floor for draw density: hand is 4 with a full recycle, so throughput is 4 cards/turn and the 5 seeded wild horses already inflate the pool to 25. All 30⚔️ of tame cost comes from Dogs — the whole goal is only 15🌾, so what is scarce is *drawing* 15 Dogs, not affording them. Two irrigated Farms fill City's 2 territory (3🌾/worker each), and Toolmaking covers the −1🔨 per untamed horse held; population never grows, because a Hut/House would cost one of the two Farm slots. Road is deliberately absent — Roads is a *sibling* branch off Writing, so it is not owned at this node (do not copy wheel.json's pool). Costs 25 of the 100 Influence guaranteed to have arrived here (farm ×2 = 1, four irrigation = 12, dogs ×8 = 7, foraging ×8 = 5).",
   "board": "city",
   "deck": [
     { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
-    { "cardId": "forge", "count": 2 },
-    { "cardId": "house", "count": 2 },
-    { "cardId": "city_walls", "count": 2 },
-    { "cardId": "conquest", "count": 2 },
-    { "cardId": "dogs", "count": 4 },
-    { "cardId": "bow", "count": 2 },
-    { "cardId": "foraging", "count": 4 },
+    { "cardId": "dogs", "count": 8 },
+    { "cardId": "foraging", "count": 6 },
     { "cardId": "toolmaking", "count": 4 }
   ]
 }

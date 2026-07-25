@@ -208,6 +208,41 @@
     "meanActions": 31.98
   },
   {
+    "label": "horse_taming",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 96,
+    "winRate": 0.96,
+    "turns": {
+      "min": 11,
+      "mean": 19.01,
+      "median": 18,
+      "max": 48
+    },
+    "meanResources": {
+      "food": 5.99,
+      "production": 4.73,
+      "science": 0,
+      "military": 4.3,
+      "money": 2,
+      "population": 2,
+      "culture": 0,
+      "territory": 2
+    },
+    "defeatCauses": {
+      "ruin": 4
+    },
+    "cardPlays": {
+      "dogs": 1703,
+      "foraging": 1124,
+      "toolmaking": 432,
+      "wild_horse": 496,
+      "farm": 184
+    },
+    "unplayedCards": [],
+    "meanActions": 57.44
+  },
+  {
     "label": "masonry",
     "policyName": "greedy",
     "runs": 100,
@@ -790,6 +825,39 @@
       "conquest"
     ],
     "meanActions": 18.68
+  },
+  {
+    "label": "horse_taming",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 100,
+    "winRate": 1,
+    "turns": {
+      "min": 12,
+      "mean": 19.58,
+      "median": 19,
+      "max": 33
+    },
+    "meanResources": {
+      "food": 6.29,
+      "production": 3.59,
+      "science": 0,
+      "military": 2.74,
+      "money": 2,
+      "population": 2,
+      "culture": 0,
+      "territory": 2
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "dogs": 1637,
+      "foraging": 822,
+      "toolmaking": 420,
+      "wild_horse": 500,
+      "farm": 191
+    },
+    "unplayedCards": [],
+    "meanActions": 54.49
   },
   {
     "label": "masonry",
