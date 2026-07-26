@@ -34,16 +34,17 @@ export const ORIGIN_BOARD_ID: BoardId = 'tribe';
  * "Raiders at the Border" mission, where the arc teaches board choice (Chiefdom vs. the settled
  * government at launch). `settlement` in turn upgrades into `city` — the Bronze Age government — on
  * clearing the "Masonry" mission. All four boards' numbers are provisional; the territory figures in
- * particular are a first pass at the unified cap and are the content pass's to measure. They sit just
- * above each board's starting population on purpose: a staffable box is only worth a slot if a worker
- * can run it, so territory far above population would leave the cap unreachable and the choice of what
- * to spend a slot on unfelt — while territory below it would idle workers outright.
+ * particular are a first pass at the unified cap and are the content pass's to measure. They track
+ * each board's starting population: a staffable box is only worth a slot if a worker can run it, so
+ * territory far above population would leave the cap unreachable and the choice of what to spend a
+ * slot on unfelt. `tribe` sits at exactly its population so the very first mission has to choose
+ * which two things its two people do; the later boards keep a slot of slack.
  */
 export const BOARDS: Record<BoardId, BoardDef> = {
   tribe: {
     id: 'tribe',
     name: 'Tribe',
-    resources: { food: 5, production: 0, science: 0, military: 0, money: 0, population: 2, territory: 3, culture: 0 },
+    resources: { food: 10, production: 0, science: 0, military: 0, money: 0, population: 2, territory: 2, culture: 0 },
   },
   settlement: {
     id: 'settlement',

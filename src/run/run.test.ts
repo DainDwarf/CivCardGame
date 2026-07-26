@@ -150,14 +150,14 @@ describe('run loop (headless integration)', () => {
     client.events.endTurn();
     const { G } = client.getState();
     expect(G.resources.production).toBe(2 + 2); // staffed production building produced 2
-    expect(G.resources.food).toBe(5 - 2); // population (2) ate, no food building to feed them
+    expect(G.resources.food).toBe(5 - 1); // population (2) ate, no food building to feed them
     client.stop();
   });
 
   it('famine is a universal defeat (population with no food starves)', () => {
     const client = start('test');
-    client.events.endTurn(); // food 3
-    client.events.endTurn(); // food 1
+    client.getState().G.resources.food = 1; // start the tribe one round from starving
+    client.events.endTurn(); // food 0
     client.events.endTurn(); // food -1 -> famine
     const { ctx } = client.getState();
     expect(ctx.gameover).toEqual({ outcome: 'defeat', reason: 'famine', missionId: 'test' });
@@ -167,13 +167,13 @@ describe('run loop (headless integration)', () => {
   it('an escalating threat drains Production round over round until ruin collapses the run', () => {
     const client = start('test');
     client.getState().G.threats = [{ id: 500, cardId: 'test_escalating' }]; // −1🔨, then −2🔨, …
-    playByName(client, 'test_food'); // +2 Food/round staffed (cost 2 prod -> production 2), offsetting
-    // population upkeep so Food stays flat and Production is what collapses first — proving the threat,
-    // not famine, ends the run.
-    client.events.endTurn(); // production 2 − 1(decay) = 1; food 5 + 2 − 2 = 5
+    playByName(client, 'test_food'); // +2 Food/round staffed (cost 2 prod -> production 2), outpacing
+    // population upkeep so Food only climbs and Production is what collapses first — proving the
+    // threat, not famine, ends the run.
+    client.events.endTurn(); // production 2 − 1(decay) = 1; food 5 + 2 − 1 = 6
     client.events.endTurn(); // production 1 − 2(decay) = -1 -> ruin
     const { G, ctx } = client.getState();
-    expect(G.resources.food).toBe(5); // never went negative — famine wasn't the cause
+    expect(G.resources.food).toBe(7); // climbed throughout — famine wasn't the cause
     expect(ctx.gameover).toEqual({ outcome: 'defeat', reason: 'ruin', missionId: 'test' });
     client.stop();
   });

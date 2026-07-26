@@ -6,11 +6,7 @@
   "deck": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
-    { "cardId": "bartering", "count": 2 },
     { "cardId": "bow", "count": 2 },
-    { "cardId": "dogs", "count": 2 },
-    { "cardId": "storytelling", "count": 2 },
-    { "cardId": "jewelry", "count": 2 },
-    { "cardId": "cave_art", "count": 2 }
+    { "cardId": "dogs", "count": 2 }
   ]
 }

@@ -5,7 +5,7 @@ import {
   COLLAPSE_BY_RESOURCE,
   CORE_KEYS,
   cultureProgress,
-  FOOD_PER_POP,
+  foodPerNextPop,
   foodUpkeep,
   freePopulation,
   goalsReadout,
@@ -119,7 +119,7 @@ function PopulationTokens({
 /** The food the population eats each round — a **gross** figure. The food stat's own projected
  *  delta already nets this off against production, so the two legitimately disagree on screen (tray
  *  −5🌾 beside food (−1)); the tooltip has to say outright that it's already counted. */
-function PopulationUpkeep({ upkeep }: { upkeep: number }) {
+function PopulationUpkeep({ upkeep, nextPop }: { upkeep: number; nextPop: number }) {
   return (
     <span
       className={`${styles.stat} ${styles.popUpkeep}`}
@@ -129,8 +129,9 @@ function PopulationUpkeep({ upkeep }: { upkeep: number }) {
       −{upkeep}
       {RESOURCE_ICON.food}
       <span className={styles.tooltip} role="tooltip">
-        <strong>Food upkeep</strong> — your people eat {FOOD_PER_POP} food each round, working or
-        idle. Already counted in the food forecast below.
+        <strong>Food upkeep</strong> — your people eat {upkeep} food each round, working or idle.
+        Your next {RESOURCE_ICON.population} would add {nextPop}
+        {RESOURCE_ICON.food}. Already counted in the food forecast below.
       </span>
     </span>
   );
@@ -1535,7 +1536,7 @@ export function Board({
           className={`${styles.populationTray}${workerOverTray ? ` ${styles.trayReturnTarget}` : ''}`}
         >
           <PopulationTokens population={G.resources.population} idle={idle} onTokenPointerDown={onPopTokenPointerDown} />
-          <PopulationUpkeep upkeep={foodUpkeep(G)} />
+          <PopulationUpkeep upkeep={foodUpkeep(G)} nextPop={foodPerNextPop(G.resources.population + 1)} />
         </div>
 
         <CultureBar culture={G.resources.culture} projected={proj.resources.culture} />

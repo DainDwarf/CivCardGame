@@ -213,12 +213,12 @@ export const THIEVES_PER_GOLD = 10;
  */
 export const CARDS: Record<string, CardDef> = {
   // — Work —
-  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, produces: { resources: { food: 3 } } },
-  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 2 } } },
+  foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, produces: { resources: { food: 1 } } },
+  toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 1 } } },
   beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { food: 2 }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 5 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
   // The first recurring ⚔️ producer from a work box — free to play like Foraging/Trader, so the worker
-  // it occupies is its whole cost. Rate beats Dogs (1🌾 → 2⚔️), which is what makes it worth a worker.
+  // it occupies is its whole cost. Rate beats Dogs (1🌾 → 1⚔️), which is what makes it worth a worker.
   war_horse: { id: 'war_horse', name: 'War Horse', kind: 'work', cost: {}, workers: 1, display: { art: '🏇' }, produces: { resources: { military: 4 } } },
 
   // — Buildings —
@@ -231,8 +231,6 @@ export const CARDS: Record<string, CardDef> = {
     effect: { resources: { population: 1 } },
   },
   burial: { id: 'burial', name: 'Burial', kind: 'building', cost: { production: 2 }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '⚰️' } },
-  // Matches Toolmaking's 2🔨/worker but as a permanent building rather than a work card refiled every
-  // round — deliberately obsoleting it, which is what a metallurgy unlock should feel like.
   forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { production: 4 }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
   // The science counterpart of the Forge: matches Storytelling's 2🔬/worker as a permanent building
   // rather than a work card refiled every round, deliberately obsoleting it.
@@ -285,7 +283,7 @@ export const CARDS: Record<string, CardDef> = {
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { money: 2 }, display: { art: '🤝' }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } } },
-  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, display: { art: '🐕' }, effect: { resources: { military: 2 } } },
+  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, display: { art: '🐕' }, effect: { resources: { military: 1 } } },
   raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { military: 3 }, display: { art: '🔥' }, effect: { resources: { money: 6 } } },
   // Conquest and Road are the game's only two territory sources, so they are deliberately `action` —
   //   the one kind that takes no slot. As board cards they would need free territory to play, which a

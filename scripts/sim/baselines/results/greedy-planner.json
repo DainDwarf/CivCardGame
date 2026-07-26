@@ -88,39 +88,36 @@
     "label": "first_settlement",
     "policyName": "greedy",
     "runs": 100,
-    "wins": 94,
-    "winRate": 0.94,
+    "wins": 95,
+    "winRate": 0.95,
     "turns": {
-      "min": 2,
-      "mean": 10.35,
-      "median": 10.5,
-      "max": 15
+      "min": 10,
+      "mean": 26.03,
+      "median": 12,
+      "max": 201
     },
     "meanResources": {
-      "food": 6.4,
-      "production": 10.3,
-      "science": 4.78,
-      "military": 10.75,
-      "money": 3.08,
+      "food": 2.49,
+      "production": 24.36,
+      "science": 0,
+      "military": 9.9,
+      "money": 0,
       "population": 2,
-      "culture": 3.4,
-      "territory": 0
+      "culture": 0,
+      "territory": 2
     },
     "defeatCauses": {
-      "famine": 6
+      "stall": 2,
+      "famine": 3
     },
     "cardPlays": {
-      "foraging": 647,
-      "storytelling": 239,
-      "dogs": 317,
-      "toolmaking": 804,
-      "bow": 147,
-      "jewelry": 284,
-      "bartering": 260,
-      "cave_art": 170
+      "dogs": 390,
+      "foraging": 2153,
+      "toolmaking": 2836,
+      "bow": 200
     },
     "unplayedCards": [],
-    "meanActions": 38.7
+    "meanActions": 80.93
   },
   {
     "label": "first_temple",
@@ -707,39 +704,33 @@
     "label": "first_settlement",
     "policyName": "planner",
     "runs": 100,
-    "wins": 97,
-    "winRate": 0.97,
+    "wins": 100,
+    "winRate": 1,
     "turns": {
-      "min": 3,
-      "mean": 13.14,
-      "median": 13,
-      "max": 19
+      "min": 11,
+      "mean": 15.75,
+      "median": 16,
+      "max": 21
     },
     "meanResources": {
-      "food": 3.17,
-      "production": 10.43,
-      "science": 3.82,
-      "military": 10.44,
-      "money": 2.5,
+      "food": 0.41,
+      "production": 10.1,
+      "science": 0,
+      "military": 10,
+      "money": 0,
       "population": 2,
-      "culture": 0.02,
-      "territory": 0
+      "culture": 0,
+      "territory": 2
     },
-    "defeatCauses": {
-      "famine": 3
-    },
+    "defeatCauses": {},
     "cardPlays": {
-      "foraging": 770,
-      "storytelling": 191,
-      "dogs": 303,
-      "toolmaking": 774,
-      "bow": 146,
-      "jewelry": 213,
-      "bartering": 176,
-      "cave_art": 1
+      "dogs": 400,
+      "foraging": 995,
+      "toolmaking": 1410,
+      "bow": 200
     },
     "unplayedCards": [],
-    "meanActions": 38.45
+    "meanActions": 45.59
   },
   {
     "label": "first_temple",

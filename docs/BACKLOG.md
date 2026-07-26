@@ -185,10 +185,42 @@
     Tepe wonder card** (add it to a deck under the wonder rule) and opens the endless sandbox — the age is
     mastered.
 
-- **Step 10 — Resource-economy rebalance pass** — runs **after Step 7 (Bronze) and before Step 8
-  (Iron)**, so Iron is authored against corrected rates instead of inheriting the distortion. Its
-  prerequisite, the **trade-route zone**, has shipped (routes permanent for now — see
-  [`TODO.md`](TODO.md)), so the money-topology half below is unblocked. `[size: L]` `[?]`
+- **Step 10 — Resource-economy rebalance pass** — **pulled forward, in progress on `trade-redesign`**:
+  the trade-route zone and the unified territory cap were the prerequisite, and the branch continues
+  straight into the rates rather than waiting for Iron. Worked **mission by mission from the first**,
+  since each mission's viability is what the rates are being read against. `[size: L]` `[?]`
+
+  **Landed so far (mission 1 — The First Settlement):** base work rates cut to **1🌾 / 1🔨 per worker**
+  (Foraging, Toolmaking) · **Dogs 1🌾 → 1⚔️** · food upkeep made superlinear, `floor(pop²/4)` ·
+  Tribe → 10🌾 / 2🗺️ (territory equal to population, so the very first turn has to choose) ·
+  `MIN_DECK_SIZE` 20 → 10 and the Founding deck narrowed to 4 Foraging / 4 Toolmaking / 2 Bow / 2 Dogs.
+  Re-fixtured and re-measured: `first_settlement.json` and its three records in
+  `baselines/results/`. **Every other fixture and result is stale** until the pass reaches its
+  mission — they name the on-trial cards and predate the rates. Re-measure per mission, not per change.
+
+  **Measured (mission 1, re-fixtured baseline):** greedy 95/100 · planner 100/100 · oracle 10/10 ·
+  heuristic 30/30 — winnable at every skill level, which is what the game's first mission should be.
+  **No dead cards**: `unplayedCards` empty under every policy. Optimal line is ~11 turns, fair
+  competent play 14–16; greedy's 5 losses are all 201-turn `stall`s, the one-ply plateau rather than
+  the content. The run is **worker-round-bound, not food-bound** — the oracle spends ~21 worker-rounds
+  (14 Toolmaking + ~7 Foraging) against 2 workers. Tribe's 10🌾 is sized right: heuristic ends on
+  5.8🌾, planner on 0.4🌾, so styles land either side of it. One caveat on the design: Bow plays 2/2
+  and Dogs 4/4 in *every* run under *every* policy — the ⚔️ half is a fixed script, so the mission's
+  only live axis is the Foraging/Toolmaking split (426 vs 222 Foraging plays, heuristic vs oracle).
+
+  **Cards on trial** — Storytelling, Cave Art, Jewelry and Bartering are off the starting collection
+  and **nothing unlocks them, so they are currently unobtainable in-game**. Deliberate: each gets
+  re-slotted onto a mission reward or cut when the pass reaches the mission that would justify it.
+  The obvious candidate homes are `reading_seasons` (🔬 → Storytelling) and `rites_rituals`
+  (🎭 → Cave Art); Jewelry is already slated for cutting or re-pointing by the money-topology work
+  below, and Bartering — the only `trade` card — wants to land wherever the money age actually opens.
+  Nothing ships to `main` with a card stranded.
+
+  **Known consequence to pay for later:** with the best food rate in the game at 1🌾/worker, all-hands
+  farming income (`pop`) crosses upkeep (`floor(pop²/4)`) at **pop 4** — so population is hard-capped
+  there until a stronger food source ships. Masonry's 6🧍 goal and the multi-worker wonders
+  (Göbekli 3, Pyramid 4) are unreachable until then; whichever mission unlocks the better faucet is a
+  hard prerequisite for them, not a balance nudge.
 
   **Diagnosis.** Three separate-looking complaints (base work cards too strong · Dogs/Bow flattening
   later military · Jewelry too strong) are one root cause: **every converter doubles, and they compose.**
@@ -197,7 +229,7 @@
   |---|---|---|---|
   | Jewelry | 1🔨 | 2🪙 | ×2 |
   | ~~Bartering~~ | ~~1🪙~~ | ~~2🌾~~ | **converted to a trade route** (2🪙 to open, then −1🪙/+1🌾 per round) |
-  | Dogs | 1🌾 | 2⚔️ | ×2 |
+  | ~~Dogs~~ | 1🌾 | ~~2⚔️~~ **1⚔️** | **cut to ×1** |
   | Raiding | 3⚔️ | 6🪙 | ×2 |
   | Bow | 2🔨 | 3⚔️ | ×1.5, self-exiling |
 
@@ -211,9 +243,10 @@
   longer has a one-shot exit into 🌾 at all. Jewelry and Raiding are the two edges left to cut.
 
   Second, **buildings never out-rate the free work card** of their resource, while also costing 🔨, a
-  territory slot, and a draw — Foraging 3🌾 vs Farm 1🌾 · Toolmaking 2🔨 vs Forge 2🔨 · Storytelling 2🔬 vs
-  Archives 2🔬 · Cave Art 2🎭 vs Burial 1🎭 · War Horse 4⚔️ vs City Walls 1⚔️. So production's only sink is
-  a card category nobody needs.
+  territory slot, and a draw — Storytelling 2🔬 vs Archives 2🔬 · Cave Art 2🎭 vs Burial 1🎭 ·
+  War Horse 4⚔️ vs City Walls 1⚔️. So production's only sink is a card category nobody needs. Cutting
+  the base work rates to 1 fixed the first two pairs as a side effect (Farm now *matches* Foraging,
+  Forge *doubles* Toolmaking); the remaining three still need the building side raised.
 
   **Decided — money's topology: a one-way hub.** Money's out-edges reach the other four; its in-edges are
   **producers only** (Trader, wonders, buildings), never conversion. It's spent through **trade routes**

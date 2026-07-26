@@ -2,8 +2,11 @@ import { CARDS } from '../content/cards';
 import type { GameState, PlacedCard } from './state';
 import { placedCards } from './territory';
 
-/** Food eaten per unit of population each round. */
-export const FOOD_PER_POP = 1;
+/** Marginal food the `n`-th person eats — the whole shape of `foodUpkeep`, exposed on its own so the
+ *  UI can show what the *next* population point will cost without re-deriving the curve. */
+export function foodPerNextPop(n: number): number {
+  return Math.floor(n / 2);
+}
 
 /**
  * A staffable board entity — a building in the tableau or a Work card in the workZone. Both are
@@ -54,9 +57,12 @@ export function freePopulation(G: GameState): number {
   return G.resources.population - assignedWorkers(G.tableau) - assignedWorkers(G.workZone);
 }
 
-/** Food the whole population eats each round (working or idle). */
+/** Food the whole population eats each round (working or idle) — superlinear, so growth has to be
+ *  paid for rather than compounding for free. `floor(pop²/4)` is the running sum of
+ *  `foodPerNextPop`, i.e. every second person raises what each further person eats. */
 export function foodUpkeep(G: GameState): number {
-  return G.resources.population * FOOD_PER_POP;
+  const pop = G.resources.population;
+  return Math.floor((pop * pop) / 4);
 }
 
 /**

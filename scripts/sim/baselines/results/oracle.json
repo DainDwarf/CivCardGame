@@ -86,34 +86,30 @@
     "wins": 10,
     "winRate": 1,
     "turns": {
-      "min": 9,
-      "mean": 10.3,
-      "median": 10,
-      "max": 13
+      "min": 10,
+      "mean": 10.9,
+      "median": 11,
+      "max": 12
     },
     "meanResources": {
-      "food": 6.1,
-      "production": 10.3,
-      "science": 4.6,
-      "military": 10.8,
-      "money": 2.3,
+      "food": 2.7,
+      "production": 10,
+      "science": 0,
+      "military": 10,
+      "money": 0,
       "population": 2,
-      "culture": 3.8,
-      "territory": 0
+      "culture": 0,
+      "territory": 2
     },
     "defeatCauses": {},
     "cardPlays": {
-      "foraging": 69,
-      "storytelling": 23,
-      "dogs": 36,
-      "toolmaking": 77,
-      "bow": 12,
-      "jewelry": 23,
-      "bartering": 23,
-      "cave_art": 19
+      "dogs": 40,
+      "foraging": 76,
+      "toolmaking": 140,
+      "bow": 20
     },
     "unplayedCards": [],
-    "meanActions": 38.7
+    "meanActions": 38.5
   },
   {
     "label": "first_temple",

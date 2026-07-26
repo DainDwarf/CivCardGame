@@ -20,7 +20,7 @@ steppe (Yamnaya / Sintashta); horses as war-mounts, **no mounted cavalry** (Iron
 ## Agreed (settled at design)
 
 - **Reward — War Horse:** a **work card**, staffed → **+⚔️/round**. Free to play (the Foraging/Trader
-  shape), so the worker it occupies is its whole cost — the rate has to beat **Dogs** (1🌾 → 2⚔️, *no*
+  shape), so the worker it occupies is its whole cost — the rate has to beat **Dogs** (1🌾 → 1⚔️, *no*
   worker) or nobody would ever spend a worker on it.
 - **Reward — Raiding:** an **action**, spend **⚔️ → gain 🪙**.
 

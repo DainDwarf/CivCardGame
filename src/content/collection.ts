@@ -8,14 +8,14 @@
  * so a seeded quantity is one the shop economy could itself reproduce. The two staffed producers a run
  * leans on every turn (Foraging, Toolmaking) get the most copies; everything else the minimum. This
  * exactly covers the Founding deck.
+ *
+ * Pointed at the first mission's two resources rather than sampling all five: a fresh profile holds
+ * exactly `MIN_DECK_SIZE` cards and no Influence, so the opening deck is *forced* — a card the first
+ * mission can't use isn't a chaff-cutting lesson, it's a dead draw the player can't remove.
  */
 export const STARTING_COLLECTION: Record<string, number> = {
   foraging: 4,
   toolmaking: 4,
-  storytelling: 2,
   bow: 2,
-  cave_art: 2,
-  jewelry: 2,
-  bartering: 2,
   dogs: 2,
 };

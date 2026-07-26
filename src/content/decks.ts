@@ -41,12 +41,8 @@ export const DEFAULT_DECKS: DeckSeed[] = [
     cards: [
       'foraging', 'foraging', 'foraging', 'foraging',
       'toolmaking', 'toolmaking', 'toolmaking', 'toolmaking',
-      'bartering', 'bartering',
       'bow', 'bow',
       'dogs', 'dogs',
-      'storytelling', 'storytelling',
-      'jewelry', 'jewelry',
-      'cave_art', 'cave_art',
     ],
   },
 ];

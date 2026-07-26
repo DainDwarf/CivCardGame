@@ -26,7 +26,7 @@ export interface CoreResourceEntry {
 /** The 5 core resources — spendable, and fatal to the run if any goes below zero (see the
  *  warning callout above this list in `Codex.tsx`, not repeated per-resource here). */
 export const CODEX_CORE_RESOURCES: CoreResourceEntry[] = [
-  { key: 'food', name: 'Food', role: 'Feeds your population — each person eats food every round. More food sustains a larger population, and so more workers.' },
+  { key: 'food', name: 'Food', role: 'Feeds your population every round, and a crowd eats more per head than a handful does. More food sustains a larger population, and so more workers.' },
   { key: 'production', name: 'Production', role: 'The build currency. Spent to play permanent building cards.' },
   { key: 'money', name: 'Money', role: 'The treasury. Buys standing access — its main use is opening trade routes and paying their rent.' },
   { key: 'military', name: 'Military', role: 'Power projection. Defends against disasters and enables expansion.' },

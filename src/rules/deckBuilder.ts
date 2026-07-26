@@ -19,7 +19,7 @@ export const MAX_DECKS = 6;
  *  enforced at the deck writer (`App.tsx`'s `saveDeck`), with the deck editor's disabled "Save"
  *  button as its reflection. Mirrors the `MAX_DECKS` precedent. The per-card copy cap (a deck may
  *  hold at most the copies owned) lives on the collection and is enforced by `addCard`. */
-export const MIN_DECK_SIZE = 20;
+export const MIN_DECK_SIZE = 10;
 
 /** How many `wonder` cards a single deck may hold. Wonders are unique monuments — a deck is capped
  *  at one. The number is provisional (balance-tunable), but the *existence* of the limit is a core

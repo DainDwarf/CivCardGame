@@ -10,6 +10,10 @@
 
 ## Random Ideas
 
+ - Drop the minimum deck size entirely? `MIN_DECK_SIZE` is down to 10 and the floor is starting to
+   look like a rule with no job: a deck too thin to survive its own reshuffle is already punished by
+   the game, so the cap may be protecting against nothing. Would remove a committed core rule, so it
+   wants a deliberate look rather than a quiet deletion.
  - Merge all zones (building, works, trade) into a single one, with all of them under the territory constraint?
  - Give the military boards a +1 territory per conquest/territory giving cards?
  - Decreasing effectiveness of old cards? (If card comes from 2 ages ago, output -1, -2, etc?)
