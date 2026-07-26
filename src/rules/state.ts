@@ -33,10 +33,11 @@ export interface CardInstance {
   stickers?: string[];
 }
 
-/** A `CardInstance` placed on the board as a staffable — a building in the `tableau` or a Work card
- *  in the `workZone` — plus the population assigned to staff it. */
+/** A `CardInstance` standing on the board — in the `tableau`, the `workZone` or the `tradeRoutes` zone
+ *  — plus the population assigned to staff it. Every board zone holds these, so `territory.ts`'s
+ *  `placedCards` is one uniform list. */
 export interface PlacedCard extends CardInstance {
-  /** Population currently assigned to this instance. */
+  /** Population currently assigned to this instance. `0` on a box that takes none. */
   workers: number;
 }
 
@@ -55,10 +56,12 @@ export type WorkInstance = PlacedCard;
  *  instance-id space. */
 export type ThreatInstance = CardInstance;
 
-/** A trade route standing in the `tradeRoutes` zone. Like a threat it is a plain `CardInstance` ticking
- *  through the `endTurn` broadcast, but it is *played* by the player, takes no workers, and — unlike a
- *  building — sits outside the territory cap. Once opened it stands for the rest of the run. */
-export type TradeRouteInstance = CardInstance;
+/** A trade route standing in the `tradeRoutes` zone, ticking through the `endTurn` broadcast like a
+ *  threat but *played* by the player. It holds a territory slot for the rest of the run like a building,
+ *  and is a `PlacedCard` at `workers: 0` — it takes no workers, which is exactly what a zero worker
+ *  count means anywhere else on the board (`population.ts`'s self-sufficient case). Its card is not
+ *  `isStaffable`, so nothing looks up a worker *capacity* for it. */
+export type TradeRouteInstance = PlacedCard;
 
 /** Why a card was filed to a pile — rides on a `discard` event so a card's `on.discard` handler can
  *  tell a *sacrifice* (a discard-cost cost, which should trigger) from an *end-of-turn recycle* (which

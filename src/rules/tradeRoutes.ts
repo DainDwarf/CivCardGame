@@ -13,7 +13,7 @@ import type { GameState } from './state';
  *  and an unpayable one collapses the treasury into bankruptcy (`rules/collapse.ts`). It holds a
  *  territory slot for that whole time like a building does, but takes no workers. */
 export function openTradeRoute(G: GameState, cardId: string, stickers?: string[]): void {
-  const route = { id: nextInstanceId(G), cardId, ...(stickers?.length ? { stickers } : {}) };
+  const route = { id: nextInstanceId(G), cardId, workers: 0, ...(stickers?.length ? { stickers } : {}) };
   G.tradeRoutes.push(route);
   resolveCard({ G, self: route });
 }

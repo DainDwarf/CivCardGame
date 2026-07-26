@@ -48,9 +48,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     thinning the deck; their removal cards are what keep circulating. So a standing thing would carry an
     ongoing *draw* cost on top of its resource cost — which is the actual design question, and wants a
     feel-play of permanent routes first.
-  - **Decide the territory question first `[?]`:** put buildings *and* trade routes under **one shared
-    territory cap**, rather than routes being cap-free as they ship. Increasingly attractive, but the
-    answer changes what the removal cards are even for — so play permanent routes before committing.
+  - **The territory question is decided (`trade-redesign`):** buildings, Work boxes *and* trade routes all
+    take a slot under one shared cap. That changes what these removal cards are for — a route now costs a
+    permanent slot *and* permanent rent, so closing one frees board space, not just money, and the
+    deck-dilution price has to be weighed against a much stronger benefit. Re-read this whole item under
+    that model before building it.
   - **Implementation notes to carry forward:**
     - The cancellation must mint into **`discard`, never `hand`** — that is what keeps the reversible
       play/close pair out of a single turn's `expandTurn` line enumeration. Minting to hand blows up the
@@ -67,8 +69,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     removal exists, a play-time `gate.check` leaks: `gate` is evaluated at play and `upkeep` fires at the
     `endTurn` boundary, so play-route → play-building → close-route-before-ending-turn pays zero 🪙 and
     keeps the building forever. Continuous gating also gives the Sea Peoples capstone its teeth.
-- **Escalating route rent** `[size: S]` `[?]` — routes ship with a **flat** rent, so the zone's only cap
-  is the treasury. The originally-planned auto-cap is a rent that scales with the number of parallel
+- **Escalating route rent** `[size: S]` `[?]` — routes ship with a **flat** rent. The zone is now capped
+  by territory as well as by the treasury, which weakens the case for this. The originally-planned
+  auto-cap is a rent that scales with the number of parallel
   routes: a per-card `upkeep.resolve` reading `G.tradeRoutes.length` (like `tamed_horses`/`overextension`,
   a drain reading a count — but **self-referential** where those aren't, since the card reads the size of
   the zone it sits in). Pure authoring, zero engine work; `sim/zoneOrderInvariance.test.ts` already pins
@@ -116,16 +119,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
-- **Trade-route zone** ✅ — a new `trade` **card kind** and a standing `G.tradeRoutes` zone rendered on
-  the right of the board (`BoardRightColumn`, hidden until the first route opens). Playing a trade card
-  files it there via `rules/tradeRoutes.ts`'s `openTradeRoute`, where the `endTurn` broadcast ticks it
-  like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling. Routes sit **outside the
-  territory cap**, take **no workers**, and are **uncapped in number**, because the rent is the cap: an
+- **Unified play area** ✅ — buildings, Work boxes and trade routes all take one **territory** slot and
+  render in one grid. `rules/territory.ts` (was `tableau.ts`) folds the cap over `placedCards`; the
+  playability gate keys on `cards.ts`'s new `occupiesTerritory`. A Work box rents its slot for the turn;
+  a building or route commits it for the run; an `action` takes none — which is why **Conquest and Road
+  became actions**, since as board cards a full board could never grow again. The work strip and the
+  right-hand trade column are gone, and `Board.tsx`'s three box components collapsed into one `BoardBox`.
+  Board starting territory was raised (Tribe/Chiefdom were 0) — **provisional, unmeasured**, as is every
+  mission under the new cap.
+- **Trade-route zone** ✅ — a new `trade` **card kind** and a standing `G.tradeRoutes` zone. Playing a
+  trade card files it there via `rules/tradeRoutes.ts`'s `openTradeRoute`, where the `endTurn` broadcast
+  ticks it like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling. A route takes
+  **no workers** and nothing closes one, so it is bounded by its territory slot and by the rent: an
   unpayable one runs money negative into **bankruptcy**. This is the sink money's one-way-hub topology
   spends through ([`BACKLOG.md`](BACKLOG.md) Step 10).
   - **One design change from the original ticket: routes are permanent.** The ticket had them removable
     at will; removal is now its own deferred item above (a minted cancellation *card*), because the real
-    subject turned out to be deck dilution and the territory-cap question, which want a feel-play first.
+    subject turned out to be deck dilution.
     So there are no reversible play/remove actions and the planner/oracle search is unaffected.
   - A standing route renders as a board **box** (the building/work treatment), not a card face, and the
     face reads its rent→yield as one exchange (`1🪙 → 1🌾`).
@@ -133,7 +143,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     one-shot action as the mechanic's test vehicle. Nine baseline fixtures carry it and the integration
     suites' win rates held unchanged, but **that is not evidence the card is fine** — they'd pass
     identically with Bartering deleted from those decks. Every board starts at 0–2🪙, so in the
-    no-purchase Stone-Age fixtures a route can barely be *opened*, let alone sustained. **The signal to
+    no-purchase Stone-Age fixtures a route can barely be *opened*, let alone sustained (and those numbers
+    predate the unified cap, so they need re-measuring anyway). **The signal to
     read in the sweep is `unplayedCards`, not the win rate.** Confirmed on masonry × 3 seeds: planner
     leaves `bartering` unplayed; the random policy plays it once and one of its runs dies to
     **bankruptcy**, so the path and the rent both work — the non-play is a decision, not a dead path.

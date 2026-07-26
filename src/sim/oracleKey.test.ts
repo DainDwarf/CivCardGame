@@ -26,7 +26,7 @@ function baseState(): GameState {
   G.discard = [{ id: 6, cardId: 'e' }];
   G.tableau = [{ id: 7, cardId: 'f', workers: 1 }];
   G.workZone = [{ id: 8, cardId: 'g', workers: 0 }];
-  G.tradeRoutes = [{ id: 9, cardId: 'h' }];
+  G.tradeRoutes = [{ id: 9, cardId: 'h', workers: 0 }];
   G.rngState = [1, 2, 3];
   return G;
 }

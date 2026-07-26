@@ -95,7 +95,9 @@ function decide(state: RunState): SimAction {
     if (best) return best;
   }
 
-  // 3. Build on free territory (economy growth) — cheapest first. Structures = buildings + wonders.
+  // 3. Commit a free slot to durable economy growth — cheapest structure first. Work cards and routes
+  //    take slots too, but they fall through to the general best-value step below: a free slot goes to
+  //    the permanent producer first, and a Work box only fills what's left over.
   if (freeTerritory(G) > 0) {
     const buildings = playable.filter((p) => isStructure(p.card));
     const best = bestPlay(G, buildings, (c) => -bundleValue(c.cost), -Infinity);
@@ -233,6 +235,8 @@ function staticValue(card: CardDef): number {
   v -= bundleValue(card.cost);
   v += ((card.effect?.resources?.population ?? 0) + (card.produces?.resources?.population ?? 0)) * 3;
   v += ((card.effect?.resources?.culture ?? 0) + (card.produces?.resources?.culture ?? 0)) * 0.6;
-  v += ((card.effect?.resources?.territory ?? 0) + (card.produces?.resources?.territory ?? 0)) * 1.5;
+  // Territory is now the cap on the whole play area, not just on buildings — a slot hosts a building,
+  // a Work box or a route — so a point of it is worth more than when it gated structures alone.
+  v += ((card.effect?.resources?.territory ?? 0) + (card.produces?.resources?.territory ?? 0)) * 3;
   return v;
 }

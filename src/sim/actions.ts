@@ -1,5 +1,5 @@
-import { freePopulation, workerCapOf, unplayableReason, type GameState } from '../rules';
-import { CARDS, type CardDef } from '../content/cards';
+import { freePopulation, placedCards, workerCapOf, unplayableReason, type GameState } from '../rules';
+import { CARDS, isStaffable, type CardDef } from '../content/cards';
 import type { SimAction } from './simulate';
 
 /**
@@ -40,7 +40,10 @@ export function enumerateActions(G: GameState): SimAction[] {
   }
 
   const idle = freePopulation(G);
-  const staffables = [...G.tableau, ...G.workZone];
+  // Every box in the play area that can hold workers. A trade route stands in a slot like the rest but
+  // takes none, so it is filtered out here rather than left out by naming only the other two zones —
+  // `findStaffable`, which the moves resolve through, would reject it anyway.
+  const staffables = placedCards(G).filter((p) => isStaffable(CARDS[p.cardId]));
   for (const s of staffables) {
     const cap = workerCapOf(s);
     if (s.workers > 0) actions.push({ kind: 'unassignWorker', id: s.id });

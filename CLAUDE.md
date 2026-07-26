@@ -110,8 +110,10 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
 - **`state.ts`** — `GameState` (the serializable run state `G`): the combined `resources: Resources`
   (all 8), the card zones `deck`/`hand`/`discard`/`removed` (each a `CardInstance[]` — `{ id, cardId,
   counters? }`, so every copy has a stable per-run **instance id** and its own per-copy `counters` via
-  `getCounter`/`bumpCounter`), the tableau (`PlacedCard` = `CardInstance` + `workers`), `workZone`
-  (played `work` awaiting staffing), `threats`, `tradeRoutes`, `objective`, and `pendingInteraction` (a suspended
+  `getCounter`/`bumpCounter`), the three board zones — `tableau`, `workZone` (played `work` awaiting
+  staffing) and `tradeRoutes`, each a `PlacedCard[]` (`CardInstance` + `workers`, `0` on a box that
+  takes none), so `territory.ts`'s `placedCards` reads them as one list — plus `threats`,
+  `objective`, and `pendingInteraction` (a suspended
   card effect; while set, `endTurn` no-ops and undo is blocked). `instancesFromCardIds` mints;
   `blankState()` builds an empty one; `cloneState()` is the snapshot primitive every move, undo entry
   and projection copies through (a plain-data deep walk — `G` has no Maps/Sets/cycles/functions, so
@@ -317,11 +319,13 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   name/cost/kind banner/art/workers/effect, shared by hand/deck-editor/Collection; shows `effectiveCard`
   numbers + a `StickerRow` badge; also owns the `RESOURCE_ICON` map for all 8 resources),
   `CardZoomOverlay.tsx`, `BoardMini.tsx` (a read-only board miniature driven off `effectiveBoard`,
-  reused across meta screens), `BoardLeftColumn` (the mission's `G.objective` card pinned in
+  reused across meta screens), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
   `.objectiveCorner` above a scrolling `.threatZone` of `G.threats` — all `CardFace`s reading only
-  `GameState`, never the mission), and its mirror `BoardRightColumn` (a `.tradeZone` of
-  `G.tradeRoutes`, hidden until the first route opens — a route renders as a board *box* like a
-  building's, not a card face, since it stands on the board rather than beside it). `.groundBackdrop` tints per board via a
+  `GameState`, never the mission). The play area is the one `.slotGrid`, one `.slot` per territory,
+  each holding at most one `BoardBox` — the single box visual for everything standing on the board
+  (`placedCards`), whatever its kind: it staffs, drags between slots and zooms identically, and only
+  the border treatment differs (dashed = a Work box, which frees its slot at end of turn; solid = a
+  building/wonder/route, which keeps it). `.groundBackdrop` tints per board via a
   `data-board` attribute (CSS-only).
 - **`meta/MetaMenu.tsx`** — the shell; a left nav switches five screens:
   - `CampaignMap.tsx` (Mission) — the mission DAG as a drag-to-pan tech tree under themed age bands; a

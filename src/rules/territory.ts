@@ -1,11 +1,11 @@
-import type { CardInstance, GameState } from './state';
+import type { GameState, PlacedCard } from './state';
 
 /** Every card standing on the board: the tableau's buildings and wonders, this turn's Work boxes, and
  *  the standing trade routes. The one read-path for "what is on the board" — the territory cap, the
  *  instance-id scan (`population.ts`'s `nextInstanceId`) and the UI slot grid all fold over it, so a
  *  new board zone reaches them by landing here. Not `threats`/`objective`: those are mission pressure
  *  standing beside the board, not land the player spends. */
-export function placedCards(G: GameState): CardInstance[] {
+export function placedCards(G: GameState): PlacedCard[] {
   return [...G.tableau, ...G.workZone, ...G.tradeRoutes];
 }
 
