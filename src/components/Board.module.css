@@ -461,6 +461,10 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  /* Clears the fixed top-right burger (its geometry lives in GameMenu.module.css), so the strip —
+     dashed edge included — visibly starts below it instead of running underneath. Inset on the
+     column, not the scrolling .tradeZone, so a route can't scroll up behind the button either. */
+  padding-top: calc(1rem + 44px + 8px);
 }
 
 /* The trade zone: routes (G.tradeRoutes) as a centered stack, scrolling if they pile up. A plum
@@ -643,6 +647,16 @@
   width: 180px;
   flex: 0 0 auto;
   border: 2px dashed var(--work-border) !important;
+  cursor: default;
+}
+
+/* A trade-route box: a building box standing in the trade strip. A plum dashed border echoes the
+   kind's banner, matching how .workBox marks itself teal. Fills the strip's width rather than taking
+   a slot's, and isn't draggable (nothing removes or moves a route). */
+.tradeBox {
+  flex: 0 0 auto;
+  align-self: stretch;
+  border: 2px dashed var(--card-trade-banner) !important;
   cursor: default;
 }
 

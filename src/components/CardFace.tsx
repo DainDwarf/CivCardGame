@@ -118,9 +118,6 @@ export function describeConditions(c: CardDef): string {
   // An event: play it (pay its cost) to banish it unresolved — its effect never fires (preventive);
   // leave it and it fires for free at end of round, then recurs from the discard.
   if (c.kind === 'event') parts.push('play to banish resolves at end of round');
-  // A route can never be closed, so its rent is a commitment for the whole run — the one thing a
-  // player must know before playing one, and nothing else on the face says it.
-  if (c.kind === 'trade') parts.push('stands for the rest of the run');
   if (c.gate?.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.gate.cultureLevelReq}`);
   if (c.gate?.discardCost) parts.push(`discard ${c.gate.discardCost}`);
   if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
@@ -144,6 +141,26 @@ export function describeBuilding(b: CardDef, includeWorkers = true): string {
   return parts.join(' · ');
 }
 
+/** Presentation-only summary of a trade route's per-round exchange, e.g. "1🪙 → 1🌾" — its `upkeep`
+ *  rent and its `produces` yield netted into one bag and split across the arrow, so the face reads as
+ *  the conversion it is rather than as two unrelated deltas. Shared by the card face and the run
+ *  board's route box. */
+export function describeTradeFlow(c: CardDef): string {
+  const net = {} as Partial<Record<keyof Resources, number>>;
+  for (const bag of [c.upkeep?.resources, c.produces?.resources]) {
+    for (const [k, v] of Object.entries(bag ?? {}) as [keyof Resources, number][]) {
+      net[k] = (net[k] ?? 0) + v;
+    }
+  }
+  const entries = (Object.entries(net) as [keyof Resources, number][]).filter(([, v]) => v);
+  const paid = entries.filter(([, v]) => v < 0).map(([k, v]) => `${-v}${RESOURCE_ICON[k]}`);
+  const got = entries.filter(([, v]) => v > 0).map(([k, v]) => `${v}${RESOURCE_ICON[k]}`);
+  if (paid.length && got.length) return `${paid.join(' ')} → ${got.join(' ')}`;
+  // A one-sided route (pure rent or pure gift) has nothing to point the arrow at, so it falls back to
+  // the signed reading every other card uses.
+  return paid.map((p) => `-${p}`).concat(got.map((g) => `+${g}`)).join(' ');
+}
+
 /** Presentation-only summary of what a card does (no game logic here). A card whose behavior the
  *  declarative `effect` fields can't express (an `effect.resolve` closure) authors its own
  *  `description`, which wins over the auto-generated text below. */
@@ -161,23 +178,21 @@ function describeSignedResources(res: Partial<Resources> | undefined, into: stri
 
 export function describeCard(c: CardDef): string {
   if (c.display?.description) return c.display.description;
+  if (c.kind === 'trade') return describeTradeFlow(c);
   const e = c.effect;
   const parts: string[] = [];
   describeSignedResources(e?.resources, parts);
-  // Recurring `upkeep` (a hazard's drain, a staffable's maintenance, a trade route's rent) shows its
-  // signed delta the same way, appended after any one-shot `effect` above — a card may carry both (e.g.
-  // a threat with an entry `effect` plus a per-round drain), and the two just concatenate.
+  // Recurring `upkeep` (a hazard's drain, a staffable's maintenance) shows its signed delta the same
+  // way, appended after any one-shot `effect` above — a card may carry both (e.g. a threat with an
+  // entry `effect` plus a per-round drain), and the two just concatenate.
   describeSignedResources(c.upkeep?.resources, parts);
-  // A standing card (staffable, or a trade route) shows its declarative per-round output — `produces` —
-  // here (a staffable's workers are shown as meeples, not text). This is the sole path for an ongoing
-  // output; the `effect` branch above is its one-shot only.
-  if (isStaffable(c) || c.kind === 'trade') {
+  // A staffable shows its declarative per-round output — `produces` — here (its workers are shown as
+  // meeples, not text). This is the sole path for an ongoing output; the `effect` branch above is its
+  // one-shot only.
+  if (isStaffable(c)) {
     const stats = describeBuilding(c, false);
     if (stats) parts.push(stats);
   }
-  // A route's rent and yield both recur, and the face has no other way to say so — without this the
-  // reading is indistinguishable from a one-shot action's.
-  if (c.kind === 'trade' && parts.length) return `${parts.join(' ')} each round`;
   return parts.join(' · ') || 'action';
 }
 

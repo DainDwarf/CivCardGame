@@ -127,6 +127,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     at will; removal is now its own deferred item above (a minted cancellation *card*), because the real
     subject turned out to be deck dilution and the territory-cap question, which want a feel-play first.
     So there are no reversible play/remove actions and the planner/oracle search is unaffected.
+  - A standing route renders as a board **box** (the building/work treatment), not a card face, and the
+    face reads its rent→yield as one exchange (`1🪙 → 1🌾`).
   - **Bartering is the first route** (2🪙 to open, then −1🪙 / +1🌾 every round), converted from a
     one-shot action as the mechanic's test vehicle. Nine baseline fixtures carry it and the integration
     suites' win rates held unchanged, but **that is not evidence the card is fine** — they'd pass

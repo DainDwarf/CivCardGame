@@ -27,7 +27,7 @@ import { computeRewards } from '../rules/rewards';
 import { isOwned, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
 import { sortDeckEntries, variantKey } from '../rules/deckBuilder';
-import { CardFace, RESOURCE_ICON, StickerRow, artFor, describeBuilding } from './CardFace';
+import { CardFace, RESOURCE_ICON, StickerRow, artFor, describeBuilding, describeTradeFlow } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
 
@@ -254,20 +254,13 @@ function BoardRightColumn({
   return (
     <div className={styles.boardRight}>
       <div className={styles.tradeZone}>
-        {G.tradeRoutes.map((r) => {
-          const card = CARDS[r.cardId];
-          const overrideText = card.display?.dynamicText?.(G, r);
-          return (
-            <CardFace
-              key={r.id}
-              card={card}
-              overrideText={overrideText}
-              stickerBadge={r.stickers}
-              className={styles.staticCard}
-              onClick={() => onZoom(r.cardId, overrideText, r.stickers)}
-            />
-          );
-        })}
+        {G.tradeRoutes.map((r) => (
+          <TradeBox
+            key={r.id}
+            inst={r}
+            onClick={() => onZoom(r.cardId, CARDS[r.cardId].display?.dynamicText?.(G, r), r.stickers)}
+          />
+        ))}
       </div>
     </div>
   );
@@ -582,6 +575,25 @@ function WorkBox({
         <div className={styles.bldFace}>
           <span className={styles.bldIcon} aria-hidden="true">{artFor(card)}</span>
           <span className={styles.bldOutput} aria-hidden="true">{gain}</span>
+        </div>
+      </div>
+      <StickerRow stickers={inst.stickers} />
+    </div>
+  );
+}
+
+/** The visual face of one standing trade route in the trade zone — the same box treatment as a
+ *  building or a Work card, so everything standing on the board reads alike. A route takes no
+ *  workers, so it carries no pip column: just its name, art, and the per-round exchange. */
+function TradeBox({ inst, onClick }: { inst: CardInstance; onClick?: () => void }) {
+  const card = effectiveCard(CARDS[inst.cardId], inst);
+  return (
+    <div className={`${styles.buildingBox} ${styles.tradeBox}`} onClick={onClick}>
+      <div className={styles.bldBody}>
+        <span className={styles.bName}>{card.name}</span>
+        <div className={styles.bldFace}>
+          <span className={styles.bldIcon} aria-hidden="true">{artFor(card)}</span>
+          <span className={styles.bldOutput} aria-hidden="true">{describeTradeFlow(card)}</span>
         </div>
       </div>
       <StickerRow stickers={inst.stickers} />

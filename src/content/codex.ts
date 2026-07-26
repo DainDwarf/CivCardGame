@@ -122,6 +122,5 @@ export const CODEX_GLOSSARY: GlossaryEntry[] = [
   { term: 'Discard cost', definition: 'You must discard that many other cards from your hand to play it.' },
   { term: 'Culture requirement', definition: 'The card can only be played once your culture has reached the required level. Culture is not consumed.' },
   { term: 'Territory', definition: 'How many buildings and wonders your tableau can hold. Trade routes are outside it.' },
-  { term: 'Stands for the rest of the run', definition: 'Once played, this card can never be taken back — its per-round cost is a commitment for the whole run.' },
   { term: 'Single use', definition: 'Instead of being discarded, this card is removed from the run once used.' },
 ];

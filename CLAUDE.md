@@ -313,7 +313,8 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   reused across meta screens), `BoardLeftColumn` (the mission's `G.objective` card pinned in
   `.objectiveCorner` above a scrolling `.threatZone` of `G.threats` — all `CardFace`s reading only
   `GameState`, never the mission), and its mirror `BoardRightColumn` (a `.tradeZone` of
-  `G.tradeRoutes`, hidden until the first route opens). `.groundBackdrop` tints per board via a
+  `G.tradeRoutes`, hidden until the first route opens — a route renders as a board *box* like a
+  building's, not a card face, since it stands on the board rather than beside it). `.groundBackdrop` tints per board via a
   `data-board` attribute (CSS-only).
 - **`meta/MetaMenu.tsx`** — the shell; a left nav switches five screens:
   - `CampaignMap.tsx` (Mission) — the mission DAG as a drag-to-pan tech tree under themed age bands; a
