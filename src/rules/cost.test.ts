@@ -121,6 +121,22 @@ describe('discardCount', () => {
     G.hand = [self, { id: 2, cardId: 'x' }];
     expect(discardCount(sacrificer, { G, self })).toBe(0);
   });
+
+  it("survives a resolve that only reprices resources and never mentions it", () => {
+    const scalingSacrificer: CardDef = {
+      id: 'sac2', name: 'Sac2', kind: 'action',
+      cost: { resources: { food: 1 }, discard: 2, resolve: () => ({ resources: { food: 9 } }) },
+    };
+    const inst: CardInstance = { id: 1, cardId: 'sac2' };
+    const G = blankState('test');
+    G.hand = [inst, { id: 2, cardId: 'x' }, { id: 3, cardId: 'x' }];
+    expect(currentCost(scalingSacrificer, { G, self: inst })).toEqual({
+      resources: { food: 9 },
+      discard: 2,
+      resolve: expect.any(Function),
+    });
+    expect(discardCount(scalingSacrificer, { G, self: inst })).toBe(2);
+  });
 });
 
 describe('runCard', () => {

@@ -29,6 +29,18 @@ describe('drawUpTo', () => {
     expect(G.discard).toEqual([]);
   });
 
+  it("carries a card's counters through the discard→deck→hand cycle", () => {
+    // What a self-scaling card's per-copy state rides on: the reshuffle canonicalizes and shuffles the
+    // *same* instance objects rather than re-minting them, so a price or effect keyed on `counters`
+    // keeps escalating across laps of the deck instead of resetting each time the pile folds over.
+    const G = blankState('enlightenment');
+    G.handSize = 1;
+    G.deck = [];
+    G.discard = [{ id: 7, cardId: 'scaler', counters: { plays: 3 } }];
+    drawUpTo(G);
+    expect(G.hand).toEqual([{ id: 7, cardId: 'scaler', counters: { plays: 3 } }]);
+  });
+
   it('emits a reshuffle event each time the discard folds back into the deck', () => {
     const G = blankState('enlightenment');
     G.handSize = 1; // draw one card, forcing exactly one reshuffle of the empty deck

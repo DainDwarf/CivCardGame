@@ -70,7 +70,9 @@ export interface CardCost {
  * bigger swing than the sticker advertises.
  */
 export function currentCost(card: CardDef, ctx: CostContext): CardCost {
-  const resolved = card.cost.resolve ? card.cost.resolve(ctx, card.cost) : card.cost;
+  // Merged over the base, not substituted for it: a `resolve` that only reprices `resources` must not
+  // silently drop a `discard`/`cultureLevelReq` it never mentioned. Composition, as with `CardEffect`.
+  const resolved = card.cost.resolve ? { ...card.cost, ...card.cost.resolve(ctx, card.cost) } : card.cost;
   if (!resolved.resources) return resolved;
   const resources = effectiveCost(resolved.resources, ctx.self);
   return resources === resolved.resources ? resolved : { ...resolved, resources };
