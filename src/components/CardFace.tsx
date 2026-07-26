@@ -36,12 +36,12 @@ const ART_FALLBACK: Record<CardDef['kind'], string> = {
 
 /** The central face glyph for a card: its own colocated `art` (`content/cards.ts`), else the
  *  per-kind default. The single reader every render site goes through (the card face, the
- *  building/work boxes in `Board.tsx`). */
+ *  board boxes in `Board.tsx`). */
 export const artFor = (card: CardDef): string => card.display?.art ?? ART_FALLBACK[card.kind];
 
 /** Bottom-left row of per-sticker badges — `CardFace`'s own `stickerBadge` prop
  *  renders this, and a non-`CardFace` board box that needs the identical treatment (`Board.tsx`'s
- *  `BuildingBox`/`WorkBox`, which own their own custom markup rather than rendering a `CardFace`)
+ *  `BoardBox`, which owns its own custom markup rather than rendering a `CardFace`)
  *  imports the component rather than reaching into this module's CSS classes directly — keeping
  *  the sticker row's one visual definition here, not duplicated at each call site. */
 export function StickerRow({
