@@ -96,6 +96,7 @@ export function DeckEditor({
   const wonders = cards.filter((c) => c.kind === 'wonder').sort(compareCards);
   const works = cards.filter((c) => c.kind === 'work').sort(compareCards);
   const actions = cards.filter((c) => c.kind === 'action').sort(compareCards);
+  const trades = cards.filter((c) => c.kind === 'trade').sort(compareCards);
 
   // Copies of `card`'s variant still available to add — the owned ones not already in the deck,
   // exactly the pool `addCard` picks from. Shared by `atCap` and the picker's badge so both read
@@ -256,6 +257,12 @@ export function DeckEditor({
           <>
             <h2 className={styles.sectionTitle}>Actions</h2>
             <div className={styles.grid}>{actions.flatMap(pickerTiles)}</div>
+          </>
+        )}
+        {trades.length > 0 && (
+          <>
+            <h2 className={styles.sectionTitle}>Trade routes</h2>
+            <div className={styles.grid}>{trades.flatMap(pickerTiles)}</div>
           </>
         )}
       </div>

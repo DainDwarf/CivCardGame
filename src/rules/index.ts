@@ -12,4 +12,5 @@ export * from './population';
 export * from './rng';
 export * from './tableau';
 export * from './threats';
+export * from './tradeRoutes';
 export * from './upkeep';

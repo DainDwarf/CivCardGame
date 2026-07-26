@@ -88,12 +88,14 @@ export function resolveCard(ctx: EffectContext): void {
 }
 
 /**
- * Resolve one operating (staffed) instance's per-round production from its `produces`. Deliberately a
- * *separate* path from `runEffect` because it scales per worker: the declarative `produces.resources`
- * are per-worker amounts multiplied by the instance's `producingUnits` (1 for a self-sufficient card),
- * then any `produces.resolve` runs and *composes* (owning its own scaling), mirroring `runEffect`'s
+ * Resolve one standing instance's per-round production from its `produces`. Deliberately a *separate*
+ * path from `runEffect` because it scales per worker: the declarative `produces.resources` are
+ * per-worker amounts multiplied by the instance's `producingUnits` (1 for a self-sufficient card), then
+ * any `produces.resolve` runs and *composes* (owning its own scaling), mirroring `runEffect`'s
  * gain-then-closure order. `ctx.self` carries no `workers`, so the live instance is resolved from its
- * zone. The scaled bundle rides `gainResources`, so a sticker applies.
+ * staffable zone — a card that stands *outside* those zones (a `trade` route) has no worker dimension
+ * at all and yields its `produces` flat, which is what the 1-unit fallback expresses. The scaled bundle
+ * rides `gainResources`, so a sticker applies.
  */
 export function resolveProduction(ctx: EffectContext): void {
   const produces = CARDS[ctx.self.cardId].produces;

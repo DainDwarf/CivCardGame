@@ -55,6 +55,11 @@ export type WorkInstance = PlacedCard;
  *  instance-id space. */
 export type ThreatInstance = CardInstance;
 
+/** A trade route standing in the `tradeRoutes` zone. Like a threat it is a plain `CardInstance` ticking
+ *  through the `endTurn` broadcast, but it is *played* by the player, takes no workers, and — unlike a
+ *  building — sits outside the territory cap. Once opened it stands for the rest of the run. */
+export type TradeRouteInstance = CardInstance;
+
 /** Why a card was filed to a pile — rides on a `discard` event so a card's `on.discard` handler can
  *  tell a *sacrifice* (a discard-cost cost, which should trigger) from an *end-of-turn recycle* (which
  *  usually shouldn't). Every discard site emits with its reason; the handler decides what to do. */
@@ -139,6 +144,10 @@ export interface GameState {
   /** Persistent board hazards, ticking every upkeep — see `rules/threats.ts`. Mission-seeded only;
    *  empty on every run that doesn't use one. */
   threats: ThreatInstance[];
+  /** Trade routes the player has opened — see `rules/tradeRoutes.ts`. Standing, workerless, and
+   *  outside the territory cap; each pays its `upkeep` rent and yields its `produces` every round.
+   *  Uncapped: the rent scales with the zone, so the treasury is what bounds it. */
+  tradeRoutes: TradeRouteInstance[];
   /** The mission's win/lose condition as a card — seeded once at setup from the mission's
    *  `objectiveCardId` (`rules/objective.ts`'s `seedObjective`). Its card owns the win *logic*
    *  (the pure-read `objective` predicate); the bus re-derives it into `G.pendingVictory` at every
@@ -235,6 +244,7 @@ export function blankState(missionId: string): GameState {
     tableau: [],
     workZone: [],
     threats: [],
+    tradeRoutes: [],
     handSize: 4,
     missionId,
     rngState: seededRng('blank').getState(),

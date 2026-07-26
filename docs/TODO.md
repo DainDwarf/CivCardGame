@@ -39,32 +39,47 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Run loop (`src/rules/`, `src/run/`)
 
-- **Trade-route zone** `[size: L]` `[?]` — a new board zone for **trade routes**: cards played for a 🪙
-  cost that then stand, paying a **per-round 🪙 upkeep**, and which the player may **remove at any time**
-  (moved to `discard`, so the card recycles). Outside the **territory cap** — a sea route isn't land, and
-  routes competing with buildings for slots means nobody ever runs one. **No hard cap either**: upkeep
-  scales with the number of parallel routes, so the zone auto-caps at whatever the treasury sustains.
-  This is the mechanism money's one-way-hub topology runs through (see
-  [`BACKLOG.md`](BACKLOG.md) Step 10) — money rents standing access rather than converting into things.
-  - **Bronze gating is continuous, not play-time.** A bronze card checks for an *operating* route every
-    round (on `produces`), so losing tin **mothballs** the forge rather than preventing its construction.
-    A play-time `gate.check` leaks: `gate` is evaluated at play, `upkeep` fires at the `endTurn`
-    boundary, so play-route → play-building → remove-route-before-ending-turn pays zero 🪙 and keeps the
-    building forever. Continuous gating also gives the Sea Peoples capstone its teeth — cut routes take
-    the whole bronze economy dark instead of leaving built infrastructure untouched.
-  - **Cashes in the deferred destroy/demolish verb** — BACKLOG parked it as "reimplement cleanly on the
-    resolver spine when a real card wants it, Bronze/Iron". Route removal is that card.
-  - **Takes no workers** (`workers: 0`) — the rent is money, and leaving population out keeps the two
-    scarcities distinct. Decide this at authoring time, not in the implementer's debugger:
-    `population.ts`'s `cardWorkerCap` *throws* on a staffable with no `workers` field.
-  - Surface: a `GameState` zone (plain data, so `cloneState` is free), play/remove moves, the escalating
-    upkeep (like `tamed_horses`/`overextension`, a drain reading a count — but **self-referential** where
-    those aren't: the card reads the size of the zone it sits in, so it isn't a copy-paste),
-    `enumerateActions`,
-    `invariants` (instance ids unique across *all* zones), `oracleKey`, and a UI zone. Budget for the
-    simulator: reversible play/remove actions widen the planner and oracle search.
-  - Escalating-cost formula is a **balance** question, not a blocking one — provisional numbers are fine
-    to build against.
+- **Removal cards — trade cancellation + building destroy** `[size: M]` `[?]` — the trade zone ships with
+  routes **permanent**; this is the half deliberately held back. Playing a trade route would *also* mint a
+  free **Trade Cancellation** into the **discard**; playing that closes one chosen route (route →
+  `discard`, cancellation → `removed`). A **building destroy** card is the same shape for the tableau, and
+  cashes in the destroy/demolish verb [`BACKLOG.md`](BACKLOG.md) parked for Bronze/Iron.
+  - **The point is deck dilution, not convenience.** Buildings and routes stand on the board without
+    thinning the deck; their removal cards are what keep circulating. So a standing thing would carry an
+    ongoing *draw* cost on top of its resource cost — which is the actual design question, and wants a
+    feel-play of permanent routes first.
+  - **Decide the territory question first `[?]`:** put buildings *and* trade routes under **one shared
+    territory cap**, rather than routes being cap-free as they ship. Increasingly attractive, but the
+    answer changes what the removal cards are even for — so play permanent routes before committing.
+  - **Implementation notes to carry forward:**
+    - The cancellation must mint into **`discard`, never `hand`** — that is what keeps the reversible
+      play/close pair out of a single turn's `expandTurn` line enumeration. Minting to hand blows up the
+      planner and oracle search.
+    - It self-exiles on the **resume** pass (splice itself out of `discard` by id → `removed`), not on
+      the suspending pass; a `bow`-style pre-exile leaves a committed, undo-visible state where the
+      cancellation is gone but the route still stands.
+    - Build the choice's `options` in a **canonical order** (sorted by `contentKey`): `oracleKey.ts`'s
+      `pendingToken` joins them positionally while `keyOf` folds `tradeRoutes` as a multiset.
+    - Gate it in `playability.ts` on at least one standing route — a zero-option `pendingInteraction`
+      is an unrecoverable soft-lock (non-cancelable, `endTurn` no-ops, undo blocked).
+  - **Bronze gating stays continuous, not play-time.** A bronze card checks for a route every round (on
+    `produces`), so losing tin **mothballs** the forge rather than preventing its construction. Once
+    removal exists, a play-time `gate.check` leaks: `gate` is evaluated at play and `upkeep` fires at the
+    `endTurn` boundary, so play-route → play-building → close-route-before-ending-turn pays zero 🪙 and
+    keeps the building forever. Continuous gating also gives the Sea Peoples capstone its teeth.
+- **Escalating route rent** `[size: S]` `[?]` — routes ship with a **flat** rent, so the zone's only cap
+  is the treasury. The originally-planned auto-cap is a rent that scales with the number of parallel
+  routes: a per-card `upkeep.resolve` reading `G.tradeRoutes.length` (like `tamed_horses`/`overextension`,
+  a drain reading a count — but **self-referential** where those aren't, since the card reads the size of
+  the zone it sits in). Pure authoring, zero engine work; `sim/zoneOrderInvariance.test.ts` already pins
+  the shape via its `test_route_scaling` fixture. A **balance** question, not a blocking one.
+- **Sim policies answer interactions blindly** `[size: S]` — `greedyPolicy`/`greedy2Policy` pick a
+  random `pendingInteraction` option and `heuristicPolicy` always answers `0`, each justified by a comment
+  ("options aren't scored — recovering a card to hand rarely moves `scoreState`") that stops being true the
+  moment a choice is a real decision, e.g. *which* route to close. Also worth recording alongside:
+  `heuristicPolicy`'s `staticValue` scores a trade route's 🪙 cost against no immediate gain, so that
+  policy will essentially never open one — a low heuristic win rate on a trade deck is the policy, not the
+  balance.
 
 ## Tech debt / architecture
 
@@ -97,6 +112,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Trade-route zone** ✅ — a new `trade` **card kind** and a standing `G.tradeRoutes` zone rendered on
+  the right of the board (`BoardRightColumn`, hidden until the first route opens). Playing a trade card
+  files it there via `rules/tradeRoutes.ts`'s `openTradeRoute`, where the `endTurn` broadcast ticks it
+  like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling. Routes sit **outside the
+  territory cap**, take **no workers**, and are **uncapped in number**, because the rent is the cap: an
+  unpayable one runs money negative into **bankruptcy**. This is the sink money's one-way-hub topology
+  spends through ([`BACKLOG.md`](BACKLOG.md) Step 10).
+  - **One design change from the original ticket: routes are permanent.** The ticket had them removable
+    at will; removal is now its own deferred item above (a minted cancellation *card*), because the real
+    subject turned out to be deck dilution and the territory-cap question, which want a feel-play first.
+    So there are no reversible play/remove actions and the planner/oracle search is unaffected.
+  - **Bartering is the first route** (2🪙 to open, then −1🪙 / +1🌾 every round), converted from a
+    one-shot action as the mechanic's test vehicle. Nine baseline fixtures carry it; the integration
+    suites' win rates held unchanged, and the baseline sweep is a separate step.
+  - **Colour:** deep plum `#7d2f57`, picked by measuring CIEDE2000 distance to every other kind banner
+    under all three CVD sims (worst 7.8, against the palette's own tightest existing pair at 4.2).
+    Deliberately *not* the brighter magenta, which is already Tritanopia's culture-gauge hue.
 - **Unsaved-changes warning on leaving the deck editor** ✅ — leaving the editor mid-edit with unsaved
   changes now prompts before discarding. `DeckEditor` reports a `dirty` flag up (variant-grouped
   content + name vs. `initialDeck`, so a remove-then-re-add of the same variant doesn't false-flag);

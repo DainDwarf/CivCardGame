@@ -111,7 +111,7 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   (all 8), the card zones `deck`/`hand`/`discard`/`removed` (each a `CardInstance[]` — `{ id, cardId,
   counters? }`, so every copy has a stable per-run **instance id** and its own per-copy `counters` via
   `getCounter`/`bumpCounter`), the tableau (`PlacedCard` = `CardInstance` + `workers`), `workZone`
-  (played `work` awaiting staffing), `threats`, `objective`, and `pendingInteraction` (a suspended
+  (played `work` awaiting staffing), `threats`, `tradeRoutes`, `objective`, and `pendingInteraction` (a suspended
   card effect; while set, `endTurn` no-ops and undo is blocked). `instancesFromCardIds` mints;
   `blankState()` builds an empty one; `cloneState()` is the snapshot primitive every move, undo entry
   and projection copies through (a plain-data deep walk — `G` has no Maps/Sets/cycles/functions, so
@@ -167,6 +167,11 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   drain, so the card computes its own behaviour. A threat's *driven* defeat (a deadline, not a drain)
   is a separate pure-read `defeat` hook; `defeatMet`/`evaluateDefeat` re-derive it into
   `G.pendingDefeat` set-or-clear each flush — never mutated mid-dispatch.
+- **`tradeRoutes.ts`** — the player-played counterpart to `threats.ts`: `openTradeRoute` files a played
+  `trade` card into `G.tradeRoutes` (resolving its one-time entry `effect`), where the `endTurn`
+  broadcast ticks it like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling.
+  Routes sit **outside the territory cap**, take **no workers**, and are **uncapped in number**: nothing
+  removes one, so the rent is the cap (an unpayable one collapses into bankruptcy).
 - **`objective.ts`** — the win counterpart to `threats.ts`: `seedObjective` seeds the mission's
   objective card into `G.objective`; `objectiveMet` folds its declarative `goals` (`goalMet`/
   `goalProgress`/`goalsReadout`; a non-threshold goal carries its own bespoke `met`). Bus-driven:
@@ -235,8 +240,8 @@ sticker's hooks — see *Cards and stickers own their own logic*), so these are 
 logic that rides on it. **A building card *is* the building** — there's no separate building catalogue.
 
 - **`cards.ts`** — `CARDS`, the single card catalogue. `CardKind` =
-  building/wonder/action/work/event/threat/objective (see DESIGN.md → *Card kinds* for what each does
-  and how it leaves play). A `building`/`wonder` carries its own `produces`/`workers`; a wonder plays
+  building/wonder/action/work/trade/event/threat/objective (see DESIGN.md → *Card kinds* for what each
+  does and how it leaves play). A `building`/`wonder` carries its own `produces`/`workers`; a wonder plays
   exactly like a building (both share the `isStructure`/`isStaffable` choke-point predicates, so no
   call site open-codes `kind === 'building'`) and differs only in the meta loop (own Collection/deck
   category, no bought copies, no stickers, ≤ `MAX_WONDERS_PER_DECK` per deck). Filing defaults to
@@ -289,7 +294,8 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   draft, delegate computation to `src/rules/`, return `'invalid'` to reject. `playCard` pays costs then
   routes by kind: a `building` → `addBuilding` into the tableau (staying in play, not filed); a `work`
   → `addWork` onto the board (resolving *no* effect on play, filing to `discard` only at end of turn);
-  everything else resolves its `effect` and, if `action`, files to `discard`.
+  a `trade` → `openTradeRoute` into the standing trade zone; everything else resolves its `effect`
+  and, if `action`, files to `discard`.
   `assignWorker`/`unassignWorker`/`transferWorker`/`toggleStaffing` target a `Staffable` by id via
   `findStaffable`, so they hit a building or a work box interchangeably.
 - **`GameContext.tsx`** — React context holding `RunState`, exposing `{ G, gameover, board, moves,
@@ -304,10 +310,11 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   name/cost/kind banner/art/workers/effect, shared by hand/deck-editor/Collection; shows `effectiveCard`
   numbers + a `StickerRow` badge; also owns the `RESOURCE_ICON` map for all 8 resources),
   `CardZoomOverlay.tsx`, `BoardMini.tsx` (a read-only board miniature driven off `effectiveBoard`,
-  reused across meta screens), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
+  reused across meta screens), `BoardLeftColumn` (the mission's `G.objective` card pinned in
   `.objectiveCorner` above a scrolling `.threatZone` of `G.threats` — all `CardFace`s reading only
-  `GameState`, never the mission). `.groundBackdrop` tints per board via a `data-board` attribute
-  (CSS-only).
+  `GameState`, never the mission), and its mirror `BoardRightColumn` (a `.tradeZone` of
+  `G.tradeRoutes`, hidden until the first route opens). `.groundBackdrop` tints per board via a
+  `data-board` attribute (CSS-only).
 - **`meta/MetaMenu.tsx`** — the shell; a left nav switches five screens:
   - `CampaignMap.tsx` (Mission) — the mission DAG as a drag-to-pan tech tree under themed age bands; a
     node opens `MissionDetailPanel` (lore + reward preview), whose "Continue" hands off to a board/deck

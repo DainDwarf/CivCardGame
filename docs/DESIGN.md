@@ -83,10 +83,10 @@ where the two are merged into one immutable run configuration. ✅
 
 ### Card kinds ✅
 
-There are **seven** card kinds — the `CardKind` values in `content/cards.ts`:
-`building`, `wonder`, `action`, `work`, `event`, `threat`, `objective`. The first four differ by how
-they leave your hand; `threat` and `objective` are the odd ones out — they never enter a hand or pile
-at all, living instead in persistent board zones (see below). By default a card returns to the
+There are **eight** card kinds — the `CardKind` values in `content/cards.ts`:
+`building`, `wonder`, `action`, `work`, `trade`, `event`, `threat`, `objective`. The first five differ
+by how they leave your hand; `threat` and `objective` are the odd ones out — they never enter a hand or
+pile at all, living instead in persistent board zones (see below). By default a card returns to the
 **discard** pile once it's done being useful (reshuffled into the deck when it runs
 dry) — the **removed** pile is the exception. What routes a card there is a *path*, not a
 static kind rule: the `event` kind's played-vs-unplayed split (a *played* event is banished;
@@ -112,6 +112,15 @@ see below). An *effect* can route a card there too — see the building note.
   on play — no idle population required to play it. Produces its effect only while
   staffed, then goes to **discard** at *end of turn* (not immediately, like Action).
   → staffed *labour*.
+- **Trade route (standing rent):** pay a cost to open it into the persistent
+  `GameState.tradeRoutes` zone, on the right of the board. It stands there for the rest of the
+  run — **nothing closes a route** — yielding its `produces` and paying its `upkeep` rent every
+  round. Deliberately *outside* the territory cap and taking **no workers**: a route isn't land and
+  isn't labour, and making it compete with buildings for either would mean nobody ever runs one. It
+  is also uncapped in number, because the rent already caps it — a treasury that can't pay goes
+  **bankrupt**, so the zone self-limits at whatever income sustains it. This is the sink money's
+  one-way-hub topology spends through: money *rents standing access* rather than converting into
+  things, which is a sink with no exchange rate to arbitrage. → a standing *commitment*.
 - **Event (recurring hazard):** missions inject it into the deck; the player can't
   build with it, but *can play it* once drawn. Its two fates are the mechanic:
   **play it** — pay its cost to banish it to **removed**, resolving its one-shot `effect` (if any)
@@ -139,9 +148,10 @@ A "round" = one turn:
 
 1. **Draw** — draw up to hand size.
 2. **Action** — commit buildings (pay cost) and play action/work cards.
-3. **Upkeep / Produce** — staffed tableau + Work cards generate resources; mission
-   pressure ticks (threat drains *and* any Event left unplayed in hand firing its `upkeep`);
-   the population eats. The round's win/lose verdict is read here, with all of that counted.
+3. **Upkeep / Produce** — staffed tableau + Work cards generate resources; standing trade routes
+   yield and charge their rent; mission pressure ticks (threat drains *and* any Event left unplayed
+   in hand firing its `upkeep`); the population eats. The round's win/lose verdict is read here, with
+   all of that counted.
 4. **End** — the turn's Work cards and the rest of the hand file to **discard**; advance the round.
 
 Upkeep and End are the two halves of the *end-turn boundary* (`run/engine.ts`'s `endTurn`

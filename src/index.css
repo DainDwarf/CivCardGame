@@ -95,6 +95,12 @@
   --card-work-band: #e2f4f1;
   --card-work-condition: #6fb8ae;
   --card-wonder-banner: #b8860b;
+  /* Trade route — deep plum, the one hue left clear of the six above under all three CVD sims
+     (measured worst ΔE 7.8, against the palette's own tightest existing pair at 4.2). Deliberately
+     *not* the brighter magenta, which is Tritanopia's culture-gauge colour. */
+  --card-trade-banner: #7d2f57;
+  --card-trade-band: #f9eaf0;
+  --card-trade-condition: #c791a8;
   --card-objective-banner: #6d4bb8;  /* Objective card — violet, the untaken kind hue (goal) */
   --card-objective-band: #ece4f9;
   --card-objective-condition: #a488d4;
@@ -271,6 +277,9 @@
   --card-work-band: #17302c;
   --card-work-condition: #4a7f78;
   --card-wonder-banner: #b8860b;
+  --card-trade-banner: #7d2f57;
+  --card-trade-band: #39272f;
+  --card-trade-condition: #945f77;
   --card-objective-banner: #6d4bb8;
   --card-objective-band: #241a38;
   --card-objective-condition: #6b5595;

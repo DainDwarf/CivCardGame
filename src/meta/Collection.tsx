@@ -50,6 +50,7 @@ export function Collection({
   const wonders = cards.filter((c) => c.kind === 'wonder').sort(compareCards);
   const works = cards.filter((c) => c.kind === 'work').sort(compareCards);
   const actions = cards.filter((c) => c.kind === 'action').sort(compareCards);
+  const trades = cards.filter((c) => c.kind === 'trade').sort(compareCards);
 
   return (
     <div className={styles.collection}>
@@ -114,6 +115,24 @@ export function Collection({
           <h2 className={styles.sectionTitle}>Actions</h2>
           <div className={styles.grid}>
             {actions.map((c) => (
+              <CardFace
+                key={c.id}
+                card={c}
+                className={styles.tile}
+                countBadge={copiesOwned(collection, c.id)}
+                upgradeHint={cardUpgradeAvailable(collection, influence, c.id, unlockedStickers)}
+                onClick={() => setDetail(c.id)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {trades.length > 0 && (
+        <>
+          <h2 className={styles.sectionTitle}>Trade routes</h2>
+          <div className={styles.grid}>
+            {trades.map((c) => (
               <CardFace
                 key={c.id}
                 card={c}

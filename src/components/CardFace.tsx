@@ -28,6 +28,7 @@ const ART_FALLBACK: Record<CardDef['kind'], string> = {
   wonder: '🗿',
   action: '⚡',
   work: '🛠️',
+  trade: '🐫',
   event: '⚠️',
   threat: '💀',
   objective: '🏆',
@@ -117,6 +118,9 @@ export function describeConditions(c: CardDef): string {
   // An event: play it (pay its cost) to banish it unresolved — its effect never fires (preventive);
   // leave it and it fires for free at end of round, then recurs from the discard.
   if (c.kind === 'event') parts.push('play to banish resolves at end of round');
+  // A route can never be closed, so its rent is a commitment for the whole run — the one thing a
+  // player must know before playing one, and nothing else on the face says it.
+  if (c.kind === 'trade') parts.push('stands for the rest of the run');
   if (c.gate?.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.gate.cultureLevelReq}`);
   if (c.gate?.discardCost) parts.push(`discard ${c.gate.discardCost}`);
   if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
@@ -160,17 +164,20 @@ export function describeCard(c: CardDef): string {
   const e = c.effect;
   const parts: string[] = [];
   describeSignedResources(e?.resources, parts);
-  // Recurring `upkeep` (a hazard's drain or a staffable's maintenance) shows its signed delta the same
-  // way, appended after any one-shot `effect` above — a card may carry both (e.g. a threat with an entry
-  // `effect` plus a per-round drain), and the two just concatenate.
+  // Recurring `upkeep` (a hazard's drain, a staffable's maintenance, a trade route's rent) shows its
+  // signed delta the same way, appended after any one-shot `effect` above — a card may carry both (e.g.
+  // a threat with an entry `effect` plus a per-round drain), and the two just concatenate.
   describeSignedResources(c.upkeep?.resources, parts);
-  // A staffable card (building/wonder/work) shows its declarative per-round output — `produces` —
-  // here (workers are shown as meeples, not text). This is the sole path for a
-  // staffable's ongoing output, work cards included; the `effect` branch above is its one-shot only.
-  if (isStaffable(c)) {
+  // A standing card (staffable, or a trade route) shows its declarative per-round output — `produces` —
+  // here (a staffable's workers are shown as meeples, not text). This is the sole path for an ongoing
+  // output; the `effect` branch above is its one-shot only.
+  if (isStaffable(c) || c.kind === 'trade') {
     const stats = describeBuilding(c, false);
     if (stats) parts.push(stats);
   }
+  // A route's rent and yield both recur, and the face has no other way to say so — without this the
+  // reading is indistinguishable from a one-shot action's.
+  if (c.kind === 'trade' && parts.length) return `${parts.join(' ')} each round`;
   return parts.join(' · ') || 'action';
 }
 
@@ -182,6 +189,7 @@ function cardBanner(c: CardDef): { label: string; variant: string } {
   if (c.kind === 'work') return { label: 'Work', variant: styles.bannerWork };
   if (c.kind === 'wonder') return { label: 'Wonder', variant: styles.bannerWonder };
   if (c.kind === 'action') return { label: 'Action', variant: styles.bannerAction };
+  if (c.kind === 'trade') return { label: 'Trade', variant: styles.bannerTrade };
   return { label: 'Building', variant: styles.bannerBuilding };
 }
 
@@ -193,6 +201,7 @@ export function kindClass(kind: CardDef['kind']): string {
   if (kind === 'objective') return styles.objective;
   if (kind === 'action') return styles.action;
   if (kind === 'work') return styles.work;
+  if (kind === 'trade') return styles.trade;
   // A wonder reuses the building face colour — it's distinguished by its gold "Wonder" banner
   // (see `cardBanner`), not a separate palette.
   return styles.building;

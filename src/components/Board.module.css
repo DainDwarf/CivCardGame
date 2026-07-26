@@ -452,6 +452,32 @@
   box-sizing: border-box;
 }
 
+/* The board's right strip: the mirror of .boardLeft, holding the standing trade routes. Same
+   in-flow column so the slot grid reflows beside it; not rendered at all until a route opens. */
+.boardRight {
+  flex: 0 0 auto;
+  width: 150px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* The trade zone: routes (G.tradeRoutes) as a centered stack, scrolling if they pile up. A plum
+   left edge marks the strip as the money side of the board, echoing the kind's banner. */
+.tradeZone {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 16px 8px;
+  box-sizing: border-box;
+  border-left: 2px dashed var(--card-trade-banner);
+}
+
 /* The main play column (slot grid + work strip), filling whatever width the left strip
    (objective corner + threat zone, if any) doesn't take. Carries the banner-height top inset
    (inline `paddingTop`, Board.tsx) so this full-width column clears the sticky centered banner —

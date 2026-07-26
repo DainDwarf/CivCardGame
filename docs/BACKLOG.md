@@ -186,8 +186,9 @@
     mastered.
 
 - **Step 10 — Resource-economy rebalance pass** — runs **after Step 7 (Bronze) and before Step 8
-  (Iron)**, so Iron is authored against corrected rates instead of inheriting the distortion. Depends on
-  the **Trade-route zone** ([`TODO.md`](TODO.md) → *Run loop*). `[size: L]` `[?]`
+  (Iron)**, so Iron is authored against corrected rates instead of inheriting the distortion. Its
+  prerequisite, the **trade-route zone**, has shipped (routes permanent for now — see
+  [`TODO.md`](TODO.md)), so the money-topology half below is unblocked. `[size: L]` `[?]`
 
   **Diagnosis.** Three separate-looking complaints (base work cards too strong · Dogs/Bow flattening
   later military · Jewelry too strong) are one root cause: **every converter doubles, and they compose.**
@@ -195,16 +196,19 @@
   | Card | In | Out | Ratio |
   |---|---|---|---|
   | Jewelry | 1🔨 | 2🪙 | ×2 |
-  | Bartering | 1🪙 | 2🌾 | ×2 |
+  | ~~Bartering~~ | ~~1🪙~~ | ~~2🌾~~ | **converted to a trade route** (2🪙 to open, then −1🪙/+1🌾 per round) |
   | Dogs | 1🌾 | 2⚔️ | ×2 |
   | Raiding | 3⚔️ | 6🪙 | ×2 |
   | Bow | 2🔨 | 3⚔️ | ×1.5, self-exiling |
 
-  Chained, Toolmaking → Jewelry → Bartering → Dogs turns **1🔨 into 8⚔️** (16⚔️ per worker-round against
-  War Horse's 4). Bartering → Dogs → Raiding **closes a cycle**: 1🪙 → 2🌾 → 4⚔️ → ~8🪙, ×8 per lap, and
-  `raiding` is live today (granted by Horse Taming). The only brake is card plays — hand size 4, +1 per
+  Chained, Toolmaking → Jewelry → Bartering → Dogs turned **1🔨 into 8⚔️** (16⚔️ per worker-round against
+  War Horse's 4), and Bartering → Dogs → Raiding **closed a cycle**: 1🪙 → 2🌾 → 4⚔️ → ~8🪙, ×8 per lap,
+  with `raiding` live today (granted by Horse Taming). The only brake is card plays — hand size 4, +1 per
   culture level, no per-turn cap — so the engine *strengthens* as culture rises. Net effect: the five core
   resources are one resource with five sprites, which is what erases deck identity.
+
+  **Bartering's conversion breaks both chains** — a route rents access instead of converting, so 🪙 no
+  longer has a one-shot exit into 🌾 at all. Jewelry and Raiding are the two edges left to cut.
 
   Second, **buildings never out-rate the free work card** of their resource, while also costing 🔨, a
   territory slot, and a draw — Foraging 3🌾 vs Farm 1🌾 · Toolmaking 2🔨 vs Forge 2🔨 · Storytelling 2🔬 vs
@@ -232,8 +236,9 @@
 
   **Ordering** (each swept against the committed baselines in `scripts/sim/baselines/`, whose
   `results/` commit is the before/after record):
-  1. **Money topology** — the trade-route zone, then Jewelry/Raiding. Unblocks the rest, because whether
-     Dogs at ×2 is fine depends entirely on whether ⚔️ is a sink or a way station.
+  1. **Money topology** — the trade-route zone (shipped; Bartering converted as its first route), then
+     Jewelry/Raiding. Unblocks the rest, because whether Dogs at ×2 is fine depends entirely on whether
+     ⚔️ is a sink or a way station.
   2. **Buildings out-rate work cards** — restores production's identity and makes territory (so military)
      worth something. A building's pitch is a *different kind of thing* (never drawn, scales per worker,
      eats a slot), so the lever may be draw/deck pressure rather than the Farm's number.

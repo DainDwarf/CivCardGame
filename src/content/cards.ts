@@ -6,7 +6,7 @@ import { peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
 import { assignedWorkers } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
 
-export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'event' | 'threat' | 'objective';
+export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'trade' | 'event' | 'threat' | 'objective';
 
 /** A card's display-only concern (face text + art), read exclusively by the render path — no rule,
  *  move, upkeep, or resolver reads any of it. */
@@ -70,14 +70,14 @@ export interface CardDef {
    *  `upkeep` disaster; a threat's recurring drain stays on `upkeep`/`on`, separate from this one-time
    *  entry. */
   effect?: CardEffect;
-  /** A staffable's per-round output once staffed — run through `resolveProduction`, scaling its
-   *  `resources` per staffed worker. May touch any of the 8 pools. Kept distinct from `effect` so a
-   *  one-shot play field can never fire every round. */
+  /** A standing card's per-round output — run through `resolveProduction`. A staffable scales its
+   *  `resources` per staffed worker; a workerless `trade` route yields them flat. May touch any of the
+   *  8 pools. Kept distinct from `effect` so a one-shot play field can never fire every round. */
   produces?: CardEffect;
   /** A recurring per-round effect fired *at the upkeep boundary*, flat (never per-worker-scaled like
-   *  `produces`): a `threat`'s drain, an unplayed `event`'s upkeep disaster, or an operating
-   *  staffable's maintenance. Composes with `produces` and `on.endTurn` — `resolveEndTurn` runs all
-   *  three (`rules/effects.ts`); a card reacting to another trigger uses `on`. */
+   *  `produces`): a `threat`'s drain, an unplayed `event`'s upkeep disaster, a `trade` route's rent, or
+   *  an operating staffable's maintenance. Composes with `produces` and `on.endTurn` — `resolveEndTurn`
+   *  runs all three (`rules/effects.ts`); a card reacting to another trigger uses `on`. */
   upkeep?: CardEffect;
   /**
    * Event-bus reactions (`rules/events.ts`): a `CardEffect` per event type, for reacting to something
@@ -105,7 +105,13 @@ export interface CardDef {
 /** Whether the player builds decks with this card. The single source for every such filter
  *  (deck-add reject, Collection/DeckEditor pickers). */
 export function isDeckable(card: CardDef): boolean {
-  return card.kind === 'building' || card.kind === 'wonder' || card.kind === 'action' || card.kind === 'work';
+  return (
+    card.kind === 'building' ||
+    card.kind === 'wonder' ||
+    card.kind === 'action' ||
+    card.kind === 'work' ||
+    card.kind === 'trade'
+  );
 }
 
 /** Whether a card *occupies a tableau slot* when played. The single choke point for every
@@ -128,9 +134,10 @@ export const KIND_RANK: Record<CardKind, number> = {
   wonder: 1,
   work: 2,
   action: 3,
-  event: 4,
-  threat: 5,
-  objective: 6,
+  trade: 4,
+  event: 5,
+  threat: 6,
+  objective: 7,
 };
 
 /** Sort key: a leading "The " is dropped so "The Colossus" sorts under C. */
@@ -270,7 +277,7 @@ export const CARDS: Record<string, CardDef> = {
   },
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
   jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
-  bartering: { id: 'bartering', name: 'Bartering', kind: 'action', cost: { money: 1 }, display: { art: '🤝' }, effect: { resources: { food: 2 } } },
+  bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { money: 2 }, display: { art: '🤝' }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, display: { art: '🐕' }, effect: { resources: { military: 2 } } },
   raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { military: 3 }, display: { art: '🔥' }, effect: { resources: { money: 6 } } },
   conquest: {

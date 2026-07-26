@@ -26,6 +26,7 @@ function baseState(): GameState {
   G.discard = [{ id: 6, cardId: 'e' }];
   G.tableau = [{ id: 7, cardId: 'f', workers: 1 }];
   G.workZone = [{ id: 8, cardId: 'g', workers: 0 }];
+  G.tradeRoutes = [{ id: 9, cardId: 'h' }];
   G.rngState = [1, 2, 3];
   return G;
 }
@@ -42,6 +43,7 @@ describe('oracle transposition key', () => {
       relabeled.tableau,
       relabeled.workZone,
       relabeled.threats,
+      relabeled.tradeRoutes,
     ]) {
       for (const c of zoneList) c.id += 1000;
     }
@@ -188,6 +190,14 @@ describe('state fingerprint', () => {
     moved.discard = [...moved.hand];
     moved.hand = [];
     expect(hashOf(moved)).not.toBe(hashOf(G));
+
+    // The same for the trade zone specifically: an open route and the identical card sitting in the
+    // discard are different states, so the two must not fold to one node.
+    const closed = structuredClone(G);
+    closed.discard = [...closed.discard, ...closed.tradeRoutes];
+    closed.tradeRoutes = [];
+    expect(hashOf(closed)).not.toBe(hashOf(G));
+    expect(keyOf(closed)).not.toBe(keyOf(G));
   });
 
   it('stays sensitive to deck order, staffing, scalars, and the rng state', () => {

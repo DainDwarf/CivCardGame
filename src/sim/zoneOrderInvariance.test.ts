@@ -5,6 +5,7 @@ import {
   addWork,
   blankState,
   instancesFromCardIds,
+  openTradeRoute,
   shuffle,
   subtractResources,
   type GameState,
@@ -50,6 +51,14 @@ const LOCAL_CARDS: Record<string, CardDef> = {
       },
     },
   },
+  // The self-referential case (the escalating-rent shape a trade route wants): a route whose rent
+  // reads the size of the very zone it sits in, so every sibling in its own batch is an input. The
+  // strongest form of a batch-sibling read, and the one the trade zone exists to allow.
+  test_route_scaling: {
+    id: 'test_route_scaling', name: 'Test Trade Route', kind: 'trade', cost: {},
+    produces: { resources: { food: 1 } },
+    upkeep: { resolve: ({ G }) => { subtractResources(G.resources, { money: G.tradeRoutes.length }); } },
+  },
 };
 
 /**
@@ -65,7 +74,8 @@ const LOCAL_CARDS: Record<string, CardDef> = {
  * reads across its batch siblings, add it here. (A miss only costs the oracle *completeness* — a looser key
  * that misses wins — never soundness, since a returned line always replays through the real engine.)
  *
- * Method: build a producing state, permute every unordered zone (tableau/workZone/hand/discard), run the
+ * Method: build a producing state, permute every unordered zone (tableau/workZone/hand/discard/
+ * tradeRoutes), run the
  * *real* `endTurn` on each permutation, and assert the committed states are identical — compared both by
  * resources (a non-commutative production would move a scalar) and by `keyOf` (the multiset abstraction the
  * oracle actually relies on).
@@ -75,6 +85,7 @@ function producingState(): GameState {
   G.resources.population = 9;
   G.resources.food = 50; // amply fed, so nothing collapses over the tested rounds
   G.resources.production = 10; // buffered so the territory drain can't run production negative
+  G.resources.money = 50; // buffered so the trade routes' rent can't bankrupt the run mid-test
   // Several producing siblings emitting to different pools — two duplicate food buildings, a multi-output
   // building (production + military), two work boxes (production, food), two territory work boxes, and a
   // self-exiling one — each auto-staffed from the idle pool (9 pop → 8 staffed, 1 idle), so a
@@ -96,6 +107,11 @@ function producingState(): GameState {
   // is non-zero either way and a mis-ordered read would move the scalar.
   addThreat(G, 'test_removed_threat');
   G.removed = instancesFromCardIds(['test_exile_work'], 500);
+  // Three standing routes, each yielding food and charging a rent scaled by the zone's own size — so a
+  // mis-ordered read across the route batch would move money.
+  openTradeRoute(G, 'test_route_scaling');
+  openTradeRoute(G, 'test_route_scaling');
+  openTradeRoute(G, 'test_route_scaling');
   // A few non-event hand cards + a stocked deck/discard, so the end-of-turn recycle and a possible
   // reshuffle both run and their ordering can't leak into the result.
   G.hand = instancesFromCardIds(['test_work', 'test_action', 'test_settlers'], 200);
@@ -114,6 +130,7 @@ function permutations(G: GameState): GameState[] {
   rev.workZone.reverse();
   rev.hand.reverse();
   rev.discard.reverse();
+  rev.tradeRoutes.reverse();
   out.push(rev);
   // seeded shuffles
   for (const s of seeds) {
@@ -122,6 +139,7 @@ function permutations(G: GameState): GameState[] {
     p.workZone = shuffle(p.workZone, `w-${s}`);
     p.hand = shuffle(p.hand, `h-${s}`);
     p.discard = shuffle(p.discard, `d-${s}`);
+    p.tradeRoutes = shuffle(p.tradeRoutes, `r-${s}`);
     out.push(p);
   }
   return out;

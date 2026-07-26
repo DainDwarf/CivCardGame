@@ -69,7 +69,8 @@ function findLiveInstance(G: GameState, id: number): CardInstance | undefined {
     G.removed.find((c) => c.id === id) ??
     G.tableau.find((c) => c.id === id) ??
     G.workZone.find((c) => c.id === id) ??
-    G.threats.find((c) => c.id === id)
+    G.threats.find((c) => c.id === id) ??
+    G.tradeRoutes.find((c) => c.id === id)
   );
 }
 
@@ -124,12 +125,14 @@ export function dispatchEvent(G: GameState, event: GameEvent): void {
   // but by the **zone order-independence invariant** (a card-design rule; see DESIGN.md and the
   // CLAUDE.md convention) the committed *outcome* must be commutative under it: no card's handler may
   // depend on the resolution order of its siblings in the same batch (production, threat drains). That
-  // is what lets the simulator key `tableau`/`workZone`/`threats` as unordered multisets
+  // is what lets the simulator key `tableau`/`workZone`/`threats`/`tradeRoutes` as unordered multisets
   // (`sim/oracleKey.ts`); `sim/zoneOrderInvariance.test.ts` checks it (over a fixed fixture — extend it
   // when adding a card that reads across its batch siblings).
   for (const b of [...G.tableau]) if (isOperating(b)) run(b);
   for (const w of [...G.workZone]) if (isOperating(w)) run(w);
   for (const t of [...G.threats]) run(t);
+  // Trade routes tick ungated like threats: they carry no `workers`, so there is no staffing to gate on.
+  for (const r of [...G.tradeRoutes]) run(r);
 }
 
 /**

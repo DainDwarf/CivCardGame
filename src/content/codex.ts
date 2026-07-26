@@ -56,7 +56,7 @@ export interface CardKindEntry {
   definition: string;
 }
 
-/** The 7 card kinds, in `cards.ts`'s `KIND_RANK` display order (the order every card listing
+/** The 8 card kinds, in `cards.ts`'s `KIND_RANK` display order (the order every card listing
  *  uses). `threat` and `objective` never reach a hand or pile — they're described by where the
  *  player actually meets them, the board's objective plaque and threat zone. */
 export const CODEX_CARD_KINDS: CardKindEntry[] = [
@@ -83,6 +83,12 @@ export const CODEX_CARD_KINDS: CardKindEntry[] = [
     name: 'Action',
     definition:
       'Resolve their effect immediately, then return to the discard pile.',
+  },
+  {
+    kind: 'trade',
+    name: 'Trade route',
+    definition:
+      'Pay their cost to open a route on the right of your board. A route takes no territory and no workers, but its rent is charged every round for the rest of the run — there is no way to close one, so a treasury that cannot pay goes bankrupt.',
   },
   {
     kind: 'event',
@@ -115,6 +121,7 @@ export interface GlossaryEntry {
 export const CODEX_GLOSSARY: GlossaryEntry[] = [
   { term: 'Discard cost', definition: 'You must discard that many other cards from your hand to play it.' },
   { term: 'Culture requirement', definition: 'The card can only be played once your culture has reached the required level. Culture is not consumed.' },
-  { term: 'Territory', definition: 'How many buildings and wonders your tableau can hold.' },
+  { term: 'Territory', definition: 'How many buildings and wonders your tableau can hold. Trade routes are outside it.' },
+  { term: 'Stands for the rest of the run', definition: 'Once played, this card can never be taken back — its per-round cost is a commitment for the whole run.' },
   { term: 'Single use', definition: 'Instead of being discarded, this card is removed from the run once used.' },
 ];

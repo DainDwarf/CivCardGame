@@ -239,6 +239,40 @@ function BoardLeftColumn({
   );
 }
 
+/** The right-hand strip: the trade routes standing in `G.tradeRoutes`, mirroring the threat column on
+ *  the left. A real layout column like `BoardLeftColumn`, so the slot grid reflows beside it; renders
+ *  nothing until the first route opens. Routes are display-only here — nothing removes one, and they
+ *  take no workers, so there is no interaction beyond zoom. */
+function BoardRightColumn({
+  G,
+  onZoom,
+}: {
+  G: GameState;
+  onZoom: (cardId: string, overrideText?: string, stickerBadge?: string[]) => void;
+}) {
+  if (G.tradeRoutes.length === 0) return null;
+  return (
+    <div className={styles.boardRight}>
+      <div className={styles.tradeZone}>
+        {G.tradeRoutes.map((r) => {
+          const card = CARDS[r.cardId];
+          const overrideText = card.display?.dynamicText?.(G, r);
+          return (
+            <CardFace
+              key={r.id}
+              card={card}
+              overrideText={overrideText}
+              stickerBadge={r.stickers}
+              className={styles.staticCard}
+              onClick={() => onZoom(r.cardId, overrideText, r.stickers)}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /** Collapse a list of card instances into one tile per **variant** with a count — copies sharing a
  *  cardId *and* their stickers are interchangeable (`variantKey`), so one face with a ×N badge says
  *  everything about the stack. A card with `dynamicText` is the exception and never groups: each copy
@@ -1757,6 +1791,10 @@ export function Board({
             </div>
           )}
         </div>
+        <BoardRightColumn
+          G={G}
+          onZoom={(cardId, overrideText, stickerBadge) => setZoom({ cardId, overrideText, stickerBadge })}
+        />
       </div>
 
       <div className={styles.handBar} ref={handBarRef}>

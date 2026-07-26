@@ -61,7 +61,8 @@ const DYNAMIC_BASE = { food: 2 } as const;
 
 /** Every shared `test_*` card, keyed by id. Covers each `CardKind`, one canonical producer per
  *  resource, the staffing variants, the canonical `effect`-field actions, a bespoke-`resolve` card, a
- *  `dynamicText` card, the threat/event/objective shapes, and the one reused `on`-handler observer. */
+ *  `dynamicText` card, the trade-route shape, the threat/event/objective shapes, and the one reused
+ *  `on`-handler observer. */
 export const FIXTURE_CARDS: Record<string, CardDef> = {
   // --- Building producers: one clean single-resource producer per resource (all need 1 worker). ---
   // The food producer doubles as the restricted-sticker (food-only) eligible card.
@@ -120,6 +121,13 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   test_work_food: {
     id: 'test_work_food', name: 'Test Work Food', kind: 'work',
     cost: {}, workers: 1, produces: { resources: { food: 3 } },
+  },
+
+  // --- Trade route: stands in its own zone once played, takes no workers and no territory, and both
+  // yields (`produces`, flat) and pays rent (`upkeep`) at every upkeep boundary until the run ends. ---
+  test_trade: {
+    id: 'test_trade', name: 'Test Trade', kind: 'trade',
+    cost: { money: 2 }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } },
   },
 
   // --- Action cards: one per canonical `effect` field, so a test can exercise each declaratively. ---

@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { addBuilding, addWork, emitEvent, findStaffable, freePopulation, workerCapOf, resolveCard, subtractResources, unplayableReason } from '../rules';
+import { addBuilding, addWork, emitEvent, findStaffable, freePopulation, workerCapOf, openTradeRoute, resolveCard, subtractResources, unplayableReason } from '../rules';
 import { effectiveCost } from '../rules/stickers';
 import { CARDS, isStructure } from '../content/cards';
 
@@ -44,8 +44,8 @@ export function playCard(
   // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
   // return the not-yet-filed sacrifices back into the deck.
   // A building/wonder card is placed in the tableau; a work card sticks onto the board and produces
-  // only while staffed (at upkeep); everything else resolves its effect immediately through the
-  // single resolver path.
+  // only while staffed (at upkeep); a trade card opens a standing route outside the territory cap;
+  // everything else resolves its effect immediately through the single resolver path.
   if (isStructure(card)) {
     // Place the structure (auto-staffing from existing idle pop), then resolve its one-shot
     // *placement* effect on the played instance (e.g. the Hut's +1 population). A no-op for the
@@ -56,6 +56,8 @@ export function playCard(
     resolveCard({ G, self: played });
   } else if (card.kind === 'work') {
     addWork(G, cardId, played.stickers);
+  } else if (card.kind === 'trade') {
+    openTradeRoute(G, cardId, played.stickers);
   } else {
     // action or event: resolve the one-shot `effect` on the played *instance* — so a self-scaling
     // card reads/writes its own copy's counters, which ride along as it files below. A *played* event
@@ -67,8 +69,9 @@ export function playCard(
     G.discard.push(c);
     emitEvent(G, { type: 'discard', instanceId: c.id, cardId: c.cardId, reason: 'sacrifice' });
   }
-  // File the played card by kind. Building cards (now on the tableau) and work cards (on the board,
-  // filed at end of turn) stay put. An `action` recycles to the **discard** — the same instance
+  // File the played card by kind. Building cards (now on the tableau), work cards (on the board, filed
+  // at end of turn) and trade cards (standing in the trade zone) stay put. An `action` recycles to the
+  // **discard** — the same instance
   // object, carrying whatever counters its resolver just bumped — unless its own effect already
   // exiled it (a single-use action like Bow pushing itself to `removed`), in which case leave it be
   // rather than double-file it into two zones. A voluntarily *played* `event` is **removed**

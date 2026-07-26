@@ -53,6 +53,7 @@ export function keyOf(G: GameState): string {
     placedMultiset(G.tableau),
     placedMultiset(G.workZone),
     multiset(G.threats),
+    multiset(G.tradeRoutes),
     multiset(G.removed),
     G.rngState.join(','),
     pendingToken(G.pendingInteraction),
@@ -130,6 +131,7 @@ export function hashOf(G: GameState): number {
   foldPlaced(G.tableau);
   foldPlaced(G.workZone);
   foldMultiset(G.threats);
+  foldMultiset(G.tradeRoutes);
   foldMultiset(G.removed);
   for (const n of G.rngState) mixScalar(n);
   foldPending(G.pendingInteraction);

@@ -74,6 +74,10 @@
   background: var(--card-objective-banner);
 }
 
+.bannerTrade {
+  background: var(--card-trade-banner);
+}
+
 /* Event cards are a threat — a red border sets them apart from the player's own cards. */
 .event {
   border-color: var(--card-event-border);
@@ -103,6 +107,10 @@
 
 .objective .cardTop {
   background: var(--card-objective-band);
+}
+
+.trade .cardTop {
+  background: var(--card-trade-band);
 }
 
 .cardName {
@@ -190,6 +198,10 @@
   background: var(--card-objective-condition);
 }
 
+.trade .cardConditions {
+  background: var(--card-trade-condition);
+}
+
 .cardText {
   display: flex;
   align-items: center;
@@ -224,6 +236,10 @@
 
 .objective .cardText {
   background: var(--card-objective-band);
+}
+
+.trade .cardText {
+  background: var(--card-trade-band);
 }
 
 /* Face-down back (`missionLocked` prop) — grey stand-in for a still-secret card, same box and

@@ -35,7 +35,7 @@ export function assertRunInvariants(G: GameState, ctx: InvariantContext = {}): v
 
   // Instance ids are unique across *every* zone (see `rules/state.ts`).
   const seen = new Set<number>();
-  const zones = [G.hand, G.deck, G.discard, G.removed, G.tableau, G.workZone, G.threats];
+  const zones = [G.hand, G.deck, G.discard, G.removed, G.tableau, G.workZone, G.threats, G.tradeRoutes];
   for (const zone of zones) {
     for (const inst of zone) {
       if (seen.has(inst.id)) fail(`duplicate instance id ${inst.id}`);
