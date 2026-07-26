@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { freePopulation, workerCapOf } from '../rules';
+import { freePopulation, usedTerritory, workerCapOf } from '../rules';
 
 /** Enough of the run's identity to reproduce a violation: the config (deck/board/mission) seed and
  *  the move-policy seed together replay a headless run exactly, and `round`/`actionsApplied` locate
@@ -54,4 +54,9 @@ export function assertRunInvariants(G: GameState, ctx: InvariantContext = {}): v
     if (s.workers < 0 || s.workers > cap) fail(`instance ${s.id} has ${s.workers} workers (cap ${cap})`);
   }
   if (freePopulation(G) < 0) fail(`negative free population (${freePopulation(G)})`);
+
+  // The board never holds more than its territory. Every placement routes through `unplayableReason`'s
+  // cap gate and nothing lowers the pool, so an overfull board means a placement path skipped the gate.
+  if (usedTerritory(G) > G.resources.territory)
+    fail(`board holds ${usedTerritory(G)} cards over ${G.resources.territory} territory`);
 }

@@ -22,7 +22,7 @@ const W = {
   bufferFloor: 3,
   /** Band 4 — pull toward the mission's own `[0, 1]` objective gradient (`sim/objective.ts`), read on the
    *  *projected* next-turn state (like bands 2 & 5) so delayed production toward the goal — a staffed
-   *  Conquest's territory, a staffed Beer's culture — counts the turn it's staffed, not only once it lands.
+   *  Beer's culture, a staffed Farm's food — counts the turn it's staffed, not only once it lands.
    *  Kept under bands 2–3 so the policy never chases the win into collapse, but above raw accumulation so
    *  it commits to the goal instead of drifting at a survival equilibrium. */
   objective: 300,
@@ -75,8 +75,8 @@ function permanentDelta(G: GameState): Resources {
  * run is over.
  *
  * Bands 2, 4 and 5 all read the **projected** next-turn state (`projectNextTurn`), because a staffed box's
- * production only lands at upkeep: on the current state a fresh Conquest (territory) or Beer (culture) play
- * looks worthless, so a strictly-improving policy would never stage the economy its objective needs. Reading
+ * production only lands at upkeep: on the current state a fresh Beer (culture) or Farm (food) play looks
+ * worthless, so a strictly-improving policy would never stage the economy its objective needs. Reading
  * the projection makes "staff the producer the goal wants" register as progress immediately — and lets
  * greedy2 value a worker *transfer* into a new box (invisible to the flat `operating` credit). A small flat
  * per-operating-box credit sits alongside for the one producer no band sees (a strategic pool the objective

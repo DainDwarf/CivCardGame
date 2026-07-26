@@ -27,34 +27,35 @@ export const ORIGIN_BOARD_ID: BoardId = 'tribe';
 
 /**
  * The government boards a run can be launched on. `tribe` (the `ORIGIN_BOARD_ID`) is the Paleolithic
- * starting configuration matching the buildingless starting deck: a modest food store and nothing
- * else, no fixed territory yet (buildings — and the territory that gates them — arrive with the Stone
- * Age arc). Clearing the first mission *upgrades* it into `settlement` (a `boardUpgrade` reward that
+ * starting configuration matching the buildingless starting deck: a modest food store and the few
+ * slots a nomadic camp works out of. Clearing the first mission *upgrades* it into `settlement` (a `boardUpgrade` reward that
  * retires Tribe for the settled version — see `rules/boardUpgrade.ts`). Other boards land through
  * `unlockBoardIds` rewards — `chiefdom`, the first military-leaning government, is unlocked by the
  * "Raiders at the Border" mission, where the arc teaches board choice (Chiefdom vs. the settled
  * government at launch). `settlement` in turn upgrades into `city` — the Bronze Age government — on
- * clearing the "Masonry" mission. The `chiefdom`/`settlement`/`city` numbers are provisional.
+ * clearing the "Masonry" mission. All four boards' numbers are provisional; the territory figures in
+ * particular are a first pass at the unified cap (every board card takes a slot, so a board with none
+ * can play nothing) and are the content pass's to measure.
  */
 export const BOARDS: Record<BoardId, BoardDef> = {
   tribe: {
     id: 'tribe',
     name: 'Tribe',
-    resources: { food: 5, production: 0, science: 0, military: 0, money: 0, population: 2, territory: 0, culture: 0 },
+    resources: { food: 5, production: 0, science: 0, military: 0, money: 0, population: 2, territory: 4, culture: 0 },
   },
   settlement: {
     id: 'settlement',
     name: 'Settlement',
-    resources: { food: 10, production: 2, science: 0, military: 0, money: 0, population: 2, territory: 2, culture: 0 },
+    resources: { food: 10, production: 2, science: 0, military: 0, money: 0, population: 2, territory: 6, culture: 0 },
   },
   chiefdom: {
     id: 'chiefdom',
     name: 'Chiefdom',
-    resources: { food: 6, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 0, culture: 0 },
+    resources: { food: 6, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 4, culture: 0 },
   },
   city: {
     id: 'city',
     name: 'City',
-    resources: { food: 12, production: 6, science: 0, military: 0, money: 2, population: 2, territory: 2, culture: 0 },
+    resources: { food: 12, production: 6, science: 0, military: 0, money: 2, population: 2, territory: 8, culture: 0 },
   },
 };

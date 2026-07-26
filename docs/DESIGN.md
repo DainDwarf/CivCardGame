@@ -111,16 +111,16 @@ see below). An *effect* can route a card there too — see the building note.
 - **Work (labour):** sticks onto the board as a staffable box instead of resolving
   on play — no idle population required to play it. Produces its effect only while
   staffed, then goes to **discard** at *end of turn* (not immediately, like Action).
-  → staffed *labour*.
+  It takes a territory slot like a building, but *rents* it for the turn instead of committing
+  it: the slot comes back when the box files. → staffed *labour*.
 - **Trade route (standing rent):** pay a cost to open it into the persistent
-  `GameState.tradeRoutes` zone, on the right of the board. It stands there for the rest of the
-  run — **nothing closes a route** — yielding its `produces` and paying its `upkeep` rent every
-  round. Deliberately *outside* the territory cap and taking **no workers**: a route isn't land and
-  isn't labour, and making it compete with buildings for either would mean nobody ever runs one. It
-  is also uncapped in number, because the rent already caps it — a treasury that can't pay goes
-  **bankrupt**, so the zone self-limits at whatever income sustains it. This is the sink money's
-  one-way-hub topology spends through: money *rents standing access* rather than converting into
-  things, which is a sink with no exchange rate to arbitrage. → a standing *commitment*.
+  `GameState.tradeRoutes` zone. It stands there for the rest of the run — **nothing closes a
+  route** — holding its territory slot, yielding its `produces` and paying its `upkeep` rent every
+  round. It takes **no workers**: a route is land and access, not labour. So it is capped twice —
+  by the slots the board has, and by the treasury the rent runs on: a treasury that can't pay goes
+  **bankrupt**. This is the sink money's one-way-hub topology spends through: money *rents standing
+  access* rather than converting into things, which is a sink with no exchange rate to arbitrage.
+  → a standing *commitment*.
 - **Event (recurring hazard):** missions inject it into the deck; the player can't
   build with it, but *can play it* once drawn. Its two fates are the mechanic:
   **play it** — pay its cost to banish it to **removed**, resolving its one-shot `effect` (if any)
@@ -201,7 +201,7 @@ Five spendable/trackable resources, each with a **mechanical role** and a **them
 
 - **Food** — population management. Population eats food each round. Going negative: **Famine**. More food supports more population, which means more workers available to staff buildings.
 - **Production** — the build currency. Represents the material the civilization has accumulated — housing, industry, infrastructure. Spent to play permanent building cards. Going negative: **Ruin**.
-- **Money** — the treasury, and the economy's **one-way hub**: it is *earned* only from producers and spent *outward* toward the other four, never converted back into. That asymmetry is the invariant — no card turns another resource into money — and it is what keeps the resource graph acyclic, so the five resources stay five resources instead of one wearing five costumes. **Not yet true of the catalogue:** Jewelry (🔨→🪙) and Raiding (⚔️→🪙) predate this and still convert inward, closing a cycle; cutting or re-pointing them is what makes the rule hold. Money buys standing **access** rather than raw materials: its principal sink is a **trade route**, a card that stands paying a per-round money upkeep, gates what it carries for as long as it runs, and can be dropped at will. So money is flexibility you *rent* — a wildcard in reach, without an exchange rate to arbitrage. Going negative: **Bankruptcy**.
+- **Money** — the treasury, and the economy's **one-way hub**: it is *earned* only from producers and spent *outward* toward the other four, never converted back into. That asymmetry is the invariant — no card turns another resource into money — and it is what keeps the resource graph acyclic, so the five resources stay five resources instead of one wearing five costumes. **Not yet true of the catalogue:** Jewelry (🔨→🪙) and Raiding (⚔️→🪙) predate this and still convert inward, closing a cycle; cutting or re-pointing them is what makes the rule hold. Money buys standing **access** rather than raw materials: its principal sink is a **trade route**, a card that takes a territory slot and pays a per-round money upkeep, gating what it carries for as long as it runs — and nothing closes one, so opening it is a commitment, not a lease you can end. So money is flexibility you *rent* — a wildcard in reach, without an exchange rate to arbitrage. Going negative: **Bankruptcy**.
 - **Science** — anticipation and planning. Primarily expressed through card manipulation: drawing extra cards, discarding strategically, retrieving cards from the discard pile, peeking at the top of the deck. Going negative: **Dark Age**.
 - **Military** — power projection, both defensive and offensive. Defends against external threats (disasters, invasion event cards) and enables aggression: expanding territory and pillaging resources. Going negative: **Revolt**.
 
@@ -210,7 +210,7 @@ Five spendable/trackable resources, each with a **mechanical role** and a **them
 Three civilization-level gauges that constrain and enable play. They are never directly spent; they define the shape of your civilization.
 
 - **Population** — your workforce. Workers are drawn from the idle population pool to staff buildings (which need at least one worker to operate) and to pay for population-reserving actions. Food production determines how large a population you can sustain. A building has a worker **capacity**: most take a single worker, but some (starting with the Göbekli Tepe wonder) hold several, and their output **scales per staffed worker** — a partly-staffed multi-worker building still runs, just at reduced output, so how you spread a scarce workforce across your buildings is a lever.
-- **Territory** — the land your civilization controls. You cannot build more buildings than your territory allows. Expand by conquest or development.
+- **Territory** — the land your civilization controls, and the single cap on the **play area**. Everything that stands on the board generating resources takes one slot: a building or wonder for the rest of the run, a trade route for the rest of the run, a Work card for the turn it's out. An `action` is the one thing that takes none — it resolves and is gone, which is exactly what makes it the kind that can *grant* territory without needing a free slot first. So the board reads as one sentence: it is where you generate resources, territory is how much of it you have, and the standing choice is whether a slot is committed to a permanent producer or kept open for this turn's labour. Expand by conquest or development.
 - **Culture** — how much your civilization shines. Accumulated over time; the more you have, the more willing your people are to act. Mechanically: culture thresholds increase hand size, and some cards require a minimum culture to be playable.
 
 Further expansion axes (`Faith`, …) remain possible.

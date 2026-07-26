@@ -1,5 +1,6 @@
 import { CARDS } from '../content/cards';
 import type { GameState, PlacedCard } from './state';
+import { placedCards } from './territory';
 
 /** Food eaten per unit of population each round. */
 export const FOOD_PER_POP = 1;
@@ -67,27 +68,24 @@ export function autoStaffCount(G: GameState, cardId: string): number {
   return Math.min(freePopulation(G), cardWorkerCap(cardId));
 }
 
-/** The next stable instance id: one past the highest currently in *any* zone — the board (tableau,
- *  workZone), the card piles (hand, deck, discard, removed), *and* any options parked off-zone in a
- *  pending interaction — all of which carry instance ids. Deterministic (no RNG). Scanning every
- *  zone is what keeps ids unique run-wide, so a building or Work box minted at play never collides
- *  with a card already sitting in the deck. `pendingInteraction.options` are cards lifted out of the
- *  deck (or discard) awaiting a choice; no move mints while an interaction is pending
- *  today, but scanning them keeps the invariant robust if a future interactive card ever does. Also
- *  scans `G.threats` (`rules/threats.ts`) and `G.tradeRoutes` (`rules/tradeRoutes.ts`), which share
- *  this same instance-id space. Ids
- *  of a card that has left every zone may be reused, which is harmless since nothing references them. */
+/** The next stable instance id: one past the highest currently in *any* zone — everything standing on
+ *  the board (`territory.ts`'s `placedCards`), the card piles (hand, deck, discard, removed), the
+ *  mission's threats and objective, *and* any options parked off-zone in a pending interaction — all
+ *  of which share one instance-id space. Deterministic (no RNG). Scanning every zone is what keeps ids
+ *  unique run-wide, so a building or Work box minted at play never collides with a card already
+ *  sitting in the deck. `pendingInteraction.options` are cards lifted out of the deck (or discard)
+ *  awaiting a choice; no move mints while an interaction is pending today, but scanning them keeps the
+ *  invariant robust if a future interactive card ever does. Ids of a card that has left every zone may
+ *  be reused, which is harmless since nothing references them. */
 export function nextInstanceId(G: GameState): number {
   let max = 0;
-  for (const b of G.tableau) max = Math.max(max, b.id);
-  for (const w of G.workZone) max = Math.max(max, w.id);
+  for (const p of placedCards(G)) max = Math.max(max, p.id);
   for (const c of G.hand) max = Math.max(max, c.id);
   for (const c of G.deck) max = Math.max(max, c.id);
   for (const c of G.discard) max = Math.max(max, c.id);
   for (const c of G.removed) max = Math.max(max, c.id);
   for (const c of G.pendingInteraction?.options ?? []) max = Math.max(max, c.id);
   for (const t of G.threats) max = Math.max(max, t.id);
-  for (const r of G.tradeRoutes) max = Math.max(max, r.id);
   if (G.objective) max = Math.max(max, G.objective.id);
   return max + 1;
 }

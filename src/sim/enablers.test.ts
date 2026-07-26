@@ -103,7 +103,7 @@ describe('consumable enabler (planner leaf accelerator)', () => {
     const territoryValue = (() => {
       const G = masonryRoot();
       G.resources = emptyResources();
-      G.resources.territory = CARDS.conquest.produces!.resources!.territory!;
+      G.resources.territory = CARDS.conquest.effect!.resources!.territory!;
       return enablerPotential(G, m);
     })();
     expect(bankOf('military')).toBeLessThan(territoryValue);

@@ -28,7 +28,7 @@ export interface CoreResourceEntry {
 export const CODEX_CORE_RESOURCES: CoreResourceEntry[] = [
   { key: 'food', name: 'Food', role: 'Feeds your population — each person eats food every round. More food sustains a larger population, and so more workers.' },
   { key: 'production', name: 'Production', role: 'The build currency. Spent to play permanent building cards.' },
-  { key: 'money', name: 'Money', role: 'The treasury. Spent on immediate, temporary actions.' },
+  { key: 'money', name: 'Money', role: 'The treasury. Buys standing access — its main use is opening trade routes and paying their rent.' },
   { key: 'military', name: 'Military', role: 'Power projection. Defends against disasters and enables expansion.' },
   { key: 'science', name: 'Science', role: 'Planning and card manipulation — drawing, retrieving, peeking.' },
 ];
@@ -44,7 +44,7 @@ export interface StrategicEntry {
 /** The 3 strategic gauges — never spent; they define the shape of your civilization. */
 export const CODEX_STRATEGIC: StrategicEntry[] = [
   { key: 'population', name: 'Population', role: 'You need population to work the land and power your buildings. But a bigger population needs more food, so be wary of overextending!' },
-  { key: 'territory', name: 'Territory', role: 'The land you control. It sets how many buildings and wonders can stand in your tableau — expand it to make room for more.' },
+  { key: 'territory', name: 'Territory', role: 'The land you control, and the size of your board. Everything that generates resources takes one slot — a building, a wonder, a trade route, or a work card for the turn it is out. Expand it to make room for more.' },
   { key: 'culture', name: 'Culture', role: 'How much your civilization shines. Each culture level raises your hand size, and some cards require a minimum culture level to play.' },
 ];
 
@@ -76,7 +76,7 @@ export const CODEX_CARD_KINDS: CardKindEntry[] = [
     kind: 'work',
     name: 'Work',
     definition:
-      'Playing one sticks it onto your board for one turn. Assign workers to it just like a building; a staffed work card produces its output at the end of the round, then returns to the discard pile.',
+      'Playing one takes a territory slot for one turn. Assign workers to it just like a building; a staffed work card produces its output at the end of the round, then returns to the discard pile and frees its slot again.',
   },
   {
     kind: 'action',
@@ -88,7 +88,7 @@ export const CODEX_CARD_KINDS: CardKindEntry[] = [
     kind: 'trade',
     name: 'Trade route',
     definition:
-      'Pay their cost to open a route on the right of your board. A route takes no territory and no workers, but its rent is charged every round for the rest of the run — there is no way to close one, so a treasury that cannot pay goes bankrupt.',
+      'Pay their cost to open a route on one of your territories. A route needs no workers, but it holds its slot and its rent is charged every round for the rest of the run — there is no way to close one, so a treasury that cannot pay goes bankrupt.',
   },
   {
     kind: 'event',
@@ -121,6 +121,6 @@ export interface GlossaryEntry {
 export const CODEX_GLOSSARY: GlossaryEntry[] = [
   { term: 'Discard cost', definition: 'You must discard that many other cards from your hand to play it.' },
   { term: 'Culture requirement', definition: 'The card can only be played once your culture has reached the required level. Culture is not consumed.' },
-  { term: 'Territory', definition: 'How many buildings and wonders your tableau can hold. Trade routes are outside it.' },
+  { term: 'Territory', definition: 'How many cards your board can hold at once. Buildings, wonders and trade routes hold a slot for the rest of the run; a work card holds one for the turn. Actions take none.' },
   { term: 'Single use', definition: 'Instead of being discarded, this card is removed from the run once used.' },
 ];

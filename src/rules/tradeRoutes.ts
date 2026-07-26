@@ -10,8 +10,8 @@ import type { GameState } from './state';
  *  per-tick function here; the card owns its behaviour and the bus drives it.
  *
  *  A route stands for the rest of the run: nothing removes one, so the rent is a one-way commitment
- *  and an unpayable one collapses the treasury into bankruptcy (`rules/collapse.ts`). That is the cap —
- *  routes take no workers and no territory. */
+ *  and an unpayable one collapses the treasury into bankruptcy (`rules/collapse.ts`). It holds a
+ *  territory slot for that whole time like a building does, but takes no workers. */
 export function openTradeRoute(G: GameState, cardId: string, stickers?: string[]): void {
   const route = { id: nextInstanceId(G), cardId, ...(stickers?.length ? { stickers } : {}) };
   G.tradeRoutes.push(route);

@@ -123,8 +123,9 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     cost: {}, workers: 1, produces: { resources: { food: 3 } },
   },
 
-  // --- Trade route: stands in its own zone once played, takes no workers and no territory, and both
-  // yields (`produces`, flat) and pays rent (`upkeep`) at every upkeep boundary until the run ends. ---
+  // --- Trade route: stands in its own zone once played, taking a territory slot but no workers, and
+  // both yields (`produces`, flat) and pays rent (`upkeep`) at every upkeep boundary until the run
+  // ends. ---
   test_trade: {
     id: 'test_trade', name: 'Test Trade', kind: 'trade',
     cost: { money: 2 }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } },

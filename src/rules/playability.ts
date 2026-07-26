@@ -1,7 +1,7 @@
-import { isStructure, type CardDef } from '../content/cards';
+import { occupiesTerritory, type CardDef } from '../content/cards';
 import { canAfford, type CoreResources } from './resources';
 import { cultureLevel } from './culture';
-import { freeTerritory } from './tableau';
+import { freeTerritory } from './territory';
 import type { CardInstance, GameState } from './state';
 import { effectiveCost } from './stickers';
 
@@ -46,6 +46,6 @@ export function unplayableReason(G: GameState, card: CardDef, self: CardInstance
   }
   if (card.gate?.cultureLevelReq && cultureLevel(G.resources.culture) < card.gate.cultureLevelReq)
     return { kind: 'cultureLevel', required: card.gate.cultureLevelReq };
-  if (isStructure(card) && freeTerritory(G) <= 0) return { kind: 'territory' };
+  if (occupiesTerritory(card) && freeTerritory(G) <= 0) return { kind: 'territory' };
   return card.gate?.check?.(G, self) ?? null;
 }

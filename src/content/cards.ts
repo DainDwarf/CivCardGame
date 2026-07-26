@@ -114,10 +114,17 @@ export function isDeckable(card: CardDef): boolean {
   );
 }
 
-/** Whether a card *occupies a tableau slot* when played. The single choke point for every
- *  placement branch (`moves.ts`, `playability.ts`, `Board.tsx`, `CardFace.tsx`). */
+/** Whether a card enters the **tableau** when played. The single choke point for the building/wonder
+ *  placement branch (`moves.ts`, `Board.tsx`, `CardFace.tsx`). */
 export function isStructure(card: CardDef): boolean {
   return card.kind === 'building' || card.kind === 'wonder';
+}
+
+/** Whether a card *stands on the board and takes a territory slot* when played — a building or wonder
+ *  in the tableau, a Work box for the turn, a standing trade route. The single choke point for the
+ *  territory cap (`rules/territory.ts`, `playability.ts`, `Board.tsx`). */
+export function occupiesTerritory(card: CardDef): boolean {
+  return isStructure(card) || card.kind === 'work' || card.kind === 'trade';
 }
 
 /** Whether a card *produces and is staffed at upkeep*. A card-kind predicate; distinct from
@@ -280,36 +287,21 @@ export const CARDS: Record<string, CardDef> = {
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { money: 2 }, display: { art: '🤝' }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, display: { art: '🐕' }, effect: { resources: { military: 2 } } },
   raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { military: 3 }, display: { art: '🔥' }, effect: { resources: { money: 6 } } },
+  // Conquest and Road are the game's only two territory sources, so they are deliberately `action` —
+  //   the one kind that takes no slot. As board cards they would need free territory to play, which a
+  //   board already full of buildings can never offer, trapping the run with no way to expand.
   conquest: {
-    id: 'conquest', name: 'Conquest', kind: 'work', cost: { military: 5 }, workers: 1,
-    // The "single use" note is the face's heads-up for the self-removal below — kept in step with it.
-    display: { art: '🗡️', note: 'single use' },
-    // Conquest is a one-shot land grab, not a sustained producer: the round it yields its territory it
-    // leaves play for good. The declarative gain lands the territory, then the closure exiles this copy
-    // to `removed` — `filter` per the bus's self-removal contract, so the end-of-turn workZone→discard
-    // recycle never files it back.
-    produces: {
-      resources: { territory: 1 },
-      resolve: (ctx) => {
-        ctx.G.workZone = ctx.G.workZone.filter((w) => w.id !== ctx.self.id);
-        ctx.G.removed.push({ id: ctx.self.id, cardId: ctx.self.cardId });
-      },
-    },
+    id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 5 },
+    display: { art: '🗡️' },
+    effect: { resources: { territory: 1 } },
   },
 
-  // Road: Conquest's economic twin — the same one-shot +1 territory and self-removal, paid in 🪙+🔨
-  //   instead of ⚔️, so expansion has a trade route as well as a war party. Structure mirrors Conquest
-  //   exactly (see its note above for the self-removal contract).
+  // Road: Conquest's economic twin — the same +1 territory, paid in 🪙+🔨 instead of ⚔️, so expansion
+  //   has a trade route as well as a war party.
   road: {
-    id: 'road', name: 'Road', kind: 'work', cost: { money: 3, production: 3 }, workers: 1,
-    display: { art: '🛣️', note: 'single use' },
-    produces: {
-      resources: { territory: 1 },
-      resolve: (ctx) => {
-        ctx.G.workZone = ctx.G.workZone.filter((w) => w.id !== ctx.self.id);
-        ctx.G.removed.push({ id: ctx.self.id, cardId: ctx.self.cardId });
-      },
-    },
+    id: 'road', name: 'Road', kind: 'action', cost: { money: 3, production: 3 },
+    display: { art: '🛣️' },
+    effect: { resources: { territory: 1 } },
   },
 
   // Calendar keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer). The
@@ -622,9 +614,8 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // Measures territory *gained* since setup (`resources − startResources`), not the absolute realm
-  //   size: building slots occupy territory but don't lower the resource, and Road/Conquest raise it,
-  //   so the difference is pure expansion — and reads the same win on every board regardless of its
-  //   starting territory.
+  //   size: occupying a slot doesn't lower the resource, and Road/Conquest raise it, so the difference
+  //   is pure expansion — and reads the same win on every board regardless of its starting territory.
   wheel_goal: {
     id: 'wheel_goal', name: 'The Wheel', kind: 'objective', cost: {},
     goals: [{ icon: '🗺️', measure: (G) => G.resources.territory - G.startResources.territory, target: WHEEL_TERRITORY }],
@@ -710,8 +701,7 @@ export const CARDS: Record<string, CardDef> = {
   },
   // The Wheel's squeeze: road upkeep on the realm's *growth*, draining 🔨 by territory gained since
   //   setup (`resources − startResources`), so a board's starting territory is toll-free and the
-  //   pressure only mounts as you expand. Threats tick after the workZone production pass
-  //   (`events.ts` dispatch order), so a Road/Conquest played this turn is already counted.
+  //   pressure only mounts as you expand.
   overextension: {
     id: 'overextension', name: 'Overextension', kind: 'threat', cost: {},
     display: {

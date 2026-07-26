@@ -111,7 +111,8 @@ export interface GameState {
   round: number;
   /** All eight resource pools in one bundle: the five core (food/production/science/military/money,
    *  spent and produced each round) plus the three strategic — `population` (a pool of workers who
-   *  each eat food every round), `territory` (caps the tableau size), and `culture` (a civilization
+   *  each eat food every round), `territory` (caps how many cards can stand on the board at once —
+   *  `rules/territory.ts`), and `culture` (a civilization
    *  gauge some cards gate on). Reached as `resources.population` etc. */
   resources: Resources;
   /** The starting resource profile this run was set up with (the board's, stickers folded in),
@@ -138,15 +139,16 @@ export interface GameState {
   removed: CardInstance[];
   /** Buildings in play (each a placed `building` card), tracking their assigned workers. */
   tableau: BuildingInstance[];
-  /** Work cards played this turn, tracking assigned workers. Transient: not territory-capped,
-   *  produces only while staffed, cleared at end of turn (each files to `discard`). */
+  /** Work cards played this turn, tracking assigned workers. Transient: produces only while staffed,
+   *  cleared at end of turn (each files to `discard`) — so the territory slot it holds is rented for
+   *  the turn rather than committed for the run. */
   workZone: WorkInstance[];
   /** Persistent board hazards, ticking every upkeep — see `rules/threats.ts`. Mission-seeded only;
    *  empty on every run that doesn't use one. */
   threats: ThreatInstance[];
-  /** Trade routes the player has opened — see `rules/tradeRoutes.ts`. Standing, workerless, and
-   *  outside the territory cap; each pays its `upkeep` rent and yields its `produces` every round.
-   *  Uncapped: the rent scales with the zone, so the treasury is what bounds it. */
+  /** Trade routes the player has opened — see `rules/tradeRoutes.ts`. Standing and workerless, each
+   *  holding a territory slot and paying its `upkeep` rent for the run while yielding its `produces`
+   *  every round. Bounded twice over: by the slots the board has, and by the treasury the rent runs on. */
   tradeRoutes: TradeRouteInstance[];
   /** The mission's win/lose condition as a card — seeded once at setup from the mission's
    *  `objectiveCardId` (`rules/objective.ts`'s `seedObjective`). Its card owns the win *logic*

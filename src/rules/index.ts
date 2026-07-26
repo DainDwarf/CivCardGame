@@ -10,7 +10,7 @@ export * from './events';
 export * from './playability';
 export * from './population';
 export * from './rng';
-export * from './tableau';
+export * from './territory';
 export * from './threats';
 export * from './tradeRoutes';
 export * from './upkeep';

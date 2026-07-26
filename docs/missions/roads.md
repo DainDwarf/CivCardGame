@@ -18,9 +18,8 @@
   otherwise "pave now or pay 🔨 later" is a weak decision; the food bleed makes it a real
   🔨-to-pave vs. 🌾-to-survive squeeze. (Sibling signatures: Copper 🔨-threat, Writing 🔬-escalating,
   Roads 🌾-flat.)
-- **Reward:** unlocks the **Road** (work card, 3🪙+3🔨 → +1 territory, single-use — Conquest's economic
-  twin, structurally identical self-removal), the tool the Wheel mission's territory goal is built
-  around.
+- **Reward:** unlocks the **Road** (action, 3🪙+3🔨 → +1 territory, repeatable — Conquest's economic
+  twin, structurally identical), the tool the Wheel mission's territory goal is built around.
 
 ## Implement ✅ (shipped)
 
@@ -32,7 +31,8 @@ Seeded events paving to `removed`; per-copy in-hand food bleed.
 lands **oracle 9/10 · planner 85% · greedy 31%** — tight but winnable, the intended squeeze.
 
 - **Still unpinned until Wheel is balanced:** the Road's 3🪙+3🔨 cost (parity with Conquest's 5⚔️ is
-  the intent).
+  the intent). Both cards became **actions** with the unified play area — no slot, no worker, immediate,
+  repeatable — so the measured result above predates a real buff to them and needs re-running.
 
 ## Polish ⬜ (not started)
 
