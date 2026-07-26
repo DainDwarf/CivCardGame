@@ -222,7 +222,7 @@ export function goalValuedCardCosts(
  *  all of `CARDS` would credit a conversion the deck can't perform (an unlocked-but-undecked card). */
 function runCardIds(G: GameState): Set<string> {
   const ids = new Set<string>();
-  for (const zone of [G.deck, G.hand, G.discard, G.removed, G.tableau, G.workZone]) {
+  for (const zone of [G.deck, G.hand, G.discard, G.removed, G.tableau, G.workZone, G.tradeRoutes]) {
     for (const c of zone) ids.add(c.cardId);
   }
   return ids;
@@ -389,11 +389,16 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
     }
   }
 
-  // Durable producers. Value one round of a structure's `produces` at the per-unit worth the model already
+  // Durable producers — a structure in the tableau or a trade route in its own zone, the two things that
+  // stand and yield every round. Value one round of `produces` at the per-unit worth the model already
   // carries — `valued` for a goal resource (whose core weight the consumables loop deliberately leaves
   // unset), `weight` for one that is only a conversion input — then credit `PRODUCER_TAIL_HORIZON` of them.
-  // Read at **one worker's** output (`produces.resources` is per-worker): crediting full capacity would
-  // re-charge for the population that staffs it, which the capacity pass above already weights.
+  // Read at **one worker's** output (`produces.resources` is per-worker for a staffable, and already flat
+  // for a workerless route): crediting full capacity would re-charge for the population that staffs it,
+  // which the capacity pass above already weights.
+  // A route's `upkeep` rent is *not* netted off here — only positive `produces` entries count, the same as
+  // for a building that pays maintenance. The rent reaches the policies through `value.ts`'s
+  // `permanentDelta`, which runs the real `applyUpkeep`.
   const producerCredit: EnablerModel['producerCredit'] = {};
   if (producers) {
     const unitValue: Partial<Record<keyof Resources, number>> = {};
@@ -402,7 +407,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
       if (v > 0) unitValue[k] = v;
     }
     for (const card of Object.values(CARDS)) {
-      if (!ids.has(card.id) || !isStructure(card) || !card.produces) continue;
+      if (!ids.has(card.id) || !(isStructure(card) || card.kind === 'trade') || !card.produces) continue;
       let perRound = 0;
       for (const [k, v] of Object.entries(unitValue) as [keyof Resources, number][]) {
         perRound += positive(card.produces.resources?.[k]) * v;
@@ -430,7 +435,7 @@ export function enablerPotential(G: GameState, model: EnablerModel): number {
     s += model.handsizePerLevel * Math.min(cultureLevel(G.resources.culture), HANDSIZE_LEVEL_CAP);
   }
   let durable = 0;
-  for (const placed of G.tableau) durable += model.producerCredit[placed.cardId] ?? 0;
+  for (const placed of [...G.tableau, ...G.tradeRoutes]) durable += model.producerCredit[placed.cardId] ?? 0;
   s += Math.min(durable, PRODUCER_CREDIT_CAP);
   return s;
 }
