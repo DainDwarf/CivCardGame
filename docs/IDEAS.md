@@ -10,6 +10,7 @@
 
 ## Random Ideas
 
+ - Merge all zones (building, works, trade) into a single one, with all of them under the territory constraint?
  - Give the military boards a +1 territory per conquest/territory giving cards?
  - Decreasing effectiveness of old cards? (If card comes from 2 ages ago, output -1, -2, etc?)
  - **Parameterized objective/threat cards** — today an "N-of-something" mission
