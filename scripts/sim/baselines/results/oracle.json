@@ -160,38 +160,33 @@
     "wins": 10,
     "winRate": 1,
     "turns": {
-      "min": 3,
-      "mean": 6.6,
-      "median": 6.5,
-      "max": 10
+      "min": 8,
+      "mean": 9.3,
+      "median": 9.5,
+      "max": 11
     },
     "meanResources": {
-      "food": 8,
-      "production": 0.8,
-      "science": 3,
-      "military": 4.9,
-      "money": 2.5,
+      "food": 4.9,
+      "production": 0.7,
+      "science": 0,
+      "military": 1.2,
+      "money": 0,
       "population": 3,
-      "culture": 2.8,
-      "territory": 2
+      "culture": 0,
+      "territory": 4
     },
     "defeatCauses": {},
     "cardPlays": {
-      "dogs": 20,
-      "toolmaking": 31,
-      "cave_art": 14,
-      "jewelry": 16,
-      "foraging": 33,
-      "storytelling": 15,
-      "bow": 3,
+      "dogs": 36,
+      "foraging": 41,
+      "toolmaking": 81,
+      "bow": 12,
+      "conquest": 20,
       "farm": 10,
-      "bartering": 7,
       "hut": 10
     },
-    "unplayedCards": [
-      "conquest"
-    ],
-    "meanActions": 23.5
+    "unplayedCards": [],
+    "meanActions": 30.2
   },
   {
     "label": "horse_taming",

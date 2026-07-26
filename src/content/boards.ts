@@ -28,7 +28,9 @@ export const ORIGIN_BOARD_ID: BoardId = 'tribe';
 /**
  * The government boards a run can be launched on. `tribe` (the `ORIGIN_BOARD_ID`) is the Paleolithic
  * starting configuration matching the buildingless starting deck: a modest food store and the few
- * slots a nomadic camp works out of. Clearing the first mission *upgrades* it into `settlement` (a `boardUpgrade` reward that
+ * slots a nomadic camp works out of — and the whole Tribe/Settlement pair is the opening arc's board
+ * lesson: the first *two* missions are played on Tribe, and clearing "Growing Numbers" (raising the roof)
+ * *upgrades* it into `settlement` (a `boardUpgrade` reward that
  * retires Tribe for the settled version — see `rules/boardUpgrade.ts`). Other boards land through
  * `unlockBoardIds` rewards — `chiefdom`, the first military-leaning government, is unlocked by the
  * "Raiders at the Border" mission, where the arc teaches board choice (Chiefdom vs. the settled
@@ -49,7 +51,7 @@ export const BOARDS: Record<BoardId, BoardDef> = {
   settlement: {
     id: 'settlement',
     name: 'Settlement',
-    resources: { food: 10, production: 2, science: 0, military: 0, money: 0, population: 2, territory: 4, culture: 0 },
+    resources: { food: 10, production: 5, science: 0, military: 0, money: 0, population: 2, territory: 4, culture: 0 },
   },
   chiefdom: {
     id: 'chiefdom',

@@ -110,13 +110,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Stockpile 10 🔨 production and 10 ⚔️ military at once.',
     failureHint: null,
     kind: 'standard',
-    // Settling upgrades the Tribe board into the settled `settlement` government (fuller stores, the
-    // first worked fields, a patch of owned territory) — the arc's first taste of board progression.
-    reward: {
-      influence: 0,
-      unlockCardIds: ['farm', 'hut', 'conquest'],
-      boardUpgrade: { from: 'tribe', to: 'settlement' },
-    },
+    reward: { influence: 0, unlockCardIds: ['farm', 'hut', 'conquest'] },
     map: { col: 0, row: 0 },
     age: 'stone',
   },
@@ -132,7 +126,14 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: `Build a 🛖 Hut and a 🌱 Farm, while holding ${GROWING_NUMBERS_TERRITORY} 🗺️ territory.`,
     failureHint: null,
     kind: 'standard',
-    reward: { influence: 6, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['granary', 'stockpile'] },
+    // Raising the roof is what upgrades the Tribe board into the settled `settlement` government — so
+    // this mission is the last one played on Tribe, and its own territory goal is fought at Tribe's 2 🗺️.
+    reward: {
+      influence: 6,
+      unlockStickerIds: ['irrigation'],
+      unlockBoardStickerIds: ['granary', 'stockpile'],
+      boardUpgrade: { from: 'tribe', to: 'settlement' },
+    },
     map: { col: 1, row: 0 },
     age: 'stone',
   },

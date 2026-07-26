@@ -35,7 +35,7 @@ nothing but noise.
 | # | Mission | State |
 |---|---|---|
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
-| 2 | `growing_numbers` | 🔶 **in progress** — goal + Conquest realigned and measured on Tribe; fixture not yet re-cut |
+| 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
 | 3 | `rites_rituals` · `reading_seasons` | ⬜ — each wants an on-trial card back (see below) |
 | 4 | `raiders_at_border` · `restless_people` | ⬜ |
 | 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
@@ -91,10 +91,16 @@ be plopped for incidental value.
   whole decision is the Foraging/Toolmaking split, and skill does show there (426 Foraging plays under
   heuristic vs 222 under oracle). Acceptable for mission 1; worth not repeating at mission 2.
 
-### Mission 2 — Growing Numbers 🔶
+### Mission 2 — Growing Numbers ✅
 
 **Goal.** Build 🛖 + 🌱 **and hold 4 🗺️** — an *absolute* pool, not a gain over the board's start, so the
 board choice is felt at the win line rather than normalized away.
+
+**The board upgrade moved here from mission 1.** `boardUpgrade: tribe → settlement` is now *this*
+mission's reward, which is what makes the absolute 4 🗺️ goal work: the opening arc's first **two**
+missions are played on Tribe, and the 4 🗺️ is fought up from Tribe's 2. On Settlement's 4 the goal would
+have been satisfied at setup and Conquest would be decorative. It also reads better — raising the roof is
+what settles you, not finding the spot. **Settlement** gains the slack in exchange: 2🔨 → **5🔨** at start.
 
 **Conquest** 5⚔️ flat → **2⚔️ doubling per play of that copy** (2 · 4 · 8 …). The escalation is per-copy
 (`CardInstance.counters`), so a bought second copy climbs on its own schedule — a live interaction with
@@ -104,8 +110,8 @@ Landing this needed the **cost spine** (`rules/cost.ts`) — one `CardCost` desc
 fields plus a `resolve` escape hatch, absorbing the old `CardGate`. See CLAUDE.md; the shape is the
 decided design and graduates to `DESIGN.md`.
 
-**Measured** on **Tribe** (2🗺️/2🧍/10🌾/0🔨 — a counterfactual: `first_settlement` retires Tribe, so a
-player arrives on Settlement) with the starting deck + one Hut/Farm/Conquest, 15 cards, no purchases:
+**Measured** on **Tribe** (2🗺️/2🧍/10🌾/0🔨 — the board a player actually arrives on, now that the upgrade
+is this mission's own reward) with the starting deck + one Hut/Farm/Conquest, 15 cards, no purchases:
 
 | policy | result | turns (min · median · max) | end 🌾 | Conquest plays/run |
 |---|---|---|---|---|
@@ -123,9 +129,11 @@ player arrives on Settlement) with the starting deck + one Hut/Farm/Conquest, 15
 - **Heuristic leaves Dogs unplayed** and funds ⚔️ through Bow alone. A `sim/value.ts` blind spot, not a
   content signal (Bow is a one-shot 2🔨→3⚔️; Dogs is the repeatable 1🌾→1⚔️).
 
-**Owed before this mission closes:** re-measure on **Settlement** (the board a player actually has — 4🗺️
-means the territory goal is *already met at setup*, which likely switches Conquest back off), and re-cut
-`scripts/sim/baselines/growing_numbers.json`, which still names four on-trial cards.
+`scripts/sim/baselines/growing_numbers.json` is re-cut to this deck on Tribe, and its rows in
+`baselines/results/` are updated (that cell only — no whole-set sweep).
+
+**Reaches forward:** Settlement's 5🔨 start touches every later mission launched on it, so missions 3+ are
+measured against the new number when the pass gets to them.
 
 ## Cards on trial
 

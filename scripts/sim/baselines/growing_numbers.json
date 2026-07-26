@@ -1,19 +1,15 @@
 {
   "id": "growing_numbers",
   "mission": "growing_numbers",
-  "note": "Minimal: starting collection + First Settlement's reward (farm/hut/conquest), one copy each. That mission also upgrades Tribe into Settlement, so Tribe is retired by this stage.",
-  "board": "settlement",
+  "note": "Minimal: the starting collection plus one copy each of First Settlement's reward (farm/hut/conquest). That mission grants 0 Influence, so nothing can be bought here. Still on Tribe — this mission's own clear is what upgrades the board to Settlement, so its 4 territory goal is fought from Tribe's 2.",
+  "board": "tribe",
   "deck": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
-    { "cardId": "bartering", "count": 2 },
     { "cardId": "bow", "count": 2 },
     { "cardId": "dogs", "count": 2 },
-    { "cardId": "storytelling", "count": 2 },
-    { "cardId": "jewelry", "count": 2 },
-    { "cardId": "cave_art", "count": 2 },
-    { "cardId": "hut", "count": 1 },
     { "cardId": "farm", "count": 1 },
+    { "cardId": "hut", "count": 1 },
     { "cardId": "conquest", "count": 1 }
   ]
 }

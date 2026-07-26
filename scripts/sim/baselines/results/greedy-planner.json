@@ -169,40 +169,38 @@
     "label": "growing_numbers",
     "policyName": "greedy",
     "runs": 100,
-    "wins": 100,
-    "winRate": 1,
+    "wins": 26,
+    "winRate": 0.26,
     "turns": {
-      "min": 2,
-      "mean": 11.13,
-      "median": 10,
-      "max": 25
+      "min": 11,
+      "mean": 20.41,
+      "median": 21,
+      "max": 31
     },
     "meanResources": {
-      "food": 13.18,
-      "production": 1.4,
-      "science": 3.44,
-      "military": 8.26,
-      "money": 2.89,
+      "food": 1.14,
+      "production": 1.83,
+      "science": 0,
+      "military": 2.42,
+      "money": 0,
       "population": 3,
-      "culture": 2.02,
-      "territory": 2.04
+      "culture": 0,
+      "territory": 2.52
     },
-    "defeatCauses": {},
+    "defeatCauses": {
+      "famine": 74
+    },
     "cardPlays": {
-      "dogs": 339,
-      "toolmaking": 377,
-      "cave_art": 101,
-      "jewelry": 202,
-      "bartering": 115,
-      "foraging": 619,
-      "storytelling": 172,
-      "bow": 56,
-      "farm": 100,
+      "dogs": 263,
+      "foraging": 749,
+      "toolmaking": 772,
+      "farm": 99,
       "hut": 100,
-      "conquest": 4
+      "bow": 45,
+      "conquest": 52
     },
     "unplayedCards": [],
-    "meanActions": 31.98
+    "meanActions": 40.95
   },
   {
     "label": "horse_taming",
@@ -784,38 +782,33 @@
     "wins": 100,
     "winRate": 1,
     "turns": {
-      "min": 3,
-      "mean": 7.51,
-      "median": 8,
-      "max": 14
+      "min": 9,
+      "mean": 13.57,
+      "median": 13,
+      "max": 24
     },
     "meanResources": {
-      "food": 7.61,
-      "production": 0.92,
-      "science": 2.78,
-      "military": 3.86,
-      "money": 2.01,
+      "food": 4.97,
+      "production": 1.49,
+      "science": 0,
+      "military": 0.79,
+      "money": 0,
       "population": 3,
-      "culture": 0.02,
-      "territory": 2
+      "culture": 0,
+      "territory": 4
     },
     "defeatCauses": {},
     "cardPlays": {
-      "toolmaking": 287,
-      "jewelry": 114,
-      "foraging": 266,
-      "storytelling": 139,
-      "dogs": 142,
-      "bow": 34,
+      "dogs": 352,
+      "foraging": 508,
+      "toolmaking": 869,
+      "conquest": 200,
       "farm": 100,
-      "hut": 100,
-      "cave_art": 1,
-      "bartering": 27
+      "bow": 109,
+      "hut": 100
     },
-    "unplayedCards": [
-      "conquest"
-    ],
-    "meanActions": 18.68
+    "unplayedCards": [],
+    "meanActions": 34.97
   },
   {
     "label": "horse_taming",
