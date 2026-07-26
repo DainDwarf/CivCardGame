@@ -148,12 +148,18 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
   **Masonry's 6🧍 goal and the multi-worker wonders (Göbekli 3, Pyramid 4) are unreachable** until a
   stronger food source ships. Whichever mission unlocks that faucet is a *hard prerequisite* for them,
   not a balance nudge — decide it before reaching Masonry.
-- **Conquest's re-cost regressed Masonry's planner integration test** (5 seeds: was ≥4 wins, now 3).
-  Expected direction — Masonry converts ⚔️→🗺️→🧍 repeatedly, so a *doubling* territory card bites hardest
-  exactly there — and `plannerPolicy.integration.test.ts` is doing its job by catching it. Masonry is
-  mission 6 and already **blocked** on the food ceiling below, so the assertion is left red rather than
-  weakened: it is the pass's own reminder that Masonry needs a territory route that doesn't escalate (Road,
-  a board with more 🗺️, or a cap on the curve). **Resolve before merging to `main`.**
+- **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is `it.skip`ped** until this pass reaches
+  Masonry. Two reasons at once, which is why it's parked rather than retuned:
+  - Its hardcoded deck fields **bartering · jewelry · cave_art** — three of the four *Cards on trial*
+    below — so the fixture is stale by this pass's own rules whatever the numbers say.
+  - Conquest's 2⚔️-doubling price pushed it from 4/6 to **3/6** against a `>= 4` threshold. Expected
+    direction (Masonry converts ⚔️→🗺️→🧍 repeatedly, so a doubling territory card bites hardest exactly
+    there), but it's a **one-seed** move on a 6-sample proxy, so it doesn't measure *how much* — that
+    needs a wider planner sweep at Masonry's turn.
+
+  The assertion is the **planner's capability claim** (the greedies win Masonry 0%), not a Masonry balance
+  check — so it must come back rather than be relaxed. Masonry likely wants a territory route that doesn't
+  escalate: Road, a wider board, or a cap on the curve. **Un-skip before merging to `main`.**
 - **`MIN_DECK_SIZE` may not need to exist.** At 10 it is starting to look like a rule with no job; see
   [`IDEAS.md`](IDEAS.md). Not this pass's call.
 
