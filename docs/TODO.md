@@ -79,7 +79,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   moment a choice is a real decision, e.g. *which* route to close. Also worth recording alongside:
   `heuristicPolicy`'s `staticValue` scores a trade route's 🪙 cost against no immediate gain, so that
   policy will essentially never open one — a low heuristic win rate on a trade deck is the policy, not the
-  balance.
+  balance. Same trap one level down: a route's *only* positive signal in the value function is
+  `enablers.ts`'s `producerCredit` (`scoreState`'s operating-count credit deliberately excludes the zone,
+  since `isOperating` throws on a workerless card), so under `bareBest`/`plannerNoProducers` or any
+  producers-off ablation a route scores **pure negative**. Expect those cells to show routes as
+  strictly-bad; that's the ablation, not the card.
 
 ## Tech debt / architecture
 
@@ -124,8 +128,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     subject turned out to be deck dilution and the territory-cap question, which want a feel-play first.
     So there are no reversible play/remove actions and the planner/oracle search is unaffected.
   - **Bartering is the first route** (2🪙 to open, then −1🪙 / +1🌾 every round), converted from a
-    one-shot action as the mechanic's test vehicle. Nine baseline fixtures carry it; the integration
-    suites' win rates held unchanged, and the baseline sweep is a separate step.
+    one-shot action as the mechanic's test vehicle. Nine baseline fixtures carry it and the integration
+    suites' win rates held unchanged, but **that is not evidence the card is fine** — they'd pass
+    identically with Bartering deleted from those decks. Every board starts at 0–2🪙, so in the
+    no-purchase Stone-Age fixtures a route can barely be *opened*, let alone sustained. **The signal to
+    read in the sweep is `unplayedCards`, not the win rate.** Confirmed on masonry × 3 seeds: planner
+    leaves `bartering` unplayed; the random policy plays it once and one of its runs dies to
+    **bankruptcy**, so the path and the rent both work — the non-play is a decision, not a dead path.
   - **Colour:** deep plum `#7d2f57`, picked by measuring CIEDE2000 distance to every other kind banner
     under all three CVD sims (worst 7.8, against the palette's own tightest existing pair at 4.2).
     Deliberately *not* the brighter magenta, which is already Tritanopia's culture-gauge hue.
