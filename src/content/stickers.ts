@@ -69,9 +69,11 @@ export const STICKERS: Record<string, StickerDef> = {
     description: '−1 🔨',
     icon: '🛞',
     cost: 5,
-    // Only a building/work that actually pays 🔨 (so it can't be wasted on a card it can't help);
-    // wonders are excluded globally by `stickerAppliesTo`. `applyCost` owns its own floor at 0.
-    appliesTo: (c) => (c.kind === 'building' || c.kind === 'work') && (c.cost?.production ?? 0) > 0,
+    // Any card that actually pays 🔨, whatever its kind (so it can't be wasted on a card it can't
+    // help); wonders are excluded globally by `stickerAppliesTo`. Keyed on the cost alone rather than
+    // a kind list, so a card moving between kinds can't silently fall out of the sticker's reach.
+    // `applyCost` owns its own floor at 0.
+    appliesTo: (c) => (c.cost?.production ?? 0) > 0,
     applyCost: (cost) => ({ ...cost, production: Math.max(0, (cost.production ?? 0) - 1) }),
   },
 };

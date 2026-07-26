@@ -22,8 +22,11 @@ push through a 🔨 crisis, earn 🔨 relief.
 - **Pressure:** the **Overextension** threat drains **−1🔨 per territory** each round (road upkeep —
   the wider the realm, the costlier to hold). It reads the just-gained territory *the same turn*, so
   the final push to N happens under the heaviest drain — you can't out-expand your economy.
-- **Reward:** the **Wheel** card sticker — **−1🔨** on any building/work paying 🔨, floored at 0 —
-  the 🔨 relief that resolves the mission's own 🔨 crisis.
+- **Reward:** the **Wheel** card sticker — **−1🔨** on any card paying 🔨, floored at 0 — the 🔨
+  relief that resolves the mission's own 🔨 crisis. Its `appliesTo` is keyed on the 🔨 cost alone, not
+  on a kind list: Road turning into an `action` had silently put this mission's own reward out of
+  reach of the mission's own territory card. Widening it also brought Bow and Jewelry (both pay 🔨)
+  into range — **unmeasured**, and the balance pass's to judge.
 
 ## Implement ✅ (shipped)
 
