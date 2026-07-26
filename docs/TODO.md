@@ -132,7 +132,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   ticks it like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling. A route takes
   **no workers** and nothing closes one, so it is bounded by its territory slot and by the rent: an
   unpayable one runs money negative into **bankruptcy**. This is the sink money's one-way-hub topology
-  spends through ([`BACKLOG.md`](BACKLOG.md) Step 10).
+  spends through (see [`REBALANCE.md`](REBALANCE.md)).
   - **One design change from the original ticket: routes are permanent.** The ticket had them removable
     at will; removal is now its own deferred item above (a minted cancellation *card*), because the real
     subject turned out to be deck dilution.

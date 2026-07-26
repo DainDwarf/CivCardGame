@@ -13,10 +13,13 @@ system below, and the roadmap.
 status board tracking each mission through Design → Implement → Balance → Polish, over per-mission
 dossiers in [`docs/missions/`](docs/missions/) (each dossier is one mission's live working state).
 [`docs/TODO.md`](docs/TODO.md) is the **transversal** bug/feature planner (not content);
-[`docs/IDEAS.md`](docs/IDEAS.md) holds unpolished candidates. All three are transient scratchpads —
+[`docs/IDEAS.md`](docs/IDEAS.md) holds unpolished candidates.
+[`docs/REBALANCE.md`](docs/REBALANCE.md) is the **resource-economy rebalance** thread — BACKLOG's
+Step 10 pulled forward onto the `trade-redesign` branch and given its own file, working mission by
+mission through the rates. All four are transient scratchpads —
 `DESIGN.md` holds the *decided* design and `CHANGELOG.md` the *durable* history, so nothing durable
 should cite an item in them. A shipped mission's `CHANGELOG` line is drawn from its dossier; a shipped
-transversal item's from TODO's *Done / shipped*.
+transversal item's from TODO's *Done / shipped*; the rebalance's from `REBALANCE.md`.
 
 Two loops:
 
