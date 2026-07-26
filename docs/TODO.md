@@ -37,6 +37,35 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   work card insert at the drop position rather than appending. `[?]`
 - **Sticker locked/unlocked visual on mission preview** — rework how a mission's sticker reward reads locked vs. unlocked (currently a generic locked chip → real face). Maybe extract a **shared sticker widget** (the `CardFace`/`BoardMini` counterpart for a single sticker) reused across the mission-detail preview and elsewhere. `[?]`
 
+## Run loop (`src/rules/`, `src/run/`)
+
+- **Trade-route zone** `[size: L]` `[?]` — a new board zone for **trade routes**: cards played for a 🪙
+  cost that then stand, paying a **per-round 🪙 upkeep**, and which the player may **remove at any time**
+  (moved to `discard`, so the card recycles). Outside the **territory cap** — a sea route isn't land, and
+  routes competing with buildings for slots means nobody ever runs one. **No hard cap either**: upkeep
+  scales with the number of parallel routes, so the zone auto-caps at whatever the treasury sustains.
+  This is the mechanism money's one-way-hub topology runs through (see
+  [`BACKLOG.md`](BACKLOG.md) Step 10) — money rents standing access rather than converting into things.
+  - **Bronze gating is continuous, not play-time.** A bronze card checks for an *operating* route every
+    round (on `produces`), so losing tin **mothballs** the forge rather than preventing its construction.
+    A play-time `gate.check` leaks: `gate` is evaluated at play, `upkeep` fires at the `endTurn`
+    boundary, so play-route → play-building → remove-route-before-ending-turn pays zero 🪙 and keeps the
+    building forever. Continuous gating also gives the Sea Peoples capstone its teeth — cut routes take
+    the whole bronze economy dark instead of leaving built infrastructure untouched.
+  - **Cashes in the deferred destroy/demolish verb** — BACKLOG parked it as "reimplement cleanly on the
+    resolver spine when a real card wants it, Bronze/Iron". Route removal is that card.
+  - **Takes no workers** (`workers: 0`) — the rent is money, and leaving population out keeps the two
+    scarcities distinct. Decide this at authoring time, not in the implementer's debugger:
+    `population.ts`'s `cardWorkerCap` *throws* on a staffable with no `workers` field.
+  - Surface: a `GameState` zone (plain data, so `cloneState` is free), play/remove moves, the escalating
+    upkeep (like `tamed_horses`/`overextension`, a drain reading a count — but **self-referential** where
+    those aren't: the card reads the size of the zone it sits in, so it isn't a copy-paste),
+    `enumerateActions`,
+    `invariants` (instance ids unique across *all* zones), `oracleKey`, and a UI zone. Budget for the
+    simulator: reversible play/remove actions widen the planner and oracle search.
+  - Escalating-cost formula is a **balance** question, not a blocking one — provisional numbers are fine
+    to build against.
+
 ## Tech debt / architecture
 
 - **Audit existing tests for the integration split** — the `*.integration.test.ts` convention (end-to-end/

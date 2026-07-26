@@ -128,6 +128,7 @@
 
 - **Step 8 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 7, Iron Age
   period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
+  Sequenced **after Step 10**, so it is authored against rebalanced rates rather than inheriting them.
   `[size: L]` `[?]`
   - Iron Age mission arcs — structure as 2–3 parallel quest lines (branching DAG paths, echoing how the Stone Age forks Rites & Rituals / Reading the Seasons after Growing Numbers), themed around distinct early civilizations:
     - Roman Empire — a military/expansion-leaning line
@@ -183,6 +184,75 @@
     (3🧍 pop · 🎭 level 2 · 30🔨 · 30🪙 held at once). **Post-clear:** the reward unlocks the **Göbekli
     Tepe wonder card** (add it to a deck under the wonder rule) and opens the endless sandbox — the age is
     mastered.
+
+- **Step 10 — Resource-economy rebalance pass** — runs **after Step 7 (Bronze) and before Step 8
+  (Iron)**, so Iron is authored against corrected rates instead of inheriting the distortion. Depends on
+  the **Trade-route zone** ([`TODO.md`](TODO.md) → *Run loop*). `[size: L]` `[?]`
+
+  **Diagnosis.** Three separate-looking complaints (base work cards too strong · Dogs/Bow flattening
+  later military · Jewelry too strong) are one root cause: **every converter doubles, and they compose.**
+
+  | Card | In | Out | Ratio |
+  |---|---|---|---|
+  | Jewelry | 1🔨 | 2🪙 | ×2 |
+  | Bartering | 1🪙 | 2🌾 | ×2 |
+  | Dogs | 1🌾 | 2⚔️ | ×2 |
+  | Raiding | 3⚔️ | 6🪙 | ×2 |
+  | Bow | 2🔨 | 3⚔️ | ×1.5, self-exiling |
+
+  Chained, Toolmaking → Jewelry → Bartering → Dogs turns **1🔨 into 8⚔️** (16⚔️ per worker-round against
+  War Horse's 4). Bartering → Dogs → Raiding **closes a cycle**: 1🪙 → 2🌾 → 4⚔️ → ~8🪙, ×8 per lap, and
+  `raiding` is live today (granted by Horse Taming). The only brake is card plays — hand size 4, +1 per
+  culture level, no per-turn cap — so the engine *strengthens* as culture rises. Net effect: the five core
+  resources are one resource with five sprites, which is what erases deck identity.
+
+  Second, **buildings never out-rate the free work card** of their resource, while also costing 🔨, a
+  territory slot, and a draw — Foraging 3🌾 vs Farm 1🌾 · Toolmaking 2🔨 vs Forge 2🔨 · Storytelling 2🔬 vs
+  Archives 2🔬 · Cave Art 2🎭 vs Burial 1🎭 · War Horse 4⚔️ vs City Walls 1⚔️. So production's only sink is
+  a card category nobody needs.
+
+  **Decided — money's topology: a one-way hub.** Money's out-edges reach the other four; its in-edges are
+  **producers only** (Trader, wonders, buildings), never conversion. It's spent through **trade routes**
+  (the TODO item) — money rents standing access rather than converting into stuff, which is a sink with no
+  exchange rate to arbitrage. The **tin route carries no bonus at all**: it purely gates bronze, so its
+  cost is pure route-capacity opportunity cost.
+
+  - **The rule to hold, not just the card:** *a route may produce money, or non-money — but no card may
+    convert that non-money output back into money.* Otherwise route + converter is a pump at any rate.
+  - **Jewelry** (🔨→🪙) is cut or re-pointed — it is the exact inverse of the planned Bronzeworking
+    (🪙→🔨) and would form a two-card loop at the centre of the age.
+  - **Raiding** (⚔️→🪙) is cut, or charged in **culture** — never spent and gates hand size, so it can't be
+    arbitraged back, and "raiders don't build civilizations" reads well.
+  - **Consequence to honour:** money leaves the optional tier for the Bronze Age. Generalizes to a
+    structural idea worth adopting — **each age promotes one resource into the substrate** (Stone = food +
+    production; Bronze adds money; Iron adds its own).
+  - **Check before building:** with Jewelry gone, money's faucets are Trader (3🪙/worker) plus whatever
+    Naval adds. Hand-check 🪙/round for N routes against a realistic deck's income; if it doesn't clear,
+    the escalating-cost curve gives.
+
+  **Ordering** (each swept against the committed baselines in `scripts/sim/baselines/`, whose
+  `results/` commit is the before/after record):
+  1. **Money topology** — the trade-route zone, then Jewelry/Raiding. Unblocks the rest, because whether
+     Dogs at ×2 is fine depends entirely on whether ⚔️ is a sink or a way station.
+  2. **Buildings out-rate work cards** — restores production's identity and makes territory (so military)
+     worth something. A building's pitch is a *different kind of thing* (never drawn, scales per worker,
+     eats a slot), so the lever may be draw/deck pressure rather than the Farm's number.
+  3. **Superlinear food upkeep** — `foodUpkeep` is flat `population × FOOD_PER_POP`; band it like culture's
+     `2^L × CULTURE_STEP` so one uniform rule produces scaling consequences (no per-age constant). Sim-check
+     Masonry's 6🧍 goal, which this turns from a growth goal into a survival goal.
+  4. *(optional, later)* Narrow production to buildings only — hold until (2) lands, or the resource has a
+     single sink nobody wants. Give **science an expensive sink**: its identity (deck churn) is fine, but
+     Calendar costs 1🔬 and Writing 2🔬 and Reading the Seasons asks you to *stockpile*, so the resource is
+     never demanded in quantity.
+
+  **The anchor is a detector, not a target.** Compute what a worker-round is worth per resource to find the
+  card that's 4× off — then deliberately leave things at 0.7× and 1.6×. Uneven-on-purpose is design;
+  uneven-and-freely-composable is the bug. Flattening every card to 1.0× is the failure mode to avoid.
+
+  **Re-point the money objectives.** Accounting (40🪙), Pyramid (50🪙) and Göbekli Tepe (30🪙) are *hoard*
+  goals, pushed against by `envious_population`. A one-way hub whose point is spending sits awkwardly with
+  them — playable, but the wildcard is switched off during the missions built around it. Decide per
+  mission rather than discovering it in the sweep.
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*
