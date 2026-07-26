@@ -48,10 +48,12 @@ export interface CardCost {
    * play count, with the board, with anything. Returns a whole `CardCost`, which the engine then
    * checks and pays generically, so the result stays as introspectable as a static cost.
    *
-   * `base` is the declarative fields above, handed in so a scaling closure derives from them instead
-   * of restating the number (edit the base and the curve follows). They are also the display fallback
-   * for contexts with no run (Collection, the deck editor) — the same relationship
-   * `display.description` has with `display.dynamicText`.
+   * `base` is the declarative fields above with this copy's stickers already folded in, handed over so a
+   * scaling closure derives from them instead of restating the number — edit the base and the curve
+   * follows, and a sticker discount compounds with the curve rather than being applied on top of it
+   * (`currentCost`). The undiscounted declarative fields are also the display fallback for contexts with
+   * no run (Collection, the deck editor) — the same relationship `display.description` has with
+   * `display.dynamicText`.
    *
    * Pure read: the projection clone re-prices every render.
    */
@@ -62,20 +64,20 @@ export interface CardCost {
 }
 
 /**
- * This copy's cost right now: the card's own `resolve` (else its declarative base), then the sticker
- * fold over whatever that produced.
+ * This copy's cost right now: the sticker fold over the declarative price, then the card's own
+ * `resolve` scaling *that*.
  *
- * The order is load-bearing — a sticker discounts the price you *actually* pay. Folded the other way
- * round, an Efficient −1🔨 would be scaled along with the base by the card's own `resolve`, a far
- * bigger swing than the sticker advertises.
+ * The order is load-bearing, and it is stickers-first — a sticker discounts the card's **base rate**,
+ * and the card's own curve then scales the discounted number, so the two **compound**: a −1🔨 on a
+ * price that doubles turns 2·4·8 into 1·2·4, not 1·3·7.
  */
 export function currentCost(card: CardDef, ctx: CostContext): CardCost {
+  const base = card.cost.resources
+    ? { ...card.cost, resources: effectiveCost(card.cost.resources, ctx.self) }
+    : card.cost;
   // Merged over the base, not substituted for it: a `resolve` that only reprices `resources` must not
   // silently drop a `discard`/`cultureLevelReq` it never mentioned. Composition, as with `CardEffect`.
-  const resolved = card.cost.resolve ? { ...card.cost, ...card.cost.resolve(ctx, card.cost) } : card.cost;
-  if (!resolved.resources) return resolved;
-  const resources = effectiveCost(resolved.resources, ctx.self);
-  return resources === resolved.resources ? resolved : { ...resolved, resources };
+  return base.resolve ? { ...base, ...base.resolve(ctx, base) } : base;
 }
 
 /** A card as this copy reads *inside a run*: `effectiveCard`'s sticker fold plus a dynamic cost priced

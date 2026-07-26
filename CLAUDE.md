@@ -143,8 +143,9 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   prerequisite) plus two closures that compose with those fields — `resolve` (this copy's *actual* cost
   when it isn't the declarative one, e.g. a price that doubles per play, handed the base to derive from)
   and `check` (a bespoke precondition, like a peek card needing a non-empty pile). `currentCost` is the
-  single seam every price flows through — the card's `resolve` then the sticker fold, in that order so a
-  discount cuts the price actually paid rather than being scaled by the card's own curve — read by
+  single seam every price flows through — the sticker fold then the card's `resolve`, in that order so a
+  sticker discounts the card's **base rate** and the two **compound**: −1🔨 on a doubling price gives
+  1·2·4, not 1·3·7 — read by
   `costReason` (the gate), `payCost` (the payment), `discardCount` (how many cards a play sacrifices),
   and `runCard` (the display, so a face can never quote a price the gate wouldn't charge). The
   declarative fields are a deliberately **closed vocabulary**: a cost must be introspectable, not just

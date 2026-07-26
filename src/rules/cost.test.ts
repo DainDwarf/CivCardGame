@@ -47,11 +47,14 @@ describe('currentCost', () => {
     expect(doubling.cost.resources).toEqual({ military: 2 });
   });
 
-  it('folds a sticker discount over the scaled price, not under it', () => {
+  it('discounts the base rate first, so a sticker compounds with the curve', () => {
     const G = blankState('test');
-    const self: CardInstance = { id: 1, cardId: 'test_doubling', counters: { plays: 2 }, stickers: ['test_costcut'] };
-    // Scaled 2→8, then −1: a discount applied to the base first would have been doubled to −4 (8→4).
-    expect(currentCost(doubling, { G, self }).resources).toEqual({ military: 7 });
+    const at = (plays: number): number => {
+      const self: CardInstance = { id: 1, cardId: 'test_doubling', counters: { plays }, stickers: ['test_costcut'] };
+      return currentCost(doubling, { G, self }).resources!.military!;
+    };
+    // −1 off the base 2, *then* doubled: 1·2·4, not the 1·3·7 a discount applied after scaling gives.
+    expect([at(0), at(1), at(2)]).toEqual([1, 2, 4]);
   });
 
   it('carries the non-resource fields through the resolve', () => {
