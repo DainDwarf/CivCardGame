@@ -14,9 +14,9 @@ export interface StrategicResources {
   territory: number;
 }
 
-/** The whole resource picture: core + strategic. `GameState.resources` holds one of these, and a
- *  `CardEffect`'s signed delta is a `Partial<Resources>` (it may touch any of the eight). A card's
- *  *cost*, by contrast, is a `Partial<CoreResources>` — only core resources are ever spent. */
+/** The whole resource picture: core + strategic. `GameState.resources` holds one of these, and both
+ *  a `CardEffect`'s signed delta and a `CardCost`'s price are a `Partial<Resources>` — either may
+ *  touch any of the eight. */
 export type Resources = CoreResources & StrategicResources;
 
 /** The core keys, in canonical order — the single source of truth for "which keys are core",
@@ -66,8 +66,8 @@ export function scaleResources(r: Partial<Resources>, factor: number): Partial<R
   return out;
 }
 
-/** Can these resources cover the whole cost bundle? Costs are core-only, so only the core pools are
- *  checked; absent keys cost nothing. */
-export function canAfford(resources: Resources, cost: Partial<CoreResources>): boolean {
-  return CORE_KEYS.every((k) => resources[k] >= (cost[k] ?? 0));
+/** Can these resources cover the whole cost bundle? Any of the eight pools may be priced (see
+ *  `rules/cost.ts`), so it checks the keys the cost actually names; absent keys cost nothing. */
+export function canAfford(resources: Resources, cost: Partial<Resources>): boolean {
+  return (Object.entries(cost) as [keyof Resources, number][]).every(([k, v]) => resources[k] >= v);
 }

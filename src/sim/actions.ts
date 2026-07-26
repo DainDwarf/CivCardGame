@@ -1,4 +1,4 @@
-import { freePopulation, placedCards, workerCapOf, unplayableReason, type GameState } from '../rules';
+import { discardCount, freePopulation, placedCards, workerCapOf, unplayableReason, type GameState } from '../rules';
 import { CARDS, isStaffable, type CardDef } from '../content/cards';
 import type { SimAction } from './simulate';
 
@@ -17,7 +17,7 @@ import type { SimAction } from './simulate';
  *
  * The extras are *canonical*: a discard-cost play sacrifices the first eligible other-hand cards. A
  * policy wanting *randomized* extras (the fuzzer) rebuilds them from this skeleton (see `randomPolicy`),
- * sharing only the sacrifice *count* via `discardCostToPay`.
+ * sharing only the sacrifice *count* via `rules/cost.ts`'s `discardCount`.
  */
 export function enumerateActions(G: GameState): SimAction[] {
   if (G.pendingInteraction) {
@@ -66,21 +66,10 @@ export function enumerateActions(G: GameState): SimAction[] {
   return actions;
 }
 
-/**
- * How many cards a play must sacrifice to its `discardCost` given the current hand — waived entirely
- * when too few spare cards exist, exactly as `moves.playCard` computes. The single source both the
- * canonical enumeration and the fuzzer's randomized sacrifice draw from, so they can never propose a
- * discard set the move would reject.
- */
-export function discardCostToPay(G: GameState, card: CardDef): number {
-  const want = card.gate?.discardCost ?? 0;
-  return G.hand.length - 1 >= want ? want : 0;
-}
-
 /** A canonical (deterministic) `playCard` for an already-vetted-playable hand index: the discard-cost
  *  sacrifices are the first eligible other-hand cards. */
 export function canonicalPlay(G: GameState, playHandIdx: number, card: CardDef): SimAction {
-  const required = discardCostToPay(G, card);
+  const required = discardCount(card, { G, self: G.hand[playHandIdx] });
   let discardHandIdxs: number[] | undefined;
   if (required > 0) {
     const idxs: number[] = [];

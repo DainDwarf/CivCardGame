@@ -10,8 +10,8 @@ import { addBuilding, cultureForLevel, emptyResources, type GameState } from '..
 // The two conversion costs the Masonry deck rides on, read from content so a rebalance re-targets these
 // expectations instead of silently breaking on a stale literal — the assertions pin the *relationship* (a
 // resource's cap is its converter's cost), not the number.
-const HUT_PRODUCTION_COST = CARDS.hut.cost.production!;
-const CONQUEST_MILITARY_COST = CARDS.conquest.cost.military!;
+const HUT_PRODUCTION_COST = CARDS.hut.cost.resources!.production!;
+const CONQUEST_MILITARY_COST = CARDS.conquest.cost.resources!.military!;
 
 // A real Masonry run root (Settlement board). Masonry wins on population: production is a production→
 // population *consumable* enabler (a Hut's cost), and territory is a *capacity* enabler (the slot the Hut
@@ -73,11 +73,11 @@ describe('consumable enabler (planner leaf accelerator)', () => {
     };
     // production → population, saturating at the Hut cost
     expect(pot('production', 0)).toBe(0);
-    expect(pot('production', HUT_PRODUCTION_COST - 2)).toBeGreaterThan(pot('production', 0));
+    expect(pot('production', HUT_PRODUCTION_COST - 1)).toBeGreaterThan(pot('production', 0));
     expect(pot('production', HUT_PRODUCTION_COST + 5)).toBe(pot('production', HUT_PRODUCTION_COST));
     // military → territory (the chained hop), saturating at the Conquest cost
     expect(pot('military', 0)).toBe(0);
-    expect(pot('military', CONQUEST_MILITARY_COST - 2)).toBeGreaterThan(pot('military', 0));
+    expect(pot('military', CONQUEST_MILITARY_COST - 1)).toBeGreaterThan(pot('military', 0));
     expect(pot('military', CONQUEST_MILITARY_COST + 3)).toBe(pot('military', CONQUEST_MILITARY_COST));
   });
 
@@ -296,9 +296,9 @@ describe('card-cost goal valuation', () => {
   it('banks each of the goal card\'s cost resources, capped at one card\'s worth', () => {
     const m = deriveEnablers(writingRoot());
     expect(m.weight.production ?? 0).toBeGreaterThan(0);
-    expect(m.cap.production).toBe(CARDS.clay_tablet.cost.production!);
+    expect(m.cap.production).toBe(CARDS.clay_tablet.cost.resources!.production!);
     expect(m.weight.food ?? 0).toBeGreaterThan(0);
-    expect(m.cap.food).toBe(CARDS.clay_tablet.cost.food!);
+    expect(m.cap.food).toBe(CARDS.clay_tablet.cost.resources!.food!);
   });
 
   it('attributes the goal step proportionally: one shared per-unit marginal across the cost keys', () => {
@@ -321,7 +321,7 @@ describe('card-cost goal valuation', () => {
       G.resources.production = production;
       return enablerPotential(G, m);
     };
-    const cost = CARDS.clay_tablet.cost.production!;
+    const cost = CARDS.clay_tablet.cost.resources!.production!;
     expect(pot(cost - 2)).toBeGreaterThan(pot(0));
     expect(pot(cost + 5)).toBe(pot(cost));
   });
@@ -370,7 +370,7 @@ describe('card-cost goal valuation', () => {
     });
     const m = deriveEnablers(createRun(config).G);
     expect(m.weight.production ?? 0).toBeGreaterThan(0);
-    expect(m.cap.production).toBe(CARDS.farm.cost.production!);
+    expect(m.cap.production).toBe(CARDS.farm.cost.resources!.production!);
   });
 
   it('registers nothing on a resource-threshold objective, so those missions\' models are untouched', () => {
@@ -400,7 +400,7 @@ describe('card-cost goal valuation', () => {
     });
     const m = deriveEnablers(createRun(config).G);
     expect(m.weight.military ?? 0).toBeGreaterThan(0);
-    expect(m.cap.military).toBe(CARDS.raider.cost.military!);
+    expect(m.cap.military).toBe(CARDS.raider.cost.resources!.military!);
   });
 });
 

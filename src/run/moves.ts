@@ -1,6 +1,6 @@
 import type { GameState } from '../rules';
-import { addBuilding, addWork, emitEvent, findStaffable, freePopulation, workerCapOf, openTradeRoute, resolveCard, subtractResources, unplayableReason } from '../rules';
-import { effectiveCost } from '../rules/stickers';
+import { addBuilding, addWork, emitEvent, findStaffable, freePopulation, workerCapOf, openTradeRoute, resolveCard, unplayableReason } from '../rules';
+import { discardCount, payCost, type CostContext } from '../rules/cost';
 import { CARDS, isStructure } from '../content/cards';
 
 /**
@@ -22,22 +22,18 @@ export function playCard(
   const card = CARDS[cardId];
   if (!card || unplayableReason(G, card, played)) return 'invalid';
 
-  // Discard-as-cost: sacrifice `discardCost` other cards — but only if you have that many
-  // to spare. Played with an otherwise-empty hand it costs no discard (a reward for
-  // sequencing the turn so this card comes last). Each index must be in range, distinct,
-  // and not the played card itself.
-  const want = card.gate?.discardCost ?? 0;
-  const required = G.hand.length - 1 >= want ? want : 0;
-  if (discardHandIdxs.length !== required) return 'invalid';
+  // Discard-as-cost: the descriptor says how many cards this play sacrifices (`discardCount`); the
+  // caller says which. Each index must be in range, distinct, and not the played card itself.
+  const ctx: CostContext = { G, self: played };
+  if (discardHandIdxs.length !== discardCount(card, ctx)) return 'invalid';
   const reserved = new Set<number>([playHandIdx]);
   for (const i of discardHandIdxs) {
     if (i < 0 || i >= G.hand.length || reserved.has(i)) return 'invalid';
     reserved.add(i);
   }
 
-  // All validated — pay costs (an Efficient sticker discounts this exact copy's price) and
-  // remove all played/sacrificed cards from hand first.
-  subtractResources(G.resources, effectiveCost(card.cost, played));
+  // All validated — pay this copy's price, then remove all played/sacrificed cards from hand.
+  payCost(card, ctx);
   const sacrifices = discardHandIdxs.map((i) => G.hand[i]);
   for (const i of [playHandIdx, ...discardHandIdxs].sort((a, b) => b - a)) G.hand.splice(i, 1);
 

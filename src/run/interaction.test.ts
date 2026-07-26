@@ -14,10 +14,13 @@ import { recoverFromDiscard } from '../rules/deck';
 // card is exactly the kind of one-file fixture that stays local (see `rules/testFixtures.ts`).
 const FIXTURE: Record<string, CardDef> = {
   test_recover: {
-    id: 'test_recover', name: 'Test Recover', kind: 'action', cost: { science: 2 },
+    id: 'test_recover', name: 'Test Recover', kind: 'action',
     display: { description: 'Return a chosen card from discard to hand.' },
     // Nothing to recover from an empty discard — gate it rather than let it fizzle for its cost.
-    gate: { check: (G) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null) },
+    cost: {
+      resources: { science: 2 },
+      check: ({ G }) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null),
+    },
     // Keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer).
     effect: {
       resolve: (ctx) => {
@@ -46,7 +49,7 @@ const FIXTURE: Record<string, CardDef> = {
   // A trivially-playable action — the "other card" the blocked-while-pending test tries to play. Given a
   // cost the test can afford, so the block is provably the pending guard, not affordability.
   test_playable: {
-    id: 'test_playable', name: 'Test Playable', kind: 'action', cost: { production: 1 },
+    id: 'test_playable', name: 'Test Playable', kind: 'action', cost: { resources: { production: 1 } },
     effect: { resources: { science: 1 } },
   },
 };

@@ -125,9 +125,9 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   drained to `[]` in any committed/undo-visible state — undo, clone, and determinism depend on it.
 - **`resources.ts`** — the three resource types and their arithmetic: `CoreResources` (5 spendable —
   food/production/science/military/money), `StrategicResources` (population/culture/territory), and
-  combined `Resources` (all 8). A card *cost* is `Partial<CoreResources>` (only core is spent); a
-  `CardEffect`'s `resources` delta is `Partial<Resources>` (may touch any of the 8). Helpers:
-  `add`/`subtract`, `scaleResources`, `canAfford` (core-only), `coreOf`, and `CORE_KEYS`.
+  combined `Resources` (all 8). Both a `CardEffect`'s `resources` delta and a `CardCost`'s price are a
+  `Partial<Resources>` — either may touch any of the 8. Helpers: `add`/`subtract`, `scaleResources`,
+  `canAfford` (over the keys a cost names), `coreOf`, and `CORE_KEYS`.
 - **`deck.ts`** — draw + discard reshuffle (`reshuffleIntoDeck`, seeded off `G.rngState`; bumps
   `reshuffleCount`, a UI-only shuffle-animation cue `Board.tsx` diffs). Also the card-facing deck
   primitives a peek/draw card resolves *through* instead of touching zones directly (the deck
@@ -138,6 +138,22 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   `spawnIntoDeck` (mint N *fresh* copies of a cardId and shuffle them in — the only primitive that
   introduces new instances mid-run; the **Envious Population** threat breeds Thieves through it).
   `drawInstance` is wired but has no shipping consumer yet.
+- **`cost.ts`** — the **cost spine**, the counterpart of `effects.ts`: one `CardCost` descriptor holding
+  everything it takes to play a card (`resources` spent, `discard`ed cards, a `cultureLevelReq`
+  prerequisite) plus two closures that compose with those fields — `resolve` (this copy's *actual* cost
+  when it isn't the declarative one, e.g. a price that doubles per play, handed the base to derive from)
+  and `check` (a bespoke precondition, like a peek card needing a non-empty pile). `currentCost` is the
+  single seam every price flows through — the card's `resolve` then the sticker fold, in that order so a
+  discount cuts the price actually paid rather than being scaled by the card's own curve — read by
+  `costReason` (the gate), `payCost` (the payment), `discardCount` (how many cards a play sacrifices),
+  and `runCard` (the display, so a face can never quote a price the gate wouldn't charge). The
+  declarative fields are a deliberately **closed vocabulary**: a cost must be introspectable, not just
+  executable, since `costReason` reports what's missing, `CardFace` renders it, and `sim/enablers.ts`
+  derives a card's value from `cost` → `produces`. So a new *kind* of payment earns a field here once,
+  while new *amounts* need no schema change at all.
+- **`playability.ts`** — `unplayableReason`: `cost.ts`'s price/prerequisite check, then the one gate that
+  isn't a cost — board room (`occupiesTerritory` ∧ no `freeTerritory`). The prod legality gate
+  `sim/actions.ts` reuses.
 - **`effects.ts`** — the **resolver spine**. A `CardEffect` is the one "what happens" descriptor,
   carried in four `CardDef` timing slots: play-time `effect`, per-round `produces`, upkeep-boundary
   `upkeep` (a threat drain / unplayed-event disaster / staffable maintenance), and each `on.*` handler.
@@ -441,10 +457,16 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   intentional dev double-invoke to catch impurity.
 - **Cards and stickers own their own logic.** A card's effect runs only through
   `resolveCard(ctx)`/`runEffect` (its `CardEffect.resolve` closure, else the declarative default) —
-  never read or scale `CardDef.effect` from a move, upkeep, threat tick, or component. A sticker
-  likewise carries its behaviour on its `StickerDef` (`appliesTo`/`applyGain`/`applyCost`), dispatched
-  generically by `rules/stickers.ts` — no sticker-specific branches at call sites. Adding a mechanic
-  means adding a closure/hook on the data, not a branch in the engine.
+  never read or scale `CardDef.effect` from a move, upkeep, threat tick, or component. Its *price* is the
+  mirror of that: read only through `rules/cost.ts`'s `currentCost` (its `CardCost.resolve` closure, else
+  the declarative fields) — never `CardDef.cost.resources` directly from a move, a gate, or a component,
+  or a scaling card's price silently reverts to its base. (The sim's static derivations over `CARDS` —
+  `enablers.ts`, `heuristicPolicy.ts` — are the deliberate exception: with no instance to price against,
+  the declarative base is the only number there is, so a scaling card reads there at its floor.)
+  A sticker likewise carries its behaviour on its
+  `StickerDef` (`appliesTo`/`applyGain`/`applyCost`), dispatched generically by `rules/stickers.ts` — no
+  sticker-specific branches at call sites. Adding a mechanic means adding a closure/hook on the data, not
+  a branch in the engine.
 - **Comments state non-obvious intent about the code they sit on — nothing else.** A comment earns its
   place only by expressing a rationale/constraint the adjacent code can't, and you **re-shave a comment
   when you edit near it** rather than appending. Reject three failure modes: **paraphrase** (restating

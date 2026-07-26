@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, GROWING_NUMBERS_TERRITORY, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -129,7 +129,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'sure you never run out of food to eat.',
     prereqs: ['first_settlement'],
     objectiveCardId: 'growing_numbers_goal',
-    victoryHint: 'Build a 🛖 Hut and a 🌱 Farm.',
+    victoryHint: `Build a 🛖 Hut and a 🌱 Farm, while holding ${GROWING_NUMBERS_TERRITORY} 🗺️ territory.`,
     failureHint: null,
     kind: 'standard',
     reward: { influence: 6, unlockStickerIds: ['irrigation'], unlockBoardStickerIds: ['granary', 'stockpile'] },

@@ -73,7 +73,7 @@ export const STICKERS: Record<string, StickerDef> = {
     // help); wonders are excluded globally by `stickerAppliesTo`. Keyed on the cost alone rather than
     // a kind list, so a card moving between kinds can't silently fall out of the sticker's reach.
     // `applyCost` owns its own floor at 0.
-    appliesTo: (c) => (c.cost?.production ?? 0) > 0,
+    appliesTo: (c) => (c.cost.resources?.production ?? 0) > 0,
     applyCost: (cost) => ({ ...cost, production: Math.max(0, (cost.production ?? 0) - 1) }),
   },
 };

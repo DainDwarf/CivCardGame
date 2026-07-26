@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { objectiveProgress, hasObjectiveGradient } from './objective';
 import { blankState, seedObjective, cultureForLevel, type GameState } from '../rules';
+import { GROWING_NUMBERS_TERRITORY } from '../content/cards';
 
 /** A zeroed state carrying the given objective card, tweaked per case. */
 function withObjective(cardId: string, mut: (G: GameState) => void = () => {}): GameState {
@@ -117,30 +118,32 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
     expect(cult(5)).toBe(Math.min(5, cultureForLevel(1)) / cultureForLevel(1)); // old: min(culture,target)/target
   });
 
-  // Territory is no longer blended into growing_numbers/masonry as a steering override — both ride the
-  // generic goals average now (building count / population), with territory valued only as a capacity
-  // enabler in `sim/enablers.ts`. So the gradient must respond to the real goal, not territory.
-  it('growing_numbers/masonry ride the generic goals gradient, not a territory override', () => {
-    const gn = (huts: boolean, farm: boolean) =>
+  // There is no territory *override* any more: a mission whose win happens to count territory reaches
+  // the gradient through its own goal like any other, and one whose win doesn't is unmoved by it.
+  it("blends growing_numbers' two goals — buildings and held territory — through the generic gradient", () => {
+    const gn = (huts: boolean, farm: boolean, territory: number) =>
       objectiveProgress(
         withObjective('growing_numbers_goal', (G) => {
-          G.resources.territory = 5; // ignored now — only built buildings move the gradient
+          G.resources.territory = territory;
           G.tableau = [
             ...(huts ? [{ id: 1, cardId: 'hut', workers: 0 }] : []),
             ...(farm ? [{ id: 2, cardId: 'farm', workers: 0 }] : []),
           ];
         }),
       );
-    expect(gn(false, false)).toBe(0); // territory alone no longer contributes
-    expect(gn(true, false)).toBe(0.5);
-    expect(gn(true, true)).toBe(1);
+    expect(gn(false, false, 0)).toBe(0);
+    expect(gn(true, true, 0)).toBe(0.5); // both buildings, no room held
+    expect(gn(false, false, GROWING_NUMBERS_TERRITORY)).toBe(0.5); // room held, nothing built
+    expect(gn(true, true, GROWING_NUMBERS_TERRITORY)).toBe(1);
+  });
 
+  it("leaves masonry's gradient untouched by territory, which its win never counts", () => {
     const mas = (population: number, territory: number) =>
       objectiveProgress(withObjective('masonry_goal', (G) => {
         G.resources.population = population;
         G.resources.territory = territory;
       }));
-    expect(mas(3, 5)).toBe(mas(3, 0)); // territory doesn't move the masonry gradient
+    expect(mas(3, 5)).toBe(mas(3, 0));
     expect(mas(6, 0)).toBe(1);
   });
 });

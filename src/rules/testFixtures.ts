@@ -68,41 +68,41 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // The food producer doubles as the restricted-sticker (food-only) eligible card.
   test_food: {
     id: 'test_food', name: 'Test Food', kind: 'building',
-    cost: { production: 2 }, produces: { resources: { food: 2 } }, workers: 1,
+    cost: { resources: { production: 2 } }, produces: { resources: { food: 2 } }, workers: 1,
   },
   test_prod: {
     id: 'test_prod', name: 'Test Prod', kind: 'building',
-    cost: { production: 2 }, produces: { resources: { production: 2 } }, workers: 1,
+    cost: { resources: { production: 2 } }, produces: { resources: { production: 2 } }, workers: 1,
   },
   test_sci: {
     id: 'test_sci', name: 'Test Science', kind: 'building',
-    cost: { production: 3 }, produces: { resources: { science: 2 } }, workers: 1,
+    cost: { resources: { production: 3 } }, produces: { resources: { science: 2 } }, workers: 1,
   },
   test_money: {
     id: 'test_money', name: 'Test Money', kind: 'building',
-    cost: { production: 2 }, produces: { resources: { money: 2 } }, workers: 1,
+    cost: { resources: { production: 2 } }, produces: { resources: { money: 2 } }, workers: 1,
   },
   // Culture producer: per-round culture output via `produces.resources.culture`, like a Theater.
   test_culture: {
     id: 'test_culture', name: 'Test Culture', kind: 'building',
-    cost: { production: 3 }, produces: { resources: { culture: 2 } }, workers: 1,
+    cost: { resources: { production: 3 } }, produces: { resources: { culture: 2 } }, workers: 1,
   },
   // Self-sufficient building (workers:0): always operating, no staffing needed — the staffing variant.
   test_selfstaffed: {
     id: 'test_selfstaffed', name: 'Test Self-Staffed', kind: 'building',
-    cost: { production: 2 }, produces: { resources: { military: 3 } }, workers: 0,
+    cost: { resources: { production: 2 } }, produces: { resources: { military: 3 } }, workers: 0,
   },
   // Multi-output building — proves an additive-gain sticker bumps *every* produced key.
   test_multi: {
     id: 'test_multi', name: 'Test Multi', kind: 'building',
-    cost: { production: 2 }, produces: { resources: { production: 1, military: 2 } }, workers: 1,
+    cost: { resources: { production: 2 } }, produces: { resources: { production: 1, military: 2 } }, workers: 1,
   },
   // Wonder: plays exactly like a building (occupies a slot, produces while staffed) but is `kind:
   // 'wonder'` — proves the wonder gates (no copies, no stickers, one per deck) and the shared
   // `isStructure`/`isStaffable` production/placement paths.
   test_wonder: {
     id: 'test_wonder', name: 'Test Wonder', kind: 'wonder',
-    cost: { production: 2 }, produces: { resources: { culture: 2 } }, workers: 1,
+    cost: { resources: { production: 2 } }, produces: { resources: { culture: 2 } }, workers: 1,
   },
   // Multi-worker building (`workers: 3` = capacity, not a fixed requirement): operates at ≥1 worker
   // and its `produces` values are *per-worker unit* amounts scaled by the staffed count (see
@@ -110,7 +110,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // of the Göbekli Tepe wonder, the first shipped card of this kind.
   test_multiworker: {
     id: 'test_multiworker', name: 'Test Multi-Worker', kind: 'building',
-    cost: { production: 4 }, produces: { resources: { production: 1, money: 1, culture: 1 } }, workers: 3,
+    cost: { resources: { production: 4 } }, produces: { resources: { production: 1, money: 1, culture: 1 } }, workers: 3,
   },
 
   // --- Work cards: produce their `produces` only while staffed, file to discard at end of turn. ---
@@ -128,41 +128,41 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // ends. ---
   test_trade: {
     id: 'test_trade', name: 'Test Trade', kind: 'trade',
-    cost: { money: 2 }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } },
+    cost: { resources: { money: 2 } }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } },
   },
 
   // --- Action cards: one per canonical `effect` field, so a test can exercise each declaratively. ---
   test_action: {
     id: 'test_action', name: 'Test Action', kind: 'action',
-    cost: { science: 1 }, effect: { resources: { science: 3 } },
+    cost: { resources: { science: 1 } }, effect: { resources: { science: 3 } },
   },
   // Draw action: draws 2 off the top via a bespoke `resolve` (a future draw card uses a closure like
   // this). Each `drawCard` emits a `draw` event, so on-draw observers still fire.
   test_draw: {
     id: 'test_draw', name: 'Test Draw', kind: 'action',
-    cost: { money: 1 }, effect: { resolve: (ctx) => { drawCard(ctx.G); drawCard(ctx.G); } },
+    cost: { resources: { money: 1 } }, effect: { resolve: (ctx) => { drawCard(ctx.G); drawCard(ctx.G); } },
   },
   test_settlers: {
     id: 'test_settlers', name: 'Test Settlers', kind: 'action',
-    cost: { food: 2 }, effect: { resources: { population: 1 } },
+    cost: { resources: { food: 2 } }, effect: { resources: { population: 1 } },
   },
   test_territory: {
     id: 'test_territory', name: 'Test Territory', kind: 'action',
-    cost: { military: 3 }, effect: { resources: { territory: 1 } },
+    cost: { resources: { military: 3 } }, effect: { resources: { territory: 1 } },
   },
   test_festival: {
     id: 'test_festival', name: 'Test Festival', kind: 'action',
-    cost: { food: 2 }, effect: { resources: { culture: 3 } },
+    cost: { resources: { food: 2 } }, effect: { resources: { culture: 3 } },
   },
   // Carries a discard cost (extra cards discarded from hand to play it), like Eureka.
   test_discard: {
     id: 'test_discard', name: 'Test Discard', kind: 'action',
-    cost: {}, gate: { discardCost: 1 }, effect: { resources: { science: 3 } },
+    cost: { discard: 1 }, effect: { resources: { science: 3 } },
   },
-  // Gated behind a minimum culture level (a gate, not a cost), like The Philosopher.
+  // Gated behind a minimum culture level — a prerequisite rather than a price, like The Philosopher.
   test_cultreq: {
     id: 'test_cultreq', name: 'Test Culture-Req', kind: 'action',
-    cost: { science: 1 }, gate: { cultureLevelReq: 1 }, effect: { resources: { science: 3 } },
+    cost: { resources: { science: 1 }, cultureLevelReq: 1 }, effect: { resources: { science: 3 } },
   },
   // Bespoke-`resolve` action with no declarative resources: adds its gain through `gainResources`, so a
   // sticker's `effectiveGain` still folds over it (the gap a bespoke resolver's output would otherwise miss).
@@ -205,7 +205,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   // events.test.ts — this one is shared because two files drive it.
   test_threshold: {
     id: 'test_threshold', name: 'Test Threshold', kind: 'building',
-    cost: { production: 2 }, workers: 1,
+    cost: { resources: { production: 2 } }, workers: 1,
     display: { description: 'While staffed, the first time 💰 reaches 10: +5🔬 (once)' },
     on: {
       resourceChange: {

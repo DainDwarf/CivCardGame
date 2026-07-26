@@ -100,7 +100,7 @@ function decide(state: RunState): SimAction {
   //    the permanent producer first, and a Work box only fills what's left over.
   if (freeTerritory(G) > 0) {
     const buildings = playable.filter((p) => isStructure(p.card));
-    const best = bestPlay(G, buildings, (c) => -bundleValue(c.cost), -Infinity);
+    const best = bestPlay(G, buildings, (c) => -bundleValue(c.cost.resources ?? {}), -Infinity);
     if (best) return best;
   }
 
@@ -220,7 +220,7 @@ function foodOutput(card: CardDef): number {
 
 /** A card's rough net food effect: what it yields (drains already netted in) minus its food cost. */
 function staticFoodDelta(card: CardDef): number {
-  return foodOutput(card) - (card.cost.food ?? 0);
+  return foodOutput(card) - (card.cost.resources?.food ?? 0);
 }
 
 function bundleValue(b?: Partial<CoreResources>): number {
@@ -232,7 +232,7 @@ function bundleValue(b?: Partial<CoreResources>): number {
  *  cost. The signed `effect.resources` already nets any drain against a gain. */
 function staticValue(card: CardDef): number {
   let v = bundleValue(coreOf(card.effect?.resources ?? {})) + bundleValue(coreOf(card.produces?.resources ?? {}));
-  v -= bundleValue(card.cost);
+  v -= bundleValue(card.cost.resources ?? {});
   v += ((card.effect?.resources?.population ?? 0) + (card.produces?.resources?.population ?? 0)) * 3;
   v += ((card.effect?.resources?.culture ?? 0) + (card.produces?.resources?.culture ?? 0)) * 0.6;
   // Territory is now the cap on the whole play area, not just on buildings — a slot hosts a building,

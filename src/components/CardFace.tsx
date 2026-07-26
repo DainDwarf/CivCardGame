@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { isStaffable, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
-import { type CoreResources, type Resources } from '../rules';
+import { type Resources } from '../rules';
 import { cardWorkerCap } from '../rules/population';
 import styles from './CardFace.module.css';
 
@@ -103,7 +103,7 @@ export function StickerRow({
  *  (culture level, reserved population, discard cost) are shown separately — see
  *  `describeConditions`. */
 export function describeCost(c: CardDef): string {
-  const parts = (Object.entries(c.cost) as [keyof CoreResources, number][])
+  const parts = (Object.entries(c.cost.resources ?? {}) as [keyof Resources, number][])
     .filter(([, v]) => v)
     .map(([k, v]) => `${v}${RESOURCE_ICON[k]}`);
   return parts.join(' · ');
@@ -118,8 +118,8 @@ export function describeConditions(c: CardDef): string {
   // An event: play it (pay its cost) to banish it unresolved — its effect never fires (preventive);
   // leave it and it fires for free at end of round, then recurs from the discard.
   if (c.kind === 'event') parts.push('play to banish resolves at end of round');
-  if (c.gate?.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.gate.cultureLevelReq}`);
-  if (c.gate?.discardCost) parts.push(`discard ${c.gate.discardCost}`);
+  if (c.cost.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.cost.cultureLevelReq}`);
+  if (c.cost.discard) parts.push(`discard ${c.cost.discard}`);
   if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
   if (c.display?.note) parts.push(c.display.note);
   return parts.join(' · ');

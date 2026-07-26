@@ -1,7 +1,7 @@
-import { subtractResources, type CoreResources } from '../rules/resources';
+import { scaleResources, subtractResources } from '../rules/resources';
 import { bumpCounter, getCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, suspendChoice } from '../rules/effects';
-import type { CardGate } from '../rules/playability';
+import type { CardCost } from '../rules/cost';
 import { peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
 import { assignedWorkers } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
@@ -55,11 +55,9 @@ export interface CardDef {
   name: string;
   /** What the card *is* and where it goes after play — see docs/DESIGN.md → *Card kinds*. */
   kind: CardKind;
-  /** CoreResources required to play. Absent keys are free (e.g. {} = no cost). */
-  cost: Partial<CoreResources>;
-  /** Everything beyond the raw resource `cost` that gates play — culture-level req, discard cost, and
-   *  bespoke preconditions — as one `CardGate` (`rules/playability.ts`). Absent = only `cost` gates. */
-  gate?: CardGate;
+  /** Everything it takes to play — the price, any prerequisite, and the escape hatch for a cost that
+   *  isn't a fixed number — as one `CardCost` (`rules/cost.ts`). `{}` = free and unconditional. */
+  cost: CardCost;
   /** Worker capacity to operate — required on every staffable card (building/wonder/work), unread on
    *  the others. `0` = self-sufficient (always operating). No default: a missing field on a staffable
    *  throws (`population.ts`'s `cardWorkerCap`) rather than silently reading as 1. */
@@ -163,6 +161,10 @@ export function compareCards(a: CardDef, b: CardDef): number {
  *  is pulled from the building's own `art`. */
 export const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm'];
 
+/** Total 🗺️ "Growing Numbers" wants held at once — an absolute pool, not a gain over the board's
+ *  start, so a wider government arrives closer to it. Shared by the win goal and its readout. */
+export const GROWING_NUMBERS_TERRITORY = 4;
+
 /** How many raider waves "Raiders at the Border" seeds — shared by the mission's injected event list
  *  (`content/missions.ts`), the `raiders_at_border_goal` win threshold, and its progress readout. */
 export const RAIDER_WAVES = 3;
@@ -215,37 +217,37 @@ export const CARDS: Record<string, CardDef> = {
   // — Work —
   foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, produces: { resources: { food: 1 } } },
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 1 } } },
-  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { food: 2 }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 5 } } },
+  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 2 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 5 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
   // The first recurring ⚔️ producer from a work box — free to play like Foraging/Trader, so the worker
   // it occupies is its whole cost. Rate beats Dogs (1🌾 → 1⚔️), which is what makes it worth a worker.
   war_horse: { id: 'war_horse', name: 'War Horse', kind: 'work', cost: {}, workers: 1, display: { art: '🏇' }, produces: { resources: { military: 4 } } },
 
   // — Buildings —
-  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { production: 2 }, produces: { resources: { food: 1 } }, workers: 1, display: { art: '🌱' } },
+  farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { food: 1 } }, workers: 1, display: { art: '🌱' } },
   // Hut: a one-shot *placement* grant (+1 population when built) — on `effect`, not `produces`, so it
   //   fires once at placement rather than every round.
   hut: {
-    id: 'hut', name: 'Hut', kind: 'building', cost: { production: 3 }, workers: 0,
+    id: 'hut', name: 'Hut', kind: 'building', cost: { resources: { production: 3 } }, workers: 0,
     display: { art: '🛖', description: 'When built: +1 🧍' },
     effect: { resources: { population: 1 } },
   },
-  burial: { id: 'burial', name: 'Burial', kind: 'building', cost: { production: 2 }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '⚰️' } },
-  forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { production: 4 }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
+  burial: { id: 'burial', name: 'Burial', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '⚰️' } },
+  forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
   // The science counterpart of the Forge: matches Storytelling's 2🔬/worker as a permanent building
   // rather than a work card refiled every round, deliberately obsoleting it.
-  archives: { id: 'archives', name: 'Archives', kind: 'building', cost: { production: 4 }, produces: { resources: { science: 2 } }, workers: 1, display: { art: '🏛️' } },
+  archives: { id: 'archives', name: 'Archives', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { science: 2 } }, workers: 1, display: { art: '🏛️' } },
   // House: the Hut's bigger cousin — a one-shot +2🧍 at placement (on `effect`, like Hut, so it grants
   //   population once when built rather than every round).
   house: {
-    id: 'house', name: 'House', kind: 'building', cost: { production: 6 }, workers: 0,
+    id: 'house', name: 'House', kind: 'building', cost: { resources: { production: 6 } }, workers: 0,
     display: { art: '🏠', description: 'When built: +2 🧍' },
     effect: { resources: { population: 2 } },
   },
   // City Walls: a standing garrison — self-sufficient (workers:0, always operating), so its per-round
   //   +1⚔️ `produces` and its −1🔨 maintenance `upkeep` both fire and compose (`resolveEndTurn`).
   city_walls: {
-    id: 'city_walls', name: 'City Walls', kind: 'building', cost: { production: 4 }, workers: 0,
+    id: 'city_walls', name: 'City Walls', kind: 'building', cost: { resources: { production: 4 } }, workers: 0,
     display: { art: '🧱', description: '+1 ⚔️ / round\n−1 🔨 upkeep' },
     produces: { resources: { military: 1 } },
     upkeep: { resources: { production: -1 } },
@@ -255,7 +257,7 @@ export const CARDS: Record<string, CardDef> = {
   gobekli_tepe: {
     id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
     display: { art: '🗿', description: '+1🔨 +1🪙 +1🎭\nper worker.' },
-    cost: { production: 8 }, gate: { cultureLevelReq: 1 }, workers: 3,
+    cost: { resources: { production: 8 }, cultureLevelReq: 1 }, workers: 3,
     produces: { resources: { production: 1, money: 1, culture: 1 } },
   },
   // The culture powerhouse — heavy 🎭 per worker where Göbekli is a balanced generalist. The 🌾 upkeep
@@ -264,7 +266,7 @@ export const CARDS: Record<string, CardDef> = {
   pyramid: {
     id: 'pyramid', name: 'Pyramid', kind: 'wonder',
     display: { art: '🔺', description: '+2🎭 +1🪙 per worker.\n−2🌾 upkeep.' },
-    cost: { production: 10, money: 6 }, gate: { cultureLevelReq: 2 }, workers: 4,
+    cost: { resources: { production: 10, money: 6 }, cultureLevelReq: 2 }, workers: 4,
     produces: { resources: { culture: 2, money: 1 } },
     upkeep: { resources: { food: -2 } },
   },
@@ -272,7 +274,7 @@ export const CARDS: Record<string, CardDef> = {
   // — Actions —
   storytelling: { id: 'storytelling', name: 'Storytelling', kind: 'work', cost: {}, workers: 1, display: { art: '🗣️' }, produces: { resources: { science: 2 } } },
   bow: {
-    id: 'bow', name: 'Bow', kind: 'action', cost: { production: 2 },
+    id: 'bow', name: 'Bow', kind: 'action', cost: { resources: { production: 2 } },
     // The "single use" note is the face's heads-up for the self-removal below — kept in step with it.
     display: { art: '🏹', note: 'single use' },
     // A one-shot: grant the military (declarative, folded first) then exile this copy to `removed`
@@ -281,23 +283,32 @@ export const CARDS: Record<string, CardDef> = {
     effect: { resources: { military: 3 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
   },
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
-  jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { production: 1 }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
-  bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { money: 2 }, display: { art: '🤝' }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } } },
-  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { food: 1 }, display: { art: '🐕' }, effect: { resources: { military: 1 } } },
-  raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { military: 3 }, display: { art: '🔥' }, effect: { resources: { money: 6 } } },
+  jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { resources: { production: 1 } }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
+  bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 2 } }, display: { art: '🤝' }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } } },
+  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { resources: { food: 1 } }, display: { art: '🐕' }, effect: { resources: { military: 1 } } },
+  raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } }, display: { art: '🔥' }, effect: { resources: { money: 6 } } },
   // Conquest and Road are the game's only two territory sources, so they are deliberately `action` —
   //   the one kind that takes no slot. As board cards they would need free territory to play, which a
   //   board already full of buildings can never offer, trapping the run with no way to expand.
   conquest: {
-    id: 'conquest', name: 'Conquest', kind: 'action', cost: { military: 5 },
-    display: { art: '🗡️' },
-    effect: { resources: { territory: 1 } },
+    id: 'conquest', name: 'Conquest', kind: 'action',
+    display: { art: '🗡️', dynamicRule: 'cost doubles per use' },
+    // The `plays` counter rides with the instance through discard→deck, so the escalation is per
+    //   *copy*: a second owned Conquest climbs on its own schedule.
+    cost: {
+      resources: { military: 2 },
+      resolve: ({ self }, base) => ({
+        ...base,
+        resources: scaleResources(base.resources ?? {}, 2 ** getCounter(self, 'plays')),
+      }),
+    },
+    effect: { resources: { territory: 1 }, resolve: (ctx) => { bumpCounter(ctx.self, 'plays'); } },
   },
 
   // Road: Conquest's economic twin — the same +1 territory, paid in 🪙+🔨 instead of ⚔️, so expansion
   //   has a trade route as well as a war party.
   road: {
-    id: 'road', name: 'Road', kind: 'action', cost: { money: 3, production: 3 },
+    id: 'road', name: 'Road', kind: 'action', cost: { resources: { money: 3, production: 3 } },
     display: { art: '🛣️' },
     effect: { resources: { territory: 1 } },
   },
@@ -307,11 +318,14 @@ export const CARDS: Record<string, CardDef> = {
   // `effect` is resolve-only (no declarative `resources`) — `resolveInteraction` re-runs the whole
   // effect on resume, so any resource field would double-apply.
   calendar: {
-    id: 'calendar', name: 'Calendar', kind: 'action', cost: { science: 1 },
+    id: 'calendar', name: 'Calendar', kind: 'action',
     display: { art: '📅', description: 'Look at the top 3 cards of your draw pile.' },
     // Nothing to reveal from an empty pile — gate it (reusing the peek reason) rather than fizzle for
     // its cost. Peeking never reshuffles, so `deck.length` (not deck+discard) is the emptiness test.
-    gate: { check: (G) => (G.deck.length === 0 ? { kind: 'emptyDrawPile' } : null) },
+    cost: {
+      resources: { science: 1 },
+      check: ({ G }) => (G.deck.length === 0 ? { kind: 'emptyDrawPile' } : null),
+    },
     effect: {
       resolve: (ctx) => {
         if (ctx.answer === undefined) {
@@ -337,11 +351,14 @@ export const CARDS: Record<string, CardDef> = {
   // (no declarative `resources`) like Calendar: `resolveInteraction` re-runs the whole effect on
   // resume, so any resource field would double-apply.
   writing: {
-    id: 'writing', name: 'Writing', kind: 'action', cost: { science: 2 },
+    id: 'writing', name: 'Writing', kind: 'action',
     display: { art: '✍️', description: 'Return a chosen card from your discard to your hand.' },
     // A zero-option `chooseCard` would park a modal with no options and no dismiss, soft-locking the
     // run — so an empty discard is gated unplayable rather than left to fizzle for its cost.
-    gate: { check: (G) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null) },
+    cost: {
+      resources: { science: 2 },
+      check: ({ G }) => (G.discard.length === 0 ? { kind: 'discardEmpty' } : null),
+    },
     effect: {
       resolve: (ctx) => {
         if (ctx.answer === undefined) {
@@ -366,9 +383,9 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // — Events —
-  raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { military: 3 }, display: { art: '🪓' }, upkeep: { resources: { food: -1 } } },
+  raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { resources: { military: 3 } }, display: { art: '🪓' }, upkeep: { resources: { food: -1 } } },
   clay_tablet: {
-    id: 'clay_tablet', name: 'Clay Tablet', kind: 'event', cost: { production: 6, food: 2 },
+    id: 'clay_tablet', name: 'Clay Tablet', kind: 'event', cost: { resources: { production: 6, food: 2 } },
     display: {
       art: '📜',
       description: '−🔬 at end of round, worsening',
@@ -385,13 +402,13 @@ export const CARDS: Record<string, CardDef> = {
   // is what `finding_copper_goal` counts, so no effect is needed. No `upkeep` either — unlike Raiders,
   // an unmined vein is not a disaster, it just waits (filing to discard and recurring). The mission's
   // pressure lives on its threat instead.
-  copper_vein: { id: 'copper_vein', name: 'Copper Vein', kind: 'event', cost: { production: 2, science: 5 }, display: { art: '⛏️' } },
+  copper_vein: { id: 'copper_vein', name: 'Copper Vein', kind: 'event', cost: { resources: { production: 2, science: 5 } }, display: { art: '⛏️' } },
   // Roadwork: paving a segment (paying its 🔨) exiles the played event to `removed`, which `roads_goal`
   //   counts. Unlike the copper vein, a segment left in hand *is* a disaster — an unfinished road cuts a
   //   settlement off, bleeding a flat 🌾 each round it goes unpaved (no per-instance escalation, unlike
   //   the clay tablet). The events are the whole pressure, so the mission seeds no threat.
   roadwork: {
-    id: 'roadwork', name: 'Roadwork', kind: 'event', cost: { production: 8 },
+    id: 'roadwork', name: 'Roadwork', kind: 'event', cost: { resources: { production: 8 } },
     display: { art: '🚧', description: '−2 🌾 at end of round while unpaved' },
     upkeep: { resources: { food: -2 } },
   },
@@ -400,7 +417,7 @@ export const CARDS: Record<string, CardDef> = {
   //   labour (a flat 🔨, like the roadwork's 🌾) and recurs; the drain is a *different* currency than the
   //   ⚔️ tame cost, so passing a horse up is a real trade rather than deferred change.
   wild_horse: {
-    id: 'wild_horse', name: 'Wild Horse', kind: 'event', cost: { military: 6 },
+    id: 'wild_horse', name: 'Wild Horse', kind: 'event', cost: { resources: { military: 6 } },
     display: { art: '🐎', description: '−1 🔨 at end of round while untamed' },
     upkeep: { resources: { production: -1 } },
   },
@@ -409,7 +426,7 @@ export const CARDS: Record<string, CardDef> = {
   //   discard); paid off with ⚔️ (catching it) the play choke exiles it to `removed` for good. Costs and
   //   drain provisional (balance pending).
   thief: {
-    id: 'thief', name: 'Thief', kind: 'event', cost: { military: 2 },
+    id: 'thief', name: 'Thief', kind: 'event', cost: { resources: { military: 2 } },
     display: { art: '🦹' },
     upkeep: { resources: { money: -2, production: -1 } },
   },
@@ -425,21 +442,26 @@ export const CARDS: Record<string, CardDef> = {
   },
   growing_numbers_goal: {
     id: 'growing_numbers_goal', name: 'Growing Numbers', kind: 'objective', cost: {},
-    // One goal counting the distinct required buildings present (both ⇒ met); the per-building
-    //   breakdown is left to `dynamicText`, which the generic readout can't express.
+    // The buildings collapse into one goal counting the distinct ones present (both ⇒ met); the
+    //   per-building breakdown is left to `dynamicText`, which the generic readout can't express — so
+    //   the territory goal has to be echoed there too, or that half of the win goes unshown.
     goals: [
       {
         icon: '🏛️',
         measure: (G) => GROWING_NUMBERS_BUILDINGS.filter((id) => G.tableau.some((b) => b.cardId === id)).length,
         target: GROWING_NUMBERS_BUILDINGS.length,
       },
+      { icon: '🗺️', measure: (G) => G.resources.territory, target: GROWING_NUMBERS_TERRITORY },
     ],
     display: {
-      description: 'Build 🛖 🌱',
+      description: `Build 🛖 🌱\nHold ${GROWING_NUMBERS_TERRITORY} 🗺️`,
       dynamicText: (G) =>
-        GROWING_NUMBERS_BUILDINGS.map(
-          (id) => `${CARDS[id].display?.art} ${G.tableau.some((b) => b.cardId === id) ? 1 : 0}/1`,
-        ).join('\n'),
+        [
+          ...GROWING_NUMBERS_BUILDINGS.map(
+            (id) => `${CARDS[id].display?.art} ${G.tableau.some((b) => b.cardId === id) ? 1 : 0}/1`,
+          ),
+          `🗺️ ${G.resources.territory}/${GROWING_NUMBERS_TERRITORY}`,
+        ].join('\n'),
     },
   },
 

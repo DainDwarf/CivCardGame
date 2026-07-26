@@ -196,7 +196,7 @@ export function goalValuedCardCosts(
     const card = CARDS[cardId];
     if (!card) continue;
     let totalCost = 0;
-    for (const ck of CORE_KEYS) totalCost += positive(card.cost[ck]);
+    for (const ck of CORE_KEYS) totalCost += positive(card.cost.resources?.[ck]);
     if (totalCost <= 0) continue; // a free card needs no banking, so its costs can't be enablers
     // Not filtered by kind: actions can self-exile via `resolve`, so any card may be what `removed` counts.
     probe.removed.push({ id: -1, cardId });
@@ -209,7 +209,7 @@ export function goalValuedCardCosts(
     if (delta <= 0) continue;
     const marginal = delta / totalCost;
     for (const ck of CORE_KEYS) {
-      const costAmt = positive(card.cost[ck]);
+      const costAmt = positive(card.cost.resources?.[ck]);
       if (costAmt <= 0) continue;
       const prev = out[ck];
       if (!prev || marginal > prev.marginal) out[ck] = { marginal, costAmt };
@@ -349,7 +349,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // reaching the level *is* the objective, already scored). Its hand-size throughput is the separate,
   // no-skip nudge below.
   if (goalValued.culture === undefined) {
-    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, (c) => !!c.gate?.cultureLevelReq, true) : 0);
+    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, (c) => !!c.cost.cultureLevelReq, true) : 0);
     if (w > 0) {
       weight.culture = w;
       cap.culture = CAPACITY_CAP;
@@ -377,7 +377,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
         const output = positive(card.effect?.resources?.[vk]) + positive(card.produces?.resources?.[vk]);
         if (output <= 0) continue;
         for (const ck of CORE_KEYS) {
-          const costAmt = card.cost[ck] ?? 0;
+          const costAmt = card.cost.resources?.[ck] ?? 0;
           if (costAmt <= 0 || goalValued[ck] !== undefined) continue;
           const w = HOP_DISCOUNT * (output / costAmt) * valuePerUnit;
           if (w > (weight[ck] ?? 0)) {

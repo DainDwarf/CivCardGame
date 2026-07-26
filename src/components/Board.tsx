@@ -27,6 +27,7 @@ import { isCompleted } from '../rules/campaign';
 import { computeRewards } from '../rules/rewards';
 import { isOwned, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
+import { runCard } from '../rules/cost';
 import { sortDeckEntries, variantKey } from '../rules/deckBuilder';
 import { CardFace, RESOURCE_ICON, StickerRow, artFor, describeBuilding, describeTradeFlow } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
@@ -1027,14 +1028,14 @@ export function Board({
       const cy = y - d.grabY + d.h / 2;
       pendingBuildSlotRef.current = chooseBuildSlot(cx, cy);
     }
-    const need = card.gate?.discardCost ?? 0;
+    const need = card.cost.discard ?? 0;
     // A discard cost only applies if you have spare cards; then pick the sacrifice by clicking.
     if (need > 0 && G.hand.length - 1 >= need) {
       setPending({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key, need, discards: [] });
       return;
     }
     spawnGhost(
-      effectiveCard(card, G.hand[d.handIdx]),
+      runCard(card, { G, self: G.hand[d.handIdx] }),
       { left: x - d.grabX, top: y - d.grabY, width: d.w, height: d.h },
       'drop',
       card.display?.dynamicText?.(G, G.hand[d.handIdx]),
@@ -1049,7 +1050,7 @@ export function Board({
       // it was a click, not a drag
       setZoom({
         cardId: d.cardId,
-        overrideCard: effectiveCard(CARDS[d.cardId], G.hand[d.handIdx]),
+        overrideCard: runCard(CARDS[d.cardId], { G, self: G.hand[d.handIdx] }),
         overrideText: CARDS[d.cardId].display?.dynamicText?.(G, G.hand[d.handIdx]),
         stickerBadge: G.hand[d.handIdx].stickers,
       });
@@ -1498,7 +1499,7 @@ export function Board({
     if (discards.length === pending.need) {
       ghostFromSlot(
         pending.playedKey,
-        effectiveCard(CARDS[pending.cardId], G.hand[pending.handIdx]),
+        runCard(CARDS[pending.cardId], { G, self: G.hand[pending.handIdx] }),
         CARDS[pending.cardId].display?.dynamicText?.(G, G.hand[pending.handIdx]),
         G.hand[pending.handIdx].stickers,
       );
@@ -1707,9 +1708,9 @@ export function Board({
               {hand.length === 0 && <p className={styles.empty}>No cards in hand.</p>}
               {hand.map((card) => {
                 const c = CARDS[card.cardId];
-                // A stickered copy's true cost/output (e.g. Efficient's discount) — same object as
-                // `c` when unstickered, see `effectiveCard`.
-                const ec = effectiveCard(c, card.inst);
+                // This copy's true cost/output — a sticker's discount and a card whose price scales
+                // with its own play count both land here (`runCard`).
+                const ec = runCard(c, { G, self: card.inst });
                 // Discard cost never blocks play — it's waived when you can't cover it.
                 const affordable = whyUnplayable(c, G, card.inst) === null;
                 const isPending = pending?.handIdx === card.handIdx;
@@ -1869,7 +1870,7 @@ export function Board({
           </div>
           <div className={styles.dragLayer} aria-hidden="true">
             <CardFace
-              card={effectiveCard(CARDS[drag.cardId], G.hand[drag.handIdx])}
+              card={runCard(CARDS[drag.cardId], { G, self: G.hand[drag.handIdx] })}
               overrideText={CARDS[drag.cardId].display?.dynamicText?.(G, G.hand[drag.handIdx])}
               stickerBadge={G.hand[drag.handIdx].stickers}
               className={styles.dragCard}
@@ -1951,7 +1952,7 @@ export function Board({
               <div className={styles.pileGrid}>
                 {groupCards(pileView.cards).map((g) => {
                   const overrideText = CARDS[g.cardId].display?.dynamicText?.(G, g.inst);
-                  const ec = effectiveCard(CARDS[g.cardId], g.inst);
+                  const ec = runCard(CARDS[g.cardId], { G, self: g.inst });
                   return (
                     <CardFace
                       key={g.key}
@@ -1989,7 +1990,7 @@ export function Board({
                   {pending.options.map((opt, i) => (
                     <CardFace
                       key={opt.id}
-                      card={effectiveCard(CARDS[opt.cardId], opt)}
+                      card={runCard(CARDS[opt.cardId], { G, self: opt })}
                       overrideText={CARDS[opt.cardId].display?.dynamicText?.(G, opt)}
                       stickerBadge={opt.stickers}
                       className={isReveal ? styles.interactionCardStatic : styles.interactionCard}

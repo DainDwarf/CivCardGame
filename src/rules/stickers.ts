@@ -91,10 +91,11 @@ export function removeSticker(collection: OwnedCards, instanceId: string, index:
 
 /**
  * Card stickers in the run loop: the two functions below are the *only* place a sticker's actual
- * effect is applied — `rules/effects.ts`'s declarative default resolvers and the two cost sites
- * (`unplayableReason`, `playCard`) all call through here rather than reimplementing the bump, so
- * resolution and the `effectiveCard` display below never diverge. Each dispatches to the sticker's
- * own `applyGain`/`applyCost` hook (`content/stickers.ts`) — no sticker-specific knowledge here.
+ * effect is applied — `rules/effects.ts`'s declarative default resolvers and `rules/cost.ts`'s
+ * `currentCost` (the single seam every price flows through) call through here rather than
+ * reimplementing the bump, so resolution and the `effectiveCard` display below never diverge. Each
+ * dispatches to the sticker's own `applyGain`/`applyCost` hook (`content/stickers.ts`) — no
+ * sticker-specific knowledge here.
  *
  * Both are a plain fold over `self.stickers`, applying each attached copy's hook in turn — so
  * stacking (two Reinforced → +2) and composing (Reinforced + Efficient) fall out for free, and a
@@ -135,7 +136,7 @@ export function effectiveCard(card: CardDef, self: StickeredInstance): CardDef {
   const resources = card.effect?.resources && effectiveGain(card.effect.resources, self);
   return {
     ...card,
-    cost: effectiveCost(card.cost, self),
+    cost: card.cost.resources ? { ...card.cost, resources: effectiveCost(card.cost.resources, self) } : card.cost,
     ...(card.produces ? { produces: { ...card.produces, ...(produces ? { resources: produces } : {}) } } : {}),
     ...(card.effect ? { effect: { ...card.effect, ...(resources ? { resources } : {}) } } : {}),
   };

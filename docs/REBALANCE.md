@@ -35,7 +35,7 @@ nothing but noise.
 | # | Mission | State |
 |---|---|---|
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
-| 2 | `growing_numbers` | ⬜ next |
+| 2 | `growing_numbers` | 🔶 **in progress** — goal + Conquest realigned and measured on Tribe; fixture not yet re-cut |
 | 3 | `rites_rituals` · `reading_seasons` | ⬜ — each wants an on-trial card back (see below) |
 | 4 | `raiders_at_border` · `restless_people` | ⬜ |
 | 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
@@ -91,6 +91,42 @@ be plopped for incidental value.
   whole decision is the Foraging/Toolmaking split, and skill does show there (426 Foraging plays under
   heuristic vs 222 under oracle). Acceptable for mission 1; worth not repeating at mission 2.
 
+### Mission 2 — Growing Numbers 🔶
+
+**Goal.** Build 🛖 + 🌱 **and hold 4 🗺️** — an *absolute* pool, not a gain over the board's start, so the
+board choice is felt at the win line rather than normalized away.
+
+**Conquest** 5⚔️ flat → **2⚔️ doubling per play of that copy** (2 · 4 · 8 …). The escalation is per-copy
+(`CardInstance.counters`), so a bought second copy climbs on its own schedule — a live interaction with
+the copy-tier shop to watch.
+
+Landing this needed the **cost spine** (`rules/cost.ts`) — one `CardCost` descriptor with declarative
+fields plus a `resolve` escape hatch, absorbing the old `CardGate`. See CLAUDE.md; the shape is the
+decided design and graduates to `DESIGN.md`.
+
+**Measured** on **Tribe** (2🗺️/2🧍/10🌾/0🔨 — a counterfactual: `first_settlement` retires Tribe, so a
+player arrives on Settlement) with the starting deck + one Hut/Farm/Conquest, 15 cards, no purchases:
+
+| policy | result | turns (min · median · max) | end 🌾 | Conquest plays/run |
+|---|---|---|---|---|
+| heuristic @100 | 84/100 | 9 · 15 · 27 | 10.7 | 1.75 |
+| greedy @100 | 26/100 | 11 · 21 · 31 | 1.1 | 0.52 |
+| planner @100 | 100/100 | 9 · 13 · 24 | 5.0 | 2.0 |
+| oracle @10 | 10/10 | 8 · 9.5 · 11 | 4.9 | 2.0 |
+
+- **The 4🗺️ goal makes Conquest load-bearing**: planner and oracle play it exactly **twice** every run
+  (2🗺️ → 4🗺️ for 2⚔️ + 4⚔️ = 6⚔️), which is the whole point of the escalation being gentle at two.
+- **Every defeat is famine** (heuristic 16, greedy 74) — no stalls. Unlike mission 1 this run *is*
+  food-bound, because ⚔️ for Conquest competes with 🌾 through Dogs (1🌾→1⚔️).
+- **Two live axes**, the thing mission 1 lacked: the Foraging/Toolmaking split *and* how much food to burn
+  on military. Skill separates hard on it — greedy 26% vs planner 100% on identical seeds.
+- **Heuristic leaves Dogs unplayed** and funds ⚔️ through Bow alone. A `sim/value.ts` blind spot, not a
+  content signal (Bow is a one-shot 2🔨→3⚔️; Dogs is the repeatable 1🌾→1⚔️).
+
+**Owed before this mission closes:** re-measure on **Settlement** (the board a player actually has — 4🗺️
+means the territory goal is *already met at setup*, which likely switches Conquest back off), and re-cut
+`scripts/sim/baselines/growing_numbers.json`, which still names four on-trial cards.
+
 ## Cards on trial
 
 Cut from the starting collection and **not unlocked by anything, so currently unobtainable in-game**.
@@ -112,6 +148,12 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
   **Masonry's 6🧍 goal and the multi-worker wonders (Göbekli 3, Pyramid 4) are unreachable** until a
   stronger food source ships. Whichever mission unlocks that faucet is a *hard prerequisite* for them,
   not a balance nudge — decide it before reaching Masonry.
+- **Conquest's re-cost regressed Masonry's planner integration test** (5 seeds: was ≥4 wins, now 3).
+  Expected direction — Masonry converts ⚔️→🗺️→🧍 repeatedly, so a *doubling* territory card bites hardest
+  exactly there — and `plannerPolicy.integration.test.ts` is doing its job by catching it. Masonry is
+  mission 6 and already **blocked** on the food ceiling below, so the assertion is left red rather than
+  weakened: it is the pass's own reminder that Masonry needs a territory route that doesn't escalate (Road,
+  a board with more 🗺️, or a cap on the curve). **Resolve before merging to `main`.**
 - **`MIN_DECK_SIZE` may not need to exist.** At 10 it is starting to look like a rule with no job; see
   [`IDEAS.md`](IDEAS.md). Not this pass's call.
 

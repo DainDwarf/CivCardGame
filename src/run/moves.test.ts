@@ -13,7 +13,7 @@ afterAll(uninstallFixtures);
 const PLACEMENT_BUILDING = {
   hut_fixture: {
     id: 'hut_fixture', name: 'Hut Fixture', kind: 'building' as const,
-    cost: { production: 4 }, workers: 0, effect: { resources: { population: 1 } },
+    cost: { resources: { production: 4 } }, workers: 0, effect: { resources: { population: 1 } },
   },
 };
 

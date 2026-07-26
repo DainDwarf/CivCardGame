@@ -1,6 +1,6 @@
-import { randInt, seededRng, type GameState } from '../rules';
+import { discardCount, randInt, seededRng, type GameState } from '../rules';
 import { CARDS } from '../content/cards';
-import { discardCostToPay, enumerateActions } from './actions';
+import { enumerateActions } from './actions';
 import type { Policy, SimAction } from './simulate';
 
 /** A live seeded generator — typed off `seededRng` so `pure-rand` stays confined to `rules/rng.ts`. */
@@ -31,10 +31,10 @@ export function createRandomPolicy(policySeed: string): Policy {
 }
 
 /** Rebuild a legal `playCard` for `playHandIdx` with *randomized* extras — a random discard-cost
- *  sacrifice (of the count `discardCostToPay` fixes, waive included). */
+ *  sacrifice (of the count `rules/cost.ts`'s `discardCount` fixes, waive included). */
 function randomizePlay(G: GameState, playHandIdx: number, rng: Rng): SimAction {
   const card = CARDS[G.hand[playHandIdx].cardId];
-  const required = discardCostToPay(G, card);
+  const required = discardCount(card, { G, self: G.hand[playHandIdx] });
 
   let discardHandIdxs: number[] | undefined;
   if (required > 0) {

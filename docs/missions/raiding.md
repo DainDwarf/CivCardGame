@@ -56,11 +56,12 @@ than Horse taming's self-inflicted food drain that **grows as you win**. Opposit
 
 ## Implement ⬜ — warnings recorded at design
 
-1. **Escalating crack-cost is likely a small new mechanic.** Every seeded-completion mission to date
-   (Copper/Roads/Horse) uses a **static** `cost`. A cost that reads a per-instance counter needs the
-   play-gate to compute cost dynamically — probably a `resolve`-side check rather than the declarative
-   `cost` field. This is the **first non-fixed cost**; design it on the resolver spine, don't special-
-   case the move.
+1. ~~**Escalating crack-cost is likely a small new mechanic.**~~ ✅ **The mechanism already exists** —
+   `rules/cost.ts`'s `CardCost.resolve` (built for Conquest's doubling price on the `trade-redesign`
+   rebalance). A target authors `cost: { resources: {...}, resolve: ({ self }, base) => ... }` reading its
+   own `counters`; the gate, the payment and the card face all price through `currentCost`. Note the
+   *resolve returns a cost, it never pays one* rule: the fortification threshold must stay expressible in
+   declarative fields, or `unplayableReason` can't say what's missing and the face can't render it.
 
 ## Balance ⬜ — watch items recorded at design
 
