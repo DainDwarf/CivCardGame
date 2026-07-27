@@ -1,7 +1,7 @@
 {
   "id": "reading_seasons",
   "mission": "reading_seasons",
-  "note": "Minimal: the other fork off Growing Numbers, so the same stage as Rites & Rituals. Storytelling is the only science faucet owned here.",
+  "note": "STALE — predates the rates and the branch restructure that moves this mission to col 3 behind Harsh Winter; re-cut when the rebalance pass reaches it. Minimal: a fork off Growing Numbers, with Storytelling the only science faucet owned.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },

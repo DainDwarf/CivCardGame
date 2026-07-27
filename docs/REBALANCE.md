@@ -37,7 +37,7 @@ nothing but noise.
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
 | 3 | `raiders_at_border` · *Harsh Winter* | 🟡 — the **pressure** pair, now first in each branch; Raiders ✅ measured, Harsh Winter not written |
-| 4 | *The First Trades* · `reading_seasons` | ⬜ — the **resource** pair; see the restructure below |
+| 4 | *The First Trades* · `reading_seasons` | 🟡 — the **resource** pair; First Trades ✅ realigned, re-fixtured, measured; `reading_seasons` untouched |
 | 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 6 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
 | 7 | `pyramid` · `accounting` | ⬜ — both hoard goals; pyramid blocked on the food ceiling |
@@ -227,24 +227,54 @@ it, and a pressure mission demands no resource — so the order inverts.
 Each col-2 mission's **reward is the col-3 mission's toolkit**: `raiders_at_border` grants the money
 pair (Bead Workshop, Bartering), Harsh Winter grants the science pair (Storytelling, Calendar).
 
+And each col-3 **tip grants a culture card**, so whichever branch a player took, the Rites-as-convergence
+node those tips would feed (see [`IDEAS.md`](IDEAS.md)) arrives with something to play. The First Trades
+grants **Beer** ✅; `reading_seasons`' culture card is undecided, and is the new-reward it owes.
+
 **The concrete `missions.ts` edits** — no mission in either branch is untouched, so a session picking
 up one of the dossiers needs this list rather than the table's shorthand:
 
 | Mission | Edit |
 |---|---|
-| `raiders_at_border` | ✅ `prereqs` → `['growing_numbers']`, `map` col **2** · ⬜ reward gains Bead Workshop + Bartering (keeps Chiefdom) |
-| `rites_rituals` | **deleted**, along with `rites_rituals_goal` — ⬜ *parked at col 3* for now, see below |
+| `raiders_at_border` | ✅ `prereqs` → `['growing_numbers']`, `map` col **2** · ✅ reward gains Bead Workshop + Bartering (keeps Chiefdom) |
+| `rites_rituals` | ✅ **deleted**, along with `rites_rituals_goal` — strands **Burial**, see *Cards on trial* |
 | `restless_people` | **rewritten** as Harsh Winter — new id, threat, goal and reward; see its dossier for what that retires |
-| `reading_seasons` | `prereqs` `['growing_numbers']` → the Harsh Winter id · `map` col 2 → **3** · **reward is now empty** (Calendar moves upstream) — needs a new one |
-| *The First Trades* | new: `prereqs: ['raiders_at_border']`, stone col 3 row -1 |
-| `first_temple` | `prereqs` `['raiders_at_border', 'restless_people']` → `['first_trades', <harsh winter id>]` — the tips moved, so the capstone's gate must follow |
+| `reading_seasons` | `prereqs` `['growing_numbers']` → the Harsh Winter id · `map` col 2 → **3** · **reward is now empty** (Calendar moves upstream) — owes a new one, and it should be this branch's **culture card** |
+| `restless_people` | ✅ Beer's grant moved to `first_trades`, so the Harsh Winter rewrite inherits a card-less reward to re-fill |
+| *The First Trades* | ✅ new: `prereqs: ['raiders_at_border']`, stone col 3 row -1 |
+| `first_temple` | 🟡 `prereqs` → `['first_trades', 'restless_people']` — the upper tip is final; the lower one re-points to Harsh Winter's id when it lands |
 
-**Landed early — the upper branch's swap and its reward.** `raiders_at_border` and `rites_rituals`
-have traded places in the DAG ahead of the rest of the restructure, so Raiders is playable off
-Growing Numbers now, and Raiders grants the reworked money pair. Rites is **not deleted yet**: it
-sits at col 3 holding the slot The First Trades will take, with `first_temple` re-pointed onto it — a
-deliberate parking spot, not a survivor of the plan. It keeps the DAG connected and the capstone
-downstream of the age's only 🎭 source while the branch's real col-3 mission is still being written.
+**Landed — the whole upper branch.** `raiders_at_border` moved to col 2 off Growing Numbers and
+grants the reworked money pair; **The First Trades** now holds col 3 and `rites_rituals` is deleted,
+with `first_temple` re-pointed onto the new mission. The lower branch is untouched, so the capstone's
+second prereq is still `restless_people` until Harsh Winter lands.
+
+**The First Trades' goal: open a 🤝 trade route and hold `FIRST_TRADES_FOOD` 🌾** (25 provisional), no
+threat and no events — the route's standing rent is the whole pressure, and it is one the player opts
+into. The mission's own [dossier](missions/first-trades.md) carries the reasoning, the reward's two open
+questions, and the balance watch list; the rate-level point for this pass is that the food target is the
+knob deciding whether the mission is a decision or a script.
+
+**Measured** at 25🌾. `scripts/sim/baselines/first_trades.json` is cut on **Settlement** (Growing
+Numbers' deck + the money pair, 17 cards, no purchases) and its rows are in `baselines/results/`:
+heuristic, greedy, planner and oracle all **100%**, medians 16 · 33 · 15 · 13 turns, every one of them
+opening the route in every run and ending within 1🌾 of the target. **Chiefdom**, swept ad-hoc on the
+same deck and seeds, is far harder — planner 92/100, heuristic 13/100, greedy 0/100, failing to famine
+rather than bankruptcy.
+
+**25🌾 stands**, chosen on the turn times: 13 · 15 · 16 at the oracle, planner and heuristic, in line
+with missions 1–2. And **territory came back to life**, which `raiders_at_border` had switched off —
+Conquest is played by heuristic, planner and oracle here. The dossier holds the per-board tables and
+what each policy left unplayed.
+
+What the mission could *not* answer is whether the workshop+route pair **scales** past one — its deck
+holds a single copy of each card. That is a rate question about the trade zone rather than about this
+mission, and is logged under *money's topology* below.
+
+One sim-side change rode along: `sim/enablers.ts`'s card-cost probe injected candidate cards only into
+`removed` and `tableau`, so a goal counting `G.tradeRoutes` read as unbankable and the planner had no
+reason to pay a route's entry cost. It now probes the trade zone too — provably inert on every other
+shipped mission, since nothing else counts that zone.
 
 The two cards shipped **reworked past the dossier's spec** — Bead Workshop is a `building` (2🔨, 1🪙 per
 staffed worker), not the work box the dossier drafted, and Bartering opens for 1🪙 and rents 1🪙/round
@@ -258,11 +288,8 @@ worker → 1🌾: double output for double the slots and the same one worker. Th
 pop 2 / terr 4 wants, and it is the first card in the arc priced on the *slots-for-workers* axis
 rather than on rate. Unmeasured — see the dossier's Balance section for what to watch.
 
-`raiders_at_border.json` is re-cut and measured (see *Mission 3* above). `rites_rituals.json` is still
-stale, and the swap moved it the *other* way — Rites now sits downstream of Raiders, so its pool legitimately
-gains the money pair and **Chiefdom as a second launchable board**, which its `"board": "settlement"` doesn't
-exercise; its note still calls Rites a fork off Growing Numbers. Left alone: the mission is a parking spot
-The First Trades takes, so the fixture is rewritten wholesale rather than half-corrected.
+`raiders_at_border.json` is re-cut and measured (see *Mission 3* above). `rites_rituals.json` is deleted
+along with its mission, and its rows are stripped from both files in `baselines/results/`.
 
 Separately, and predating this branch: several fixtures stock **Storytelling and Cave Art**, which are in
 neither `STARTING_COLLECTION` nor any mission's `unlockCardIds` — the *Cards on trial* list, being measured
@@ -271,7 +298,7 @@ what resolves the underlying strandedness.
 
 A *missing* prereq id used to fail nothing — `campaign.ts`'s `isAvailable` just never satisfies it, so
 the mission dropped out of the campaign silently. `content/missions.test.ts` now pins prereq id
-existence and acyclicity, so deleting `rites_rituals` while something still names it is a red test.
+existence and acyclicity, which is what caught `first_temple` at the moment `rites_rituals` was deleted.
 ⚠️ It cannot catch a real-but-*wrong* id: pointing `first_temple` at `growing_numbers` instead of the
 new branch tips passes both cases and quietly flattens the DAG. Naming the right missions is still on
 whoever makes the edit.
@@ -293,26 +320,45 @@ as a *better* faucet than Bead Workshop and its pitch is rewritten. Decide when 
 
 ### Culture leaves the Stone Age
 
-`rites_rituals` is **removed** — The First Trades takes its slot — and the Harsh Winter rewrite drops
-the arc's other culture goal. So the tutorial age no longer teaches 🎭 at all, and this is owed work,
-not a finished decision:
+`rites_rituals` is **removed** ✅ — The First Trades has taken its slot — and the Harsh Winter rewrite
+drops the arc's other culture goal. `restless_people`'s 🎭 level 2 is all that is left, and it goes with
+that rewrite. So the tutorial age is on its way to teaching 🎭 not at all, and this is owed work, not a
+finished decision:
 
 - **Both wonders become unplayable.** Göbekli Tepe carries `cultureLevelReq: 1` and Pyramid
   `cultureLevelReq: 2` — a hard play-gate, not a goal. With no 🎭 source anywhere in the age, the
   Stone Age *capstone reward* is a card that cannot be played. This is the sharpest consequence of the
   three and the one most likely to force culture back somewhere.
-- **Three cards have no home**: Cave Art (2🎭 work), Burial (1🎭 building), Beer (2🌾 → 5🎭 work).
-  Burial and Beer are *currently obtainable*; they join the trial list above on the day this ships.
+- **Beer ✅ has a home** — reworked to **1🌾 → 2🎭** and granted by The First Trades (see its
+  [dossier](missions/first-trades.md) for why that mission and not another). **Cave Art and Burial do
+  not**: see the trial list above.
 - **Two culture goals are orphaned**: `first_temple` (🎭 level 2) and `pyramid` (🎭 level 2). Each
   must drop its culture term, or culture must find a mission upstream of it.
 - **Hand size is pinned at 4 for the whole tutorial age.** Culture is its only lever, so the
   hand-size-grows-with-your-civilization progression no longer happens anywhere in Stone.
-- **`sim/enablers.test.ts` builds off a `ritesRoot` fixture** derived from `rites_rituals`, and its
-  culture cases read the wonder's gate. Deleting the mission breaks it — re-point the fixture rather
-  than dropping the cases; they cover the gate-unlock enabler, not the mission.
+- ⬜ **The culture-level curve is un-re-read.** Levels sit at cumulative **10 / 30 / 70** (`CULTURE_STEP
+  = 10`, each band double the last, `rules/culture.ts`) — set when every converter ran ×2. Beer is the
+  first culture producer priced at the new rates (1🌾 → 2🎭), and nothing in the pass has yet *asked*
+  for a culture level, so the curve has had no mission to be judged against. Settle it at the first
+  rebalanced mission that wants 🎭 — the Rites convergence node, if that lands — and expect it to move
+  Beer's rate rather than the other way round.
+- ✅ **`sim/enablers.test.ts`'s culture cases are off the shipped catalogue entirely.** They needed a
+  mission whose *goal* is a culture level; that used to be `rites_rituals` and would next have been
+  `restless_people`, which this same pass retires. They now install a synthetic `test_culture_win`
+  (`rules/testFixtures.ts`) instead, so the culture question can be settled without a test re-point.
+  `rules/objective.test.ts` and `sim/objective.test.ts` still read `restless_people_goal` for the
+  culture-threshold boundary — those are *content* coherence checks, so they follow whichever shipped
+  mission wins on culture and re-point again at Harsh Winter's turn.
 
-The cheapest resolution is probably a culture mission early in **Bronze** — which is also what the
-age-promotes-a-resource framing wants, now that money has vacated that slot. Not decided.
+Two candidate resolutions, neither decided:
+
+- **A culture mission early in Bronze** — what the age-promotes-a-resource framing wants, now that
+  money has vacated that slot.
+- **Rites & Rituals returns as a convergence node** after both Stone branch tips, i.e. between
+  {The First Trades, Harsh Winter} and `first_temple` (jotted in [`IDEAS.md`](IDEAS.md)). Keeps 🎭 in
+  the tutorial age where the wonders' gates want it, gives Burial and Cave Art a home, and needs
+  whichever card produces the culture granted one column upstream — the same col-2-grants-col-3 shape
+  the restructure already uses.
 
 ## Cards on trial
 
@@ -324,6 +370,7 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
 |---|---|---|
 | Storytelling (2🔬 work) | 🔬 has no sink at all in the Stone Age start | ⬜ **Harsh Winter** reward, reworked to the 1-per-worker base rate — mission not written yet |
 | Cave Art (2🎭 work) | 🎭 level 1 is 10🎭 — a whole tutorial mission's output for +1 hand size | ❌ **no home** — `rites_rituals` was it. See *Culture leaves the Stone Age* |
+| Burial (1🎭 building) | was `rites_rituals`' reward, and that mission is now deleted | ❌ **no home** — same fate as Cave Art, and the same two candidate resolutions |
 
 Bead Workshop and Bartering have **left this list** — both are reworked and granted by `raiders_at_border`;
 see *Landed early* above.
@@ -354,9 +401,10 @@ see *Landed early* above.
   Raiders now grants isn't guaranteed to be owned — a player who took only this branch still meets the
   first reshuffle with no income and bankrupts. The Harsh Winter rewrite retires the mission and the threat both, which
   closes this — but if `unrest` is ever reused it must be re-keyed off a resource the player produces.
-- **The Influence faucet ledger shifts.** Dropping `rites_rituals` (8⭐) and adding The First Trades
-  changes `cumulativeInfluenceInto` for every mission downstream — which is the number shop tiers and
-  sticker prices are tuned against. `npm run economy` prints the new ledger once the DAG is edited.
+- **The Influence faucet ledger.** The First Trades was given `rites_rituals`' 8⭐ deliberately, so the
+  swap leaves `cumulativeInfluenceInto` unchanged for everything downstream — the number shop tiers and
+  sticker prices are tuned against. That holds only while the reward stays unargued: fix it, and run
+  `npm run economy` for the new ledger. Harsh Winter's payout is still an open shift.
 - **`MIN_DECK_SIZE` may not need to exist.** At 10 it is starting to look like a rule with no job; see
   [`IDEAS.md`](IDEAS.md). Not this pass's call.
 
@@ -409,9 +457,14 @@ no bonus at all**: it purely gates bronze, so its cost is pure route-capacity op
   the restructure above — money enters at Stone col 3. The generalization survives the reversal and is
   worth keeping — **each age promotes one resource into the substrate** — but Stone now takes food +
   production + money, and what Bronze promotes is open (culture is the candidate).
-- **Check before building:** money's Stone-Age faucet is the reworked Bead Workshop alone, with Trader
-  (3🪙/worker) and whatever Naval adds arriving in Bronze. Hand-check 🪙/round for N routes against a
-  realistic deck's income; if it doesn't clear, the escalating-cost curve gives.
+- **Does the workshop+route pair scale?** ⬜ The open rate question, and **not any one mission's** — The
+  First Trades measured a single pair (100% at every competent policy, 13–16 turn medians) but its deck
+  holds one copy of each card, so no run there could build a second. The route out-rates the building
+  that funds it, so pair *N* costs what pair 1 did with **territory the only brake** and no diminishing
+  term. Needs a deliberately multi-copy deck on a slot-rich board: if two pairs simply double the food,
+  the pair is the dominant food line everywhere rather than an alternative to one, and either the rent
+  or the return has to curve. Money's Stone-Age faucet is the reworked Bead Workshop alone; Trader
+  (3🪙/worker) and whatever Naval adds arrive in Bronze and change the arithmetic again.
 
 ## Remaining work
 

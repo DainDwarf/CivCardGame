@@ -24,7 +24,7 @@
  *   npm run sim -- --scenario growing_numbers --deck <file> --board settlement
  *   npm run sim -- --scenario growing_numbers --deck <file> --board scripts/sim/boards/city-stockpiled.json
  *   npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board <file> --seeds 500
- *   npm run sim -- --scenario rites_rituals --deck <file> --board <file> --policies greedy,heuristic
+ *   npm run sim -- --scenario first_trades --deck <file> --board <file> --policies greedy,heuristic
  *   npm run sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100 --format json
  *   npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies planner --seed 3   # replay one run
  *

@@ -177,7 +177,8 @@ function positive(x: number | undefined): number {
 
 /** The card-count counterpart of `goalValuedResources`: which core resources fund a card the objective
  *  *counts*, probed by injecting a synthetic instance of each run card into the zones a goal can measure
- *  (`removed` for a played event, `tableau` for a building) and diffing `objectiveProgress`. A card that
+ *  (`removed` for a played event, `tableau` for a building, `tradeRoutes` for
+ *  an open route — the three a card *stays* in, so a goal can count it) and diffing `objectiveProgress`. A card that
  *  moves the gradient makes its `cost` bankable: paying it *is* the goal step. The per-card progress
  *  delta is attributed **proportionally** over the card's total core cost — one shared per-unit marginal,
  *  so a full multi-resource bank sums to `HOP_DISCOUNT · delta`, keeping the shaping sound (a per-key
@@ -205,7 +206,10 @@ export function goalValuedCardCosts(
     probe.tableau.push({ id: -2, cardId, workers: 0 });
     const tableauDelta = objectiveProgress(probe) - base;
     probe.tableau.pop();
-    const delta = Math.max(removedDelta, tableauDelta);
+    probe.tradeRoutes.push({ id: -3, cardId, workers: 0 });
+    const routeDelta = objectiveProgress(probe) - base;
+    probe.tradeRoutes.pop();
+    const delta = Math.max(removedDelta, tableauDelta, routeDelta);
     if (delta <= 0) continue;
     const marginal = delta / totalCost;
     for (const ck of CORE_KEYS) {

@@ -49,15 +49,14 @@ describe('objectiveMet (goals-derived win boolean)', () => {
     ).toBe(true);
   });
 
-  // The refactor models a culture-*level* win as `culture >= cultureForLevel(N)`. Pin that this is
-  // exactly equivalent to the old `cultureLevel(culture) >= N` at the band boundary (a `>=` vs `>`
+  // A culture-*level* win is modelled as the threshold `culture >= cultureForLevel(N)`. Pin that this
+  // is exactly equivalent to `cultureLevel(culture) >= N` at the band boundary (a `>=` vs `>`
   // off-by-one here would silently change the win condition).
-  it('the culture threshold exactly matches the old cultureLevel predicate', () => {
-    const met = (cardId: string, culture: number) =>
-      objectiveMet(withObjective(cardId, (G) => (G.resources.culture = culture)));
+  it('the culture threshold exactly matches the cultureLevel predicate', () => {
+    const met = (culture: number) =>
+      objectiveMet(withObjective('restless_people_goal', (G) => (G.resources.culture = culture)));
     for (let culture = 0; culture <= cultureForLevel(2) + 20; culture++) {
-      expect(met('rites_rituals_goal', culture)).toBe(cultureLevel(culture) >= 1);
-      expect(met('restless_people_goal', culture)).toBe(cultureLevel(culture) >= 2);
+      expect(met(culture)).toBe(cultureLevel(culture) >= 2);
     }
   });
 

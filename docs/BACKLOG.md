@@ -34,10 +34,11 @@
     settlement gives tearing-down its natural context. `[?]`
   - **The arc's two middle branches are being restructured** on the `trade-redesign` branch —
     `rites_rituals` and `restless_people` are replaced by *The First Trades* (🪙) and *Harsh Winter*
-    (famine threat), inverting each branch to pressure-first. See [`REBALANCE.md`](REBALANCE.md) →
-    *Stone Age branches 3–4 restructure*, plus the [first-trades](missions/first-trades.md) and
-    [harsh-winter](missions/harsh-winter.md) dossiers. Step 9's substeps below are written against the
-    old arc and are stale for **9.3 / 9.5 / 9.6**.
+    (famine threat), inverting each branch to pressure-first. The upper branch has **landed**
+    (`rites_rituals` deleted, The First Trades shipped at col 3); the lower one is still to write. See
+    [`REBALANCE.md`](REBALANCE.md) → *Stone Age branches 3–4 restructure*, plus the
+    [first-trades](missions/first-trades.md) and [harsh-winter](missions/harsh-winter.md) dossiers.
+    Step 9's substeps below are written against the old arc and are stale for **9.3 / 9.5 / 9.6**.
 
 - **Step 7 — Bronze Age arc** (content expansion) — new cards + missions themed to the Bronze
   Age, **no new mechanics**. Continues unlocking cards/stickers/boards through mission rewards.
@@ -160,10 +161,12 @@
     the territory squeeze that forces Conquest). **Post-clear:** teach **stickers +
     Influence/shop** (the reward debuts the Irrigation card sticker + the Granary/Stockpile board
     stickers — the sticker-unlock reward kinds).
-  - **9.3 — Rites & Rituals tutorial** — teach the **Culture** gauge: culture levels (each raises
-    hand size) and the `cultureLevelReq` play-gate. **Post-clear:** the reward unlocks the **Burial**
-    building — a culture producer (+1🎭 per staffed round). (The Göbekli Tepe wonder is *not* unlocked
-    here; the capstone `first_temple` grants it — see 9.7.)
+  - **9.3 — The First Trades tutorial** *(replaces the deleted Rites & Rituals; rewrite pending)* —
+    teach **money and trade routes**: the standing trade zone, a route's per-round rent against its
+    per-round yield, and why the faucet that pays the rent has to be a building. **Post-clear:** reward
+    undecided, so the post-clear lesson is too. Where the **Culture** gauge (levels, hand size, the
+    `cultureLevelReq` play-gate) gets taught is now open — see REBALANCE → *Culture leaves the Stone
+    Age*.
   - **9.4 — Raiders at the Border tutorial** — teach the **event** card mechanic: mission-injected
     disasters (the raider waves) that auto-resolve from hand each round, draining a resource, and are
     defused for good by *playing* them (paying the cost banishes the card unresolved). **Post-clear:**

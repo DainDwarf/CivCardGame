@@ -70,7 +70,7 @@ Examples:
 npm run sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100
 npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies oracle --seeds 20
 npm run sim -- --scenario growing_numbers --deck <file> --board settlement
-npm run sim -- --scenario first_settlement,growing_numbers,rites_rituals --deck <file> --board <board> --seeds 500
+npm run sim -- --scenario first_settlement,growing_numbers,first_trades --deck <file> --board <board> --seeds 500
 ```
 
 ## File schemas (JSON)

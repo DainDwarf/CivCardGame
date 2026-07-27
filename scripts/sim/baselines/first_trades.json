@@ -1,0 +1,17 @@
+{
+  "id": "first_trades",
+  "mission": "first_trades",
+  "note": "Minimal: Growing Numbers' deck plus one copy each of Raiders at the Border's money pair (bead_workshop/bartering) — the two cards this mission is built around. No bought copies and no stickers, though 14 Influence has arrived unspent by here. On Settlement, the board Growing Numbers' clear upgrades into; Chiefdom is the other launchable choice and measures far harder (planner 92/100 against 100/100 here).",
+  "board": "settlement",
+  "deck": [
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "farm", "count": 1 },
+    { "cardId": "hut", "count": 1 },
+    { "cardId": "conquest", "count": 1 },
+    { "cardId": "bead_workshop", "count": 1 },
+    { "cardId": "bartering", "count": 1 }
+  ]
+}

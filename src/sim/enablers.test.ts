@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { installCards, installFixtures, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { createRun } from '../run/engine';
 import { simConfig } from './simulate';
 import { DEFAULT_ENABLER_TERMS, deriveEnablers, enablerPotential, goalValuedCardCosts } from './enablers';
 import { OBJECTIVE_WEIGHT } from './value';
 import { objectiveProgress } from './objective';
-import { CARDS } from '../content/cards';
+import { CARDS, type CardDef } from '../content/cards';
 import { addBuilding, cultureForLevel, emptyResources, type GameState } from '../rules';
 
 // The two conversion costs the Masonry deck rides on, read from content so a rebalance re-targets these
@@ -158,7 +159,23 @@ function pyramidRoot(deckCardIds: string[]): GameState {
   return createRun(config).G;
 }
 
+// Two staffable culture producers whose only meaningful property is that one out-rates the other — local
+// to this file, since only the best-producer case needs them.
+const CULTURE_PRODUCERS: Record<string, CardDef> = {
+  test_weak_culture: {
+    id: 'test_weak_culture', name: 'Test Weak Culture', kind: 'work',
+    cost: {}, workers: 1, produces: { resources: { culture: 2 } },
+  },
+  test_strong_culture: {
+    id: 'test_strong_culture', name: 'Test Strong Culture', kind: 'work',
+    cost: {}, workers: 1, produces: { resources: { culture: 6 } },
+  },
+};
+
 describe('population capacity enabler', () => {
+  beforeAll(() => installCards(CULTURE_PRODUCERS));
+  afterAll(() => uninstallCards(CULTURE_PRODUCERS));
+
   it('credits population as a durable, multi-round enabler when it is not itself goal-valued', () => {
     const deck = ['toolmaking', 'toolmaking', 'foraging', 'foraging', 'farm', 'farm', 'bead_workshop', 'bead_workshop'];
     const m = deriveEnablers(pyramidRoot(deck));
@@ -181,11 +198,12 @@ describe('population capacity enabler', () => {
   });
 
   it('scales the credit with the deck\'s best goal producer', () => {
-    // Beer (5🎭/worker) is a stronger culture producer than Cave Art (2🎭/worker); the population credit
-    // tracks the best staffable, so a deck holding Beer earns more per population than one without it.
-    const withBeer = deriveEnablers(pyramidRoot(['cave_art', 'beer', 'foraging', 'foraging']));
-    const caveArtOnly = deriveEnablers(pyramidRoot(['cave_art', 'foraging', 'foraging']));
-    expect(withBeer.weight.population!).toBeGreaterThan(caveArtOnly.weight.population!);
+    // The credit tracks the *best* staffable producer of a goal resource, so adding a stronger one raises
+    // it. Synthetic producers, ordered by construction: a real pair can be flattened by a rebalance until
+    // the two are equal, which pins nothing.
+    const withStrong = deriveEnablers(pyramidRoot(['test_weak_culture', 'test_strong_culture', 'foraging']));
+    const weakOnly = deriveEnablers(pyramidRoot(['test_weak_culture', 'foraging']));
+    expect(withStrong.weight.population!).toBeGreaterThan(weakOnly.weight.population!);
   });
 
   it('rises with banked population then saturates at the cap', () => {
@@ -378,7 +396,7 @@ describe('card-cost goal valuation', () => {
     // the probe is provably a no-op, so `deriveEnablers` output — and hence every planner/oracle
     // trajectory — is unchanged by this layer. A broad deck widens the candidate pool the probe injects.
     const resourceMissions = [
-      'first_settlement', 'rites_rituals', 'restless_people', 'reading_seasons',
+      'first_settlement', 'restless_people', 'reading_seasons',
       'first_temple', 'masonry', 'accounting', 'pyramid',
     ];
     const deckCardIds = [
@@ -467,6 +485,9 @@ describe('durable producer credit', () => {
 });
 
 describe('culture enabler', () => {
+  beforeAll(installFixtures);
+  afterAll(uninstallFixtures);
+
   // First Settlement wins on production/military; culture is *not* goal-valued, so a producer gated behind a
   // culture level makes reaching that level an enabler. Göbekli Tepe is gated at culture level 1 and produces
   // production (a goal resource here).
@@ -475,10 +496,10 @@ describe('culture enabler', () => {
     return createRun(config).G;
   }
 
-  // Rites & Rituals wins *at* a culture level, so culture is goal-valued there — used to pin the gate-unlock
-  // skip and, contrastingly, the hand-size credit that survives it.
-  function ritesRoot(deckCardIds: string[]): GameState {
-    const config = simConfig({ deckCardIds, board: 'settlement', missionId: 'rites_rituals', seed: 'enablers-culture-skip' });
+  // The synthetic culture mission wins *at* a culture level, so culture is goal-valued there — used to pin the
+  // gate-unlock skip and, contrastingly, the hand-size credit that survives it.
+  function cultureWinRoot(deckCardIds: string[]): GameState {
+    const config = simConfig({ deckCardIds, board: 'settlement', missionId: 'test_culture_win', seed: 'enablers-culture-skip' });
     return createRun(config).G;
   }
 
@@ -489,18 +510,18 @@ describe('culture enabler', () => {
   });
 
   it('skips the gate-unlock when culture is itself the objective', () => {
-    // Reaching the level *is* the win on Rites, scored directly — so the gated producer isn't a separate enabler.
-    const m = deriveEnablers(ritesRoot(['gobekli_tepe', 'burial', 'burial']));
+    // Reaching the level *is* the win there, scored directly — so the gated producer isn't a separate enabler.
+    const m = deriveEnablers(cultureWinRoot(['gobekli_tepe', 'burial', 'burial']));
     expect(m.weight.culture ?? 0).toBe(0);
   });
 
   it('credits hand-size throughput per culture level even when culture is goal-valued', () => {
     // A bigger hand helps every goal, not the one the level might be — so unlike the gate-unlock it rides no
     // skip. Level-based (not linear in raw culture): flat within a level, a step up at each new level.
-    const m = deriveEnablers(ritesRoot(['burial', 'burial', 'foraging']));
+    const m = deriveEnablers(cultureWinRoot(['burial', 'burial', 'foraging']));
     expect(m.handsizePerLevel ?? 0).toBeGreaterThan(0);
     const pot = (culture: number) => {
-      const G = ritesRoot(['burial', 'burial', 'foraging']);
+      const G = cultureWinRoot(['burial', 'burial', 'foraging']);
       G.resources = emptyResources();
       G.resources.culture = culture;
       return enablerPotential(G, m);
@@ -515,7 +536,7 @@ describe('culture enabler', () => {
   });
 
   it('handSize: false sets no hand-size credit even when the deck grows culture', () => {
-    const m = deriveEnablers(ritesRoot(['burial', 'burial', 'foraging']), { handSize: false });
+    const m = deriveEnablers(cultureWinRoot(['burial', 'burial', 'foraging']), { handSize: false });
     expect(m.handsizePerLevel).toBeUndefined();
   });
 });

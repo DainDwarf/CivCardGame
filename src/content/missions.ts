@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, GROWING_NUMBERS_TERRITORY, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -139,22 +139,6 @@ export const MISSIONS: Record<string, MissionDef> = {
     map: { col: 1, row: 0 },
     age: 'stone',
   },
-  rites_rituals: {
-    id: 'rites_rituals',
-    name: 'Rites & Rituals',
-    lore:
-      'The last few seasons have been rough. The harvest was poor, and your tribe fears it may not ' +
-      'last through the coming winter. The priority now is to calm your people — to remind them that, ' +
-      'whatever comes, they are all part of one community.',
-    prereqs: ['raiders_at_border'],
-    objectiveCardId: 'rites_rituals_goal',
-    victoryHint: 'Reach 🎭 culture level 1.',
-    failureHint: null,
-    kind: 'standard',
-    reward: { influence: 8, unlockCardIds: ['burial'] },
-    map: { col: 3, row: -1 },
-    age: 'stone',
-  },
   raiders_at_border: {
     id: 'raiders_at_border',
     name: 'Raiders at the Border',
@@ -180,6 +164,28 @@ export const MISSIONS: Record<string, MissionDef> = {
     map: { col: 2, row: -1 },
     age: 'stone',
   },
+  first_trades: {
+    id: 'first_trades',
+    name: 'The First Trades',
+    lore:
+      'The raiders are driven off, and the border holds. But not every tribe beyond it came with ' +
+      'spears — some came with salt, with obsidian, with shells from a sea none of your people have ' +
+      'ever seen. War made the border. Now make it worth holding: open a road to your neighbours, ' +
+      'pay what they ask, and let the grain pile up in stores you never dug from your own soil.',
+    prereqs: ['raiders_at_border'],
+    objectiveCardId: 'first_trades_goal',
+    victoryHint: `Open a 🤝 trade route and stockpile ${FIRST_TRADES_FOOD} 🌾 food.`,
+    failureHint: null,
+    kind: 'standard',
+    // No threat and no events: the standing rent a route charges every round is the mission's whole
+    // pressure, and it is one the player chooses to take on.
+    // Unlocks Beer, whose 🌾 price is only cheap once a route is paying food for no workers — so the
+    // reward is worth having precisely because of what this mission taught you to build. Influence
+    // amount provisional.
+    reward: { influence: 8, unlockCardIds: ['beer'] },
+    map: { col: 3, row: -1 },
+    age: 'stone',
+  },
   restless_people: {
     id: 'restless_people',
     name: 'Restless People',
@@ -192,8 +198,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Reach 🎭 culture level 2 to placate the restless people.',
     failureHint: 'Unrest drains 🪙 on every deck reshuffle — bankruptcy ends the run.',
     kind: 'standard',
-    // Unlocks Beer — a work card costing 2🌾 to play that then yields 5🎭 per staffed round. Influence amount is provisional.
-    reward: { influence: 9, unlockCardIds: ['beer'] },
+    // Beer's grant has moved upstream to `first_trades`; the Harsh Winter rewrite that retires this
+    // mission decides what replaces it. Influence amount is provisional.
+    reward: { influence: 9 },
     map: { col: 3, row: 1 },
     age: 'stone',
   },
@@ -225,7 +232,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'hilltop, ring upon ring of towering carved stones takes shape — pillars hauled and set by ' +
       'hands that could have been tilling, adorned with the beasts of the world around them. It feeds ' +
       'no one, yet the whole valley comes to build it: the first temple.',
-    prereqs: ['rites_rituals', 'restless_people'],
+    prereqs: ['first_trades', 'restless_people'],
     objectiveCardId: 'first_temple_goal',
     victoryHint: 'Reach 3 🧍 population and 🎭 culture level 2 while holding 30 🔨 and 30 🪙 at once.',
     failureHint: null,

@@ -25,6 +25,7 @@ import { BOARDS, type BoardDef, type BoardId } from '../content/boards';
 import { STICKERS, type StickerDef } from '../content/stickers';
 import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
 import { MISSIONS, type MissionDef } from '../content/missions';
+import { cultureForLevel } from './culture';
 import { scaleResources, subtractResources } from './resources';
 import { getCounter, bumpCounter } from './state';
 import { gainResources } from './effects';
@@ -276,6 +277,13 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
       dynamicText: (G) => `${G.resources.science}/10🔬`,
     },
   },
+  // Wins *at* a culture level, the shape a culture mission takes: culture is then goal-valued, which is
+  // what the sim's enabler model reads to switch off its gate-unlock credit.
+  test_culture_objective: {
+    id: 'test_culture_objective', name: 'Test Culture Objective', kind: 'objective', cost: {},
+    goals: [{ icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(1) }],
+    display: { description: 'Reach culture level 1.' },
+  },
   // An always-false objective — the win counterpart to the sandbox's `sandbox_goal`, for a fixture
   // *unwinnable* mission (no line exists at any depth). Pair with a deadline threat so a run still ends.
   test_never: {
@@ -362,6 +370,14 @@ export const FIXTURE_MISSIONS: Record<string, MissionDef> = {
     threats: ['test_deadline_far'],
     objectiveCardId: 'test_objective',
     victoryHint: 'Reach 10 science.', failureHint: null,
+    kind: 'standard',
+  },
+  // Wins at a culture level (`test_culture_objective`) — the culture-goal mission the enabler tests
+  // measure against, so they don't ride whichever shipped mission happens to want culture this week.
+  test_culture_win: {
+    id: 'test_culture_win', name: 'Test Culture Win', lore: '', prereqs: [],
+    objectiveCardId: 'test_culture_objective',
+    victoryHint: 'Reach culture level 1.', failureHint: null,
     kind: 'standard',
   },
   // An unwinnable mission bounded by a near deadline: `test_never` can never be met, so the only exit is

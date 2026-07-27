@@ -169,6 +169,13 @@ export const GROWING_NUMBERS_TERRITORY = 4;
  *  (`content/missions.ts`), the `raiders_at_border_goal` win threshold, and its progress readout. */
 export const RAIDER_WAVES = 3;
 
+/** The 🌾 "The First Trades" wants banked alongside a standing route — shared by the win goal and the
+ *  mission's `victoryHint`. It is the mission's whole balance knob: low enough and a forage-only line
+ *  reaches it with the mandated route left decorative, high enough and a second workshop+route pair
+ *  (Settlement's whole board, plus a Hut for the worker) is forced. Provisional (balance pending a sim
+ *  sweep). */
+export const FIRST_TRADES_FOOD = 25;
+
 /** How many copper veins "Finding Copper" seeds — shared by the mission's injected event list
  *  (`content/missions.ts`), the `finding_copper_goal` win threshold, and its progress readout. */
 export const COPPER_VEINS = 3;
@@ -217,7 +224,7 @@ export const CARDS: Record<string, CardDef> = {
   // — Work —
   foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, produces: { resources: { food: 1 } } },
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 1 } } },
-  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 2 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 5 } } },
+  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 1 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 2 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
   // The first recurring ⚔️ producer from a work box — free to play like Foraging/Trader, so the worker
   // it occupies is its whole cost. Rate beats Dogs (1🌾 → 1⚔️), which is what makes it worth a worker.
@@ -465,20 +472,6 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // Culture is never spent, so `culture >= cultureForLevel(N)` is exactly `cultureLevel >= N`. The
-  //   readout anchors on the *level* (a within-band count would reset each level-up), so it overrides.
-  rites_rituals_goal: {
-    id: 'rites_rituals_goal', name: 'Rites & Rituals', kind: 'objective', cost: {},
-    goals: [{ icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(1) }],
-    display: {
-      description: 'Reach 🎭 level 1',
-      dynamicText: (G) => {
-        const p = cultureProgress(G.resources.culture);
-        return p.level >= 1 ? '🎭 Level 1/1' : `🎭 Level ${p.level}/1`;
-      },
-    },
-  },
-
   // A raider reaches `removed` only by being played, so counting them there counts defeated waves.
   raiders_at_border_goal: {
     id: 'raiders_at_border_goal', name: 'Raiders at the Border', kind: 'objective', cost: {},
@@ -496,8 +489,19 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // Its own card so the objective plaque shows this mission's name (a steeper culture bar than
-  // "Rites & Rituals", which only asks for level 1).
+  // Nothing ever removes a route, so the route half latches the moment it is opened and only the 🌾
+  //   half can fall back — which is what lets the two stand as one "and" without a hold-for-N-rounds term.
+  first_trades_goal: {
+    id: 'first_trades_goal', name: 'The First Trades', kind: 'objective', cost: {},
+    goals: [
+      { icon: '🤝', measure: (G) => G.tradeRoutes.length, target: 1 },
+      { icon: '🌾', measure: (G) => G.resources.food, target: FIRST_TRADES_FOOD },
+    ],
+    display: { description: `Open a 🤝 trade route\nHold ${FIRST_TRADES_FOOD} 🌾` },
+  },
+
+  // Culture is never spent, so `culture >= cultureForLevel(N)` is exactly `cultureLevel >= N`. The
+  //   readout anchors on the *level* (a within-band count would reset each level-up), so it overrides.
   restless_people_goal: {
     id: 'restless_people_goal', name: 'Restless People', kind: 'objective', cost: {},
     goals: [{ icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(2) }],

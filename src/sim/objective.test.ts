@@ -49,17 +49,18 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
     expect(objectiveProgress(atThreshold)).toBeLessThan(1);
   });
 
-  it('rises with accumulated culture on "Rites & Rituals" and is 1 exactly at level 1', () => {
+  it('rises with accumulated culture on "Restless People" and is 1 exactly at level 2', () => {
+    const target = cultureForLevel(2);
     const p = (culture: number) =>
-      objectiveProgress(withObjective('rites_rituals_goal', (G) => (G.resources.culture = culture)));
+      objectiveProgress(withObjective('restless_people_goal', (G) => (G.resources.culture = culture)));
     expect(p(0)).toBe(0);
-    // Sub-level culture registers (a discrete cultureLevel would read 0 all the way to 10).
+    // Sub-level culture registers (a discrete cultureLevel would read 0 all the way to the band edge).
     expect(p(5)).toBeGreaterThan(p(0));
-    expect(p(9)).toBeGreaterThan(p(5)); // still short of the level
-    expect(p(9)).toBeLessThan(1); // one short of the level still isn't done
-    expect(p(10)).toBe(1); // level 1 = the win
+    expect(p(target - 1)).toBeGreaterThan(p(5)); // still short of the level
+    expect(p(target - 1)).toBeLessThan(1); // one short of the level still isn't done
+    expect(p(target)).toBe(1); // level 2 = the win
     // Never spent, so hoarding past the goal earns no more.
-    expect(p(70)).toBe(1);
+    expect(p(target + 60)).toBe(1);
   });
 
   it('the sandbox never wins and offers no gradient to climb (a purely-bespoke goal)', () => {
@@ -80,7 +81,7 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
   });
 
   it('reports a climbable gradient for the declarative objectives', () => {
-    for (const cardId of ['first_settlement_goal', 'rites_rituals_goal', 'raiders_at_border_goal']) {
+    for (const cardId of ['first_settlement_goal', 'restless_people_goal', 'raiders_at_border_goal']) {
       expect(hasObjectiveGradient(withObjective(cardId)), cardId).toBe(true);
     }
   });
@@ -114,8 +115,8 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
     expect(raid(5)).toBe(1);
 
     const cult = (c: number) =>
-      objectiveProgress(withObjective('rites_rituals_goal', (G) => (G.resources.culture = c)));
-    expect(cult(5)).toBe(Math.min(5, cultureForLevel(1)) / cultureForLevel(1)); // old: min(culture,target)/target
+      objectiveProgress(withObjective('restless_people_goal', (G) => (G.resources.culture = c)));
+    expect(cult(5)).toBe(Math.min(5, cultureForLevel(2)) / cultureForLevel(2)); // old: min(culture,target)/target
   });
 
   // There is no territory *override* any more: a mission whose win happens to count territory reaches
