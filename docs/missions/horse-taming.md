@@ -14,14 +14,15 @@ into **Bronze**.
 
 Opens the arc's **predatory money faucet** (military → money by raiding — Naval's aggressive twin, both
 feeding the tin-money sink). Bonus: thickens the thin ⚔️ economy — the **War Horse** reward is the first
-recurring ⚔️ producer from a work box (alongside City Walls, Bow, Dogs, Conquest). Theme: Bronze-Age
+⚔️ producer that is a staffed work box (alongside City Walls, Bow, Dogs, Conquest). Theme: Bronze-Age
 steppe (Yamnaya / Sintashta); horses as war-mounts, **no mounted cavalry** (Iron Age).
 
 ## Agreed (settled at design)
 
-- **Reward — War Horse:** a **work card**, staffed → **+⚔️/round**. Free to play (the Foraging/Trader
-  shape), so the worker it occupies is its whole cost — the rate has to beat **Dogs** (1🌾 → 1⚔️, *no*
-  worker) or nobody would ever spend a worker on it.
+- **Reward — War Horse:** a **work card**, staffed → **+⚔️ on the turn it's played** (a work box files at
+  end of turn, so it pays out once per play, not per round). Free to play (the Foraging/Trader
+  shape), so the worker it occupies for that turn is its whole cost — the rate has to beat **Dogs**
+  (1🌾 → 1⚔️, *no* worker) or nobody would ever spend a worker on it.
 - **Reward — Raiding:** an **action**, spend **⚔️ → gain 🪙**.
 
 ## Goal + pressure ✅ (converged; numbers provisional)
@@ -55,7 +56,7 @@ all on the existing spine.
 
 - **Numbers (provisional):** 5 horses · **6⚔️** to tame each · **−1🔨** per untamed horse held at end of
   round · **−1🌾 per already-tamed horse** each round.
-- **Reward cards:** War Horse (work, free, 1 worker → **+4⚔️/round**) and Raiding (action, **3⚔️ → 6🪙**).
+- **Reward cards:** War Horse (work, free, 1 worker → **+4⚔️ per play**) and Raiding (action, **3⚔️ → 6🪙**).
   Neither is available *in* mission — both are granted on clear — so the goal must be reachable on the
   owned ⚔️ economy alone.
 - No `defeat` hook: like Wheel, the drain runs food down to the universal `'ruin'` collapse, and

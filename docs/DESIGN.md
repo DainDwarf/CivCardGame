@@ -112,7 +112,11 @@ see below). An *effect* can route a card there too — see the building note.
   on play — no idle population required to play it. Produces its effect only while
   staffed, then goes to **discard** at *end of turn* (not immediately, like Action).
   It takes a territory slot like a building, but *rents* it for the turn instead of committing
-  it: the slot comes back when the box files. → staffed *labour*.
+  it: the slot comes back when the box files. Because it files at end of turn, its `produces`
+  fires **exactly once per play** — it shares the building's production field and the building's
+  production path, and differs only in how long it stands. So a work card's printed number is a
+  *per-play* rate and a building's is a *per-round* one; the two are commensurable per **worker-turn**,
+  not per turn. → staffed *labour*.
 - **Trade route (standing rent):** pay a cost to open it into the persistent
   `GameState.tradeRoutes` zone. It stands there for the rest of the run — **nothing closes a
   route** — holding its territory slot, yielding its `produces` and paying its `upkeep` rent every

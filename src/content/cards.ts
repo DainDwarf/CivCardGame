@@ -68,9 +68,12 @@ export interface CardDef {
    *  `upkeep` disaster; a threat's recurring drain stays on `upkeep`/`on`, separate from this one-time
    *  entry. */
   effect?: CardEffect;
-  /** A standing card's per-round output — run through `resolveProduction`. A staffable scales its
-   *  `resources` per staffed worker; a workerless `trade` route yields them flat. May touch any of the
-   *  8 pools. Kept distinct from `effect` so a one-shot play field can never fire every round. */
+  /** A standing card's output **per round it stands on the board** — run through `resolveProduction`.
+   *  A staffable scales its `resources` per staffed worker; a workerless `trade` route yields them flat.
+   *  How many rounds that is belongs to the *kind*, not to this field: a building/wonder/route stands for
+   *  the run, while a `work` box is filed at end of turn (`upkeep.ts`'s `discardWorkZone`) and so produces
+   *  exactly **once per play**. May touch any of the 8 pools. Kept distinct from `effect` so a play-time
+   *  field can never fire at the production boundary. */
   produces?: CardEffect;
   /** A recurring per-round effect fired *at the upkeep boundary*, flat (never per-worker-scaled like
    *  `produces`): a `threat`'s drain, an unplayed `event`'s upkeep disaster, a `trade` route's rent, or
@@ -245,8 +248,9 @@ export const CARDS: Record<string, CardDef> = {
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 1 } } },
   beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 1 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 2 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
-  // The first recurring ⚔️ producer from a work box — free to play like Foraging/Trader, so the worker
-  // it occupies is its whole cost. Rate beats Dogs (1🌾 → 1⚔️), which is what makes it worth a worker.
+  // The first ⚔️ producer that is a staffed work box rather than a one-shot action — free to play like
+  // Foraging/Trader, so the worker it occupies for the turn is its whole cost. Its per-play 4⚔️ beats
+  // Dogs (1🌾 → 1⚔️), which is what makes it worth that worker.
   war_horse: { id: 'war_horse', name: 'War Horse', kind: 'work', cost: {}, workers: 1, display: { art: '🏇' }, produces: { resources: { military: 4 } } },
 
   // — Buildings —

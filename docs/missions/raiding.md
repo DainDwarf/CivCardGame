@@ -10,7 +10,7 @@ Prereq **horse-taming**; the branch converges into **Bronze**.
 
 ## Identity (agreed)
 
-The **payoff** of the arc's predatory money faucet: you now field the **War Horse** (⚔️/round) and the
+The **payoff** of the arc's predatory money faucet: you now field the **War Horse** (a staffed ⚔️ work box) and the
 **Raiding** action (⚔️ → 🪙) unlocked by [Horse taming](horse-taming.md), and turn martial power into
 plunder.
 
@@ -25,7 +25,7 @@ plunder.
 ## Goal + pressure ✅ (converged; numbers provisional)
 
 **Money is the reward, never the goal.** The player already owns cheap, repeatable money faucets
-(Trader +3🪙/round, Bead Workshop +1🪙/worker, plus whatever Naval adds), so any "hold N 🪙" win check is
+(Trader +3🪙 per play, Bead Workshop +1🪙 per worker per round, plus whatever Naval adds), so any "hold N 🪙" win check is
 solvable without raiding *or* fielding military — the raiding loop would be optional flavour. So the
 win condition is the raiding **act** (proven un-shortcuttable by a money pile), and plunder is the
 **payoff** for it — which is also truer to the identity ("turn martial power into plunder").

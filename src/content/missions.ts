@@ -386,7 +386,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     failureHint:
       'Every horse you tame eats 1 🌾 each round for the rest of the run; starve the herd and the run ends.',
     kind: 'standard',
-    // Opens the military branch: unlocks the War Horse (the first recurring ⚔️ work box) and Raiding
+    // Opens the military branch: unlocks the War Horse (the first ⚔️ work box) and Raiding
     // (⚔️ → 🪙, the predatory money faucet) — the pair the next mission is built around. Influence
     // amount provisional.
     reward: { influence: 12, unlockCardIds: ['war_horse', 'raiding'] },

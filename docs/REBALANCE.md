@@ -263,7 +263,7 @@ rate-level points for this pass:
 - **Storytelling 2🔬 → 1🔬**/worker, granted here. This closes one of the three work-card/building pairs
   the *Diagnosis* below still owed: Archives (4🔨, 2🔬/worker) now **doubles** it, the shape Forge has
   against Toolmaking. Cave Art/Burial has since been resolved at `reading_seasons` (Sun Stone replaced
-  Burial, Cave Art is cut); War Horse/City Walls remains.
+  Burial, Cave Art is cut); War Horse/City Walls has since left the list entirely (see *Diagnosis*).
 - **Fire** is new and granted here: an action paying 1🔬 for one card discarded from hand — Storytelling's
   alternative rather than its better, the same 1🔬 bought with a card instead of a worker-round. It
   replaces **Calendar**, which is benched onto *Cards on trial*: the pair feeds a mission that asks the
@@ -457,8 +457,9 @@ Bead Workshop too strong) are one root cause: **every converter doubles, and the
 | Raiding | 3⚔️ | 6🪙 | ×2 |
 | Bow | 2🔨 | 3⚔️ | ×1.5, self-exiling |
 
-Chained, Toolmaking → Bead Workshop → Bartering → Dogs turned **1🔨 into 8⚔️** (16⚔️ per worker-round against
-War Horse's 4), and Bartering → Dogs → Raiding **closed a cycle**: 1🪙 → 2🌾 → 4⚔️ → ~8🪙, ×8 per lap,
+Chained, Toolmaking → Bead Workshop → Bartering → Dogs turned **1🔨 into 8⚔️** (16⚔️ per worker-play
+against War Horse's 4 — both a work box's single payout), and Bartering → Dogs → Raiding **closed a
+cycle**: 1🪙 → 2🌾 → 4⚔️ → ~8🪙, ×8 per lap,
 with `raiding` live today (granted by Horse Taming). The only brake is card plays — hand size 4, +1 per
 culture level, no per-turn cap — so the engine *strengthens* as culture rises. Net effect: the five core
 resources are one resource with five sprites, which is what erases deck identity.
@@ -468,13 +469,25 @@ longer has a one-shot exit into 🌾 at all, and Bead Workshop's rework removes 
 is the last converting edge left to cut.**
 
 Second, **buildings never out-rate the free work card** of their resource, while also costing 🔨, a
-territory slot, and a draw — Cave Art 2🎭 vs Burial 1🎭 · War Horse 4⚔️ vs City Walls 1⚔️. So
-production's only sink is a card category nobody needs. Cutting the base work rates to 1 has fixed three
+territory slot, and a draw. So production's only sink is a card category nobody needs. The comparison is
+**per worker-turn** — the one basis on which the two are commensurable, since a work box pays its printed
+number once per play and hands the worker back, while a building pays it every round it holds one. Equal
+printed numbers are therefore equal throughput *per worker*, and the building's edge is reliability
+(never undrawn) plus deck-thinning, not rate. Cutting the base work rates to 1 has fixed three
 pairs as a side effect (Farm now *matches* Foraging, Forge *doubles* Toolmaking, and Archives doubles
 Storytelling once it drops to 1🔬 at Harsh Winter). The culture pair went the other way, by **replacing
 the building rather than raising it**: Burial became **Sun Stone** at 4🔨 → 2🎭/worker — the Forge/Archives
 shape, permanent output at the work card's rate — and Cave Art is cut, leaving Beer as culture's work
-card. **War Horse / City Walls is the last pair owing a raise.**
+card.
+
+⚠️ **War Horse / City Walls is off the list; its "owed raise" is withdrawn.** The old read — *War Horse
+4⚔️ vs City Walls 1⚔️* — set 4⚔️ **per play** against 1⚔️ **per round forever**, and City Walls takes
+**no workers**, so the per-worker-turn basis above doesn't apply to it at all. Amortized instead: one War
+Horse in a ~23-card deck at hand 4 is drawn about every 6th turn ≈ **0.7⚔️/turn**, rising to ~0.9 as
+buildings thin the deck — against City Walls' flat **1⚔️/turn**. The building already out-rates it. What
+the pair actually owes is a **price** check, not a rate raise: over a 20-turn run City Walls buys ⚔️ at
+~1.2🔨 each (4🔨 up front + 1🔨/round maintenance), where Bow buys it at 0.67🔨 — capped at 3⚔️ per copy,
+since Bow self-exiles. The maintenance is the suspect number, and it needs a measurement before any move.
 
 ## Decided — money's topology: a one-way hub
 
@@ -512,10 +525,11 @@ no bonus at all**: it purely gates bronze, so its cost is pure route-capacity op
    because whether a military converter is fine depends entirely on whether ⚔️ is a sink or a way station.
 2. **Buildings out-rate work cards** — restores production's identity and makes territory (so military)
    worth something. Mostly landed as a side effect of the base-rate cut, and the culture pair since
-   resolved at `reading_seasons` (Sun Stone replaced Burial at the Forge/Archives shape, Cave Art cut);
-   **War Horse/City Walls** is the last pair owing a raise. A building's pitch is a *different kind of
-   thing* (never drawn, scales per worker, eats a slot), so the lever may be draw/deck pressure rather
-   than the Farm's number.
+   resolved at `reading_seasons` (Sun Stone replaced Burial at the Forge/Archives shape, Cave Art cut).
+   **War Horse/City Walls has left the list** — re-derived in *Diagnosis*: City Walls already out-rates
+   it per turn and takes no workers. What's open there is its 1🔨/round maintenance, a price question
+   needing a measurement, not a raise. A building's pitch is a *different kind of thing* (never drawn,
+   scales per worker, eats a slot), so the lever may be draw/deck pressure rather than the Farm's number.
 3. ~~**Superlinear food upkeep**~~ — ✅ landed as `floor(pop²/4)` at mission 1. What remains is the
    consequence: a stronger food faucet before Masonry (see *Consequences owed*).
 4. *(optional, later)* Narrow production to buildings only — hold until (2) lands, or the resource has a

@@ -157,7 +157,8 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   isn't a cost — board room (`occupiesTerritory` ∧ no `freeTerritory`). The prod legality gate
   `sim/actions.ts` reuses.
 - **`effects.ts`** — the **resolver spine**. A `CardEffect` is the one "what happens" descriptor,
-  carried in four `CardDef` timing slots: play-time `effect`, per-round `produces`, upkeep-boundary
+  carried in four `CardDef` timing slots: play-time `effect`, `produces` (each round the card stands —
+  every round for a building/route, the single one a Work box is out), upkeep-boundary
   `upkeep` (a threat drain / unplayed-event disaster / staffable maintenance), and each `on.*` handler.
   `runEffect(ctx, effect)` applies the declarative `resources` field (folded through stickers) then
   runs any `resolve` closure — the two *compose*. `resolveCard` runs a card's play `effect`;

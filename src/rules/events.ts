@@ -129,6 +129,8 @@ export function dispatchEvent(G: GameState, event: GameEvent): void {
   // (`sim/oracleKey.ts`); `sim/zoneOrderInvariance.test.ts` checks it (over a fixed fixture — extend it
   // when adding a card that reads across its batch siblings).
   for (const b of [...G.tableau]) if (isOperating(b)) run(b);
+  // A Work box is walked exactly like a tableau building, but stands only for the turn — `upkeep.ts`'s
+  // `discardWorkZone` files it right after this broadcast, so its `produces` fires once per play.
   for (const w of [...G.workZone]) if (isOperating(w)) run(w);
   for (const t of [...G.threats]) run(t);
   // Trade routes tick ungated like threats: they carry no `workers`, so there is no staffing to gate on.

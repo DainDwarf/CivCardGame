@@ -125,8 +125,9 @@ export function describeConditions(c: CardDef): string {
   return parts.join(' · ');
 }
 
-/** Presentation-only summary of a building card's per-round output. `includeWorkers` is false for
- *  the card face, which shows worker capacity as a column of meeples instead of text. */
+/** Presentation-only summary of a staffable's output for one round it stands — a building/wonder every
+ *  round, a Work box the single round it's out. `includeWorkers` is false for the card face, which shows
+ *  worker capacity as a column of meeples instead of text. */
 export function describeBuilding(b: CardDef, includeWorkers = true): string {
   const parts: string[] = [];
   if (b.produces?.resources) {
@@ -186,9 +187,9 @@ export function describeCard(c: CardDef): string {
   // way, appended after any one-shot `effect` above — a card may carry both (e.g. a threat with an
   // entry `effect` plus a per-round drain), and the two just concatenate.
   describeSignedResources(c.upkeep?.resources, parts);
-  // A staffable shows its declarative per-round output — `produces` — here (its workers are shown as
-  // meeples, not text). This is the sole path for an ongoing output; the `effect` branch above is its
-  // one-shot only.
+  // A staffable shows its declarative standing output — `produces` — here (its workers are shown as
+  // meeples, not text). This is the sole path for a production output; the `effect` branch above is its
+  // one-shot only. It must stay cadence-free: a Work box's number is per play, a building's per round.
   if (isStaffable(c)) {
     const stats = describeBuilding(c, false);
     if (stats) parts.push(stats);

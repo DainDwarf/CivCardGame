@@ -6,8 +6,9 @@ import { findStaffable, producingUnits } from './population';
 
 /**
  * A card's "what happens" descriptor, carried in four timing slots on `CardDef`: `effect` (on play),
- * `produces` (each round while staffed), `upkeep` (each round at the upkeep boundary), and each `on.*`
- * handler. The declarative `resources` and a `resolve` closure *compose* — both apply, resources first.
+ * `produces` (each round it stands, while staffed), `upkeep` (each round at the upkeep boundary), and
+ * each `on.*` handler.
+ * The declarative `resources` and a `resolve` closure *compose* — both apply, resources first.
  * Signs are neutral: a negative resource entry drains, a positive one grants — any of the 8 pools.
  */
 export interface CardEffect {
