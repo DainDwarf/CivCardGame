@@ -347,26 +347,32 @@ as a *better* faucet than Bead Workshop and its pitch is rewritten. Decide when 
 
 ### Culture leaves the Stone Age
 
-**Done, and it is now a fact rather than a forecast.** `rites_rituals` is removed ✅ (The First Trades took
-its slot) and `restless_people`'s 🎭 level 2 went with the Harsh Winter rewrite ✅. **No Stone Age mission
-asks for culture and no starting card makes it.** That is owed work, not a finished decision:
+**…and comes back at the convergence. ✅ Decided.** `rites_rituals` is removed (The First Trades took its
+slot) and `restless_people`'s 🎭 level 2 went with the Harsh Winter rewrite, so no *shipped* Stone mission
+asks for culture today. The resolution is a **new culture mission on the reconvergence of both branches**,
+between {`first_trades`, `reading_seasons`} and `first_temple` — the arc already rejoins there, and the
+culture lesson goes on that node. Not written yet; see its [dossier](missions/rites.md).
 
-- **Both wonders become unplayable.** Göbekli Tepe carries `cultureLevelReq: 1` and Pyramid
-  `cultureLevelReq: 2` — a hard play-gate, not a goal. With no 🎭 source anywhere in the age, the
-  Stone Age *capstone reward* is a card that cannot be played. This is the sharpest consequence of the
-  three and the one most likely to force culture back somewhere.
-- **Beer ✅ has a home** — reworked to **1🌾 → 2🎭** and granted by The First Trades (see its
-  [dossier](missions/first-trades.md) for why that mission and not another). **Cave Art and Burial do
-  not**: see the trial list above.
-- **Two culture goals are orphaned**: `first_temple` (🎭 level 2) and `pyramid` (🎭 level 2). Each
-  must drop its culture term, or culture must find a mission upstream of it.
-- **Hand size is pinned at 4 for the whole tutorial age.** Culture is its only lever, so the
-  hand-size-grows-with-your-civilization progression no longer happens anywhere in Stone.
+That closes the question and settles the consequences below — each is now *owed work with a known home*
+rather than an open decision:
+
+- **Both wonders stay playable** — ✅ resolved by the placement. Göbekli Tepe carries `cultureLevelReq: 1`
+  and Pyramid `cultureLevelReq: 2`, a hard play-gate rather than a goal; the convergence node sits
+  *directly upstream of* `first_temple`, so the 🎭 a player needs arrives before the wonder that demands
+  it. This is what forced the node to that slot rather than into Bronze.
+- **The 🎭 *producers* are a separate question.** Beer ✅ has a home (1🌾 → 2🎭, granted by The First
+  Trades). Cave Art and Burial are **not** rehabilitated by this decision — it restored the culture
+  *goal*, not the cut cards — and stay on *Cards on trial* to be re-slotted or cut on their own merits.
+- **The two orphaned culture goals keep their culture term**: `first_temple` (🎭 level 2) and `pyramid`
+  (🎭 level 2) are both downstream of the node, so neither has to drop it.
+- **Hand size stays pinned at 4 until the convergence.** Culture is its only lever, so the
+  hand-size-grows-with-your-civilization progression now happens *once* in Stone, on the node — which
+  makes it the age's reward for reconverging rather than a steady climb.
 - ⬜ **The culture-level curve is un-re-read.** Levels sit at cumulative **10 / 30 / 70** (`CULTURE_STEP
   = 10`, each band double the last, `rules/culture.ts`) — set when every converter ran ×2. Beer is the
   first culture producer priced at the new rates (1🌾 → 2🎭), and nothing in the pass has yet *asked*
-  for a culture level, so the curve has had no mission to be judged against. Settle it at the first
-  rebalanced mission that wants 🎭 — the Rites convergence node, if that lands — and expect it to move
+  for a culture level, so the curve has had no mission to be judged against. **Settle it at the
+  convergence node**, now that there is a definite mission to judge it against, and expect it to move
   Beer's rate rather than the other way round.
 - ✅ **`sim/enablers.test.ts`'s culture cases are off the shipped catalogue entirely.** They needed a
   mission whose *goal* is a culture level; that used to be `rites_rituals` and would next have been
@@ -377,15 +383,21 @@ asks for culture and no starting card makes it.** That is owed work, not a finis
   culture goal to anchor on. The 🎭 shape is now pinned entirely off the catalogue — which is what lets
   culture re-enter the age wherever it lands without dragging a test re-point behind it.
 
-Two candidate resolutions, neither decided:
+**Ruled out: a culture mission early in Bronze.** It was what the age-promotes-a-resource framing wanted
+once money vacated that slot, and it loses to one fact — both wonders gate on a culture *level*, and
+Göbekli Tepe is the Stone capstone's own reward. Culture arriving in Bronze would ship a capstone reward
+that cannot be played at the moment it is granted. So the resource stays in the tutorial age, and what
+Bronze promotes is open again.
 
-- **A culture mission early in Bronze** — what the age-promotes-a-resource framing wants, now that
-  money has vacated that slot.
-- **Rites & Rituals returns as a convergence node** after both Stone branch tips, i.e. between
-  {The First Trades, Harsh Winter} and `first_temple` (jotted in [`IDEAS.md`](IDEAS.md)). Keeps 🎭 in
-  the tutorial age where the wonders' gates want it, gives Burial and Cave Art a home, and needs
-  whichever card produces the culture granted one column upstream — the same col-2-grants-col-3 shape
-  the restructure already uses.
+**What the node still owes**, when it is written:
+
+- `first_temple`'s `prereqs` re-point from `['first_trades', 'reading_seasons']` onto the node, and it
+  takes the col-4 slot the capstone holds today — so the capstone shifts right and both tips feed the
+  node instead. The only DAG edit in the age still outstanding.
+- ⬜ **The lower branch's culture source is unresolved** — the one thing the decision doesn't settle.
+  The forcing rule the restructure was built on says a mission may only demand a resource an upstream
+  mission granted the means to make; Beer reaches the node down the *upper* branch only, so a player
+  coming through `reading_seasons` arrives with no 🎭 producer at all. Decide it at the node.
 
 ## Cards on trial
 
@@ -396,8 +408,8 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
 | Card | Charge | Resolution |
 |---|---|---|
 | ~~Storytelling~~ | — | ✅ **left the list** — reworked to 1🔬/worker and granted by `harsh_winter` |
-| Cave Art (2🎭 work) | 🎭 level 1 is 10🎭 — a whole tutorial mission's output for +1 hand size | ❌ **no home** — `rites_rituals` was it. See *Culture leaves the Stone Age* |
-| Burial (1🎭 building) | was `rites_rituals`' reward, and that mission is now deleted | ❌ **no home** — same fate as Cave Art, and the same two candidate resolutions |
+| Cave Art (2🎭 work) | 🎭 level 1 is 10🎭 — a whole tutorial mission's output for +1 hand size | ❌ **no home.** The convergence node does *not* rehabilitate it — that decision restored the culture *goal*, not these cards. Re-slot or cut on its own merits |
+| Burial (1🎭 building) | was `rites_rituals`' reward, and that mission is now deleted | ❌ **no home** — same as Cave Art |
 
 Bead Workshop and Bartering have **left this list** — both are reworked and granted by `raiders_at_border`;
 see *Landed early* above.

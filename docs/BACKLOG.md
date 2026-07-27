@@ -34,12 +34,15 @@
     settlement gives tearing-down its natural context. `[?]`
   - **The arc's two middle branches are being restructured** on the `trade-redesign` branch —
     `rites_rituals` and `restless_people` are replaced by *The First Trades* (🪙) and *Harsh Winter*
-    (famine threat), inverting each branch to pressure-first. Both branches have **landed**
-    (`rites_rituals` and `restless_people` deleted, The First Trades and Harsh Winter shipped); what
-    remains is Harsh Winter's balance pass. See
+    (famine threat), inverting each branch to pressure-first. Both branches have **landed and are
+    measured** (`rites_rituals` and `restless_people` deleted, The First Trades and Harsh Winter
+    shipped). What remains in the age is **one new mission**: a culture-goal node on the reconvergence of
+    both branches, decided and not yet written ([rites](missions/rites.md)) — it re-points
+    `first_temple`'s prereqs, and its blocking question is what produces 🎭 on the lower branch. See
     [`REBALANCE.md`](REBALANCE.md) → *Stone Age branches 3–4 restructure*, plus the
     [first-trades](missions/first-trades.md) and [harsh-winter](missions/harsh-winter.md) dossiers.
-    Step 9's substeps below are written against the old arc and are stale for **9.3 / 9.5 / 9.6**.
+    Step 9's substeps below are written against the old arc and are stale for **9.3 / 9.5 / 9.6**;
+    **9.6b** is the new culture node's lesson.
 
 - **Step 7 — Bronze Age arc** (content expansion) — new cards + missions themed to the Bronze
   Age, **no new mechanics**. Continues unlocking cards/stickers/boards through mission rewards.
@@ -187,6 +190,11 @@
     the Storytelling work card). **Post-clear:** the reward unlocks the **Calendar** action (cost 1🔬,
     a look-only peek at the top 3 cards) — the first peek-family card, showing what science *does*
     (foresight + the look-only interaction popup).
+  - **9.6b — Rites & Rituals tutorial** — teach **culture** (🎭) on the reconvergence node
+    ([dossier](missions/rites.md)), the age's last unexercised resource and the only place hand size
+    grows in Stone. It sits between both branch tips and the capstone, so it is also where the two
+    routes' lessons rejoin — and it must land *before* 9.7, since both wonders gate on a culture level.
+    Mission not written; the tutorial follows its design.
   - **9.7 — Göbekli Tepe tutorial** — the capstone (mission 6.7 / `first_temple`, prereq **both** branch
     tips). Teach **wonders**: a wonder plays exactly like a building (tableau slot, staffed, produces every
     round — Göbekli Tepe is the multi-worker one: +1🔨+1🪙+1🎭 *per* staffed worker, culture-level-1

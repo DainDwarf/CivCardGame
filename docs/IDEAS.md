@@ -14,13 +14,6 @@
    look like a rule with no job: a deck too thin to survive its own reshuffle is already punished by
    the game, so the cap may be protecting against nothing. Would remove a committed core rule, so it
    wants a deliberate look rather than a quiet deletion.
- - **Rites & Rituals as a convergence node.** The mission was deleted from the Stone arc to free col 3
-   for The First Trades, which leaves the tutorial age with no 🎭 at all — and both wonders gated behind
-   a culture level they can't reach. Bring it back *after* both branch tips instead, between
-   {The First Trades, Harsh Winter} and `first_temple`: the reconvergence the arc already has, with the
-   culture lesson on it. Its culture source comes from **both tips granting a culture card**, so either
-   branch arrives equipped — The First Trades already grants Beer; `reading_seasons` owes the other.
-   That would leave Burial (and Cave Art, if unused) to be granted by the node itself, or cut.
  - Give the military boards a +1 territory per conquest/territory giving cards?
  - Decreasing effectiveness of old cards? (If card comes from 2 ages ago, output -1, -2, etc?)
  - **Parameterized objective/threat cards** — today an "N-of-something" mission
