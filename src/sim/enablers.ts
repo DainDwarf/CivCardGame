@@ -339,7 +339,10 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   }
 
   // Population is the worker for a per-worker producer (`workers >= 1`); the staffing yields the output, so
-  // it reads `produces` only, not the card's one-shot play `effect`.
+  // it reads `produces` only, not the card's one-shot play `effect`. A Work box counts here despite paying
+  // once per play: what's credited is the *worker*, which restaffs whatever is drawn each round, so the
+  // capacity recurs even when no single card does — the asymmetry with `producerCredit`, which credits
+  // owning one named card and so excludes `work`.
   if (goalValued.population === undefined) {
     const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, (c) => (c.workers ?? 0) >= 1, false) : 0);
     if (w > 0) {
