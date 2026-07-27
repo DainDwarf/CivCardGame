@@ -5,6 +5,7 @@ import { STICKERS } from './stickers';
 import { BOARD_STICKERS } from './boardStickers';
 import { BOARDS } from './boards';
 import { AGES, ageColSpans } from './ages';
+import { foldOrder } from '../rules/campaign';
 
 // The mission *spine* mechanism (seedMissionCards, objectiveMet/defeatMet, the bus-driven win/loss
 // flags) is asserted on synthetic fixtures in `rules/missionSpine.test.ts`. What's left here are the
@@ -64,6 +65,24 @@ describe('mission catalogue coherence', () => {
         expect(BOARDS[to], `${m.id} → reward → boardUpgrade.to ${to}`).toBeDefined();
       }
     }
+  });
+
+  // A bad prereq id is the one content error that surfaces nothing at runtime: unlike an objective or
+  // threat id — which throws the moment a run seeds — `campaign.ts`'s `isAvailable` just never
+  // satisfies it, so the mission silently drops out of the campaign for the whole game.
+  it('every prereq names a real mission', () => {
+    for (const m of Object.values(MISSIONS)) {
+      for (const prereqId of m.prereqs) {
+        expect(MISSIONS[prereqId], `${m.id} → prereq → ${prereqId}`).toBeDefined();
+      }
+    }
+  });
+
+  // Asserted *through* `foldOrder` — the topological sort every reward-folding consumer already runs
+  // on — so this pins the ordering the DAG depends on rather than a re-derived copy of it. A mission
+  // inside a cycle is as unreachable as one naming a missing prereq, and just as quiet.
+  it('the prereq graph is acyclic', () => {
+    expect(() => foldOrder(MISSIONS, new Set(Object.keys(MISSIONS)))).not.toThrow();
   });
 
   // Each age covers a slice of the DAG (`ages.ts`'s `ageColSpans`), so a standard mission must be

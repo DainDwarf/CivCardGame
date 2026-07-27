@@ -119,6 +119,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Coherence-check mission `prereqs` ids** ✅ — the suite pinned a mission's `objectiveCardId`,
+  threat/event ids and every reward-unlock id against the real catalogues, but **not** `prereqs` — the
+  one content id that fails silently: `campaign.ts`'s `isAvailable` simply never satisfies a bad one, so
+  the mission drops out of the campaign for the whole game with no error anywhere. Two cases in
+  `content/missions.test.ts`: an id-existence iterator, and acyclicity asserted *through* `foldOrder`
+  (the real topological sort, not a re-derived copy) — a mission inside a cycle being just as
+  unreachable, and just as quiet. Both verified against a deliberately broken catalogue.
 - **Unified play area** ✅ — buildings, Work boxes and trade routes all take one **territory** slot and
   render in one grid. `rules/territory.ts` (was `tableau.ts`) folds the cap over `placedCards`; the
   playability gate keys on `cards.ts`'s new `occupiesTerritory`. A Work box rents its slot for the turn;

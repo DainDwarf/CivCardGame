@@ -18,7 +18,9 @@ export interface MissionDef {
    *  (`meta/CampaignMap.tsx`'s `MissionFlowPopup`, 'detail' step). */
   lore: string;
   /** Mission ids that must be completed (see `rules/campaign.ts`) before this one is
-   *  available. Empty = a DAG root, always available. */
+   *  available. Empty = a DAG root, always available. Each id must name a real mission and the graph
+   *  must stay acyclic (both pinned by a coherence test) — a prereq no clear can ever satisfy raises
+   *  nothing on its own, it just drops the mission out of the campaign. */
   prereqs: string[];
   /** Threat cards this mission seeds at setup, one instance each (`rules/threats.ts`'s `addThreat`).
    *  Declarative rather than an imperative `addThreat` call inside `setup` so the mission-detail
