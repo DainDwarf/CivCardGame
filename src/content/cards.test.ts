@@ -136,7 +136,7 @@ describe('envious_population', () => {
 // Failing Stone Tools drains 🔨 per worker staffed *in a building* — the buildings-only rule is the
 // whole identity of the threat, so it's pinned here against the real catalogue rather than a fixture.
 // Each case ticks the threat via the `endTurn` broadcast, the same path a real round uses. The staffed
-// cards are chosen to produce anything *but* production (Farm → 🌾, Burial → 🎭, Foraging → 🌾), so the
+// cards are chosen to produce anything *but* production (Farm → 🌾, Sun Stone → 🎭, Foraging → 🌾), so the
 // asserted 🔨 delta is the drain alone and not a producer's output netted against it.
 describe('failing_stone_tools', () => {
   const tick = (G: ReturnType<typeof blankState>) => {
@@ -150,7 +150,7 @@ describe('failing_stone_tools', () => {
     const G = blankState('finding_copper');
     G.tableau = [
       { id: 1, cardId: 'farm', workers: 1 },
-      { id: 2, cardId: 'burial', workers: 1 },
+      { id: 2, cardId: 'sun_stone', workers: 1 },
     ];
     expect(tick(G)).toBe(8);
   });

@@ -280,7 +280,7 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   `upkeep.ts`'s `resolveHandEvents`). `isDeckable(card)` is the single "a card the player builds decks
   with" predicate (excludes event/threat/objective); `occupiesTerritory(card)` the single "takes a slot
   in the play area" one (`territory.ts`). Holds the Paleolithic starting set + the first
-  Stone Age structures (Farm/Hut/Burial, the Göbekli Tepe wonder) + the endless missions' own cards.
+  Stone Age structures (Farm/Hut/Sun Stone, the Göbekli Tepe wonder) + the endless missions' own cards.
 - **`decks.ts`** — `DeckDef` (`cards` = meta instance ids) plus `DeckSeed`/`DEFAULT_DECKS` (authored in
   plain cardIds, resolved by `buildSeedDecks`). A fresh player starts with one editable deck — the
   buildingless **Founding deck**; there's no read-only "built-in" tier.

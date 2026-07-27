@@ -258,7 +258,7 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🛖', description: 'When built: +1 🧍' },
     effect: { resources: { population: 1 } },
   },
-  burial: { id: 'burial', name: 'Burial', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '⚰️' } },
+  sun_stone: { id: 'sun_stone', name: 'Sun Stone', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { culture: 2 } }, workers: 1, display: { art: '☀️' } },
   bead_workshop: { id: 'bead_workshop', name: 'Bead Workshop', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { money: 1 } }, workers: 1, display: { art: '📿' } },
   forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
   // The science counterpart of the Forge, and priced on the same shape: a permanent building doubling
@@ -309,6 +309,9 @@ export const CARDS: Record<string, CardDef> = {
     // file once the effect has already filed the copy (see `moves.ts`'s `playCard`).
     effect: { resources: { military: 3 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
   },
+  // ⚠️ Cut, not yet deleted: it makes the same 2🎭 as Beer for no 🌾, so it obsoletes a shipped card and
+  //   has no reward slot to be granted from. It survives only because six sim baselines still stock it,
+  //   and each is re-cut at its own mission's balance pass — delete it with the last of them.
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { resources: { food: 1 } }, display: { art: '🐕' }, effect: { resources: { military: 1 } } },

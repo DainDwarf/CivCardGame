@@ -218,15 +218,19 @@ export const MISSIONS: Record<string, MissionDef> = {
       'The winter broke, and your people counted what it had cost them. It came early and no one saw ' +
       'it coming — that is the part they cannot forgive. So the elders set the young to watching: where ' +
       'the sun stands at its lowest, which birds leave and when, how many nights fall between the first ' +
-      'frost and the last. Learn the turning of the year, and no season will ever arrive unannounced again.',
+      'frost and the last. What they learn goes into stone — a marker raised on the ridge where the sun ' +
+      'turns back, so the reckoning outlives the watchers who made it. Learn the turning of the year, ' +
+      'and no season will ever arrive unannounced again.',
     prereqs: ['harsh_winter'],
     objectiveCardId: 'reading_seasons_goal',
     victoryHint: 'Stockpile 10 🔬 science.',
     failureHint: null,
     kind: 'standard',
-    // ⚠️ Reward-less by omission, not by design: this mission owes the branch's culture card — see
-    // docs/REBALANCE.md → *Culture leaves the Stone Age*. Influence amount provisional.
-    reward: { influence: 9 },
+    // Grants the branch's culture card, so the convergence node downstream is reached with a culture
+    // *building* from this tip and a culture *work card* (Beer) from the other — two different kinds of
+    // producer rather than a second copy of one. Its rate is provisional: nothing has yet asked for a
+    // culture level, so the convergence node's sweep is the first thing able to judge it.
+    reward: { influence: 9, unlockCardIds: ['sun_stone'] },
     map: { col: 3, row: 1 },
     age: 'stone',
   },

@@ -511,17 +511,17 @@ describe('culture enabler', () => {
 
   it('skips the gate-unlock when culture is itself the objective', () => {
     // Reaching the level *is* the win there, scored directly — so the gated producer isn't a separate enabler.
-    const m = deriveEnablers(cultureWinRoot(['gobekli_tepe', 'burial', 'burial']));
+    const m = deriveEnablers(cultureWinRoot(['gobekli_tepe', 'sun_stone', 'sun_stone']));
     expect(m.weight.culture ?? 0).toBe(0);
   });
 
   it('credits hand-size throughput per culture level even when culture is goal-valued', () => {
     // A bigger hand helps every goal, not the one the level might be — so unlike the gate-unlock it rides no
     // skip. Level-based (not linear in raw culture): flat within a level, a step up at each new level.
-    const m = deriveEnablers(cultureWinRoot(['burial', 'burial', 'foraging']));
+    const m = deriveEnablers(cultureWinRoot(['sun_stone', 'sun_stone', 'foraging']));
     expect(m.handsizePerLevel ?? 0).toBeGreaterThan(0);
     const pot = (culture: number) => {
-      const G = cultureWinRoot(['burial', 'burial', 'foraging']);
+      const G = cultureWinRoot(['sun_stone', 'sun_stone', 'foraging']);
       G.resources = emptyResources();
       G.resources.culture = culture;
       return enablerPotential(G, m);
@@ -536,7 +536,7 @@ describe('culture enabler', () => {
   });
 
   it('handSize: false sets no hand-size credit even when the deck grows culture', () => {
-    const m = deriveEnablers(cultureWinRoot(['burial', 'burial', 'foraging']), { handSize: false });
+    const m = deriveEnablers(cultureWinRoot(['sun_stone', 'sun_stone', 'foraging']), { handSize: false });
     expect(m.handsizePerLevel).toBeUndefined();
   });
 });

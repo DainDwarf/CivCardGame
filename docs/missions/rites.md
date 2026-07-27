@@ -34,8 +34,8 @@ judged against — this is that mission. Expect the sweep to move **Beer's rate*
 - **`first_temple`'s `prereqs`** re-point from `['first_trades', 'reading_seasons']` onto this node, and
   the capstone shifts col 4 → 5. The last outstanding DAG edit in the age. Note the coherence tests
   cannot catch a real-but-*wrong* prereq id — naming the right mission is on whoever makes the edit.
-- **Nothing, for Cave Art and Burial.** They stay stranded on *Cards on trial* and are resolved
-  separately — this node does not adopt them.
+- **Nothing, for Cave Art and Burial** — both were resolved upstream instead. Burial is now **Sun Stone**
+  (4🔨 → 2🎭/worker), granted by `reading_seasons`; Cave Art is cut. This node adopts neither.
 - **`rules/objective.test.ts` / `sim/objective.test.ts` / `sim/enablers.test.ts`** need no re-point: they
   read synthetic culture fixtures (`test_culture_objective`, `test_culture_win`) precisely so culture
   could re-enter the age without dragging tests behind it.

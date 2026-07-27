@@ -37,7 +37,7 @@ nothing but noise.
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
 | 3 | `raiders_at_border` · `harsh_winter` | ✅ **done** — the **pressure** pair, now first in each branch; both realigned, re-fixtured and measured |
-| 4 | *The First Trades* · `reading_seasons` | 🟡 — the **resource** pair; First Trades ✅ realigned, re-fixtured, measured; `reading_seasons` ✅ re-fixtured and measured (100% at heuristic/greedy/planner/oracle, 0% random) — **no rate change decided yet**, which is what still holds the row open |
+| 4 | *The First Trades* · `reading_seasons` | ✅ **done** — the **resource** pair; both realigned, re-fixtured, measured. `reading_seasons` needed no rate change (100% at heuristic/greedy/planner/oracle, 0% random) and now grants **Sun Stone**, the branch's culture card, whose own rate is settled at the convergence node |
 | 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 6 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
 | 7 | `pyramid` · `accounting` | ⬜ — both hoard goals; pyramid blocked on the food ceiling |
@@ -237,7 +237,7 @@ up one of the dossiers needs this list rather than the table's shorthand:
 | Mission | Edit |
 |---|---|
 | `raiders_at_border` | ✅ `prereqs` → `['growing_numbers']`, `map` col **2** · ✅ reward gains Bead Workshop + Bartering (keeps Chiefdom) |
-| `rites_rituals` | ✅ **deleted**, along with `rites_rituals_goal` — strands **Burial**, see *Cards on trial* |
+| `rites_rituals` | ✅ **deleted**, along with `rites_rituals_goal` — stranded **Burial**, since re-homed as **Sun Stone** on `reading_seasons` |
 | `restless_people` | ✅ **rewritten** as `harsh_winter` at col 2 off Growing Numbers — new id, threat (`deep_cold`), goal and reward; `unrest` and `restless_people_goal` deleted with it ([dossier](missions/harsh-winter.md)) |
 | `reading_seasons` | ✅ `prereqs` → `['harsh_winter']` · ✅ `map` col 2 → **3** · ✅ **reward is now Influence-only** — owes a new one, and it should be this branch's **culture card** |
 | *The First Trades* | ✅ new: `prereqs: ['raiders_at_border']`, stone col 3 row -1 |
@@ -262,7 +262,8 @@ rate-level points for this pass:
   the same constants. A tutorial mission is better one-dimensional than correct-but-layered.
 - **Storytelling 2🔬 → 1🔬**/worker, granted here. This closes one of the three work-card/building pairs
   the *Diagnosis* below still owed: Archives (4🔨, 2🔬/worker) now **doubles** it, the shape Forge has
-  against Toolmaking. Cave Art/Burial and War Horse/City Walls remain.
+  against Toolmaking. Cave Art/Burial has since been resolved at `reading_seasons` (Sun Stone replaced
+  Burial, Cave Art is cut); War Horse/City Walls remains.
 - **Fire** is new and granted here: an action paying 1🔬 for one card discarded from hand — Storytelling's
   alternative rather than its better, the same 1🔬 bought with a card instead of a worker-round. It
   replaces **Calendar**, which is benched onto *Cards on trial*: the pair feeds a mission that asks the
@@ -321,10 +322,14 @@ rather than on rate. Unmeasured — see the dossier's Balance section for what t
 `raiders_at_border.json` is re-cut and measured (see *Mission 3* above). `rites_rituals.json` is deleted
 along with its mission, and its rows are stripped from both files in `baselines/results/`.
 
-Separately, and predating this branch: several fixtures stock **Storytelling and Cave Art**, which are in
-neither `STARTING_COLLECTION` nor any mission's `unlockCardIds` — the *Cards on trial* list, being measured
-in decks no player can build. Every such fixture is re-cut at its own mission's turn, and the trial list is
-what resolves the underlying strandedness.
+Separately, and predating this branch: several fixtures stock **Cave Art**, which is in neither
+`STARTING_COLLECTION` nor any mission's `unlockCardIds` — the *Cards on trial* list, being measured in decks
+no player can build. Every such fixture is re-cut at its own mission's turn, and the trial list is what
+resolves the underlying strandedness. (Storytelling has left that list — `harsh_winter` grants it.) Cave Art
+is now **cut but not yet deleted**: six fixtures still reference it — `first_temple`, `finding_copper`,
+`masonry`, `accounting`, `roads`, `pyramid` — and deleting the card would fail their load, so it goes with
+the last of them to be re-cut. `first_temple.json` is additionally marked STALE now: Burial in it became
+Sun Stone at a new rate, so its committed numbers describe a deck it no longer holds.
 
 A *missing* prereq id used to fail nothing — `campaign.ts`'s `isAvailable` just never satisfies it, so
 the mission dropped out of the campaign silently. `content/missions.test.ts` now pins prereq id
@@ -360,10 +365,12 @@ That closes the question and settles the consequences below:
 
 - **Both wonders stay playable.** Göbekli Tepe carries `cultureLevelReq: 1` and Pyramid
   `cultureLevelReq: 2` — a hard play-gate, not a goal — and the node sits upstream of both.
-- **The 🎭 *producers* are a separate question.** Beer ✅ has a home (1🌾 → 2🎭, granted by The First
-  Trades), and a further culture reward is planned on the lower branch. Cave Art and Burial are **not**
-  rehabilitated by this decision — it restored the culture *goal*, not the cut cards — and stay on
-  *Cards on trial* to be re-slotted or cut on their own merits.
+- ✅ **The 🎭 *producers* are settled, one per branch.** Beer (1🌾 → 2🎭 work card) is granted by The First
+  Trades on the upper branch; **Sun Stone** (4🔨 → 2🎭/worker building, the re-rated Burial) by
+  `reading_seasons` on the lower one. Since the node ANDs both tips, a player always arrives holding
+  both — and they are different *kinds* of producer, which is the point: a work card played from hand
+  against a permanent building eating a territory slot. Cave Art is cut rather than rehabilitated; it
+  made Beer's 2🎭 for no 🌾, so it obsoleted a shipped card.
 - **The two orphaned culture goals keep their culture term**: `first_temple` (🎭 level 2) and `pyramid`
   (🎭 level 2) are both downstream of the node.
 - **Hand size stays pinned at 4 until the convergence**, culture being its only lever.
@@ -399,8 +406,8 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
 | Card | Charge | Resolution |
 |---|---|---|
 | ~~Storytelling~~ | — | ✅ **left the list** — reworked to 1🔬/worker and granted by `harsh_winter` |
-| Cave Art (2🎭 work) | 🎭 level 1 is 10🎭 — a whole tutorial mission's output for +1 hand size | ❌ **no home.** The convergence node does *not* rehabilitate it — that decision restored the culture *goal*, not these cards. Re-slot or cut on its own merits |
-| Burial (1🎭 building) | was `rites_rituals`' reward, and that mission is now deleted | ❌ **no home** — same as Cave Art |
+| Cave Art (2🎭 work) | makes the same 2🎭 as Beer for no 🌾, so it obsoletes a shipped card, and no reward slot is left to grant it from | ✅ **decided: cut.** Not yet deleted — six baselines still stock it (`first_temple`, `finding_copper`, `masonry`, `accounting`, `roads`, `pyramid`) and would fail to load; it goes with the last of them to be re-cut |
+| ~~Burial~~ | — | ✅ **left the list** — renamed **Sun Stone**, re-rated to 4🔨 → 2🎭/worker, and granted by `reading_seasons` |
 | Calendar (1🔬 → peek top 3) | benched off `harsh_winter` for **Fire**: it *spends* the resource the mission it fed asks you to stockpile, and the peek may not be worth a card at all | ❌ **no home.** Re-slot or cut — but it is the only shipped consumer of `peekTop` and the look-only `reveal` interaction, so a cut costs those a live example |
 
 Bead Workshop and Bartering have **left this list** — both are reworked and granted by `raiders_at_border`;
@@ -464,7 +471,10 @@ Second, **buildings never out-rate the free work card** of their resource, while
 territory slot, and a draw — Cave Art 2🎭 vs Burial 1🎭 · War Horse 4⚔️ vs City Walls 1⚔️. So
 production's only sink is a card category nobody needs. Cutting the base work rates to 1 has fixed three
 pairs as a side effect (Farm now *matches* Foraging, Forge *doubles* Toolmaking, and Archives doubles
-Storytelling once it drops to 1🔬 at Harsh Winter); the **two** above still need the building side raised.
+Storytelling once it drops to 1🔬 at Harsh Winter). The culture pair went the other way, by **replacing
+the building rather than raising it**: Burial became **Sun Stone** at 4🔨 → 2🎭/worker — the Forge/Archives
+shape, permanent output at the work card's rate — and Cave Art is cut, leaving Beer as culture's work
+card. **War Horse / City Walls is the last pair owing a raise.**
 
 ## Decided — money's topology: a one-way hub
 
@@ -501,9 +511,11 @@ no bonus at all**: it purely gates bronze, so its cost is pure route-capacity op
    Bead Workshop (re-pointed to a building) are done; **Raiding** is the last edge to cut. Unblocks the rest,
    because whether a military converter is fine depends entirely on whether ⚔️ is a sink or a way station.
 2. **Buildings out-rate work cards** — restores production's identity and makes territory (so military)
-   worth something. Mostly landed as a side effect of the base-rate cut; two pairs (Cave Art/Burial,
-   War Horse/City Walls) still need the building side raised. A building's pitch is a *different kind of thing* (never drawn, scales per
-   worker, eats a slot), so the lever may be draw/deck pressure rather than the Farm's number.
+   worth something. Mostly landed as a side effect of the base-rate cut, and the culture pair since
+   resolved at `reading_seasons` (Sun Stone replaced Burial at the Forge/Archives shape, Cave Art cut);
+   **War Horse/City Walls** is the last pair owing a raise. A building's pitch is a *different kind of
+   thing* (never drawn, scales per worker, eats a slot), so the lever may be draw/deck pressure rather
+   than the Farm's number.
 3. ~~**Superlinear food upkeep**~~ — ✅ landed as `floor(pop²/4)` at mission 1. What remains is the
    consequence: a stronger food faucet before Masonry (see *Consequences owed*).
 4. *(optional, later)* Narrow production to buildings only — hold until (2) lands, or the resource has a
