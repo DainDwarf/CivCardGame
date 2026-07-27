@@ -24,21 +24,9 @@ grows — so it reads as the reward for reconverging rather than one step of a s
 **Goal — a culture level**, which is what the wonders gate on, so the mission teaches exactly what the
 capstone then asks for. The threshold is open (see the curve note below).
 
-**⬜ The blocking open question: what makes the 🎭 on the lower branch.** The restructure's forcing rule
-is that a mission may only demand a resource an upstream mission granted the means to make. Today the
-only shipped 🎭 producer is **Beer**, granted by `first_trades` — the **upper** tip. A player who came
-down `harsh_winter` → `reading_seasons` reaches this node with no culture producer at all, and the goal
-is unreachable. Three shapes, none chosen:
-
-1. **The node grants its own producer** and the goal is met with it during the mission — breaks the
-   col-N-grants-col-N+1 shape the rest of the arc uses, but is self-contained.
-2. **`reading_seasons` grants a 🎭 producer** — it has owed a card reward since Calendar moved upstream
-   to `harsh_winter`, so the slot is already empty and waiting. Needs a card to put there.
-3. **Beer moves upstream** of the fork so both routes own it.
-
-⚠️ **Cave Art and Burial are not the answer by default.** The decision here restored the culture *goal*,
-not the two cut cards; they remain on REBALANCE's *Cards on trial* to be re-slotted or cut on their own
-merits, and reaching for them to fill option 2 would be a separate call.
+**The 🎭 producer is in hand on arrival.** `prereqs` is an AND, so both tips are cleared before this node
+opens and **Beer** (granted by `first_trades`) is always owned. A further culture reward is planned on
+the lower branch.
 
 **⚠️ The culture-level curve is settled here.** Levels sit at cumulative **10 / 30 / 70**
 (`CULTURE_STEP = 10`, each band double the last, `rules/culture.ts`), set back when every converter ran

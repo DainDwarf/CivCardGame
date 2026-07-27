@@ -389,15 +389,9 @@ Göbekli Tepe is the Stone capstone's own reward. Culture arriving in Bronze wou
 that cannot be played at the moment it is granted. So the resource stays in the tutorial age, and what
 Bronze promotes is open again.
 
-**What the node still owes**, when it is written:
-
-- `first_temple`'s `prereqs` re-point from `['first_trades', 'reading_seasons']` onto the node, and it
-  takes the col-4 slot the capstone holds today — so the capstone shifts right and both tips feed the
-  node instead. The only DAG edit in the age still outstanding.
-- ⬜ **The lower branch's culture source is unresolved** — the one thing the decision doesn't settle.
-  The forcing rule the restructure was built on says a mission may only demand a resource an upstream
-  mission granted the means to make; Beer reaches the node down the *upper* branch only, so a player
-  coming through `reading_seasons` arrives with no 🎭 producer at all. Decide it at the node.
+**The one DAG edit it owes:** `first_temple`'s `prereqs` re-point from `['first_trades',
+'reading_seasons']` onto the node, which takes the col-4 slot the capstone holds today — so the capstone
+shifts right and both tips feed the node instead. The last outstanding DAG edit in the age.
 
 ## Cards on trial
 
