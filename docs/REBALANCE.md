@@ -36,7 +36,7 @@ nothing but noise.
 |---|---|---|
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
-| 3 | `raiders_at_border` · *Harsh Winter* | 🟡 — the **pressure** pair, now first in each branch; Raiders ✅ measured, Harsh Winter holds `restless_people`'s slot at col 2 but is not written |
+| 3 | `raiders_at_border` · `harsh_winter` | 🟡 — the **pressure** pair, now first in each branch; Raiders ✅ measured, Harsh Winter ✅ written (realigned) but **unswept — no fixture yet** |
 | 4 | *The First Trades* · `reading_seasons` | 🟡 — the **resource** pair; First Trades ✅ realigned, re-fixtured, measured; `reading_seasons` moved to col 3, otherwise untouched |
 | 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 6 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
@@ -222,7 +222,7 @@ it, and a pressure mission demands no resource — so the order inverts.
 | | col 2 — pressure | col 3 — resource |
 |---|---|---|
 | **upper** (row -1) | `raiders_at_border` — event waves; goal and pressure kept, **moved** | **The First Trades** — 🪙 + trade routes, new ([dossier](missions/first-trades.md)) |
-| **lower** (row +1) | **Harsh Winter** — famine threat, a rewrite of `restless_people` ([dossier](missions/harsh-winter.md)) | `reading_seasons` — 10🔬 kept, **moved**, and loses its reward |
+| **lower** (row +1) | **Harsh Winter** ✅ — ⚔️ toll + famine ramp, a rewrite of `restless_people` ([dossier](missions/harsh-winter.md)) | `reading_seasons` — 10🔬 kept, **moved**, and loses its reward |
 
 Each col-2 mission's **reward is the col-3 mission's toolkit**: `raiders_at_border` grants the money
 pair (Bead Workshop, Bartering), Harsh Winter grants the science pair (Storytelling, Calendar).
@@ -238,22 +238,35 @@ up one of the dossiers needs this list rather than the table's shorthand:
 |---|---|
 | `raiders_at_border` | ✅ `prereqs` → `['growing_numbers']`, `map` col **2** · ✅ reward gains Bead Workshop + Bartering (keeps Chiefdom) |
 | `rites_rituals` | ✅ **deleted**, along with `rites_rituals_goal` — strands **Burial**, see *Cards on trial* |
-| `restless_people` | ✅ `prereqs` → `['growing_numbers']`, `map` col **2** — the slot swap only · **rewritten** as Harsh Winter — new id, threat, goal and reward; see its dossier for what that retires |
-| `reading_seasons` | ✅ `prereqs` → `['restless_people']` (re-points to the Harsh Winter id when it lands) · ✅ `map` col 2 → **3** · **reward is now empty** (Calendar moves upstream) — owes a new one, and it should be this branch's **culture card** |
-| `restless_people` | ✅ Beer's grant moved to `first_trades`, so the Harsh Winter rewrite inherits a card-less reward to re-fill |
+| `restless_people` | ✅ **rewritten** as `harsh_winter` at col 2 off Growing Numbers — new id, threat (`deep_cold`), goal and reward; `unrest` and `restless_people_goal` deleted with it ([dossier](missions/harsh-winter.md)) |
+| `reading_seasons` | ✅ `prereqs` → `['harsh_winter']` · ✅ `map` col 2 → **3** · ✅ **reward is now Influence-only** (Calendar moved upstream) — owes a new one, and it should be this branch's **culture card** |
 | *The First Trades* | ✅ new: `prereqs: ['raiders_at_border']`, stone col 3 row -1 |
 | `first_temple` | ✅ `prereqs` → `['first_trades', 'reading_seasons']` — both tips are final, and the lower one never moves again: the swap put `reading_seasons` at the tip, so the Harsh Winter rename doesn't reach this line |
 
-**Landed — the upper branch, and the lower branch's order.** `raiders_at_border` moved to col 2 off
-Growing Numbers and grants the reworked money pair; **The First Trades** now holds col 3 and
-`rites_rituals` is deleted. On the lower branch the two missions have **traded slots**:
-`restless_people` sits at col 2 off Growing Numbers (holding the Harsh Winter slot until the rewrite
-replaces it) and `reading_seasons` at col 3, with `first_temple` re-pointed onto both new tips.
+**Landed — both branches.** `raiders_at_border` moved to col 2 off Growing Numbers and grants the
+reworked money pair; **The First Trades** now holds col 3 and `rites_rituals` is deleted. On the lower
+branch the two missions traded slots and the col-2 one was then rewritten: **Harsh Winter** sits at col 2
+off Growing Numbers and grants the science pair, `reading_seasons` at col 3, and `first_temple` points at
+both new tips. The restructure's shape is complete; what is left is measuring it.
 
-The order swap moves nothing but the DAG. `reading_seasons` still asks 10🔬 with Storytelling stranded,
-and `restless_people` is still the `unrest`-bankruptcy mission below — now reachable directly off
-Growing Numbers, so one step *more* exposed than before. Both are already merge-blockers (see
-*Consequences owed* and *Cards on trial*) and the Harsh Winter rewrite is what closes the lower one.
+**Mission 3 (lower) — Harsh Winter ✅ written, ⬜ unswept.** Full detail in its
+[dossier](missions/harsh-winter.md); the rate-level points for this pass:
+
+- Its threat `deep_cold` carries **two clauses on one card** — a per-round 1⚔️ toll from round 1 (or
+  2🌾 from a tribe holding none), and a 🌾 famine ramping from `HARSH_WINTER_ONSET` until the winter
+  **breaks** at `HARSH_WINTER_BREAK`, which is also the win. Bounded by a *lift*, not a ceiling: at
+  1🌾/worker against a pop cap of 4, a plateau survivable at all pins every worker to farming forever.
+- The toll exists because the mission otherwise has **no 🔨 and no ⚔️ sink** — 9 of its 15 arrival cards
+  would be dead draws. It makes Toolmaking → Bow the production sink and gives the grace window its own
+  decision, so preparation time isn't four empty rounds.
+- **Storytelling 2🔬 → 1🔬**/worker, granted here. This closes one of the three work-card/building pairs
+  the *Diagnosis* below still owed: Archives (4🔨, 2🔬/worker) now **doubles** it, the shape Forge has
+  against Toolmaking. Cave Art/Burial and War Horse/City Walls remain.
+- **Calendar ships unchanged** and moves here. The base-rate cut re-priced it for free — at 2🔬/worker
+  its 1🔬 was half a worker-round, at 1🔬/worker it is a full one.
+- Both `HARSH_WINTER_*` constants and the unarmed fallback are **provisional**; the dossier holds the
+  paper arithmetic and the watch list. No fixture exists yet — `harsh_winter.json` is the balance pass's
+  to cut, on the same arrival deck `raiders_at_border.json` uses.
 
 **The First Trades' goal: open a 🤝 trade route and hold `FIRST_TRADES_FOOD` 🌾** (25 provisional), no
 threat and no events — the route's standing rent is the whole pressure, and it is one the player opts
@@ -326,10 +339,9 @@ as a *better* faucet than Bead Workshop and its pitch is rewritten. Decide when 
 
 ### Culture leaves the Stone Age
 
-`rites_rituals` is **removed** ✅ — The First Trades has taken its slot — and the Harsh Winter rewrite
-drops the arc's other culture goal. `restless_people`'s 🎭 level 2 is all that is left, and it goes with
-that rewrite. So the tutorial age is on its way to teaching 🎭 not at all, and this is owed work, not a
-finished decision:
+**Done, and it is now a fact rather than a forecast.** `rites_rituals` is removed ✅ (The First Trades took
+its slot) and `restless_people`'s 🎭 level 2 went with the Harsh Winter rewrite ✅. **No Stone Age mission
+asks for culture and no starting card makes it.** That is owed work, not a finished decision:
 
 - **Both wonders become unplayable.** Göbekli Tepe carries `cultureLevelReq: 1` and Pyramid
   `cultureLevelReq: 2` — a hard play-gate, not a goal. With no 🎭 source anywhere in the age, the
@@ -352,9 +364,10 @@ finished decision:
   mission whose *goal* is a culture level; that used to be `rites_rituals` and would next have been
   `restless_people`, which this same pass retires. They now install a synthetic `test_culture_win`
   (`rules/testFixtures.ts`) instead, so the culture question can be settled without a test re-point.
-  `rules/objective.test.ts` and `sim/objective.test.ts` still read `restless_people_goal` for the
-  culture-threshold boundary — those are *content* coherence checks, so they follow whichever shipped
-  mission wins on culture and re-point again at Harsh Winter's turn.
+  ✅ `rules/objective.test.ts` and `sim/objective.test.ts` have followed at Harsh Winter's turn: their
+  culture-threshold and gradient cases read `test_culture_objective`, since there is no longer a shipped
+  culture goal to anchor on. The 🎭 shape is now pinned entirely off the catalogue — which is what lets
+  culture re-enter the age wherever it lands without dragging a test re-point behind it.
 
 Two candidate resolutions, neither decided:
 
@@ -374,7 +387,7 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
 
 | Card | Charge | Resolution |
 |---|---|---|
-| Storytelling (2🔬 work) | 🔬 has no sink at all in the Stone Age start | ⬜ **Harsh Winter** reward, reworked to the 1-per-worker base rate — mission not written yet |
+| ~~Storytelling~~ | — | ✅ **left the list** — reworked to 1🔬/worker and granted by `harsh_winter` |
 | Cave Art (2🎭 work) | 🎭 level 1 is 10🎭 — a whole tutorial mission's output for +1 hand size | ❌ **no home** — `rites_rituals` was it. See *Culture leaves the Stone Age* |
 | Burial (1🎭 building) | was `rites_rituals`' reward, and that mission is now deleted | ❌ **no home** — same fate as Cave Art, and the same two candidate resolutions |
 
@@ -401,12 +414,10 @@ see *Landed early* above.
   The assertion is the **planner's capability claim** (the greedies win Masonry 0%), not a Masonry balance
   check — so it must come back rather than be relaxed. Masonry likely wants a territory route that doesn't
   escalate: Road, a wider board, or a cap on the curve. **Un-skip before merging to `main`.**
-- **`restless_people` is unwinnable as it stands** — a shipped mission with no line, same merge-blocker
-  class as a stranded card. Its `unrest` threat drains −1🪙 per 🧍 on every reshuffle; Tribe, Settlement
-  and Chiefdom all start at **0🪙**, and its prereq chain is the *lower* branch, so the money faucet
-  Raiders now grants isn't guaranteed to be owned — a player who took only this branch still meets the
-  first reshuffle with no income and bankrupts. The Harsh Winter rewrite retires the mission and the threat both, which
-  closes this — but if `unrest` is ever reused it must be re-keyed off a resource the player produces.
+- ~~**`restless_people` is unwinnable as it stands**~~ — ✅ **closed**: the Harsh Winter rewrite retired the
+  mission and deleted `unrest` outright. The rule the case established survives the card: a threat may
+  only drain a resource the player is guaranteed to *produce* on every prereq chain reaching it, and a
+  branch-local faucet doesn't count.
 - **The Influence faucet ledger.** The First Trades was given `rites_rituals`' 8⭐ deliberately, so the
   swap leaves `cumulativeInfluenceInto` unchanged for everything downstream — the number shop tiers and
   sticker prices are tuned against. That holds only while the reward stays unargued: fix it, and run
@@ -438,10 +449,10 @@ longer has a one-shot exit into 🌾 at all, and Bead Workshop's rework removes 
 is the last converting edge left to cut.**
 
 Second, **buildings never out-rate the free work card** of their resource, while also costing 🔨, a
-territory slot, and a draw — Storytelling 2🔬 vs Archives 2🔬 · Cave Art 2🎭 vs Burial 1🎭 ·
-War Horse 4⚔️ vs City Walls 1⚔️. So production's only sink is a card category nobody needs. Cutting
-the base work rates to 1 fixed the first two pairs as a side effect (Farm now *matches* Foraging,
-Forge *doubles* Toolmaking); the remaining three still need the building side raised.
+territory slot, and a draw — Cave Art 2🎭 vs Burial 1🎭 · War Horse 4⚔️ vs City Walls 1⚔️. So
+production's only sink is a card category nobody needs. Cutting the base work rates to 1 has fixed three
+pairs as a side effect (Farm now *matches* Foraging, Forge *doubles* Toolmaking, and Archives doubles
+Storytelling once it drops to 1🔬 at Harsh Winter); the **two** above still need the building side raised.
 
 ## Decided — money's topology: a one-way hub
 
@@ -478,8 +489,8 @@ no bonus at all**: it purely gates bronze, so its cost is pure route-capacity op
    Bead Workshop (re-pointed to a building) are done; **Raiding** is the last edge to cut. Unblocks the rest,
    because whether a military converter is fine depends entirely on whether ⚔️ is a sink or a way station.
 2. **Buildings out-rate work cards** — restores production's identity and makes territory (so military)
-   worth something. Half-landed as a side effect of the base-rate cut; the remaining three pairs need
-   the building side raised. A building's pitch is a *different kind of thing* (never drawn, scales per
+   worth something. Mostly landed as a side effect of the base-rate cut; two pairs (Cave Art/Burial,
+   War Horse/City Walls) still need the building side raised. A building's pitch is a *different kind of thing* (never drawn, scales per
    worker, eats a slot), so the lever may be draw/deck pressure rather than the Farm's number.
 3. ~~**Superlinear food upkeep**~~ — ✅ landed as `floor(pop²/4)` at mission 1. What remains is the
    consequence: a stronger food faucet before Masonry (see *Consequences owed*).

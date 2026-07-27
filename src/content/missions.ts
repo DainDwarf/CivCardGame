@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -186,21 +186,27 @@ export const MISSIONS: Record<string, MissionDef> = {
     map: { col: 3, row: -1 },
     age: 'stone',
   },
-  restless_people: {
-    id: 'restless_people',
-    name: 'Restless People',
+  harsh_winter: {
+    id: 'harsh_winter',
+    name: 'Harsh Winter',
     lore:
-      'Your hard-won knowledge of the seasons carried your people through the harsh winter — but now ' +
-      'the village grows malcontent. They feel their concerns have gone unheard.',
+      'The cold came early this year, and it came to stay. The herds have gone thin and moved on, the ' +
+      'ground has shut like a fist, and every night something circles the stores your people spent the ' +
+      'summer filling. There is nothing to win here and nothing to build — only a winter to be outlasted, ' +
+      'on what you thought to set aside before it began. Come through it, and your people will swear ' +
+      'never to be caught by the turning of the year again.',
     prereqs: ['growing_numbers'],
-    threats: ['unrest'],
-    objectiveCardId: 'restless_people_goal',
-    victoryHint: 'Reach 🎭 culture level 2 to placate the restless people.',
-    failureHint: 'Unrest drains 🪙 on every deck reshuffle — bankruptcy ends the run.',
+    threats: ['deep_cold'],
+    objectiveCardId: 'harsh_winter_goal',
+    victoryHint: `Outlast the winter — survive to round ${HARSH_WINTER_BREAK}.`,
+    failureHint:
+      `The cold takes 1 ⚔️ each round, or 🌾 from a tribe holding none, and from round ${HARSH_WINTER_ONSET} ` +
+      'it drains a deepening amount of 🌾 on top — starve and the run ends.',
     kind: 'standard',
-    // Beer's grant has moved upstream to `first_trades`; the Harsh Winter rewrite that retires this
-    // mission decides what replaces it. Influence amount is provisional.
-    reward: { influence: 9 },
+    // Grants the science pair, which is `reading_seasons`' toolkit: the branch's pressure mission pays
+    // for its resource mission, the same shape the upper branch uses. Influence amount inherited from
+    // the mission this replaces, so the downstream faucet ledger is unmoved — provisional either way.
+    reward: { influence: 9, unlockCardIds: ['storytelling', 'calendar'] },
     map: { col: 2, row: 1 },
     age: 'stone',
   },
@@ -208,18 +214,20 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'reading_seasons',
     name: 'Reading the Seasons',
     lore:
-      'The last few seasons have been rough. The harvest was poor, and your tribe fears it may not ' +
-      'last through the coming winter. The priority now is to plan ahead — to read the turning of the ' +
-      'year and never again be caught starving.',
-    prereqs: ['restless_people'],
+      'The winter broke, and your people counted what it had cost them. It came early and no one saw ' +
+      'it coming — that is the part they cannot forgive. So the elders set the young to watching: where ' +
+      'the sun stands at its lowest, which birds leave and when, how many nights fall between the first ' +
+      'frost and the last. Learn the turning of the year, and no season will ever arrive unannounced again.',
+    prereqs: ['harsh_winter'],
     objectiveCardId: 'reading_seasons_goal',
     victoryHint: 'Stockpile 10 🔬 science.',
     failureHint: null,
     kind: 'standard',
-    // Unlocks the Calendar card — the age's foresight entry, first to exercise the peek family. The
-    // objective doesn't require owning it, so there's no build-what-you-don't-have sequencing bind.
-    // Influence amount provisional (balance pending a sim sweep).
-    reward: { influence: 9, unlockCardIds: ['calendar'] },
+    // ⚠️ Reward-less by omission, not by design: Calendar moved upstream to `harsh_winter` (a mission
+    // may not grant what its own prereq already unlocked), and this mission owes the branch's culture
+    // card in its place — see docs/REBALANCE.md → *Culture leaves the Stone Age*. Influence amount
+    // provisional.
+    reward: { influence: 9 },
     map: { col: 3, row: 1 },
     age: 'stone',
   },

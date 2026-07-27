@@ -439,49 +439,6 @@
     "meanActions": 46.38
   },
   {
-    "label": "restless_people",
-    "policyName": "greedy",
-    "runs": 100,
-    "wins": 62,
-    "winRate": 0.62,
-    "turns": {
-      "min": 7,
-      "mean": 31.87,
-      "median": 34,
-      "max": 44
-    },
-    "meanResources": {
-      "food": 10.01,
-      "production": 7.14,
-      "science": 10.08,
-      "military": 19.54,
-      "money": 0.97,
-      "population": 2.4,
-      "culture": 25.58,
-      "territory": 2.38
-    },
-    "defeatCauses": {
-      "bankruptcy": 38
-    },
-    "cardPlays": {
-      "foraging": 1684,
-      "toolmaking": 1052,
-      "dogs": 835,
-      "jewelry": 968,
-      "cave_art": 1279,
-      "bow": 158,
-      "storytelling": 504,
-      "bartering": 352,
-      "conquest": 38,
-      "hut": 40,
-      "farm": 93
-    },
-    "unplayedCards": [
-      "calendar"
-    ],
-    "meanActions": 101.52
-  },
-  {
     "label": "roads",
     "policyName": "greedy",
     "runs": 100,
@@ -1033,49 +990,6 @@
     },
     "unplayedCards": [],
     "meanActions": 38.53
-  },
-  {
-    "label": "restless_people",
-    "policyName": "planner",
-    "runs": 100,
-    "wins": 71,
-    "winRate": 0.71,
-    "turns": {
-      "min": 7,
-      "mean": 37.53,
-      "median": 41,
-      "max": 53
-    },
-    "meanResources": {
-      "food": 8.36,
-      "production": 5.49,
-      "science": 8.52,
-      "military": 9.25,
-      "money": 0.73,
-      "population": 2.77,
-      "culture": 25.76,
-      "territory": 2.23
-    },
-    "defeatCauses": {
-      "bankruptcy": 29
-    },
-    "cardPlays": {
-      "foraging": 1910,
-      "storytelling": 426,
-      "dogs": 334,
-      "jewelry": 1126,
-      "cave_art": 1288,
-      "toolmaking": 1076,
-      "bow": 124,
-      "bartering": 273,
-      "conquest": 23,
-      "farm": 99,
-      "hut": 77
-    },
-    "unplayedCards": [
-      "calendar"
-    ],
-    "meanActions": 105.25
   },
   {
     "label": "roads",

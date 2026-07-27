@@ -176,6 +176,30 @@ export const RAIDER_WAVES = 3;
  *  sweep). */
 export const FIRST_TRADES_FOOD = 25;
 
+/** The round "Harsh Winter"'s famine first bites, and the round the winter breaks. Shared by the
+ *  `deep_cold` threat's drain schedule, the `harsh_winter_goal` win threshold and the mission's hints,
+ *  so the deadline can never drift from the drain that makes it one. The peak drain is their difference:
+ *  rounds `ONSET..BREAK-1` take `1..BREAK-ONSET` 🌾, and reaching `BREAK` *is* the win, so the schedule
+ *  needs no ceiling — the run always ends the round the ramp would continue past.
+ *
+ *  Both are the mission's balance knobs and provisional (pending a sim sweep): the gap before `ONSET`
+ *  is preparation time, without which the mission only measures the board's starting stockpile, and
+ *  the ramp's length sets both the 🌾 deficit to be banked against and how many rounds of ⚔️ toll the
+ *  deck must fund. */
+export const HARSH_WINTER_ONSET = 5;
+export const HARSH_WINTER_BREAK = 10;
+
+/** 🌾 the Deep Cold takes from a tribe holding no ⚔️ — deliberately worse than the 1⚔️ toll it replaces,
+ *  so arming is the cheaper answer at any 🌾 price the deck can pay for military. */
+export const DEEP_COLD_UNARMED_FOOD = 2;
+
+/** 🌾 the famine half of the Deep Cold takes in the given round: nothing before the onset, then
+ *  deepening by 1 each round. Shared by the drain and its face readout so the card can't display a
+ *  bite it won't take. */
+function famineAt(round: number): number {
+  return Math.max(0, round - HARSH_WINTER_ONSET + 1);
+}
+
 /** How many copper veins "Finding Copper" seeds — shared by the mission's injected event list
  *  (`content/missions.ts`), the `finding_copper_goal` win threshold, and its progress readout. */
 export const COPPER_VEINS = 3;
@@ -242,8 +266,8 @@ export const CARDS: Record<string, CardDef> = {
   burial: { id: 'burial', name: 'Burial', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '⚰️' } },
   bead_workshop: { id: 'bead_workshop', name: 'Bead Workshop', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { money: 1 } }, workers: 1, display: { art: '📿' } },
   forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
-  // The science counterpart of the Forge: matches Storytelling's 2🔬/worker as a permanent building
-  // rather than a work card refiled every round, deliberately obsoleting it.
+  // The science counterpart of the Forge, and priced on the same shape: a permanent building doubling
+  // the free work card's rate, paid for once in 🔨 and a territory slot.
   archives: { id: 'archives', name: 'Archives', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { science: 2 } }, workers: 1, display: { art: '🏛️' } },
   // House: the Hut's bigger cousin — a one-shot +2🧍 at placement (on `effect`, like Hut, so it grants
   //   population once when built rather than every round).
@@ -280,7 +304,7 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // — Actions —
-  storytelling: { id: 'storytelling', name: 'Storytelling', kind: 'work', cost: {}, workers: 1, display: { art: '🗣️' }, produces: { resources: { science: 2 } } },
+  storytelling: { id: 'storytelling', name: 'Storytelling', kind: 'work', cost: {}, workers: 1, display: { art: '🗣️' }, produces: { resources: { science: 1 } } },
   bow: {
     id: 'bow', name: 'Bow', kind: 'action', cost: { resources: { production: 2 } },
     // The "single use" note is the face's heads-up for the self-removal below — kept in step with it.
@@ -500,17 +524,15 @@ export const CARDS: Record<string, CardDef> = {
     display: { description: `Open a 🤝 trade route\nHold ${FIRST_TRADES_FOOD} 🌾` },
   },
 
-  // Culture is never spent, so `culture >= cultureForLevel(N)` is exactly `cultureLevel >= N`. The
-  //   readout anchors on the *level* (a within-band count would reset each level-up), so it overrides.
-  restless_people_goal: {
-    id: 'restless_people_goal', name: 'Restless People', kind: 'objective', cost: {},
-    goals: [{ icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(2) }],
+  // The one goal in the arc measured in rounds rather than a pool: surviving *is* the win, so the
+  //   objective counts the same clock the Deep Cold's ramp is keyed to. Reaching the break round is
+  //   checked at `beginTurn`'s flush, so the win lands having paid the round before it in full.
+  harsh_winter_goal: {
+    id: 'harsh_winter_goal', name: 'Harsh Winter', kind: 'objective', cost: {},
+    goals: [{ icon: '❄️', measure: (G) => G.round, target: HARSH_WINTER_BREAK }],
     display: {
-      description: 'Reach 🎭 level 2',
-      dynamicText: (G) => {
-        const p = cultureProgress(G.resources.culture);
-        return p.level >= 2 ? '🎭 Level 2/2' : `🎭 Level ${p.level}/2`;
-      },
+      description: `Outlast the winter — survive to round ${HARSH_WINTER_BREAK}`,
+      dynamicText: (G) => `❄️ round ${Math.min(G.round, HARSH_WINTER_BREAK)}/${HARSH_WINTER_BREAK}`,
     },
   },
 
@@ -677,14 +699,31 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // — Threats —
-  unrest: {
-    id: 'unrest', name: 'Unrest', kind: 'threat', cost: {},
-    display: { art: '💢', description: '−1🪙 per 🧍 on reshuffle' },
-    on: {
-      reshuffle: {
-        resolve: ({ G }) => {
-          subtractResources(G.resources, { money: G.resources.population });
-        },
+  // Harsh Winter's threat, in two clauses on one card. The **toll** runs from round 1: the cold takes
+  //   1⚔️ a round, or twice that in 🌾 from a tribe with nothing to drive the predators off — a threat
+  //   you answer, and the only ⚔️/🔨 sink the mission has (Bow is 2🔨 → 3⚔️ → three rounds of cover).
+  //   The **famine** joins it at `HARSH_WINTER_ONSET` and deepens every round until the winter breaks —
+  //   a threat you can only weather, out of stores banked before it starts. Unlike `long_winter`'s
+  //   unbounded ramp this one is outlastable by construction, which is what lets a standard mission
+  //   carry it.
+  deep_cold: {
+    id: 'deep_cold', name: 'The Deep Cold', kind: 'threat', cost: {},
+    display: {
+      art: '🥶',
+      description: `−1⚔️ each round, or −${DEEP_COLD_UNARMED_FOOD}🌾 with none. From round ${HARSH_WINTER_ONSET} it also takes 🌾, worsening until it breaks.`,
+      dynamicText: (G) => {
+        const famine = famineAt(G.round);
+        return `${famine > 0 ? `−${famine}🌾 ` : ''}−1⚔️ · breaks in ${Math.max(0, HARSH_WINTER_BREAK - G.round)}`;
+      },
+    },
+    upkeep: {
+      resolve: ({ G }) => {
+        // Auto-paid rather than a prompt: an upkeep handler may not open a `pendingInteraction`, and
+        // the choice the toll is really asking — whether to have armed at all — was already made.
+        if (G.resources.military >= 1) subtractResources(G.resources, { military: 1 });
+        else subtractResources(G.resources, { food: DEEP_COLD_UNARMED_FOOD });
+        const famine = famineAt(G.round);
+        if (famine > 0) subtractResources(G.resources, { food: famine });
       },
     },
   },
@@ -770,7 +809,7 @@ export const CARDS: Record<string, CardDef> = {
   // Accounting's engine: envy breeds thieves in proportion to the untracked hoard. Each reshuffle mints
   //   `floor(money / THIEVES_PER_GOLD)` `thief` events into the deck (via `spawnIntoDeck`, so the mint
   //   ids stay unique and the shuffle-in is deterministic) — so a fat treasury floods your own draws,
-  //   the pressure that stops the player sitting on a pile. Reacts on `reshuffle` like `unrest`.
+  //   the pressure that stops the player sitting on a pile. The one shipped card on the `reshuffle` bus.
   envious_population: {
     id: 'envious_population', name: 'Envious Population', kind: 'threat', cost: {},
     display: {

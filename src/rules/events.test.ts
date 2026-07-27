@@ -266,12 +266,11 @@ describe('dispatchEvent — endTurn broadcast (production + threat drains)', () 
 });
 
 describe('dispatchEvent — reshuffle broadcast (subject-less, on.reshuffle only)', () => {
-  // The real `unrest` threat drains 1🪙 per 🧍 on every reshuffle.
   it('reaches a threat with on.reshuffle, draining 1🪙 per population point', () => {
     const G = blankState('test');
     G.resources.population = 3;
     G.resources.money = 10;
-    G.threats = [{ id: 1, cardId: 'unrest' }];
+    G.threats = [{ id: 1, cardId: 'test_reshuffle_drain' }];
     dispatchEvent(G, { type: 'reshuffle' });
     expect(G.resources.money).toBe(7); // −3 (one reshuffle × pop 3)
   });
@@ -283,11 +282,11 @@ describe('dispatchEvent — reshuffle broadcast (subject-less, on.reshuffle only
     expect(G.resources.food).toBe(0); // production runs on endTurn, not reshuffle
   });
 
-  it('drives the Unrest drain end-to-end: a deck fold emits the event, the flush drains 🪙', () => {
+  it('drives the drain end-to-end: a deck fold emits the event, the flush applies it', () => {
     const G = blankState('test');
     G.resources.population = 2;
     G.resources.money = 5;
-    G.threats = [{ id: 1, cardId: 'unrest' }];
+    G.threats = [{ id: 1, cardId: 'test_reshuffle_drain' }];
     G.handSize = 1;
     G.deck = [];
     G.discard = instancesFromCardIds(['test_food', 'test_prod']);

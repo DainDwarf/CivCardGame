@@ -131,7 +131,7 @@ export function enablerTermsOf(enablers: boolean | EnablerTerms): EnablerTerms |
 /** The **planner's shipped term set** — the two carriers (capacity, producers) plus the confined
  *  card-cost slope; conversions/floor/handSize off. Measured against the full model over the whole
  *  baseline set (planner @ 100 paired seeds, the tuned depth-2 config @ 10): never worse than ~1 seed
- *  anywhere, +10..+15pp on the three hardest cells (pyramid/restless_people/writing), and the full
+ *  anywhere, +10..+15pp on the hardest cells (pyramid, writing), and the full
  *  model's depth-1 stall-cell edge (first_temple/accounting) vanishes at depth 2. The oracle
  *  deliberately does **not** use this: its job is proving winnability, and the all-on model finds
  *  strictly more wins there (12×10/10). */

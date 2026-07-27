@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { objectiveProgress, hasObjectiveGradient } from './objective';
 import { blankState, seedObjective, cultureForLevel, type GameState } from '../rules';
+import { installFixtures, uninstallFixtures } from '../rules/testFixtures';
 import { GROWING_NUMBERS_TERRITORY } from '../content/cards';
 
 /** A zeroed state carrying the given objective card, tweaked per case. */
@@ -49,18 +50,25 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
     expect(objectiveProgress(atThreshold)).toBeLessThan(1);
   });
 
-  it('rises with accumulated culture on "Restless People" and is 1 exactly at level 2', () => {
-    const target = cultureForLevel(2);
-    const p = (culture: number) =>
-      objectiveProgress(withObjective('restless_people_goal', (G) => (G.resources.culture = culture)));
-    expect(p(0)).toBe(0);
-    // Sub-level culture registers (a discrete cultureLevel would read 0 all the way to the band edge).
-    expect(p(5)).toBeGreaterThan(p(0));
-    expect(p(target - 1)).toBeGreaterThan(p(5)); // still short of the level
-    expect(p(target - 1)).toBeLessThan(1); // one short of the level still isn't done
-    expect(p(target)).toBe(1); // level 2 = the win
-    // Never spent, so hoarding past the goal earns no more.
-    expect(p(target + 60)).toBe(1);
+  // Off the synthetic `test_culture_objective`, not a shipped mission: the arc no longer wins on
+  // culture anywhere, and the gradient's shape over a *level* goal still has to be pinned.
+  it('rises with accumulated culture on a culture-level goal and is 1 exactly at the level', () => {
+    installFixtures();
+    try {
+      const target = cultureForLevel(1);
+      const p = (culture: number) =>
+        objectiveProgress(withObjective('test_culture_objective', (G) => (G.resources.culture = culture)));
+      expect(p(0)).toBe(0);
+      // Sub-level culture registers (a discrete cultureLevel would read 0 all the way to the band edge).
+      expect(p(3)).toBeGreaterThan(p(0));
+      expect(p(target - 1)).toBeGreaterThan(p(3)); // still short of the level
+      expect(p(target - 1)).toBeLessThan(1); // one short of the level still isn't done
+      expect(p(target)).toBe(1); // the level = the win
+      // Never spent, so hoarding past the goal earns no more.
+      expect(p(target + 60)).toBe(1);
+    } finally {
+      uninstallFixtures();
+    }
   });
 
   it('the sandbox never wins and offers no gradient to climb (a purely-bespoke goal)', () => {
@@ -81,7 +89,7 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
   });
 
   it('reports a climbable gradient for the declarative objectives', () => {
-    for (const cardId of ['first_settlement_goal', 'restless_people_goal', 'raiders_at_border_goal']) {
+    for (const cardId of ['first_settlement_goal', 'reading_seasons_goal', 'raiders_at_border_goal']) {
       expect(hasObjectiveGradient(withObjective(cardId)), cardId).toBe(true);
     }
   });
@@ -114,9 +122,14 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
     expect(raid(1)).toBe(Math.min(1, 3) / 3); // old: min(count,RAIDER_WAVES)/RAIDER_WAVES
     expect(raid(5)).toBe(1);
 
-    const cult = (c: number) =>
-      objectiveProgress(withObjective('restless_people_goal', (G) => (G.resources.culture = c)));
-    expect(cult(5)).toBe(Math.min(5, cultureForLevel(2)) / cultureForLevel(2)); // old: min(culture,target)/target
+    installFixtures();
+    try {
+      const cult = (c: number) =>
+        objectiveProgress(withObjective('test_culture_objective', (G) => (G.resources.culture = c)));
+      expect(cult(3)).toBe(Math.min(3, cultureForLevel(1)) / cultureForLevel(1)); // old: min(culture,target)/target
+    } finally {
+      uninstallFixtures();
+    }
   });
 
   // There is no territory *override* any more: a mission whose win happens to count territory reaches

@@ -34,9 +34,9 @@
     settlement gives tearing-down its natural context. `[?]`
   - **The arc's two middle branches are being restructured** on the `trade-redesign` branch —
     `rites_rituals` and `restless_people` are replaced by *The First Trades* (🪙) and *Harsh Winter*
-    (famine threat), inverting each branch to pressure-first. The upper branch has **landed**
-    (`rites_rituals` deleted, The First Trades shipped at col 3); the lower one has landed its **order**
-    (Reading the Seasons moved to col 3) but the col-2 rewrite is still to write. See
+    (famine threat), inverting each branch to pressure-first. Both branches have **landed**
+    (`rites_rituals` and `restless_people` deleted, The First Trades and Harsh Winter shipped); what
+    remains is Harsh Winter's balance pass. See
     [`REBALANCE.md`](REBALANCE.md) → *Stone Age branches 3–4 restructure*, plus the
     [first-trades](missions/first-trades.md) and [harsh-winter](missions/harsh-winter.md) dossiers.
     Step 9's substeps below are written against the old arc and are stale for **9.3 / 9.5 / 9.6**.

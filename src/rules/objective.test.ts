@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { blankState } from './state';
 import { seedObjective, objectiveMet, goalsReadout } from './objective';
 import { cultureForLevel, cultureLevel } from './culture';
+import { installFixtures, uninstallFixtures } from './testFixtures';
 import { CARDS } from '../content/cards';
 import type { GameState } from './state';
 
@@ -51,12 +52,19 @@ describe('objectiveMet (goals-derived win boolean)', () => {
 
   // A culture-*level* win is modelled as the threshold `culture >= cultureForLevel(N)`. Pin that this
   // is exactly equivalent to `cultureLevel(culture) >= N` at the band boundary (a `>=` vs `>`
-  // off-by-one here would silently change the win condition).
+  // off-by-one here would silently change the win condition). Measured against the synthetic
+  // `test_culture_objective`: no shipped mission wins on culture any more, so the shape has to be
+  // pinned off the catalogue or it can't be pinned at all.
   it('the culture threshold exactly matches the cultureLevel predicate', () => {
-    const met = (culture: number) =>
-      objectiveMet(withObjective('restless_people_goal', (G) => (G.resources.culture = culture)));
-    for (let culture = 0; culture <= cultureForLevel(2) + 20; culture++) {
-      expect(met(culture)).toBe(cultureLevel(culture) >= 2);
+    installFixtures();
+    try {
+      const met = (culture: number) =>
+        objectiveMet(withObjective('test_culture_objective', (G) => (G.resources.culture = culture)));
+      for (let culture = 0; culture <= cultureForLevel(1) + 20; culture++) {
+        expect(met(culture)).toBe(cultureLevel(culture) >= 1);
+      }
+    } finally {
+      uninstallFixtures();
     }
   });
 

@@ -396,7 +396,7 @@ describe('card-cost goal valuation', () => {
     // the probe is provably a no-op, so `deriveEnablers` output — and hence every planner/oracle
     // trajectory — is unchanged by this layer. A broad deck widens the candidate pool the probe injects.
     const resourceMissions = [
-      'first_settlement', 'restless_people', 'reading_seasons',
+      'first_settlement', 'reading_seasons',
       'first_temple', 'masonry', 'accounting', 'pyramid',
     ];
     const deckCardIds = [

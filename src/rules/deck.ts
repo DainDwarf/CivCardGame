@@ -33,8 +33,8 @@ function reshuffleIntoDeck(G: GameState): void {
   G.discard = [];
   G.rngState = rngState;
   G.reshuffleCount += 1;
-  // Announce the recycle so a card can react to the draw pile folding over (e.g. an unrest threat
-  // that drains on every reshuffle). A broadcast (no subject); emitted here mid-draw and drained at
+  // Announce the recycle so a card can react to the draw pile folding over (a threat that bites once
+  // per lap through the deck). A broadcast (no subject); emitted here mid-draw and drained at
   // the next boundary flush like any leaf-emitted event — never dispatched from this mutation site.
   emitEvent(G, { type: 'reshuffle' });
 }

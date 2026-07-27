@@ -44,6 +44,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 - **Work reordering + insert-at-drop** — let the player reorder placed work cards, and have a newly-played
   work card insert at the drop position rather than appending. `[?]`
+- **Show the food-upkeep change on population-granting cards** — Hut, House and any future `+N 🧍` card
+  read as a pure gain, but upkeep is `floor(pop²/4)`, so the *marginal* mouth costs `floor(pop/2)` 🌾 a
+  round and the price of growing rises as you grow. A player can't see that from the card face and only
+  discovers it after building. Surface the delta on the face (and/or in the play preview) — `foodPerNextPop`
+  (`rules/population.ts`) already exists for exactly this, so the curve isn't re-derived in the UI. Note it
+  is state-dependent: the same card shows a different number at pop 2 than at pop 5. `[size: S]` `[?]`
 - **Sticker locked/unlocked visual on mission preview** — rework how a mission's sticker reward reads locked vs. unlocked (currently a generic locked chip → real face). Maybe extract a **shared sticker widget** (the `CardFace`/`BoardMini` counterpart for a single sticker) reused across the mission-detail preview and elsewhere. `[?]`
 
 ## Run loop (`src/rules/`, `src/run/`)

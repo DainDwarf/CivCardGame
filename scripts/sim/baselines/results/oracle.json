@@ -416,47 +416,6 @@
     "meanActions": 51.3
   },
   {
-    "label": "restless_people",
-    "policyName": "oracle",
-    "runs": 10,
-    "wins": 10,
-    "winRate": 1,
-    "turns": {
-      "min": 32,
-      "mean": 34.4,
-      "median": 34,
-      "max": 37
-    },
-    "meanResources": {
-      "food": 13.1,
-      "production": 7.1,
-      "science": 10.4,
-      "military": 17.4,
-      "money": 3.2,
-      "population": 3,
-      "culture": 30,
-      "territory": 3
-    },
-    "defeatCauses": {},
-    "cardPlays": {
-      "foraging": 240,
-      "storytelling": 62,
-      "toolmaking": 142,
-      "dogs": 85,
-      "jewelry": 139,
-      "cave_art": 154,
-      "bartering": 30,
-      "bow": 18,
-      "farm": 10,
-      "hut": 10,
-      "conquest": 10
-    },
-    "unplayedCards": [
-      "calendar"
-    ],
-    "meanActions": 131.7
-  },
-  {
     "label": "roads",
     "policyName": "oracle",
     "runs": 10,

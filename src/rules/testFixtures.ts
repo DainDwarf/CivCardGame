@@ -252,6 +252,20 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
       },
     },
   },
+  // Reacts to a timing it doesn't own: `on.reshuffle`, the subject-less broadcast, draining per 🧍 so a
+  // case can tell "fired once" from "fired per population point". The one fixture covering the reshuffle
+  // bus — no shipped card reacts to it today, and the mechanism outlives whichever one does.
+  test_reshuffle_drain: {
+    id: 'test_reshuffle_drain', name: 'Test Reshuffle Drain', kind: 'threat', cost: {},
+    display: { description: '−1🪙 per 🧍 on reshuffle' },
+    on: {
+      reshuffle: {
+        resolve: ({ G }) => {
+          subtractResources(G.resources, { money: G.resources.population });
+        },
+      },
+    },
+  },
   // Deadline threat: owns its own driven defeat as a pure-read predicate (no resource drain), the loss
   // counterpart to an objective's win. `round > 5` (not `>= 5`) mirrors the shipped deadline convention.
   test_deadline: {
