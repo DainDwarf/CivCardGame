@@ -32,6 +32,12 @@
     during the card tech-debt pass rather than carried through unused; reimplement it cleanly on the
     resolver spine (a `resolve` closure) when a real card wants it — Bronze/Iron, where a built-up
     settlement gives tearing-down its natural context. `[?]`
+  - **The arc's two middle branches are being restructured** on the `trade-redesign` branch —
+    `rites_rituals` and `restless_people` are replaced by *The First Trades* (🪙) and *Harsh Winter*
+    (famine threat), inverting each branch to pressure-first. See [`REBALANCE.md`](REBALANCE.md) →
+    *Stone Age branches 3–4 restructure*, plus the [first-trades](missions/first-trades.md) and
+    [harsh-winter](missions/harsh-winter.md) dossiers. Step 9's substeps below are written against the
+    old arc and are stale for **9.3 / 9.5 / 9.6**.
 
 - **Step 7 — Bronze Age arc** (content expansion) — new cards + missions themed to the Bronze
   Age, **no new mechanics**. Continues unlocking cards/stickers/boards through mission rewards.

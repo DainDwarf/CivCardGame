@@ -36,8 +36,8 @@ nothing but noise.
 |---|---|---|
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
-| 3 | `rites_rituals` · `reading_seasons` | ⬜ — each wants an on-trial card back (see below) |
-| 4 | `raiders_at_border` · `restless_people` | ⬜ |
+| 3 | `raiders_at_border` · *Harsh Winter* | ⬜ — the **pressure** pair, now first in each branch |
+| 4 | *The First Trades* · `reading_seasons` | ⬜ — the **resource** pair; see the restructure below |
 | 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 6 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
 | 7 | `pyramid` · `accounting` | ⬜ — both hoard goals; pyramid blocked on the food ceiling |
@@ -135,18 +135,94 @@ is this mission's own reward) with the starting deck + one Hut/Farm/Conquest, 15
 **Reaches forward:** Settlement's 5🔨 start touches every later mission launched on it, so missions 3+ are
 measured against the new number when the pass gets to them.
 
+## Decided — Stone Age branches 3–4 restructure
+
+**The forcing problem.** Both branches were authored *resource first, pressure second* —
+`rites_rituals` (🎭 level 1) then `raiders_at_border`, `reading_seasons` (10🔬) then
+`restless_people`. Leaning the starting collection cut Cave Art and Storytelling, so the player
+arrives at each branch's first mission owning **zero** cards that make the resource it asks for.
+Both openers are unpassable as authored. A resource has to be *granted* before a mission can demand
+it, and a pressure mission demands no resource — so the order inverts.
+
+**The new shape.** Pressure first, resource second, both branches:
+
+| | col 2 — pressure | col 3 — resource |
+|---|---|---|
+| **upper** (row -1) | `raiders_at_border` — event waves; goal and pressure kept, **moved** | **The First Trades** — 🪙 + trade routes, new ([dossier](missions/first-trades.md)) |
+| **lower** (row +1) | **Harsh Winter** — famine threat, a rewrite of `restless_people` ([dossier](missions/harsh-winter.md)) | `reading_seasons` — 10🔬 kept, **moved**, and loses its reward |
+
+Each col-2 mission's **reward is the col-3 mission's toolkit**: `raiders_at_border` grants the money
+pair (Jewelry, Bartering), Harsh Winter grants the science pair (Storytelling, Calendar).
+
+**The concrete `missions.ts` edits** — no mission in either branch is untouched, so a session picking
+up one of the dossiers needs this list rather than the table's shorthand:
+
+| Mission | Edit |
+|---|---|
+| `raiders_at_border` | `prereqs` `['rites_rituals']` → `['growing_numbers']` · `map` col 3 → **2** · reward gains Jewelry + Bartering (keeps Chiefdom) |
+| `rites_rituals` | **deleted**, along with `rites_rituals_goal` |
+| `restless_people` | **rewritten** as Harsh Winter — new id, threat, goal and reward; see its dossier for what that retires |
+| `reading_seasons` | `prereqs` `['growing_numbers']` → the Harsh Winter id · `map` col 2 → **3** · **reward is now empty** (Calendar moves upstream) — needs a new one |
+| *The First Trades* | new: `prereqs: ['raiders_at_border']`, stone col 3 row -1 |
+| `first_temple` | `prereqs` `['raiders_at_border', 'restless_people']` → `['first_trades', <harsh winter id>]` — the tips moved, so the capstone's gate must follow |
+
+A *missing* prereq id used to fail nothing — `campaign.ts`'s `isAvailable` just never satisfies it, so
+the mission dropped out of the campaign silently. `content/missions.test.ts` now pins prereq id
+existence and acyclicity, so deleting `rites_rituals` while something still names it is a red test.
+⚠️ It cannot catch a real-but-*wrong* id: pointing `first_temple` at `growing_numbers` instead of the
+new branch tips passes both cases and quietly flattens the DAG. Naming the right missions is still on
+whoever makes the edit.
+
+Also fixed incidentally: `restless_people` demanded 🎭 level 2 while its only prereq chain was the
+*science* branch, so it was reachable having never played the culture mission.
+
+**Money enters at Stone, not Bronze.** This reverses *money's topology* below, which put money in the
+Bronze substrate. Taken deliberately, in exchange for `first_temple`'s 30🪙 becoming reachable
+without re-pointing. The topology **rule** survives intact — the reworked Jewelry produces 🪙 from a
+worker instead of converting 🔨, and the route rents rather than exchanges, so there is still no
+edge converting non-money back into money. What lapses is only the *age* the resource belongs to,
+and with it the "each age promotes one resource into the substrate" framing: Stone now carries food,
+production **and money**, leaving Bronze to promote something else.
+
+**Trader's home is now open.** It was `accounting`'s reward as "the money faucet that opens the money
+spine", but the spine opens five missions earlier. Either Trader moves up, or `accounting` keeps it
+as a *better* faucet than Jewelry and its pitch is rewritten. Decide when the pass reaches Accounting.
+
+### Culture leaves the Stone Age
+
+`rites_rituals` is **removed** — The First Trades takes its slot — and the Harsh Winter rewrite drops
+the arc's other culture goal. So the tutorial age no longer teaches 🎭 at all, and this is owed work,
+not a finished decision:
+
+- **Both wonders become unplayable.** Göbekli Tepe carries `cultureLevelReq: 1` and Pyramid
+  `cultureLevelReq: 2` — a hard play-gate, not a goal. With no 🎭 source anywhere in the age, the
+  Stone Age *capstone reward* is a card that cannot be played. This is the sharpest consequence of the
+  three and the one most likely to force culture back somewhere.
+- **Three cards have no home**: Cave Art (2🎭 work), Burial (1🎭 building), Beer (2🌾 → 5🎭 work).
+  Burial and Beer are *currently obtainable*; they join the trial list above on the day this ships.
+- **Two culture goals are orphaned**: `first_temple` (🎭 level 2) and `pyramid` (🎭 level 2). Each
+  must drop its culture term, or culture must find a mission upstream of it.
+- **Hand size is pinned at 4 for the whole tutorial age.** Culture is its only lever, so the
+  hand-size-grows-with-your-civilization progression no longer happens anywhere in Stone.
+- **`sim/enablers.test.ts` builds off a `ritesRoot` fixture** derived from `rites_rituals`, and its
+  culture cases read the wonder's gate. Deleting the mission breaks it — re-point the fixture rather
+  than dropping the cases; they cover the gate-unlock enabler, not the mission.
+
+The cheapest resolution is probably a culture mission early in **Bronze** — which is also what the
+age-promotes-a-resource framing wants, now that money has vacated that slot. Not decided.
+
 ## Cards on trial
 
 Cut from the starting collection and **not unlocked by anything, so currently unobtainable in-game**.
 Deliberate: each is re-slotted onto a mission reward or cut outright when the pass reaches the mission
 that would justify it. **Nothing merges to `main` with a card stranded** — this list must be empty.
 
-| Card | Charge | Candidate resolution |
+| Card | Charge | Resolution |
 |---|---|---|
-| Storytelling (2🔬 work) | 🔬 has no sink at all in the Stone Age start | reward of `reading_seasons` (the 🔬 mission) |
-| Cave Art (2🎭 work) | 🎭 level 1 is 10🎭 — a whole tutorial mission's output for +1 hand size | reward of `rites_rituals` (the 🎭 mission) |
-| Jewelry (1🔨→2🪙) | **anti-goal at mission 1** — drains the resource the objective counts, for one with no reachable sink | already slated for cut/re-point by *money's topology* below |
-| Bartering (2🪙 route) | unaffordable at mission 1, and its rent bankrupts a treasury with no income | wherever the money age actually opens |
+| Storytelling (2🔬 work) | 🔬 has no sink at all in the Stone Age start | ✅ **Harsh Winter** reward, reworked to the 1-per-worker base rate |
+| Jewelry (1🔨→2🪙) | **anti-goal at mission 1** — drains the resource the objective counts, for one with no reachable sink | ✅ **`raiders_at_border`** reward, reworked from a 🔨→🪙 converter into a 🪙 *work* box |
+| Bartering (2🪙 route) | unaffordable at mission 1, and its rent bankrupts a treasury with no income | ✅ **`raiders_at_border`** reward — the first route, paired with the Jewelry faucet that funds it |
+| Cave Art (2🎭 work) | 🎭 level 1 is 10🎭 — a whole tutorial mission's output for +1 hand size | ❌ **no home** — `rites_rituals` was it. See *Culture leaves the Stone Age* |
 
 ## Consequences owed
 
@@ -168,6 +244,14 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
   The assertion is the **planner's capability claim** (the greedies win Masonry 0%), not a Masonry balance
   check — so it must come back rather than be relaxed. Masonry likely wants a territory route that doesn't
   escalate: Road, a wider board, or a cap on the curve. **Un-skip before merging to `main`.**
+- **`restless_people` is unwinnable as it stands** — a shipped mission with no line, same merge-blocker
+  class as a stranded card. Its `unrest` threat drains −1🪙 per 🧍 on every reshuffle; Tribe, Settlement
+  and Chiefdom all start at **0🪙**, Jewelry is cut and Trader is gated behind `accounting`, so the first
+  reshuffle bankrupts the run. The Harsh Winter rewrite retires the mission and the threat both, which
+  closes this — but if `unrest` is ever reused it must be re-keyed off a resource the player produces.
+- **The Influence faucet ledger shifts.** Dropping `rites_rituals` (8⭐) and adding The First Trades
+  changes `cumulativeInfluenceInto` for every mission downstream — which is the number shop tiers and
+  sticker prices are tuned against. `npm run economy` prints the new ledger once the DAG is edited.
 - **`MIN_DECK_SIZE` may not need to exist.** At 10 it is starting to look like a rule with no job; see
   [`IDEAS.md`](IDEAS.md). Not this pass's call.
 
@@ -209,21 +293,24 @@ no bonus at all**: it purely gates bronze, so its cost is pure route-capacity op
 - **The rule to hold, not just the card:** *a route may produce money, or non-money — but no card may
   convert that non-money output back into money.* Otherwise route + converter is a pump at any rate.
 - **Jewelry** (🔨→🪙) is cut or re-pointed — it is the exact inverse of the planned Bronzeworking
-  (🪙→🔨) and would form a two-card loop at the centre of the age.
+  (🪙→🔨) and would form a two-card loop at the centre of the age. ✅ **Resolved:** re-pointed into a
+  🪙 *work* box (a worker makes money; nothing converts 🔨 into it), so the loop never forms.
 - **Raiding** (⚔️→🪙) is cut, or charged in **culture** — never spent and gates hand size, so it can't be
-  arbitraged back, and "raiders don't build civilizations" reads well.
-- **Consequence to honour:** money leaves the optional tier for the Bronze Age. Generalizes to a
-  structural idea worth adopting — **each age promotes one resource into the substrate** (Stone = food +
-  production; Bronze adds money; Iron adds its own).
-- **Check before building:** with Jewelry gone, money's faucets are Trader (3🪙/worker) plus whatever
-  Naval adds. Hand-check 🪙/round for N routes against a realistic deck's income; if it doesn't clear,
-  the escalating-cost curve gives.
+  arbitraged back, and "raiders don't build civilizations" reads well. ⚠️ The culture option dies if
+  culture leaves the age — cut it, or charge it in something else.
+- ~~**Consequence to honour:** money leaves the optional tier for the Bronze Age.~~ **Superseded** by
+  the restructure above — money enters at Stone col 3. The generalization survives the reversal and is
+  worth keeping — **each age promotes one resource into the substrate** — but Stone now takes food +
+  production + money, and what Bronze promotes is open (culture is the candidate).
+- **Check before building:** money's Stone-Age faucet is the reworked Jewelry alone, with Trader
+  (3🪙/worker) and whatever Naval adds arriving in Bronze. Hand-check 🪙/round for N routes against a
+  realistic deck's income; if it doesn't clear, the escalating-cost curve gives.
 
 ## Remaining work
 
-1. **Money topology** — the trade-route zone (shipped; Bartering converted as its first route), then
-   Jewelry/Raiding. Unblocks the rest, because whether a military converter is fine depends entirely on
-   whether ⚔️ is a sink or a way station.
+1. **Money topology** — the trade-route zone (shipped; Bartering converted as its first route) and
+   Jewelry (re-pointed to a work box) are done; **Raiding** is the last edge to cut. Unblocks the rest,
+   because whether a military converter is fine depends entirely on whether ⚔️ is a sink or a way station.
 2. **Buildings out-rate work cards** — restores production's identity and makes territory (so military)
    worth something. Half-landed as a side effect of the base-rate cut; the remaining three pairs need
    the building side raised. A building's pitch is a *different kind of thing* (never drawn, scales per
