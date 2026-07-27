@@ -192,7 +192,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     lore:
       'Your hard-won knowledge of the seasons carried your people through the harsh winter — but now ' +
       'the village grows malcontent. They feel their concerns have gone unheard.',
-    prereqs: ['reading_seasons'],
+    prereqs: ['growing_numbers'],
     threats: ['unrest'],
     objectiveCardId: 'restless_people_goal',
     victoryHint: 'Reach 🎭 culture level 2 to placate the restless people.',
@@ -201,7 +201,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Beer's grant has moved upstream to `first_trades`; the Harsh Winter rewrite that retires this
     // mission decides what replaces it. Influence amount is provisional.
     reward: { influence: 9 },
-    map: { col: 3, row: 1 },
+    map: { col: 2, row: 1 },
     age: 'stone',
   },
   reading_seasons: {
@@ -211,7 +211,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'The last few seasons have been rough. The harvest was poor, and your tribe fears it may not ' +
       'last through the coming winter. The priority now is to plan ahead — to read the turning of the ' +
       'year and never again be caught starving.',
-    prereqs: ['growing_numbers'],
+    prereqs: ['restless_people'],
     objectiveCardId: 'reading_seasons_goal',
     victoryHint: 'Stockpile 10 🔬 science.',
     failureHint: null,
@@ -220,7 +220,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // objective doesn't require owning it, so there's no build-what-you-don't-have sequencing bind.
     // Influence amount provisional (balance pending a sim sweep).
     reward: { influence: 9, unlockCardIds: ['calendar'] },
-    map: { col: 2, row: 1 },
+    map: { col: 3, row: 1 },
     age: 'stone',
   },
   first_temple: {
@@ -232,7 +232,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'hilltop, ring upon ring of towering carved stones takes shape — pillars hauled and set by ' +
       'hands that could have been tilling, adorned with the beasts of the world around them. It feeds ' +
       'no one, yet the whole valley comes to build it: the first temple.',
-    prereqs: ['first_trades', 'restless_people'],
+    prereqs: ['first_trades', 'reading_seasons'],
     objectiveCardId: 'first_temple_goal',
     victoryHint: 'Reach 3 🧍 population and 🎭 culture level 2 while holding 30 🔨 and 30 🪙 at once.',
     failureHint: null,

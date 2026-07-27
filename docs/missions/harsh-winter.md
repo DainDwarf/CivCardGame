@@ -7,8 +7,9 @@
 
 **Stage:** Design 🟡 · Implement ⬜ · Balance ⬜ · Polish ⬜
 **Branch:** Stone, lower (row +1) — the **threat** mission, first in its branch.
-**Placement:** `prereqs: ['growing_numbers']`, stone col 2 row +1. A full rewrite of
-`restless_people`, which moves from second in the branch to first and keeps nothing but its slot.
+**Placement:** `prereqs: ['growing_numbers']`, stone col 2 row +1 — ✅ the slot swap has landed, so
+`restless_people` already sits there and `reading_seasons` has moved to col 3. What remains is the
+rewrite: this mission keeps nothing of `restless_people` but that slot.
 **Reward influence:** undecided.
 
 **Narrative.** A winter arrives that the stores were not cut for, and the tribe comes through it
@@ -46,7 +47,7 @@ Calendar moving here means **`reading_seasons` loses its current reward and need
   `accounting`) — so the first reshuffle is a bankruptcy for anyone who came straight down this branch. Delete it, or re-key it off
   a resource the player actually produces before reusing it anywhere.
 - **`restless_people_goal`** (objective, 🎭 level 2) — the arc no longer teaches culture at all.
-- **`beer`** (work, 2🌾 → 5🎭 per worker) — was this mission's reward; now homeless. See REBALANCE →
-  *Culture leaves the Stone Age*.
+- **Nothing of the reward.** Beer was this mission's grant; it has moved to `first_trades` (reworked to
+  1🌾 → 2🎭), leaving the slot card-less for the science pair to fill.
 
 ## Polish ⬜ (not started)

@@ -36,8 +36,8 @@ nothing but noise.
 |---|---|---|
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
-| 3 | `raiders_at_border` · *Harsh Winter* | 🟡 — the **pressure** pair, now first in each branch; Raiders ✅ measured, Harsh Winter not written |
-| 4 | *The First Trades* · `reading_seasons` | 🟡 — the **resource** pair; First Trades ✅ realigned, re-fixtured, measured; `reading_seasons` untouched |
+| 3 | `raiders_at_border` · *Harsh Winter* | 🟡 — the **pressure** pair, now first in each branch; Raiders ✅ measured, Harsh Winter holds `restless_people`'s slot at col 2 but is not written |
+| 4 | *The First Trades* · `reading_seasons` | 🟡 — the **resource** pair; First Trades ✅ realigned, re-fixtured, measured; `reading_seasons` moved to col 3, otherwise untouched |
 | 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 6 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
 | 7 | `pyramid` · `accounting` | ⬜ — both hoard goals; pyramid blocked on the food ceiling |
@@ -238,16 +238,22 @@ up one of the dossiers needs this list rather than the table's shorthand:
 |---|---|
 | `raiders_at_border` | ✅ `prereqs` → `['growing_numbers']`, `map` col **2** · ✅ reward gains Bead Workshop + Bartering (keeps Chiefdom) |
 | `rites_rituals` | ✅ **deleted**, along with `rites_rituals_goal` — strands **Burial**, see *Cards on trial* |
-| `restless_people` | **rewritten** as Harsh Winter — new id, threat, goal and reward; see its dossier for what that retires |
-| `reading_seasons` | `prereqs` `['growing_numbers']` → the Harsh Winter id · `map` col 2 → **3** · **reward is now empty** (Calendar moves upstream) — owes a new one, and it should be this branch's **culture card** |
+| `restless_people` | ✅ `prereqs` → `['growing_numbers']`, `map` col **2** — the slot swap only · **rewritten** as Harsh Winter — new id, threat, goal and reward; see its dossier for what that retires |
+| `reading_seasons` | ✅ `prereqs` → `['restless_people']` (re-points to the Harsh Winter id when it lands) · ✅ `map` col 2 → **3** · **reward is now empty** (Calendar moves upstream) — owes a new one, and it should be this branch's **culture card** |
 | `restless_people` | ✅ Beer's grant moved to `first_trades`, so the Harsh Winter rewrite inherits a card-less reward to re-fill |
 | *The First Trades* | ✅ new: `prereqs: ['raiders_at_border']`, stone col 3 row -1 |
-| `first_temple` | 🟡 `prereqs` → `['first_trades', 'restless_people']` — the upper tip is final; the lower one re-points to Harsh Winter's id when it lands |
+| `first_temple` | ✅ `prereqs` → `['first_trades', 'reading_seasons']` — both tips are final, and the lower one never moves again: the swap put `reading_seasons` at the tip, so the Harsh Winter rename doesn't reach this line |
 
-**Landed — the whole upper branch.** `raiders_at_border` moved to col 2 off Growing Numbers and
-grants the reworked money pair; **The First Trades** now holds col 3 and `rites_rituals` is deleted,
-with `first_temple` re-pointed onto the new mission. The lower branch is untouched, so the capstone's
-second prereq is still `restless_people` until Harsh Winter lands.
+**Landed — the upper branch, and the lower branch's order.** `raiders_at_border` moved to col 2 off
+Growing Numbers and grants the reworked money pair; **The First Trades** now holds col 3 and
+`rites_rituals` is deleted. On the lower branch the two missions have **traded slots**:
+`restless_people` sits at col 2 off Growing Numbers (holding the Harsh Winter slot until the rewrite
+replaces it) and `reading_seasons` at col 3, with `first_temple` re-pointed onto both new tips.
+
+The order swap moves nothing but the DAG. `reading_seasons` still asks 10🔬 with Storytelling stranded,
+and `restless_people` is still the `unrest`-bankruptcy mission below — now reachable directly off
+Growing Numbers, so one step *more* exposed than before. Both are already merge-blockers (see
+*Consequences owed* and *Cards on trial*) and the Harsh Winter rewrite is what closes the lower one.
 
 **The First Trades' goal: open a 🤝 trade route and hold `FIRST_TRADES_FOOD` 🌾** (25 provisional), no
 threat and no events — the route's standing rent is the whole pressure, and it is one the player opts
