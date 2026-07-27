@@ -25,8 +25,10 @@ push through a 🔨 crisis, earn 🔨 relief.
 - **Reward:** the **Wheel** card sticker — **−1🔨** on any card paying 🔨, floored at 0 — the 🔨
   relief that resolves the mission's own 🔨 crisis. Its `appliesTo` is keyed on the 🔨 cost alone, not
   on a kind list: Road turning into an `action` had silently put this mission's own reward out of
-  reach of the mission's own territory card. Widening it also brought Bow and Jewelry (both pay 🔨)
-  into range — **unmeasured**, and the balance pass's to judge.
+  reach of the mission's own territory card. Widening it also brought Bow and Bead Workshop (both pay
+  🔨) into range — **unmeasured**, and the balance pass's to judge. Note the second one is now a 2🔨
+  *building*, so the sticker halves a one-time build price; it used to be a 1🔨-per-play action, where
+  −1🔨 made a repeatable money faucet outright free. The sharper case is the one that went away.
 
 ## Implement ✅ (shipped)
 

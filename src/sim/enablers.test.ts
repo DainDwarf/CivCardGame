@@ -160,7 +160,7 @@ function pyramidRoot(deckCardIds: string[]): GameState {
 
 describe('population capacity enabler', () => {
   it('credits population as a durable, multi-round enabler when it is not itself goal-valued', () => {
-    const deck = ['toolmaking', 'toolmaking', 'foraging', 'foraging', 'farm', 'farm', 'jewelry', 'jewelry'];
+    const deck = ['toolmaking', 'toolmaking', 'foraging', 'foraging', 'farm', 'farm', 'bead_workshop', 'bead_workshop'];
     const m = deriveEnablers(pyramidRoot(deck));
 
     // One round of the deck's best goal producer (Toolmaking: 2🔨/worker) credited through the objective —
@@ -383,7 +383,7 @@ describe('card-cost goal valuation', () => {
     ];
     const deckCardIds = [
       'hut', 'farm', 'forge', 'toolmaking', 'conquest', 'beer',
-      'storytelling', 'bow', 'dogs', 'foraging', 'jewelry', 'cave_art',
+      'storytelling', 'bow', 'dogs', 'foraging', 'bead_workshop', 'cave_art',
     ];
     for (const missionId of resourceMissions) {
       const G = createRun(simConfig({ deckCardIds, board: 'settlement', missionId, seed: 'enablers-card-cost' })).G;

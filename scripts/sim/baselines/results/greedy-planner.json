@@ -328,44 +328,38 @@
     "label": "raiders_at_border",
     "policyName": "greedy",
     "runs": 100,
-    "wins": 98,
-    "winRate": 0.98,
+    "wins": 100,
+    "winRate": 1,
     "turns": {
-      "min": 4,
-      "mean": 12.53,
-      "median": 12,
-      "max": 20
+      "min": 6,
+      "mean": 12.25,
+      "median": 11,
+      "max": 41
     },
     "meanResources": {
-      "food": 8.96,
-      "production": 3.89,
-      "science": 4.52,
-      "military": 1.71,
-      "money": 3.47,
-      "population": 2.03,
-      "culture": 4.03,
-      "territory": 2.02
+      "food": 5.76,
+      "production": 6.63,
+      "science": 0,
+      "military": 0.02,
+      "money": 0,
+      "population": 2.02,
+      "culture": 0,
+      "territory": 4
     },
-    "defeatCauses": {
-      "famine": 2
-    },
+    "defeatCauses": {},
     "cardPlays": {
-      "foraging": 634,
-      "toolmaking": 459,
-      "jewelry": 272,
-      "dogs": 323,
-      "bartering": 197,
-      "storytelling": 226,
-      "bow": 141,
-      "cave_art": 150,
-      "raider": 296,
-      "burial": 16,
-      "farm": 66,
-      "hut": 3,
-      "conquest": 2
+      "bow": 200,
+      "raider": 300,
+      "foraging": 750,
+      "toolmaking": 759,
+      "dogs": 302,
+      "farm": 95,
+      "hut": 2
     },
-    "unplayedCards": [],
-    "meanActions": 39.4
+    "unplayedCards": [
+      "conquest"
+    ],
+    "meanActions": 35.33
   },
   {
     "label": "reading_seasons",
@@ -932,45 +926,38 @@
     "label": "raiders_at_border",
     "policyName": "planner",
     "runs": 100,
-    "wins": 98,
-    "winRate": 0.98,
+    "wins": 100,
+    "winRate": 1,
     "turns": {
-      "min": 4,
-      "mean": 13.09,
-      "median": 12.5,
-      "max": 27
+      "min": 6,
+      "mean": 9.58,
+      "median": 9,
+      "max": 16
     },
     "meanResources": {
-      "food": 6.35,
-      "production": 4.01,
-      "science": 3.94,
-      "military": 1.1,
-      "money": 2.81,
+      "food": 4.11,
+      "production": 3.95,
+      "science": 0,
+      "military": 0,
+      "money": 0,
       "population": 2.03,
-      "culture": 0.18,
-      "territory": 2
+      "culture": 0,
+      "territory": 4
     },
-    "defeatCauses": {
-      "famine": 2
-    },
+    "defeatCauses": {},
     "cardPlays": {
-      "foraging": 568,
-      "storytelling": 197,
-      "dogs": 259,
-      "jewelry": 216,
-      "bartering": 151,
-      "toolmaking": 444,
-      "raider": 296,
-      "farm": 67,
-      "bow": 160,
-      "burial": 4,
-      "cave_art": 1,
+      "bow": 200,
+      "foraging": 478,
+      "raider": 300,
+      "toolmaking": 456,
+      "dogs": 300,
+      "farm": 76,
       "hut": 3
     },
     "unplayedCards": [
       "conquest"
     ],
-    "meanActions": 35.9
+    "meanActions": 26.75
   },
   {
     "label": "reading_seasons",

@@ -12,11 +12,11 @@ import type { RunState } from '../run/engine';
 
 // A money-leaning deck with no money *sink* (no Bartering), so the goal-directed greedy — whose target on
 // this mission *is* money — banks 🪙 upward toward 40 and crosses the spawn threshold at a reshuffle
-// rather than incidentally. Trader/Jewelry are the faucets; Farm/Foraging/Hut sustain and grow the
+// rather than incidentally. Trader/Bead Workshop are the faucets; Farm/Foraging/Hut sustain and grow the
 // population that staffs them.
 const MONEY_DECK: string[] = [
   ...Array<string>(3).fill('trader'),
-  ...Array<string>(3).fill('jewelry'),
+  ...Array<string>(3).fill('bead_workshop'),
   ...Array<string>(3).fill('toolmaking'),
   ...Array<string>(2).fill('farm'),
   ...Array<string>(2).fill('foraging'),

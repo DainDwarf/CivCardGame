@@ -19,12 +19,13 @@ plunder.
 - **Reward — Chiefdom → Warband** `boardUpgrade` (retires Chiefdom, like Settlement→City on the settled
   line): a **military + money** government keeping Chiefdom's **low-territory / high-population** shape.
   Name **Warband** is locked. **Blocked on a Chiefdom rebalance first** — Warband's numbers derive from a
-  re-tuned Chiefdom (a balance-stage task, not a design blocker).
+  re-tuned Chiefdom (a balance-stage task, not a design blocker). Half-unblocked: Chiefdom's shape has
+  landed at pop 3 / terr 2 (REBALANCE → *Landed*), but unmeasured, and its food start is still owed.
 
 ## Goal + pressure ✅ (converged; numbers provisional)
 
 **Money is the reward, never the goal.** The player already owns cheap, repeatable money faucets
-(Trader +3🪙/round, Jewelry 1🔨→2🪙, plus whatever Naval adds), so any "hold N 🪙" win check is
+(Trader +3🪙/round, Bead Workshop +1🪙/worker, plus whatever Naval adds), so any "hold N 🪙" win check is
 solvable without raiding *or* fielding military — the raiding loop would be optional flavour. So the
 win condition is the raiding **act** (proven un-shortcuttable by a money pile), and plunder is the
 **payoff** for it — which is also truer to the identity ("turn martial power into plunder").

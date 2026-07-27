@@ -18,8 +18,8 @@
  * so export a backup first if you care about it.)
  *
  * `--upto` clears the target's transitive prereqs *plus the target*, so a branch the target doesn't
- * depend on stays uncleared — `--upto raiders_at_border` seeds a "went down the Rites branch" save
- * with the Reading the Seasons branch untouched. Run stats are randomized off `--seed`, so the same
+ * depend on stays uncleared — `--upto raiders_at_border` seeds a "went down the Raiders branch" save
+ * with the parallel branch untouched. Run stats are randomized off `--seed`, so the same
  * flags always produce the same file.
  */
 import { writeFileSync } from 'node:fs';

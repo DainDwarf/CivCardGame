@@ -308,40 +308,35 @@
     "wins": 10,
     "winRate": 1,
     "turns": {
-      "min": 7,
-      "mean": 10.4,
-      "median": 10.5,
-      "max": 15
+      "min": 6,
+      "mean": 6.9,
+      "median": 7,
+      "max": 8
     },
     "meanResources": {
-      "food": 8.9,
-      "production": 2.5,
-      "science": 3.8,
-      "military": 1.1,
-      "money": 3.3,
+      "food": 5.8,
+      "production": 3.7,
+      "science": 0,
+      "military": 0,
+      "money": 0,
       "population": 2,
-      "culture": 3.2,
-      "territory": 2
+      "culture": 0,
+      "territory": 4
     },
     "defeatCauses": {},
     "cardPlays": {
-      "foraging": 57,
-      "toolmaking": 46,
-      "bow": 17,
-      "jewelry": 23,
-      "dogs": 25,
-      "storytelling": 19,
-      "bartering": 13,
+      "bow": 20,
+      "foraging": 32,
       "raider": 30,
-      "cave_art": 15,
-      "farm": 10,
-      "burial": 3
+      "toolmaking": 45,
+      "farm": 9,
+      "dogs": 30
     },
     "unplayedCards": [
       "hut",
       "conquest"
     ],
-    "meanActions": 39
+    "meanActions": 22.9
   },
   {
     "label": "reading_seasons",

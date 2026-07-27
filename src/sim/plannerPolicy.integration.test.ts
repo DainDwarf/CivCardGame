@@ -13,7 +13,7 @@ const MASONRY_DECK: (string | DeckCard)[] = [
   ...Array<string>(2).fill('bartering'),
   ...Array<string>(2).fill('bow'),
   ...Array<string>(2).fill('dogs'),
-  ...Array<string>(2).fill('jewelry'),
+  ...Array<string>(2).fill('bead_workshop'),
   ...Array<string>(2).fill('cave_art'),
   ...Array<string>(4).fill('hut'),
   { cardId: 'farm', stickers: ['irrigation', 'irrigation'] },
@@ -69,7 +69,7 @@ describe('planner resolves a parked peek instead of deadlocking', () => {
     ...Array<string>(4).fill('foraging'),
     ...Array<string>(4).fill('toolmaking'),
     ...Array<string>(2).fill('bartering'),
-    ...Array<string>(2).fill('jewelry'),
+    ...Array<string>(2).fill('bead_workshop'),
     ...Array<string>(2).fill('storytelling'),
     'calendar',
   ];

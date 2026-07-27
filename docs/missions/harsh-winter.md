@@ -41,8 +41,9 @@ Calendar moving here means **`reading_seasons` loses its current reward and need
 ## What this rework retires
 
 - **`unrest`** (threat, −1🪙 per 🧍 on reshuffle) — no longer used. It is also **broken as it stands**:
-  every board a player can reach at this point starts at 0🪙, Jewelry is cut and Trader is gated
-  behind `accounting`, so the first reshuffle is a guaranteed bankruptcy. Delete it, or re-key it off
+  every board a player can reach at this point starts at 0🪙, and the only faucets are Bead Workshop
+  (granted on the *upper* branch, so this chain doesn't guarantee it) and Trader (gated behind
+  `accounting`) — so the first reshuffle is a bankruptcy for anyone who came straight down this branch. Delete it, or re-key it off
   a resource the player actually produces before reusing it anywhere.
 - **`restless_people_goal`** (objective, 🎭 level 2) — the arc no longer teaches culture at all.
 - **`beer`** (work, 2🌾 → 5🎭 per worker) — was this mission's reward; now homeless. See REBALANCE →

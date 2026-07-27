@@ -138,7 +138,7 @@
   period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
   Sequenced **after Step 10**, so it is authored against rebalanced rates rather than inheriting them.
   `[size: L]` `[?]`
-  - Iron Age mission arcs — structure as 2–3 parallel quest lines (branching DAG paths, echoing how the Stone Age forks Rites & Rituals / Reading the Seasons after Growing Numbers), themed around distinct early civilizations:
+  - Iron Age mission arcs — structure as 2–3 parallel quest lines (branching DAG paths, echoing how the Stone Age forks Raiders at the Border / Reading the Seasons after Growing Numbers), themed around distinct early civilizations:
     - Roman Empire — a military/expansion-leaning line
     - China — a distinct cultural/technological line
     - Central Arabia (maybe) — a trade/desert line, tentative third branch

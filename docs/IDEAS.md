@@ -38,7 +38,7 @@ Centralized, elite-controlled, trade-dependent palace civilizations.
 
 No coins, those are iron age
 For the trade: Wheel for the first trade works? Get a few money producing work, and bronzeworking building that use money to produce prod.
-Issue: Current jewelry card is already strong at making money
+Issue: Bead Workshop already covers the money-producing work
 Writing
 Sailing
 Tin trade

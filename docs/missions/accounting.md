@@ -19,8 +19,8 @@ A single 🪙-stockpile goal fought against a **theft economy** — a fat treasu
   paying its ⚔️ cost catches it (→ `removed`).
 - **Reward:** unlocks the **Trader** (work, free, 3🪙/staffed worker) + the **Opulence** board sticker
   (+10 starting 🪙, the first money board sticker).
-- **Prereq feeds the fight:** Copper→Forge→🔨→Jewelry is the income; Masonry→City Walls is the ⚔️ that
-  catches thieves — each prereq feeds one half.
+- **Prereq feeds the fight:** Copper→Forge→🔨 pays for the Bead Workshops that are the income;
+  Masonry→City Walls is the ⚔️ that catches thieves — each prereq feeds one half.
 
 ## Implement ✅ (shipped)
 

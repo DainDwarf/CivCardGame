@@ -23,6 +23,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
+- **Deck editor: the fixed deck-tray banner swallows clicks on the picker's last section.** At a
+  ~949px-tall viewport the picker's bottom-most section sits *under* `.banner`
+  (`position: fixed; bottom: 0`) at the default unscrolled position — `.picker`'s
+  `padding-bottom: 260px` clearance isn't enough. `elementFromPoint` on a tile there resolves to a
+  card in the tray beneath, so the click silently toggles **a different card** out of the deck; no
+  error, no visual cue. Scrolling the picker down clears it. Found when Bartering became the first
+  *ownable* `trade` card and its new **Trade Routes** section landed last in the picker — so every
+  future kind added at the end walks into this. Fix the clearance/stacking, not the section order.
+  `[size: S]`
 - **Danger-button text contrast (app-wide)** — the `--danger-strong` / white pairing on danger
   buttons (GameMenu's Clear/Replace confirms, the deck-editor discard confirm, etc.) measures
   ~3.74:1 white-on-red — short of WCAG AA (4.5:1) for its bold ~15.7px size, in both light and dark.
@@ -109,6 +118,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Misc
 
+- **Rework the Influence economy and the copy-count ladder together.** Explicitly **not** the
+  `trade-redesign` branch's job — parked here so it isn't rediscovered from a card. How many copies of
+  a card a player can reach is what decides whether a second-rate line is worth building at all, and
+  right now that scarcity is doing load-bearing balance work it was never tuned for — a second Farm
+  is a shop purchase, while a second Bead Workshop + Bartering pair is only two more territory slots
+  (see [`missions/first-trades.md`](missions/first-trades.md) → *Balance*). **Which of the two food
+  lines wins is therefore set by the copy ladder, not by their rates**, so re-read that pair when the
+  ladder moves. `npm run economy` prints the faucet ledger and price list the rework starts from.
+  `[size: L]`
+
 ---
 
 ## Done / shipped
@@ -146,12 +165,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     So there are no reversible play/remove actions and the planner/oracle search is unaffected.
   - A standing route renders as a board **box** (the building/work treatment), not a card face, and the
     face reads its rent→yield as one exchange (`1🪙 → 1🌾`).
-  - **Bartering is the first route** (2🪙 to open, then −1🪙 / +1🌾 every round), converted from a
+  - **Bartering is the first route** (1🪙 to open, then −1🪙 / +1🌾 every round), converted from a
     one-shot action as the mechanic's test vehicle. Nine baseline fixtures carry it and the integration
     suites' win rates held unchanged, but **that is not evidence the card is fine** — they'd pass
-    identically with Bartering deleted from those decks. Every board starts at 0–2🪙, so in the
-    no-purchase Stone-Age fixtures a route can barely be *opened*, let alone sustained (and those numbers
-    predate the unified cap, so they need re-measuring anyway). **The signal to
+    identically with Bartering deleted from those decks. The measurements below were taken at the
+    card's original 2🪙 opening cost, against boards starting at 0–2🪙 with no faucet at all, so they
+    need re-reading anyway (they also predate the unified cap). **The signal to
     read in the sweep is `unplayedCards`, not the win rate.** Confirmed on masonry × 3 seeds: planner
     leaves `bartering` unplayed; the random policy plays it once and one of its runs dies to
     **bankruptcy**, so the path and the rent both work — the non-play is a decision, not a dead path.

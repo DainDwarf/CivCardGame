@@ -1,20 +1,15 @@
 {
   "id": "raiders_at_border",
   "mission": "raiders_at_border",
-  "note": "Minimal: the upper branch — Growing Numbers' stage + Rites & Rituals' reward (Burial). No Calendar: that is the parallel lower branch's reward, which the DAG doesn't require to get here. Chiefdom is this mission's own reward, so Settlement is the only board available.",
+  "note": "Minimal: identical to the Growing Numbers deck — Raiders forks straight off it, and its own rewards (Bead Workshop, Bartering, the Chiefdom board) are what this run is played to earn. Settlement is the only board, Growing Numbers' clear having retired Tribe. The 6 ⭐ arriving from that clear is left unspent, and the Irrigation sticker it unlocked unbought.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
-    { "cardId": "bartering", "count": 2 },
     { "cardId": "bow", "count": 2 },
     { "cardId": "dogs", "count": 2 },
-    { "cardId": "storytelling", "count": 2 },
-    { "cardId": "jewelry", "count": 2 },
-    { "cardId": "cave_art", "count": 2 },
-    { "cardId": "hut", "count": 1 },
     { "cardId": "farm", "count": 1 },
-    { "cardId": "conquest", "count": 1 },
-    { "cardId": "burial", "count": 1 }
+    { "cardId": "hut", "count": 1 },
+    { "cardId": "conquest", "count": 1 }
   ]
 }

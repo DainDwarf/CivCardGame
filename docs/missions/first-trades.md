@@ -21,14 +21,23 @@ Introduces **money** and **trade routes** — the first mission where 🪙 is bo
 Its two cards are `raiders_at_border`'s reward, so they are owned before this mission is launched
 (the cross-cutting sequencing rule in BACKLOG).
 
-**The two cards** (both reworks of cards currently on trial, see REBALANCE → *Cards on trial*):
+**The two cards** — ✅ **both reworked and shipped**, granted by `raiders_at_border` (landed ahead of
+this mission so they can be played in the meantime):
 
-| Card | Was | Becomes |
+| Card | Was | Is now |
 |---|---|---|
-| Jewelry | `action`, 1🔨 → 2🪙 | **`work`**, 1🪙 per staffed worker |
-| Bartering | `trade` route, 2🪙 to open, −1🪙/round, +1🌾/round | **`trade`** route, 1🪙 rent → 1🌾/round |
+| Bead Workshop | `action`, 1🔨 → 2🪙 | **`building`**, 2🔨 to build, 1🪙 per staffed worker |
+| Bartering | `trade` route, 2🪙 to open, −1🪙/round, +1🌾/round | **`trade`** route, 1🪙 to open, 1🪙 rent → **2🌾**/round |
 
-Both sit on money's **producer** side, so the one-way-hub topology holds: Jewelry no longer converts
+**Why the faucet is a building and not a work box.** A route's rent is charged every round
+unconditionally, while a work card only pays out on the turns it is *drawn* — one copy in a ~23-card
+deck reaches a 4-card hand about 17% of the time, four copies about 53%. No number of copies covers a
+100% obligation, so a draw-dependent faucet funding a permanent rent runs a structural deficit into
+bankruptcy. The income has to be as permanent as the debt. The same argument prices the route's 1🪙
+entry: it can't be paid before the faucet is standing, so the trap of opening a route with no income
+is closed by the cost rather than by a warning.
+
+Both sit on money's **producer** side, so the one-way-hub topology holds: Bead Workshop no longer converts
 🔨 into 🪙 (a worker does), and the route rents access rather than exchanging. Nothing converts the
 route's 🌾 back into 🪙.
 
@@ -41,26 +50,27 @@ Decide before implementing.
 
 ## Balance ⬜ (not started)
 
-**The rate does not clear as specified — resolve this at Design, not in the sweep.** As written the
-pair is strictly worse than a card the player already owns:
+**Resolved by lever 2 — the route's return, not the faucet's rate.** The line now reads:
 
-- Jewelry work box — 1 territory slot + 1 worker → 1🪙/round.
-- Bartering route — 1 territory slot + 0 workers → −1🪙/round, +1🌾/round.
-- **Together: 2 slots + 1 worker → 1🌾/round.** Foraging is 1 slot + 1 worker → 1🌾/round.
+- Bead Workshop building — 2🔨, 1 slot + 1 worker → 1🪙/round.
+- Bartering route — 1🪙 to open, 1 slot + 0 workers → −1🪙/round, **+2🌾/round**.
+- **Together: 2🔨, 2 slots + 1 worker → 2🌾/round.** Farm is 2🔨, 1 slot + 1 worker → 1🌾/round.
 
-So the whole money loop costs an extra territory slot to do exactly what a starting card already
-does. Under the unified territory cap that slot is the scarcest thing on the board, so this is
-dead on arrival. Three levers, not yet chosen:
+So the pair is **double a Farm's output for double its slots and the same single worker** — a real
+trade rather than a strict loss, and the axis it trades on is the one the boards actually squeeze:
+Settlement is pop 2 / terr 4, so slots are what you have spare and workers are what you don't.
 
-1. Raise Jewelry's rate (1 worker funds more than one route's rent).
-2. Raise the route's return (1🪙 buys more than 1🌾, or the route yields something Foraging can't).
-3. Give routes a value that isn't throughput at all — a route takes **no worker**, so a player who is
-   worker-bound rather than slot-bound would pay a slot for it. That reframes the pitch, but only
-   bites on boards where population is the binding constraint.
+Why lever 2 and not lever 1 (one faucet funding several routes): the faucet is fixed at 1🪙, so a
+route's rent eats all of it. Lever 3 (routes cost no worker) is real but can't carry the pair alone —
+at one route per faucet, the worker a route saves is spent on the faucet that funds it.
 
-Lever 2 is the one that also makes the *mission* interesting, since the goal is likely route-count.
+**Watch at the sweep:** the route now out-rates the building it depends on, so a second Bead Workshop
++ route pair scales linearly on slots with no diminishing term. Territory is the only brake. Check
+whether a slot-rich board turns this into the dominant food line rather than an alternative to one.
+Also unchanged: 🪙 is demanded outside routes — 30🪙 at `first_temple`, 6🪙 in Pyramid's build cost —
+so the building keeps a job even where a route isn't worth its slot.
 
-**Second check:** at this point in the arc, Jewelry is money's only faucet and the route its only
+**Second check:** at this point in the arc, Bead Workshop is money's only faucet and the route its only
 sink — a closed two-card system. Verify it is a decision and not a script before locking numbers.
 
 ## Polish ⬜ (not started)

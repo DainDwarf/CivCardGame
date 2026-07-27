@@ -27,7 +27,7 @@ House/City Walls cards + the Settlement → City board upgrade shipped.
 The in-mission population lever is **thin** — House and City are *this mission's own rewards*, so while
 playing it the only population source is **Hut** (+1, one-shot, costs a territory slot).
 
-- On Settlement (pop 2 / territory 2) or Chiefdom (pop 3 / territory 0), hitting 6 leans hard on
+- On Settlement (pop 2 / territory 4) or Chiefdom (pop 3 / territory 2), hitting 6 leans hard on
   **Conquest** chains (military → territory) to open building slots for more Huts, while Farms compete
   for those same slots and 6 pop eats 6🌾/round.
 - So **6 may be *structurally* steep**, not just a high number — verify winnability with a sim sweep

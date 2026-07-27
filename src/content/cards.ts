@@ -233,6 +233,7 @@ export const CARDS: Record<string, CardDef> = {
     effect: { resources: { population: 1 } },
   },
   burial: { id: 'burial', name: 'Burial', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '⚰️' } },
+  bead_workshop: { id: 'bead_workshop', name: 'Bead Workshop', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { money: 1 } }, workers: 1, display: { art: '📿' } },
   forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
   // The science counterpart of the Forge: matches Storytelling's 2🔬/worker as a permanent building
   // rather than a work card refiled every round, deliberately obsoleting it.
@@ -283,8 +284,7 @@ export const CARDS: Record<string, CardDef> = {
     effect: { resources: { military: 3 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
   },
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
-  jewelry: { id: 'jewelry', name: 'Jewelry', kind: 'action', cost: { resources: { production: 1 } }, display: { art: '📿' }, effect: { resources: { money: 2 } } },
-  bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 2 } }, display: { art: '🤝' }, produces: { resources: { food: 1 } }, upkeep: { resources: { money: -1 } } },
+  bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { resources: { food: 1 } }, display: { art: '🐕' }, effect: { resources: { military: 1 } } },
   raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } }, display: { art: '🔥' }, effect: { resources: { money: 6 } } },
   // Conquest and Road are the game's only two territory sources, so they are deliberately `action` —

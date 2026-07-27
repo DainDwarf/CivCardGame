@@ -36,7 +36,7 @@ nothing but noise.
 |---|---|---|
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
-| 3 | `raiders_at_border` · *Harsh Winter* | ⬜ — the **pressure** pair, now first in each branch |
+| 3 | `raiders_at_border` · *Harsh Winter* | 🟡 — the **pressure** pair, now first in each branch; Raiders ✅ measured, Harsh Winter not written |
 | 4 | *The First Trades* · `reading_seasons` | ⬜ — the **resource** pair; see the restructure below |
 | 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 6 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
@@ -47,6 +47,38 @@ nothing but noise.
 | — | `ice_age` · `sandbox` | ⬜ — infinite; no win to measure, read collapse round instead |
 
 ## Landed
+
+### Chiefdom — pop 3 / terr **2** ✅ (unmeasured)
+
+Territory 4 → **2**; everything else unchanged. Chiefdom was the *low-territory / high-population*
+government in [`missions/raiding.md`](missions/raiding.md) — which locks Warband as "keeping
+Chiefdom's shape" — but carried Settlement's territory 4, so the identity existed only on paper. Now
+three workers share two slots and one starts idle.
+
+**Why territory and not the spendable pools.** Five of a board's eight numbers are one-time and wash
+out by turn 10; only population and territory are standing capacities, felt every round. They are the
+whole persistent-differentiation budget a board has, and no board had used them on purpose. Chiefdom's
+6⚔️ was its only identity and it was gone by turn 3.
+
+**6⚔️ was already the right number**, which is why it didn't move: Conquest costs 2⚔️ doubling per
+play per copy, so plays one and two are 2 then 4 — the start buys exactly two, taking territory 2 → 4.
+The board states its strategy as a shortage the player spends the army to fix, rather than as a bonus.
+
+Not pop 4: upkeep is `floor(pop²/4)`, so pop 4 eats 4🌾/round — break-even with *every* worker farming
+(see *Consequences owed*). Pop 4 on two slots is a spiral, not a push.
+
+**Owed at the sweep:** food. 6🌾 is the lowest start of the four, against 2🌾/round upkeep at pop 3 —
+three rounds of slack before a food source has to land. Unmeasured, and the first thing to read.
+
+**Still open — do boards get behaviour, not just numbers?** Deliberately deferred until this is played:
+numbers-only may be a complete answer now that the persistent axis is used on purpose. If it still reads
+bland, the ranked options are (1) a board starting with a card already **in play** — flavour as loud as
+a rule with every rule still printed on a readable card face, and on Chiefdom it would occupy one of the
+two slots, sharpening the squeeze rather than paying it off; (2) a board rule keyed to a **concept**,
+e.g. *territory gained is doubled* — survives Road and anything after, unlike naming Conquest. Ruled
+out either way: a board rule that changes a **card's printed numbers**, which makes the card face lie
+on one board. Watch that any such rule doesn't make Chiefdom the *answer* to the territory-hungry
+missions (Masonry, Wheel) instead of a *choice*.
 
 ### Mission 1 — The First Settlement ✅
 
@@ -135,6 +167,47 @@ is this mission's own reward) with the starting deck + one Hut/Farm/Conquest, 15
 **Reaches forward:** Settlement's 5🔨 start touches every later mission launched on it, so missions 3+ are
 measured against the new number when the pass gets to them.
 
+### Mission 3 — Raiders at the Border ✅
+
+**No content edit.** Three waves at 3⚔️ each, no threat, food the only other pressure — the mission
+proved sound at the new rates as authored. What moved is what a player *arrives* with: the DAG swap
+puts Raiders directly after Growing Numbers, so its deck is now that mission's deck **exactly**, on
+Settlement (Growing Numbers' clear having retired Tribe), with the 6⭐ arriving unspent and Irrigation
+unbought. `raiders_at_border.json` is re-cut to that, and its rows in `baselines/results/` updated —
+that cell only.
+
+**Measured** (15 cards, no purchases, Settlement's 10🌾/5🔨/4🗺️/2🧍):
+
+| policy | result | turns (min · median · max) | end 🌾 | Conquest plays/run |
+|---|---|---|---|---|
+| random @200 | 7/200 | 4 · 7 · 17 | −1.4 | 0.34 |
+| heuristic @200 | 0/200 | 7 · 27 · 128 | −1.2 | 0.46 |
+| greedy @100 | 100/100 | 6 · 11 · 41 | 5.8 | 0 |
+| planner @100 | 100/100 | 6 · 9 · 16 | 4.1 | 0 |
+| oracle @10 | 10/10 | 6 · 7 · 8 | 5.8 | 0 |
+
+- **The competent floor is 100%.** Not one defeat across greedy, planner and oracle at 100 seeds; a
+  wider greedy sweep @200 turned up a single famine. Against mission 2's greedy 26/100 on identical
+  construction, **the arc's difficulty steps down here** — the pressure mission is easier than the
+  resource mission that precedes it, which is the opposite of the restructure's intent and the first
+  thing to weigh when Harsh Winter is written to sit opposite it.
+- **The territory axis is dead.** Conquest is unplayed by *every* competent policy, Hut lands 2–3
+  times per 100 runs, and all three end at pop 2 / 🗺️ 4 — Settlement's start, untouched. Mission 2
+  made 🗺️→🧍 the live decision and this mission switches it off: Settlement already grants more slots
+  than the run needs, so ⚔️ has exactly one buyer (the waves) and never competes with expansion.
+- **Every competent policy converges on the same minimal ⚔️ budget** — Bow twice (2 × 3⚔️) and Dogs
+  three times (3 × 1⚔️) = **9⚔️ against three waves at 3⚔️**, ending on ~0⚔️, identical across greedy,
+  planner and oracle. Not a hard ceiling — Dogs is repeatable and food is spare, so ⚔️ is buyable at
+  1🌾 indefinitely — but there is no *reason* to buy a tenth, so the plan is the same every run and
+  skill can't express itself in it.
+- **Skill shows in tempo, not survival**: oracle 7 turns · planner 9 · greedy 11. Everyone wins; the
+  gradient is how fast.
+- **Heuristic's 0/200 is a `sim/value.ts` blind spot, not content** — it leaves Dogs unplayed (the same
+  gap recorded at mission 2), so it holds only Bow's 6⚔️, cracks two waves, and starves on the third's
+  upkeep at a 27-turn median. It is not a difficulty signal: the resource it needs is on the table.
+- **Not measured here: the money pair.** Bead Workshop and Bartering are this mission's *reward*, so
+  no run in this cell owns either. Their first measurement is The First Trades' cell.
+
 ## Decided — Stone Age branches 3–4 restructure
 
 **The forcing problem.** Both branches were authored *resource first, pressure second* —
@@ -152,19 +225,49 @@ it, and a pressure mission demands no resource — so the order inverts.
 | **lower** (row +1) | **Harsh Winter** — famine threat, a rewrite of `restless_people` ([dossier](missions/harsh-winter.md)) | `reading_seasons` — 10🔬 kept, **moved**, and loses its reward |
 
 Each col-2 mission's **reward is the col-3 mission's toolkit**: `raiders_at_border` grants the money
-pair (Jewelry, Bartering), Harsh Winter grants the science pair (Storytelling, Calendar).
+pair (Bead Workshop, Bartering), Harsh Winter grants the science pair (Storytelling, Calendar).
 
 **The concrete `missions.ts` edits** — no mission in either branch is untouched, so a session picking
 up one of the dossiers needs this list rather than the table's shorthand:
 
 | Mission | Edit |
 |---|---|
-| `raiders_at_border` | `prereqs` `['rites_rituals']` → `['growing_numbers']` · `map` col 3 → **2** · reward gains Jewelry + Bartering (keeps Chiefdom) |
-| `rites_rituals` | **deleted**, along with `rites_rituals_goal` |
+| `raiders_at_border` | ✅ `prereqs` → `['growing_numbers']`, `map` col **2** · ⬜ reward gains Bead Workshop + Bartering (keeps Chiefdom) |
+| `rites_rituals` | **deleted**, along with `rites_rituals_goal` — ⬜ *parked at col 3* for now, see below |
 | `restless_people` | **rewritten** as Harsh Winter — new id, threat, goal and reward; see its dossier for what that retires |
 | `reading_seasons` | `prereqs` `['growing_numbers']` → the Harsh Winter id · `map` col 2 → **3** · **reward is now empty** (Calendar moves upstream) — needs a new one |
 | *The First Trades* | new: `prereqs: ['raiders_at_border']`, stone col 3 row -1 |
 | `first_temple` | `prereqs` `['raiders_at_border', 'restless_people']` → `['first_trades', <harsh winter id>]` — the tips moved, so the capstone's gate must follow |
+
+**Landed early — the upper branch's swap and its reward.** `raiders_at_border` and `rites_rituals`
+have traded places in the DAG ahead of the rest of the restructure, so Raiders is playable off
+Growing Numbers now, and Raiders grants the reworked money pair. Rites is **not deleted yet**: it
+sits at col 3 holding the slot The First Trades will take, with `first_temple` re-pointed onto it — a
+deliberate parking spot, not a survivor of the plan. It keeps the DAG connected and the capstone
+downstream of the age's only 🎭 source while the branch's real col-3 mission is still being written.
+
+The two cards shipped **reworked past the dossier's spec** — Bead Workshop is a `building` (2🔨, 1🪙 per
+staffed worker), not the work box the dossier drafted, and Bartering opens for 1🪙 and rents 1🪙/round
+for **2🌾**/round. The faucet had to become permanent: a route's rent is charged every round while a work
+card only pays on the turns it's *drawn*, and no copy count closes that gap (one copy in a ~23-card
+deck reaches a 4-card hand ~17% of the time, four copies ~53%, against a 100% obligation) — so a
+work-card faucet funding a permanent rent is not weak but unpayable. Permanence answered reliability
+but not *throughput* — the pair was then a strict loss to a plain Farm — so the route's **return**
+took the second lever to 2🌾, and it lands at 2 slots + 1 worker → 2🌾 against Farm's 1 slot + 1
+worker → 1🌾: double output for double the slots and the same one worker. That is the trade Settlement's
+pop 2 / terr 4 wants, and it is the first card in the arc priced on the *slots-for-workers* axis
+rather than on rate. Unmeasured — see the dossier's Balance section for what to watch.
+
+`raiders_at_border.json` is re-cut and measured (see *Mission 3* above). `rites_rituals.json` is still
+stale, and the swap moved it the *other* way — Rites now sits downstream of Raiders, so its pool legitimately
+gains the money pair and **Chiefdom as a second launchable board**, which its `"board": "settlement"` doesn't
+exercise; its note still calls Rites a fork off Growing Numbers. Left alone: the mission is a parking spot
+The First Trades takes, so the fixture is rewritten wholesale rather than half-corrected.
+
+Separately, and predating this branch: several fixtures stock **Storytelling and Cave Art**, which are in
+neither `STARTING_COLLECTION` nor any mission's `unlockCardIds` — the *Cards on trial* list, being measured
+in decks no player can build. Every such fixture is re-cut at its own mission's turn, and the trial list is
+what resolves the underlying strandedness.
 
 A *missing* prereq id used to fail nothing — `campaign.ts`'s `isAvailable` just never satisfies it, so
 the mission dropped out of the campaign silently. `content/missions.test.ts` now pins prereq id
@@ -178,7 +281,7 @@ Also fixed incidentally: `restless_people` demanded 🎭 level 2 while its only 
 
 **Money enters at Stone, not Bronze.** This reverses *money's topology* below, which put money in the
 Bronze substrate. Taken deliberately, in exchange for `first_temple`'s 30🪙 becoming reachable
-without re-pointing. The topology **rule** survives intact — the reworked Jewelry produces 🪙 from a
+without re-pointing. The topology **rule** survives intact — the reworked Bead Workshop produces 🪙 from a
 worker instead of converting 🔨, and the route rents rather than exchanges, so there is still no
 edge converting non-money back into money. What lapses is only the *age* the resource belongs to,
 and with it the "each age promotes one resource into the substrate" framing: Stone now carries food,
@@ -186,7 +289,7 @@ production **and money**, leaving Bronze to promote something else.
 
 **Trader's home is now open.** It was `accounting`'s reward as "the money faucet that opens the money
 spine", but the spine opens five missions earlier. Either Trader moves up, or `accounting` keeps it
-as a *better* faucet than Jewelry and its pitch is rewritten. Decide when the pass reaches Accounting.
+as a *better* faucet than Bead Workshop and its pitch is rewritten. Decide when the pass reaches Accounting.
 
 ### Culture leaves the Stone Age
 
@@ -219,10 +322,11 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
 
 | Card | Charge | Resolution |
 |---|---|---|
-| Storytelling (2🔬 work) | 🔬 has no sink at all in the Stone Age start | ✅ **Harsh Winter** reward, reworked to the 1-per-worker base rate |
-| Jewelry (1🔨→2🪙) | **anti-goal at mission 1** — drains the resource the objective counts, for one with no reachable sink | ✅ **`raiders_at_border`** reward, reworked from a 🔨→🪙 converter into a 🪙 *work* box |
-| Bartering (2🪙 route) | unaffordable at mission 1, and its rent bankrupts a treasury with no income | ✅ **`raiders_at_border`** reward — the first route, paired with the Jewelry faucet that funds it |
+| Storytelling (2🔬 work) | 🔬 has no sink at all in the Stone Age start | ⬜ **Harsh Winter** reward, reworked to the 1-per-worker base rate — mission not written yet |
 | Cave Art (2🎭 work) | 🎭 level 1 is 10🎭 — a whole tutorial mission's output for +1 hand size | ❌ **no home** — `rites_rituals` was it. See *Culture leaves the Stone Age* |
+
+Bead Workshop and Bartering have **left this list** — both are reworked and granted by `raiders_at_border`;
+see *Landed early* above.
 
 ## Consequences owed
 
@@ -234,8 +338,8 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
   not a balance nudge — decide it before reaching Masonry.
 - **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is `it.skip`ped** until this pass reaches
   Masonry. Two reasons at once, which is why it's parked rather than retuned:
-  - Its hardcoded deck fields **bartering · jewelry · cave_art** — three of the four *Cards on trial*
-    below — so the fixture is stale by this pass's own rules whatever the numbers say.
+  - Its hardcoded deck fields **bartering · bead_workshop · cave_art** — the first two at pre-rework rates,
+    the third still homeless — so the fixture is stale whatever the numbers say.
   - Conquest's 2⚔️-doubling price pushed it from 4/6 to **3/6** against a `>= 4` threshold. Expected
     direction (Masonry converts ⚔️→🗺️→🧍 repeatedly, so a doubling territory card bites hardest exactly
     there), but it's a **one-seed** move on a 6-sample proxy, so it doesn't measure *how much* — that
@@ -246,8 +350,9 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
   escalate: Road, a wider board, or a cap on the curve. **Un-skip before merging to `main`.**
 - **`restless_people` is unwinnable as it stands** — a shipped mission with no line, same merge-blocker
   class as a stranded card. Its `unrest` threat drains −1🪙 per 🧍 on every reshuffle; Tribe, Settlement
-  and Chiefdom all start at **0🪙**, Jewelry is cut and Trader is gated behind `accounting`, so the first
-  reshuffle bankrupts the run. The Harsh Winter rewrite retires the mission and the threat both, which
+  and Chiefdom all start at **0🪙**, and its prereq chain is the *lower* branch, so the money faucet
+  Raiders now grants isn't guaranteed to be owned — a player who took only this branch still meets the
+  first reshuffle with no income and bankrupts. The Harsh Winter rewrite retires the mission and the threat both, which
   closes this — but if `unrest` is ever reused it must be re-keyed off a resource the player produces.
 - **The Influence faucet ledger shifts.** Dropping `rites_rituals` (8⭐) and adding The First Trades
   changes `cumulativeInfluenceInto` for every mission downstream — which is the number shop tiers and
@@ -258,24 +363,25 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
 ## Diagnosis (the original analysis)
 
 Three separate-looking complaints (base work cards too strong · Dogs/Bow flattening later military ·
-Jewelry too strong) are one root cause: **every converter doubles, and they compose.**
+Bead Workshop too strong) are one root cause: **every converter doubles, and they compose.**
 
 | Card | In | Out | Ratio |
 |---|---|---|---|
-| Jewelry | 1🔨 | 2🪙 | ×2 |
-| ~~Bartering~~ | ~~1🪙~~ | ~~2🌾~~ | **converted to a trade route** (2🪙 to open, then −1🪙/+1🌾 per round) |
+| ~~Bead Workshop~~ | ~~1🔨~~ | ~~2🪙~~ | **converted to a building** (2🔨 once, then 1🪙 per staffed worker) |
+| ~~Bartering~~ | ~~1🪙~~ | ~~2🌾~~ | **converted to a trade route** (1🪙 to open, then −1🪙/+1🌾 per round) |
 | ~~Dogs~~ | 1🌾 | ~~2⚔️~~ **1⚔️** | **cut to ×1** |
 | Raiding | 3⚔️ | 6🪙 | ×2 |
 | Bow | 2🔨 | 3⚔️ | ×1.5, self-exiling |
 
-Chained, Toolmaking → Jewelry → Bartering → Dogs turned **1🔨 into 8⚔️** (16⚔️ per worker-round against
+Chained, Toolmaking → Bead Workshop → Bartering → Dogs turned **1🔨 into 8⚔️** (16⚔️ per worker-round against
 War Horse's 4), and Bartering → Dogs → Raiding **closed a cycle**: 1🪙 → 2🌾 → 4⚔️ → ~8🪙, ×8 per lap,
 with `raiding` live today (granted by Horse Taming). The only brake is card plays — hand size 4, +1 per
 culture level, no per-turn cap — so the engine *strengthens* as culture rises. Net effect: the five core
 resources are one resource with five sprites, which is what erases deck identity.
 
 **Bartering's conversion breaks both chains** — a route rents access instead of converting, so 🪙 no
-longer has a one-shot exit into 🌾 at all. Jewelry and Raiding are the two edges left to cut.
+longer has a one-shot exit into 🌾 at all, and Bead Workshop's rework removes 🔨's exit into 🪙. **Raiding
+is the last converting edge left to cut.**
 
 Second, **buildings never out-rate the free work card** of their resource, while also costing 🔨, a
 territory slot, and a draw — Storytelling 2🔬 vs Archives 2🔬 · Cave Art 2🎭 vs Burial 1🎭 ·
@@ -292,9 +398,10 @@ no bonus at all**: it purely gates bronze, so its cost is pure route-capacity op
 
 - **The rule to hold, not just the card:** *a route may produce money, or non-money — but no card may
   convert that non-money output back into money.* Otherwise route + converter is a pump at any rate.
-- **Jewelry** (🔨→🪙) is cut or re-pointed — it is the exact inverse of the planned Bronzeworking
-  (🪙→🔨) and would form a two-card loop at the centre of the age. ✅ **Resolved:** re-pointed into a
-  🪙 *work* box (a worker makes money; nothing converts 🔨 into it), so the loop never forms.
+- **Bead Workshop** (was 🔨→🪙 as Jewelry) is cut or re-pointed — it was the exact inverse of the
+  planned Bronzeworking (🪙→🔨) and would form a two-card loop at the centre of the age. ✅
+  **Resolved:** re-pointed into a **building** (a worker makes money; the 2🔨 is a one-time build
+  price, not a per-unit exchange), so the loop never forms.
 - **Raiding** (⚔️→🪙) is cut, or charged in **culture** — never spent and gates hand size, so it can't be
   arbitraged back, and "raiders don't build civilizations" reads well. ⚠️ The culture option dies if
   culture leaves the age — cut it, or charge it in something else.
@@ -302,14 +409,14 @@ no bonus at all**: it purely gates bronze, so its cost is pure route-capacity op
   the restructure above — money enters at Stone col 3. The generalization survives the reversal and is
   worth keeping — **each age promotes one resource into the substrate** — but Stone now takes food +
   production + money, and what Bronze promotes is open (culture is the candidate).
-- **Check before building:** money's Stone-Age faucet is the reworked Jewelry alone, with Trader
+- **Check before building:** money's Stone-Age faucet is the reworked Bead Workshop alone, with Trader
   (3🪙/worker) and whatever Naval adds arriving in Bronze. Hand-check 🪙/round for N routes against a
   realistic deck's income; if it doesn't clear, the escalating-cost curve gives.
 
 ## Remaining work
 
 1. **Money topology** — the trade-route zone (shipped; Bartering converted as its first route) and
-   Jewelry (re-pointed to a work box) are done; **Raiding** is the last edge to cut. Unblocks the rest,
+   Bead Workshop (re-pointed to a building) are done; **Raiding** is the last edge to cut. Unblocks the rest,
    because whether a military converter is fine depends entirely on whether ⚔️ is a sink or a way station.
 2. **Buildings out-rate work cards** — restores production's identity and makes territory (so military)
    worth something. Half-landed as a side effect of the base-rate cut; the remaining three pairs need

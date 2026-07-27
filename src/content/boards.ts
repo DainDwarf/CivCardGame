@@ -40,7 +40,8 @@ export const ORIGIN_BOARD_ID: BoardId = 'tribe';
  * each board's starting population: a staffable box is only worth a slot if a worker can run it, so
  * territory far above population would leave the cap unreachable and the choice of what to spend a
  * slot on unfelt. `tribe` sits at exactly its population so the very first mission has to choose
- * which two things its two people do; the later boards keep a slot of slack.
+ * which two things its two people do; the settled line keeps a slot of slack. `chiefdom` inverts it
+ * deliberately — see its own note.
  */
 export const BOARDS: Record<BoardId, BoardDef> = {
   tribe: {
@@ -56,7 +57,10 @@ export const BOARDS: Record<BoardId, BoardDef> = {
   chiefdom: {
     id: 'chiefdom',
     name: 'Chiefdom',
-    resources: { food: 6, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 4, culture: 0 }, // pop 3 → one more slot than the others
+    // The one board whose territory sits *below* its population, so a worker starts with nowhere to
+    // work. Its 6⚔️ is exactly two plays of one Conquest copy (2⚔️ doubling per play), which is what
+    // buys the missing room — the board states its strategy as a shortage rather than a bonus.
+    resources: { food: 6, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 2, culture: 0 },
   },
   city: {
     id: 'city',

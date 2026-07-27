@@ -146,13 +146,13 @@ export const MISSIONS: Record<string, MissionDef> = {
       'The last few seasons have been rough. The harvest was poor, and your tribe fears it may not ' +
       'last through the coming winter. The priority now is to calm your people — to remind them that, ' +
       'whatever comes, they are all part of one community.',
-    prereqs: ['growing_numbers'],
+    prereqs: ['raiders_at_border'],
     objectiveCardId: 'rites_rituals_goal',
     victoryHint: 'Reach 🎭 culture level 1.',
     failureHint: null,
     kind: 'standard',
     reward: { influence: 8, unlockCardIds: ['burial'] },
-    map: { col: 2, row: -1 },
+    map: { col: 3, row: -1 },
     age: 'stone',
   },
   raiders_at_border: {
@@ -162,7 +162,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'Your settlement is stronger than it has ever been — and that has not gone unnoticed. Less ' +
       'fortunate tribes around your village have grown envious, and now turn to violence to survive. ' +
       'It is time to defend the food supplies you fought so hard to gather.',
-    prereqs: ['rites_rituals'],
+    prereqs: ['growing_numbers'],
     // One `raider` event per wave, tied to the objective's threshold by the shared RAIDER_WAVES const
     // so the mission can't seed a different count than the win asks for. `Array.from` (not `.fill`)
     // for a clean `string[]`.
@@ -172,9 +172,12 @@ export const MISSIONS: Record<string, MissionDef> = {
     failureHint: null,
     kind: 'standard',
     // Unlocks the Chiefdom board — the first military-leaning government, so the arc teaches board
-    // choice (Tribe vs. Chiefdom at launch). Influence amount + board stats are provisional.
-    reward: { influence: 8, unlockBoardIds: ['chiefdom'] },
-    map: { col: 3, row: -1 },
+    // choice (Tribe vs. Chiefdom at launch) — plus the money pair, which is the next mission's
+    // toolkit: Bead Workshop is 🪙's only faucet and Bartering the only sink that spends it. The faucet is
+    // a building because the route's rent is charged every round, which no drawn card can cover.
+    // Influence amount + board stats are provisional.
+    reward: { influence: 8, unlockCardIds: ['bead_workshop', 'bartering'], unlockBoardIds: ['chiefdom'] },
+    map: { col: 2, row: -1 },
     age: 'stone',
   },
   restless_people: {
@@ -222,7 +225,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'hilltop, ring upon ring of towering carved stones takes shape — pillars hauled and set by ' +
       'hands that could have been tilling, adorned with the beasts of the world around them. It feeds ' +
       'no one, yet the whole valley comes to build it: the first temple.',
-    prereqs: ['raiders_at_border', 'restless_people'],
+    prereqs: ['rites_rituals', 'restless_people'],
     objectiveCardId: 'first_temple_goal',
     victoryHint: 'Reach 3 🧍 population and 🎭 culture level 2 while holding 30 🔨 and 30 🪙 at once.',
     failureHint: null,
