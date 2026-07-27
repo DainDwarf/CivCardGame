@@ -347,27 +347,23 @@ as a *better* faucet than Bead Workshop and its pitch is rewritten. Decide when 
 
 ### Culture leaves the Stone Age
 
-**…and comes back at the convergence. ✅ Decided.** `rites_rituals` is removed (The First Trades took its
-slot) and `restless_people`'s 🎭 level 2 went with the Harsh Winter rewrite, so no *shipped* Stone mission
-asks for culture today. The resolution is a **new culture mission on the reconvergence of both branches**,
-between {`first_trades`, `reading_seasons`} and `first_temple` — the arc already rejoins there, and the
-culture lesson goes on that node. Not written yet; see its [dossier](missions/rites.md).
+**…and comes back at the convergence. ✅ Decided — culture stays in the Stone Age.** `rites_rituals` is
+removed (The First Trades took its slot) and `restless_people`'s 🎭 level 2 went with the Harsh Winter
+rewrite, so no *shipped* Stone mission asks for culture today. The resolution is a **new culture-goal
+mission on the reconvergence of both branches**, between {`first_trades`, `reading_seasons`} and
+`first_temple`. Not written yet; see its [dossier](missions/rites.md).
 
-That closes the question and settles the consequences below — each is now *owed work with a known home*
-rather than an open decision:
+That closes the question and settles the consequences below:
 
-- **Both wonders stay playable** — ✅ resolved by the placement. Göbekli Tepe carries `cultureLevelReq: 1`
-  and Pyramid `cultureLevelReq: 2`, a hard play-gate rather than a goal; the convergence node sits
-  *directly upstream of* `first_temple`, so the 🎭 a player needs arrives before the wonder that demands
-  it. This is what forced the node to that slot rather than into Bronze.
+- **Both wonders stay playable.** Göbekli Tepe carries `cultureLevelReq: 1` and Pyramid
+  `cultureLevelReq: 2` — a hard play-gate, not a goal — and the node sits upstream of both.
 - **The 🎭 *producers* are a separate question.** Beer ✅ has a home (1🌾 → 2🎭, granted by The First
-  Trades). Cave Art and Burial are **not** rehabilitated by this decision — it restored the culture
-  *goal*, not the cut cards — and stay on *Cards on trial* to be re-slotted or cut on their own merits.
+  Trades), and a further culture reward is planned on the lower branch. Cave Art and Burial are **not**
+  rehabilitated by this decision — it restored the culture *goal*, not the cut cards — and stay on
+  *Cards on trial* to be re-slotted or cut on their own merits.
 - **The two orphaned culture goals keep their culture term**: `first_temple` (🎭 level 2) and `pyramid`
-  (🎭 level 2) are both downstream of the node, so neither has to drop it.
-- **Hand size stays pinned at 4 until the convergence.** Culture is its only lever, so the
-  hand-size-grows-with-your-civilization progression now happens *once* in Stone, on the node — which
-  makes it the age's reward for reconverging rather than a steady climb.
+  (🎭 level 2) are both downstream of the node.
+- **Hand size stays pinned at 4 until the convergence**, culture being its only lever.
 - ⬜ **The culture-level curve is un-re-read.** Levels sit at cumulative **10 / 30 / 70** (`CULTURE_STEP
   = 10`, each band double the last, `rules/culture.ts`) — set when every converter ran ×2. Beer is the
   first culture producer priced at the new rates (1🌾 → 2🎭), and nothing in the pass has yet *asked*
@@ -383,10 +379,8 @@ rather than an open decision:
   culture goal to anchor on. The 🎭 shape is now pinned entirely off the catalogue — which is what lets
   culture re-enter the age wherever it lands without dragging a test re-point behind it.
 
-**Ruled out: a culture mission early in Bronze.** It was what the age-promotes-a-resource framing wanted
-once money vacated that slot, and it loses to one fact — both wonders gate on a culture *level*, and
-Göbekli Tepe is the Stone capstone's own reward. Culture arriving in Bronze would ship a capstone reward
-that cannot be played at the moment it is granted. So the resource stays in the tutorial age, and what
+**Ruled out: a culture mission early in Bronze** — the other candidate, which the
+age-promotes-a-resource framing wanted once money vacated that slot. Culture stays in Stone, so what
 Bronze promotes is open again.
 
 **The one DAG edit it owes:** `first_temple`'s `prereqs` re-point from `['first_trades',

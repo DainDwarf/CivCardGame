@@ -10,19 +10,15 @@
 `first_temple` holds today, which shifts right to col 5.
 **Reward influence:** undecided.
 
-**Decided ✅ — culture stays in the Stone Age, on this node.** The arc lost its 🎭 twice over (the
+**Decided ✅ — culture stays in the Stone Age**, on this node. The arc had lost its 🎭 twice over (the
 original `rites_rituals` deleted for The First Trades, `restless_people`'s culture goal retired by the
-Harsh Winter rewrite). It comes back here rather than in Bronze, because **both wonders gate on a
-culture *level*** and Göbekli Tepe is the Stone capstone's own reward — culture arriving in Bronze would
-ship a capstone reward that cannot be played the moment it is granted.
+Harsh Winter rewrite); this is where it comes back.
 
 ## Design 🟡 (open)
 
-Teaches **culture**, the age's last unexercised resource, and is the only Stone mission where hand size
-grows — so it reads as the reward for reconverging rather than one step of a steady climb.
+Teaches **culture**, the age's last unexercised resource.
 
-**Goal — a culture level**, which is what the wonders gate on, so the mission teaches exactly what the
-capstone then asks for. The threshold is open (see the curve note below).
+**Goal — a culture level.** The threshold is open (see the curve note below).
 
 **The 🎭 producer is in hand on arrival.** `prereqs` is an AND, so both tips are cleared before this node
 opens and **Beer** (granted by `first_trades`) is always owned. A further culture reward is planned on

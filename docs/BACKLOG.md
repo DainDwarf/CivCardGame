@@ -191,10 +191,9 @@
     a look-only peek at the top 3 cards) — the first peek-family card, showing what science *does*
     (foresight + the look-only interaction popup).
   - **9.6b — Rites & Rituals tutorial** — teach **culture** (🎭) on the reconvergence node
-    ([dossier](missions/rites.md)), the age's last unexercised resource and the only place hand size
-    grows in Stone. It sits between both branch tips and the capstone, so it is also where the two
-    routes' lessons rejoin — and it must land *before* 9.7, since both wonders gate on a culture level.
-    Mission not written; the tutorial follows its design.
+    ([dossier](missions/rites.md)), the age's last unexercised resource, and the lesson where the two
+    routes rejoin. Sits between both branch tips and the capstone, so it runs before 9.7. Mission not
+    written; the tutorial follows its design.
   - **9.7 — Göbekli Tepe tutorial** — the capstone (mission 6.7 / `first_temple`, prereq **both** branch
     tips). Teach **wonders**: a wonder plays exactly like a building (tableau slot, staffed, produces every
     round — Göbekli Tepe is the multi-worker one: +1🔨+1🪙+1🎭 *per* staffed worker, culture-level-1
