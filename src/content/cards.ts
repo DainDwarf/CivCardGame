@@ -312,7 +312,7 @@ export const CARDS: Record<string, CardDef> = {
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
   dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { resources: { food: 1 } }, display: { art: '🐕' }, effect: { resources: { military: 1 } } },
-  raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } }, display: { art: '🔥' }, effect: { resources: { money: 6 } } },
+  raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } }, display: { art: '🏴' }, effect: { resources: { money: 6 } } },
   // Conquest and Road are the game's only two territory sources, so they are deliberately `action` —
   //   the one kind that takes no slot. As board cards they would need free territory to play, which a
   //   board already full of buildings can never offer, trapping the run with no way to expand.
@@ -338,6 +338,8 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🛣️' },
     effect: { resources: { territory: 1 } },
   },
+
+  fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { discard: 1 }, display: { art: '🔥' }, effect: { resources: { science: 1 } } },
 
   // Calendar keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer). The
   // reveal is look-only: peeking keeps nothing, so the resume pass just clears the interaction. Its

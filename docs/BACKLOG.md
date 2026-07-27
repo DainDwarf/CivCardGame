@@ -186,10 +186,10 @@
     manipulation** — and take the moment to **recap the flavour of every resource**, now that the arc has
     surfaced them all (each resource's thematic feel per DESIGN's *Resources* — food = population,
     production = the build currency, money = the treasury, science = planning, military = power; plus the
-    three strategic gauges). In-mission the objective is simply to **stockpile 10 🔬** (science comes off
-    the Storytelling work card). **Post-clear:** the reward unlocks the **Calendar** action (cost 1🔬,
-    a look-only peek at the top 3 cards) — the first peek-family card, showing what science *does*
-    (foresight + the look-only interaction popup).
+    three strategic gauges). In-mission the objective is simply to **stockpile 10 🔬** — science comes off
+    the two cards Harsh Winter granted upstream: the **Storytelling** work card, and the **Fire** action,
+    which pays 1🔬 for a card discarded from hand. **Post-clear:** the reward grants no card today; it
+    owes the branch's culture card (see [`REBALANCE.md`](REBALANCE.md) → *Culture leaves the Stone Age*).
   - **9.6b — Rites & Rituals tutorial** — teach **culture** (🎭) on the reconvergence node
     ([dossier](missions/rites.md)), the age's last unexercised resource, and the lesson where the two
     routes rejoin. Sits between both branch tips and the capstone, so it runs before 9.7. Mission not

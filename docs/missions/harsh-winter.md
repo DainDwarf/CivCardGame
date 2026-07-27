@@ -56,17 +56,49 @@ is built around, and why this cell has to be read carefully (below).
 
 ### The reward — the science pair
 
-`reading_seasons`' prerequisites, so they had to land here.
+`reading_seasons`' prerequisites, so they had to land here. **Both make 🔬, neither spends it** — the
+mission they feed asks the player to *stockpile* science, so a card priced in 🔬 would work against the
+goal it was granted for.
 
 - **Storytelling** — 2🔬 → **1🔬** per worker, onto the 1-per-worker base rate. Side effect worth noting:
   this fixes one of the three work-card/building pairs REBALANCE's *Diagnosis* still owed, since Archives
   (4🔨, 2🔬/worker) now **doubles** it the way Forge doubles Toolmaking.
-- **Calendar** — shipped **unchanged** (1🔬, look-only peek at top 3). The dossier previously owed it a
-  rework; the base-rate cut delivered one for free. At 2🔬/worker it cost half a worker-round, at
-  1🔬/worker it costs a full one, so its price doubled in real terms without the card being touched.
+- **Fire** — new: an action paying **1🔬** for **one card discarded from hand**. Storytelling's
+  alternative rather than its better — the same 1🔬, bought with a card instead of a worker-round, which
+  is the trade worth having at a pop cap of 4. The first shipped consumer of `CardCost.discard`; the
+  field, `playCard`'s validation, the sim enumeration and the Board's sacrifice-picker were all already
+  built and tested, so the card is content only.
 
-**Consequence:** `reading_seasons` has lost Calendar and is now Influence-only, owing the branch's
-culture card. Tracked in REBALANCE → *Culture leaves the Stone Age*, flagged at the reward site.
+**The 1🔬 is unmeasured**, and this mission's cell cannot measure it — Harsh Winter names no 🔬, and the
+reward isn't in the run's deck anyway. `reading_seasons`' sweep is what judges the number, and it needs
+three things known before the numbers land:
+
+- **Its fixture must gain Fire.** `baselines/reading_seasons.json` is marked STALE and predates the
+  restructure; Fire is granted by its *direct* prereq, so a re-cut that omits it measures the mission
+  without the card it was added for.
+- **The enabler model prices Fire as free.** `enablers.ts` derives value from `cost` → `effect` over
+  *resource* costs; a card cost has no representation there, so the model reads Fire as +1🔬 for nothing
+  and the planner may over-play it. Hard to spot on a 🔬-stockpile goal, where over-playing it looks like
+  good play.
+- **The oracle biases *down*, not up.** Its key treats `hand` as a multiset (`oracleKey.ts`) while
+  `canonicalPlay` picks the sacrifice by hand *index*, so two hands with the same contents in a different
+  order merge although their sacrifices differ. Per `oracle.ts` that costs completeness, never soundness —
+  every returned line is replayed through the real engine — so a proven win stays proven and a miss is the
+  only error available.
+
+Also note that `discardCount` waives the sacrifice when the hand has no card to spare, so Fire played
+last is a free 1🔬 — that's the card's floor, and it's the existing rule for every discard cost rather
+than something this card introduces.
+
+**Consequences.**
+
+- **Calendar is benched.** It was this mission's second grant and is now unlocked by nothing, so it joins
+  REBALANCE's *Cards on trial* to be re-slotted or cut on its own merits. Cutting it is not free: it is
+  the only shipped consumer of `peekTop` and the look-only `reveal` interaction.
+- `reading_seasons` stays Influence-only, owing the branch's culture card. Tracked in REBALANCE →
+  *Culture leaves the Stone Age*, flagged at the reward site.
+- **The Balance ✅ above still holds.** A reward is granted on clear, never played during the run, so
+  swapping one leaves `baselines/harsh_winter.json` and its measured numbers untouched.
 
 ## Balance ✅
 

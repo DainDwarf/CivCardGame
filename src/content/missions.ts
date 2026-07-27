@@ -204,9 +204,10 @@ export const MISSIONS: Record<string, MissionDef> = {
       'starve and the run ends.',
     kind: 'standard',
     // Grants the science pair, which is `reading_seasons`' toolkit: the branch's pressure mission pays
-    // for its resource mission, the same shape the upper branch uses. Influence amount inherited from
+    // for its resource mission, the same shape the upper branch uses. Both *make* 🔬 and neither spends
+    // it — the mission they feed asks the player to stockpile science. Influence amount inherited from
     // the mission this replaces, so the downstream faucet ledger is unmoved — provisional either way.
-    reward: { influence: 9, unlockCardIds: ['storytelling', 'calendar'] },
+    reward: { influence: 9, unlockCardIds: ['storytelling', 'fire'] },
     map: { col: 2, row: 1 },
     age: 'stone',
   },
@@ -223,10 +224,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Stockpile 10 🔬 science.',
     failureHint: null,
     kind: 'standard',
-    // ⚠️ Reward-less by omission, not by design: Calendar moved upstream to `harsh_winter` (a mission
-    // may not grant what its own prereq already unlocked), and this mission owes the branch's culture
-    // card in its place — see docs/REBALANCE.md → *Culture leaves the Stone Age*. Influence amount
-    // provisional.
+    // ⚠️ Reward-less by omission, not by design: this mission owes the branch's culture card — see
+    // docs/REBALANCE.md → *Culture leaves the Stone Age*. Influence amount provisional.
     reward: { influence: 9 },
     map: { col: 3, row: 1 },
     age: 'stone',

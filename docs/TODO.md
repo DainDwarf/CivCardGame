@@ -149,6 +149,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   decide the scope: upkeep only (production still gated on staffing), or the whole `endTurn` handler?
   `workers: 0` cards (City Walls) are unaffected (always operating); the Pyramid's −2🌾 would then bleed
   while idle. `[size: M]`
+- **Card art must be unique across the player collection** — nothing pins it today, and the near-miss
+  just happened: Fire wanted 🔥 and Raiding already held it (Raiding moved to 🏴). Two ownable cards
+  sharing a glyph is a **bug** — the art is how a card is recognized on the board and in the picker.
+  **The relaxation:** mission-only kinds (`objective`/`threat`/`event`) may share a glyph with each
+  other as long as **no single mission seeds both**, since the player never sees them side by side.
+  Belongs next to `content/cards.test.ts`'s existing "every deckable card sets its own art glyph"
+  coherence test, which is where art is ruled on. Note the relaxed half can't be checked off `CARDS`
+  alone — it has to read `MISSIONS`' `threats`/`events`/`objectiveCardId` lists to know what co-occurs.
+  The catalogue is clean as of the Fire/Raiding swap, so this lands green. `[size: S]`
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit

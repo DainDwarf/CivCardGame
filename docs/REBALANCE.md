@@ -225,7 +225,7 @@ it, and a pressure mission demands no resource — so the order inverts.
 | **lower** (row +1) | **Harsh Winter** ✅ — ⚔️ toll + famine ramp, a rewrite of `restless_people` ([dossier](missions/harsh-winter.md)) | `reading_seasons` — 10🔬 kept, **moved**, and loses its reward |
 
 Each col-2 mission's **reward is the col-3 mission's toolkit**: `raiders_at_border` grants the money
-pair (Bead Workshop, Bartering), Harsh Winter grants the science pair (Storytelling, Calendar).
+pair (Bead Workshop, Bartering), Harsh Winter grants the science pair (Storytelling, Fire).
 
 And each col-3 **tip grants a culture card**, so whichever branch a player took, the Rites-as-convergence
 node those tips would feed (see [`IDEAS.md`](IDEAS.md)) arrives with something to play. The First Trades
@@ -239,7 +239,7 @@ up one of the dossiers needs this list rather than the table's shorthand:
 | `raiders_at_border` | ✅ `prereqs` → `['growing_numbers']`, `map` col **2** · ✅ reward gains Bead Workshop + Bartering (keeps Chiefdom) |
 | `rites_rituals` | ✅ **deleted**, along with `rites_rituals_goal` — strands **Burial**, see *Cards on trial* |
 | `restless_people` | ✅ **rewritten** as `harsh_winter` at col 2 off Growing Numbers — new id, threat (`deep_cold`), goal and reward; `unrest` and `restless_people_goal` deleted with it ([dossier](missions/harsh-winter.md)) |
-| `reading_seasons` | ✅ `prereqs` → `['harsh_winter']` · ✅ `map` col 2 → **3** · ✅ **reward is now Influence-only** (Calendar moved upstream) — owes a new one, and it should be this branch's **culture card** |
+| `reading_seasons` | ✅ `prereqs` → `['harsh_winter']` · ✅ `map` col 2 → **3** · ✅ **reward is now Influence-only** — owes a new one, and it should be this branch's **culture card** |
 | *The First Trades* | ✅ new: `prereqs: ['raiders_at_border']`, stone col 3 row -1 |
 | `first_temple` | ✅ `prereqs` → `['first_trades', 'reading_seasons']` — both tips are final, and the lower one never moves again: the swap put `reading_seasons` at the tip, so the Harsh Winter rename doesn't reach this line |
 
@@ -263,8 +263,11 @@ rate-level points for this pass:
 - **Storytelling 2🔬 → 1🔬**/worker, granted here. This closes one of the three work-card/building pairs
   the *Diagnosis* below still owed: Archives (4🔨, 2🔬/worker) now **doubles** it, the shape Forge has
   against Toolmaking. Cave Art/Burial and War Horse/City Walls remain.
-- **Calendar ships unchanged** and moves here. The base-rate cut re-priced it for free — at 2🔬/worker
-  its 1🔬 was half a worker-round, at 1🔬/worker it is a full one.
+- **Fire** is new and granted here: an action paying 1🔬 for one card discarded from hand — Storytelling's
+  alternative rather than its better, the same 1🔬 bought with a card instead of a worker-round. It
+  replaces **Calendar**, which is benched onto *Cards on trial*: the pair feeds a mission that asks the
+  player to *stockpile* 🔬, and a card priced in science works against the goal it was granted for. The
+  1🔬 is unmeasured — Harsh Winter's cell names no 🔬, so `reading_seasons`' sweep judges it.
 - **Measured** on `scripts/sim/baselines/harsh_winter.json` (Growing Numbers' deck on Settlement, the
   same arrival state `raiders_at_border.json` uses), records in `baselines/results/`: greedy 3/100 ·
   planner 25/100 · **oracle 9/10** · random 0/10.
@@ -398,6 +401,7 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
 | ~~Storytelling~~ | — | ✅ **left the list** — reworked to 1🔬/worker and granted by `harsh_winter` |
 | Cave Art (2🎭 work) | 🎭 level 1 is 10🎭 — a whole tutorial mission's output for +1 hand size | ❌ **no home.** The convergence node does *not* rehabilitate it — that decision restored the culture *goal*, not these cards. Re-slot or cut on its own merits |
 | Burial (1🎭 building) | was `rites_rituals`' reward, and that mission is now deleted | ❌ **no home** — same as Cave Art |
+| Calendar (1🔬 → peek top 3) | benched off `harsh_winter` for **Fire**: it *spends* the resource the mission it fed asks you to stockpile, and the peek may not be worth a card at all | ❌ **no home.** Re-slot or cut — but it is the only shipped consumer of `peekTop` and the look-only `reveal` interaction, so a cut costs those a live example |
 
 Bead Workshop and Bartering have **left this list** — both are reworked and granted by `raiders_at_border`;
 see *Landed early* above.
@@ -504,8 +508,10 @@ no bonus at all**: it purely gates bronze, so its cost is pure route-capacity op
    consequence: a stronger food faucet before Masonry (see *Consequences owed*).
 4. *(optional, later)* Narrow production to buildings only — hold until (2) lands, or the resource has a
    single sink nobody wants. Give **science an expensive sink**: its identity (deck churn) is fine, but
-   Calendar costs 1🔬 and Writing 2🔬 and Reading the Seasons asks you to *stockpile*, so the resource is
-   never demanded in quantity.
+   Writing costs 2🔬 and Reading the Seasons asks you to *stockpile*, so the resource is never demanded
+   in quantity. Benching Calendar leaves Writing the only sink in the age — deliberate, since a sink
+   granted *by* a stockpile mission fights its own goal, but it means the sink this item wants has to
+   come from a mission that doesn't ask you to hoard 🔬.
 
 **Re-point the money objectives.** Accounting (40🪙), Pyramid (50🪙) and Göbekli Tepe (30🪙) are *hoard*
 goals, pushed against by `envious_population`. A one-way hub whose point is spending sits awkwardly with

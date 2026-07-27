@@ -155,7 +155,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     id: 'test_festival', name: 'Test Festival', kind: 'action',
     cost: { resources: { food: 2 } }, effect: { resources: { culture: 3 } },
   },
-  // Carries a discard cost (extra cards discarded from hand to play it), like Eureka.
+  // Carries a discard cost (extra cards discarded from hand to play it), like Fire.
   test_discard: {
     id: 'test_discard', name: 'Test Discard', kind: 'action',
     cost: { discard: 1 }, effect: { resources: { science: 3 } },

@@ -27,7 +27,7 @@ import { isCompleted } from '../rules/campaign';
 import { computeRewards } from '../rules/rewards';
 import { isOwned, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
-import { runCard } from '../rules/cost';
+import { discardCount, runCard } from '../rules/cost';
 import { sortDeckEntries, variantKey } from '../rules/deckBuilder';
 import { CardFace, RESOURCE_ICON, StickerRow, artFor, describeBuilding, describeTradeFlow } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
@@ -1028,9 +1028,10 @@ export function Board({
       const cy = y - d.grabY + d.h / 2;
       pendingBuildSlotRef.current = chooseBuildSlot(cx, cy);
     }
-    const need = card.cost.discard ?? 0;
-    // A discard cost only applies if you have spare cards; then pick the sacrifice by clicking.
-    if (need > 0 && G.hand.length - 1 >= need) {
+    // Read through `discardCount`, never `cost.discard`: it is the same waive-when-the-hand-is-thin
+    // rule `playCard` validates against, so the picker can't ask for a sacrifice the move would reject.
+    const need = discardCount(card, { G, self: G.hand[d.handIdx] });
+    if (need > 0) {
       setPending({ cardId: d.cardId, handIdx: d.handIdx, playedKey: d.key, need, discards: [] });
       return;
     }
