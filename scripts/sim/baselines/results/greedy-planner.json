@@ -1115,5 +1115,81 @@
       "beer"
     ],
     "meanActions": 45.31
+  },
+  {
+    "label": "harsh_winter",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 3,
+    "winRate": 0.03,
+    "turns": {
+      "min": 8,
+      "mean": 8.77,
+      "median": 9,
+      "max": 10
+    },
+    "meanResources": {
+      "food": -2.51,
+      "production": 5.3,
+      "science": 0,
+      "military": 6.04,
+      "money": 0,
+      "population": 2.11,
+      "culture": 0,
+      "territory": 4
+    },
+    "defeatCauses": {
+      "famine": 97
+    },
+    "cardPlays": {
+      "dogs": 43,
+      "toolmaking": 613,
+      "foraging": 740,
+      "bow": 187,
+      "farm": 88,
+      "hut": 11
+    },
+    "unplayedCards": [
+      "conquest"
+    ],
+    "meanActions": 25.56
+  },
+  {
+    "label": "harsh_winter",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 25,
+    "winRate": 0.25,
+    "turns": {
+      "min": 8,
+      "mean": 9.24,
+      "median": 9,
+      "max": 10
+    },
+    "meanResources": {
+      "food": -1.47,
+      "production": 3.8,
+      "science": 0,
+      "military": 5.2,
+      "money": 0,
+      "population": 2,
+      "culture": 0,
+      "territory": 4
+    },
+    "defeatCauses": {
+      "famine": 75
+    },
+    "cardPlays": {
+      "dogs": 28,
+      "toolmaking": 408,
+      "foraging": 656,
+      "bow": 164,
+      "farm": 100
+    },
+    "unplayedCards": [
+      "hut",
+      "conquest"
+    ],
+    "meanActions": 22.56
   }
 ]

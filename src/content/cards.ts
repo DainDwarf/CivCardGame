@@ -189,13 +189,8 @@ export const FIRST_TRADES_FOOD = 25;
 export const HARSH_WINTER_ONSET = 5;
 export const HARSH_WINTER_BREAK = 10;
 
-/** 🌾 the Deep Cold takes from a tribe holding no ⚔️ — deliberately worse than the 1⚔️ toll it replaces,
- *  so arming is the cheaper answer at any 🌾 price the deck can pay for military. */
-export const DEEP_COLD_UNARMED_FOOD = 2;
-
-/** 🌾 the famine half of the Deep Cold takes in the given round: nothing before the onset, then
- *  deepening by 1 each round. Shared by the drain and its face readout so the card can't display a
- *  bite it won't take. */
+/** 🌾 the Deep Cold takes in the given round: nothing before the onset, then deepening by 1 each round.
+ *  Shared by the drain and its face readout so the card can't display a bite it won't take. */
 function famineAt(round: number): number {
   return Math.max(0, round - HARSH_WINTER_ONSET + 1);
 }
@@ -699,29 +694,25 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // — Threats —
-  // Harsh Winter's threat, in two clauses on one card. The **toll** runs from round 1: the cold takes
-  //   1⚔️ a round, or twice that in 🌾 from a tribe with nothing to drive the predators off — a threat
-  //   you answer, and the only ⚔️/🔨 sink the mission has (Bow is 2🔨 → 3⚔️ → three rounds of cover).
-  //   The **famine** joins it at `HARSH_WINTER_ONSET` and deepens every round until the winter breaks —
-  //   a threat you can only weather, out of stores banked before it starts. Unlike `long_winter`'s
-  //   unbounded ramp this one is outlastable by construction, which is what lets a standard mission
-  //   carry it.
+  // Harsh Winter's threat, and the whole mission: nothing until `HARSH_WINTER_ONSET`, then a famine
+  //   deepening every round until the winter breaks. Unlike `long_winter`'s unbounded ramp it is
+  //   outlastable by construction — bounded by a *lift* rather than a ceiling, which is what lets a
+  //   standard mission carry it, and it is survived out of stores banked before it starts rather than
+  //   out of income.
   deep_cold: {
     id: 'deep_cold', name: 'The Deep Cold', kind: 'threat', cost: {},
     display: {
       art: '🥶',
-      description: `−1⚔️ each round, or −${DEEP_COLD_UNARMED_FOOD}🌾 with none. From round ${HARSH_WINTER_ONSET} it also takes 🌾, worsening until it breaks.`,
+      description: `From round ${HARSH_WINTER_ONSET}: −1🌾 each round, worsening until the winter breaks.`,
       dynamicText: (G) => {
         const famine = famineAt(G.round);
-        return `${famine > 0 ? `−${famine}🌾 ` : ''}−1⚔️ · breaks in ${Math.max(0, HARSH_WINTER_BREAK - G.round)}`;
+        return famine > 0
+          ? `−${famine}🌾 · breaks in ${Math.max(0, HARSH_WINTER_BREAK - G.round)}`
+          : `bites in ${HARSH_WINTER_ONSET - G.round}`;
       },
     },
     upkeep: {
       resolve: ({ G }) => {
-        // Auto-paid rather than a prompt: an upkeep handler may not open a `pendingInteraction`, and
-        // the choice the toll is really asking — whether to have armed at all — was already made.
-        if (G.resources.military >= 1) subtractResources(G.resources, { military: 1 });
-        else subtractResources(G.resources, { food: DEEP_COLD_UNARMED_FOOD });
         const famine = famineAt(G.round);
         if (famine > 0) subtractResources(G.resources, { food: famine });
       },

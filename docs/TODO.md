@@ -117,6 +117,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   producers-off ablation a route scores **pure negative**. Expect those cells to show routes as
   strictly-bad; that's the ablation, not the card.
 
+- **The simulator can't steer a survival objective** `[size: M]` — a mission that wins on *rounds
+  survived* names no resource in its goals, so `sim/objective.ts`'s `objectiveProgress` is a flat
+  function of `G.round`: it rises by ending the turn and is identical across every within-turn action
+  sequence. `sim/enablers.ts` then builds an **empty** model, since it derives everything by probing that
+  same function — no goal-valued resource, no producer credit, no capacity credit. The competent
+  policies are given no reason to bank the resource the drain is eating or to build the producer that
+  makes it. **Measured on `harsh_winter`** (the first such mission): temporarily blending a synthetic
+  "stockpile 20🌾" term into the gradient moved greedy **3 → 37%** and planner **25 → 73%** on one cell
+  with no content change, redirecting labour off Toolmaking and onto Foraging. So those cells' numbers
+  are a floor, not a difficulty reading, and only the oracle (which searches the real shuffle rather than
+  steering) reads true.
+  The fix must be **general and mechanical**, never a per-mission steering term (see CLAUDE.md →
+  *sim/-is-a-consumer*): a survival goal's real currency is the **runway** against the drain that bounds
+  it, so the gradient likely wants a term derived from the seeded threats' projected upkeep — how many
+  more rounds the current stores survive — the same way `enablers.ts` derives its slope from
+  `cost`→`produces` rather than from authored hints. Blocks trusting greedy/planner on any
+  rounds-survived mission; `ice_age` and `sandbox` dodge it only because the sim doesn't drive them.
+
 ## Tech debt / architecture
 
 - **Audit existing tests for the integration split** — the `*.integration.test.ts` convention (end-to-end/

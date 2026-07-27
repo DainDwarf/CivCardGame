@@ -36,7 +36,7 @@ nothing but noise.
 |---|---|---|
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
-| 3 | `raiders_at_border` · `harsh_winter` | 🟡 — the **pressure** pair, now first in each branch; Raiders ✅ measured, Harsh Winter ✅ written (realigned) but **unswept — no fixture yet** |
+| 3 | `raiders_at_border` · `harsh_winter` | ✅ **done** — the **pressure** pair, now first in each branch; both realigned, re-fixtured and measured |
 | 4 | *The First Trades* · `reading_seasons` | 🟡 — the **resource** pair; First Trades ✅ realigned, re-fixtured, measured; `reading_seasons` moved to col 3, otherwise untouched |
 | 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 6 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
@@ -249,24 +249,32 @@ branch the two missions traded slots and the col-2 one was then rewritten: **Har
 off Growing Numbers and grants the science pair, `reading_seasons` at col 3, and `first_temple` points at
 both new tips. The restructure's shape is complete; what is left is measuring it.
 
-**Mission 3 (lower) — Harsh Winter ✅ written, ⬜ unswept.** Full detail in its
-[dossier](missions/harsh-winter.md); the rate-level points for this pass:
+**Mission 3 (lower) — Harsh Winter ✅.** Full detail in its [dossier](missions/harsh-winter.md); the
+rate-level points for this pass:
 
-- Its threat `deep_cold` carries **two clauses on one card** — a per-round 1⚔️ toll from round 1 (or
-  2🌾 from a tribe holding none), and a 🌾 famine ramping from `HARSH_WINTER_ONSET` until the winter
-  **breaks** at `HARSH_WINTER_BREAK`, which is also the win. Bounded by a *lift*, not a ceiling: at
-  1🌾/worker against a pop cap of 4, a plateau survivable at all pins every worker to farming forever.
-- The toll exists because the mission otherwise has **no 🔨 and no ⚔️ sink** — 9 of its 15 arrival cards
-  would be dead draws. It makes Toolmaking → Bow the production sink and gives the grace window its own
-  decision, so preparation time isn't four empty rounds.
+- Its threat `deep_cold` is **one clause**: nothing until `HARSH_WINTER_ONSET` (5), then −1🌾 deepening
+  each round until the winter **breaks** at `HARSH_WINTER_BREAK` (10), which is also the win. Bounded by
+  a *lift*, not a ceiling: at 1🌾/worker against a pop cap of 4, a plateau survivable at all pins every
+  worker to farming forever.
+- **Deliberately one-dimensional**, at the accepted cost of no 🔨 and no ⚔️ sink — Toolmaking, Bow, Dogs
+  and Conquest are played but their output is inert. A ⚔️ toll clause was built to fix exactly that and
+  **cut after measurement**: with it the mission was unwinnable (0/10 at the oracle), without it 9/10 on
+  the same constants. A tutorial mission is better one-dimensional than correct-but-layered.
 - **Storytelling 2🔬 → 1🔬**/worker, granted here. This closes one of the three work-card/building pairs
   the *Diagnosis* below still owed: Archives (4🔨, 2🔬/worker) now **doubles** it, the shape Forge has
   against Toolmaking. Cave Art/Burial and War Horse/City Walls remain.
 - **Calendar ships unchanged** and moves here. The base-rate cut re-priced it for free — at 2🔬/worker
   its 1🔬 was half a worker-round, at 1🔬/worker it is a full one.
-- Both `HARSH_WINTER_*` constants and the unarmed fallback are **provisional**; the dossier holds the
-  paper arithmetic and the watch list. No fixture exists yet — `harsh_winter.json` is the balance pass's
-  to cut, on the same arrival deck `raiders_at_border.json` uses.
+- **Measured** on `scripts/sim/baselines/harsh_winter.json` (Growing Numbers' deck on Settlement, the
+  same arrival state `raiders_at_border.json` uses), records in `baselines/results/`: greedy 3/100 ·
+  planner 25/100 · **oracle 9/10** · random 0/10.
+- ⚠️ **Only the oracle's number is a difficulty reading here**, and this is the first mission where that
+  is true. A goal measured in *rounds* names no resource, so `objectiveProgress` is flat in `G.round` and
+  `deriveEnablers` — which probes that function — comes out empty; the competent policies are given no
+  reason to bank 🌾 or build a Farm. Measured, not assumed: a temporary synthetic "stockpile 20🌾"
+  gradient term moved greedy 3 → 37% and planner 25 → 73% on this cell with no content change. Logged as
+  transversal work in [`TODO.md`](TODO.md) — it belongs to the objective *shape*, so every later
+  rounds-survived mission inherits it.
 
 **The First Trades' goal: open a 🤝 trade route and hold `FIRST_TRADES_FOOD` 🌾** (25 provisional), no
 threat and no events — the route's standing rent is the whole pressure, and it is one the player opts

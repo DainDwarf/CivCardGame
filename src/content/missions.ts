@@ -200,8 +200,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     objectiveCardId: 'harsh_winter_goal',
     victoryHint: `Outlast the winter — survive to round ${HARSH_WINTER_BREAK}.`,
     failureHint:
-      `The cold takes 1 ⚔️ each round, or 🌾 from a tribe holding none, and from round ${HARSH_WINTER_ONSET} ` +
-      'it drains a deepening amount of 🌾 on top — starve and the run ends.',
+      `From round ${HARSH_WINTER_ONSET} the cold drains 🌾 every round, deepening until it breaks — ` +
+      'starve and the run ends.',
     kind: 'standard',
     // Grants the science pair, which is `reading_seasons`' toolkit: the branch's pressure mission pays
     // for its resource mission, the same shape the upper branch uses. Influence amount inherited from

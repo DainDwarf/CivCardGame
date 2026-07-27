@@ -533,5 +533,43 @@
     },
     "unplayedCards": [],
     "meanActions": 54.4
+  },
+  {
+    "label": "harsh_winter",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 9,
+    "winRate": 0.9,
+    "turns": {
+      "min": 8,
+      "mean": 9.8,
+      "median": 10,
+      "max": 10
+    },
+    "meanResources": {
+      "food": 0,
+      "production": 3.9,
+      "science": 0,
+      "military": 3.6,
+      "money": 0,
+      "population": 2,
+      "culture": 0,
+      "territory": 4.2
+    },
+    "defeatCauses": {
+      "famine": 1
+    },
+    "cardPlays": {
+      "toolmaking": 35,
+      "foraging": 70,
+      "bow": 13,
+      "farm": 9,
+      "conquest": 2,
+      "dogs": 1
+    },
+    "unplayedCards": [
+      "hut"
+    ],
+    "meanActions": 22.2
   }
 ]

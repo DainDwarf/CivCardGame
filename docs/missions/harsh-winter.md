@@ -5,7 +5,7 @@
 > restructure*. Final decisions → [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at
 > ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ⬜ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
 **Branch:** Stone, lower (row +1) — the **threat** mission, first in its branch.
 **Placement:** `prereqs: ['growing_numbers']`, stone col 2 row +1. Shipped as `harsh_winter`, replacing
 `restless_people` outright — the slot is all it kept.
@@ -26,39 +26,23 @@ on the leaned starting collection, and its *reward* is what makes the branch's s
 Farm · Hut · Conquest), 6⭐ unspent, Irrigation unbought. Both col-2 missions fork off the same clear,
 so neither can assume anything the other grants.
 
-### The threat — `deep_cold`, two clauses on one card
+### The threat — `deep_cold`
 
-| Clause | From | Effect |
-|---|---|---|
-| **Toll** | round 1 | −1⚔️ each round; with no ⚔️ held, −`DEEP_COLD_UNARMED_FOOD` 🌾 instead |
-| **Famine** | `HARSH_WINTER_ONSET` | −1🌾, deepening by 1 each round, until the winter breaks |
+Nothing until `HARSH_WINTER_ONSET`, then −1🌾 deepening by 1 every round until the winter breaks at
+`HARSH_WINTER_BREAK`, which is also the win. The grace window is preparation time: without it the
+mission would only measure the board's starting stockpile.
 
-A threat you **answer** and a threat you can only **weather**, on one face — which is the whole lesson,
-and the reason this is one card rather than two. A second card would have bought the same two clauses at
-the price of a second name, glyph, lifecycle and thematic justification, and diluted the mission's stated
-teaching job.
-
-**Why the toll exists at all:** without it the mission has no 🔨 and no ⚔️ sink, and 9 of 15 cards are
-dead draws — the "one live axis" failure recorded against mission 1, worse. The toll makes
-Toolmaking → Bow (2🔨 → 3⚔️ → three rounds of cover) the mission's production sink, reached through
-military. Dogs is the other route at 1🌾 → 1⚔️, which is half the unarmed fallback, so it is worth
-playing on sight — the toll's *real* price through most of the run is ~1🌾/round, not 1⚔️.
-
-**Why it starts at round 1 while the famine waits.** The grace window is preparation time — without it
-the mission only measures the board's starting stockpile — but four *empty* rounds is worse pacing than
-four rounds with something to answer. The toll gives the preparation phase its own decision without
-touching the food stockpile the grace window exists to protect.
-
-**Why it auto-pays** rather than prompting: an upkeep handler may not open a `pendingInteraction`, and
-the choice the toll is really asking — whether to have armed at all — was already made on earlier turns.
+**Deliberately one-dimensional.** It is the arc's threat tutorial, and simple to the point of a single
+axis beats a second mechanic layered on top. The accepted cost is that the mission has **no 🔨 and no
+⚔️ sink** — Toolmaking, Bow, Dogs and Conquest are played, but their output is inert. A ⚔️ toll clause
+was built and measured against exactly this, and cut: see *What was tried and cut*.
 
 **Why not `long_winter`'s shape.** That ramp is unbounded, correctly: `ice_age` has no win, so its
 threat must eventually beat you. Against a standard mission it can't be outlasted — the food ceiling is
 1🌾/worker at a pop cap of 4, so an unbounded drain crosses maximum income around round 4 and is never
 recoverable. "Survive N rounds" against it is a stopwatch, not a decision. Bounding it by a **lift** (it
 deepens, then ends) rather than a **ceiling** (it deepens, then plateaus) was deliberate: a survivable
-plateau lands at −3/−4, which pins every worker to farming forever and switches the second axis off
-exactly when the mission should be tightest.
+plateau lands at −3/−4, which pins every worker to farming forever.
 
 ### The goal — survive to the break
 
@@ -67,7 +51,8 @@ threat's ramp, so the deadline can't drift from the drain that makes it one. The
 `beginTurn`'s flush, so reaching the break round means the round before it was paid in full — and the
 schedule needs no ceiling, because the run always ends the round the ramp would continue past.
 
-The arc's only round-measured goal. Every other mission wins on a pool.
+The arc's only round-measured goal. Every other mission wins on a pool — which is what the simulator
+is built around, and why this cell has to be read carefully (below).
 
 ### The reward — the science pair
 
@@ -83,64 +68,57 @@ The arc's only round-measured goal. Every other mission wins on a pool.
 **Consequence:** `reading_seasons` has lost Calendar and is now Influence-only, owing the branch's
 culture card. Tracked in REBALANCE → *Culture leaves the Stone Age*, flagged at the reward site.
 
-## Balance ⬜ (not started)
+## Balance ✅
 
-**Every number below is provisional and unswept.** `HARSH_WINTER_ONSET = 5`, `HARSH_WINTER_BREAK = 10`,
-`DEEP_COLD_UNARMED_FOOD = 2`.
+`HARSH_WINTER_ONSET = 5`, `HARSH_WINTER_BREAK = 10`. Measured on
+`scripts/sim/baselines/harsh_winter.json` (the arrival deck above), records in `baselines/results/`:
 
-Paper arithmetic on the arrival deck. **It does not close**, which is the first thing the sweep has to
-settle:
+| policy | seeds | result | turns (min · median · max) | end 🌾 | end ⚔️ |
+|---|---|---|---|---|---|
+| greedy | 100 | 3/100 | 8 · 9 · 10 | −2.5 | 6.0 |
+| planner | 100 | 25/100 | 8 · 9 · 10 | −1.5 | 5.2 |
+| oracle | 10 | **9/10** | 8 · 10 · 10 | 0.0 | 3.6 |
 
-| Out (rounds 1–9) | 🌾 |
-|---|---|
-| Normal upkeep, pop 2 | 9 |
-| Famine, rounds 5–9 at 1·2·3·4·5 | 15 |
-| Toll remainder — 9 rounds, 6 covered by two Bows, 3 paid in Dogs at 1🌾 | 3 |
-| **Total** | **27** |
+**⚠️ Only the oracle's number is a difficulty reading.** The mission wins on rounds survived, so its
+objective names no resource: `objectiveProgress` is a flat function of the round, and because
+`deriveEnablers` builds its whole model by probing that function, the model comes out **empty** — greedy
+and planner are given no reason to bank food or build a Farm, and bank 🔨/⚔️ the mission cannot use
+(note the 5–6 mean end ⚔️ above). This was measured, not assumed: temporarily blending a synthetic
+"stockpile 20🌾" term into the gradient moved **greedy 3 → 37%** and **planner 25 → 73%** on this exact
+cell with no content change, redirecting labour off Toolmaking and onto Foraging. The oracle is
+unaffected — it searches the real shuffle rather than steering by the gradient.
 
-| In | 🌾 |
-|---|---|
-| Settlement's start | 10 |
-| Income ≈1.76/round × 9 — Farm plus a Foraging drawn ~76% of rounds | 15.8 |
-| Less a Toolmaking worker-round: Farm (2🔨) + two Bows (4🔨) is 6🔨 against a 5🔨 start | −1 |
-| **Total** | **≈24.8** |
+So the cell reads: **winnable, with a real skill gradient** (random 0/10 · oracle 9/10), and the
+competent-policy numbers are a **floor** until the simulator can steer a survival objective. That gap is
+logged as transversal work in [`../TODO.md`](../TODO.md) — it belongs to the objective *shape*, not to
+this mission, and anything later that wins on rounds survived meets it too.
 
-**Short by ~2🌾 on close to the optimal line**, so the mission may currently have no line at all. The
-constraint is that income is **draw-capped, not worker-capped**: at pop 2 with Farm holding one worker,
-at most one Foraging can be staffed per round, and it is in hand only ~76% of the time. Growing doesn't
-help — Hut's 3🔨 competes with the Bows, and pop 3 costs +1🌾/round upkeep for ~+0.7🌾/round of
-draw-limited income.
+`ONSET = 5` was chosen over `6` on the oracle: 9/10 against 10/10, i.e. the extra preparation round is
+worth ~1 seed at the ceiling while costing the mission its whole margin — end 🌾 at the oracle is 0.0 at
+5 against 3.7 at 6. The tighter number is the one that makes the mission a decision. (For the record,
+`ONSET = 6` measured greedy 66% · planner 99% · heuristic 61% — but through the same distorted
+instrument, so those are not comparable to a pool-goal mission's numbers either.)
 
-Levers, least damage to the design first: **`ONSET` → 6** (drops the −5 round, keeps the 10-round length
-and adds the preparation round the grace window exists for) or **`BREAK` → 9** (drops the same round and
-a toll round with it). **Not the toll's round-1 start** — that is the clause carrying the second axis.
+**Watch when replaying by hand:** every winning run takes exactly `BREAK` turns, so unlike Raiders
+there is no tempo gradient — skill shows only as surviving or not.
 
-**Watch list.**
+## What was tried and cut
 
-1. **The two clauses tune together.** If it comes out too hard, the ramp is the knob, not the toll — the
-   toll carries the second axis, the ramp is only the clock. Suspect the peak lands at −4 (i.e. `BREAK`
-   at 9) or the grace stretches to 5.
-2. **Is the toll actually payable, or a permanent 2🌾 tax?** If competent policies never hold ⚔️ and just
-   eat the fallback every round, the 🔨/⚔️ sink is decorative and the mission is back to one axis.
-   Read `unplayedCards` for Bow and Dogs — that is the direct signal.
-3. **⚠️ Read the planner's number as instrumentation before reading it as difficulty.** This is the arc's
-   only goal that reads neither `G.resources` nor a zone, and that has two consequences in `sim/`.
-   `objectiveProgress` folds to `min(G.round, BREAK)/BREAK` — it rises by *ending turns* and is identical
-   across every within-turn action sequence, unlike every other shipped mission. And `deriveEnablers`
-   registers nothing off it: no capacity credit, no producer credit, no card-cost credit, so the planner
-   is given no reason to build a Farm. **The tell is direction** — `heuristicPolicy` never consults
-   `objectiveProgress`, so if heuristic *beats* planner here (the inverse of missions 1–3, where planner
-   led 100/100/100 against 95/26/100), that is the empty enabler model talking, not the mission. Settle
-   which it is before retuning any constant, or the content gets tuned against a sim artifact.
-4. **Skill separation may be genuinely compressed too.** A fixed deadline means everyone who survives
-   wins on the same round, so turn count carries no gradient here the way it did at Raiders. Separate
-   from the instrumentation caveat above, and only readable once that one is ruled out.
-5. **Conquest is the one accepted dead card** — territory 4 already exceeds what the mission needs. One
-   of fifteen is tolerable; if the sweep shows more, the ramp is starving out plays rather than pressuring
-   them.
-6. **The fixture doesn't exist yet.** `scripts/sim/baselines/harsh_winter.json` is Balance's to cut, on
-   the arrival deck above. `restless_people.json` is deleted along with its mission, and its rows are
-   stripped from both files in `baselines/results/`.
+A second clause on `deep_cold`: a **1⚔️ toll every round from round 1**, falling back to 2🌾 for a tribe
+holding none. Its purpose was to give the mission a 🔨/⚔️ sink (Toolmaking → Bow → three rounds of
+cover) and to give the grace window its own decision instead of four empty rounds.
+
+**Measured and cut** — kept here because the numbers are the argument against re-adding it:
+
+- With the toll at these constants the mission was **unwinnable**: 0/100 at heuristic, greedy and
+  planner, and **0/10 at the oracle**, every defeat famine at round 7–9 against a round-10 win.
+- Removing it alone took the oracle to 9/10 on the same constants, so the toll was the entire overrun.
+- The toll clause itself was working as designed — greedy, planner and oracle all armed and paid in ⚔️
+  (Bow ~1.9 plays/run) rather than eating the 🌾 fallback. It was affordable *and* unaffordable
+  alongside the famine.
+
+Cut on design grounds rather than re-tuned: a tutorial mission is better one-dimensional than
+correct-but-layered.
 
 ## Polish ⬜ (not started)
 
