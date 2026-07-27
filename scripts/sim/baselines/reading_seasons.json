@@ -1,19 +1,17 @@
 {
   "id": "reading_seasons",
   "mission": "reading_seasons",
-  "note": "STALE — predates the rates and the branch restructure that moves this mission to col 3 behind Harsh Winter; re-cut when the rebalance pass reaches it. Minimal: a fork off Growing Numbers, with Storytelling the only science faucet owned.",
+  "note": "Minimal: Harsh Winter's deck plus the science pair that mission grants, one copy each -- the arrival state on the lower branch, where reading_seasons sits at col 3 behind harsh_winter. No purchases, per the Stone Age convention.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
-    { "cardId": "bartering", "count": 2 },
     { "cardId": "bow", "count": 2 },
     { "cardId": "dogs", "count": 2 },
-    { "cardId": "storytelling", "count": 2 },
-    { "cardId": "bead_workshop", "count": 2 },
-    { "cardId": "cave_art", "count": 2 },
-    { "cardId": "hut", "count": 1 },
     { "cardId": "farm", "count": 1 },
-    { "cardId": "conquest", "count": 1 }
+    { "cardId": "hut", "count": 1 },
+    { "cardId": "conquest", "count": 1 },
+    { "cardId": "storytelling", "count": 1 },
+    { "cardId": "fire", "count": 1 }
   ]
 }

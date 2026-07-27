@@ -73,9 +73,8 @@ goal it was granted for.
 reward isn't in the run's deck anyway. `reading_seasons`' sweep is what judges the number, and it needs
 three things known before the numbers land:
 
-- **Its fixture must gain Fire.** `baselines/reading_seasons.json` is marked STALE and predates the
-  restructure; Fire is granted by its *direct* prereq, so a re-cut that omits it measures the mission
-  without the card it was added for.
+- ✅ **Its fixture has been re-cut** — `baselines/reading_seasons.json` is now this mission's deck plus
+  one Storytelling and one Fire, on Settlement, and the cell is measured.
 - **The enabler model prices Fire as free.** `enablers.ts` derives value from `cost` → `effect` over
   *resource* costs; a card cost has no representation there, so the model reads Fire as +1🔬 for nothing
   and the planner may over-play it. Hard to spot on a 🔬-stockpile goal, where over-playing it looks like

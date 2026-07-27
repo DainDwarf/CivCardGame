@@ -406,37 +406,36 @@
     "wins": 100,
     "winRate": 1,
     "turns": {
-      "min": 11,
-      "mean": 13.13,
-      "median": 13,
-      "max": 18
+      "min": 15,
+      "mean": 18.62,
+      "median": 18,
+      "max": 23
     },
     "meanResources": {
-      "food": 11.59,
-      "production": 5.39,
-      "science": 10.04,
-      "military": 10.55,
-      "money": 4.82,
-      "population": 2.2,
-      "culture": 4.14,
-      "territory": 2.22
+      "food": 7.32,
+      "production": 8.68,
+      "science": 10,
+      "military": 6.59,
+      "money": 0,
+      "population": 2.7,
+      "culture": 0,
+      "territory": 4
     },
     "defeatCauses": {},
     "cardPlays": {
-      "jewelry": 375,
-      "toolmaking": 585,
-      "bow": 143,
-      "foraging": 780,
-      "cave_art": 207,
-      "storytelling": 502,
-      "farm": 55,
-      "dogs": 368,
-      "bartering": 268,
-      "conquest": 22,
-      "hut": 20
+      "dogs": 62,
+      "foraging": 1109,
+      "storytelling": 481,
+      "bow": 199,
+      "toolmaking": 1164,
+      "fire": 519,
+      "farm": 94,
+      "hut": 70
     },
-    "unplayedCards": [],
-    "meanActions": 46.38
+    "unplayedCards": [
+      "conquest"
+    ],
+    "meanActions": 55.04
   },
   {
     "label": "roads",
@@ -959,37 +958,35 @@
     "wins": 100,
     "winRate": 1,
     "turns": {
-      "min": 11,
-      "mean": 13.56,
-      "median": 13,
-      "max": 20
+      "min": 15,
+      "mean": 18.9,
+      "median": 19,
+      "max": 24
     },
     "meanResources": {
-      "food": 5.87,
-      "production": 5,
+      "food": 3.09,
+      "production": 5.09,
       "science": 10,
-      "military": 4.53,
-      "money": 3.22,
-      "population": 2.76,
-      "culture": 0.04,
-      "territory": 2.01
+      "military": 3.07,
+      "money": 0,
+      "population": 2.91,
+      "culture": 0,
+      "territory": 5.62
     },
     "defeatCauses": {},
     "cardPlays": {
-      "jewelry": 244,
-      "toolmaking": 538,
-      "foraging": 687,
-      "storytelling": 500,
-      "bartering": 166,
-      "dogs": 121,
-      "farm": 80,
-      "bow": 72,
-      "hut": 76,
-      "conquest": 1,
-      "cave_art": 2
+      "dogs": 182,
+      "toolmaking": 864,
+      "foraging": 1002,
+      "bow": 191,
+      "storytelling": 470,
+      "fire": 530,
+      "conquest": 162,
+      "farm": 100,
+      "hut": 91
     },
     "unplayedCards": [],
-    "meanActions": 38.53
+    "meanActions": 54.13
   },
   {
     "label": "roads",

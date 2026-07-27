@@ -383,37 +383,35 @@
     "wins": 10,
     "winRate": 1,
     "turns": {
-      "min": 11,
-      "mean": 12.9,
-      "median": 13,
-      "max": 14
+      "min": 15,
+      "mean": 16.9,
+      "median": 17,
+      "max": 19
     },
     "meanResources": {
-      "food": 9,
-      "production": 3.6,
+      "food": 5.5,
+      "production": 6.5,
       "science": 10,
-      "military": 7.3,
-      "money": 5.2,
+      "military": 3,
+      "money": 0,
       "population": 3,
-      "culture": 7.2,
-      "territory": 2.1
+      "culture": 0,
+      "territory": 6
     },
     "defeatCauses": {},
     "cardPlays": {
-      "jewelry": 40,
-      "toolmaking": 64,
-      "bow": 8,
-      "foraging": 78,
-      "cave_art": 36,
+      "dogs": 30,
+      "foraging": 128,
+      "toolmaking": 110,
       "storytelling": 50,
-      "bartering": 28,
+      "bow": 20,
+      "conquest": 20,
+      "fire": 50,
       "farm": 10,
-      "dogs": 27,
-      "hut": 10,
-      "conquest": 1
+      "hut": 10
     },
     "unplayedCards": [],
-    "meanActions": 51.3
+    "meanActions": 61.4
   },
   {
     "label": "roads",
