@@ -88,14 +88,32 @@ culture card. Tracked in REBALANCE → *Culture leaves the Stone Age*, flagged a
 **Every number below is provisional and unswept.** `HARSH_WINTER_ONSET = 5`, `HARSH_WINTER_BREAK = 10`,
 `DEEP_COLD_UNARMED_FOOD = 2`.
 
-Paper arithmetic on the arrival deck, to be confirmed or killed by the sweep:
+Paper arithmetic on the arrival deck. **It does not close**, which is the first thing the sweep has to
+settle:
 
-- **Winter total 15🌾** (rounds 5–9 at 1·2·3·4·5) on top of normal upkeep (1🌾/round at pop 2).
-- **Toll demand ~9⚔️** over rounds 1–9, against a supply of 6⚔️ from two Bows (4🔨, and they self-exile,
-  so that is the *whole run's* Bow budget) plus ~3–4 from recurring Dogs at 1🌾 each. Tight by
-  construction — the shortfall rounds fall back to 🌾.
-- **Pop-2 all-food income ≈1.75🌾/round** (Farm plus a Foraging drawn ~76% of rounds), banking to ~13🌾
-  by the end of the grace window and landing just the far side of the ramp.
+| Out (rounds 1–9) | 🌾 |
+|---|---|
+| Normal upkeep, pop 2 | 9 |
+| Famine, rounds 5–9 at 1·2·3·4·5 | 15 |
+| Toll remainder — 9 rounds, 6 covered by two Bows, 3 paid in Dogs at 1🌾 | 3 |
+| **Total** | **27** |
+
+| In | 🌾 |
+|---|---|
+| Settlement's start | 10 |
+| Income ≈1.76/round × 9 — Farm plus a Foraging drawn ~76% of rounds | 15.8 |
+| Less a Toolmaking worker-round: Farm (2🔨) + two Bows (4🔨) is 6🔨 against a 5🔨 start | −1 |
+| **Total** | **≈24.8** |
+
+**Short by ~2🌾 on close to the optimal line**, so the mission may currently have no line at all. The
+constraint is that income is **draw-capped, not worker-capped**: at pop 2 with Farm holding one worker,
+at most one Foraging can be staffed per round, and it is in hand only ~76% of the time. Growing doesn't
+help — Hut's 3🔨 competes with the Bows, and pop 3 costs +1🌾/round upkeep for ~+0.7🌾/round of
+draw-limited income.
+
+Levers, least damage to the design first: **`ONSET` → 6** (drops the −5 round, keeps the 10-round length
+and adds the preparation round the grace window exists for) or **`BREAK` → 9** (drops the same round and
+a toll round with it). **Not the toll's round-1 start** — that is the clause carrying the second axis.
 
 **Watch list.**
 
@@ -105,13 +123,22 @@ Paper arithmetic on the arrival deck, to be confirmed or killed by the sweep:
 2. **Is the toll actually payable, or a permanent 2🌾 tax?** If competent policies never hold ⚔️ and just
    eat the fallback every round, the 🔨/⚔️ sink is decorative and the mission is back to one axis.
    Read `unplayedCards` for Bow and Dogs — that is the direct signal.
-3. **Skill separation.** Missions 1–3 measured greedy 95/26/100 against planner 100/100/100. A survival
-   goal with a fixed deadline may compress that: everyone who survives wins on the same round, so turn
-   count carries no gradient here the way it did at Raiders.
-4. **Conquest is the one accepted dead card** — territory 4 already exceeds what the mission needs. One
+3. **⚠️ Read the planner's number as instrumentation before reading it as difficulty.** This is the arc's
+   only goal that reads neither `G.resources` nor a zone, and that has two consequences in `sim/`.
+   `objectiveProgress` folds to `min(G.round, BREAK)/BREAK` — it rises by *ending turns* and is identical
+   across every within-turn action sequence, unlike every other shipped mission. And `deriveEnablers`
+   registers nothing off it: no capacity credit, no producer credit, no card-cost credit, so the planner
+   is given no reason to build a Farm. **The tell is direction** — `heuristicPolicy` never consults
+   `objectiveProgress`, so if heuristic *beats* planner here (the inverse of missions 1–3, where planner
+   led 100/100/100 against 95/26/100), that is the empty enabler model talking, not the mission. Settle
+   which it is before retuning any constant, or the content gets tuned against a sim artifact.
+4. **Skill separation may be genuinely compressed too.** A fixed deadline means everyone who survives
+   wins on the same round, so turn count carries no gradient here the way it did at Raiders. Separate
+   from the instrumentation caveat above, and only readable once that one is ruled out.
+5. **Conquest is the one accepted dead card** — territory 4 already exceeds what the mission needs. One
    of fifteen is tolerable; if the sweep shows more, the ramp is starving out plays rather than pressuring
    them.
-5. **The fixture doesn't exist yet.** `scripts/sim/baselines/harsh_winter.json` is Balance's to cut, on
+6. **The fixture doesn't exist yet.** `scripts/sim/baselines/harsh_winter.json` is Balance's to cut, on
    the arrival deck above. `restless_people.json` is deleted along with its mission, and its rows are
    stripped from both files in `baselines/results/`.
 
