@@ -120,6 +120,11 @@ Measured results live under `baselines/results/`; committing them *is* the recor
 content SHA they were taken at. When new shipped content deserves a standing cell, add a
 fixture and commit it. `--deck`/`--board` remain for hand-written ad-hoc decks.
 
+**A committed result *is* the current baseline — never re-measure one to obtain it.** It is
+committed because it describes the tree as it stands; a result known to have gone stale is
+called out as stale where it is tracked. Re-running a baseline sweep to "confirm" a committed
+row measures nothing and costs as much as the variant run it precedes.
+
 ## Replay one run — `--seed <i>`
 
 Passing `--seed <i>` re-runs the single `(cell, policy, index)` the batch would have run and prints
@@ -201,7 +206,11 @@ Two kinds of variable:
   1. Fix the `--scenario` / `--deck` / `--board` / `--seeds` so both runs are a paired comparison
      (same seeds → identical shuffles → the content edit is the only variable). Use a policy that
      actually reaches the mechanic (`greedy`/`heuristic` past the early game; `random` barely survives).
-  2. **Baseline run** — capture output to `scratchpad/baseline.txt` (or use `--format json`).
+  2. **Baseline numbers** — on a baseline-fixture cell, read the committed rows in
+     `baselines/results/` and skip this run entirely; match the sweep's `--policies`/`--seeds` to
+     what they were measured at. Only *measure* a baseline when the cell has none — an ad-hoc
+     `--deck`/`--board` comparison, or a fixture never swept. Capture to `scratchpad/baseline.txt`
+     (or `--format json`).
   3. **Edit** the content value (the `Edit` tool on the real `src/content/*.ts`).
   4. **Variant run** — same flags, capture to `scratchpad/variant.txt`.
   5. **Roll back** with `git checkout -- src/content/<file>.ts`, then **verify clean**:
