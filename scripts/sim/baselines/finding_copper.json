@@ -1,18 +1,17 @@
 {
   "id": "finding_copper",
   "mission": "finding_copper",
-  "note": "Purchased — ice_age opens at First Temple, so Influence can be ground from here on. Pool is the Stone Age set + Göbekli Tepe (the Forge is this mission's own reward). Works-leaning on purpose: the Failing Stone Tools threat drains 1🔨 per round per worker staffed in a *building*, and work cards are exempt, so Foraging/Toolmaking/Storytelling carry the economy and Huts (workers: 0) add population without feeding the drain.",
+  "note": "Purchased — 62 Influence has arrived by here, and 6 of it buys the two Irrigation stickers on the Farm (unlocked back at Growing Numbers). Pool is the Stone Age set + Göbekli Tepe (the Forge is this mission's own reward). Three deliberate omissions, each measured: **Bartering + Bead Workshop** are a trap in this cell — the Workshop is the pool's only 🪙 faucet and it is a *building*, so the route's 1🪙/round rent pins a worker into the Failing Stone Tools drain, and the only alternative to ruin is bankruptcy (planner opened the route in 67 of 100 runs and ruined in 67; every replayed ruin had it open, and no replayed run without it ruined). The route is not the only path to ruin — any staffed building feeds the drain — but it is the one that makes ruin inescapable. **Beer + Sun Stone** produce culture, which nothing here asks for. **Göbekli Tepe** costs 8🔨 and a culture level to enter and then staffs 3 workers for +3🔨 against the threat's −3🔨, netting zero production — no policy ever played it, oracle included. What is left is works-leaning on purpose: the drain counts workers staffed in the tableau only, so Foraging/Toolmaking/Hunting/Storytelling carry the economy and the Hut (workers: 0) adds population without feeding it.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
-    { "cardId": "storytelling", "count": 4 },
-    { "cardId": "hut", "count": 2 },
-    { "cardId": "conquest", "count": 2 },
     { "cardId": "bow", "count": 2 },
     { "cardId": "dogs", "count": 2 },
-    { "cardId": "bead_workshop", "count": 2 },
-    { "cardId": "bartering", "count": 2 },
-    { "cardId": "cave_art", "count": 2 }
+    { "cardId": "farm", "count": 1, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "hut", "count": 1 },
+    { "cardId": "conquest", "count": 1 },
+    { "cardId": "storytelling", "count": 1 },
+    { "cardId": "fire", "count": 1 }
   ]
 }

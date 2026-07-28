@@ -46,38 +46,36 @@
     "wins": 10,
     "winRate": 1,
     "turns": {
-      "min": 14,
-      "mean": 16.8,
-      "median": 17,
-      "max": 19
+      "min": 30,
+      "mean": 33,
+      "median": 33,
+      "max": 37
     },
     "meanResources": {
-      "food": 10.2,
-      "production": 1.9,
-      "science": 1.4,
-      "military": 6.3,
-      "money": 4.5,
-      "population": 2,
-      "culture": 6,
-      "territory": 2.2
+      "food": 15,
+      "production": 4.1,
+      "science": 0.5,
+      "military": 5.5,
+      "money": 0,
+      "population": 3,
+      "culture": 0,
+      "territory": 6.2
     },
     "defeatCauses": {},
     "cardPlays": {
-      "storytelling": 83,
-      "toolmaking": 67,
-      "foraging": 89,
-      "jewelry": 41,
-      "bartering": 37,
-      "bow": 15,
+      "foraging": 203,
+      "toolmaking": 247,
+      "bow": 19,
+      "fire": 77,
+      "storytelling": 78,
+      "dogs": 86,
+      "conquest": 22,
       "copper_vein": 30,
-      "cave_art": 30,
-      "dogs": 14,
-      "conquest": 2
+      "farm": 10,
+      "hut": 10
     },
-    "unplayedCards": [
-      "hut"
-    ],
-    "meanActions": 57.2
+    "unplayedCards": [],
+    "meanActions": 123.5
   },
   {
     "label": "first_settlement",

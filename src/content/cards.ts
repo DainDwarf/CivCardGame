@@ -261,9 +261,9 @@ export const CARDS: Record<string, CardDef> = {
   },
   sun_stone: { id: 'sun_stone', name: 'Sun Stone', kind: 'building', cost: { resources: { production: 3 } }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '☀️' } },
   bead_workshop: { id: 'bead_workshop', name: 'Bead Workshop', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { money: 1 } }, workers: 1, display: { art: '📿' } },
-  forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
-  // The science counterpart of the Forge, and priced on the same shape: a permanent building doubling
-  // the free work card's rate, paid for once in 🔨 and a territory slot.
+  forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { resources: { production: 3 } }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
+  // The science counterpart of the Forge, on the same shape: a permanent building doubling the free
+  // work card's rate, paid for once in 🔨 and a territory slot.
   archives: { id: 'archives', name: 'Archives', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { science: 2 } }, workers: 1, display: { art: '🏛️' } },
   // House: the Hut's bigger cousin — a one-shot +2🧍 at placement (on `effect`, like Hut, so it grants
   //   population once when built rather than every round).

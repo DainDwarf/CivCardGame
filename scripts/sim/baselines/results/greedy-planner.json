@@ -47,42 +47,42 @@
     "label": "finding_copper",
     "policyName": "greedy",
     "runs": 100,
-    "wins": 99,
-    "winRate": 0.99,
+    "wins": 96,
+    "winRate": 0.96,
     "turns": {
-      "min": 13,
-      "mean": 19.87,
-      "median": 19.5,
-      "max": 30
+      "min": 9,
+      "mean": 43.13,
+      "median": 42,
+      "max": 82
     },
     "meanResources": {
-      "food": 8.93,
-      "production": 4.91,
-      "science": 3.59,
-      "military": 7.62,
-      "money": 5.45,
-      "population": 2.24,
-      "culture": 6.24,
-      "territory": 2.56
+      "food": 23.48,
+      "production": 3.47,
+      "science": 0.41,
+      "military": 19,
+      "money": 0,
+      "population": 2.35,
+      "culture": 0,
+      "territory": 4
     },
     "defeatCauses": {
-      "famine": 1
+      "famine": 4
     },
     "cardPlays": {
-      "storytelling": 927,
-      "dogs": 260,
-      "toolmaking": 889,
-      "foraging": 1088,
-      "jewelry": 469,
-      "bartering": 393,
-      "bow": 174,
-      "copper_vein": 299,
-      "cave_art": 312,
-      "conquest": 56,
-      "hut": 24
+      "foraging": 2526,
+      "dogs": 1325,
+      "toolmaking": 2580,
+      "bow": 192,
+      "fire": 870,
+      "storytelling": 616,
+      "copper_vein": 289,
+      "farm": 96,
+      "hut": 35
     },
-    "unplayedCards": [],
-    "meanActions": 67.79
+    "unplayedCards": [
+      "conquest"
+    ],
+    "meanActions": 141.02
   },
   {
     "label": "first_settlement",
@@ -609,42 +609,40 @@
     "label": "finding_copper",
     "policyName": "planner",
     "runs": 100,
-    "wins": 96,
-    "winRate": 0.96,
+    "wins": 100,
+    "winRate": 1,
     "turns": {
-      "min": 8,
-      "mean": 20.72,
-      "median": 20.5,
-      "max": 30
+      "min": 31,
+      "mean": 38.91,
+      "median": 38,
+      "max": 75
     },
     "meanResources": {
-      "food": 7.19,
-      "production": 5.27,
-      "science": 3.27,
-      "military": 6,
-      "money": 4.02,
-      "population": 2.02,
-      "culture": 0.04,
-      "territory": 2.06
+      "food": 11.69,
+      "production": 2.58,
+      "science": 0.13,
+      "military": 13.45,
+      "money": 0,
+      "population": 2.23,
+      "culture": 0,
+      "territory": 4
     },
-    "defeatCauses": {
-      "famine": 4
-    },
+    "defeatCauses": {},
     "cardPlays": {
-      "storytelling": 896,
-      "toolmaking": 775,
-      "dogs": 123,
-      "foraging": 1035,
-      "jewelry": 375,
-      "bartering": 348,
-      "bow": 128,
-      "copper_vein": 293,
-      "hut": 2,
-      "conquest": 6,
-      "cave_art": 2
+      "foraging": 1798,
+      "dogs": 766,
+      "bow": 193,
+      "fire": 792,
+      "toolmaking": 2041,
+      "storytelling": 721,
+      "copper_vein": 300,
+      "farm": 100,
+      "hut": 23
     },
-    "unplayedCards": [],
-    "meanActions": 59.59
+    "unplayedCards": [
+      "conquest"
+    ],
+    "meanActions": 113.45
   },
   {
     "label": "first_settlement",

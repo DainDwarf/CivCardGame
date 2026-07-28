@@ -13,7 +13,7 @@
 - **Goal:** mine all 3 copper-vein events (2🔨+5🔬 each, played → `removed`).
 - **Pressure:** the **Failing Stone Tools** threat — −1🔨 per round per worker staffed *in a building*;
   work cards exempt.
-- **Reward:** unlocks the **Forge** (building, 4🔨, 2🔨/worker — deliberately obsoletes Toolmaking).
+- **Reward:** unlocks the **Forge** (building, 3🔨, 2🔨/worker — deliberately obsoletes Toolmaking).
 
 ## Implement ✅ (shipped)
 
@@ -23,7 +23,33 @@ see Balance).
 ## Balance ✅ (settled)
 
 Confirmed by simulation + hand-play. The works-are-exempt trade (a works-only deck can dodge the
-drain) is **intended, not a leak**.
+drain) is **intended, not a leak** — and the re-cut baseline is what a deck leaning into it measures at.
+
+**Re-swept under the rebalanced rates** (settlement · the First Temple pool, 62⭐ arrived, 6 of it spent
+on the Farm's two Irrigation stickers). No threshold moved; the deck is what changed:
+
+| policy | win rate | turns (min/med/mean/max) | defeat causes |
+|---|---|---|---|
+| random | 0/100 | 2 / 9 / 9.0 / 20 | famine 57 · ruin 43 |
+| heuristic | 0/100 | 2 / 7 / 8.0 / 26 | ruin 91 · famine 9 |
+| greedy | 96/100 | 9 / 42 / 43.1 / 82 | famine 4 |
+| planner | 100/100 | 31 / 38 / 38.9 / 75 | — |
+| oracle | 10/10 | 30 / 33 / 33.0 / 37 | — |
+
+**The money pair is a trap here, and that is the mission working.** The Bead Workshop is the Stone Age
+pool's only 🪙 faucet and it is a *building*, so once Bartering's 1🪙/round rent is running, the worker
+funding it is pinned into the drain: staffed is ruin, unstaffed is bankruptcy. Planner opened the route
+in 67 of 100 runs and ruined in 67 — dropping the pair took it from 28% to 100%. The threat taxes
+permanent infrastructure, and the route is the most permanent thing in the pool.
+
+## Open
+
+- **Göbekli Tepe is unplayable-in-practice on this mission**, oracle included: 8🔨 and a culture level to
+  enter, then 3 staffed workers producing +3🔨 against the threat's −3🔨 — it nets zero production on the
+  one board slot it costs. Not a strand (it clears `first_temple`, which grants it, and reads normally
+  elsewhere), but this is the mission where a wonder is worth *nothing*, and the drain is why.
+- **Forge at 3🔨 is unmeasured** — it is this mission's reward, so no fixture here can reach it. See
+  [`../REBALANCE.md`](../REBALANCE.md) → the rate ledger.
 
 ## Polish ⬜ (not started)
 

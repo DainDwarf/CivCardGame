@@ -63,7 +63,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 6 | `reading_seasons` | ✅ | ✅ | ✅ | ✅ | [reading-seasons](missions/reading-seasons.md) |
 | 7 | *Rites & Rituals* | ✅ | ✅ | ✅ | ✅ | [rites](missions/rites.md) |
 | 8 | `first_temple` | ✅ | ✅ | ✅ | ✅ | [first-temple](missions/first-temple.md) |
-| 9 | `finding_copper` | ⬜ | ⬜ | ⬜ | ⬜ | [copper](missions/copper.md) |
+| 9 | `finding_copper` | ✅ | ✅ | ✅ | ✅ | [copper](missions/copper.md) |
 | 10 | `masonry` | ⬜ | ⬜ | ⬜ | ⬜ | [masonry](missions/masonry.md) |
 | 11 | `pyramid` | ⬜ | ⬜ | ⬜ | ⬜ | [pyramid](missions/pyramid.md) |
 | 12 | `accounting` | ⬜ | ⬜ | ⬜ | ⬜ | [accounting](missions/accounting.md) |
@@ -84,6 +84,10 @@ Per-row notes, where the ⬜ isn't the whole story:
 - **8 · `first_temple`** kept its four-term conjunction's 🧍 and 🎭 terms and **dropped both spendable
   ones** (30🔨, 30🪙) — see *Re-point the money objectives*. It is the age's **long** mission by design:
   an oracle median of ~40 turns against the 11–16 band before it, accepted rather than tuned away.
+- **9 · `finding_copper`** moved no threshold — the mission proved sound as authored and what changed is
+  the deck. Its Forge price cut is a **rate move no committed cell measures**: the Forge is this
+  mission's own reward, so it is absent from the very fixture that would have caught it, and the five
+  cells that do stock it (11–13, 15–16) are all still ⬜.
 - **12 · `accounting`** is a second hoard goal.
 - **`ice_age` · `sandbox`** are infinite, so `Swept` can never mean a win rate there: read the collapse
   round instead. They are last because nothing downstream depends on them.
@@ -107,6 +111,7 @@ What every later cell is measured against. Each mission's reasoning and sweep is
 | 5 | The culture pair halved — **Beer** 1🌾 → **1🎭** (work) · **Sun Stone** **3🔨** → **1🎭**/worker (building). The level curve holds at cumulative **10 / 30 / 70** (`CULTURE_STEP = 10`): the producers were the freshly-rated numbers and the curve the oldest, so they moved |
 | 5 | **Irrigation** keeps +1🌾 and now also charges **+1🔨 to play**, reaching work cards as well as buildings · **Elegant** is new: **+1🎭, +1 🎭 level to play**, on a culture producer of either kind |
 | 7+ | Dogs → **Hunting**: the 1🌾→1⚔️ `action` becomes a free `work` box at **1⚔️**/worker (card id still `dogs`). ⚔️ stops being bought with 🌾 and starts costing a worker and a board slot for the turn. Post-dates mission 7's pass rather than coming out of it — a trial, measured across all seven swept cells at once |
+| 9 | **Forge** 4🔨 → **3🔨**, output unchanged at 2🔨/worker — so it now undercuts the Archives it was priced level with. **Unmeasured**: it is `finding_copper`'s own reward and so absent from that cell's deck, and every cell that stocks it is still ⬜ |
 
 The base-rate cut fixed three work-card/building pairs as a side effect — Farm now *matches* Foraging,
 Forge *doubles* Toolmaking, Archives *doubles* Storytelling. The culture pair went the other way, by
@@ -216,9 +221,9 @@ Consequences that outlived the restructure:
 - **Cave Art is stranded.** Cut from the starting collection and unlocked by nothing, so it is
   unobtainable in-game — and **nothing merges to `main` with a card stranded**. The cut is decided (it
   made Beer's 2🎭 for no 🌾, obsoleting a shipped card, and no reward slot was left to grant it from);
-  it is not yet *deleted* because five baselines still stock it (`finding_copper`, `masonry`,
-  `accounting`, `roads`, `pyramid`) and would fail to load, so the card goes with the last of them to be
-  re-cut.
+  it is not yet *deleted* because four baselines still stock it (`masonry`, `accounting`, `roads`,
+  `pyramid`) and would fail to load, so the card goes with the last of them to be re-cut.
+  `finding_copper` dropped it at its own re-cut.
 - **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is `it.skip`ped.** Two reasons at once,
   which is why it's parked rather than retuned:
   - Its hardcoded deck fields **bartering · bead_workshop · cave_art** — the first two at pre-rework
