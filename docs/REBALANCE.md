@@ -38,7 +38,7 @@ nothing but noise.
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
 | 3 | `raiders_at_border` · `harsh_winter` | ✅ **done** — the **pressure** pair, now first in each branch; both realigned, re-fixtured and measured |
 | 4 | *The First Trades* · `reading_seasons` | ✅ **done** — the **resource** pair; both realigned, re-fixtured, measured. `reading_seasons` needed no rate change (100% at heuristic/greedy/planner/oracle, 0% random) and now grants **Sun Stone** (the branch's culture card, whose rate is settled at the convergence node) **+ Calendar** (see *Science gets its sink*) |
-| 5 | *Rites & Rituals* | 🟡 — written, placed and **swept once** on both boards ([dossier](missions/rites.md)). Its cell is what re-cut Chiefdom's food. **Open: the 🎭 threshold is too cheap** — oracle clears Settlement in a 6-turn median — so the culture-level curve is *not* yet settled |
+| 5 | *Rites & Rituals* | 🟡 — realigned, **fixtured and measured** on Settlement (greedy 94 · planner 98 · oracle 10/10, median 11–14.5). Its cell re-cut Chiefdom's food *and* halved the culture pair, which settled the level curve by moving the producers instead. **Open: Chiefdom at planner 40%**, below every other Stone cell ([dossier](missions/rites.md)) |
 | 6 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 7 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
 | 8 | `pyramid` · `accounting` | ⬜ — both hoard goals; pyramid blocked on the food ceiling |

@@ -1,0 +1,22 @@
+{
+  "id": "rites_rituals",
+  "mission": "rites_rituals",
+  "note": "Minimal: the Founding deck plus one copy of every card the six cleared prereqs granted — this node ANDs both Stone branches, so its arrival pool is the whole age's unlocks (Farm/Hut/Conquest from the first two missions, the money pair from Raiders, Beer from The First Trades, the science pair from Harsh Winter, Sun Stone + Calendar from Reading the Seasons). No bought copies and no stickers, though 40 Influence has arrived unspent by here. On Settlement, the settled line's board; Chiefdom is the other launchable choice and measures far harder (planner 40/100 against 98/100 here) — deliberately not cut as a fixture, since the standing set is one cell per mission.",
+  "board": "settlement",
+  "deck": [
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "farm", "count": 1 },
+    { "cardId": "hut", "count": 1 },
+    { "cardId": "conquest", "count": 1 },
+    { "cardId": "bead_workshop", "count": 1 },
+    { "cardId": "bartering", "count": 1 },
+    { "cardId": "beer", "count": 1 },
+    { "cardId": "storytelling", "count": 1 },
+    { "cardId": "fire", "count": 1 },
+    { "cardId": "sun_stone", "count": 1 },
+    { "cardId": "calendar", "count": 1 }
+  ]
+}

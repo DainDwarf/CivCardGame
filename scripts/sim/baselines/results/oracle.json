@@ -569,5 +569,48 @@
       "hut"
     ],
     "meanActions": 22.2
+  },
+  {
+    "label": "rites_rituals",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 9,
+      "mean": 10.6,
+      "median": 11,
+      "max": 12
+    },
+    "meanResources": {
+      "food": 2.5,
+      "production": 2.2,
+      "science": 2.5,
+      "military": 2.7,
+      "money": 0.1,
+      "population": 2,
+      "culture": 10,
+      "territory": 5
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "dogs": 14,
+      "fire": 20,
+      "sun_stone": 10,
+      "toolmaking": 38,
+      "bow": 11,
+      "conquest": 10,
+      "foraging": 29,
+      "beer": 14,
+      "farm": 6,
+      "storytelling": 6,
+      "bead_workshop": 1,
+      "bartering": 1
+    },
+    "unplayedCards": [
+      "hut",
+      "calendar"
+    ],
+    "meanActions": 27.7
   }
 ]

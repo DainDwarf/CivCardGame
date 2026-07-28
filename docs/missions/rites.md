@@ -87,7 +87,10 @@ and the rate cut did not move it — Chiefdom's binding constraint is its slot/f
 culture rate, which is the same reading the food sweep gave. Whether 40% is acceptable for the *second*
 board on an optional-choice node, or wants another lever, is the remaining call.
 
-No baseline fixture yet — the committed set is one per *measured* mission, and Chiefdom is the open half.
+✅ **Fixture cut and recorded** — `scripts/sim/baselines/rites_rituals.json` (the deck above, on
+Settlement), with its greedy/planner and oracle rows in `baselines/results/`. Settlement only: the
+standing set is one cell per mission, and Chiefdom is measured in this dossier rather than committed,
+the same way The First Trades records its Chiefdom sweep.
 
 ## Open
 

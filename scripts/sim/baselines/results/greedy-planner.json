@@ -1188,5 +1188,95 @@
       "conquest"
     ],
     "meanActions": 22.56
+  },
+  {
+    "label": "rites_rituals",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 94,
+    "winRate": 0.94,
+    "turns": {
+      "min": 8,
+      "mean": 24.38,
+      "median": 14.5,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 6.85,
+      "production": 2.61,
+      "science": 4.49,
+      "military": 4.38,
+      "money": 8.45,
+      "population": 2.06,
+      "culture": 9.55,
+      "territory": 4
+    },
+    "defeatCauses": {
+      "stall": 5,
+      "famine": 1
+    },
+    "cardPlays": {
+      "fire": 318,
+      "dogs": 42,
+      "sun_stone": 95,
+      "toolmaking": 494,
+      "bow": 132,
+      "foraging": 472,
+      "beer": 205,
+      "storytelling": 131,
+      "bead_workshop": 19,
+      "bartering": 15,
+      "farm": 64,
+      "hut": 6
+    },
+    "unplayedCards": [
+      "conquest",
+      "calendar"
+    ],
+    "meanActions": 44.26
+  },
+  {
+    "label": "rites_rituals",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 98,
+    "winRate": 0.98,
+    "turns": {
+      "min": 7,
+      "mean": 12.16,
+      "median": 11,
+      "max": 23
+    },
+    "meanResources": {
+      "food": 3.1,
+      "production": 1.66,
+      "science": 2.55,
+      "military": 2.75,
+      "money": 0.5,
+      "population": 2.11,
+      "culture": 9.82,
+      "territory": 4.92
+    },
+    "defeatCauses": {
+      "famine": 2
+    },
+    "cardPlays": {
+      "fire": 160,
+      "dogs": 92,
+      "sun_stone": 98,
+      "toolmaking": 361,
+      "bow": 127,
+      "foraging": 325,
+      "farm": 35,
+      "storytelling": 99,
+      "conquest": 92,
+      "beer": 130,
+      "bead_workshop": 22,
+      "bartering": 19,
+      "hut": 11,
+      "calendar": 2
+    },
+    "unplayedCards": [],
+    "meanActions": 28.28
   }
 ]

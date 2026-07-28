@@ -37,8 +37,9 @@
     (famine threat), inverting each branch to pressure-first. Both branches have **landed and are
     measured** (`restless_people` deleted, The First Trades and Harsh Winter shipped). The age's last
     new mission — **Rites & Rituals**, the culture-goal node on the reconvergence
-    ([rites](missions/rites.md)) — is now **written and placed** but unmeasured; it re-points
-    `first_temple`'s prereqs and shifts every mission behind it one column right. See
+    ([rites](missions/rites.md)) — is **written, placed, fixtured and measured** on the settled board;
+    it re-points `first_temple`'s prereqs and shifts every mission behind it one column right. What is
+    left there is Chiefdom, the alternative launch board. See
     [`REBALANCE.md`](REBALANCE.md) → *Stone Age branches 3–4 restructure*, plus the
     [first-trades](missions/first-trades.md) and [harsh-winter](missions/harsh-winter.md) dossiers.
     Step 9's substeps below are written against the old arc and are stale for **9.3 / 9.5 / 9.6**;
