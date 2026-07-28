@@ -38,7 +38,7 @@ nothing but noise.
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
 | 3 | `raiders_at_border` · `harsh_winter` | ✅ **done** — the **pressure** pair, now first in each branch; both realigned, re-fixtured and measured |
 | 4 | *The First Trades* · `reading_seasons` | ✅ **done** — the **resource** pair; both realigned, re-fixtured, measured. `reading_seasons` needed no rate change (100% at heuristic/greedy/planner/oracle, 0% random) and now grants **Sun Stone** (the branch's culture card, whose rate is settled at the convergence node) **+ Calendar** (see *Science gets its sink*) |
-| 5 | *Rites & Rituals* | 🟡 — realigned, **fixtured and measured** on Settlement (greedy 94 · planner 98 · oracle 10/10, median 11–14.5). Its cell re-cut Chiefdom's food *and* halved the culture pair, which settled the level curve by moving the producers instead. **Open: Chiefdom at planner 40%**, below every other Stone cell ([dossier](missions/rites.md)) |
+| 5 | *Rites & Rituals* | ✅ **done** — realigned, fixtured, measured (Settlement: greedy 94 · planner 98 · oracle 10/10, median 11–14.5). Its cell re-cut **Chiefdom's food**, **halved the culture pair** — settling the level curve by moving the producers instead — and grants the new **Elegant** sticker. Chiefdom's planner 40% is accepted with reasons, not left open ([dossier](missions/rites.md)) |
 | 6 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 7 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
 | 8 | `pyramid` · `accounting` | ⬜ — both hoard goals; pyramid blocked on the food ceiling |
@@ -407,14 +407,13 @@ That closes the question and settles the consequences below:
 - **The two orphaned culture goals keep their culture term**: `first_temple` (🎭 level 2) and `pyramid`
   (🎭 level 2) are both downstream of the node.
 - **Hand size stays pinned at 4 until the convergence**, culture being its only lever.
-- ⬜ **The culture-level curve is un-re-read.** Levels sit at cumulative **10 / 30 / 70** (`CULTURE_STEP
-  = 10`, each band double the last, `rules/culture.ts`) — set when every converter ran ×2. Beer is the
-  first culture producer priced at the new rates (1🌾 → 1🎭), and nothing in the pass has yet *asked*
-  for a culture level. The convergence node now asks for one, so the curve finally has a mission to be
-  judged against, and **the first sweep says level 1 is too cheap**: the oracle clears Settlement in a
-  6-turn median off Beer and Sun Stone alone, against 13–16 at the three missions before it. Still
-  un-settled — the dossier holds the ordered list of knobs (threshold, then the producers' rate, then the
-  curve) and the reason Chiefdom bounds how far any of them can move.
+- ✅ **The culture-level curve is re-read, and holds.** Levels stay at cumulative **10 / 30 / 70**
+  (`CULTURE_STEP = 10`, each band double the last, `rules/culture.ts`) — set when every converter ran ×2,
+  and never judged against a mission until the convergence node asked for a level. That sweep found
+  level 1 too *cheap* (oracle clearing Settlement in a 6-turn median against 13–16 at the three missions
+  before it), and the fix went to **the producers, not the curve**: Beer and Sun Stone both halved, which
+  is the outcome this entry predicted. The curve was the oldest number in the group and the producers the
+  freshest, so they were the ones with the weaker claim to being right.
 - ✅ **`sim/enablers.test.ts`'s culture cases are off the shipped catalogue entirely.** They needed a
   mission whose *goal* is a culture level; that used to be `rites_rituals` and would next have been
   `restless_people`, which this same pass retires. They now install a synthetic `test_culture_win`

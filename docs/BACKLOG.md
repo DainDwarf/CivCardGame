@@ -37,9 +37,9 @@
     (famine threat), inverting each branch to pressure-first. Both branches have **landed and are
     measured** (`restless_people` deleted, The First Trades and Harsh Winter shipped). The age's last
     new mission — **Rites & Rituals**, the culture-goal node on the reconvergence
-    ([rites](missions/rites.md)) — is **written, placed, fixtured and measured** on the settled board;
-    it re-points `first_temple`'s prereqs, shifts every mission behind it one column right, and grants
-    the new **Elegant** culture sticker. What is left there is Chiefdom, the alternative launch board. See
+    ([rites](missions/rites.md)) — is **designed, implemented and balanced**; it re-points
+    `first_temple`'s prereqs, shifts every mission behind it one column right, and grants the new
+    **Elegant** culture sticker. Only Polish is left on it. See
     [`REBALANCE.md`](REBALANCE.md) → *Stone Age branches 3–4 restructure*, plus the
     [first-trades](missions/first-trades.md) and [harsh-winter](missions/harsh-winter.md) dossiers.
     Step 9's substeps below are written against the old arc and are stale for **9.3 / 9.5 / 9.6**;
@@ -196,8 +196,10 @@
     ([dossier](missions/rites.md)), the age's last unexercised resource, and the lesson where the two
     routes rejoin. Sits between both branch tips and the capstone, so it runs before 9.7. In-mission the
     objective is to reach **🎭 level 1**, off the two producers the branch tips granted — Beer (a work
-    card) and Sun Stone (a building), so the lesson can contrast the two kinds. **Post-clear:** the
-    reward grants no card today (see the dossier's *Open*).
+    card) and Sun Stone (a building), so the lesson can contrast the two kinds. Culture's *own* payoff is
+    worth naming here, since nothing else spends it: it raises hand size a card per level, and gates the
+    age's two wonders. **Post-clear:** the reward grants the **Elegant** sticker — the first sticker that
+    charges as well as gives, so it's also where the tutorial can say what a sticker is for.
   - **9.7 — Göbekli Tepe tutorial** — the capstone (mission 6.7 / `first_temple`, prereq **both** branch
     tips). Teach **wonders**: a wonder plays exactly like a building (tableau slot, staffed, produces every
     round — Göbekli Tepe is the multi-worker one: +1🔨+1🪙+1🎭 *per* staffed worker, culture-level-1

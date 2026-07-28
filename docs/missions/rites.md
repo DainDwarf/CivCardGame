@@ -4,7 +4,7 @@
 > that created this slot is in [`../REBALANCE.md`](../REBALANCE.md) → *Culture leaves the Stone Age*.
 > Final decisions → [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
 **Branch:** Stone — the **reconvergence** of both branches, on the centre axis.
 **Placement:** ✅ `prereqs: ['first_trades', 'reading_seasons']`, stone **col 4 row 0**; `first_temple`
 re-points onto this node at col 5, and every Bronze mission shifts one column right behind it.
@@ -28,7 +28,7 @@ node opens: **Beer** (1🌾 → 1🎭 work card, from `first_trades`) and **Sun 
 building, from `reading_seasons`) — two different *kinds* of producer, which is the choice the mission
 is about.
 
-## Balance 🟡 — Settlement settled, Chiefdom open
+## Balance ✅
 
 Swept on the arrival deck: Founding + one copy of every card the six cleared prereqs granted (22 cards,
 Farm/Hut/Conquest/Bead Workshop/Bartering/Beer/Storytelling/Fire/Sun Stone/Calendar), no purchases, both
@@ -82,10 +82,22 @@ right one, exactly as predicted: they were the freshly-rated numbers and the cur
 The threshold raise stays rejected on its original ground (at level 2 this node demands precisely what
 `first_temple` does, and culture resets each run).
 
-⬜ **Chiefdom is what is still open at 40% planner.** That is below every other measured Stone Age cell,
-and the rate cut did not move it — Chiefdom's binding constraint is its slot/food economy, not the
-culture rate, which is the same reading the food sweep gave. Whether 40% is acceptable for the *second*
-board on an optional-choice node, or wants another lever, is the remaining call.
+✅ **Chiefdom's 40% planner is accepted, not unresolved.** It is below every other measured Stone Age
+cell, and three things were weighed before letting it stand:
+
+- **It is not the culture rate.** The producer cut moved Settlement 85 → 98% and left Chiefdom at 40%,
+  the same reading the food sweep gave — Chiefdom's binding constraint is its slot/food economy.
+- **It is substantially measurement, not difficulty.** `deepPlanner` — the *same fair search* with the
+  calibrated deep knobs, no oracle-style cheating — clears the identical cell at **90%**. Winning here
+  means committing to a two-turn setup dip (Bead Workshop → bank 🪙 → Bartering), and the default
+  planner's shallower lookahead is what drops it, not the board.
+- **Chiefdom is a choice, not the path.** Settlement is the board the campaign upgrades you onto; the
+  harder second board reading harder is the point of offering two. Tuning the mission to lift the
+  *default planner* on the optional board would flatten the one place board choice currently means
+  something.
+
+Deliberately **not** chased further. If Chiefdom is revisited it is as a board question — the slot/food
+economy, per REBALANCE → *Chiefdom* — not as a Rites question.
 
 ✅ **Fixture cut and recorded** — `scripts/sim/baselines/rites_rituals.json` (the deck above, on
 Settlement), with its greedy/planner and oracle rows in `baselines/results/`. Settlement only: the
