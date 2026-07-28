@@ -224,16 +224,12 @@ Consequences that outlived the restructure:
   it is not yet *deleted* because three baselines still stock it (`accounting`, `roads`, `pyramid`) and
   would fail to load, so the card goes with the last of them to be re-cut. `finding_copper` and
   `masonry` dropped it at their own re-cuts.
-- **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is `it.skip`ped.** Two reasons at once,
-  which is why it's parked rather than retuned:
-  - Its hardcoded deck fields **bartering · bead_workshop · cave_art** — the first two at pre-rework
-    rates, the third still homeless — so the fixture is stale whatever the numbers say.
-  - Conquest's 2⚔️-doubling price pushed it from 4/6 to **3/6** against a `>= 4` threshold. Expected
-    direction (Masonry converts ⚔️→🗺️→🧍 repeatedly, so a doubling territory card bites hardest exactly
-    there), but it's a **one-seed** move on a 6-sample proxy, so it doesn't measure *how much*.
-
-  The assertion is the **planner's capability claim** (the greedies win Masonry 0%), not a Masonry
-  balance check — so it must come back rather than be relaxed. **Un-skip before merging.**
+- **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is un-skipped and green, with no margin.**
+  It carries the re-cut deck now and passes at exactly its `>= 4` threshold (4/6). Those six seeds are a
+  cold slice — the same fixture measures 86/100 over the full sweep — so the thinness is sampling, not the
+  planner. Left as-is deliberately; the assertion is the **planner's capability claim** (the greedies win
+  Masonry 0%), not a Masonry balance check, so if it ever goes red the move is a wider sample, never a
+  lower bar.
 
 ### Rates still to settle
 
