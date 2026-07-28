@@ -105,8 +105,10 @@ Baseline — a whole cell in one file:
 ## The standing set — `scripts/sim/baselines/`
 
 The committed baselines are the standing regression references (the equivalent of the old
-`SCENARIOS` rows). One per mission, First Settlement → Writing, each pinning the deck and
-board a player actually has **arriving** at it:
+`SCENARIOS` rows), covering First Settlement → Writing, each pinning the deck and board a
+player actually has **arriving** at it. Usually one per mission; a mission reachable from two
+boards that play it differently gets one fixture per board (`masonry` / `masonry_chiefdom`),
+since a fixture holds exactly one board:
 
 - **Stone Age baselines are deliberately minimal** — the starting collection plus one copy of
   every card the cleared prereqs granted, **no bought copies and no stickers**. `ice_age` (the

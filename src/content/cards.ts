@@ -273,12 +273,11 @@ export const CARDS: Record<string, CardDef> = {
     effect: { resources: { population: 2 } },
   },
   // City Walls: a standing garrison — self-sufficient (workers:0, always operating), so its per-round
-  //   +1⚔️ `produces` and its −1🔨 maintenance `upkeep` both fire and compose (`resolveEndTurn`).
+  //   +1⚔️ `produces` fires with no worker staffed.
   city_walls: {
-    id: 'city_walls', name: 'City Walls', kind: 'building', cost: { resources: { production: 4 } }, workers: 0,
-    display: { art: '🧱', description: '+1 ⚔️ / round\n−1 🔨 upkeep' },
+    id: 'city_walls', name: 'City Walls', kind: 'building', cost: { resources: { production: 3 } }, workers: 0,
+    display: { art: '🧱', description: '+1 ⚔️ / round' },
     produces: { resources: { military: 1 } },
-    upkeep: { resources: { production: -1 } },
   },
 
   // — Wonders —

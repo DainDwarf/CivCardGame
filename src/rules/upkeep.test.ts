@@ -21,8 +21,7 @@ const LOCAL: Record<string, CardDef> = {
     on: { draw: { resolve: (ctx) => gainResources(ctx, { science: 5 }) } },
   },
   // Self-sufficient building carrying BOTH `produces` and `upkeep` (workers:0, always operating): each
-  // round it yields +1⚔️ and pays −1🔨. Proves the two per-round slots compose in one boundary — the
-  // shape City Walls ships as (a fixture, so a numbers tweak to that card can't break this mechanism test).
+  // round it yields +1⚔️ and pays −1🔨. Proves the two per-round slots compose in one boundary.
   test_upkeep_producer: {
     id: 'test_upkeep_producer', name: 'Test Upkeep Producer', kind: 'building', cost: { resources: { production: 4 } }, workers: 0,
     produces: { resources: { military: 1 } },

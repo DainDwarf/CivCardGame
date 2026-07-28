@@ -64,7 +64,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 7 | *Rites & Rituals* | ✅ | ✅ | ✅ | ✅ | [rites](missions/rites.md) |
 | 8 | `first_temple` | ✅ | ✅ | ✅ | ✅ | [first-temple](missions/first-temple.md) |
 | 9 | `finding_copper` | ✅ | ✅ | ✅ | ✅ | [copper](missions/copper.md) |
-| 10 | `masonry` | ⬜ | ⬜ | ⬜ | ⬜ | [masonry](missions/masonry.md) |
+| 10 | `masonry` | ✅ | ✅ | ✅ | ✅ | [masonry](missions/masonry.md) |
 | 11 | `pyramid` | ⬜ | ⬜ | ⬜ | ⬜ | [pyramid](missions/pyramid.md) |
 | 12 | `accounting` | ⬜ | ⬜ | ⬜ | ⬜ | [accounting](missions/accounting.md) |
 | 13 | `writing` | ⬜ | ⬜ | ⬜ | ⬜ | [writing](missions/writing.md) |
@@ -221,9 +221,9 @@ Consequences that outlived the restructure:
 - **Cave Art is stranded.** Cut from the starting collection and unlocked by nothing, so it is
   unobtainable in-game — and **nothing merges to `main` with a card stranded**. The cut is decided (it
   made Beer's 2🎭 for no 🌾, obsoleting a shipped card, and no reward slot was left to grant it from);
-  it is not yet *deleted* because four baselines still stock it (`masonry`, `accounting`, `roads`,
-  `pyramid`) and would fail to load, so the card goes with the last of them to be re-cut.
-  `finding_copper` dropped it at its own re-cut.
+  it is not yet *deleted* because three baselines still stock it (`accounting`, `roads`, `pyramid`) and
+  would fail to load, so the card goes with the last of them to be re-cut. `finding_copper` and
+  `masonry` dropped it at their own re-cuts.
 - **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is `it.skip`ped.** Two reasons at once,
   which is why it's parked rather than retuned:
   - Its hardcoded deck fields **bartering · bead_workshop · cave_art** — the first two at pre-rework
@@ -250,13 +250,14 @@ Consequences that outlived the restructure:
   the dominant food line everywhere rather than an alternative to one, and either the rent or the return
   has to curve. Trader (3🪙/worker) and whatever Naval adds arrive in Bronze and change the arithmetic
   again.
-- **City Walls' 1🔨/round maintenance is the suspect number.** Its old "owed raise" against War Horse is
-  **withdrawn** — that read set 4⚔️ *per play* against 1⚔️ *per round forever*, and City Walls takes no
-  workers, so the worker-turn basis doesn't apply. Amortized instead: one War Horse in a ~23-card deck at
-  hand 4 is drawn about every 6th turn ≈ **0.7⚔️/turn**, rising to ~0.9 as buildings thin the deck,
-  against City Walls' flat **1⚔️/turn** — the building already out-rates it. What's left is a *price*
-  check: over a 20 turn run City Walls buys ⚔️ at ~1.2🔨 each, where Bow buys it at 0.67🔨 (capped at
-  3⚔️ per copy, since Bow self-exiles). Needs a measurement before any move.
+- **City Walls' maintenance is cut, unmeasured.** The card is now 3🔨 flat for +1⚔️/round with **no
+  upkeep** (was 4🔨 and −1🔨/round). The rate reading that preceded it stands and is what the cut acts
+  on: the old "owed raise" against War Horse is **withdrawn** — that read set 4⚔️ *per play* against 1⚔️
+  *per round forever*, and City Walls takes no workers, so the worker-turn basis doesn't apply. Amortized
+  instead, one War Horse in a ~23-card deck at hand 4 is drawn about every 6th turn ≈ **0.7⚔️/turn**,
+  rising to ~0.9 as buildings thin the deck, against City Walls' flat **1⚔️/turn** — the building already
+  out-rates it. The *price* check that was still open (⚔️ at ~1.2🔨 each over a 20-turn run, against Bow's
+  0.67🔨 capped at 3⚔️ per copy) is what the cut answers; it has not been swept.
 - **Science is never demanded in quantity.** Its identity (deck churn) is fine and it now has a sink at
   all, but both card sinks are 2🔬 one-shots (Calendar, Writing). `finding_copper`'s 15🔬 across three
   veins is the only place quantity is asked for, and that's a mission-seeded event rather than a card.

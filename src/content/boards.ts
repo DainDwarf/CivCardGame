@@ -65,6 +65,6 @@ export const BOARDS: Record<BoardId, BoardDef> = {
   city: {
     id: 'city',
     name: 'City',
-    resources: { food: 12, production: 6, science: 0, military: 0, money: 2, population: 2, territory: 5, culture: 0 },
+    resources: { food: 12, production: 10, science: 0, military: 0, money: 2, population: 2, territory: 5, culture: 0 },
   },
 };

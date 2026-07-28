@@ -1,8 +1,8 @@
 {
-  "id": "masonry",
+  "id": "masonry_chiefdom",
   "mission": "masonry",
-  "note": "Purchased — hand-authored and hand-verified as a clear. House and the City board are this mission's own rewards, so population runs through Huts, with Conquest opening the territory slots they need. Paired with masonry_chiefdom.json: the same deck on the other board this mission is reached from.",
-  "board": "settlement",
+  "note": "masonry.json's deck on Chiefdom — the two boards a player can bring here trade the same 6🧍 goal against opposite starting profiles (Settlement 2🧍/4🏞️ vs Chiefdom 3🧍/2🏞️), so the mission needs a row for each.",
+  "board": "chiefdom",
   "deck": [
     { "cardId": "bead_workshop", "count": 1 },
     { "cardId": "farm", "count": 1, "stickers": ["irrigation", "irrigation"] },

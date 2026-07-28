@@ -78,9 +78,11 @@ surprise, so nothing shows a locked placeholder or a total count.
   deck × board matrix: `--scenario <ids>` names missions (live from `content/missions.ts`),
   `--deck`/`--board` point at JSON files (examples under `scripts/sim/`). **`--baseline <paths|dir>`**
   loads *self-contained* fixtures that each own their own mission, deck and board — so one sweep spans
-  cells sharing none of the three. `scripts/sim/baselines/` is the committed standing set — one per
-  *measured* standard mission (a freshly-shipped one has none until its balance pass cuts it: an
-  unmeasured fixture is worse than no fixture, since its numbers read as fact); the Stone Age ones are deliberately **minimal no-purchase decks**, since no
+  cells sharing none of the three. `scripts/sim/baselines/` is the committed standing set, covering the
+  *measured* standard missions (a freshly-shipped one has none until its balance pass cuts it: an
+  unmeasured fixture is worse than no fixture, since its numbers read as fact) — usually one apiece, but
+  a fixture holds exactly one board, so a mission the campaign reaches from two boards gets one per
+  board; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
   Influence can be ground before `ice_age` unlocks — a mission needing the shop there would be a
   softlock. Measured results live under `baselines/results/`, whose commit *is* their content-SHA
   record. Both styles take `--seeds`/`--policies`/`--format` (text|json); `--seed <i>` switches to a

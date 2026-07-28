@@ -267,35 +267,34 @@
     "winRate": 1,
     "turns": {
       "min": 18,
-      "mean": 20,
-      "median": 20.5,
-      "max": 22
+      "mean": 23.1,
+      "median": 23.5,
+      "max": 29
     },
     "meanResources": {
-      "food": 19.7,
-      "production": 7.8,
+      "food": 13.5,
+      "production": 0.3,
       "science": 0,
-      "military": 3.6,
-      "money": 6.5,
+      "military": 4,
+      "money": 2.7,
       "population": 6,
-      "culture": 18.5,
-      "territory": 6
+      "culture": 0,
+      "territory": 7.8
     },
     "defeatCauses": {},
     "cardPlays": {
-      "dogs": 88,
-      "toolmaking": 162,
-      "cave_art": 45,
-      "farm": 20,
       "bow": 20,
-      "conquest": 40,
-      "jewelry": 60,
+      "toolmaking": 171,
+      "conquest": 38,
+      "bead_workshop": 10,
+      "foraging": 126,
+      "dogs": 93,
+      "bartering": 10,
       "hut": 40,
-      "beer": 19,
-      "bartering": 55
+      "farm": 8
     },
     "unplayedCards": [],
-    "meanActions": 76.1
+    "meanActions": 77.2
   },
   {
     "label": "pyramid",
@@ -612,5 +611,42 @@
       "calendar"
     ],
     "meanActions": 27
+  },
+  {
+    "label": "masonry_chiefdom",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 18,
+      "mean": 20.2,
+      "median": 20,
+      "max": 22
+    },
+    "meanResources": {
+      "food": 14.8,
+      "production": 0.2,
+      "science": 0,
+      "military": 4.8,
+      "money": 1.2,
+      "population": 6,
+      "culture": 0,
+      "territory": 6
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "conquest": 40,
+      "dogs": 60,
+      "foraging": 101,
+      "toolmaking": 161,
+      "farm": 9,
+      "bead_workshop": 9,
+      "bow": 17,
+      "bartering": 9,
+      "hut": 30
+    },
+    "unplayedCards": [],
+    "meanActions": 64.4
   }
 ]
