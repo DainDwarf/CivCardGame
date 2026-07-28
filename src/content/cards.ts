@@ -546,6 +546,17 @@ export const CARDS: Record<string, CardDef> = {
     display: { description: 'Reach 10 🔬 science' },
   },
 
+  // Culture is never spent, so `culture >= cultureForLevel(N)` is exactly `cultureLevel >= N`. The
+  //   readout anchors on the *level* — a within-band count would reset to 0 on each level-up.
+  rites_rituals_goal: {
+    id: 'rites_rituals_goal', name: 'Rites & Rituals', kind: 'objective', cost: {},
+    goals: [{ icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(1) }],
+    display: {
+      description: 'Reach 🎭 level 1',
+      dynamicText: (G) => `🎭 Level ${Math.min(cultureProgress(G.resources.culture).level, 1)}/1`,
+    },
+  },
+
   // The Stone Age capstone: four thresholds met at once. The culture term reads as a *level* (like
   //   the other culture goals) rather than the raw /30 the generic readout would show.
   first_temple_goal: {

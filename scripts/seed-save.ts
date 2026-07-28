@@ -11,15 +11,18 @@
  * Usage:
  *   npm run seed-save                              # the whole campaign (every standard mission)
  *   npm run seed-save -- --upto raiders_at_border  # only that mission's prereq chain, inclusive
+ *   npm run seed-save -- --upto a,b                # several targets at once (see below)
  *   npm run seed-save -- --influence 500           # override the Influence balance
  *   npm run seed-save -- --seed abc --out my.civsave
  *
  * Then in-game: burger menu → Save → Load, and pick the file. (Loading replaces your current save,
  * so export a backup first if you care about it.)
  *
- * `--upto` clears the target's transitive prereqs *plus the target*, so a branch the target doesn't
- * depend on stays uncleared — `--upto raiders_at_border` seeds a "went down the Raiders branch" save
- * with the parallel branch untouched. Run stats are randomized off `--seed`, so the same
+ * `--upto` clears each target's transitive prereqs *plus the target*, so a branch no target depends
+ * on stays uncleared — `--upto raiders_at_border` seeds a "went down the Raiders branch" save with the
+ * parallel branch untouched. It takes a comma-separated list because the state *just before* a
+ * convergence mission is "every branch tip cleared, the convergence itself not" — naming the
+ * convergence would clear it and grant its reward. Run stats are randomized off `--seed`, so the same
  * flags always produce the same file.
  */
 import { writeFileSync } from 'node:fs';
@@ -89,8 +92,11 @@ try {
   fail((e as Error).message);
 }
 
-if (values.upto !== undefined && !MISSIONS[values.upto]) {
-  fail(`unknown --upto mission '${values.upto}'. Known: ${Object.keys(MISSIONS).join(', ')}.`);
+// A comma-separated list, not a single id: a mission sitting on a *convergence* has several prereq
+// branches, and seeding the state just before it means clearing every tip at once.
+const uptoTargets = values.upto?.split(',').map((id) => id.trim()) ?? [];
+for (const id of uptoTargets) {
+  if (!MISSIONS[id]) fail(`unknown --upto mission '${id}'. Known: ${Object.keys(MISSIONS).join(', ')}.`);
 }
 
 const influence = values.influence !== undefined ? Number(values.influence) : undefined;
@@ -103,7 +109,7 @@ const rng = seededRng(values.seed ?? 'seed-save');
 // The lifted DAG helpers throw on a bad prereq/cycle; surface that as the same clean one-liner.
 let missions: MissionDef[];
 try {
-  missions = foldOrder(MISSIONS, prereqClosure(MISSIONS, values.upto !== undefined ? [values.upto] : defaultTargets()));
+  missions = foldOrder(MISSIONS, prereqClosure(MISSIONS, uptoTargets.length > 0 ? uptoTargets : defaultTargets()));
 } catch (e) {
   fail((e as Error).message);
 }

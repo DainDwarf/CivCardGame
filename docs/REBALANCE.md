@@ -38,12 +38,13 @@ nothing but noise.
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
 | 3 | `raiders_at_border` · `harsh_winter` | ✅ **done** — the **pressure** pair, now first in each branch; both realigned, re-fixtured and measured |
 | 4 | *The First Trades* · `reading_seasons` | ✅ **done** — the **resource** pair; both realigned, re-fixtured, measured. `reading_seasons` needed no rate change (100% at heuristic/greedy/planner/oracle, 0% random) and now grants **Sun Stone**, the branch's culture card, whose own rate is settled at the convergence node |
-| 5 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
-| 6 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
-| 7 | `pyramid` · `accounting` | ⬜ — both hoard goals; pyramid blocked on the food ceiling |
-| 8 | `writing` | ⬜ |
-| 9 | `horse_taming` · `roads` | ⬜ |
-| 10 | `wheel` | ⬜ |
+| 5 | *Rites & Rituals* | 🟡 — **written and placed**, unmeasured: the 🎭 convergence node, 🎭 level 1 ([dossier](missions/rites.md)). The culture-level curve is settled in its sweep |
+| 6 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
+| 7 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
+| 8 | `pyramid` · `accounting` | ⬜ — both hoard goals; pyramid blocked on the food ceiling |
+| 9 | `writing` | ⬜ |
+| 10 | `horse_taming` · `roads` | ⬜ |
+| 11 | `wheel` | ⬜ |
 | — | `ice_age` · `sandbox` | ⬜ — infinite; no win to measure, read collapse round instead |
 
 ## Landed
@@ -355,11 +356,11 @@ as a *better* faucet than Bead Workshop and its pitch is rewritten. Decide when 
 
 ### Culture leaves the Stone Age
 
-**…and comes back at the convergence. ✅ Decided — culture stays in the Stone Age.** `rites_rituals` is
-removed (The First Trades took its slot) and `restless_people`'s 🎭 level 2 went with the Harsh Winter
-rewrite, so no *shipped* Stone mission asks for culture today. The resolution is a **new culture-goal
-mission on the reconvergence of both branches**, between {`first_trades`, `reading_seasons`} and
-`first_temple`. Not written yet; see its [dossier](missions/rites.md).
+**…and comes back at the convergence. ✅ Decided and shipped — culture stays in the Stone Age.**
+`rites_rituals` is reinserted as a **culture-goal mission on the reconvergence of both branches**,
+between {`first_trades`, `reading_seasons`} and `first_temple`: 🎭 **level 1**, no threat and no events,
+reward 10⭐ with no unlock. Placed and unmeasured — the sweep is what settles the curve. See its
+[dossier](missions/rites.md) for the level-1-not-2 reasoning, the open reward, and the balance watch list.
 
 That closes the question and settles the consequences below:
 
@@ -377,9 +378,10 @@ That closes the question and settles the consequences below:
 - ⬜ **The culture-level curve is un-re-read.** Levels sit at cumulative **10 / 30 / 70** (`CULTURE_STEP
   = 10`, each band double the last, `rules/culture.ts`) — set when every converter ran ×2. Beer is the
   first culture producer priced at the new rates (1🌾 → 2🎭), and nothing in the pass has yet *asked*
-  for a culture level, so the curve has had no mission to be judged against. **Settle it at the
-  convergence node**, now that there is a definite mission to judge it against, and expect it to move
-  Beer's rate rather than the other way round.
+  for a culture level. The convergence node now asks for one, so the curve finally has a mission to be
+  judged against — settle it in **status-board row 5's sweep**, and expect it to move Beer's rate rather
+  than the other way round. Level 1 is 10🎭, which looks trivially reachable off either producer; the
+  dossier holds the ordered list of knobs.
 - ✅ **`sim/enablers.test.ts`'s culture cases are off the shipped catalogue entirely.** They needed a
   mission whose *goal* is a culture level; that used to be `rites_rituals` and would next have been
   `restless_people`, which this same pass retires. They now install a synthetic `test_culture_win`
@@ -393,9 +395,9 @@ That closes the question and settles the consequences below:
 age-promotes-a-resource framing wanted once money vacated that slot. Culture stays in Stone, so what
 Bronze promotes is open again.
 
-**The one DAG edit it owes:** `first_temple`'s `prereqs` re-point from `['first_trades',
-'reading_seasons']` onto the node, which takes the col-4 slot the capstone holds today — so the capstone
-shifts right and both tips feed the node instead. The last outstanding DAG edit in the age.
+✅ **The DAG edit it owed is done:** `first_temple` re-points onto the node, which takes the col-4 slot,
+and the capstone plus every Bronze mission behind it shifted one column right (stone now spans cols 0–5,
+bronze 6–10). The age's DAG is final.
 
 ## Cards on trial
 
@@ -408,7 +410,7 @@ that would justify it. **Nothing merges to `main` with a card stranded** — thi
 | ~~Storytelling~~ | — | ✅ **left the list** — reworked to 1🔬/worker and granted by `harsh_winter` |
 | Cave Art (2🎭 work) | makes the same 2🎭 as Beer for no 🌾, so it obsoletes a shipped card, and no reward slot is left to grant it from | ✅ **decided: cut.** Not yet deleted — six baselines still stock it (`first_temple`, `finding_copper`, `masonry`, `accounting`, `roads`, `pyramid`) and would fail to load; it goes with the last of them to be re-cut |
 | ~~Burial~~ | — | ✅ **left the list** — renamed **Sun Stone**, re-rated to 4🔨 → 2🎭/worker, and granted by `reading_seasons` |
-| Calendar (1🔬 → peek top 3) | benched off `harsh_winter` for **Fire**: it *spends* the resource the mission it fed asks you to stockpile, and the peek may not be worth a card at all | ❌ **no home.** Re-slot or cut — but it is the only shipped consumer of `peekTop` and the look-only `reveal` interaction, so a cut costs those a live example |
+| Calendar (1🔬 → peek top 3) | benched off `harsh_winter` for **Fire**: it *spends* the resource the mission it fed asks you to stockpile, and the peek may not be worth a card at all | 🟡 **candidate: *Rites & Rituals*'s open card reward.** That node asks for 🎭, not 🔬, so the benching objection lapses, and it sits downstream of `reading_seasons` so the 🔬 to pay with is owned. Decide at its sweep — the alternative is still a cut, which costs `peekTop` and the look-only `reveal` interaction their only live example |
 
 Bead Workshop and Bartering have **left this list** — both are reworked and granted by `raiders_at_border`;
 see *Landed early* above.
@@ -437,10 +439,11 @@ see *Landed early* above.
   mission and deleted `unrest` outright. The rule the case established survives the card: a threat may
   only drain a resource the player is guaranteed to *produce* on every prereq chain reaching it, and a
   branch-local faucet doesn't count.
-- **The Influence faucet ledger.** The First Trades was given `rites_rituals`' 8⭐ deliberately, so the
-  swap leaves `cumulativeInfluenceInto` unchanged for everything downstream — the number shop tiers and
-  sticker prices are tuned against. That holds only while the reward stays unargued: fix it, and run
-  `npm run economy` for the new ledger. Harsh Winter's payout is still an open shift.
+- **The Influence faucet ledger has moved.** The First Trades was given `rites_rituals`' 8⭐ deliberately,
+  so the *swap* left `cumulativeInfluenceInto` unchanged downstream — but reinserting the node as a new
+  mission adds its 10⭐ on top: arrival at `first_temple` is 40 → **50⭐** and at Masonry 52 → **62⭐**
+  (`npm run economy`; `campaign.test.ts` pins the Masonry number). Shop tiers and sticker prices are
+  tuned against those. Both that 10⭐ and Harsh Winter's payout are still open shifts.
 - **`MIN_DECK_SIZE` may not need to exist.** At 10 it is starting to look like a rule with no job; see
   [`IDEAS.md`](IDEAS.md). Not this pass's call.
 

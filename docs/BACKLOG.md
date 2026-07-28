@@ -35,10 +35,10 @@
   - **The arc's two middle branches are being restructured** on the `trade-redesign` branch —
     `rites_rituals` and `restless_people` are replaced by *The First Trades* (🪙) and *Harsh Winter*
     (famine threat), inverting each branch to pressure-first. Both branches have **landed and are
-    measured** (`rites_rituals` and `restless_people` deleted, The First Trades and Harsh Winter
-    shipped). What remains in the age is **one new mission**: a culture-goal node on the reconvergence of
-    both branches, decided and not yet written ([rites](missions/rites.md)) — it re-points
-    `first_temple`'s prereqs, and its blocking question is what produces 🎭 on the lower branch. See
+    measured** (`restless_people` deleted, The First Trades and Harsh Winter shipped). The age's last
+    new mission — **Rites & Rituals**, the culture-goal node on the reconvergence
+    ([rites](missions/rites.md)) — is now **written and placed** but unmeasured; it re-points
+    `first_temple`'s prereqs and shifts every mission behind it one column right. See
     [`REBALANCE.md`](REBALANCE.md) → *Stone Age branches 3–4 restructure*, plus the
     [first-trades](missions/first-trades.md) and [harsh-winter](missions/harsh-winter.md) dossiers.
     Step 9's substeps below are written against the old arc and are stale for **9.3 / 9.5 / 9.6**;
@@ -192,8 +192,10 @@
     owes the branch's culture card (see [`REBALANCE.md`](REBALANCE.md) → *Culture leaves the Stone Age*).
   - **9.6b — Rites & Rituals tutorial** — teach **culture** (🎭) on the reconvergence node
     ([dossier](missions/rites.md)), the age's last unexercised resource, and the lesson where the two
-    routes rejoin. Sits between both branch tips and the capstone, so it runs before 9.7. Mission not
-    written; the tutorial follows its design.
+    routes rejoin. Sits between both branch tips and the capstone, so it runs before 9.7. In-mission the
+    objective is to reach **🎭 level 1**, off the two producers the branch tips granted — Beer (a work
+    card) and Sun Stone (a building), so the lesson can contrast the two kinds. **Post-clear:** the
+    reward grants no card today (see the dossier's *Open*).
   - **9.7 — Göbekli Tepe tutorial** — the capstone (mission 6.7 / `first_temple`, prereq **both** branch
     tips). Teach **wonders**: a wonder plays exactly like a building (tableau slot, staffed, produces every
     round — Göbekli Tepe is the multi-worker one: +1🔨+1🪙+1🎭 *per* staffed worker, culture-level-1

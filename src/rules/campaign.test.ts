@@ -114,6 +114,6 @@ describe('campaign DAG walk', () => {
 
   it('pins the real campaign: Influence arriving at Masonry', () => {
     // The guaranteed faucet into masonry — the anchor the economy ledger reports.
-    expect(cumulativeInfluenceInto(MISSIONS, 'masonry')).toBe(52);
+    expect(cumulativeInfluenceInto(MISSIONS, 'masonry')).toBe(62);
   });
 });

@@ -68,7 +68,9 @@ surprise, so nothing shows a locked placeholder or a total count.
   transform otherwise taxes a sweep ~15%): walks the campaign DAG and folds
   one finished run per mission through the real `applyRunResult` to write a populated `.civsave`
   (default `./seed.civsave`, gitignored) for testing the meta screens without grinding. `--upto
-  <missionId>` stops at that mission's transitive prereqs + itself; `--influence <n>` overrides the
+  <missionId[,…]>` stops at each named mission's transitive prereqs + itself — a comma-separated list,
+  so seeding the state *just before* a convergence mission means naming its branch tips rather than the
+  convergence (which would clear it and grant its reward); `--influence <n>` overrides the
   spendable balance; `--seed`/`--out` set randomization and output path. The DAG walk and default
   target set derive from `content/missions.ts` — missions are never hard-coded.
 - `npm run sim` — balance tool (`scripts/sim.ts`): sweeps the headless simulator and prints an

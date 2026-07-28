@@ -234,6 +234,29 @@ export const MISSIONS: Record<string, MissionDef> = {
     map: { col: 3, row: 1 },
     age: 'stone',
   },
+  rites_rituals: {
+    id: 'rites_rituals',
+    name: 'Rites & Rituals',
+    lore:
+      'Your people have come back from the border with goods, and down from the ridge with the ' +
+      'reckoning of the year — and neither road was walked by all of them. What one half of the ' +
+      'valley knows, the other half has only heard about. So set a night aside: the same fire, the ' +
+      'same songs, the same words said over the same stones, until every family marks the turning ' +
+      'year the same way. A people who feast together will build together.',
+    // The reconvergence of both branches: an AND, so the player always arrives holding *both* culture
+    // producers — Beer from the trade branch, Sun Stone from the season branch.
+    prereqs: ['first_trades', 'reading_seasons'],
+    objectiveCardId: 'rites_rituals_goal',
+    victoryHint: 'Reach 🎭 culture level 1.',
+    failureHint: null,
+    kind: 'standard',
+    // Influence-only and provisional, both halves: the amount is a fresh addition to the faucet ledger
+    // (the original mission's 8⭐ was inherited by The First Trades), and whether this node grants a card
+    // is still open.
+    reward: { influence: 10 },
+    map: { col: 4, row: 0 },
+    age: 'stone',
+  },
   first_temple: {
     id: 'first_temple',
     name: 'The First Temple',
@@ -243,14 +266,14 @@ export const MISSIONS: Record<string, MissionDef> = {
       'hilltop, ring upon ring of towering carved stones takes shape — pillars hauled and set by ' +
       'hands that could have been tilling, adorned with the beasts of the world around them. It feeds ' +
       'no one, yet the whole valley comes to build it: the first temple.',
-    prereqs: ['first_trades', 'reading_seasons'],
+    prereqs: ['rites_rituals'],
     objectiveCardId: 'first_temple_goal',
     victoryHint: 'Reach 3 🧍 population and 🎭 culture level 2 while holding 30 🔨 and 30 🪙 at once.',
     failureHint: null,
     kind: 'standard',
     // Unlocks the Göbekli Tepe wonder — the age's capstone build. Influence amount provisional.
     reward: { influence: 12, unlockCardIds: ['gobekli_tepe'] },
-    map: { col: 4, row: 0 },
+    map: { col: 5, row: 0 },
     age: 'stone',
   },
   finding_copper: {
@@ -273,7 +296,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Opens the Bronze Age: unlocks the Forge, the answer to the very drain this mission inflicts.
     // Influence amount provisional (balance pending a sim sweep).
     reward: { influence: 12, unlockCardIds: ['forge'] },
-    map: { col: 5, row: -1 },
+    map: { col: 6, row: -1 },
     age: 'bronze',
   },
   masonry: {
@@ -295,7 +318,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       unlockCardIds: ['city_walls', 'house'],
       boardUpgrade: { from: 'settlement', to: 'city' },
     },
-    map: { col: 5, row: 1 },
+    map: { col: 6, row: 1 },
     age: 'bronze',
   },
   pyramid: {
@@ -315,7 +338,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // An optional challenge leaf off Masonry — a bigger reward for a harder clear: unlocks the Pyramid
     // wonder (the culture powerhouse). Influence amount provisional.
     reward: { influence: 25, unlockCardIds: ['pyramid'] },
-    map: { col: 6, row: 1 },
+    map: { col: 7, row: 1 },
     age: 'bronze',
   },
   accounting: {
@@ -339,8 +362,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     // treasury). Influence amount provisional.
     reward: { influence: 12, unlockCardIds: ['trader'], unlockBoardStickerIds: ['opulence'] },
     // Mainline convergence rejoining the centre axis (like first_temple); the pyramid leaf sits below at
-    // col 6 row 1.
-    map: { col: 6, row: 0 },
+    // col 7 row 1.
+    map: { col: 7, row: 0 },
     age: 'bronze',
   },
   writing: {
@@ -364,7 +387,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Opens the literacy half of the Bronze spine: the Archives (the first science *building*) and the
     // Writing action. Influence amount provisional (balance pending a sim sweep).
     reward: { influence: 12, unlockCardIds: ['archives', 'writing'] },
-    map: { col: 7, row: 0 },
+    map: { col: 8, row: 0 },
     age: 'bronze',
   },
   horse_taming: {
@@ -390,7 +413,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // (⚔️ → 🪙, the predatory money faucet) — the pair the next mission is built around. Influence
     // amount provisional.
     reward: { influence: 12, unlockCardIds: ['war_horse', 'raiding'] },
-    map: { col: 8, row: 0 },
+    map: { col: 9, row: 0 },
     age: 'bronze',
   },
   roads: {
@@ -413,7 +436,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Opens the expansion branch: unlocks the Road, Conquest's economic twin (🪙+🔨 → +1 territory), the
     // tool the Wheel mission's territory goal is built around. Influence amount provisional.
     reward: { influence: 12, unlockCardIds: ['road'] },
-    map: { col: 8, row: -1 },
+    map: { col: 9, row: -1 },
     age: 'bronze',
   },
   wheel: {
@@ -435,7 +458,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Closes the expansion branch: unlocks the Wheel sticker (−1🔨 on buildings/works), the 🔨 relief
     // that resolves the mission's own 🔨 crisis. Influence amount provisional.
     reward: { influence: 12, unlockStickerIds: ['wheel'] },
-    map: { col: 9, row: -1 },
+    map: { col: 10, row: -1 },
     age: 'bronze',
   },
   ice_age: {
