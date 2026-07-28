@@ -45,11 +45,10 @@ No baseline fixture yet: the committed set is one per *measured* mission.
 
 ## Open
 
-- **The reward's card half.** 10⭐ and no unlock today. **Calendar** (1🔬 → peek top 3) is the candidate:
-  it is the last card on REBALANCE's *Cards on trial* with no home, the objection that benched it off
-  `harsh_winter` (it *spends* the resource that mission asks you to stockpile) does not apply here, and
-  this node sits downstream of `reading_seasons`, so its 🔬 producers are owned. Not taken unilaterally —
-  Calendar's homing is a REBALANCE-tracked decision.
+- **The reward's card half.** 10⭐ and no unlock today. Calendar was weighed for this slot and went to
+  `reading_seasons` instead — the science hole it fills is that mission's, not this one's (REBALANCE →
+  *Science gets its sink*). So the slot is open with no candidate: the node may simply stay
+  Influence-only, which is a legal reward and one the sweep can judge.
 - **The 10⭐ itself grows the faucet ledger**, unlike the branch restructure: the original mission's 8⭐
   was inherited by The First Trades precisely so downstream totals stayed put, and this node is a *new*
   faucet. Arrival at `first_temple` goes 40 → 50⭐ and at Masonry 52 → 62⭐ (`npm run economy`), which is

@@ -91,11 +91,11 @@ than something this card introduces.
 
 **Consequences.**
 
-- **Calendar is benched.** It was this mission's second grant and is now unlocked by nothing, so it joins
-  REBALANCE's *Cards on trial* to be re-slotted or cut on its own merits. Cutting it is not free: it is
-  the only shipped consumer of `peekTop` and the look-only `reveal` interaction.
-- `reading_seasons` stays Influence-only, owing the branch's culture card. Tracked in REBALANCE →
-  *Culture leaves the Stone Age*, flagged at the reward site.
+- ✅ **Calendar is benched, and re-slotted one mission on.** It was this mission's second grant; it is now
+  `reading_seasons`', reworked into a peek-and-draw (REBALANCE → *Science gets its sink*). Moving it
+  downstream is what resolves the charge that benched it — the card *spends* the 🔬 the next mission asks
+  you to bank, and a reward is granted on clear rather than held during the run.
+- ✅ `reading_seasons` now grants **Sun Stone** (the branch's culture card) **and Calendar**.
 - **The Balance ✅ above still holds.** A reward is granted on clear, never played during the run, so
   swapping one leaves `baselines/harsh_winter.json` and its measured numbers untouched.
 

@@ -37,7 +37,7 @@ nothing but noise.
 | 1 | `first_settlement` | ✅ **done** — realigned, re-fixtured, measured |
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
 | 3 | `raiders_at_border` · `harsh_winter` | ✅ **done** — the **pressure** pair, now first in each branch; both realigned, re-fixtured and measured |
-| 4 | *The First Trades* · `reading_seasons` | ✅ **done** — the **resource** pair; both realigned, re-fixtured, measured. `reading_seasons` needed no rate change (100% at heuristic/greedy/planner/oracle, 0% random) and now grants **Sun Stone**, the branch's culture card, whose own rate is settled at the convergence node |
+| 4 | *The First Trades* · `reading_seasons` | ✅ **done** — the **resource** pair; both realigned, re-fixtured, measured. `reading_seasons` needed no rate change (100% at heuristic/greedy/planner/oracle, 0% random) and now grants **Sun Stone** (the branch's culture card, whose rate is settled at the convergence node) **+ Calendar** (see *Science gets its sink*) |
 | 5 | *Rites & Rituals* | 🟡 — **written and placed**, unmeasured: the 🎭 convergence node, 🎭 level 1 ([dossier](missions/rites.md)). The culture-level curve is settled in its sweep |
 | 6 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 7 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
@@ -399,18 +399,48 @@ Bronze promotes is open again.
 and the capstone plus every Bronze mission behind it shifted one column right (stone now spans cols 0–5,
 bronze 6–10). The age's DAG is final.
 
+### Science gets its sink ✅
+
+**The diagnosis.** `harsh_winter` grants Storytelling (1🔬/worker) and Fire (discard a card → 1🔬);
+`reading_seasons` then asks you to bank 10🔬. Both cards *make* science and **nothing owned spends it** —
+the first sink of any kind was `finding_copper`'s Copper Veins (5🔬 each), two missions downstream, and the
+first *card* sink was Writing (2🔬), four missions downstream. So the mission teaching you to stockpile a
+resource handed it to you with nothing to do.
+
+**The fix.** Calendar is rehabilitated as `reading_seasons`' **second** reward card, and reworked from
+`1🔬 → look at the top 3` to **`2🔬 → look at the top 3 and draw one`**. It does not replace Sun Stone:
+the one-culture-producer-per-branch-tip rule is what the convergence node's design rests on.
+
+**Granting it *here* is what makes it legal.** The reason it was benched off `harsh_winter` was that it
+*spends* the resource the mission it fed asks you to stockpile — but a reward is granted **on clear**, so
+as `reading_seasons`' own reward it arrives after that run rather than during it. The objection lapses
+entirely; it does not merely weaken.
+
+**Why the pick, and why 2🔬.** The old peek was look-only, and a card that buys pure information was
+thin enough that "not worth a card at all" was half its charge. Drawing one of the three makes it card
+*advantage*, which is a thing worth 2🔬 — and the two cards passed over keep their places on top of the
+pile rather than shuffling back, so the information survives the draw and the play does two things.
+Priced against Writing (2🔬, return a chosen card from the discard), the pair splits cleanly: Writing has
+far wider selection, Calendar has the residual knowledge and no non-empty-discard precondition, so
+neither is strictly worse and the later unlock is the stronger one.
+
+⚠️ **The look-only `reveal` interaction now has no shipping consumer.** Calendar was its only one. The
+kind, `Board.tsx`'s branch and `sim/actions.ts`'s single-answer enumeration all stay — a peek card is a
+plausible thing to want again, and the machinery is tested — but nothing in the catalogue exercises it.
+
 ## Cards on trial
 
 Cut from the starting collection and **not unlocked by anything, so currently unobtainable in-game**.
 Deliberate: each is re-slotted onto a mission reward or cut outright when the pass reaches the mission
 that would justify it. **Nothing merges to `main` with a card stranded** — this list must be empty.
+Only Cave Art is left, and it is a decided cut waiting on the fixtures that still stock it.
 
 | Card | Charge | Resolution |
 |---|---|---|
 | ~~Storytelling~~ | — | ✅ **left the list** — reworked to 1🔬/worker and granted by `harsh_winter` |
 | Cave Art (2🎭 work) | makes the same 2🎭 as Beer for no 🌾, so it obsoletes a shipped card, and no reward slot is left to grant it from | ✅ **decided: cut.** Not yet deleted — six baselines still stock it (`first_temple`, `finding_copper`, `masonry`, `accounting`, `roads`, `pyramid`) and would fail to load; it goes with the last of them to be re-cut |
 | ~~Burial~~ | — | ✅ **left the list** — renamed **Sun Stone**, re-rated to 4🔨 → 2🎭/worker, and granted by `reading_seasons` |
-| Calendar (1🔬 → peek top 3) | benched off `harsh_winter` for **Fire**: it *spends* the resource the mission it fed asks you to stockpile, and the peek may not be worth a card at all | 🟡 **candidate: *Rites & Rituals*'s open card reward.** That node asks for 🎭, not 🔬, so the benching objection lapses, and it sits downstream of `reading_seasons` so the 🔬 to pay with is owned. Decide at its sweep — the alternative is still a cut, which costs `peekTop` and the look-only `reveal` interaction their only live example |
+| ~~Calendar~~ | — | ✅ **left the list** — reworked to **2🔬 → look at the top 3 and draw one**, and granted by `reading_seasons` alongside Sun Stone. See *Science gets its sink* |
 
 Bead Workshop and Bartering have **left this list** — both are reworked and granted by `raiders_at_border`;
 see *Landed early* above.
@@ -537,10 +567,10 @@ no bonus at all**: it purely gates bronze, so its cost is pure route-capacity op
    consequence: a stronger food faucet before Masonry (see *Consequences owed*).
 4. *(optional, later)* Narrow production to buildings only — hold until (2) lands, or the resource has a
    single sink nobody wants. Give **science an expensive sink**: its identity (deck churn) is fine, but
-   Writing costs 2🔬 and Reading the Seasons asks you to *stockpile*, so the resource is never demanded
-   in quantity. Benching Calendar leaves Writing the only sink in the age — deliberate, since a sink
-   granted *by* a stockpile mission fights its own goal, but it means the sink this item wants has to
-   come from a mission that doesn't ask you to hoard 🔬.
+   the two sinks that exist are both 2🔬 one-shots (Calendar, Writing), so the resource is never demanded
+   in *quantity* — `finding_copper`'s 15🔬 across three veins is the only place it is, and that is a
+   mission-seeded event rather than a card. Calendar's rehabilitation (see *Science gets its sink*) fixes
+   the "no sink at all" hole, not this one.
 
 **Re-point the money objectives.** Accounting (40🪙), Pyramid (50🪙) and Göbekli Tepe (30🪙) are *hoard*
 goals, pushed against by `envious_population`. A one-way hub whose point is spending sits awkwardly with

@@ -2,7 +2,7 @@ import { scaleResources, subtractResources } from '../rules/resources';
 import { bumpCounter, getCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { type CardEffect, suspendChoice } from '../rules/effects';
 import type { CardCost } from '../rules/cost';
-import { peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
+import { drawInstance, peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
 import { assignedWorkers } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
 
@@ -348,35 +348,44 @@ export const CARDS: Record<string, CardDef> = {
 
   fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { discard: 1 }, display: { art: '🔥' }, effect: { resources: { science: 1 } } },
 
-  // Calendar keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer). The
-  // reveal is look-only: peeking keeps nothing, so the resume pass just clears the interaction. Its
+  // Calendar keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer). Its
   // `effect` is resolve-only (no declarative `resources`) — `resolveInteraction` re-runs the whole
   // effect on resume, so any resource field would double-apply.
   calendar: {
     id: 'calendar', name: 'Calendar', kind: 'action',
-    display: { art: '📅', description: 'Look at the top 3 cards of your draw pile.' },
-    // Nothing to reveal from an empty pile — gate it (reusing the peek reason) rather than fizzle for
+    display: { art: '📅', description: 'Look at the top 3 cards of your draw pile and draw one.' },
+    // Nothing to look at in an empty pile — gate it (reusing the peek reason) rather than fizzle for
     // its cost. Peeking never reshuffles, so `deck.length` (not deck+discard) is the emptiness test.
     cost: {
-      resources: { science: 1 },
+      resources: { science: 2 },
       check: ({ G }) => (G.deck.length === 0 ? { kind: 'emptyDrawPile' } : null),
     },
     effect: {
       resolve: (ctx) => {
         if (ctx.answer === undefined) {
-          // First pass: pure-read the top cards (peekTop leaves them on the deck) and park a look-only
-          // reveal. The options alias live `G.deck` instances — fine, the reveal never mutates them.
+          // First pass: pure-read the top cards (peekTop leaves them on the deck) and park the pick.
+          // The options alias live `G.deck` instances — fine, nothing mutates them before the resume.
           const top = peekTop(ctx, 3);
           if (top.length === 0) return;
           suspendChoice(ctx, {
-            kind: 'reveal',
-            prompt: 'The next cards you will draw, in order',
+            kind: 'chooseCard',
+            prompt: 'Draw one — the rest stay on top of the pile, in order',
             options: top,
-            pick: 0,
+            pick: 1,
           });
           return;
         }
-        // Resume: a peek keeps nothing — just clear the interaction.
+        // Resume: `answer` indexes the parked options, which are detached copies after the move's
+        // clone — so the pick is lifted off the deck by instance id, never by position.
+        const pending = ctx.G.pendingInteraction;
+        if (!pending) return;
+        const chosen = pending.options[ctx.answer];
+        if (chosen) {
+          // The cards passed over keep their places at the top, so the knowledge the play bought
+          // outlives the draw it bought.
+          ctx.G.deck = ctx.G.deck.filter((c) => c.id !== chosen.id);
+          drawInstance(ctx, chosen);
+        }
         ctx.G.pendingInteraction = null;
       },
     },

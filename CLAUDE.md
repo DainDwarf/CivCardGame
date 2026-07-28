@@ -135,12 +135,14 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   `reshuffleCount`, a UI-only shuffle-animation cue `Board.tsx` diffs). Also the card-facing deck
   primitives a peek/draw card resolves *through* instead of touching zones directly (the deck
   counterpart to `gainResources`, each taking `EffectContext`): `peekTop` (a **pure read** of the top
-  N — never reshuffles; bumps `revealCount` so undo treats the peek as a boundary; drives the
-  **Calendar** action), `drawInstance` (draw one *specific* card, emits `draw`), `returnToDeck`,
+  N — never reshuffles; bumps `revealCount` so undo treats the peek as a boundary), `drawInstance`
+  (draw one *specific* card, emits `draw`), `returnToDeck`,
   `recoverFromDiscard` (return one chosen card discard→hand — drives the **Writing** action), and
   `spawnIntoDeck` (mint N *fresh* copies of a cardId and shuffle them in — the only primitive that
   introduces new instances mid-run; the **Envious Population** threat breeds Thieves through it).
-  `drawInstance` is wired but has no shipping consumer yet.
+  The **Calendar** action composes the first two: `peekTop` reads the top 3, the pick is lifted off the
+  deck by id and handed to `drawInstance`, and the cards passed over keep their places — so the peek
+  primitive itself stays look-only.
 - **`cost.ts`** — the **cost spine**, the counterpart of `effects.ts`: one `CardCost` descriptor holding
   everything it takes to play a card (`resources` spent, `discard`ed cards, a `cultureLevelReq`
   prerequisite) plus two closures that compose with those fields — `resolve` (this copy's *actual* cost

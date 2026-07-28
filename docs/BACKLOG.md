@@ -188,8 +188,9 @@
     production = the build currency, money = the treasury, science = planning, military = power; plus the
     three strategic gauges). In-mission the objective is simply to **stockpile 10 🔬** — science comes off
     the two cards Harsh Winter granted upstream: the **Storytelling** work card, and the **Fire** action,
-    which pays 1🔬 for a card discarded from hand. **Post-clear:** the reward grants no card today; it
-    owes the branch's culture card (see [`REBALANCE.md`](REBALANCE.md) → *Culture leaves the Stone Age*).
+    which pays 1🔬 for a card discarded from hand. **Post-clear:** the reward grants **Sun Stone** (the
+    branch's culture card, for the convergence node) and **Calendar** — 🔬's first sink, so the lesson can
+    close on what the stockpile was *for*, which until now nothing in the age answered.
   - **9.6b — Rites & Rituals tutorial** — teach **culture** (🎭) on the reconvergence node
     ([dossier](missions/rites.md)), the age's last unexercised resource, and the lesson where the two
     routes rejoin. Sits between both branch tips and the capstone, so it runs before 9.7. In-mission the
