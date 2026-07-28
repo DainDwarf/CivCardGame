@@ -60,7 +60,7 @@ export const BOARDS: Record<BoardId, BoardDef> = {
     // The one board whose territory sits *below* its population, so a worker starts with nowhere to
     // work. Its 6⚔️ is exactly two plays of one Conquest copy (2⚔️ doubling per play), which is what
     // buys the missing room — the board states its strategy as a shortage rather than a bonus.
-    resources: { food: 6, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 2, culture: 0 },
+    resources: { food: 8, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 2, culture: 0 },
   },
   city: {
     id: 'city',

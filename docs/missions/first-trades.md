@@ -103,7 +103,11 @@ left unspent. Its rows are recorded in `baselines/results/`.
 | oracle @10 | 10/10 | 9 · 13 · 15 | 25.0 | 4.5 | 1.0 |
 
 **Chiefdom** (6🌾 / 6⚔️ / 2🗺️ / 3🧍) — the arc's other launchable board, swept ad-hoc on the same deck
-and seeds, **not** cut as a fixture:
+and seeds, **not** cut as a fixture.
+
+⚠️ **Stale: taken at Chiefdom's 6🌾 start, since raised to 8** (REBALANCE → *Chiefdom*). Every number
+below reads a board a run no longer launches on, and the direction is known — one extra round of
+runway. Re-sweep before drawing anything from it:
 
 | policy | result | turns (min · median · max) | end 🌾 | Bartering plays/run |
 |---|---|---|---|---|

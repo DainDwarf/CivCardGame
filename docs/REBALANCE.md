@@ -38,7 +38,7 @@ nothing but noise.
 | 2 | `growing_numbers` | ✅ **done** — realigned, re-fixtured, measured |
 | 3 | `raiders_at_border` · `harsh_winter` | ✅ **done** — the **pressure** pair, now first in each branch; both realigned, re-fixtured and measured |
 | 4 | *The First Trades* · `reading_seasons` | ✅ **done** — the **resource** pair; both realigned, re-fixtured, measured. `reading_seasons` needed no rate change (100% at heuristic/greedy/planner/oracle, 0% random) and now grants **Sun Stone** (the branch's culture card, whose rate is settled at the convergence node) **+ Calendar** (see *Science gets its sink*) |
-| 5 | *Rites & Rituals* | 🟡 — **written and placed**, unmeasured: the 🎭 convergence node, 🎭 level 1 ([dossier](missions/rites.md)). The culture-level curve is settled in its sweep |
+| 5 | *Rites & Rituals* | 🟡 — written, placed and **swept once** on both boards ([dossier](missions/rites.md)). Its cell is what re-cut Chiefdom's food. **Open: the 🎭 threshold is too cheap** — oracle clears Settlement in a 6-turn median — so the culture-level curve is *not* yet settled |
 | 6 | `first_temple` | ⬜ — 30🪙 hoard goal, see *Re-point the money objectives* |
 | 7 | `finding_copper` · `masonry` | ⬜ — **masonry is blocked** on the food ceiling below |
 | 8 | `pyramid` · `accounting` | ⬜ — both hoard goals; pyramid blocked on the food ceiling |
@@ -49,7 +49,7 @@ nothing but noise.
 
 ## Landed
 
-### Chiefdom — pop 3 / terr **2** ✅ (unmeasured)
+### Chiefdom — pop 3 / terr **2** / 🌾 **8** ✅
 
 Territory 4 → **2**; everything else unchanged. Chiefdom was the *low-territory / high-population*
 government in [`missions/raiding.md`](missions/raiding.md) — which locks Warband as "keeping
@@ -68,8 +68,38 @@ The board states its strategy as a shortage the player spends the army to fix, r
 Not pop 4: upkeep is `floor(pop²/4)`, so pop 4 eats 4🌾/round — break-even with *every* worker farming
 (see *Consequences owed*). Pop 4 on two slots is a spiral, not a push.
 
-**Owed at the sweep:** food. 6🌾 is the lowest start of the four, against 2🌾/round upkeep at pop 3 —
-three rounds of slack before a food source has to land. Unmeasured, and the first thing to read.
+**Food 6 → 8 ✅, measured** on the Rites & Rituals cell (the first mission a player can bring Chiefdom
+to with a full Stone Age collection). At 6🌾 and 2🌾/round upkeep the board had **three rounds** of
+slack, which is less than any food line in the deck takes to build — so the *ceiling* was runway-bound,
+not just the fair-competent tier:
+
+| policy | 6🌾 | **8🌾** | 10🌾 |
+|---|---|---|---|
+| random @100 | 0% | 0% | 0% |
+| heuristic @100 | 4% | 8% | 9% |
+| greedy @100 | 0% | 0% | 3% |
+| planner @100 | 26% | **40%** | 62% |
+| deepPlanner @10 | 50% | **90%** | 90% |
+| oracle @10 | 90% | **100%** | 100% |
+
+**8 because the curve splits there.** The two deep policies reach 10🌾's numbers exactly at 8, so the
+fourth round is what the ceiling was missing; the default planner gains only a third of the distance,
+because what *it* is short on is the depth to commit to a setup dip, not runway (deepPlanner on the
+same 8🌾 gets 90%). Paying two more food to move a number that isn't measuring the content is the
+wrong trade — and it would cost the trait: at 10🌾 Chiefdom's food would equal Tribe's and
+Settlement's, leaving terr 2 / pop 3 / 6⚔️ as its whole identity. At 8 it is still the lowest start
+of the four, with **four rounds** of slack against Settlement's ten.
+
+**The board's own lines stay load-bearing at 8🌾**, which is the check that mattered: planner plays
+Conquest 1.7×/run ending at terr 3.7, and still opens the Bead Workshop + Bartering route in a fifth of
+its runs; the oracle's only unplayed card is Hut. Contrast a **2× Irrigation Farm** (3🌾/worker on one
+slot), swept on the same cell as the alternative fix: greedy 0 → 76% while ending at territory **2.0**
+with Conquest *and* Bartering unplayed. That is the failure mode to watch on this board — a single card
+that answers both the slot shortage and the food clock at once switches off every decision the board
+exists to pose, where extra food buys the *time* to run those decisions.
+
+⚠️ **The deep rows are 10 seeds**, so 90 vs 100% there is one run either way. The 8-vs-10 call rests on
+the planner column and on the trait argument, not on those.
 
 **Still open — do boards get behaviour, not just numbers?** Deliberately deferred until this is played:
 numbers-only may be a complete answer now that the persistent axis is used on purpose. If it still reads
@@ -290,7 +320,8 @@ knob deciding whether the mission is a decision or a script.
 **Measured** at 25🌾. `scripts/sim/baselines/first_trades.json` is cut on **Settlement** (Growing
 Numbers' deck + the money pair, 17 cards, no purchases) and its rows are in `baselines/results/`:
 heuristic, greedy, planner and oracle all **100%**, medians 16 · 33 · 15 · 13 turns, every one of them
-opening the route in every run and ending within 1🌾 of the target. **Chiefdom**, swept ad-hoc on the
+opening the route in every run and ending within 1🌾 of the target. **Chiefdom** (⚠️ stale — swept at its
+old 6🌾 start, since raised to 8), swept ad-hoc on the
 same deck and seeds, is far harder — planner 92/100, heuristic 13/100, greedy 0/100, failing to famine
 rather than bankruptcy.
 
@@ -379,9 +410,10 @@ That closes the question and settles the consequences below:
   = 10`, each band double the last, `rules/culture.ts`) — set when every converter ran ×2. Beer is the
   first culture producer priced at the new rates (1🌾 → 2🎭), and nothing in the pass has yet *asked*
   for a culture level. The convergence node now asks for one, so the curve finally has a mission to be
-  judged against — settle it in **status-board row 5's sweep**, and expect it to move Beer's rate rather
-  than the other way round. Level 1 is 10🎭, which looks trivially reachable off either producer; the
-  dossier holds the ordered list of knobs.
+  judged against, and **the first sweep says level 1 is too cheap**: the oracle clears Settlement in a
+  6-turn median off Beer and Sun Stone alone, against 13–16 at the three missions before it. Still
+  un-settled — the dossier holds the ordered list of knobs (threshold, then the producers' rate, then the
+  curve) and the reason Chiefdom bounds how far any of them can move.
 - ✅ **`sim/enablers.test.ts`'s culture cases are off the shipped catalogue entirely.** They needed a
   mission whose *goal* is a culture level; that used to be `rites_rituals` and would next have been
   `restless_people`, which this same pass retires. They now install a synthetic `test_culture_win`

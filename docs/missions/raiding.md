@@ -19,8 +19,9 @@ plunder.
 - **Reward — Chiefdom → Warband** `boardUpgrade` (retires Chiefdom, like Settlement→City on the settled
   line): a **military + money** government keeping Chiefdom's **low-territory / high-population** shape.
   Name **Warband** is locked. **Blocked on a Chiefdom rebalance first** — Warband's numbers derive from a
-  re-tuned Chiefdom (a balance-stage task, not a design blocker). Half-unblocked: Chiefdom's shape has
-  landed at pop 3 / terr 2 (REBALANCE → *Landed*), but unmeasured, and its food start is still owed.
+  re-tuned Chiefdom (a balance-stage task, not a design blocker). ✅ **Unblocked:** Chiefdom is now
+  measured and settled at pop 3 / terr 2 / 8🌾 (REBALANCE → *Chiefdom*), so Warband has a real board to
+  derive from.
 
 ## Goal + pressure ✅ (converged; numbers provisional)
 
