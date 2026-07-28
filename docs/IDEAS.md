@@ -61,9 +61,11 @@ coins
 hoplites
 legions
 
-## Post-classical/medieval/Paper Age? Steel Age? (*crucible* steel, is rare, but was around that period. Paper is a more defining tech, this period widespread the use of paper)
+## Empire Age
 
-## Colonization/Globalization/**Gunpowder Age**
+## Mill Age
+
+## Gunpowder Age
 
 ## Steam Age
 
