@@ -169,5 +169,5 @@ correct-but-layered.
   the engine no coverage.
 - **`restless_people_goal`** (objective, 🎭 level 2) — **deleted**; the arc no longer teaches culture at
   all. The culture-threshold tests it anchored now read the synthetic `test_culture_objective`.
-- **Beer** — was this mission's grant; it moved to `first_trades` (reworked to 1🌾 → 2🎭), which is what
+- **Beer** — was this mission's grant; it moved to `first_trades` (reworked to 1🌾 → 1🎭), which is what
   left the slot free for the science pair.

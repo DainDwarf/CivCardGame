@@ -246,7 +246,7 @@ export const CARDS: Record<string, CardDef> = {
   // — Work —
   foraging: { id: 'foraging', name: 'Foraging', kind: 'work', cost: {}, workers: 1, display: { art: '🌿' }, produces: { resources: { food: 1 } } },
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 1 } } },
-  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 1 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 2 } } },
+  beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 1 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 1 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
   // The first ⚔️ producer that is a staffed work box rather than a one-shot action — free to play like
   // Foraging/Trader, so the worker it occupies for the turn is its whole cost. Its per-play 4⚔️ beats
@@ -262,7 +262,7 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🛖', description: 'When built: +1 🧍' },
     effect: { resources: { population: 1 } },
   },
-  sun_stone: { id: 'sun_stone', name: 'Sun Stone', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { culture: 2 } }, workers: 1, display: { art: '☀️' } },
+  sun_stone: { id: 'sun_stone', name: 'Sun Stone', kind: 'building', cost: { resources: { production: 3 } }, produces: { resources: { culture: 1 } }, workers: 1, display: { art: '☀️' } },
   bead_workshop: { id: 'bead_workshop', name: 'Bead Workshop', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { money: 1 } }, workers: 1, display: { art: '📿' } },
   forge: { id: 'forge', name: 'Forge', kind: 'building', cost: { resources: { production: 4 } }, produces: { resources: { production: 2 } }, workers: 1, display: { art: '⚒️' } },
   // The science counterpart of the Forge, and priced on the same shape: a permanent building doubling

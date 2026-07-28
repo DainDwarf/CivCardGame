@@ -397,8 +397,8 @@ That closes the question and settles the consequences below:
 
 - **Both wonders stay playable.** Göbekli Tepe carries `cultureLevelReq: 1` and Pyramid
   `cultureLevelReq: 2` — a hard play-gate, not a goal — and the node sits upstream of both.
-- ✅ **The 🎭 *producers* are settled, one per branch.** Beer (1🌾 → 2🎭 work card) is granted by The First
-  Trades on the upper branch; **Sun Stone** (4🔨 → 2🎭/worker building, the re-rated Burial) by
+- ✅ **The 🎭 *producers* are settled, one per branch.** Beer (1🌾 → 1🎭 work card) is granted by The First
+  Trades on the upper branch; **Sun Stone** (3🔨 → 1🎭/worker building, the re-rated Burial) by
   `reading_seasons` on the lower one. Since the node ANDs both tips, a player always arrives holding
   both — and they are different *kinds* of producer, which is the point: a work card played from hand
   against a permanent building eating a territory slot. Cave Art is cut rather than rehabilitated; it
@@ -408,7 +408,7 @@ That closes the question and settles the consequences below:
 - **Hand size stays pinned at 4 until the convergence**, culture being its only lever.
 - ⬜ **The culture-level curve is un-re-read.** Levels sit at cumulative **10 / 30 / 70** (`CULTURE_STEP
   = 10`, each band double the last, `rules/culture.ts`) — set when every converter ran ×2. Beer is the
-  first culture producer priced at the new rates (1🌾 → 2🎭), and nothing in the pass has yet *asked*
+  first culture producer priced at the new rates (1🌾 → 1🎭), and nothing in the pass has yet *asked*
   for a culture level. The convergence node now asks for one, so the curve finally has a mission to be
   judged against, and **the first sweep says level 1 is too cheap**: the oracle clears Settlement in a
   6-turn median off Beer and Sun Stone alone, against 13–16 at the three missions before it. Still
@@ -471,7 +471,7 @@ Only Cave Art is left, and it is a decided cut waiting on the fixtures that stil
 |---|---|---|
 | ~~Storytelling~~ | — | ✅ **left the list** — reworked to 1🔬/worker and granted by `harsh_winter` |
 | Cave Art (2🎭 work) | makes the same 2🎭 as Beer for no 🌾, so it obsoletes a shipped card, and no reward slot is left to grant it from | ✅ **decided: cut.** Not yet deleted — six baselines still stock it (`first_temple`, `finding_copper`, `masonry`, `accounting`, `roads`, `pyramid`) and would fail to load; it goes with the last of them to be re-cut |
-| ~~Burial~~ | — | ✅ **left the list** — renamed **Sun Stone**, re-rated to 4🔨 → 2🎭/worker, and granted by `reading_seasons` |
+| ~~Burial~~ | — | ✅ **left the list** — renamed **Sun Stone**, re-rated to 3🔨 → 1🎭/worker, and granted by `reading_seasons` |
 | ~~Calendar~~ | — | ✅ **left the list** — reworked to **2🔬 → look at the top 3 and draw one**, and granted by `reading_seasons` alongside Sun Stone. See *Science gets its sink* |
 
 Bead Workshop and Bartering have **left this list** — both are reworked and granted by `raiders_at_border`;
@@ -541,9 +541,10 @@ printed numbers are therefore equal throughput *per worker*, and the building's 
 (never undrawn) plus deck-thinning, not rate. Cutting the base work rates to 1 has fixed three
 pairs as a side effect (Farm now *matches* Foraging, Forge *doubles* Toolmaking, and Archives doubles
 Storytelling once it drops to 1🔬 at Harsh Winter). The culture pair went the other way, by **replacing
-the building rather than raising it**: Burial became **Sun Stone** at 4🔨 → 2🎭/worker — the Forge/Archives
+the building rather than raising it**: Burial became **Sun Stone**, now 3🔨 → 1🎭/worker — the Farm/Foraging
 shape, permanent output at the work card's rate — and Cave Art is cut, leaving Beer as culture's work
-card.
+card. Both halves were then cut together at the convergence node's sweep (Beer 2🎭 → 1🎭, Sun Stone
+4🔨/2🎭 → 3🔨/1🎭), which moved the pair's *tempo* without disturbing that relationship.
 
 ⚠️ **War Horse / City Walls is off the list; its "owed raise" is withdrawn.** The old read — *War Horse
 4⚔️ vs City Walls 1⚔️* — set 4⚔️ **per play** against 1⚔️ **per round forever**, and City Walls takes

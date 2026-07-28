@@ -228,8 +228,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     // Sun Stone is the branch's culture card, so the convergence node downstream is reached with a
     // culture *building* from this tip and a culture *work card* (Beer) from the other — two different
-    // kinds of producer rather than a second copy of one. Its rate is provisional: nothing has yet asked
-    // for a culture level, so the convergence node's sweep is the first thing able to judge it.
+    // kinds of producer rather than a second copy of one.
     // Calendar is 🔬's first sink, granted by the mission that teaches you to bank it: the two cards
     // upstream both *make* science and nothing in the age spends it until the Bronze copper veins.
     // Granting it here rather than upstream is what keeps a sink out of the hand during the very run

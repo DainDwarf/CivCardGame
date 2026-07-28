@@ -58,8 +58,9 @@ target is met yet.
 take on — the first obligation in the arc that isn't inflicted by the mission. Food upkeep remains the
 only other clock, so a run that never opens a route simply never wins rather than losing.
 
-**Reward ✅ — 8⭐ + Beer**, reworked from 2🌾 → 5🎭 to **1🌾 → 2🎭** (a `work` card as before). Same
-8⭐ + one card the deleted `rites_rituals` paid, so `cumulativeInfluenceInto` is unmoved downstream.
+**Reward ✅ — 8⭐ + Beer**, reworked from 2🌾 → 5🎭 to 1🌾 → 2🎭, and cut again at the convergence node's
+sweep to **1🌾 → 1🎭** (a `work` card throughout). Same 8⭐ + one card the deleted `rites_rituals` paid;
+⭐ downstream has since moved anyway, since Rites came back as a *new* node with its own faucet.
 
 **Both Stone branch tips grant a culture card**, so the Rites-as-convergence node they'd feed
 (see [`../IDEAS.md`](../IDEAS.md)) has something to play with whichever branch a player took. Beer is
@@ -67,11 +68,11 @@ this branch's.
 
 **Why Beer is the *right* card here and not just an available one.** Priced against what has actually
 landed in this pass — Foraging 1🌾/worker, Toolmaking 1🔨/worker, Dogs 1🌾→1⚔️, Bartering 1🪙→2🌾 —
-Beer at 1🌾→2🎭 costs one worker-round for the box plus one Foraging worker-round for the food: **2
-worker-rounds → 2🎭**, dead on the pass's 1-per-worker-round floor. What lifts it is exactly what this
+Beer at 1🌾→1🎭 costs one worker-round for the box plus one Foraging worker-round for the food: **2
+worker-rounds → 1🎭**, *below* the pass's 1-per-worker-round floor. What lifts it is exactly what this
 mission builds: **a route pays 2🌾/round for zero workers**, so the food stops competing for labour and
-the same play becomes **1 worker-round → 2🎭**, double rate. So Beer is *conditional on trade
-infrastructure* rather than strictly better than anything — bad without a route, strong with one. That
+the same play becomes **1 worker-round → 1🎭**, onto the floor. So Beer is *conditional on trade
+infrastructure* rather than strictly better than anything — bad without a route, par with one. That
 is the shape a branch-specific reward should have.
 
 `work`, not a building: the route is permanent and workerless, Beer transient and worker-hungry, so the
@@ -79,9 +80,10 @@ two **complement**. A brewery building would put a second slot-eater on the bran
 already that slots are the squeeze. Beer paying a slot for the turn is not a cost to design around —
 it is the cap decision the unified territory rule exists to create.
 
-**1🌾 → 2🎭 is a starting number.** It is priced against landed rates only; the culture *level* curve
-(10 / 30 / 70) is pre-rebalance and un-re-read, so what a culture goal is actually worth is still open —
-see REBALANCE. Whichever way that lands may move this rate.
+✅ **The rate is now measured, at 1🌾 → 1🎭.** It was a starting number priced against landed rates
+alone, with the culture *level* curve (10 / 30 / 70) un-re-read. The convergence node's sweep judged
+both at once and moved this one: the curve held and Beer halved, alongside Sun Stone
+([rites](rites.md) → *Balance*).
 
 ## Balance ✅
 
