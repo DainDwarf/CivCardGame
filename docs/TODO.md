@@ -158,6 +158,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   coherence test, which is where art is ruled on. Note the relaxed half can't be checked off `CARDS`
   alone — it has to read `MISSIONS`' `threats`/`events`/`objectiveCardId` lists to know what co-occurs.
   The catalogue is clean as of the Fire/Raiding swap, so this lands green. `[size: S]`
+- **One sim baseline file per configuration, holding its own results** `[size: M]` — today a cell's
+  launch config (`scripts/sim/baselines/<mission>.json`) and its measured numbers (a global
+  `results/<policy-set>.json`) live apart, so re-cutting a fixture silently strands rows keyed by label
+  in a file nobody edits, and one mission can't hold two cells without hand-splicing both sides. Fold
+  them into a single per-configuration file carrying config **and** recorded results. Optional second
+  half: teach `scripts/sim.ts` the format — report a sweep as a **delta against the recorded numbers**,
+  and take a flag to overwrite them in place.
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
