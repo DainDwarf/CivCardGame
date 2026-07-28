@@ -1,8 +1,8 @@
 # The First Trades — mission dossier
 
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); the arc restructure
-> that created this mission is in [`../REBALANCE.md`](../REBALANCE.md) → *Stone Age branches 3–4
-> restructure*. Final decisions → [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at
+> that created this mission is in [`../REBALANCE.md`](../REBALANCE.md) → *The Stone Age DAG,
+> restructured*. Final decisions → [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at
 > ship. Live state only.
 
 **Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
@@ -41,7 +41,7 @@ Both sit on money's **producer** side, so the one-way-hub topology holds: Bead W
 🔨 into 🪙 (a worker does), and the route rents access rather than exchanging. Nothing converts the
 route's 🌾 back into 🪙.
 
-**Goal — ✅ open a 🤝 trade route and hold `FIRST_TRADES_FOOD` 🌾 at once** (25 provisional).
+**Goal — ✅ open a 🤝 trade route and hold `FIRST_TRADES_FOOD` 🌾 at once** (25, settled below).
 
 A 🪙 *hoard* target was ruled out: money's whole point under the one-way hub is that it is spent, so a
 hoard switches the wildcard off during the very mission built around it. The route half is a
@@ -164,7 +164,7 @@ target was picked for.
 building it depends on, so pair *N* costs what pair 1 did with territory the only brake — is a **rate**
 question about the trade zone itself, not about this mission's target. This cell can't even pose it: the
 deck holds one copy of each card, so no run could build a second pair. Carried to
-[`../REBALANCE.md`](../REBALANCE.md) → *money's topology*.
+[`../REBALANCE.md`](../REBALANCE.md) → *Open* → *Rates still to settle*.
 
 Left as a measured observation, not a finding: **Chiefdom is the harder cell by a wide margin** (planner
 92/100 and greedy 0/100, against 100/100 for both on Settlement), failing to famine rather than

@@ -1,8 +1,8 @@
 # Harsh Winter *(name provisional)* — mission dossier
 
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); the arc restructure
-> that created this mission is in [`../REBALANCE.md`](../REBALANCE.md) → *Stone Age branches 3–4
-> restructure*. Final decisions → [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at
+> that created this mission is in [`../REBALANCE.md`](../REBALANCE.md) → *The Stone Age DAG,
+> restructured*. Final decisions → [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at
 > ship. Live state only.
 
 **Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
@@ -61,8 +61,8 @@ mission they feed asks the player to *stockpile* science, so a card priced in �
 goal it was granted for.
 
 - **Storytelling** — 2🔬 → **1🔬** per worker, onto the 1-per-worker base rate. Side effect worth noting:
-  this fixes one of the three work-card/building pairs REBALANCE's *Diagnosis* still owed, since Archives
-  (4🔨, 2🔬/worker) now **doubles** it the way Forge doubles Toolmaking.
+  this fixes one of the work-card/building pairs the pass owed, since Archives (4🔨, 2🔬/worker) now
+  **doubles** it the way Forge doubles Toolmaking.
 - **Fire** — new: an action paying **1🔬** for **one card discarded from hand**. Storytelling's
   alternative rather than its better — the same 1🔬, bought with a card instead of a worker-round, which
   is the trade worth having at a pop cap of 4. The first shipped consumer of `CardCost.discard`; the
@@ -75,10 +75,11 @@ three things known before the numbers land:
 
 - ✅ **Its fixture has been re-cut** — `baselines/reading_seasons.json` is now this mission's deck plus
   one Storytelling and one Fire, on Settlement, and the cell is measured.
-- **The enabler model prices Fire as free.** `enablers.ts` derives value from `cost` → `effect` over
-  *resource* costs; a card cost has no representation there, so the model reads Fire as +1🔬 for nothing
-  and the planner may over-play it. Hard to spot on a 🔬-stockpile goal, where over-playing it looks like
-  good play.
+- ✅ **The enabler model prices Fire as free** — `enablers.ts` derives value from `cost` → `effect` over
+  *resource* costs, so a card cost has no representation there and the model reads Fire as +1🔬 for
+  nothing. **Measured at that cell and the effect is small**: both greedies play Fire slightly more than
+  Storytelling where the oracle splits them evenly ([reading-seasons](reading-seasons.md) → *Balance*).
+  The mispricing is confirmed; it isn't distorting the numbers.
 - **The oracle biases *down*, not up.** Its key treats `hand` as a multiset (`oracleKey.ts`) while
   `canonicalPlay` picks the sacrifice by hand *index*, so two hands with the same contents in a different
   order merge although their sacrifices differ. Per `oracle.ts` that costs completeness, never soundness —
@@ -92,7 +93,7 @@ than something this card introduces.
 **Consequences.**
 
 - ✅ **Calendar is benched, and re-slotted one mission on.** It was this mission's second grant; it is now
-  `reading_seasons`', reworked into a peek-and-draw (REBALANCE → *Science gets its sink*). Moving it
+  `reading_seasons`', reworked into a peek-and-draw ([reading-seasons](reading-seasons.md) → *Design*). Moving it
   downstream is what resolves the charge that benched it — the card *spends* the 🔬 the next mission asks
   you to bank, and a reward is granted on clear rather than held during the run.
 - ✅ `reading_seasons` now grants **Sun Stone** (the branch's culture card) **and Calendar**.

@@ -27,7 +27,10 @@
 
   - **Cross-cutting sequencing rule** (future missions): a mission that *spotlights a player-played
     card* as its objective needs that card **unlocked by an upstream mission** — a reward is granted on
-    clear, so you can't build/play what you don't yet own.
+    clear, so you can't build/play what you don't yet own. The same rule read from the pressure side: a
+    **threat may only drain a resource the player is guaranteed to *produce* on every prereq chain
+    reaching it**, and a branch-local faucet doesn't count. `unrest` was deleted for breaking exactly
+    that — it drained 🪙 on a branch where the money faucet is granted on the *other* one.
   - **Destroy / demolish** — deliberately deferred out of the Stone Age. The engine verb was removed
     during the card tech-debt pass rather than carried through unused; reimplement it cleanly on the
     resolver spine (a `resolve` closure) when a real card wants it — Bronze/Iron, where a built-up
@@ -40,10 +43,15 @@
     ([rites](missions/rites.md)) — is **designed, implemented and balanced**; it re-points
     `first_temple`'s prereqs, shifts every mission behind it one column right, and grants the new
     **Elegant** culture sticker. Only Polish is left on it. See
-    [`REBALANCE.md`](REBALANCE.md) → *Stone Age branches 3–4 restructure*, plus the
+    [`REBALANCE.md`](REBALANCE.md) → *The Stone Age DAG, restructured*, plus the
     [first-trades](missions/first-trades.md) and [harsh-winter](missions/harsh-winter.md) dossiers.
     Step 9's substeps below are written against the old arc and are stale for **9.3 / 9.5 / 9.6**;
     **9.6b** is the new culture node's lesson.
+  - **The arc's re-rated missions carry dossiers now** —
+    [first-settlement](missions/first-settlement.md) · [growing-numbers](missions/growing-numbers.md) ·
+    [raiders](missions/raiders-at-border.md) · [reading-seasons](missions/reading-seasons.md). They
+    shipped in Steps 1–6 but were re-read on the same branch, so each is Design/Implement/Balance ✅
+    with **Polish** the one stage left.
 
 - **Step 7 — Bronze Age arc** (content expansion) — new cards + missions themed to the Bronze
   Age, **no new mechanics**. Continues unlocking cards/stickers/boards through mission rewards.
@@ -170,8 +178,8 @@
     teach **money and trade routes**: the standing trade zone, a route's per-round rent against its
     per-round yield, and why the faucet that pays the rent has to be a building. **Post-clear:** reward
     undecided, so the post-clear lesson is too. Where the **Culture** gauge (levels, hand size, the
-    `cultureLevelReq` play-gate) gets taught is now open — see REBALANCE → *Culture leaves the Stone
-    Age*.
+    `cultureLevelReq` play-gate) gets taught is settled — the convergence node
+    ([rites](missions/rites.md)) teaches it.
   - **9.4 — Raiders at the Border tutorial** — teach the **event** card mechanic: mission-injected
     disasters (the raider waves) that auto-resolve from hand each round, draining a resource, and are
     defused for good by *playing* them (paying the cost banishes the card unresolved). **Post-clear:**

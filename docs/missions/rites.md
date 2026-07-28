@@ -1,7 +1,7 @@
 # Rites & Rituals *(name provisional)* — mission dossier
 
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); the branch restructure
-> that created this slot is in [`../REBALANCE.md`](../REBALANCE.md) → *Culture leaves the Stone Age*.
+> that created this slot is in [`../REBALANCE.md`](../REBALANCE.md) → *The Stone Age DAG, restructured*.
 > Final decisions → [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
 **Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
@@ -110,7 +110,7 @@ the same way The First Trades records its Chiefdom sweep.
   level to play**, on a culture-producing building *or* work card. It is the only reward that can be
   spent on *either* branch's producer — Beer from the trade tip, Sun Stone from the season tip — so the
   convergence pays off both routes into it rather than picking one. Calendar was weighed for this slot
-  first and went to `reading_seasons` instead (REBALANCE → *Science gets its sink*).
+  first and went to `reading_seasons` instead ([reading-seasons](reading-seasons.md) → *Design*).
   - ⚠️ **Elegant is dead on the mission that grants it, by construction.** This node's goal is a single
     term, so crossing 🎭 level 1 *ends the run* — a card gated at level 1 can never be played here. Its
     windows are the conjunction goals downstream: `first_temple` (4 terms) and `pyramid` (3), where you
@@ -122,8 +122,7 @@ the same way The First Trades records its Chiefdom sweep.
     static-derivation exception, not a new gap.
 - **The 10⭐ itself grows the faucet ledger**, unlike the branch restructure: the original mission's 8⭐
   was inherited by The First Trades precisely so downstream totals stayed put, and this node is a *new*
-  faucet. Arrival at `first_temple` goes 40 → 50⭐ and at Masonry 52 → 62⭐ (`npm run economy`), which is
-  what shop tiers and sticker prices are tuned against.
+  faucet. The campaign-wide arithmetic it moves is in [`../REBALANCE.md`](../REBALANCE.md) → *Open*.
 
 ## Settled elsewhere
 
