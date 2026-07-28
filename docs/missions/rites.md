@@ -8,7 +8,7 @@
 **Branch:** Stone — the **reconvergence** of both branches, on the centre axis.
 **Placement:** ✅ `prereqs: ['first_trades', 'reading_seasons']`, stone **col 4 row 0**; `first_temple`
 re-points onto this node at col 5, and every Bronze mission shifts one column right behind it.
-**Reward:** ✅ **10⭐, no unlock** — provisional on both halves (see *Open*).
+**Reward:** ✅ **10⭐ + the `elegant` sticker** — the ⭐ amount provisional (see *Open*).
 
 **Decided ✅ — culture stays in the Stone Age**, on this node. The arc had lost its 🎭 twice over (the
 original `rites_rituals` deleted for The First Trades, `restless_people`'s culture goal retired by the
@@ -94,10 +94,20 @@ the same way The First Trades records its Chiefdom sweep.
 
 ## Open
 
-- **The reward's card half.** 10⭐ and no unlock today. Calendar was weighed for this slot and went to
-  `reading_seasons` instead — the science hole it fills is that mission's, not this one's (REBALANCE →
-  *Science gets its sink*). So the slot is open with no candidate: the node may simply stay
-  Influence-only, which is a legal reward and one the sweep can judge.
+- ✅ **The reward is 10⭐ + the `elegant` sticker** — the age's culture sticker: **+1🎭 output, +1 🎭
+  level to play**, on a culture-producing building *or* work card. It is the only reward that can be
+  spent on *either* branch's producer — Beer from the trade tip, Sun Stone from the season tip — so the
+  convergence pays off both routes into it rather than picking one. Calendar was weighed for this slot
+  first and went to `reading_seasons` instead (REBALANCE → *Science gets its sink*).
+  - ⚠️ **Elegant is dead on the mission that grants it, by construction.** This node's goal is a single
+    term, so crossing 🎭 level 1 *ends the run* — a card gated at level 1 can never be played here. Its
+    windows are the conjunction goals downstream: `first_temple` (4 terms) and `pyramid` (3), where you
+    sit at level 1 and then 2 for many turns while grinding the other thresholds. Coherent for a
+    granted-on-clear reward, but worth stating rather than discovering.
+  - **The planner misprices it, harmlessly.** `sim/enablers.ts` reads `cost.cultureLevelReq` off static
+    `CARDS`, so a stickered copy's *raised* gate is invisible to its valuation. Legality is unaffected —
+    that routes through `costReason` → `currentCost`, which folds stickers. The documented
+    static-derivation exception, not a new gap.
 - **The 10⭐ itself grows the faucet ledger**, unlike the branch restructure: the original mission's 8⭐
   was inherited by The First Trades precisely so downstream totals stayed put, and this node is a *new*
   faucet. Arrival at `first_temple` goes 40 → 50⭐ and at Masonry 52 → 62⭐ (`npm run economy`), which is

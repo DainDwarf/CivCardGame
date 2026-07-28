@@ -328,10 +328,19 @@ export const FIXTURE_STICKERS: Record<string, StickerDef> = {
     id: 'test_costcut', name: 'Test Cost-Cut', description: 'Costs 1 less to play',
     icon: '➖', cost: 3,
     applyCost: (cost) => {
-      const out: typeof cost = {};
-      for (const [k, v] of Object.entries(cost) as [keyof typeof cost, number][]) out[k] = Math.max(0, v - 1);
-      return out;
+      const resources: NonNullable<typeof cost.resources> = {};
+      for (const [k, v] of Object.entries(cost.resources ?? {}) as [keyof typeof resources, number][]) {
+        resources[k] = Math.max(0, v - 1);
+      }
+      return { ...cost, resources };
     },
+  },
+  // The non-resource half of `applyCost`'s reach: a sticker raising a card's culture-level
+  // prerequisite, which no resource-only hook could express.
+  test_gated: {
+    id: 'test_gated', name: 'Test Gated', description: 'Requires one more 🎭 level',
+    icon: '🔒', cost: 3,
+    applyCost: (cost) => ({ ...cost, cultureLevelReq: (cost.cultureLevelReq ?? 0) + 1 }),
   },
   test_restricted: {
     id: 'test_restricted', name: 'Test Restricted', description: '+1🌾 on a food building',

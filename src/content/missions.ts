@@ -253,10 +253,12 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Reach 🎭 culture level 1.',
     failureHint: null,
     kind: 'standard',
-    // Influence-only and provisional, both halves: the amount is a fresh addition to the faucet ledger
-    // (the original mission's 8⭐ was inherited by The First Trades), and whether this node grants a card
-    // is still open.
-    reward: { influence: 10 },
+    // Elegant is the age's culture sticker, and the only reward that can be *spent* on either branch's
+    // producer — Beer from one tip, Sun Stone from the other. Its culture-level surcharge makes it dead
+    // on this mission (a single-term goal ends the run the moment the level lands) and live on the
+    // conjunction goals downstream. Influence amount provisional: a fresh addition to the faucet ledger,
+    // since the original mission's 8⭐ was inherited by The First Trades.
+    reward: { influence: 10, unlockStickerIds: ['elegant'] },
     map: { col: 4, row: 0 },
     age: 'stone',
   },

@@ -148,9 +148,11 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   prerequisite) plus two closures that compose with those fields — `resolve` (this copy's *actual* cost
   when it isn't the declarative one, e.g. a price that doubles per play, handed the base to derive from)
   and `check` (a bespoke precondition, like a peek card needing a non-empty pile). `currentCost` is the
-  single seam every price flows through — the sticker fold then the card's `resolve`, in that order so a
+  single seam every price flows through — the sticker fold (over the *whole* descriptor, so a sticker may
+  raise any declarative field, not just `resources`) then the card's `resolve`, in that order so a
   sticker discounts the card's **base rate** and the two **compound**: −1🔨 on a doubling price gives
-  1·2·4, not 1·3·7 — read by
+  1·2·4, not 1·3·7. `resolve`'s result is *merged over* the folded base, so a field a sticker added and
+  the closure never mentions survives. Read by
   `costReason` (the gate), `payCost` (the payment), `discardCount` (how many cards a play sacrifices),
   and `runCard` (the display, so a face can never quote a price the gate wouldn't charge). The
   declarative fields are a deliberately **closed vocabulary**: a cost must be introspectable, not just
@@ -236,8 +238,11 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   on one copy — positional because a copy may carry the same sticker twice, so an id would destroy both
   of a stack; drops the `stickers` key when the last one goes, returning the copy to the fungible pool;
   **refunds nothing**), and `effectiveGain`/`effectiveCost`/`effectiveCard` — the only places a sticker
-  touches run or display values (each a generic fold over the `StickerDef` hooks). See DESIGN.md →
-  *Economy & progression* for the destroy / no-refund rationale.
+  touches run or display values (each a generic fold over the `StickerDef` hooks). `effectiveCost` folds
+  the **whole `CardCost`**, not just its `resources`, so a sticker reaches any declarative field (a
+  `cultureLevelReq` surcharge, a `discard`) and lands on a card with **no** printed price at all — which
+  is what lets a surcharge sticker charge a free work box. See DESIGN.md → *Economy & progression* for
+  the destroy / no-refund rationale.
 - **`boardStickers.ts`** — the board counterpart: `buyBoardSticker`, `removeBoardSticker` (destroy at
   an *index* — positional for the same reason; deletes the board key at zero; returns a bare
   `BoardStickers`, **refunds nothing** — the missing `influence` field is the rule, not an oversight),
@@ -293,7 +298,9 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   `collectionFromCounts`). Counts must be **copy-tier-attainable** (the ×1→×2→×4→×8 ladder — so 1/2/4/8,
   never 3); `rules/collection.test.ts` pins that the starting collection covers the Founding deck.
 - **`stickers.ts`** — `STICKERS`; each `StickerDef` carries its own `appliesTo`/`applyGain`/`applyCost`
-  logic and an `icon`.
+  logic and an `icon`. Each is a **trade-off, not an upgrade**: it raises one output and charges for it
+  in another currency, so the decision is what the copy gives up rather than whether you can afford it.
+  A `applyCost` **discount** leaves an absent field absent; a **surcharge** materializes it.
 - **`boardStickers.ts`** — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
   `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
 - **`boards.ts`** — `BOARDS` (each sets all 8 starting resources) + `ORIGIN_BOARD_ID`. There is no

@@ -72,9 +72,7 @@ export interface CardCost {
  * price that doubles turns 2·4·8 into 1·2·4, not 1·3·7.
  */
 export function currentCost(card: CardDef, ctx: CostContext): CardCost {
-  const base = card.cost.resources
-    ? { ...card.cost, resources: effectiveCost(card.cost.resources, ctx.self) }
-    : card.cost;
+  const base = effectiveCost(card.cost, ctx.self);
   // Merged over the base, not substituted for it: a `resolve` that only reprices `resources` must not
   // silently drop a `discard`/`cultureLevelReq` it never mentioned. Composition, as with `CardEffect`.
   return base.resolve ? { ...base, ...base.resolve(ctx, base) } : base;

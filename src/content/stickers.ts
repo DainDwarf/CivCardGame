@@ -1,4 +1,5 @@
 import type { Resources } from '../rules/resources';
+import type { CardCost } from '../rules/cost';
 import type { CardDef } from './cards';
 
 /**
@@ -13,11 +14,12 @@ import type { CardDef } from './cards';
  * output/cost tweak) is added here alone, never at a call site. Deliberately small —
  * real variety/balance is deferred.
  *
- * The two effect hooks cover per-copy *output* and *play-cost* only — the two things the granular
- * run-loop call sites already need (`run/moves.ts`'s `playCard` calls `effectiveCost(card.cost)`
- * on its own, so a single `applyToCard(card) => card` transformer wouldn't slot in cleanly). A
- * future sticker touching `workers`/`draw` needs a new hook here *plus* a
- * new compose site in `rules/stickers.ts`'s `effectiveCard` — that's the seam; don't pre-build it.
+ * The two effect hooks cover per-copy *output* and *play-cost* only. `applyCost` takes and returns a
+ * whole `CardCost`, so a sticker reaches every declarative field a price has — a resource amount, a
+ * discard, a `cultureLevelReq` — not just the resource bundle. That is what lets a sticker charge in a
+ * currency the card doesn't already pay in. A future sticker touching `workers`/`draw` needs a new hook
+ * here *plus* a new compose site in `rules/stickers.ts`'s `effectiveCard` — that's the seam; don't
+ * pre-build it.
  */
 export interface StickerDef {
   id: string;
@@ -40,8 +42,11 @@ export interface StickerDef {
    *  gain has nothing to bump). Absent = no output change. */
   applyGain?: (base: Partial<Resources> | undefined) => Partial<Resources> | undefined;
   /** This sticker's contribution to play cost, applied *once per attached copy* (fold in
-   *  `effectiveCost`). Absent = no cost change. */
-  applyCost?: (cost: Partial<Resources>) => Partial<Resources>;
+   *  `effectiveCost`). The whole `CardCost` in and out, so a sticker may touch any declarative
+   *  field — not only `resources`. Two shapes, and the difference is load-bearing: a **discount**
+   *  reads the field it cuts and leaves an absent one absent, while a **surcharge** materializes the
+   *  field on a card that never paid it. Absent = no cost change. */
+  applyCost?: (cost: CardCost) => CardCost;
 }
 
 /**
@@ -49,19 +54,46 @@ export interface StickerDef {
  * (`MissionDef.reward.unlockStickerIds`) — a sticker becomes purchasable only once
  * `PlayerStore.unlockedStickers` holds its id (see `rules/upgrades.ts` / the Collection tray).
  *
- * `irrigation` is the first, unlocked by the "Growing Numbers" mission: +1 🌾 to a building that
- * already produces food (so it bumps that food output, never grants food to a non-food building).
+ * `irrigation` and `elegant` are both **trade-offs, not upgrades**: each raises one producer's output
+ * and charges for it in a different currency — 🔨 up front, or a culture level you must already have
+ * reached. That is the shape a sticker takes here; a pure buff would make the only decision "can I
+ * afford it".
  */
+
+/** A producer of `key` a sticker may bump: a staffable that already makes the resource, so a sticker
+ *  raises an output the card has rather than granting one it doesn't. Buildings *and* work boxes —
+ *  the two kinds whose `produces` scales per staffed worker — and never a wonder, which
+ *  `stickerAppliesTo` excludes globally. */
+const producerOf = (key: 'food' | 'culture') => (c: CardDef) =>
+  (c.kind === 'building' || c.kind === 'work') && (c.produces?.resources?.[key] ?? 0) > 0;
+
 export const STICKERS: Record<string, StickerDef> = {
   irrigation: {
     id: 'irrigation',
     name: 'Irrigation',
-    description: '+1 🌾',
+    description: '+1 🌾, +1 🔨 to play',
     icon: '💧',
     cost: 3,
-    // Attaches only to a building that already produces food; bumps *only* that food output.
-    appliesTo: (c) => c.kind === 'building' && (c.produces?.resources?.food ?? 0) > 0,
+    appliesTo: producerOf('food'),
     applyGain: (base) => (base ? { ...base, food: (base.food ?? 0) + 1 } : base),
+    // A surcharge, so it materializes 🔨 on a card that pays none — the free work boxes are exactly
+    // where the trade-off bites, since there the sticker *creates* the price rather than raising one.
+    applyCost: (cost) => ({
+      ...cost,
+      resources: { ...cost.resources, production: (cost.resources?.production ?? 0) + 1 },
+    }),
+  },
+  elegant: {
+    id: 'elegant',
+    name: 'Elegant',
+    description: '+1 🎭, +1 🎭 level to play',
+    icon: '✨',
+    cost: 4,
+    appliesTo: producerOf('culture'),
+    applyGain: (base) => (base ? { ...base, culture: (base.culture ?? 0) + 1 } : base),
+    // The sticker pays for itself in the resource it makes: each copy demands one more culture level
+    // than the last, so a stack only turns on as the culture it produces accumulates.
+    applyCost: (cost) => ({ ...cost, cultureLevelReq: (cost.cultureLevelReq ?? 0) + 1 }),
   },
   wheel: {
     id: 'wheel',
@@ -74,6 +106,9 @@ export const STICKERS: Record<string, StickerDef> = {
     // a kind list, so a card moving between kinds can't silently fall out of the sticker's reach.
     // `applyCost` owns its own floor at 0.
     appliesTo: (c) => (c.cost.resources?.production ?? 0) > 0,
-    applyCost: (cost) => ({ ...cost, production: Math.max(0, (cost.production ?? 0) - 1) }),
+    applyCost: (cost) => ({
+      ...cost,
+      resources: { ...cost.resources, production: Math.max(0, (cost.resources?.production ?? 0) - 1) },
+    }),
   },
 };

@@ -249,22 +249,49 @@ describe('effectiveGain (additive-gain)', () => {
 describe('effectiveCost (cost-cut)', () => {
   it('knocks 1 off every cost resource on a stickered instance', () => {
     const self: CardInstance = { id: 1, cardId: 'test_food', stickers: ['test_costcut'] };
-    expect(effectiveCost({ production: 2 }, self)).toEqual({ production: 1 });
+    expect(effectiveCost({ resources: { production: 2 } }, self)).toEqual({ resources: { production: 1 } });
   });
 
   it('floors a discounted resource at 0 rather than going negative', () => {
     const self: CardInstance = { id: 1, cardId: 'test_food', stickers: ['test_costcut'] };
-    expect(effectiveCost({ production: 1, food: 0 }, self)).toEqual({ production: 0, food: 0 });
+    expect(effectiveCost({ resources: { production: 1, food: 0 } }, self)).toEqual({
+      resources: { production: 0, food: 0 },
+    });
   });
 
   it('leaves cost untouched on an unstickered instance', () => {
     const self: CardInstance = { id: 1, cardId: 'test_food' };
-    expect(effectiveCost({ production: 2 }, self)).toEqual({ production: 2 });
+    expect(effectiveCost({ resources: { production: 2 } }, self)).toEqual({ resources: { production: 2 } });
   });
 
   it('stacks two cost-cut stickers on the same instance to -2, still floored at 0', () => {
     const self: CardInstance = { id: 1, cardId: 'test_food', stickers: ['test_costcut', 'test_costcut'] };
-    expect(effectiveCost({ production: 3, food: 1 }, self)).toEqual({ production: 1, food: 0 });
+    expect(effectiveCost({ resources: { production: 3, food: 1 } }, self)).toEqual({
+      resources: { production: 1, food: 0 },
+    });
+  });
+});
+
+// The reach `applyCost` gained by taking a whole `CardCost`: a sticker can price a card in a field it
+// never declared, which no resource-only hook could reach.
+describe('effectiveCost (non-resource fields)', () => {
+  it('raises a card-level prerequisite the base cost never declared', () => {
+    const self: CardInstance = { id: 1, cardId: 'test_food', stickers: ['test_gated'] };
+    expect(effectiveCost({}, self)).toEqual({ cultureLevelReq: 1 });
+  });
+
+  it('stacks, and leaves a declared prerequisite as the floor it counts up from', () => {
+    const self: CardInstance = { id: 1, cardId: 'test_food', stickers: ['test_gated', 'test_gated'] };
+    expect(effectiveCost({ cultureLevelReq: 1 }, self)).toEqual({ cultureLevelReq: 3 });
+  });
+
+  it('carries the untouched fields through rather than replacing the cost', () => {
+    const self: CardInstance = { id: 1, cardId: 'test_food', stickers: ['test_gated'] };
+    expect(effectiveCost({ resources: { food: 1 }, discard: 2 }, self)).toEqual({
+      resources: { food: 1 },
+      discard: 2,
+      cultureLevelReq: 1,
+    });
   });
 });
 
@@ -272,7 +299,7 @@ describe('a doubly-stickered instance', () => {
   it('composes two different stickers (additive-gain + cost-cut) on the same copy', () => {
     const self: CardInstance = { id: 1, cardId: 'test_food', stickers: ['test_addgain', 'test_costcut'] };
     expect(effectiveGain({ food: 2 }, self)).toEqual({ food: 3 });
-    expect(effectiveCost({ production: 2 }, self)).toEqual({ production: 1 });
+    expect(effectiveCost({ resources: { production: 2 } }, self)).toEqual({ resources: { production: 1 } });
   });
 });
 

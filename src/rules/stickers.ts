@@ -1,6 +1,7 @@
 import { STICKERS, type StickerDef } from '../content/stickers';
 import { CARDS, type CardDef } from '../content/cards';
 import { findInstance, isStickerFull, type OwnedCards } from './collection';
+import type { CardCost } from './cost';
 import type { Resources } from './resources';
 
 /** The minimal shape `effectiveGain`/`effectiveCost`/`effectiveCard` need — any holder carrying a
@@ -116,9 +117,11 @@ export function effectiveGain(base: Partial<Resources> | undefined, self: Sticke
   return out;
 }
 
-/** Fold each attached sticker's `applyCost` over `cost` in order (each hook is responsible for
- *  its own flooring). `?? out` skips a sticker lacking `applyCost` (e.g. Reinforced). */
-export function effectiveCost(cost: Partial<Resources>, self: StickeredInstance): Partial<Resources> {
+/** Fold each attached sticker's `applyCost` over the whole `CardCost` in order (each hook is
+ *  responsible for its own flooring). Folds over a card with *no* declarative price too — that's what
+ *  lets a surcharge sticker land on a free card. `?? out` skips a sticker lacking `applyCost`
+ *  (e.g. Reinforced). */
+export function effectiveCost(cost: CardCost, self: StickeredInstance): CardCost {
   let out = cost;
   for (const id of self.stickers ?? []) out = STICKERS[id]?.applyCost?.(out) ?? out;
   return out;
@@ -136,7 +139,7 @@ export function effectiveCard(card: CardDef, self: StickeredInstance): CardDef {
   const resources = card.effect?.resources && effectiveGain(card.effect.resources, self);
   return {
     ...card,
-    cost: card.cost.resources ? { ...card.cost, resources: effectiveCost(card.cost.resources, self) } : card.cost,
+    cost: effectiveCost(card.cost, self),
     ...(card.produces ? { produces: { ...card.produces, ...(produces ? { resources: produces } : {}) } } : {}),
     ...(card.effect ? { effect: { ...card.effect, ...(resources ? { resources } : {}) } } : {}),
   };

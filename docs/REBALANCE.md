@@ -93,7 +93,8 @@ of the four, with **four rounds** of slack against Settlement's ten.
 **The board's own lines stay load-bearing at 8🌾**, which is the check that mattered: planner plays
 Conquest 1.7×/run ending at terr 3.7, and still opens the Bead Workshop + Bartering route in a fifth of
 its runs; the oracle's only unplayed card is Hut. Contrast a **2× Irrigation Farm** (3🌾/worker on one
-slot), swept on the same cell as the alternative fix: greedy 0 → 76% while ending at territory **2.0**
+slot — swept *before* Irrigation gained its 🔨 surcharge, so the modern sticker is weaker than this),
+swept on the same cell as the alternative fix: greedy 0 → 76% while ending at territory **2.0**
 with Conquest *and* Bartering unplayed. That is the failure mode to watch on this board — a single card
 that answers both the slot shortage and the food clock at once switches off every decision the board
 exists to pose, where extra food buys the *time* to run those decisions.
@@ -430,6 +431,27 @@ Bronze promotes is open again.
 ✅ **The DAG edit it owed is done:** `first_temple` re-points onto the node, which takes the col-4 slot,
 and the capstone plus every Bronze mission behind it shifted one column right (stone now spans cols 0–5,
 bronze 6–10). The age's DAG is final.
+
+### Stickers become trade-offs ✅
+
+**The rule now**: a card sticker raises one output and **charges for it in another currency**. A pure
+buff makes the only decision "can I afford it"; a trade-off makes it "what is this copy giving up",
+which is the decision a per-copy permanent purchase should carry.
+
+- **Irrigation** — keeps +1🌾, now also **+1🔨 to play**, and reaches **work cards** as well as
+  buildings. So it lands on Foraging (free → 1🔨, 2🌾/worker) as well as Farm (2 → 3🔨, 2🌾/worker):
+  the free work box is where the trade-off bites hardest, because there the sticker *creates* the price.
+- **Elegant** — new, `rites_rituals`' reward: **+1🎭, +1 🎭 level to play**, on a culture-producing
+  building or work card (Sun Stone, Beer). It pays for itself in the resource it makes, and it stacks
+  on both halves — 2× is +2🎭 at 🎭 level 2. Full reasoning in the [dossier](missions/rites.md).
+
+**The one code change under it**: `StickerDef.applyCost` took and returned a `Partial<Resources>`, so a
+sticker could only move a price the card already paid in resources. It now takes and returns the whole
+`CardCost`, which is what lets Elegant raise a `cultureLevelReq` at all — and fixes a latent bug the
+same day it would have shipped: `currentCost`/`effectiveCard` both guarded on `card.cost.resources`
+being present, so **a surcharge on a free card would have silently vanished**, exactly Irrigation on
+Foraging. A discount leaves an absent field absent; a surcharge materializes it. Committed baselines are
+no-purchase/no-sticker, so nothing in the standing set moves.
 
 ### Science gets its sink ✅
 
