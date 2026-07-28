@@ -75,6 +75,9 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 
 Per-row notes, where the ⬜ isn't the whole story:
 
+- **1–7 were re-measured** after Dogs became Hunting — it sits in the starting collection, so every deck
+  in the age holds two copies. `baselines/results/` carries the new greedy/planner/oracle rows and the
+  ✅s stand on them; each **dossier's own tables and readings still quote the pre-change numbers**.
 - **3 · `raiders_at_border`** moved no rate of its own — the mission proved sound as authored, and what
   changed is the deck a player *arrives* with. **6 · `reading_seasons`** moved none either, and is the
   only cell where nothing about the mission changed at all.
@@ -105,6 +108,7 @@ What every later cell is measured against. Each mission's reasoning and sweep is
 | 4 | `FIRST_TRADES_FOOD` = **25🌾**, set on turn times (13 · 15 · 16 at oracle/planner/heuristic) · **Sun Stone** (the re-rated Burial) and **Calendar** (2🔬 → look at the top 3 and draw one) are `reading_seasons`' grants |
 | 5 | The culture pair halved — **Beer** 1🌾 → **1🎭** (work) · **Sun Stone** **3🔨** → **1🎭**/worker (building). The level curve holds at cumulative **10 / 30 / 70** (`CULTURE_STEP = 10`): the producers were the freshly-rated numbers and the curve the oldest, so they moved |
 | 5 | **Irrigation** keeps +1🌾 and now also charges **+1🔨 to play**, reaching work cards as well as buildings · **Elegant** is new: **+1🎭, +1 🎭 level to play**, on a culture producer of either kind |
+| 7+ | Dogs → **Hunting**: the 1🌾→1⚔️ `action` becomes a free `work` box at **1⚔️**/worker (card id still `dogs`). ⚔️ stops being bought with 🌾 and starts costing a worker and a board slot for the turn. Post-dates mission 7's pass rather than coming out of it — a trial, measured across all seven swept cells at once |
 
 The base-rate cut fixed three work-card/building pairs as a side effect — Farm now *matches* Foraging,
 Forge *doubles* Toolmaking, Archives *doubles* Storytelling. The culture pair went the other way, by

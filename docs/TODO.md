@@ -420,7 +420,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   folded `objectiveProgress`/`hasObjectiveGradient` down to the goals-average path and deleted the vacated
   coherence test. (En route: fixed a planner deadlock where a parked look-only peek — Calendar — was never
   resolved, looping a no-op `endTurn` to the action wall.)
-- **Pet the doggo** ✅ — "can you pet the dog?" easter egg: clicking the Dogs card's art band in the
+- **Pet the doggo** ✅ — "can you pet the dog?" easter egg: clicking the Hunting card's art band in the
   zoom overlay puffs floating *pet* *pet* text + a woof! bubble instead of closing. Lives in
   `CardZoomOverlay` (gated on `cardId === 'dogs'`) via a new `CardFace` `onArtClick` prop, so it works
   on every zoom surface.

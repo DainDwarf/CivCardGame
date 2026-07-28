@@ -248,9 +248,6 @@ export const CARDS: Record<string, CardDef> = {
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 1 } } },
   beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 1 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 1 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
-  // The first ⚔️ producer that is a staffed work box rather than a one-shot action — free to play like
-  // Foraging/Trader, so the worker it occupies for the turn is its whole cost. Its per-play 4⚔️ beats
-  // Dogs (1🌾 → 1⚔️), which is what makes it worth that worker.
   war_horse: { id: 'war_horse', name: 'War Horse', kind: 'work', cost: {}, workers: 1, display: { art: '🏇' }, produces: { resources: { military: 4 } } },
 
   // — Buildings —
@@ -318,7 +315,7 @@ export const CARDS: Record<string, CardDef> = {
   //   and each is re-cut at its own mission's balance pass — delete it with the last of them.
   cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
-  dogs: { id: 'dogs', name: 'Dogs', kind: 'action', cost: { resources: { food: 1 } }, display: { art: '🐕' }, effect: { resources: { military: 1 } } },
+  dogs: { id: 'dogs', name: 'Hunting', kind: 'work', cost: {}, workers: 1, display: { art: '🐕' }, produces: { resources: { military: 1 } } },
   raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } }, display: { art: '🏴' }, effect: { resources: { money: 6 } } },
   // Conquest and Road are the game's only two territory sources, so they are deliberately `action` —
   //   the one kind that takes no slot. As board cards they would need free territory to play, which a

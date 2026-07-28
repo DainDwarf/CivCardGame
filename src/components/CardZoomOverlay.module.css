@@ -22,7 +22,7 @@
   animation: zoomIn 0.16s ease-out;
 }
 
-/* "Pet the dog" easter egg (Dogs card only): a woof! speech bubble above the dog + floating
+/* "Pet the dog" easter egg (Hunting card only): a woof! speech bubble above the dog + floating
    *pet* text where you clicked. Pointer-inert so they never swallow the next pet/close click. */
 .woof {
   position: absolute;

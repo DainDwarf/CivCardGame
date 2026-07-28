@@ -30,7 +30,7 @@ export function CardZoomOverlay({
   stickerBadge?: string[];
   onClose: () => void;
 }) {
-  // "Pet the dog": clicking the Dogs card's art band puffs floating *pet* text + a woof! bubble
+  // "Pet the dog": clicking the Hunting card's art band puffs floating *pet* text + a woof! bubble
   // instead of closing. Each pet self-removes on a timer; timers are tracked so a mid-animation
   // close leaves none dangling.
   const wrapRef = useRef<HTMLDivElement>(null);
