@@ -1,22 +1,22 @@
 {
   "id": "first_temple",
   "mission": "first_temple",
-  "note": "STALE — predates the branch restructure, and its pool no longer matches what the two tips hand out: it still stocks Cave Art (cut) and Calendar (benched, unlocked by nothing), and it is missing Fire. Burial was renamed Sun Stone and re-rated (4 production, 2 culture per worker), so this deck's culture is a different card at a different rate than when it was measured. Re-cut at this mission's balance pass. Minimal: both branches cleared — every card the Stone Age hands out before its capstone, one copy each. Göbekli Tepe's own wonder is this mission's reward, not an input, and the objective doesn't require building it. Chiefdom is also unlocked by now; Settlement is the canonical throughline, Chiefdom an ad-hoc alternate.",
+  "note": "Minimal: the Founding deck plus one copy of every card the seven cleared prereqs granted — identical to the rites_rituals pool, since that node grants a sticker rather than a card. No bought copies and no stickers, though 50 Influence has arrived unspent by here. The goal's 3 population term is exactly what this deck can reach: Hut (+1) is the age's only population source and an unlock grants one copy, so Settlement's pop 2 + one Hut = 3 with no shop purchase — the softlock check this fixture exists to run, and it passes. Chiefdom is the other launchable choice and is measured ad-hoc in docs/missions/first-temple.md rather than committed, since the standing set is one cell per mission.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },
     { "cardId": "toolmaking", "count": 4 },
-    { "cardId": "bartering", "count": 2 },
     { "cardId": "bow", "count": 2 },
     { "cardId": "dogs", "count": 2 },
-    { "cardId": "storytelling", "count": 2 },
-    { "cardId": "bead_workshop", "count": 2 },
-    { "cardId": "cave_art", "count": 2 },
-    { "cardId": "hut", "count": 1 },
     { "cardId": "farm", "count": 1 },
+    { "cardId": "hut", "count": 1 },
     { "cardId": "conquest", "count": 1 },
+    { "cardId": "bead_workshop", "count": 1 },
+    { "cardId": "bartering", "count": 1 },
+    { "cardId": "beer", "count": 1 },
+    { "cardId": "storytelling", "count": 1 },
+    { "cardId": "fire", "count": 1 },
     { "cardId": "sun_stone", "count": 1 },
-    { "cardId": "calendar", "count": 1 },
-    { "cardId": "beer", "count": 1 }
+    { "cardId": "calendar", "count": 1 }
   ]
 }

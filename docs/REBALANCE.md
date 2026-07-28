@@ -62,7 +62,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 5 | *The First Trades* | ✅ | ✅ | ✅ | ✅ | [first-trades](missions/first-trades.md) |
 | 6 | `reading_seasons` | ✅ | ✅ | ✅ | ✅ | [reading-seasons](missions/reading-seasons.md) |
 | 7 | *Rites & Rituals* | ✅ | ✅ | ✅ | ✅ | [rites](missions/rites.md) |
-| 8 | `first_temple` | ⬜ | ⬜ | ⬜ | ⬜ | — |
+| 8 | `first_temple` | ✅ | ✅ | ✅ | ✅ | [first-temple](missions/first-temple.md) |
 | 9 | `finding_copper` | ⬜ | ⬜ | ⬜ | ⬜ | [copper](missions/copper.md) |
 | 10 | `masonry` | ⬜ | ⬜ | ⬜ | ⬜ | [masonry](missions/masonry.md) |
 | 11 | `pyramid` | ⬜ | ⬜ | ⬜ | ⬜ | [pyramid](missions/pyramid.md) |
@@ -81,12 +81,10 @@ Per-row notes, where the ⬜ isn't the whole story:
 - **3 · `raiders_at_border`** moved no rate of its own — the mission proved sound as authored, and what
   changed is the deck a player *arrives* with. **6 · `reading_seasons`** moved none either, and is the
   only cell where nothing about the mission changed at all.
-- **8 · `first_temple`** has a 30🪙 hoard goal (see *Re-point the money objectives*), and its committed
-  fixture is **STALE** rather than merely unreached: the Burial in it became Sun Stone at a new rate, so
-  its numbers describe a deck it no longer holds. It is the one mission past the frontier with no
-  dossier.
-- **10 · `masonry` and 11 · `pyramid` are blocked**, not merely queued — both need a food faucet that
-  doesn't exist yet (*Blocking a mission*). **12 · `accounting`** is a second hoard goal.
+- **8 · `first_temple`** kept its four-term conjunction's 🧍 and 🎭 terms and **dropped both spendable
+  ones** (30🔨, 30🪙) — see *Re-point the money objectives*. It is the age's **long** mission by design:
+  an oracle median of ~40 turns against the 11–16 band before it, accepted rather than tuned away.
+- **12 · `accounting`** is a second hoard goal.
 - **`ice_age` · `sandbox`** are infinite, so `Swept` can never mean a win rate there: read the collapse
   round instead. They are last because nothing downstream depends on them.
 
@@ -198,10 +196,12 @@ it (stone spans cols 0–5, bronze 6–10). **The age's DAG is final**, and ever
 
 Consequences that outlived the restructure:
 
-- **Money enters at Stone, not Bronze**, which reverses the plan that put it in the Bronze substrate —
-  taken in exchange for `first_temple`'s 30🪙 becoming reachable without re-pointing. The topology
-  **rule** survives intact (see *Open*); what lapses is the age it belongs to. Culture also stayed in
-  Stone rather than opening Bronze, so **what Bronze promotes is open**.
+- **Money enters at Stone, not Bronze**, which reverses the plan that put it in the Bronze substrate.
+  The topology **rule** survives intact (see *Open*); what lapses is the age it belongs to. Culture also
+  stayed in Stone rather than opening Bronze, so **what Bronze promotes is open**. ⚠️ The move was taken
+  partly to make `first_temple`'s 30🪙 reachable without re-pointing, and **that goal is now gone** — so
+  money arrives in Stone with no mission demanding it in quantity
+  ([first-temple](missions/first-temple.md) → *Open*).
 - **Both wonders stay playable** — Göbekli Tepe's `cultureLevelReq: 1` and Pyramid's `2` are play-gates,
   and the culture node sits upstream of both. `first_temple` and `pyramid` keep their 🎭 level 2 goals.
 - **Hand size stays pinned at 4 until the convergence**, culture being its only lever.
@@ -216,7 +216,7 @@ Consequences that outlived the restructure:
 - **Cave Art is stranded.** Cut from the starting collection and unlocked by nothing, so it is
   unobtainable in-game — and **nothing merges to `main` with a card stranded**. The cut is decided (it
   made Beer's 2🎭 for no 🌾, obsoleting a shipped card, and no reward slot was left to grant it from);
-  it is not yet *deleted* because six baselines still stock it (`first_temple`, `finding_copper`, `masonry`,
+  it is not yet *deleted* because five baselines still stock it (`finding_copper`, `masonry`,
   `accounting`, `roads`, `pyramid`) and would fail to load, so the card goes with the last of them to be
   re-cut.
 - **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is `it.skip`ped.** Two reasons at once,
@@ -229,16 +229,6 @@ Consequences that outlived the restructure:
 
   The assertion is the **planner's capability claim** (the greedies win Masonry 0%), not a Masonry
   balance check — so it must come back rather than be relaxed. **Un-skip before merging.**
-
-### Blocking a mission
-
-- **Population is hard-capped at 4.** The best food rate in the game is now 1🌾/worker (Foraging *and*
-  Farm), so all-hands-farming income (`pop`) crosses upkeep (`floor(pop²/4)`) at pop 4 — 4 vs 4,
-  break-even; pop 5 is 5 vs 6, already negative with every worker farming and nothing else running.
-  **Masonry's 6🧍 goal and the multi-worker wonders (Göbekli 3, Pyramid 4) are unreachable** until a
-  stronger food source ships. Whichever mission unlocks that faucet is a *hard prerequisite* for them,
-  not a balance nudge — decide it before reaching Masonry. Masonry likely also wants a territory route
-  that doesn't escalate: Road, a wider board, or a cap on Conquest's curve.
 
 ### Rates still to settle
 
@@ -271,10 +261,13 @@ Consequences that outlived the restructure:
 
 ### Placement and economy
 
-- **Re-point the money objectives.** Accounting (40🪙), Pyramid (50🪙) and Göbekli Tepe (30🪙) are
-  *hoard* goals, pushed against by `envious_population`. A one-way hub whose point is spending sits
-  awkwardly with them — playable, but the wildcard is switched off during the missions built around it.
-  Decide per mission rather than discovering it in the sweep.
+- **Re-point the money objectives.** Accounting (40🪙) and Pyramid (50🪙) are *hoard* goals, pushed
+  against by `envious_population`. A one-way hub whose point is spending sits awkwardly with them —
+  playable, but the wildcard is switched off during the missions built around it. Decide per mission
+  rather than discovering it in the sweep.
+  - ✅ **Göbekli Tepe's 30🪙 is dropped**, along with its 30🔨, leaving 4🧍 · 🎭 level 2 — the first of
+    the three resolved. Reasoning in [first-temple](missions/first-temple.md) → *Design*; the money
+    faucet+sink cancelling exactly, with the hoard gone, is logged as a strand in that dossier's *Open*.
 - **Trader's home is open.** It was `accounting`'s reward as "the money faucet that opens the money
   spine", but the spine now opens five missions earlier. Either Trader moves up, or `accounting` keeps it
   as a *better* faucet than Bead Workshop and its pitch is rewritten. Decide when the pass reaches

@@ -113,7 +113,7 @@ the same way The First Trades records its Chiefdom sweep.
   first and went to `reading_seasons` instead ([reading-seasons](reading-seasons.md) → *Design*).
   - ⚠️ **Elegant is dead on the mission that grants it, by construction.** This node's goal is a single
     term, so crossing 🎭 level 1 *ends the run* — a card gated at level 1 can never be played here. Its
-    windows are the conjunction goals downstream: `first_temple` (4 terms) and `pyramid` (3), where you
+    windows are the conjunction goals downstream: `first_temple` (2 terms) and `pyramid` (3), where you
     sit at level 1 and then 2 for many turns while grinding the other thresholds. Coherent for a
     granted-on-clear reward, but worth stating rather than discovering.
   - **The planner misprices it, harmlessly.** `sim/enablers.ts` reads `cost.cultureLevelReq` off static

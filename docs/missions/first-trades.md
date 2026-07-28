@@ -168,7 +168,8 @@ deck holds one copy of each card, so no run could build a second pair. Carried t
 
 Left as a measured observation, not a finding: **Chiefdom is the harder cell by a wide margin** (planner
 92/100 and greedy 0/100, against 100/100 for both on Settlement), failing to famine rather than
-bankruptcy. And 🪙 is demanded outside routes — 30🪙 at `first_temple`, 6🪙 in Pyramid's build cost — so
-the building keeps a job even where a route isn't worth its slot.
+bankruptcy. ⚠️ **The building's job outside routes has thinned since**: `first_temple`'s 30🪙 hoard is
+gone, leaving Pyramid's 6🪙 build cost as the age's only non-rent 🪙 demand. Tracked in
+[first-temple](first-temple.md) → *Open*.
 
 ## Polish ⬜ (not started)

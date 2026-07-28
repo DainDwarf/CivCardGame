@@ -563,23 +563,20 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // The Stone Age capstone: four thresholds met at once. The culture term reads as a *level* (like
-  //   the other culture goals) rather than the raw /30 the generic readout would show.
+  // The Stone Age capstone: two standing capacities held at once, neither of them a spendable pool —
+  //   so nothing here asks the player to stop spending. The culture term reads as a *level* (like the
+  //   other culture goals) rather than the raw /30 the generic readout would show.
   first_temple_goal: {
     id: 'first_temple_goal', name: 'Göbekli Tepe', kind: 'objective', cost: {},
     goals: [
       { icon: '🧍', measure: (G) => G.resources.population, target: 3 },
       { icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(2) },
-      { icon: '🔨', measure: (G) => G.resources.production, target: 30 },
-      { icon: '🪙', measure: (G) => G.resources.money, target: 30 },
     ],
     display: {
-      description: 'Have 3 🧍, 🎭 level 2, 30 🔨, and 30 🪙',
+      description: 'Have 3 🧍 and 🎭 level 2',
       dynamicText: (G) =>
         `🧍 ${Math.min(G.resources.population, 3)}/3 · ` +
-        `🎭 Level ${Math.min(cultureProgress(G.resources.culture).level, 2)}/2 · ` +
-        `🔨 ${Math.min(G.resources.production, 30)}/30 · ` +
-        `🪙 ${Math.min(G.resources.money, 30)}/30`,
+        `🎭 Level ${Math.min(cultureProgress(G.resources.culture).level, 2)}/2`,
     },
   },
 
@@ -601,9 +598,9 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // The Pyramid's "wealthy, cultured state" goal — like `first_temple_goal` but money-weighted, for the
-  //   Bronze money economy. The deadline that makes it a challenge is the `pharaohs_reign` threat, not
-  //   this objective (win/lose stay on their own hooks).
+  // The Pyramid's "wealthy, cultured state" goal, weighted onto the Bronze money economy. The deadline
+  //   that makes it a challenge is the `pharaohs_reign` threat, not this objective (win/lose stay on
+  //   their own hooks).
   pyramid_goal: {
     id: 'pyramid_goal', name: 'Pyramid', kind: 'objective', cost: {},
     goals: [

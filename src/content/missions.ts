@@ -273,7 +273,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'no one, yet the whole valley comes to build it: the first temple.',
     prereqs: ['rites_rituals'],
     objectiveCardId: 'first_temple_goal',
-    victoryHint: 'Reach 3 🧍 population and 🎭 culture level 2 while holding 30 🔨 and 30 🪙 at once.',
+    victoryHint: 'Reach 3 🧍 population and 🎭 culture level 2 at once.',
     failureHint: null,
     kind: 'standard',
     // Unlocks the Göbekli Tepe wonder — the age's capstone build. Influence amount provisional.

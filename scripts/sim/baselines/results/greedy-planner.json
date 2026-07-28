@@ -120,47 +120,47 @@
     "label": "first_temple",
     "policyName": "greedy",
     "runs": 100,
-    "wins": 59,
-    "winRate": 0.59,
+    "wins": 18,
+    "winRate": 0.18,
     "turns": {
-      "min": 15,
-      "mean": 97.73,
-      "median": 60,
+      "min": 8,
+      "mean": 69.51,
+      "median": 28,
       "max": 201
     },
     "meanResources": {
-      "food": 5.8,
-      "production": 23.04,
-      "science": 10.84,
-      "military": 8.19,
-      "money": 22.25,
-      "population": 2.6,
-      "culture": 76.3,
-      "territory": 2.24
+      "food": 22.57,
+      "production": 4.1,
+      "science": 11.12,
+      "military": 9.46,
+      "money": 8.64,
+      "population": 2.87,
+      "culture": 25.68,
+      "territory": 4
     },
     "defeatCauses": {
-      "stall": 21,
-      "famine": 20
+      "famine": 57,
+      "stall": 25
     },
     "cardPlays": {
-      "bow": 59,
-      "cave_art": 1273,
-      "foraging": 1386,
-      "toolmaking": 2797,
-      "jewelry": 2906,
-      "storytelling": 542,
-      "bartering": 3587,
-      "farm": 100,
-      "dogs": 381,
-      "beer": 107,
-      "conquest": 24,
-      "burial": 43,
-      "hut": 60
+      "foraging": 963,
+      "dogs": 466,
+      "beer": 123,
+      "toolmaking": 926,
+      "bow": 160,
+      "fire": 887,
+      "hut": 87,
+      "farm": 92,
+      "storytelling": 225,
+      "sun_stone": 63,
+      "bead_workshop": 31,
+      "bartering": 19
     },
     "unplayedCards": [
+      "conquest",
       "calendar"
     ],
-    "meanActions": 229.73
+    "meanActions": 109.58
   },
   {
     "label": "first_trades",
@@ -682,46 +682,45 @@
     "label": "first_temple",
     "policyName": "planner",
     "runs": 100,
-    "wins": 95,
-    "winRate": 0.95,
+    "wins": 98,
+    "winRate": 0.98,
     "turns": {
-      "min": 61,
-      "mean": 114.26,
-      "median": 109,
-      "max": 201
+      "min": 8,
+      "mean": 48.26,
+      "median": 46,
+      "max": 126
     },
     "meanResources": {
-      "food": 4.1,
-      "production": 30.51,
-      "science": 5.34,
-      "military": 4.61,
-      "money": 30.34,
-      "population": 2.95,
-      "culture": 76.88,
-      "territory": 2.88
+      "food": 16.87,
+      "production": 4.84,
+      "science": 8.22,
+      "military": 4.6,
+      "money": 3.5,
+      "population": 3,
+      "culture": 29.43,
+      "territory": 6.32
     },
     "defeatCauses": {
-      "stall": 5
+      "famine": 2
     },
     "cardPlays": {
-      "bow": 151,
-      "cave_art": 499,
-      "foraging": 5541,
-      "toolmaking": 2973,
-      "jewelry": 2124,
-      "storytelling": 267,
-      "bartering": 1214,
-      "farm": 100,
-      "dogs": 224,
-      "hut": 95,
-      "beer": 180,
-      "conquest": 88,
-      "burial": 92
+      "dogs": 729,
+      "foraging": 1118,
+      "beer": 829,
+      "storytelling": 310,
+      "toolmaking": 1347,
+      "bow": 197,
+      "fire": 642,
+      "conquest": 232,
+      "farm": 90,
+      "hut": 100,
+      "bead_workshop": 96,
+      "bartering": 96,
+      "sun_stone": 99,
+      "calendar": 65
     },
-    "unplayedCards": [
-      "calendar"
-    ],
-    "meanActions": 252.94
+    "unplayedCards": [],
+    "meanActions": 112.25
   },
   {
     "label": "first_trades",
