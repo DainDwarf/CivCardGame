@@ -115,17 +115,12 @@ export function isDeckable(card: CardDef): boolean {
   );
 }
 
-/** Whether a card enters the **tableau** when played. The single choke point for the building/wonder
- *  placement branch (`moves.ts`, `Board.tsx`, `CardFace.tsx`). */
+/** Whether a card enters the **tableau** when played, taking one territory slot for the rest of the
+ *  run. The single choke point for both the building/wonder placement branch (`moves.ts`,
+ *  `Board.tsx`, `CardFace.tsx`) and the territory cap (`rules/territory.ts`, `playability.ts`) — the
+ *  tableau is the only board zone territory sizes. */
 export function isStructure(card: CardDef): boolean {
   return card.kind === 'building' || card.kind === 'wonder';
-}
-
-/** Whether a card *stands on the board and takes a territory slot* when played — a building or wonder
- *  in the tableau, a Work box for the turn, a standing trade route. The single choke point for the
- *  territory cap (`rules/territory.ts`, `playability.ts`, `Board.tsx`). */
-export function occupiesTerritory(card: CardDef): boolean {
-  return isStructure(card) || card.kind === 'work' || card.kind === 'trade';
 }
 
 /** Whether a card *produces and is staffed at upkeep*. A card-kind predicate; distinct from

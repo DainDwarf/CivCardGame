@@ -1,5 +1,5 @@
 import { CORE_KEYS, STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, type GameState, type Resources } from '../rules';
-import { CARDS, occupiesTerritory, type CardDef } from '../content/cards';
+import { CARDS, isStructure, type CardDef } from '../content/cards';
 import { objectiveProgress } from './objective';
 import { OBJECTIVE_WEIGHT } from './value';
 
@@ -327,11 +327,11 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // spent), so the two credits can't deter building what they jointly enable — the payoff materializes only
   // once both pools are grown, and the search grows both.
 
-  // Territory is the slot for anything that stands on the board — a building or wonder, a Work box for
-  // the turn, a trade route — so it reads the best goal output over *all* of those in the deck: a
+  // Territory is the slot a structure stands in — and only a structure, since a Work box and a trade
+  // route cost none — so it reads the best goal output over the deck's buildings and wonders: a
   // self-sufficient grant (Hut/House, on `effect`) or a staffed producer (Farm/Forge, on `produces`) alike.
   if (goalValued.territory === undefined) {
-    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, occupiesTerritory, true) : 0);
+    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, isStructure, true) : 0);
     if (w > 0) {
       weight.territory = w;
       cap.territory = CAPACITY_CAP;
@@ -396,9 +396,9 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
     }
   }
 
-  // Durable producers — the board cards that keep their territory slot for the rest of the run and yield
-  // every round: a structure in the tableau or a trade route in its own zone. A Work box takes a slot too
-  // but gives it back at end of turn, so it earns nothing here; its single turn of output is what the
+  // Durable producers — the board cards that stand for the rest of the run and yield every round: a
+  // structure in the tableau or a trade route in its own zone. A Work box comes back off the board at
+  // end of turn, so it earns nothing here; its single turn of output is what the
   // one-turn leaf already prices. Value one round of `produces` at the per-unit worth the model already
   // carries — `valued` for a goal resource (whose core weight the consumables loop deliberately leaves
   // unset), `weight` for one that is only a conversion input — then credit `PRODUCER_TAIL_HORIZON` of them.
@@ -416,7 +416,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
       if (v > 0) unitValue[k] = v;
     }
     for (const card of Object.values(CARDS)) {
-      if (!ids.has(card.id) || !occupiesTerritory(card) || card.kind === 'work' || !card.produces) continue;
+      if (!ids.has(card.id) || !(isStructure(card) || card.kind === 'trade') || !card.produces) continue;
       let perRound = 0;
       for (const [k, v] of Object.entries(unitValue) as [keyof Resources, number][]) {
         perRound += positive(card.produces.resources?.[k]) * v;

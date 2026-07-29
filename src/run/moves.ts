@@ -39,8 +39,8 @@ export function playCard(
 
   // Resolve effects before routing to discard — a draw that reshuffles G.discard cannot
   // return the not-yet-filed sacrifices back into the deck.
-  // A building/wonder card is placed in the tableau; a work card sticks onto the board and produces
-  // only while staffed (at upkeep); a trade card opens a standing route outside the territory cap;
+  // A building/wonder card is placed in the tableau, the one zone territory caps; a work card sticks
+  // onto the board and produces only while staffed (at upkeep); a trade card opens a standing route;
   // everything else resolves its effect immediately through the single resolver path.
   if (isStructure(card)) {
     // Place the structure (auto-staffing from existing idle pop), then resolve its one-shot

@@ -120,7 +120,8 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   counters? }`, so every copy has a stable per-run **instance id** and its own per-copy `counters` via
   `getCounter`/`bumpCounter`), the three board zones — `tableau`, `workZone` (played `work` awaiting
   staffing) and `tradeRoutes`, each a `PlacedCard[]` (`CardInstance` + `workers`, `0` on a box that
-  takes none), so `territory.ts`'s `placedCards` reads them as one list — plus `threats`,
+  takes none), so `territory.ts`'s `placedCards` reads them as one list (a board-wide read, *not* the
+  territory cap — only the tableau spends land) — plus `threats`,
   `objective`, and `pendingInteraction` (a suspended
   card effect; while set, `endTurn` no-ops and undo is blocked). `instancesFromCardIds` mints;
   `blankState()` builds an empty one; `cloneState()` is the snapshot primitive every move, undo entry
@@ -162,7 +163,7 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   derives a card's value from `cost` → `produces`. So a new *kind* of payment earns a field here once,
   while new *amounts* need no schema change at all.
 - **`playability.ts`** — `unplayableReason`: `cost.ts`'s price/prerequisite check, then the one gate that
-  isn't a cost — board room (`occupiesTerritory` ∧ no `freeTerritory`). The prod legality gate
+  isn't a cost — board room (`isStructure` ∧ no `freeTerritory`). The prod legality gate
   `sim/actions.ts` reuses.
 - **`effects.ts`** — the **resolver spine**. A `CardEffect` is the one "what happens" descriptor,
   carried in four `CardDef` timing slots: play-time `effect`, `produces` (each round the card stands —
@@ -202,9 +203,8 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
 - **`tradeRoutes.ts`** — the player-played counterpart to `threats.ts`: `openTradeRoute` files a played
   `trade` card into `G.tradeRoutes` (resolving its one-time entry `effect`), where the `endTurn`
   broadcast ticks it like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling.
-  A route holds a **territory slot** for the run like a building, but takes **no workers**. Nothing
-  removes one, so it is bounded twice: by the slots the board has, and by the rent (an unpayable one
-  collapses into bankruptcy).
+  A route takes **no workers** and **no territory**, and nothing removes one — so the rent alone
+  bounds the zone (an unpayable one collapses into bankruptcy).
 - **`objective.ts`** — the win counterpart to `threats.ts`: `seedObjective` seeds the mission's
   objective card into `G.objective`; `objectiveMet` folds its declarative `goals` (`goalMet`/
   `goalProgress`/`goalsReadout`; a non-threshold goal carries its own bespoke `met`). Bus-driven:
@@ -215,12 +215,13 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   recur), and `discardWorkZone`. `settleEndOfTurn` is the single choke point chaining
   resolve-hand-events → recycle-hand → file-work-zone → flush, shared by `engine.ts`'s `endTurn` and
   the UI preview `projectedDelta` so the two can't drift.
-- **`territory.ts`** — the **play area** and its one cap. `placedCards` is the single read-path for
-  everything standing on the board (tableau ∪ workZone ∪ tradeRoutes — not the mission's
-  threats/objective); `usedTerritory`/`freeTerritory` derive the cap over it. Every kind that stands
-  there takes one slot (`cards.ts`'s `occupiesTerritory`, the gate in `playability.ts`) — permanently
-  for a building/wonder/route, for the turn for a Work box — and an `action` takes none, which is why
-  the territory-granting cards are actions: a board card couldn't be played to escape a full board.
+- **`territory.ts`** — the **play area** and the tableau's cap, two separate things. `placedCards` is
+  the single read-path for everything standing on the board (tableau ∪ workZone ∪ tradeRoutes — not
+  the mission's threats/objective), used by the instance-id scan and the UI. The cap is narrower:
+  `usedTerritory`/`freeTerritory` measure the **tableau alone** (`cards.ts`'s `isStructure`, the gate
+  in `playability.ts`), so land is what buildings and wonders compete for. The other two board zones
+  are uncapped and bounded by their own economics instead — a Work box by the workers free to run it,
+  a trade route by its rent.
 - **`deckBuilder.ts`** — deck *construction* in terms of the **`DeckCard`** variant (a cardId + the
   stickers a copy carries — also `RunConfig.deck`'s element shape, so it's one identity on both sides
   of the contract). A `DeckDef.cards` entry is a meta instance id; `addCard`/`removeCard` take a
@@ -290,8 +291,8 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   one-shot `effect` and is exiled to `removed` with its `upkeep` disaster pre-empted, while one **left
   unplayed** fires `upkeep` at end of turn and files to `discard` so it recurs (`moves.playCard` /
   `upkeep.ts`'s `resolveHandEvents`). `isDeckable(card)` is the single "a card the player builds decks
-  with" predicate (excludes event/threat/objective); `occupiesTerritory(card)` the single "takes a slot
-  in the play area" one (`territory.ts`). Holds the Paleolithic starting set + the first
+  with" predicate (excludes event/threat/objective); `isStructure(card)` the single "enters the tableau
+  and takes a territory slot" one (`territory.ts`). Holds the Paleolithic starting set + the first
   Stone Age structures (Farm/Hut/Sun Stone, the Göbekli Tepe wonder) + the endless missions' own cards.
 - **`decks.ts`** — `DeckDef` (`cards` = meta instance ids) plus `DeckSeed`/`DEFAULT_DECKS` (authored in
   plain cardIds, resolved by `buildSeedDecks`). A fresh player starts with one editable deck — the

@@ -40,9 +40,9 @@ export function enumerateActions(G: GameState): SimAction[] {
   }
 
   const idle = freePopulation(G);
-  // Every box in the play area that can hold workers. A trade route stands in a slot like the rest but
-  // takes none, so it is filtered out here rather than left out by naming only the other two zones —
-  // `findStaffable`, which the moves resolve through, would reject it anyway.
+  // Every box in the play area that can hold workers. A trade route stands on the board like the rest
+  // but takes none, so it is filtered out here rather than left out by naming only the other two zones
+  // — `findStaffable`, which the moves resolve through, would reject it anyway.
   const staffables = placedCards(G).filter((p) => isStaffable(CARDS[p.cardId]));
   for (const s of staffables) {
     const cap = workerCapOf(s);

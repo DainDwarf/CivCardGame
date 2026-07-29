@@ -95,9 +95,9 @@ function decide(state: RunState): SimAction {
     if (best) return best;
   }
 
-  // 3. Commit a free slot to durable economy growth — cheapest structure first. Work cards and routes
-  //    take slots too, but they fall through to the general best-value step below: a free slot goes to
-  //    the permanent producer first, and a Work box only fills what's left over.
+  // 3. Commit a free slot to durable economy growth — cheapest structure first. A slot is the one
+  //    thing only a structure can spend, so it is claimed here before the general best-value step
+  //    below gets to weigh a work box or a route, neither of which competes for it.
   if (freeTerritory(G) > 0) {
     const buildings = playable.filter((p) => isStructure(p.card));
     const best = bestPlay(G, buildings, (c) => -bundleValue(c.cost.resources ?? {}), -Infinity);

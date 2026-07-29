@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { freeTerritory, usedTerritory } from './territory';
+import { freeTerritory, placedCards, usedTerritory } from './territory';
 import { unplayableReason } from './playability';
-import { settleEndOfTurn } from './upkeep';
 import { addWork } from './population';
 import { openTradeRoute } from './tradeRoutes';
 import { blankState, type BuildingInstance } from './state';
@@ -25,17 +24,7 @@ describe('territory', () => {
     expect(usedTerritory(G)).toBe(2);
   });
 
-  it('work boxes and trade routes fill slots alongside buildings', () => {
-    const G = blankState('test');
-    G.resources.territory = 5;
-    G.tableau = [b('test_food', 1)];
-    addWork(G, mint(G, 'test_work'));
-    openTradeRoute(G, mint(G, 'test_trade'));
-    expect(usedTerritory(G)).toBe(3);
-    expect(freeTerritory(G)).toBe(2);
-  });
-
-  it('free territory is the cap minus what stands on the board', () => {
+  it('free territory is the cap minus what is built', () => {
     const G = blankState('test');
     G.resources.territory = 3;
     G.tableau = [b('test_food', 1), b('test_prod', 1)];
@@ -44,24 +33,29 @@ describe('territory', () => {
     expect(freeTerritory(G)).toBe(0);
   });
 
-  it('a full board blocks every kind that stands on it, but never an action', () => {
+  it('work boxes and trade routes stand on the board without spending territory', () => {
+    const G = blankState('test');
+    G.resources.territory = 2;
+    G.tableau = [b('test_food', 1)];
+    addWork(G, mint(G, 'test_work'));
+    openTradeRoute(G, mint(G, 'test_trade'));
+    // All three are on the board...
+    expect(placedCards(G)).toHaveLength(3);
+    // ...but only the building is on the land.
+    expect(usedTerritory(G)).toBe(1);
+    expect(freeTerritory(G)).toBe(1);
+  });
+
+  it('a full board blocks a structure, but nothing else', () => {
     const G = blankState('test');
     G.resources = { ...G.resources, production: 20, money: 20, science: 20, territory: 1 };
     G.tableau = [b('test_food', 1)];
     const self = { id: 99, cardId: 'unused' };
-    for (const card of [FIXTURE_CARDS.test_food, FIXTURE_CARDS.test_wonder, FIXTURE_CARDS.test_work, FIXTURE_CARDS.test_trade]) {
+    for (const card of [FIXTURE_CARDS.test_food, FIXTURE_CARDS.test_wonder]) {
       expect(unplayableReason(G, card, self)).toEqual({ kind: 'territory' });
     }
-    expect(unplayableReason(G, FIXTURE_CARDS.test_action, self)).toBeNull();
-  });
-
-  it('a work box frees its slot at end of turn while a route keeps its own', () => {
-    const G = blankState('test');
-    G.resources.territory = 4;
-    addWork(G, mint(G, 'test_work'));
-    openTradeRoute(G, mint(G, 'test_trade'));
-    expect(usedTerritory(G)).toBe(2);
-    settleEndOfTurn(G);
-    expect(usedTerritory(G)).toBe(1);
+    for (const card of [FIXTURE_CARDS.test_work, FIXTURE_CARDS.test_trade, FIXTURE_CARDS.test_action]) {
+      expect(unplayableReason(G, card, self)).toBeNull();
+    }
   });
 });

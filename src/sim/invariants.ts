@@ -55,8 +55,9 @@ export function assertRunInvariants(G: GameState, ctx: InvariantContext = {}): v
   }
   if (freePopulation(G) < 0) fail(`negative free population (${freePopulation(G)})`);
 
-  // The board never holds more than its territory. Every placement routes through `unplayableReason`'s
-  // cap gate and nothing lowers the pool, so an overfull board means a placement path skipped the gate.
+  // The tableau never holds more than its territory. Every placement routes through
+  // `unplayableReason`'s cap gate and nothing lowers the pool, so an overfull tableau means a
+  // placement path skipped the gate.
   if (usedTerritory(G) > G.resources.territory)
-    fail(`board holds ${usedTerritory(G)} cards over ${G.resources.territory} territory`);
+    fail(`tableau holds ${usedTerritory(G)} structures over ${G.resources.territory} territory`);
 }

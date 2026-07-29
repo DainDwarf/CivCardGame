@@ -17,7 +17,7 @@ import {
   unplayableReason,
 } from '../rules';
 import type { CollapseReason } from '../rules';
-import { CARDS, isStaffable, occupiesTerritory, type CardDef } from '../content/cards';
+import { CARDS, isStaffable, isStructure, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
 import { BOARD_STICKERS } from '../content/boardStickers';
 import { BOARDS } from '../content/boards';
@@ -1014,13 +1014,12 @@ export function Board({
       rejectShake(d.key, reason);
       return;
     }
-    // A card that stands on the board (building/wonder, Work, trade route) drops into the slot under
-    // the release point (or the nearest free slot if that one's taken); the reconcile effect places
-    // the new instance there. An action occupies no slot, so it needs no placement.
+    // A structure drops into the slot under the release point (or the nearest free slot if that one's
+    // taken); the reconcile effect places the new instance there. Nothing else needs a slot chosen.
     // This must be captured now, at the drop point — not after the discard-cost branch below, which
     // can defer the actual moves.playCard call until a later click, by which point the release
     // position is long gone.
-    if (occupiesTerritory(card)) {
+    if (isStructure(card)) {
       // Use the card's own center, not the raw cursor — the cursor can sit anywhere within the
       // card depending on where it was grabbed, which otherwise skews "closest slot" toward
       // wherever the grab point happened to land instead of where the card visually rests.

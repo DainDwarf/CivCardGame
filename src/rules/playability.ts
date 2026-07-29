@@ -1,4 +1,4 @@
-import { occupiesTerritory, type CardDef } from '../content/cards';
+import { isStructure, type CardDef } from '../content/cards';
 import { costReason, type CostContext, type UnplayableReason } from './cost';
 import { freeTerritory } from './territory';
 import type { CardInstance, GameState } from './state';
@@ -12,6 +12,6 @@ export function unplayableReason(G: GameState, card: CardDef, self: CardInstance
   const ctx: CostContext = { G, self };
   const priced = costReason(card, ctx);
   if (priced) return priced;
-  if (occupiesTerritory(card) && freeTerritory(G) <= 0) return { kind: 'territory' };
+  if (isStructure(card) && freeTerritory(G) <= 0) return { kind: 'territory' };
   return null;
 }
