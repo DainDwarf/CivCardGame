@@ -44,7 +44,7 @@ export interface StrategicEntry {
 /** The 3 strategic gauges — never spent; they define the shape of your civilization. */
 export const CODEX_STRATEGIC: StrategicEntry[] = [
   { key: 'population', name: 'Population', role: 'You need population to work the land and power your buildings. But a bigger population needs more food, so be wary of overextending!' },
-  { key: 'territory', name: 'Territory', role: 'The land you control, and the size of your board. Everything that generates resources takes one slot — a building, a wonder, a trade route, or a work card for the turn it is out. Expand it to make room for more.' },
+  { key: 'territory', name: 'Territory', role: 'The land you control, and how much you can build on it. Every building and wonder takes one slot for the rest of the run. Work cards and trade routes take none. Expand it to make room for more.' },
   { key: 'culture', name: 'Culture', role: 'How much your civilization shines. Each culture level raises your hand size, and some cards require a minimum culture level to play.' },
 ];
 
@@ -76,7 +76,7 @@ export const CODEX_CARD_KINDS: CardKindEntry[] = [
     kind: 'work',
     name: 'Work',
     definition:
-      'Playing one takes a territory slot for one turn. Assign workers to it just like a building; a staffed work card produces its output at the end of the round, then returns to the discard pile and frees its slot again.',
+      'Play one onto the board and assign workers to it just like a building — but it costs no territory. A staffed work card produces its output at the end of the round, then returns to the discard pile.',
   },
   {
     kind: 'action',
@@ -121,6 +121,6 @@ export interface GlossaryEntry {
 export const CODEX_GLOSSARY: GlossaryEntry[] = [
   { term: 'Discard cost', definition: 'You must discard that many other cards from your hand to play it.' },
   { term: 'Culture requirement', definition: 'The card can only be played once your culture has reached the required level. Culture is not consumed.' },
-  { term: 'Territory', definition: 'How many cards your board can hold at once. Buildings, wonders and trade routes hold a slot for the rest of the run; a work card holds one for the turn. Actions take none.' },
+  { term: 'Territory', definition: 'How many buildings and wonders your board can hold at once — each takes a slot for the rest of the run. Work cards, trade routes and actions take none.' },
   { term: 'Single use', definition: 'Instead of being discarded, this card is removed from the run once used.' },
 ];

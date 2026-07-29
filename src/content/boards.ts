@@ -35,36 +35,34 @@ export const ORIGIN_BOARD_ID: BoardId = 'tribe';
  * `unlockBoardIds` rewards — `chiefdom`, the first military-leaning government, is unlocked by the
  * "Raiders at the Border" mission, where the arc teaches board choice (Chiefdom vs. the settled
  * government at launch). `settlement` in turn upgrades into `city` — the Bronze Age government — on
- * clearing the "Masonry" mission. All four boards' numbers are provisional; the territory figures in
- * particular are a first pass at the unified cap and are the content pass's to measure. They track
- * each board's starting population: a staffable box is only worth a slot if a worker can run it, so
- * territory far above population would leave the cap unreachable and the choice of what to spend a
- * slot on unfelt. `tribe` sits at exactly its population so the very first mission has to choose
- * which two things its two people do; the settled line keeps a slot of slack. `chiefdom` inverts it
- * deliberately — see its own note.
+ * clearing the "Masonry" mission. All four boards' numbers are provisional and unmeasured against the
+ * split cap; the territory figures in particular are the content pass's to settle. Territory now buys
+ * *buildings* alone — work and trade cost none — so it is a building budget rather than a whole-board
+ * one, and the numbers are back to what they were before the caps were merged. `tribe` starts with
+ * none at all: the origin deck has no buildings to place, so land is something the opening arc goes
+ * out and takes (Conquest or Road) rather than something it is handed.
  */
 export const BOARDS: Record<BoardId, BoardDef> = {
   tribe: {
     id: 'tribe',
     name: 'Tribe',
-    resources: { food: 10, production: 0, science: 0, military: 0, money: 0, population: 2, territory: 2, culture: 0 },
+    resources: { food: 10, production: 0, science: 0, military: 0, money: 0, population: 2, territory: 0, culture: 0 },
   },
   settlement: {
     id: 'settlement',
     name: 'Settlement',
-    resources: { food: 10, production: 5, science: 0, military: 0, money: 0, population: 2, territory: 4, culture: 0 },
+    resources: { food: 10, production: 5, science: 0, military: 0, money: 0, population: 2, territory: 2, culture: 0 },
   },
   chiefdom: {
     id: 'chiefdom',
     name: 'Chiefdom',
-    // The one board whose territory sits *below* its population, so a worker starts with nowhere to
-    // work. Its 6⚔️ is exactly two plays of one Conquest copy (2⚔️ doubling per play), which is what
-    // buys the missing room — the board states its strategy as a shortage rather than a bonus.
-    resources: { food: 8, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 2, culture: 0 },
+    // Landless like Tribe, but its 6⚔️ is exactly two plays of one Conquest copy (2⚔️ doubling per
+    // play) — the board hands you the means to take room rather than the room itself.
+    resources: { food: 8, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 0, culture: 0 },
   },
   city: {
     id: 'city',
     name: 'City',
-    resources: { food: 12, production: 10, science: 0, military: 0, money: 2, population: 2, territory: 5, culture: 0 },
+    resources: { food: 12, production: 10, science: 0, military: 0, money: 2, population: 2, territory: 2, culture: 0 },
   },
 };

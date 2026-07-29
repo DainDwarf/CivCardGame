@@ -311,14 +311,13 @@ export const CARDS: Record<string, CardDef> = {
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
   dogs: { id: 'dogs', name: 'Hunting', kind: 'work', cost: {}, workers: 1, display: { art: '🐕' }, produces: { resources: { military: 1 } } },
   raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } }, display: { art: '🏴' }, effect: { resources: { money: 6 } } },
-  // Conquest and Road are the game's only two territory sources, so they are deliberately `action` —
-  //   the one kind that takes no slot. As board cards they would need free territory to play, which a
-  //   board already full of buildings can never offer, trapping the run with no way to expand.
   conquest: {
-    id: 'conquest', name: 'Conquest', kind: 'action',
+    id: 'conquest', name: 'Conquest', kind: 'work', workers: 1,
     display: { art: '🗡️', dynamicRule: 'cost doubles per use' },
-    // The `plays` counter rides with the instance through discard→deck, so the escalation is per
-    //   *copy*: a second owned Conquest climbs on its own schedule.
+    // The `plays` counter rides with the instance everywhere it goes — onto the board, back to the
+    //   discard, round to the deck — so the escalation is per *copy*: a second owned Conquest climbs
+    //   on its own schedule. Bumping in `produces` rather than at play means an unstaffed box, which
+    //   never ticks and so takes no land, doesn't raise the price either.
     cost: {
       resources: { military: 2 },
       resolve: ({ self }, base) => ({
@@ -326,15 +325,16 @@ export const CARDS: Record<string, CardDef> = {
         resources: scaleResources(base.resources ?? {}, 2 ** getCounter(self, 'plays')),
       }),
     },
-    effect: { resources: { territory: 1 }, resolve: (ctx) => { bumpCounter(ctx.self, 'plays'); } },
+    produces: { resources: { territory: 1 }, resolve: (ctx) => { bumpCounter(ctx.self, 'plays'); } },
   },
 
-  // Road: Conquest's economic twin — the same +1 territory, paid in 🪙+🔨 instead of ⚔️, so expansion
-  //   has a trade route as well as a war party.
+  // Road: Conquest's economic twin — the same worker for the turn and the same +1 territory, paid in
+  //   🪙+🔨 instead of ⚔️, so expansion has a trade route as well as a war party.
   road: {
-    id: 'road', name: 'Road', kind: 'action', cost: { resources: { money: 3, production: 3 } },
+    id: 'road', name: 'Road', kind: 'work', workers: 1,
+    cost: { resources: { money: 3, production: 3 } },
     display: { art: '🛣️' },
-    effect: { resources: { territory: 1 } },
+    produces: { resources: { territory: 1 } },
   },
 
   fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { discard: 1 }, display: { art: '🔥' }, effect: { resources: { science: 1 } } },
