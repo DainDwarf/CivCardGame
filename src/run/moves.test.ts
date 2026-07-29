@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { assignWorker, playCard, toggleStaffing, transferWorker } from './moves';
-import { blankState, drawCard, instancesFromCardIds, type GameState } from '../rules';
+import { blankState, bumpCounter, currentCost, drawCard, getCounter, instancesFromCardIds, scaleResources, settleEndOfTurn, type GameState } from '../rules';
 import { installCards, installFixtures, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
+import { applyUpkeep } from '../rules/upkeep';
 import type { CardDef } from '../content/cards';
 
 beforeAll(installFixtures);
@@ -14,6 +15,23 @@ const PLACEMENT_BUILDING = {
   hut_fixture: {
     id: 'hut_fixture', name: 'Hut Fixture', kind: 'building' as const,
     cost: { resources: { production: 4 } }, workers: 0, effect: { resources: { population: 1 } },
+  },
+};
+
+// A work card whose price doubles per completed use, counted on this copy (Conquest's mechanism).
+// The bump lives in `produces`, which only runs for a *staffed* box — so an idle one costs nothing
+// and charges nothing. Synthetic rather than the real card so a rebalance can't retune the assertion.
+const ESCALATING_WORK: Record<string, CardDef> = {
+  escalating_work: {
+    id: 'escalating_work', name: 'Escalating Work', kind: 'work', workers: 1,
+    cost: {
+      resources: { military: 2 },
+      resolve: ({ self }, base) => ({
+        ...base,
+        resources: scaleResources(base.resources ?? {}, 2 ** getCounter(self, 'plays')),
+      }),
+    },
+    produces: { resources: { territory: 1 }, resolve: (ctx) => { bumpCounter(ctx.self, 'plays'); } },
   },
 };
 
@@ -242,6 +260,56 @@ describe('playCard: per-instance card state (a self-scaling card)', () => {
     expect(G.hand[0].counters?.plays).toBe(1); // its counter rode along with it
     play(G, 'test_growing'); // now +2 (plays was 1) -> total 3
     expect(G.resources.food).toBe(3);
+  });
+
+  it("a work card's counter survives the board, so an escalating price actually escalates", () => {
+    installCards(ESCALATING_WORK);
+    try {
+      const G = blankState('test');
+      G.hand = instancesFromCardIds(['escalating_work']); // id 1
+      G.deck = [];
+      G.resources.population = 1;
+      G.resources.military = 2;
+
+      const territory0 = G.resources.territory;
+      play(G, 'escalating_work'); // auto-staffs the one worker
+      expect(G.resources.military).toBe(0); // first play charges the base 2
+      applyUpkeep(G); // the staffed box produces: +1 territory, plays -> 1
+      expect(G.resources.territory).toBe(territory0 + 1);
+      settleEndOfTurn(G); // files the box to discard
+
+      drawCard(G); // deck empty -> the same copy reshuffles back and is drawn
+      const self = G.hand[0];
+      expect(getCounter(self, 'plays')).toBe(1);
+      // The whole point of the round trip: this copy now quotes double.
+      expect(currentCost(ESCALATING_WORK.escalating_work, { G, self }).resources?.military).toBe(4);
+    } finally {
+      uninstallCards(ESCALATING_WORK);
+    }
+  });
+
+  it('an unstaffed work box takes nothing and so charges nothing next time', () => {
+    installCards(ESCALATING_WORK);
+    try {
+      const G = blankState('test');
+      G.hand = instancesFromCardIds(['escalating_work']);
+      G.deck = [];
+      G.resources.population = 0; // nothing to staff it with
+      G.resources.military = 2;
+
+      const territory0 = G.resources.territory;
+      play(G, 'escalating_work');
+      applyUpkeep(G); // idle box never ticks, so it neither yields nor counts
+      expect(G.resources.territory).toBe(territory0);
+      settleEndOfTurn(G);
+
+      drawCard(G);
+      const self = G.hand[0];
+      expect(getCounter(self, 'plays')).toBe(0);
+      expect(currentCost(ESCALATING_WORK.escalating_work, { G, self }).resources?.military).toBe(2);
+    } finally {
+      uninstallCards(ESCALATING_WORK);
+    }
   });
 });
 
