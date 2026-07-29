@@ -427,8 +427,11 @@ answers no human can play enough games to reach. It re-implements **no** game lo
 `rules/rng.ts`'s `randInt` — the one seam.
 
 - **`actions.ts`** — `enumerateActions(G)`, the shared legality enumeration, reusing the prod gate
-  `rules/playability.ts`'s `unplayableReason` (never a re-derived copy) and returning canonical extra
-  args; with a `pendingInteraction` parked it returns *only* the answer actions, so no policy deadlocks.
+  `rules/playability.ts`'s `unplayableReason` (never a re-derived copy); with a `pendingInteraction`
+  parked it returns *only* the answer actions, so no policy deadlocks. A discard-cost play enumerates
+  one action per **distinct sacrifice** (`enumeratePlays`, deduped by `state.ts`'s `contentKey`), so
+  *which* card is given up is a decision each policy makes rather than a fixed pick every search
+  inherits — `canonicalPlay` remains as the single representative the heuristic ladder takes.
 - **`invariants.ts`** — `assertRunInvariants` (bus drained · unique instance ids · staffing/population
   bounds — deliberately **not** resource non-negativity, since a collapse ending legitimately leaves a
   negative pool), run after every action. The random policy doubles as a crash/illegal-state fuzzer,

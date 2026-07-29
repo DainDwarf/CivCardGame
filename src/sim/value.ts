@@ -56,9 +56,12 @@ export const OBJECTIVE_WEIGHT = W.objective;
  */
 function permanentDelta(G: GameState): Resources {
   const clone = cloneState(G);
-  clone.workZone = []; // drop this-turn-only work-box production before running upkeep
+  // Drop both transient zones before running upkeep: this-turn-only work-box production, and the hand,
+  // whose unplayed events would otherwise fire their drain inside `applyUpkeep` and read as permanent.
+  clone.workZone = [];
+  clone.hand = [];
   applyUpkeep(clone); // tableau production − threat drains − building maintenance − population food
-  return subtractResources(clone.resources, G.resources); // settleEndOfTurn skipped: no hand events
+  return subtractResources(clone.resources, G.resources); // settleEndOfTurn skipped: nothing left to recycle
 }
 
 /**

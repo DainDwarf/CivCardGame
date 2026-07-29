@@ -496,16 +496,26 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   zoom overlay puffs floating *pet* *pet* text + a woof! bubble instead of closing. Lives in
   `CardZoomOverlay` (gated on `cardId === 'dogs'`) via a new `CardFace` `onArtClick` prop, so it works
   on every zoom surface.
-
-## Jot — `permanentDelta` comment/code mismatch (which side is authoritative?)
-
-`sim/value.ts`'s `permanentDelta` comment says it drops the *transient* contributors — "the work zone
-… **and the hand** (an unplayed event's drain is hand-contingent, not permanent)" — but the code only
-sets `clone.workZone = []`. It still runs `applyUpkeep`, whose `resolveHandEvents` fires any unplayed
-`event`'s `upkeep`, so a hand event's drain **does** land in the band-3 permanent buffer. Either the
-comment is stale (add `clone.hand = []` to match it) or the code is intended and the comment is wrong.
-A band-3 (survival-buffer) question, not a perf one — decide which is authoritative. Found while
-profiling the oracle's clone cost (the two `scoreState` projections).
+- **A discard cost's target is a searched decision** ✅ — `enumerateActions` fixed the sacrifice to the
+  lowest-index other-hand cards, so no policy (oracle included) could ever *choose* to ditch an unplayed
+  event with Fire and dodge its drain — a real line, since `resolveHandEvents` scans `G.hand` only and a
+  tablet in the discard neither drains nor escalates. Now `enumeratePlays` emits one action per **distinct
+  sacrifice**, deduped by `contentKey` so four identical copies are one choice while two copies at
+  different counter levels are two; `canonicalPlay` stays as the heuristic ladder's single representative,
+  and `randomPolicy`'s own re-randomization went away as a now-duplicate mechanism. Combination growth is
+  deliberately unbounded (only a `discard: 1` card exists) with a warning where it would bite. Measured on
+  the Writing player deck: greedy 10 → **22%**, planner 82 → 80%, oracle/prover 10/10 either way but ~1
+  turn faster. The **whole** committed baseline set was re-swept at the standing protocol, and it moved
+  exactly where the two mechanisms reach: the five cells stocking Fire, plus `raiders_at_border` (greedy
+  100 → 99%), the only other cell whose mission seeds `event` cards for `permanentDelta` to have been
+  mis-buffering. The six cells with neither came back **byte-identical** — the tightest confirmation
+  available that nothing else shifted. Accounting's oracle row moved 90 → 70% @10: **cause unattributed**
+  between the two changes (`scoreState` is also the beam's ranking heuristic), though a `prover`
+  diagnostic rules out the search budget — its declines are `deadEnd`/`depth`, never `budget`.
+- **`permanentDelta` counted a hand event's drain as permanent** ✅ — the resolved jot: the *comment* was
+  authoritative, so `clone.hand = []` joins `clone.workZone = []` in `sim/value.ts`. Band 3 was buffering
+  ~3 turns against a one-round, hand-contingent drain (a 100-point swing on the pinning test); the drain
+  still reads at collapse scale in band 2, which projects the *actual* next turn.
 
 
 ## Jot — `scoreState` credits a goal resource whose own accumulation is the threat

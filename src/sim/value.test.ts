@@ -95,6 +95,37 @@ describe('scoreState', () => {
     expect(scoreState(withDrain)).toBeLessThan(scoreState(noDrain));
   });
 
+  it('treats an unplayed event in hand as transient, not as permanent drain (band 3)', () => {
+    // `test_event` bleeds 2⚔️ while it sits unplayed, but it leaves the hand this round either way (played,
+    // sacrificed, or auto-resolved), so `permanentDelta` must not buffer against it — otherwise band 3
+    // charges 3 turns of a one-round drain. 5⚔️ keeps band 2 quiet (5 − 2 ≥ 0), isolating band 3.
+    const withEvent = state((G) => {
+      G.resources.food = 20;
+      G.resources.military = 5;
+      G.hand = [mint(G, 'test_event')];
+    });
+    const bare = state((G) => {
+      G.resources.food = 20;
+      G.resources.military = 5;
+    });
+    // Only the projected-accumulation tiebreaker (band 5) may separate them — well under one unit of the
+    // band-3 shortfall weight.
+    expect(scoreState(bare) - scoreState(withEvent)).toBeLessThan(25);
+  });
+
+  it('still punishes an unplayed event that projects a pool negative (band 2)', () => {
+    // The transient exclusion above is band 3's alone: the event's drain is in the *actual* next turn, so
+    // an empty military pool facing it is an imminent `ruin` and must read at collapse scale.
+    const doomed = state((G) => {
+      G.resources.food = 20;
+      G.hand = [mint(G, 'test_event')];
+    });
+    const bare = state((G) => {
+      G.resources.food = 20;
+    });
+    expect(scoreState(bare) - scoreState(doomed)).toBeGreaterThan(400);
+  });
+
   it('is monotonic in banked core resources, all else equal (bands 3 & 5)', () => {
     const base = state((G) => {
       G.resources.food = 5;

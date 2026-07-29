@@ -1,14 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { enumerateActions } from './actions';
+import { canonicalPlay, enumerateActions, enumeratePlays } from './actions';
 import { applyAction, simConfig, createRandomPolicy } from './index';
 import { createRun } from '../run/engine';
-import { blankState } from '../rules';
-import { installFixtures, uninstallFixtures, TEST_BOARD_ID } from '../rules/testFixtures';
+import { blankState, bumpCounter } from '../rules';
+import { CARDS } from '../content/cards';
+import { installFixtures, uninstallFixtures, mint, TEST_BOARD_ID } from '../rules/testFixtures';
 
 // A synthetic deck spanning the staffable + action kinds, so a random run enumerates plays, worker
-// assignment, and transfers — the whole action surface — without leaning on the shipped catalogue. The
-// mission's round-5 deadline (`test_unwinnable`) guarantees every random run terminates in the step budget.
-const FIXTURE_DECK = ['test_food', 'test_prod', 'test_work', 'test_work_food', 'test_action', 'test_settlers'];
+// assignment, and transfers — the whole action surface — without leaning on the shipped catalogue.
+// `test_discard` carries a discard cost, so the walk also exercises the sacrifice enumeration against
+// `moves.playCard`'s own index validation. The mission's round-5 deadline (`test_unwinnable`) guarantees
+// every random run terminates in the step budget.
+const FIXTURE_DECK = ['test_food', 'test_prod', 'test_work', 'test_work_food', 'test_action', 'test_settlers', 'test_discard'];
 
 describe('enumerateActions', () => {
   beforeAll(installFixtures);
@@ -35,6 +38,38 @@ describe('enumerateActions', () => {
       }
       expect(state.gameover).toBeTruthy(); // the run actually terminated within the step budget
     }
+  });
+
+  // `test_discard` costs one other card from hand — the choice of *which* is the decision these cases
+  // pin, since a fixed pick would hide (e.g.) ditching an unplayed event from every search.
+  it('offers one play per distinct sacrifice content, not one per hand position', () => {
+    const G = blankState('test');
+    // Two interchangeable copies plus one different card: three positions, two real choices.
+    G.hand = [mint(G, 'test_discard'), mint(G, 'test_action'), mint(G, 'test_action'), mint(G, 'test_food')];
+    const plays = enumeratePlays(G, 0, CARDS.test_discard);
+    expect(plays.map((p) => (p.kind === 'playCard' ? p.discardHandIdxs : null))).toEqual([[1], [3]]);
+  });
+
+  it('splits one cardId into distinct sacrifices when the copies carry different counters', () => {
+    // `contentKey` folds counters in, so an escalated copy is *not* interchangeable with a fresh one —
+    // the difference an event's per-instance drain level rides on.
+    const G = blankState('test');
+    G.hand = [mint(G, 'test_discard'), mint(G, 'test_action'), mint(G, 'test_action')];
+    bumpCounter(G.hand[2], 'level');
+    expect(enumeratePlays(G, 0, CARDS.test_discard)).toHaveLength(2);
+  });
+
+  it('leads with the canonical play, so the heuristic ladder picks an enumerated action', () => {
+    const G = blankState('test');
+    G.hand = [mint(G, 'test_discard'), mint(G, 'test_action'), mint(G, 'test_food')];
+    expect(enumeratePlays(G, 0, CARDS.test_discard)[0]).toEqual(canonicalPlay(G, 0, CARDS.test_discard));
+  });
+
+  it('offers a single sacrifice-free play when the discard cost is waived', () => {
+    // `discardCount` waives the cost outright on an otherwise-empty hand, so there is nothing to choose.
+    const G = blankState('test');
+    G.hand = [mint(G, 'test_discard')];
+    expect(enumeratePlays(G, 0, CARDS.test_discard)).toEqual([{ kind: 'playCard', playHandIdx: 0 }]);
   });
 
   it('always offers ending the turn when no interaction is pending', () => {

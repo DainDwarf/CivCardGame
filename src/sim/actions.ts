@@ -1,10 +1,10 @@
-import { discardCount, freePopulation, placedCards, workerCapOf, unplayableReason, type GameState } from '../rules';
+import { contentKey, discardCount, freePopulation, placedCards, workerCapOf, unplayableReason, type GameState } from '../rules';
 import { CARDS, isStaffable, type CardDef } from '../content/cards';
 import type { SimAction } from './simulate';
 
 /**
- * Every legal action from the current state, with **canonical (deterministic) extra args** — the one
- * legality enumeration all policies share (`randomPolicy` / `greedyPolicy` / `heuristicPolicy`), so no
+ * Every legal action from the current state, in a **deterministic** order — the one legality enumeration
+ * all policies share (`randomPolicy` / `greedyPolicy` / `heuristicPolicy`), so no
  * policy re-derives "what is playable" and they can never disagree with the engine. Legality reuses the
  * *production* gate `unplayableReason` (`rules/playability.ts`) for plays, and the same staffing bounds
  * the moves enforce (`freePopulation` / `workerCapOf`), never a re-derived copy.
@@ -15,9 +15,9 @@ import type { SimAction } from './simulate';
  * would loop until `simulateRun`'s action cap throws), centralizing the guard here instead of trusting
  * each policy to remember it.
  *
- * The extras are *canonical*: a discard-cost play sacrifices the first eligible other-hand cards. A
- * policy wanting *randomized* extras (the fuzzer) rebuilds them from this skeleton (see `randomPolicy`),
- * sharing only the sacrifice *count* via `rules/cost.ts`'s `discardCount`.
+ * A discard-cost play enumerates **one action per distinct sacrifice** (`enumeratePlays`), so *which*
+ * card is given up is a decision the consumer makes — dodging an unplayed event's drain by ditching it
+ * is a line a fixed pick would hide from every search, including the oracle's winnability proof.
  */
 export function enumerateActions(G: GameState): SimAction[] {
   if (G.pendingInteraction) {
@@ -36,7 +36,7 @@ export function enumerateActions(G: GameState): SimAction[] {
     const inst = G.hand[i];
     const card = CARDS[inst.cardId];
     if (!card || unplayableReason(G, card, inst) !== null) continue;
-    actions.push(canonicalPlay(G, i, card));
+    actions.push(...enumeratePlays(G, i, card));
   }
 
   const idle = freePopulation(G);
@@ -66,8 +66,9 @@ export function enumerateActions(G: GameState): SimAction[] {
   return actions;
 }
 
-/** A canonical (deterministic) `playCard` for an already-vetted-playable hand index: the discard-cost
- *  sacrifices are the first eligible other-hand cards. */
+/** The single `playCard` a consumer takes when it doesn't want to weigh the sacrifice itself (the
+ *  `heuristicPolicy` ladder): the discard-cost sacrifices are the first eligible other-hand cards.
+ *  Ascending-index, like `enumeratePlays`'s walk, so this is that list's head. */
 export function canonicalPlay(G: GameState, playHandIdx: number, card: CardDef): SimAction {
   const required = discardCount(card, { G, self: G.hand[playHandIdx] });
   let discardHandIdxs: number[] | undefined;
@@ -77,4 +78,45 @@ export function canonicalPlay(G: GameState, playHandIdx: number, card: CardDef):
     discardHandIdxs = idxs;
   }
   return { kind: 'playCard', playHandIdx, discardHandIdxs };
+}
+
+/**
+ * Every distinct way to play an already-vetted-playable hand index — one action per **sacrifice
+ * content**, not per hand position: four identical copies are one choice, while two copies of one
+ * cardId carrying different counters are two. Keyed by `contentKey` (`rules/state.ts`), the same
+ * id-independent identity the reshuffle and the transposition key use, so two actions differ here
+ * exactly when they reach states the search treats as different.
+ *
+ * ⚠️ Generation is `C(other hand cards, required)` before that dedupe, and deliberately **unbounded** —
+ * fine while the only discard cost in the catalogue is 1, but a multi-card sacrifice would multiply the
+ * branching factor at every node of the beam searches, so cap it there rather than discover it as a
+ * runtime cliff.
+ */
+export function enumeratePlays(G: GameState, playHandIdx: number, card: CardDef): SimAction[] {
+  const required = discardCount(card, { G, self: G.hand[playHandIdx] });
+  if (required === 0) return [{ kind: 'playCard', playHandIdx }];
+
+  const others: number[] = [];
+  for (let i = 0; i < G.hand.length; i++) if (i !== playHandIdx) others.push(i);
+
+  const seen = new Set<string>();
+  const plays: SimAction[] = [];
+  const combo: number[] = [];
+  // Ascending walk, so each content's surviving representative is its lowest-index one.
+  const walk = (from: number): void => {
+    if (combo.length === required) {
+      const key = combo.map((i) => contentKey(G.hand[i])).sort().join(';');
+      if (seen.has(key)) return;
+      seen.add(key);
+      plays.push({ kind: 'playCard', playHandIdx, discardHandIdxs: [...combo] });
+      return;
+    }
+    for (let i = from; i < others.length; i++) {
+      combo.push(others[i]);
+      walk(i + 1);
+      combo.pop();
+    }
+  };
+  walk(0);
+  return plays;
 }

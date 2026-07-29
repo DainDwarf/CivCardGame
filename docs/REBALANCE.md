@@ -119,13 +119,16 @@ Per-row notes, where the ⬜ isn't the whole story:
   cells that do stock it (11–13, 15–16) are all still ⬜.
 - **12 · `accounting`** is a second hoard goal, and **moved no rate** — 40🪙 and `THIEVES_PER_GOLD` = 10
   stand as authored, its hardness kept deliberately. The fixture is now the player's own winning deck on
-  City, swept at the standing protocol: greedy 30% / planner 36% @100, oracle 90% @10. **Read that oracle
+  City, swept at the standing protocol: greedy 31% / planner 43% @100, oracle 70% @10. **Read that oracle
   row with its n:** a 50-seed sweep of the same deck on another seed stream gave oracle 60% / prover 58%,
-  so 9/10 is the optimistic end of a wide interval and *not* evidence the cell sits with the 90–100% peers.
+  so anything above that is the optimistic end of a wide interval and *not* evidence the cell sits with
+  the 90–100% peers.
   Chiefdom also reaches this mission but gets no fixture — 0 starting territory against 8 structures makes
   it a deck problem, and it would need its own deck before its number said anything. This is the mission
   where the objective gradient's blind spot bites (`TODO.md` jot): beam width alone moves proven
   winnability 46 → 70%, so every search figure here is a floor, and the `planner` row is the one to read.
+  A `prover` spot-check @10 backs that: it declines seeds as `deadEnd`/`depth`, never `budget` — the
+  ranking and the round bound are what bind here, not the node budget.
 - **`ice_age` · `sandbox`** are infinite, so `Swept` can never mean a win rate there: read the collapse
   round instead. They are last because nothing downstream depends on them.
 
