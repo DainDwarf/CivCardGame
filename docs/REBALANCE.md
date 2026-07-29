@@ -5,18 +5,26 @@
 > this branch, so the rates follow here instead of waiting for Iron. BACKLOG keeps a one-line status
 > pointer at Step 10; the live state is all here.
 >
-> ## ⚠️ The cap model changed mid-thread — most rows below are stale
+> ## ⚠️ The cap model changed mid-thread — re-measured for rows 1–10
 >
-> Everything from the *Chiefdom* row onward was measured while buildings, Work boxes **and** trade
-> routes shared one territory cap. That cap has since been reverted: **territory caps the tableau
-> alone**, work and trade cost none, Conquest and Road are `work` cards again, and board territory
-> went back to Tribe 0 / Settlement 2 / Chiefdom 0 / City 2.
+> This thread was worked while buildings, Work boxes **and** trade routes shared one territory cap.
+> That cap has since been reverted: **territory caps the tableau alone**, work and trade cost none,
+> Conquest and Road are `work` cards again, and board territory went back to Tribe 0 / Settlement 2 /
+> Chiefdom 0 / City 2.
 >
-> So every ✅ here means "measured under the shared cap", not "measured". The **rates** (what a
-> worker-round is worth, what converts into what) are mostly untouched by the change and should carry
-> over; anything reasoning about **slots** — the Chiefdom identity, the Hunting board-slot cost, the
-> first-trades slot economics — has lost its premise and needs re-deriving. Every row in
-> `scripts/sim/baselines/results/` is stale for the same reason.
+> **`baselines/results/` has been re-cut** for the eleven fixtures behind rows 1–10 (greedy+planner
+> @100, oracle @10). Headline: the oracle still clears every cell (90–100%), so nothing became
+> unwinnable, and most cells moved by ≤3 points. Three did move — Masonry greedy **0 → 77** and
+> Chiefdom **0 → 57** (the stalls are gone), and Growing Numbers planner **100 → 78**; each is written
+> up in its own dossier.
+>
+> Rows 11–16 were never balanced, so their stale rows were **removed** rather than left reading as
+> fact. `npm run sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100`
+> regenerates the full set when those missions reach their pass.
+>
+> Still to re-derive by hand: the **prose** that reasons about slots — the Chiefdom identity, the
+> Hunting board-slot cost, the first-trades slot economics — has lost its premise even where the
+> numbers now agree. The **rates** are mostly untouched by the change and carry over.
 >
 > **Scope:** the *rates* — what a worker-round is worth per resource, what converts into what, and
 > what each mission is therefore asking for. A mission's own reasoning, sweep tables and readings live
@@ -87,9 +95,10 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 
 Per-row notes, where the ⬜ isn't the whole story:
 
-- **1–7 were re-measured** after Dogs became Hunting — it sits in the starting collection, so every deck
-  in the age holds two copies. `baselines/results/` carries the new greedy/planner/oracle rows and the
-  ✅s stand on them; each **dossier's own tables and readings still quote the pre-change numbers**.
+- **1–10 were re-measured** under the split cap (see the banner above) — and 1–7 before that, after Dogs
+  became Hunting. `baselines/results/` carries the current greedy/planner/oracle rows and the ✅s stand
+  on them. Only the Masonry and Growing Numbers dossiers have been brought in step with those rows;
+  **every other dossier's tables still quote the pre-change numbers**.
 - **3 · `raiders_at_border`** moved no rate of its own — the mission proved sound as authored, and what
   changed is the deck a player *arrives* with. **6 · `reading_seasons`** moved none either, and is the
   only cell where nothing about the mission changed at all.

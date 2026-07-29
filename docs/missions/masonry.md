@@ -34,15 +34,23 @@ prohibitive: hand-won on the second try, and the sweep clears it on both boards.
 from opposite ends. Same 21-card deck (the First Temple pool, Bead Workshop · Farm+2 Irrigation ·
 4 Hut · 4 Foraging · 2 Hunting · 4 Toolmaking · 2 Bow · 2 Conquest · Bartering):
 
+Re-measured under the split territory cap (Conquest a `work` card; Settlement 2🏞️, Chiefdom 0🏞️):
+
 | board | greedy | planner | oracle |
 |---|---|---|---|
-| settlement | 0/100 · famine 100 | **86/100** · famine 14 | 10/10 |
-| chiefdom | 0/100 · famine 92 · stall 8 | **70/100** · famine 30 | 10/10 |
+| settlement | 77/100 · famine 23 | **89/100** · famine 11 | 10/10 |
+| chiefdom | 57/100 · famine 43 | **64/100** · famine 36 | 9/10 |
 
-Turns (min/med/mean/max) under planner: settlement 8 / 30 / 27.5 / 39 · chiefdom 6 / 24.5 / 21.0 / 34.
-Chiefdom wins faster and loses more — its 6⚔️ start buys the first Conquests outright, its 2🏞️ leaves
-nowhere to put what they open. **Greedy wins neither board**: the ⚔️→🏞️→🧍 chain is multi-turn, so
-Conquest goes unplayed under it entirely. That gap is the policy, not the mission.
+Turns (min/med/mean/max) under planner: settlement 8 / 31 / 29.4 / 40 · chiefdom 6 / 29 / 23.8 / 62.
+Chiefdom still wins faster and loses more. Every defeat on both boards is now famine — **the stalls
+are gone**, and Conquest is played ~3.3–4.0×/run under *both* policies.
+
+**Greedy went 0/100 → 77 and 0/100 → 57**, which is the largest move anywhere in the re-measure. The
+old reading — "greedy wins neither board; the ⚔️→🏞️→🧍 chain is multi-turn, so Conquest goes unplayed
+under it entirely" — no longer describes the cell, and this mission was the standing example of a
+one-ply policy plateauing. **Why it moved is not measured**; `--policies greedy,greedy2 --seeds 100`
+on this fixture is the comparison that would say whether the multi-turn chain got shorter or the
+one-ply value function simply started seeing it.
 
 ## Open
 

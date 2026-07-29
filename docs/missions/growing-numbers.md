@@ -41,16 +41,19 @@ the same reason.
 **The ask it encoded did not change**, which is why the shape survived: +2🗺️ then, +2🗺️ now (Tribe
 **0** → a **2🗺️** goal), still exactly two plays of one Conquest at 2⚔️ + 4⚔️.
 
-Re-measured at 10 seeds on the same fixture, Conquest now a work card:
+Re-measured on the same fixture, Conquest now a work card:
 
-| policy | result | turns (min · median · max) | end 🌾 | Conquest plays/run |
-|---|---|---|---|---|
-| oracle @10 | 10/10 | 9 · 10 · 12 | 4.3 | 2.0 |
-| planner @10 | 5/10 | 11 · 13 · 18 | 2.0 | 1.8 |
+| policy | result | turns (min · median · max) | Conquest plays/run |
+|---|---|---|---|
+| greedy @100 | 97/100 · famine 3 | 11 · 18 · 30 | 1.98 |
+| planner @100 | 78/100 · famine 22 | 9 · 13 · 22 | 1.95 |
+| oracle @10 | 10/10 | 9 · 10 · 12 | 2.0 |
 
-- **Oracle is unchanged** (10/10, two Conquests, ~10 turns); **planner fell 100% → 50%**, all five
-  losses to famine. 10 seeds is thin — `--policies planner --seeds 100` is the measurement that would
-  settle whether that is a real drop, and `--seed <i>` replays a losing run.
+- **Both competent policies still play Conquest exactly twice**, which is the reading the goal was
+  built on and the reason it survived the change.
+- **greedy 84 → 97, planner 100 → 78.** The two policies crossed: greedy now out-performs the planner
+  here, which it does nowhere else in the set. Every planner loss is famine. Not diagnosed —
+  `--seed <i>` replays one.
 
 **Below: the pre-split table, kept for the delta.**
 
