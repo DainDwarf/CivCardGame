@@ -161,7 +161,7 @@ export const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm'];
 
 /** Total 🗺️ "Growing Numbers" wants held at once — an absolute pool, not a gain over the board's
  *  start, so a wider government arrives closer to it. Shared by the win goal and its readout. */
-export const GROWING_NUMBERS_TERRITORY = 4;
+export const GROWING_NUMBERS_TERRITORY = 2;
 
 /** How many raider waves "Raiders at the Border" seeds — shared by the mission's injected event list
  *  (`content/missions.ts`), the `raiders_at_border_goal` win threshold, and its progress readout. */

@@ -10,14 +10,15 @@
 **Reward:** 6⭐ + the **Irrigation** card sticker + the **Granary/Stockpile** board stickers +
 **`boardUpgrade: tribe → settlement`**.
 
-**Goal — build 🛖 + 🌱 and hold 4🗺️** — an *absolute* pool, not a gain over the board's start, so the
+**Goal — build 🛖 + 🌱 and hold 2🗺️** — an *absolute* pool, not a gain over the board's start, so the
 board choice is felt at the win line rather than normalized away.
 
 ## Design ✅
 
-**The board upgrade moved here from mission 1**, and that is what makes the absolute 4🗺️ goal work:
-the opening arc's first **two** missions are played on Tribe, so the 4🗺️ is fought up from Tribe's 2.
-On Settlement's 4 the goal would have been satisfied at setup and Conquest would be decorative. It also
+**The board upgrade moved here from mission 1**, and that is what makes the absolute 🗺️ goal work:
+the opening arc's first **two** missions are played on Tribe, so the territory is fought up from
+Tribe's **0**. On Settlement's 2 the goal would be satisfied at setup and Conquest would be
+decorative. It also
 reads better — raising the roof is what settles you, not finding the spot. **Settlement** gains the
 slack in exchange: 2🔨 → **5🔨** at start, a number that reaches forward into every mission launched
 on it.
@@ -33,10 +34,25 @@ fields plus a `resolve` escape hatch, absorbing the old `CardGate`. Decided desi
 
 ## Balance ✅
 
-**Measured** on **Tribe** (2🗺️ / 2🧍 / 10🌾 / 0🔨 — the board a player actually arrives on, now that
-the upgrade is this mission's own reward) with the starting deck + one Hut/Farm/Conquest, 15 cards, no
-purchases. `scripts/sim/baselines/growing_numbers.json` is re-cut to that deck and its rows in
-`baselines/results/` are updated — that cell only, no whole-set sweep.
+⚠️ **The table below was measured under the shared territory cap**, on a Tribe holding 2🗺️ against a
+4🗺️ goal, with Conquest an `action`. All three have since changed; `baselines/results/` is stale for
+the same reason.
+
+**The ask it encoded did not change**, which is why the shape survived: +2🗺️ then, +2🗺️ now (Tribe
+**0** → a **2🗺️** goal), still exactly two plays of one Conquest at 2⚔️ + 4⚔️.
+
+Re-measured at 10 seeds on the same fixture, Conquest now a work card:
+
+| policy | result | turns (min · median · max) | end 🌾 | Conquest plays/run |
+|---|---|---|---|---|
+| oracle @10 | 10/10 | 9 · 10 · 12 | 4.3 | 2.0 |
+| planner @10 | 5/10 | 11 · 13 · 18 | 2.0 | 1.8 |
+
+- **Oracle is unchanged** (10/10, two Conquests, ~10 turns); **planner fell 100% → 50%**, all five
+  losses to famine. 10 seeds is thin — `--policies planner --seeds 100` is the measurement that would
+  settle whether that is a real drop, and `--seed <i>` replays a losing run.
+
+**Below: the pre-split table, kept for the delta.**
 
 | policy | result | turns (min · median · max) | end 🌾 | Conquest plays/run |
 |---|---|---|---|---|
@@ -45,8 +61,8 @@ purchases. `scripts/sim/baselines/growing_numbers.json` is re-cut to that deck a
 | planner @100 | 100/100 | 9 · 13 · 24 | 5.0 | 2.0 |
 | oracle @10 | 10/10 | 8 · 9.5 · 11 | 4.9 | 2.0 |
 
-- **The 4🗺️ goal makes Conquest load-bearing**: planner and oracle play it exactly **twice** every run
-  (2🗺️ → 4🗺️ for 2⚔️ + 4⚔️ = 6⚔️), which is the whole point of the escalation being gentle at two.
+- **The 🗺️ goal makes Conquest load-bearing**: planner and oracle play it exactly **twice** every run
+  for 2⚔️ + 4⚔️ = 6⚔️, which is the whole point of the escalation being gentle at two.
 - **Every defeat is famine** (heuristic 16, greedy 74) — no stalls. Unlike mission 1 this run *is*
   food-bound, because ⚔️ for Conquest competes with 🌾 through Dogs (1🌾→1⚔️).
 - **Two live axes**, the thing mission 1 lacked: the Foraging/Toolmaking split *and* how much food to
