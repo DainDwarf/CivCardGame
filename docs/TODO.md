@@ -135,6 +135,29 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   more rounds the current stores survive — the same way `enablers.ts` derives its slope from
   `cost`→`produces` rather than from authored hints. Blocks trusting greedy/planner on any
   rounds-survived mission; `ice_age` and `sandbox` dodge it only because the sim doesn't drive them.
+- **The objective gradient credits a goal term the instant it lands, ignoring what it then costs**
+  `[size: M]` — `sim/objective.ts`'s `objectiveProgress` scores a met sub-goal as pure progress, so the
+  planner takes one as soon as it can afford it even when holding it is a standing drain. The cost
+  accrues over later rounds, past the beam's horizon, so nothing ever charges it back.
+  **Measured on `growing_numbers`**, where it inverts the policy bracket: **planner 78/100 vs greedy
+  97/100** — the only cell in the set where greedy beats the planner. Every planner loss is famine, and
+  `farm` plays/run is **0.78**, exactly its win rate: the Farm is the term it dies before reaching.
+  Planner ends on 3.3🌾, greedy on 10.6.
+  The mission's two building terms are asymmetric and share one slot (the goal's 2🗺️ is *exactly* Hut +
+  Farm, so at 1🗺️ they compete). **Farm** is a staffed permanent producer, +1🌾/worker/round. **Hut**
+  grants +1🧍, which raises upkeep from `floor(2²/4)=1` to `floor(3²/4)=2` — and the marginal worker
+  foraging returns +1🌾, so it is *break-even at best* and negative the moment that worker does anything
+  else. The Hut is a liability from the turn it lands until the turn you win.
+  `--seed 0` shows it cleanly on one shuffle: planner plays Hut turn 7, never affords the second
+  Conquest, and dies turn 13 on 0🌾 holding **7🔨 it has nothing to spend on** (its only slot is under
+  the Hut). Greedy on the same seed plays Farm turn 10, banks ⚔️, Conquests turn 17 and plays **Hut as
+  the winning move on turn 18**, never dropping below 8🌾 — paying the pop tax for zero rounds.
+  So this cell's 78% is a policy reading, not a difficulty one, and the same shape will bite any goal
+  whose terms carry ongoing upkeep. Next measurements, both cheap: `--policies greedy2 --seeds 100` on
+  the fixture (should also win high if this is the gap), and `--policies deepPlanner --seed 0` (a flip
+  to a win says horizon, not weighting). The fix must be **general and mechanical** like its sibling
+  above — a met goal's *carried* cost is derivable from the card's `effect`/`upkeep` against
+  `foodUpkeep`, never a per-mission hint.
 
 ## Tech debt / architecture
 
