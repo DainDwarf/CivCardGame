@@ -1,19 +1,21 @@
 {
   "id": "accounting",
   "mission": "accounting",
-  "note": "Purchased — hand-authored. Copper→Forge→🔨→Bead Workshop is the income; the Cave Art count reaches culture level 1 to switch on Göbekli Tepe's money pump, and the Dogs catch the thieves envy breeds off held gold. The Trader is this mission's own reward, so it is not in the pool.",
+  "note": "The player's own winning deck. City Walls are the load-bearing card, not the Bead Workshops: crossing the 10🪙 spawn line with no Walls up lost every run it was measured on, so the deck buys defence before treasury. Two Bead Workshops are the whole money faucet — the Trader is this mission's own reward, so it is not in the pool. Chiefdom is the other board reaching this mission but wants its own deck (0 starting territory against 8 structures), so it gets no fixture here.",
   "board": "city",
   "deck": [
+    { "cardId": "bead_workshop", "count": 2 },
+    { "cardId": "city_walls", "count": 2 },
     { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
-    { "cardId": "forge", "count": 2 },
-    { "cardId": "house", "count": 2 },
-    { "cardId": "gobekli_tepe", "count": 1 },
-    { "cardId": "beer", "count": 1 },
-    { "cardId": "cave_art", "count": 4 },
-    { "cardId": "conquest", "count": 4 },
-    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "forge", "count": 1 },
+    { "cardId": "house", "count": 1 },
+    { "cardId": "beer", "count": 2 },
+    { "cardId": "conquest", "count": 2 },
+    { "cardId": "foraging", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "toolmaking", "count": 2 },
     { "cardId": "bow", "count": 2 },
-    { "cardId": "dogs", "count": 4 },
-    { "cardId": "bead_workshop", "count": 2 }
+    { "cardId": "calendar", "count": 1 },
+    { "cardId": "fire", "count": 2 }
   ]
 }

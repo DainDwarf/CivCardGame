@@ -77,7 +77,7 @@
   | Copper | ✅ | ✅ | ✅ | ⬜ | [copper](missions/copper.md) |
   | Masonry | ✅ | ✅ | ✅ | ⬜ | [masonry](missions/masonry.md) |
   | Pyramid *(leaf)* | ✅ | ✅ | 🟡 | ⬜ | [pyramid](missions/pyramid.md) |
-  | Accounting | ✅ | ✅ | 🟡 | ⬜ | [accounting](missions/accounting.md) |
+  | Accounting | ✅ | ✅ | ✅ | ⬜ | [accounting](missions/accounting.md) |
   | Writing | ✅ | ✅ | 🟡 | ⬜ | [writing](missions/writing.md) |
   | Hammurabi's Code *(leaf)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Roads | ✅ | ✅ | ✅ | ⬜ | [roads](missions/roads.md) |
@@ -104,7 +104,7 @@
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see [`missions/copper.md`](missions/copper.md)).
   2. **Masonry** — DONE (see [`missions/masonry.md`](missions/masonry.md)). Optional **Pyramid** leaf — mechanics DONE (balance pending; see [`missions/pyramid.md`](missions/pyramid.md)).
-  3. **Accounting** — mechanics DONE (balance pending; see [`missions/accounting.md`](missions/accounting.md)). **Writing** — mechanics
+  3. **Accounting** — DONE, balance included (see [`missions/accounting.md`](missions/accounting.md)). **Writing** — mechanics
      DONE (balance pending; see [`missions/writing.md`](missions/writing.md)). The optional **Hammurabi's Code** leaf off Writing
      remains — the last piece of the literacy half.
   4. **Wheel+roads (×2)** first (now the **expansion/territory** branch — repositioned from the money

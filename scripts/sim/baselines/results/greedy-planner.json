@@ -1,5 +1,52 @@
 [
   {
+    "label": "accounting",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 30,
+    "winRate": 0.3,
+    "turns": {
+      "min": 12,
+      "mean": 32.36,
+      "median": 22.5,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 47.78,
+      "production": 17.41,
+      "science": 4.82,
+      "military": 18.36,
+      "money": 25.16,
+      "population": 2,
+      "culture": 0.9,
+      "territory": 2.9
+    },
+    "defeatCauses": {
+      "famine": 49,
+      "ruin": 18,
+      "stall": 3
+    },
+    "cardPlays": {
+      "bow": 157,
+      "fire": 482,
+      "city_walls": 59,
+      "bead_workshop": 123,
+      "toolmaking": 237,
+      "conquest": 90,
+      "dogs": 209,
+      "beer": 90,
+      "foraging": 217,
+      "forge": 17,
+      "thief": 397,
+      "farm": 51
+    },
+    "unplayedCards": [
+      "house",
+      "calendar"
+    ],
+    "meanActions": 53.62
+  },
+  {
     "label": "finding_copper",
     "policyName": "greedy",
     "runs": 100,
@@ -426,6 +473,52 @@
       "calendar"
     ],
     "meanActions": 49.7
+  },
+  {
+    "label": "accounting",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 36,
+    "winRate": 0.36,
+    "turns": {
+      "min": 13,
+      "mean": 30.02,
+      "median": 29,
+      "max": 83
+    },
+    "meanResources": {
+      "food": 11.39,
+      "production": 4.61,
+      "science": 5.2,
+      "military": 6.73,
+      "money": 27.66,
+      "population": 2.14,
+      "culture": 0,
+      "territory": 4.47
+    },
+    "defeatCauses": {
+      "famine": 41,
+      "ruin": 16,
+      "bankruptcy": 7
+    },
+    "cardPlays": {
+      "bow": 144,
+      "fire": 574,
+      "bead_workshop": 157,
+      "toolmaking": 280,
+      "city_walls": 64,
+      "conquest": 248,
+      "dogs": 170,
+      "foraging": 292,
+      "thief": 480,
+      "forge": 24,
+      "farm": 63,
+      "house": 7,
+      "calendar": 27,
+      "beer": 2
+    },
+    "unplayedCards": [],
+    "meanActions": 61.03
   },
   {
     "label": "finding_copper",

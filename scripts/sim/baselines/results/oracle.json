@@ -1,5 +1,49 @@
 [
   {
+    "label": "accounting",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 9,
+    "winRate": 0.9,
+    "turns": {
+      "min": 20,
+      "mean": 31.7,
+      "median": 32,
+      "max": 39
+    },
+    "meanResources": {
+      "food": 4.5,
+      "production": 6.2,
+      "science": 6.4,
+      "military": 6.7,
+      "money": 39.1,
+      "population": 2.4,
+      "culture": 1.1,
+      "territory": 5.9
+    },
+    "defeatCauses": {
+      "famine": 1
+    },
+    "cardPlays": {
+      "fire": 80,
+      "city_walls": 10,
+      "dogs": 9,
+      "bead_workshop": 20,
+      "toolmaking": 41,
+      "conquest": 40,
+      "foraging": 55,
+      "farm": 9,
+      "thief": 66,
+      "beer": 11,
+      "calendar": 8,
+      "forge": 6,
+      "house": 2,
+      "bow": 11
+    },
+    "unplayedCards": [],
+    "meanActions": 87.8
+  },
+  {
     "label": "finding_copper",
     "policyName": "oracle",
     "runs": 10,

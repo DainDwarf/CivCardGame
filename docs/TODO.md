@@ -507,3 +507,25 @@ comment is stale (add `clone.hand = []` to match it) or the code is intended and
 A band-3 (survival-buffer) question, not a perf one — decide which is authoritative. Found while
 profiling the oracle's clone cost (the two `scoreState` projections).
 
+
+## Jot — `scoreState` credits a goal resource whose own accumulation is the threat
+
+`sim/value.ts` scores the objective gradient (band 4, weight 300) off `objectiveProgress`, which for a
+threshold goal is just `pool / target`. Bands 2/3/5 read `projectNextTurn`/`applyUpkeep` — **one turn**.
+So when holding the goal resource is *itself* the danger, the upside is scored and the liability is not.
+
+Accounting is the live case: `envious_population` mints a Thief per 10🪙 held, on **`on.reshuffle`** — an
+event no band models at any horizon. Gold therefore reads as pure progress, the beam fills with
+gold-first states, and those states are unrecoverable (measured: **0 wins in 49** planner runs that
+reached 10🪙 with no City Walls up; 0 in 25 that got there with 2 Bead Workshops and no Walls). Whole
+search levels then die at once — `noWinFound:deadEnd` — and merely widening the beam recovers real
+winning lines the ranking had discarded: 50 seeds, City fixture, **46% → 58% → 66% → 70%** proven at beam
+16/64/128/256, `deadEnd` 26→20→15→13. Returns flatten, so this is a large part of that mission's
+apparent difficulty but not all of it.
+
+Generic, not per-mission: any goal whose measured pool feeds a threat's `on.*` handler hits it, and the
+gradient can't see the coupling because it reads only `goalProgress`. Related to the *uncharged goal-term
+upkeep* jot. Any fix stays sim-local ([[sim-logic-stays-in-sim]]) — a card/mission hook is not the answer.
+Note the mission itself is **not** a bug: its difficulty is wanted as authored, so this is a simulator
+fidelity item, and the `planner` number is the honest human-difficulty estimate precisely because a human
+has no proof search to rescue them either.
