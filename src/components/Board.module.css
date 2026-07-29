@@ -393,7 +393,7 @@
 }
 
 /* The play area: a row holding the left strip (objective corner + threat zone, when seeded) beside
-   the main play column (the territory grid), bounded to end exactly above the hand bar
+   the main play column (slot grid above the work strip), bounded to end exactly above the hand bar
    so neither scrolls nor sits behind it. It spans top:0 → the left strip rises into the true
    top-left corner; only .gameContent carries the banner-height top inset (the banner is centered/
    narrow, so only the full-width play column needs to clear it). No background of its own —
@@ -452,10 +452,40 @@
   box-sizing: border-box;
 }
 
-/* The main play column (the territory grid), filling whatever width the left strip (objective corner
-   + threat zone, if any) doesn't take. Carries the banner-height top inset (inline `paddingTop`,
-   Board.tsx) so this full-width column clears the sticky centered banner — the left strip beside it
-   deliberately does not, so the objective reaches the top-left corner. */
+/* The board's right strip: the mirror of .boardLeft, holding the standing trade routes. Same
+   in-flow column so the slot grid reflows beside it; not rendered at all until a route opens. */
+.boardRight {
+  flex: 0 0 auto;
+  width: 150px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  /* Clears the fixed top-right burger (its geometry lives in GameMenu.module.css), so the strip —
+     dashed edge included — visibly starts below it instead of running underneath. Inset on the
+     column, not the scrolling .tradeZone, so a route can't scroll up behind the button either. */
+  padding-top: calc(1rem + 44px + 8px);
+}
+
+/* The trade zone: routes (G.tradeRoutes) as a centered stack, scrolling if they pile up. A plum
+   left edge marks the strip as the money side of the board, echoing the kind's banner. */
+.tradeZone {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 16px 8px;
+  box-sizing: border-box;
+  border-left: 2px dashed var(--card-trade-banner);
+}
+
+/* The main play column (slot grid + work strip), filling whatever width the left strip
+   (objective corner + threat zone, if any) doesn't take. Carries the banner-height top inset
+   (inline `paddingTop`, Board.tsx) so this full-width column clears the sticky centered banner —
+   the left strip beside it deliberately does not, so the objective reaches the top-left corner. */
 .gameContent {
   flex: 1;
   min-width: 0;
@@ -479,8 +509,7 @@
   box-sizing: border-box;
 }
 
-/* One territory slot — holds at most one box (building, wonder, Work card or trade route), or shows
-   as an empty drop target. */
+/* One territory slot — holds at most one building box, or shows as an empty drop target. */
 .slot {
   width: 200px;
   min-height: 110px;
@@ -493,19 +522,32 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* The slot under the cursor while dragging a box — the drop target. */
+/* The slot under the cursor while dragging a building — the drop target. */
 .slotDrop {
   border: 2px dashed rgb(var(--accent-rgb) / 0.85);
   background: rgb(var(--accent-rgb) / 0.18);
 }
 
-/* The slot under the cursor while dragging an idle worker onto a box that can staff it. */
+/* The slot under the cursor while dragging an idle worker onto a building that can staff it. */
 .workerDropTarget {
   border: 2px dashed rgb(var(--staff-rgb) / 0.85);
   background: rgb(var(--staff-rgb) / 0.18);
 }
 
-/* A box standing in a territory slot, filling it. */
+/* Work cards played this turn live in the play area but occupy no territory slot — a strip below
+   the grid. Each box is staffable exactly like a building. */
+.workStrip {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 2px dashed rgb(var(--slot-border-rgb) / 0.3);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* A building box, filling its slot. */
 .buildingBox {
   position: relative; /* anchors the bottom-left sticker badge row (CardFace.module.css's stickerRow) */
   box-sizing: border-box;
@@ -536,7 +578,7 @@
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32);
 }
 
-/* The floating clone layer for a box dragged between slots. */
+/* The floating clone layer for a building dragged between slots. */
 .buildingDragClone {
   position: fixed;
   transform: rotate(-2deg) scale(1.04);
@@ -584,7 +626,7 @@
     transform 0.42s ease-out;
 }
 
-/* The slot a box is being dragged out of — its box fades to show it's in transit. */
+/* The slot a building is being dragged out of — its box fades to show it's in transit. */
 .slotSource .buildingBox {
   opacity: 0.35;
 }
@@ -598,18 +640,24 @@
   background: var(--idle-bg);
 }
 
-/* Border style says how long a box holds its slot, colour says which kind it is. A Work box is the
-   only one that gives its slot back (at end of turn), so it alone is dashed — in the Work teal. Its
-   interior still reads staffed (green) / idle (tan) like any staffable box. */
+/* A Work box: a building box that lives in the work strip instead of a slot. A teal dashed border
+   marks it as work; its interior still reads staffed (green) / idle (tan) like any building. Not
+   draggable between slots (there are none), so no grab cursor on the box itself. */
 .workBox {
+  width: 180px;
+  flex: 0 0 auto;
   border: 2px dashed var(--work-border) !important;
+  cursor: default;
 }
 
-/* A trade-route box keeps its slot for the run like a building, so it takes a solid border, in the
-   kind's plum. It has no staffing to signal, so it keeps the plain surface rather than the
-   staffed/idle tint — the third of the three box looks in the grid. */
+/* A trade-route box: a building box standing in the trade strip. A plum dashed border echoes the
+   kind's banner, matching how .workBox marks itself teal. Fills the strip's width rather than taking
+   a slot's, and isn't draggable (nothing removes or moves a route). */
 .tradeBox {
-  border: 2px solid var(--card-trade-banner) !important;
+  flex: 0 0 auto;
+  align-self: stretch;
+  border: 2px dashed var(--card-trade-banner) !important;
+  cursor: default;
 }
 
 .bName {

@@ -357,12 +357,15 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   `CardZoomOverlay.tsx`, `BoardMini.tsx` (a read-only board miniature driven off `effectiveBoard`,
   reused across meta screens), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
   `.objectiveCorner` above a scrolling `.threatZone` of `G.threats` — all `CardFace`s reading only
-  `GameState`, never the mission). The play area is the one `.slotGrid`, one `.slot` per territory,
-  each holding at most one `BoardBox` — the single box visual for everything standing on the board
-  (`placedCards`), whatever its kind: it staffs, drags between slots and zooms identically, and only
-  the border treatment differs (dashed = a Work box, which frees its slot at end of turn; solid = a
-  building/wonder/route, which keeps it). `.groundBackdrop` tints per board via a
-  `data-board` attribute (CSS-only).
+  `GameState`, never the mission) and its mirror `BoardRightColumn` (a `.tradeZone` of `G.tradeRoutes`,
+  rendered only once a route opens). The play area is **three zones**, matching the three board zones
+  in `G`: the `.slotGrid` of buildings (one `.slot` per territory, the only zone territory caps), the
+  `.workStrip` of this turn's Work boxes below it, and that trade column. All three render the one
+  `BoardBox` — it staffs and zooms identically wherever it stands; the zone decides the rest (only a
+  building drags between slots, and the border tint says which strip a box belongs to). The two
+  staffable zones are hit-tested separately (`slotEls` by slot, `workBoxEls` by box) and reconciled in
+  `staffableUnder`, so a worker drop targets either without the drop handlers branching.
+  `.groundBackdrop` tints per board via a `data-board` attribute (CSS-only).
 - **`meta/MetaMenu.tsx`** — the shell; a left nav switches five screens:
   - `CampaignMap.tsx` (Mission) — the mission DAG as a drag-to-pan tech tree under themed age bands; a
     node opens `MissionDetailPanel` (lore + reward preview), whose "Continue" hands off to a board/deck

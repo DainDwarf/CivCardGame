@@ -10,7 +10,6 @@ import {
   freePopulation,
   goalsReadout,
   isOperating,
-  placedCards,
   producingUnits,
   projectedDelta,
   workerCapOf,
@@ -242,6 +241,39 @@ function BoardLeftColumn({
   );
 }
 
+/** The board's right strip: the trade routes standing in `G.tradeRoutes`, mirroring the threat column
+ *  on the left. A real layout column like `BoardLeftColumn`, so the slot grid reflows beside it;
+ *  renders nothing until the first route opens. Routes are display-only here — nothing removes one and
+ *  they take no workers, so zoom is the only interaction. */
+function BoardRightColumn({
+  G,
+  gameover,
+  idle,
+  onZoom,
+}: {
+  G: GameState;
+  gameover: boolean;
+  idle: number;
+  onZoom: (cardId: string, overrideText?: string, stickerBadge?: string[]) => void;
+}) {
+  if (G.tradeRoutes.length === 0) return null;
+  return (
+    <div className={styles.boardRight}>
+      <div className={styles.tradeZone}>
+        {G.tradeRoutes.map((r) => (
+          <BoardBox
+            key={r.id}
+            inst={r}
+            gameover={gameover}
+            idle={idle}
+            onZoomClick={() => onZoom(r.cardId, CARDS[r.cardId].display?.dynamicText?.(G, r), r.stickers)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Collapse a list of card instances into one tile per **variant** with a count — copies sharing a
  *  cardId *and* their stickers are interchangeable (`variantKey`), so one face with a ×N badge says
  *  everything about the stack. A card with `dynamicText` is the exception and never groups: each copy
@@ -420,10 +452,11 @@ function StaffPips({
   );
 }
 
-/** The visual face of one box standing in a territory slot — a building, a wonder, a Work card played
- *  this turn, or a standing trade route. One component for all four because they are one thing on the
- *  board: a card in a slot, staffed if it takes workers, showing its per-round flow. Each box is a
- *  single instance (same-type boxes are never coalesced), so its stable `id` keys its slot.
+/** The visual face of one box standing on the board — a building or wonder in a territory slot, a Work
+ *  card played this turn in the work strip, or a standing trade route in the trade column. One
+ *  component for all four because a box is one thing wherever it stands: a card, staffed if it takes
+ *  workers, showing its per-round flow. Each box is a single instance (same-type boxes are never
+ *  coalesced), so its stable `id` keys it. The three *zones* differ; the box does not.
  *
  *  Two things vary by kind, both display-only: a route reads its per-round exchange from
  *  `describeTradeFlow` rather than scaling a `produces` per worker, and it carries no staffing tint
@@ -433,6 +466,8 @@ function BoardBox({
   gameover,
   idle,
   dragging,
+  className: extraClass,
+  boxRef,
   workerDragSource,
   workerDropTarget,
   onPointerDown,
@@ -444,6 +479,12 @@ function BoardBox({
   gameover: boolean;
   idle: number;
   dragging?: boolean;
+  /** Extra classes from the zone this box stands in — the work strip highlights the box itself as a
+   *  worker-drop target, where the grid highlights the slot around it. */
+  className?: string;
+  /** Registers the box element for pointer hit-testing. Only the work strip needs it; a box in the
+   *  grid is found through its slot. */
+  boxRef?: (el: HTMLDivElement | null) => void;
   /** True while one of this box's workers is being dragged out of it (fades the pip column). */
   workerDragSource?: boolean;
   /** True while a dragged worker hovers this box and it can accept it (see the matching
@@ -465,6 +506,7 @@ function BoardBox({
     kindBoxClass(card),
     staffable ? (isOperating(inst) ? styles.operating : styles.idleBuilding) : '',
     dragging ? styles.boxDragging : '',
+    extraClass ?? '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -472,7 +514,7 @@ function BoardBox({
     ? boxOutputLabels(card.produces?.resources, producingUnits(inst)).join(' ')
     : describeTradeFlow(card);
   return (
-    <div className={className} onPointerDown={onPointerDown} onClick={onZoomClick}>
+    <div className={className} ref={boxRef} onPointerDown={onPointerDown} onClick={onZoomClick}>
       {cap > 0 && (
         <StaffPips
           inst={inst}
@@ -498,9 +540,9 @@ function BoardBox({
   );
 }
 
-/** The box's kind modifier, which carries how long it holds its slot in its border: a Work box is the
- *  only one that gives its slot back, and the only dashed one. A building/wonder takes no modifier —
- *  it wears the shared box border, tinted by its staffing state. */
+/** The box's kind modifier, which tints its border to say which zone it stands in: teal for the work
+ *  strip, plum for the trade column. A building/wonder takes no modifier — it wears the shared box
+ *  border, tinted by its staffing state instead. */
 function kindBoxClass(card: CardDef): string {
   if (card.kind === 'work') return styles.workBox;
   if (card.kind === 'trade') return styles.tradeBox;
@@ -766,6 +808,8 @@ export function Board({
   const [workerDrag, setWorkerDragState] = useState<WorkerDrag | null>(null);
   // Slot the pointer is hovering while dragging an idle worker onto a box.
   const [workerHoverSlot, setWorkerHoverSlot] = useState<number | null>(null);
+  // The same, for the work strip, which highlights the box itself rather than a slot around it.
+  const [workerHoverWorkId, setWorkerHoverWorkId] = useState<number | null>(null);
   // Whether the pointer is over the population tray while dragging a worker out of a building.
   const [workerOverTray, setWorkerOverTray] = useState(false);
   // The canvas is a fixed backdrop; these insets keep its content between the banner and hand bar.
@@ -773,9 +817,13 @@ export function Board({
   const slotDragRef = useRef<SlotDrag | null>(null);
   const workerDragRef = useRef<WorkerDrag | null>(null);
   const layoutRef = useRef<(number | null)[]>([]);
-  // Slot index → the slot's DOM element, for pointer hit-testing during drag / placement. Every box
-  // stands in a slot, so this is the one hit-test map for the whole play area.
+  // Slot index → the slot's DOM element, for pointer hit-testing during drag / placement. Covers the
+  // territory grid only — the work strip has no slots, so its boxes register themselves below.
   const slotEls = useRef<Map<number, HTMLDivElement>>(new Map());
+  // Work-box instance id → its DOM element. The work strip's counterpart to `slotEls`: a Work box is
+  // a worker-drop target like a building, but it stands outside the grid, so it is hit-tested by box
+  // rather than by slot. `staffableUnder` reconciles the two.
+  const workBoxEls = useRef<Map<number, HTMLDivElement>>(new Map());
   // Staffable instance id → its staffing pip column, the fly target for a worker-deployment token
   // (see flyWorkers). A self-sufficient box renders no pips, but it never deploys either.
   const staffEls = useRef<Map<number, HTMLElement>>(new Map());
@@ -803,8 +851,11 @@ export function Board({
   // Hold the hand back during the run-start injection animation — feeding an empty hand means every
   // real card reads as freshly drawn (`isNew`) when `handHeld` clears, so the deal-in fires on reveal.
   const hand = useAnimatedHand(handHeld ? [] : G.hand);
-  // Every box standing on the board, keyed by the stable id that also keys its slot in `layout`.
-  const placedById = new Map(placedCards(G).map((p) => [p.id, p]));
+  // The two staffable zones, keyed by instance id: the tableau (whose ids also key `layout`'s slots)
+  // and the work strip. Both hold `PlacedCard`s, so a worker move treats them interchangeably; they
+  // stay separate here because only a building has a slot to be found in.
+  const buildingById = new Map(G.tableau.map((b) => [b.id, b]));
+  const workById = new Map(G.workZone.map((w) => [w.id, w]));
 
   /** Shake a card that can't be played and briefly show why. */
   function rejectShake(key: number, reason?: string) {
@@ -847,19 +898,32 @@ export function Board({
     return null;
   }
 
+  /** The Work box containing the given viewport point, by instance id, or null if none. */
+  function workBoxAt(x: number, y: number): number | null {
+    for (const [id, el] of workBoxEls.current) {
+      const r = el.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return id;
+    }
+    return null;
+  }
+
   /** Whether the given viewport point lands on the population tray. */
   function isOverTray(x: number, y: number): boolean {
     const r = popTrayRef.current?.getBoundingClientRect();
     return !!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
   }
 
-  /** The box standing under the given viewport point that can hold workers, or undefined. A trade
-   *  route is a box like any other but takes none, so it is never a worker-drop target. */
+  /** The box under the given viewport point that can hold workers, or undefined. Unifies the two
+   *  hit-tests — the territory grid and the work strip — so a worker drop can target either zone
+   *  without the drop handlers knowing which one it landed in. A trade route stands in neither and
+   *  takes no workers, so it is never a target. */
   function staffableUnder(x: number, y: number) {
     const slot = slotAt(x, y);
     const key = slot != null ? layout[slot] : null;
-    const inst = key != null ? placedById.get(key) : undefined;
-    return inst && isStaffable(CARDS[inst.cardId]) ? inst : undefined;
+    const building = key != null ? buildingById.get(key) : undefined;
+    if (building) return building;
+    const workId = workBoxAt(x, y);
+    return workId != null ? workById.get(workId) : undefined;
   }
 
   /**
@@ -1136,7 +1200,7 @@ export function Board({
         }
       } else {
         // It was a click, not a drag — zoom the box's card (mirrors finishDrag for hand cards).
-        const inst = placedById.get(d.id);
+        const inst = buildingById.get(d.id);
         if (inst) setZoom({ cardId: inst.cardId, overrideCard: effectiveCard(CARDS[inst.cardId], inst), stickerBadge: inst.stickers });
       }
       setSlotDrag(null);
@@ -1167,6 +1231,7 @@ export function Board({
       const active = d.active || moved > DRAG_THRESHOLD;
       setWorkerDrag({ ...d, x: e.clientX, y: e.clientY, active });
       setWorkerHoverSlot(active ? slotAt(e.clientX, e.clientY) : null);
+      setWorkerHoverWorkId(active ? workBoxAt(e.clientX, e.clientY) : null);
       setWorkerOverTray(active && d.fromBuildingId != null && isOverTray(e.clientX, e.clientY));
     }
     function onUp(e: PointerEvent) {
@@ -1203,6 +1268,7 @@ export function Board({
       }
       setWorkerDrag(null);
       setWorkerHoverSlot(null);
+      setWorkerHoverWorkId(null);
       setWorkerOverTray(false);
     }
     window.addEventListener('pointermove', onMove);
@@ -1222,15 +1288,12 @@ export function Board({
     layoutRef.current = layout;
   }, [layout]);
 
-  // Reconcile the slot layout with what stands on the board and the territory cap. Runs whenever a
-  // box lands or leaves (the key signature changes) or territory grows. Existing placements —
-  // including ones the player dragged — are preserved; a box that has left frees its slot, which is
-  // the common case rather than the rare one now that Work boxes file every end of turn; a newly
-  // placed one takes its drop slot (else the first free slot). Territory only ever grows, so slots
-  // are appended and pre-existing ones never shift.
-  const placedSig = placedCards(G)
-    .map((p) => p.id)
-    .join(',');
+  // Reconcile the slot layout with the tableau and the territory cap. Runs whenever a building lands
+  // (the key signature changes) or territory grows. Existing placements — including ones the player
+  // dragged — are preserved; a newly placed building takes its drop slot (else the first free slot).
+  // Territory only ever grows, so slots are appended and pre-existing ones never shift. Nothing
+  // removes a building today, but a vacated slot is still freed rather than left dangling.
+  const tableauSig = G.tableau.map((b) => b.id).join(',');
   useEffect(() => {
     // Capture and clear the pending drop slot here, outside the updater below — setLayout's
     // updater must stay pure (StrictMode invokes it twice in dev and keeps only the second
@@ -1242,25 +1305,24 @@ export function Board({
       const next = prev.slice();
       while (next.length < G.resources.territory) next.push(null);
       if (next.length > G.resources.territory) next.length = G.resources.territory; // defensive; territory is monotonic
-      const onBoard = placedCards(G);
-      const present = new Set(onBoard.map((p) => p.id));
+      const present = new Set(G.tableau.map((b) => b.id));
       for (let i = 0; i < next.length; i++) {
-        if (next[i] != null && !present.has(next[i]!)) next[i] = null; // box gone → free slot
+        if (next[i] != null && !present.has(next[i]!)) next[i] = null; // building gone → free slot
       }
       const seated = new Set(next.filter((k): k is number => k != null));
       let want = wantSlot;
-      for (const p of onBoard) {
-        if (seated.has(p.id)) continue;
+      for (const b of G.tableau) {
+        if (seated.has(b.id)) continue;
         let slot = want != null && want < next.length && next[want] == null ? want : next.indexOf(null);
-        want = null; // only the first newly-placed box in this pass takes the drop slot
+        want = null; // only the first newly-placed building in this pass takes the drop slot
         if (slot === -1) slot = next.length; // no free slot (shouldn't happen) → append defensively
-        next[slot] = p.id;
-        seated.add(p.id);
+        next[slot] = b.id;
+        seated.add(b.id);
       }
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [placedSig, G.resources.territory]);
+  }, [tableauSig, G.resources.territory]);
 
   // Worker-deployment animation for the non-drag *placement* path: when a staffable card is played,
   // the core auto-staffs it (population.ts's autoStaffCount) and the new box appears already
@@ -1611,11 +1673,10 @@ export function Board({
         <div className={styles.gameContent} style={{ paddingTop: insets.top }}>
           <div className={styles.slotGrid}>
             {layout.map((key, slotIdx) => {
-              const inst = key != null ? placedById.get(key) : undefined;
+              const inst = key != null ? buildingById.get(key) : undefined;
               const isDropTarget = slotDrag?.active === true && hoverSlot === slotIdx;
               const isDragSource = slotDrag?.active === true && slotDrag.fromSlot === slotIdx;
-              const canAcceptWorker =
-                !!inst && isStaffable(CARDS[inst.cardId]) && inst.workers < workerCapOf(inst);
+              const canAcceptWorker = !!inst && inst.workers < workerCapOf(inst);
               const isWorkerDropTarget =
                 workerDrag?.active === true &&
                 workerHoverSlot === slotIdx &&
@@ -1670,7 +1731,45 @@ export function Board({
               );
             })}
           </div>
+          {G.workZone.length > 0 && (
+            <div className={styles.workStrip}>
+              {G.workZone.map((w) => {
+                const isWorkerDropTarget =
+                  workerDrag?.active === true &&
+                  workerHoverWorkId === w.id &&
+                  w.workers < workerCapOf(w) &&
+                  w.id !== workerDrag.fromBuildingId;
+                return (
+                  <BoardBox
+                    key={w.id}
+                    inst={w}
+                    gameover={!!gameover}
+                    idle={idle}
+                    // The strip has no slot around the box, so the drop highlight lands on the box.
+                    className={isWorkerDropTarget ? styles.workerDropTarget : undefined}
+                    boxRef={(el) => {
+                      if (el) workBoxEls.current.set(w.id, el);
+                      else workBoxEls.current.delete(w.id);
+                    }}
+                    workerDragSource={workerDrag?.active === true && workerDrag.fromBuildingId === w.id}
+                    workerDropTarget={isWorkerDropTarget}
+                    onStaffPointerDown={onStaffPointerDown}
+                    staffRef={(el) => {
+                      if (el) staffEls.current.set(w.id, el);
+                      else staffEls.current.delete(w.id);
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
+        <BoardRightColumn
+          G={G}
+          gameover={!!gameover}
+          idle={idle}
+          onZoom={(cardId, overrideText, stickerBadge) => setZoom({ cardId, overrideText, stickerBadge })}
+        />
       </div>
 
       <div className={styles.handBar} ref={handBarRef}>
@@ -1881,7 +1980,7 @@ export function Board({
       )}
 
       {/* The box following the cursor while it's dragged between slots. */}
-      {slotDrag?.active && placedById.has(slotDrag.id) && (
+      {slotDrag?.active && buildingById.has(slotDrag.id) && (
         <div className={styles.dragLayer} aria-hidden="true">
           <div
             className={styles.buildingDragClone}
@@ -1892,7 +1991,7 @@ export function Board({
               height: px(slotDrag.h),
             }}
           >
-            <BoardBox inst={placedById.get(slotDrag.id)!} gameover idle={idle} dragging />
+            <BoardBox inst={buildingById.get(slotDrag.id)!} gameover idle={idle} dragging />
           </div>
         </div>
       )}
