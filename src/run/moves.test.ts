@@ -199,11 +199,11 @@ describe('playCard: cards vs. buildings', () => {
     G.resources.population = 1;
     play(G, 'test_work'); // takes the one idle worker
     play(G, 'test_work_food'); // still allowed, but nothing left to staff it
-    // Instance ids are unique across *all* zones: when test_work is played, test_work_food
-    // (id 2) is still in hand, so its work box allocates past it (id 3), then test_work_food's box (id 4).
+    // A played card *is* the box: it keeps its hand id across the zone crossing rather than being
+    // re-minted, which is what lets its stickers and counters ride along with it.
     expect(G.workZone).toEqual([
-      { id: 3, cardId: 'test_work', workers: 1 },
-      { id: 4, cardId: 'test_work_food', workers: 0 },
+      { id: 1, cardId: 'test_work', workers: 1 },
+      { id: 2, cardId: 'test_work_food', workers: 0 },
     ]);
     expect(G.hand).toEqual([]);
   });

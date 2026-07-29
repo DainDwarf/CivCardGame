@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { addWork, blankState, findStaffable, instancesFromCardIds, type GameState } from '../rules';
 import type { CardDef } from '../content/cards';
-import { installCards, uninstallCards } from '../rules/testFixtures';
+import { mint, installCards, uninstallCards } from '../rules/testFixtures';
 import type { RunState } from '../run/engine';
 import { createGreedyPolicy } from './greedyPolicy';
 import { createGreedy2Policy } from './greedy2Policy';
@@ -35,7 +35,7 @@ function saturatedState(): RunState {
   const G: GameState = blankState('test'); // mission label only — this scenario seeds no objective
   G.resources.food = 5; // fed, but under the buffer cap so extra resource still scores
   G.resources.population = 1;
-  addWork(G, 'test_weak_work'); // auto-staffs the one worker (idle 1 → 0)
+  addWork(G, mint(G, 'test_weak_work')); // auto-staffs the one worker (idle 1 → 0)
   G.hand = instancesFromCardIds(['test_strong_work'], 100);
   return { G, gameover: undefined };
 }

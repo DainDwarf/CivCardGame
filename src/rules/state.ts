@@ -8,7 +8,9 @@ import { seededRng } from './rng';
  * copy among identical siblings, and per-copy state rides with it as it cycles hand→discard→deck.
  */
 export interface CardInstance {
-  /** Stable identity, unique within the run — assigned once, at mint (setup or play). */
+  /** Stable identity, unique within the run — assigned once at mint (run setup, a mission's seeded
+   *  cards, or `deck.ts`'s `spawnIntoDeck`). Playing a card mints nothing: it carries its own id onto
+   *  the board, so a copy holds one identity wherever it stands. */
   id: number;
   /** Key into the CARDS catalogue. */
   cardId: string;
@@ -17,10 +19,9 @@ export interface CardInstance {
    * chooses — a generic map, not bespoke fields, per the *cards own their own numbers* convention.
    * Absent until a resolver first writes one; read/written via `getCounter`/`bumpCounter`.
    *
-   * NOTE: two transitions deliberately drop `counters` when re-minting a plain instance, harmless
-   * today because no work/building/interactive card uses one — but the exact spots a *future* such
-   * card would lose its state: `upkeep.ts`'s `discardWorkZone` (work box → discard) and `moves.ts`'s
-   * `resolveInteraction` (rebuilding `self` for a resume pass).
+   * NOTE: one transition still rebuilds a plain instance and so drops these — `moves.ts`'s
+   * `resolveInteraction`, reconstructing `self` for a resume pass. Harmless today (no interactive card
+   * keeps a counter), but it is the one spot a future one would lose its state.
    */
   counters?: Record<string, number>;
   /**

@@ -1,6 +1,5 @@
-import { nextInstanceId } from './population';
 import { resolveCard } from './effects';
-import type { GameState } from './state';
+import type { CardInstance, GameState } from './state';
 
 /** Open a trade route: place a played `trade` card into the standing trade zone and resolve its
  *  one-time entry `effect` once (a no-op for the usual `effect`-less route, the same way `addBuilding`
@@ -12,8 +11,8 @@ import type { GameState } from './state';
  *  A route stands for the rest of the run: nothing removes one, so the rent is a one-way commitment
  *  and an unpayable one collapses the treasury into bankruptcy (`rules/collapse.ts`). It holds a
  *  territory slot for that whole time like a building does, but takes no workers. */
-export function openTradeRoute(G: GameState, cardId: string, stickers?: string[]): void {
-  const route = { id: nextInstanceId(G), cardId, workers: 0, ...(stickers?.length ? { stickers } : {}) };
+export function openTradeRoute(G: GameState, inst: CardInstance): void {
+  const route = { ...inst, workers: 0 };
   G.tradeRoutes.push(route);
   resolveCard({ G, self: route });
 }

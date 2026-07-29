@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { installCards, installFixtures, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
+import { mint, installCards, installFixtures, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { createRun } from '../run/engine';
 import { simConfig } from './simulate';
 import { DEFAULT_ENABLER_TERMS, deriveEnablers, enablerPotential, goalValuedCardCosts } from './enablers';
@@ -440,7 +440,7 @@ describe('durable producer credit', () => {
   function withBuilding(cardId: string, workers: number): number {
     const G = producerRoot();
     const m = deriveEnablers(G);
-    addBuilding(G, cardId);
+    addBuilding(G, mint(G, cardId));
     G.tableau[G.tableau.length - 1]!.workers = workers;
     return enablerPotential(G, m);
   }
@@ -476,9 +476,9 @@ describe('durable producer credit', () => {
     // the starting pools can't break this for reasons unrelated to the credit.
     const G = producerRoot();
     const m = deriveEnablers(G);
-    for (let i = 0; i < 40; i++) addBuilding(G, 'forge');
+    for (let i = 0; i < 40; i++) addBuilding(G, mint(G, 'forge'));
     const saturated = enablerPotential(G, m);
-    addBuilding(G, 'forge');
+    addBuilding(G, mint(G, 'forge'));
     expect(enablerPotential(G, m)).toBe(saturated);
     expect(m.producerCredit.forge! * 41).toBeGreaterThan(OBJECTIVE_WEIGHT); // the cap is what bound it
   });
@@ -572,7 +572,7 @@ describe('enabler term toggles', () => {
     });
     expect(m).toEqual({ weight: {}, cap: {}, producerCredit: {} });
     const G = masonryRoot();
-    addBuilding(G, 'farm');
+    addBuilding(G, mint(G, 'farm'));
     expect(enablerPotential(G, m)).toBe(0);
   });
 });

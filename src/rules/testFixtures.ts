@@ -27,7 +27,8 @@ import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
 import { MISSIONS, type MissionDef } from '../content/missions';
 import { cultureForLevel } from './culture';
 import { scaleResources, subtractResources } from './resources';
-import { getCounter, bumpCounter } from './state';
+import { getCounter, bumpCounter, type CardInstance, type GameState } from './state';
+import { nextInstanceId } from './population';
 import { gainResources } from './effects';
 import { drawCard } from './deck';
 import { effectiveGain } from './stickers';
@@ -420,6 +421,13 @@ export const FIXTURE_MISSIONS: Record<string, MissionDef> = {
  *  a test uses to install *its own* local fixtures (e.g. `events.test.ts`'s cascade/self-removal cards,
  *  which are specific to that suite and don't belong in the shared set) on top of the shared ones,
  *  without itself value-importing `content/cards`. Pair with `uninstallCards` in teardown. */
+/** Mint one card instance to hand to `addBuilding`/`addWork`/`openTradeRoute`, which take the played
+ *  copy rather than a cardId. Ids come from `nextInstanceId`, the same source `moves.ts` draws the
+ *  played instance's id from, so a test never invents an id that collides with a seeded zone. */
+export function mint(G: GameState, cardId: string, stickers?: string[]): CardInstance {
+  return { id: nextInstanceId(G), cardId, ...(stickers?.length ? { stickers } : {}) };
+}
+
 export function installCards(cards: Record<string, CardDef>): void {
   for (const [id, def] of Object.entries(cards)) CARDS[id] = def;
 }

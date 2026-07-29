@@ -11,7 +11,7 @@ import {
   type GameState,
 } from '../rules';
 import type { CardDef } from '../content/cards';
-import { installCards, installFixtures, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
+import { mint, installCards, installFixtures, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { endTurn, type RunState } from '../run/engine';
 import { hashOf, keyOf } from './oracleKey';
 
@@ -91,14 +91,14 @@ function producingState(): GameState {
   // self-exiling one — each auto-staffed from the idle pool (9 pop → 8 staffed, 1 idle), so a
   // non-commutative production would move a scalar. The territory boxes let the drain threat below read a
   // mutated sibling *pool*; the exiling box lets the second one read a mutated sibling *zone*.
-  addBuilding(G, 'test_food');
-  addBuilding(G, 'test_food');
-  addBuilding(G, 'test_multi');
-  addWork(G, 'test_work');
-  addWork(G, 'test_work_food');
-  addWork(G, 'test_terr_work');
-  addWork(G, 'test_terr_work');
-  addWork(G, 'test_exile_work');
+  addBuilding(G, mint(G, 'test_food'));
+  addBuilding(G, mint(G, 'test_food'));
+  addBuilding(G, mint(G, 'test_multi'));
+  addWork(G, mint(G, 'test_work'));
+  addWork(G, mint(G, 'test_work_food'));
+  addWork(G, mint(G, 'test_terr_work'));
+  addWork(G, mint(G, 'test_terr_work'));
+  addWork(G, mint(G, 'test_exile_work'));
   // The territory-scaled drain: it ticks after the workZone production pass, so it reads the +2 territory
   // the two work boxes just landed — pinning that the committed drain is order-independent regardless.
   addThreat(G, 'test_terr_threat');
@@ -109,9 +109,9 @@ function producingState(): GameState {
   G.removed = instancesFromCardIds(['test_exile_work'], 500);
   // Three standing routes, each yielding food and charging a rent scaled by the zone's own size — so a
   // mis-ordered read across the route batch would move money.
-  openTradeRoute(G, 'test_route_scaling');
-  openTradeRoute(G, 'test_route_scaling');
-  openTradeRoute(G, 'test_route_scaling');
+  openTradeRoute(G, mint(G, 'test_route_scaling'));
+  openTradeRoute(G, mint(G, 'test_route_scaling'));
+  openTradeRoute(G, mint(G, 'test_route_scaling'));
   // A few non-event hand cards + a stocked deck/discard, so the end-of-turn recycle and a possible
   // reshuffle both run and their ordering can't leak into the result.
   G.hand = instancesFromCardIds(['test_work', 'test_action', 'test_settlers'], 200);

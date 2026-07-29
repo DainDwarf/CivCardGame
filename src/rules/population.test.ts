@@ -13,7 +13,7 @@ import {
   workerCapOf,
 } from './population';
 import { blankState } from './state';
-import { installCards, installFixtures, uninstallCards, uninstallFixtures } from './testFixtures';
+import { mint, installCards, installFixtures, uninstallCards, uninstallFixtures } from './testFixtures';
 import type { CardDef } from '../content/cards';
 
 // `test_food`/`test_prod` are 1-worker producing buildings, `test_selfstaffed` a self-sufficient
@@ -111,14 +111,14 @@ describe('auto-staffing a new building (partial fill)', () => {
   it("carries the played instance's stickers onto the new tableau instance", () => {
     const G = blankState('test');
     G.resources.population = 1;
-    addBuilding(G, 'test_food', ['test_addgain']);
+    addBuilding(G, mint(G, 'test_food', ['test_addgain']));
     expect(G.tableau).toEqual([{ id: 1, cardId: 'test_food', workers: 1, stickers: ['test_addgain'] }]);
   });
 
   it('omits the stickers field entirely when the played instance carried none', () => {
     const G = blankState('test');
     G.resources.population = 1;
-    addBuilding(G, 'test_food');
+    addBuilding(G, mint(G, 'test_food'));
     expect(G.tableau).toEqual([{ id: 1, cardId: 'test_food', workers: 1 }]);
   });
 });
@@ -147,7 +147,7 @@ describe('Work cards as staffables', () => {
   it('addWork sticks the card in the workZone, auto-staffed from idle pop', () => {
     const G = blankState('test');
     G.resources.population = 1;
-    addWork(G, 'test_work'); // 1 idle -> staffs its 1 worker
+    addWork(G, mint(G, 'test_work')); // 1 idle -> staffs its 1 worker
     expect(G.workZone).toEqual([{ id: 1, cardId: 'test_work', workers: 1 }]);
     expect(freePopulation(G)).toBe(0);
   });
@@ -155,14 +155,14 @@ describe('Work cards as staffables', () => {
   it('addWork leaves the box unstaffed when no idle workers are free', () => {
     const G = blankState('test');
     G.resources.population = 0;
-    addWork(G, 'test_work_food');
+    addWork(G, mint(G, 'test_work_food'));
     expect(G.workZone).toEqual([{ id: 1, cardId: 'test_work_food', workers: 0 }]);
   });
 
   it("carries the played instance's stickers onto the new work box — otherwise a boosted Work card would silently lose its bonus the instant it's placed", () => {
     const G = blankState('test');
     G.resources.population = 1;
-    addWork(G, 'test_work', ['test_addgain']);
+    addWork(G, mint(G, 'test_work', ['test_addgain']));
     expect(G.workZone).toEqual([{ id: 1, cardId: 'test_work', workers: 1, stickers: ['test_addgain'] }]);
   });
 

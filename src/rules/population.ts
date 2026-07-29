@@ -1,5 +1,5 @@
 import { CARDS } from '../content/cards';
-import type { GameState, PlacedCard } from './state';
+import type { CardInstance, GameState, PlacedCard } from './state';
 import { placedCards } from './territory';
 
 /** Marginal food the `n`-th person eats — the whole shape of `foodUpkeep`, exposed on its own so the
@@ -78,8 +78,9 @@ export function autoStaffCount(G: GameState, cardId: string): number {
  *  the board (`territory.ts`'s `placedCards`), the card piles (hand, deck, discard, removed), the
  *  mission's threats and objective, *and* any options parked off-zone in a pending interaction — all
  *  of which share one instance-id space. Deterministic (no RNG). Scanning every zone is what keeps ids
- *  unique run-wide, so a building or Work box minted at play never collides with a card already
- *  sitting in the deck. `pendingInteraction.options` are cards lifted out of the deck (or discard)
+ *  unique run-wide, so a card minted mid-run (`deck.ts`'s `spawnIntoDeck`, a mission's seeded threats)
+ *  never collides with one already in a zone. Playing a card mints nothing — it carries its own id
+ *  onto the board. `pendingInteraction.options` are cards lifted out of the deck (or discard)
  *  awaiting a choice; no move mints while an interaction is pending today, but scanning them keeps the
  *  invariant robust if a future interactive card ever does. Ids of a card that has left every zone may
  *  be reused, which is harmless since nothing references them. */
@@ -98,21 +99,23 @@ export function nextInstanceId(G: GameState): number {
 
 /** Erect a building card in the tableau, auto-staffing it from the idle pool (partial-filling toward
  *  its capacity — see `autoStaffCount`).
- *  `stickers` (if the played hand instance carried any) rides onto the new tableau instance —
- *  otherwise a Reinforced building would silently lose its bonus the moment it's placed, since
- *  `resolveProduction`'s `effectiveGain` reads stickers off *this* instance, not the played card's
- *  original one. */
-export function addBuilding(G: GameState, cardId: string, stickers?: string[]): void {
-  const workers = autoStaffCount(G, cardId);
-  G.tableau.push({ id: nextInstanceId(G), cardId, workers, ...(stickers?.length ? { stickers } : {}) });
+ *
+ *  Takes the **played instance itself** and adds staffing to it, rather than minting a fresh id from
+ *  the cardId: a copy keeps one identity for the whole run wherever it stands, so its `stickers` (a
+ *  Reinforced building must still read its bonus through `resolveProduction`'s `effectiveGain`) and
+ *  its `counters` (a self-scaling card's per-copy state) travel with the physical card instead of
+ *  being re-derived — or lost — at every zone crossing. */
+export function addBuilding(G: GameState, inst: CardInstance): PlacedCard {
+  const placed = { ...inst, workers: autoStaffCount(G, inst.cardId) };
+  G.tableau.push(placed);
+  return placed;
 }
 
 /** Play a Work card onto the board, auto-staffing it from the idle pool (partial-filling toward its
- *  capacity — see `autoStaffCount`). Carries `stickers` onto the new work-zone instance, same
- *  reasoning as `addBuilding` above. */
-export function addWork(G: GameState, cardId: string, stickers?: string[]): void {
-  const workers = autoStaffCount(G, cardId);
-  G.workZone.push({ id: nextInstanceId(G), cardId, workers, ...(stickers?.length ? { stickers } : {}) });
+ *  capacity — see `autoStaffCount`). Carries the played instance across, same reasoning as
+ *  `addBuilding` above; `upkeep.ts`'s `discardWorkZone` strips only the staffing on the way out. */
+export function addWork(G: GameState, inst: CardInstance): void {
+  G.workZone.push({ ...inst, workers: autoStaffCount(G, inst.cardId) });
 }
 
 /** Find a staffable (building or Work card) by its instance id, searching both zones. */

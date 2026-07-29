@@ -44,16 +44,15 @@ export function playCard(
   // everything else resolves its effect immediately through the single resolver path.
   if (isStructure(card)) {
     // Place the structure (auto-staffing from existing idle pop), then resolve its one-shot
-    // *placement* effect on the played instance (e.g. the Hut's +1 population). A no-op for the
-    // usual produces-only building; a structure's per-round output is `produces`, never resolved
-    // here — see `CardDef.effect`. Population/territory a placement grants are global, so
-    // resolving on `played` (not the new tableau instance) is fine.
-    addBuilding(G, cardId, played.stickers);
-    resolveCard({ G, self: played });
+    // *placement* effect on the **placed** instance (e.g. the Hut's +1 population) — the copy that
+    // will stand there all run, so a counter the placement writes is the one its `produces` reads
+    // back later. A no-op for the usual produces-only building; a structure's per-round output is
+    // `produces`, never resolved here — see `CardDef.effect`.
+    resolveCard({ G, self: addBuilding(G, played) });
   } else if (card.kind === 'work') {
-    addWork(G, cardId, played.stickers);
+    addWork(G, played);
   } else if (card.kind === 'trade') {
-    openTradeRoute(G, cardId, played.stickers);
+    openTradeRoute(G, played);
   } else {
     // action or event: resolve the one-shot `effect` on the played *instance* — so a self-scaling
     // card reads/writes its own copy's counters, which ride along as it files below. A *played* event

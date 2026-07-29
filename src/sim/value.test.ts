@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { scoreState } from './value';
 import { addThreat, addWork, blankState, seedObjective, type GameState } from '../rules';
 import type { CardDef } from '../content/cards';
-import { installFixtures, uninstallFixtures, installCards, uninstallCards } from '../rules/testFixtures';
+import { mint, installFixtures, uninstallFixtures, installCards, uninstallCards } from '../rules/testFixtures';
 
 /**
  * Local fixtures for the objective-pull bands. A *strategic*-resource goal (culture, absent from
@@ -128,12 +128,12 @@ describe('scoreState', () => {
     const staffed = state((G) => {
       G.resources.food = 5;
       G.resources.population = 1;
-      addWork(G, 'test_work_culture'); // auto-staffs the one idle worker
+      addWork(G, mint(G, 'test_work_culture')); // auto-staffs the one idle worker
     });
     const unstaffed = state((G) => {
       G.resources.food = 5;
       G.resources.population = 1;
-      addWork(G, 'test_work_culture');
+      addWork(G, mint(G, 'test_work_culture'));
       G.workZone[0].workers = 0; // same box + population, but idle ⇒ not operating
     });
     expect(scoreState(staffed)).toBeGreaterThan(scoreState(unstaffed));
@@ -152,14 +152,14 @@ describe('scoreState', () => {
       G.resources.food = 5;
       G.resources.population = 1;
       G.resources.culture = 0; // below the 4🎭 goal, so growing culture is real progress
-      addWork(G, 'test_work_culture'); // auto-staffs the one idle worker → +culture next upkeep
+      addWork(G, mint(G, 'test_work_culture')); // auto-staffs the one idle worker → +culture next upkeep
     });
     const food = state((G) => {
       seedObjective(G, 'test_culture_goal');
       G.resources.food = 5;
       G.resources.population = 1;
       G.resources.culture = 0;
-      addWork(G, 'test_work_food'); // same operating count, but its output (food) doesn't advance the goal
+      addWork(G, mint(G, 'test_work_food')); // same operating count, but its output (food) doesn't advance the goal
     });
     expect(scoreState(culture)).toBeGreaterThan(scoreState(food));
   });

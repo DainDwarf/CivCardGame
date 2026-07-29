@@ -5,7 +5,7 @@ import { settleEndOfTurn } from './upkeep';
 import { addWork } from './population';
 import { openTradeRoute } from './tradeRoutes';
 import { blankState, type BuildingInstance } from './state';
-import { FIXTURE_CARDS, installFixtures, uninstallFixtures } from './testFixtures';
+import { mint, FIXTURE_CARDS, installFixtures, uninstallFixtures } from './testFixtures';
 
 beforeAll(() => {
   installFixtures();
@@ -29,8 +29,8 @@ describe('territory', () => {
     const G = blankState('test');
     G.resources.territory = 5;
     G.tableau = [b('test_food', 1)];
-    addWork(G, 'test_work');
-    openTradeRoute(G, 'test_trade');
+    addWork(G, mint(G, 'test_work'));
+    openTradeRoute(G, mint(G, 'test_trade'));
     expect(usedTerritory(G)).toBe(3);
     expect(freeTerritory(G)).toBe(2);
   });
@@ -58,8 +58,8 @@ describe('territory', () => {
   it('a work box frees its slot at end of turn while a route keeps its own', () => {
     const G = blankState('test');
     G.resources.territory = 4;
-    addWork(G, 'test_work');
-    openTradeRoute(G, 'test_trade');
+    addWork(G, mint(G, 'test_work'));
+    openTradeRoute(G, mint(G, 'test_trade'));
     expect(usedTerritory(G)).toBe(2);
     settleEndOfTurn(G);
     expect(usedTerritory(G)).toBe(1);
