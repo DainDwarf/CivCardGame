@@ -317,7 +317,9 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   single injection site, called once by `run/setup.ts`) and `kind`/`prereqs`/`map`/`age`/`reward`/
   `lore`. There is no bespoke per-mission setup/upkeep hook — a mission's behaviour is whatever its
   seeded threat/event *cards* do through the normal spine. `CampaignMap`'s `MissionFlowPopup` reads the
-  same lists, so the display can't drift from what a run seeds.
+  same lists, so the display can't drift from what a run seeds — plus an authored `alsoDisplay` list for
+  cards a run injects only **mid-play** (Accounting's Thief, bred by its Envious Population threat),
+  which no seed list can name.
 - **`ages.ts`** — `AGES` (Stone → Bronze → Iron) plus `ageColSpans`, which derives each age's
   contiguous DAG **column slice** from its missions' `map.col`. `CampaignMap` positions each age's band
   + wash over its slice — purely mission-derived, so an age with no placed missions renders no band. The

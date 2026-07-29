@@ -31,6 +31,12 @@ export interface MissionDef {
    *  N times for N copies (e.g. several event entries for a mission's successive waves). Same
    *  single-source-of-truth reasoning as `threats`. */
   events?: string[];
+  /** Extra cards for the mission-detail panel that no setup list names — ones a run only injects
+   *  *mid-play* (Accounting's Thief, bred into the deck by the Envious Population threat), which the
+   *  player would otherwise first meet in their own draw pile. Display-only, and authored rather than
+   *  derived: unlike `threats`/`events` nothing seeds from it, so a mission whose injecting card
+   *  changes has to be re-checked by hand. */
+  alsoDisplay?: string[];
   /** The mission's win condition, made into a card. Names a real `content/cards.ts` id of kind
    *  `'objective'` (pinned by a coherence test); `run/setup.ts` seeds it into `GameState.objective`
    *  and the card owns the win (the `objective` predicate) logic plus its live progress readout — so it's the
@@ -359,6 +365,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // must be tracked exists only once you have both the copper to make it and the city to store it.
     prereqs: ['finding_copper', 'masonry'],
     threats: ['envious_population'],
+    alsoDisplay: ['thief'],
     objectiveCardId: 'accounting_goal',
     victoryHint: 'Amass 40 🪙. The richer you grow, the more thieves envy breeds — pay ⚔️ to catch them.',
     failureHint: `Each reshuffle, envy adds a thief to your deck for every ${THIEVES_PER_GOLD} 🪙 you hold; an uncaught thief skims 🪙 and 🔨 every round.`,

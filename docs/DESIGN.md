@@ -229,6 +229,8 @@ MissionDef
   id, name, lore
   prereqs:          mission ids gating availability (the DAG edges)
   threats?/events?: cards seeded onto the board / shuffled into the deck at setup
+  alsoDisplay?:     cards the detail panel shows that setup does *not* seed — ones a run
+                    injects mid-play, which no seed list can name
   objectiveCardId:  the mission's win card, seeded into GameState.objective at setup
   reward?:          granted once on first clear (Influence + zero or more unlocks)
   kind:             'standard' | 'infinite'

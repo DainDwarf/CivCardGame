@@ -36,6 +36,17 @@ describe('mission catalogue coherence', () => {
     }
   });
 
+  // Existence only, no kind assertion: a mid-play injection lands in the draw pile, so any deck-legal
+  // kind is legitimate there and pinning one would box content in for nothing. This is what lets
+  // `CampaignMap` index `CARDS` with an `alsoDisplay` id unguarded.
+  it('every declared alsoDisplay id names a real card', () => {
+    for (const m of Object.values(MISSIONS)) {
+      for (const cardId of m.alsoDisplay ?? []) {
+        expect(CARDS[cardId], `${m.id} → alsoDisplay → ${cardId}`).toBeDefined();
+      }
+    }
+  });
+
   // A mission↔card coherence check, not a reward mechanism test, so it lives with the other mission
   // coherence iterators. A standard mission carries
   // a reward object (the reward-preview UI renders its Influence), but its unlocks are **all
