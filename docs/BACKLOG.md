@@ -171,7 +171,8 @@
     newly-unlocked Farm/Hut + Conquest cards into the deck — the reward's whole building
     set + military→territory conquest).
   - **9.2 — Growing Numbers tutorial** — teach **buildings, territory, and worker staffing** (and
-    the territory squeeze that forces Conquest). **Post-clear:** teach **stickers +
+    that a landless board has to take room before it can build at all — the squeeze that forces
+    Conquest). **Post-clear:** teach **stickers +
     Influence/shop** (the reward debuts the Irrigation card sticker + the Granary/Stockpile board
     stickers — the sticker-unlock reward kinds).
   - **9.3 — The First Trades tutorial** *(replaces the deleted Rites & Rituals; rewrite pending)* —
@@ -220,9 +221,11 @@
 
 - **Step 10 — Resource-economy rebalance pass** — **pulled forward; in progress on the
   `trade-redesign` branch, tracked in its own file: [`REBALANCE.md`](REBALANCE.md).** The
-  trade-route zone and the unified territory cap were its prerequisites, so the rates follow
-  there rather than waiting for Iron. Worked mission by mission from the first; mission 1 is
-  done. Step 8 (Iron) still sequences after it. `[size: L]` `[?]`
+  trade-route zone was its prerequisite, so the rates follow there rather than waiting for Iron.
+  Worked mission by mission from the first. **The territory cap model changed mid-pass** — the
+  shared cap it was measured under has been reverted to the tableau alone — so its later rows and
+  every committed baseline result need re-cutting; see REBALANCE's own note.
+  Step 8 (Iron) still sequences after it. `[size: L]` `[?]`
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*

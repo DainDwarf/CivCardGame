@@ -45,15 +45,15 @@ push through a 🔨 crisis, earn 🔨 relief.
 Target and drain are **both untuned**. The raw `territory` multiplier is the design intent
 ("heaviest drain at the final push") but may be **unwinnable**.
 
-**Re-read under the unified play area.** Every board card now takes a territory slot and Road/Conquest
-are **actions** (no slot, no worker, immediate, repeatable), so this mission's numbers shifted twice
-over: territory is now demanded by ordinary play as well as by the goal, and the goal's own climb got
-cheaper. Both need re-measuring before any lever below is chosen.
+**Re-read under the split play area.** Territory is spent by buildings alone again, so ordinary play
+no longer competes with the goal for it — but Road and Conquest are `work` cards again, each costing a
+worker for the turn, so the goal's climb is paced by labour rather than by cost alone. The board also
+starts with less land (City 5 → 2). All of that needs re-measuring before any lever below is chosen.
 
 - **First levers, in order:** `WHEEL_TERRITORY`, then softening the drain to a grace band
   (`max(0, territory − K)`) or a divisor.
-- **Feel-play watch:** Road/Conquest are now cost-limited only — several in one turn can still spike
-  territory to dodge the escalating drain.
+- **Feel-play watch:** a turn can field only as many Roads/Conquests as it has free workers, so
+  spiking territory to dodge the escalating drain is now bounded by population, not just by cost.
 - **Sweep on:** `scripts/sim/baselines/wheel.json`.
 
 ## Polish ⬜ (not started)

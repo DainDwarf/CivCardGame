@@ -56,9 +56,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Collapse the three board zones into one** `[size: M]` `[?]` — `GameState` still holds `tableau`,
   `workZone` and `tradeRoutes` as three separate `PlacedCard[]`s; they are already *presented* as one
-  board (`territory.ts`'s `placedCards` concatenates them, and the cap, the instance-id scan and the
-  UI slot grid all fold over that single list). Finish the job in the data: one array, with the
-  per-kind behaviour read off `CARDS[c.cardId].kind` where it's actually needed.
+  board in the data (`territory.ts`'s `placedCards` concatenates them for the instance-id scan and the
+  UI's box lookup) even though they now render as three zones again and only the tableau is capped.
+  Merging them into one array would read the per-kind behaviour off `CARDS[c.cardId].kind` where it's
+  actually needed. **Re-read under the zone split before building it** — the three zones being visible
+  again weakens the "they're already one board" argument this item opened with.
   - **What the split still encodes** is lifecycle, and that's what has to survive the merge: the
     tableau persists, the workZone clears every end of turn (`upkeep.ts`'s `discardWorkZone`), routes
     persist but take no workers and tick flat rather than per-worker. Today those are "which array am
@@ -77,11 +79,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     thinning the deck; their removal cards are what keep circulating. So a standing thing would carry an
     ongoing *draw* cost on top of its resource cost — which is the actual design question, and wants a
     feel-play of permanent routes first.
-  - **The territory question is decided (`trade-redesign`):** buildings, Work boxes *and* trade routes all
-    take a slot under one shared cap. That changes what these removal cards are for — a route now costs a
-    permanent slot *and* permanent rent, so closing one frees board space, not just money, and the
-    deck-dilution price has to be weighed against a much stronger benefit. Re-read this whole item under
-    that model before building it.
+  - **The territory question is settled (`trade-redesign`):** territory caps the **tableau** alone — a
+    route costs rent and nothing else. So closing one buys back money, not board space, which is the
+    weaker of the two benefits the shared-cap version would have offered. Weigh the deck-dilution price
+    against that alone.
   - **Implementation notes to carry forward:**
     - The cancellation must mint into **`discard`, never `hand`** — that is what keeps the reversible
       play/close pair out of a single turn's `expandTurn` line enumeration. Minting to hand blows up the
@@ -98,8 +99,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     removal exists, a play-time `gate.check` leaks: `gate` is evaluated at play and `upkeep` fires at the
     `endTurn` boundary, so play-route → play-building → close-route-before-ending-turn pays zero 🪙 and
     keeps the building forever. Continuous gating also gives the Sea Peoples capstone its teeth.
-- **Escalating route rent** `[size: S]` `[?]` — routes ship with a **flat** rent. The zone is now capped
-  by territory as well as by the treasury, which weakens the case for this. The originally-planned
+- **Escalating route rent** `[size: S]` `[?]` — routes ship with a **flat** rent. The treasury is the
+  zone's *only* cap again, so the case for this is back at full strength. The originally-planned
   auto-cap is a rent that scales with the number of parallel
   routes: a per-card `upkeep.resolve` reading `G.tradeRoutes.length` (like `tamed_horses`/`overextension`,
   a drain reading a count — but **self-referential** where those aren't, since the card reads the size of
@@ -176,7 +177,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `trade-redesign` branch's job — parked here so it isn't rediscovered from a card. How many copies of
   a card a player can reach is what decides whether a second-rate line is worth building at all, and
   right now that scarcity is doing load-bearing balance work it was never tuned for — a second Farm
-  is a shop purchase, while a second Bead Workshop + Bartering pair is only two more territory slots
+  is a shop purchase *and* a territory slot, while a second Bead Workshop + Bartering pair needs only the one slot
   (see [`missions/first-trades.md`](missions/first-trades.md) → *Balance*). **Which of the two food
   lines wins is therefore set by the copy ladder, not by their rates**, so re-read that pair when the
   ladder moves. `npm run economy` prints the faucet ledger and price list the rework starts from.
@@ -199,18 +200,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `content/missions.test.ts`: an id-existence iterator, and acyclicity asserted *through* `foldOrder`
   (the real topological sort, not a re-derived copy) — a mission inside a cycle being just as
   unreachable, and just as quiet. Both verified against a deliberately broken catalogue.
-- **Unified play area** ✅ — buildings, Work boxes and trade routes all take one **territory** slot and
-  render in one grid. `rules/territory.ts` (was `tableau.ts`) folds the cap over `placedCards`; the
-  playability gate keys on `cards.ts`'s new `occupiesTerritory`. A Work box rents its slot for the turn;
-  a building or route commits it for the run; an `action` takes none — which is why **Conquest and Road
-  became actions**, since as board cards a full board could never grow again. The work strip and the
-  right-hand trade column are gone, and `Board.tsx`'s three box components collapsed into one `BoardBox`.
-  Board starting territory was raised (Tribe/Chiefdom were 0) — **provisional, unmeasured**, as is every
-  mission under the new cap.
+- **Unified play area** ✅ *— shipped, then reversed.* Buildings, Work boxes and trade routes briefly
+  shared one **territory** cap and one grid. Played, the shared cap wasn't the feel wanted, so it was
+  reverted: territory caps the **tableau** alone (`usedTerritory` folds `G.tableau`, the gate keys on
+  `isStructure`, and `occupiesTerritory` is gone), and the work strip and right-hand trade column are
+  back. **Conquest and Road are `work` cards again** — the trap that forced them to be actions only
+  existed while work took a slot. Board territory went back to its pre-merge figures (Tribe 0,
+  Settlement 2, Chiefdom 0, City 2). Two things from the merge were kept because they were never about
+  the cap: `placedCards` as the one board-wide read, and the single `BoardBox` drawing all three zones.
+  **Everything measured under the shared cap is stale** — every row in `scripts/sim/baselines/results/`
+  and every "measured" claim in [`REBALANCE.md`](REBALANCE.md).
 - **Trade-route zone** ✅ — a new `trade` **card kind** and a standing `G.tradeRoutes` zone. Playing a
   trade card files it there via `rules/tradeRoutes.ts`'s `openTradeRoute`, where the `endTurn` broadcast
   ticks it like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling. A route takes
-  **no workers** and nothing closes one, so it is bounded by its territory slot and by the rent: an
+  **no workers**, no territory, and nothing closes one, so the rent alone bounds it: an
   unpayable one runs money negative into **bankruptcy**. This is the sink money's one-way-hub topology
   spends through (see [`REBALANCE.md`](REBALANCE.md)).
   - **One design change from the original ticket: routes are permanent.** The ticket had them removable

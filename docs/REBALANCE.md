@@ -1,10 +1,22 @@
 # CivCardGame — Resource-economy rebalance pass
 
 > The working thread of the **`trade-redesign` branch**. Was [`BACKLOG.md`](BACKLOG.md)'s *Step 10*,
-> scheduled between the Bronze and Iron arcs; **pulled forward** once the trade-route zone and the
-> unified territory cap — its two prerequisites — shipped on this branch, so the rates follow here
-> instead of waiting for Iron. BACKLOG keeps a one-line status pointer at Step 10; the live state is
-> all here.
+> scheduled between the Bronze and Iron arcs; **pulled forward** once the trade-route zone shipped on
+> this branch, so the rates follow here instead of waiting for Iron. BACKLOG keeps a one-line status
+> pointer at Step 10; the live state is all here.
+>
+> ## ⚠️ The cap model changed mid-thread — most rows below are stale
+>
+> Everything from the *Chiefdom* row onward was measured while buildings, Work boxes **and** trade
+> routes shared one territory cap. That cap has since been reverted: **territory caps the tableau
+> alone**, work and trade cost none, Conquest and Road are `work` cards again, and board territory
+> went back to Tribe 0 / Settlement 2 / Chiefdom 0 / City 2.
+>
+> So every ✅ here means "measured under the shared cap", not "measured". The **rates** (what a
+> worker-round is worth, what converts into what) are mostly untouched by the change and should carry
+> over; anything reasoning about **slots** — the Chiefdom identity, the Hunting board-slot cost, the
+> first-trades slot economics — has lost its premise and needs re-deriving. Every row in
+> `scripts/sim/baselines/results/` is stale for the same reason.
 >
 > **Scope:** the *rates* — what a worker-round is worth per resource, what converts into what, and
 > what each mission is therefore asking for. A mission's own reasoning, sweep tables and readings live
@@ -110,7 +122,7 @@ What every later cell is measured against. Each mission's reasoning and sweep is
 | 4 | `FIRST_TRADES_FOOD` = **25🌾**, set on turn times (13 · 15 · 16 at oracle/planner/heuristic) · **Sun Stone** (the re-rated Burial) and **Calendar** (2🔬 → look at the top 3 and draw one) are `reading_seasons`' grants |
 | 5 | The culture pair halved — **Beer** 1🌾 → **1🎭** (work) · **Sun Stone** **3🔨** → **1🎭**/worker (building). The level curve holds at cumulative **10 / 30 / 70** (`CULTURE_STEP = 10`): the producers were the freshly-rated numbers and the curve the oldest, so they moved |
 | 5 | **Irrigation** keeps +1🌾 and now also charges **+1🔨 to play**, reaching work cards as well as buildings · **Elegant** is new: **+1🎭, +1 🎭 level to play**, on a culture producer of either kind |
-| 7+ | Dogs → **Hunting**: the 1🌾→1⚔️ `action` becomes a free `work` box at **1⚔️**/worker (card id still `dogs`). ⚔️ stops being bought with 🌾 and starts costing a worker and a board slot for the turn. Post-dates mission 7's pass rather than coming out of it — a trial, measured across all seven swept cells at once |
+| 7+ | Dogs → **Hunting**: the 1🌾→1⚔️ `action` becomes a free `work` box at **1⚔️**/worker (card id still `dogs`). ⚔️ stops being bought with 🌾 and starts costing a worker for the turn (the board slot it also cost when this was measured is no longer charged). Post-dates mission 7's pass rather than coming out of it — a trial, measured across all seven swept cells at once |
 | 9 | **Forge** 4🔨 → **3🔨**, output unchanged at 2🔨/worker — so it now undercuts the Archives it was priced level with. **Unmeasured**: it is `finding_copper`'s own reward and so absent from that cell's deck, and every cell that stocks it is still ⬜ |
 
 The base-rate cut fixed three work-card/building pairs as a side effect — Farm now *matches* Foraging,
@@ -118,21 +130,22 @@ Forge *doubles* Toolmaking, Archives *doubles* Storytelling. The culture pair we
 **replacing the building rather than raising it**: Burial became Sun Stone at the Farm/Foraging shape
 (permanent output at the work card's rate), and Cave Art was cut, leaving Beer as culture's work card.
 
-### Chiefdom — pop 3 / terr **2** / 🌾 **8** ✅
+### Chiefdom — pop 3 / terr **0** / 🌾 **8** ⚠️ premise changed
 
-Territory 4 → **2**; everything else unchanged. Chiefdom was the *low-territory / high-population*
-government in [`missions/raiding.md`](missions/raiding.md) — which locks Warband as "keeping
-Chiefdom's shape" — but carried Settlement's territory 4, so the identity existed only on paper. Now
-three workers share two slots and one starts idle.
+Chiefdom is the *low-territory / high-population* government in
+[`missions/raiding.md`](missions/raiding.md) — which locks Warband as "keeping Chiefdom's shape". The
+shared-cap pass gave it territory 2 to make three workers share two slots; with the cap split it sits
+at **0** like Tribe, and the shortage it expresses is now specifically a *building* shortage — its
+three workers can all still work, just never in a building until it takes land.
 
 **Why territory and not the spendable pools.** Five of a board's eight numbers are one-time and wash
 out by turn 10; only population and territory are standing capacities, felt every round. They are the
-whole persistent-differentiation budget a board has, and no board had used them on purpose. Chiefdom's
-6⚔️ was its only identity and it was gone by turn 3.
+whole persistent-differentiation budget a board has. This reasoning survives the cap change intact.
 
-**6⚔️ was already the right number**, which is why it didn't move: Conquest costs 2⚔️ doubling per
-play per copy, so plays one and two are 2 then 4 — the start buys exactly two, taking territory 2 → 4.
-The board states its strategy as a shortage the player spends the army to fix, rather than as a bonus.
+**6⚔️ is still exactly two Conquests** (2⚔️ doubling per play per copy → 2 then 4), which is what
+kept the number when the cap moved. What that buys changed: two slots from a standing start rather
+than a top-up from 2 to 4 — and, now that Conquest is a `work` card, it also costs two worker-turns.
+**Unmeasured under the split cap.**
 
 Not pop 4: upkeep is `floor(pop²/4)`, so pop 4 eats 4🌾/round — break-even with *every* worker farming
 (see *Open*). Pop 4 on two slots is a spiral, not a push.
@@ -174,8 +187,8 @@ the planner column and on the trait argument, not on those.
 **Still open — do boards get behaviour, not just numbers?** Deliberately deferred until this is played:
 numbers-only may be a complete answer now that the persistent axis is used on purpose. If it still reads
 bland, the ranked options are (1) a board starting with a card already **in play** — flavour as loud as
-a rule with every rule still printed on a readable card face, and on Chiefdom it would occupy one of the
-two slots, sharpening the squeeze rather than paying it off; (2) a board rule keyed to a **concept**,
+a rule with every rule still printed on a readable card face — though on a landless Chiefdom a starting
+*building* has nowhere to stand, so it would have to be a route or a granted slot; (2) a board rule keyed to a **concept**,
 e.g. *territory gained is doubled* — survives Road and anything after, unlike naming Conquest. Ruled
 out either way: a board rule that changes a **card's printed numbers**, which makes the card face lie
 on one board. Watch that any such rule doesn't make Chiefdom the *answer* to the territory-hungry
@@ -241,7 +254,9 @@ Consequences that outlived the restructure:
   can't be arbitraged back, and "raiders don't build civilizations" reads well.
 - **Does the workshop+route pair scale?** The First Trades measured a *single* pair, its deck holding one
   copy of each card, so no run there could build a second. The route out-rates the building that funds
-  it, so pair *N* costs what pair 1 did with **territory the only brake** and no diminishing term. Needs
+  it, so pair *N* costs what pair 1 did with no diminishing term. **Sharper since the cap split**: the
+  route half now costs no territory at all, so only the workshop is braked by slots and the rent is the
+  only thing that curves. Needs
   a deliberately multi-copy deck on a slot-rich board: if two pairs simply double the food, the pair is
   the dominant food line everywhere rather than an alternative to one, and either the rent or the return
   has to curve. Trader (3🪙/worker) and whatever Naval adds arrive in Bronze and change the arithmetic

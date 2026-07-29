@@ -18,8 +18,9 @@
   otherwise "pave now or pay 🔨 later" is a weak decision; the food bleed makes it a real
   🔨-to-pave vs. 🌾-to-survive squeeze. (Sibling signatures: Copper 🔨-threat, Writing 🔬-escalating,
   Roads 🌾-flat.)
-- **Reward:** unlocks the **Road** (action, 3🪙+3🔨 → +1 territory, repeatable — Conquest's economic
-  twin, structurally identical), the tool the Wheel mission's territory goal is built around.
+- **Reward:** unlocks the **Road** (work card, 1 worker, 3🪙+3🔨 → +1 territory, repeatable —
+  Conquest's economic twin, structurally identical), the tool the Wheel mission's territory goal is
+  built around.
 
 ## Implement ✅ (shipped)
 
@@ -30,9 +31,11 @@ Seeded events paving to `removed`; per-copy in-hand food bleed.
 6 segments · 8🔨 each · −2🌾 per unpaved segment. On the standing baseline (26-card City deck) this
 lands **oracle 9/10 · planner 85% · greedy 31%** — tight but winnable, the intended squeeze.
 
-- **Still unpinned until Wheel is balanced:** the Road's 3🪙+3🔨 cost (parity with Conquest's 5⚔️ is
-  the intent). Both cards became **actions** with the unified play area — no slot, no worker, immediate,
-  repeatable — so the measured result above predates a real buff to them and needs re-running.
+- **Still unpinned until Wheel is balanced:** the Road's 3🪙+3🔨 cost. Parity with Conquest is no
+  longer a flat comparison — Conquest is 2⚔️ *doubling per copy-use* while the Road's price is flat, so
+  the Road overtakes it from the third expansion on. Both are `work` cards again (one worker, land
+  arriving at end of turn), and City now starts at 2 territory rather than 5, so the measured result
+  above predates all of that and needs re-running.
 
 ## Polish ⬜ (not started)
 

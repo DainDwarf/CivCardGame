@@ -77,8 +77,8 @@ is the shape a branch-specific reward should have.
 
 `work`, not a building: the route is permanent and workerless, Beer transient and worker-hungry, so the
 two **complement**. A brewery building would put a second slot-eater on the branch whose lesson is
-already that slots are the squeeze. Beer paying a slot for the turn is not a cost to design around —
-it is the cap decision the unified territory rule exists to create.
+already that slots are the squeeze; Beer costs a worker for the turn and no land at all, which is a
+different scarcity and therefore a real choice rather than a second bid for the same one.
 
 ✅ **The rate is now measured, at 1🌾 → 1🎭.** It was a starting number priced against landed rates
 alone, with the culture *level* curve (10 / 30 / 70) un-re-read. The convergence node's sweep judged
@@ -137,12 +137,16 @@ Read straight off the report, no interpretation attached:
 **The per-worker arithmetic the target was set against**, on Settlement (10🌾 / 5🔨 / 4🗺️ / 2🧍,
 upkeep `floor(pop²/4)` = 1🌾):
 
-- **One pair** — Bead Workshop (1 slot, 1 worker → 1🪙) funding Bartering (1 slot, 0 workers, −1🪙 →
-  +2🌾). The second worker forages. ≈ **+2🌾/round** off two slots, and the route's half of that is
+⚠️ **Re-derive: this whole section counted routes against the slot budget.** Under the split cap a
+route costs no land, so only the Bead Workshop half is braked by slots and the numbers below are wrong
+in the direction of *too pessimistic*.
+
+- **One pair** — Bead Workshop (1 slot, 1 worker → 1🪙) funding Bartering (0 slots, 0 workers, −1🪙 →
+  +2🌾). The second worker forages. ≈ **+2🌾/round** off a single slot, and the route's half of that is
   paid whether or not a Foraging card is in hand — which is the real advantage over a Farm line.
-- **Two pairs** — 4 slots (Settlement's whole board), and the third worker needs a Hut, which needs a
-  *fifth* slot, which needs a Conquest. So the second pair drags ⚔️ back into a mission that looks like
-  it has nothing to do with it. ≈ **+3🌾/round** for ~5🔨 more and a 2⚔️ Conquest.
+- **Two pairs** — 2 slots on Settlement's board of 2, so the third worker's Hut needs a *third* slot,
+  which needs a Conquest. So the second pair still drags ⚔️ back into a mission that looks like it has
+  nothing to do with it — but one expansion later than it used to.
 
 The second pair's marginal is +1🌾/round for roughly ten rounds of payback, so at 25🌾 one pair plus
 foraging is the line and the second is a choice rather than a requirement — which is the shape the

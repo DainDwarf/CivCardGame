@@ -129,8 +129,8 @@ they replaced were void, having been taken on both the old deck and the old goal
   ~1🎭/worker/round) is what sets it and stays.
 - ✅ **Two terms, no third.** The 3🧍 term is reached incidentally by every winning line (planner and
   oracle both end at exactly 3.0), so the goal is in practice a culture race with a Hut attached. The
-  reserve third term — **one standing trade route**, costing a *slot, not a worker*, so it would press
-  on the dimension the sweep proved binding (territory) — was weighed and **declined**: it repeats The
+  reserve third term — **one standing trade route**, costing rent rather than a worker or a slot (so it
+  no longer presses on territory, the dimension the sweep proved binding) — was weighed and **declined**: it repeats The
   First Trades' own term, and the cell measures healthily without it. It stays on the shelf if the money
   strand below forces a re-open.
 - ⚠️ **Money is stranded in the Stone Age.** With 30🪙 gone, the age's only 🪙 demand is a route's

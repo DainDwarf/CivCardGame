@@ -60,10 +60,12 @@ saw 5 on Chiefdom.
 preferred Sun Stone over Beer on that board (97 plays to 75); at 3🔨 deepPlanner is back to 90% and Beer
 leads again (128 to 84). The third 🔨 is what keeps the *work card* worth owning next to the building.
 
-**Chiefdom is a genuinely different mission**, not the same one harder: worker-rich and slot-poor, so
-the food line has to be the highest-rate-per-*slot* rather than per worker, and the deck's only such
-card is the Bartering route (2🌾/slot, no workers) against Farm's 1🌾. The oracle opens one in most of
-its wins; on Settlement it never touches Bead Workshop or Bartering at all.
+**Chiefdom is a genuinely different mission**, not the same one harder: worker-rich and landless, so
+the food line has to come from somewhere other than a building, and the deck's only such card is the
+Bartering route (2🌾 for its rent, no workers, no land) against Farm's 1🌾. The oracle opens one in most of
+its wins; on Settlement it never touches Bead Workshop or Bartering at all. ⚠️ Measured when Chiefdom
+had 2 territory and a route cost one of them; the *shape* of the reading survives — the route is still
+the landless answer — but the numbers predate both changes.
 
 **Greedy's 0% on Chiefdom is a policy reading, not a content one.** Opening a route means spending a
 slot and a worker on Bead Workshop while food's band-3 buffer target still sits at 9🌾 — the payoff
