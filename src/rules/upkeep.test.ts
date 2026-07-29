@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { resolveHandEvents, projectedDelta, applyUpkeep } from './upkeep';
-import { blankState, instancesFromCardIds } from './state';
+import { resolveHandEvents, projectedDelta, applyUpkeep, discardWorkZone } from './upkeep';
+import { blankState, getCounter, instancesFromCardIds } from './state';
 import { gainResources } from './effects';
 import { subtractResources } from './resources';
 import type { CardDef } from '../content/cards';
@@ -173,5 +173,22 @@ describe('projectedDelta — imminent next-turn reshuffle', () => {
     const delta = projectedDelta(G);
     expect(delta.resources.money).toBe(-3); // structural reshuffle cost — shown
     expect(delta.resources.science).toBe(0); // draw-contingent on.draw — suppressed
+  });
+});
+
+describe('filing the work zone', () => {
+  it('keeps the physical card whole, dropping only its staffing', () => {
+    const G = blankState('test');
+    G.workZone = [{ id: 7, cardId: 'test_work', workers: 1, stickers: ['test_addgain'], counters: { plays: 2 } }];
+    discardWorkZone(G);
+
+    expect(G.workZone).toEqual([]);
+    const filed = G.discard[0];
+    expect(filed.id).toBe(7);
+    // A sticker is bought and permanent, and a counter is this copy's per-run state: both belong to
+    // the card, so both survive the trip back to the deck. Only `workers` is the box's.
+    expect(filed.stickers).toEqual(['test_addgain']);
+    expect(getCounter(filed, 'plays')).toBe(2);
+    expect('workers' in filed).toBe(false);
   });
 });

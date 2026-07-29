@@ -13,11 +13,13 @@ import { cloneState, type CardInstance, type GameState } from './state';
  * end of turn. Not part of `applyUpkeep` itself, since the projection clone runs upkeep too.
  */
 export function discardWorkZone(G: GameState): void {
-  // File each work card to discard as a plain card instance (its workZone id is free to reuse once
-  // the zone is cleared), dropping the staffing-only `workers`/`counters` a work box carried.
-  for (const w of G.workZone) {
-    G.discard.push({ id: w.id, cardId: w.cardId });
-    emitEvent(G, { type: 'discard', instanceId: w.id, cardId: w.cardId, reason: 'workFiled' });
+  // Strip `workers` and nothing else: staffing is the one thing that belongs to the box rather than
+  // to the physical card, so `stickers` (bought, permanent) and `counters` (this copy's per-run
+  // state, e.g. a self-scaling card's play count) ride along to the discard and back into the deck.
+  for (const { workers, ...filed } of G.workZone) {
+    void workers;
+    G.discard.push(filed);
+    emitEvent(G, { type: 'discard', instanceId: filed.id, cardId: filed.cardId, reason: 'workFiled' });
   }
   G.workZone = [];
 }
