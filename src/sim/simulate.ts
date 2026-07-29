@@ -47,6 +47,11 @@ export type SimAction =
 export interface Policy {
   (state: RunState): SimAction;
   seed?: string;
+  /** Consulted before each action; a non-null string ends the run as a defeat with that `gameover.reason`.
+   *  The seam a policy that can *decline* to play needs — a search policy with no winning line reports its
+   *  own non-result rather than handing the run to a different brain, which would file the outcome under
+   *  the search's name. Round-driven cutoffs stay the drive loop's job ({@link SimOptions.maxRounds}). */
+  abort?: (state: RunState) => string | null;
 }
 
 /** The result of a headless run: the meta-loop `RunResult` plus enough raw state for aggregation. */
@@ -135,15 +140,22 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
 
   let actionsApplied = 0;
   const cardPlays: Record<string, number> = {};
+  // Reads the loop's live `state`/counters, so a synthesized defeat carries the same payload a natural
+  // gameover would.
+  const endWith = (reason: string): SimOutcome => {
+    const gameover: Gameover = { outcome: 'defeat', reason, missionId: state.G.missionId };
+    return { result: toRunResult(state.G, gameover), gameover, finalState: state.G, actionsApplied, cardPlays };
+  };
   while (!state.gameover) {
     if (state.G.round > maxRounds) {
       // A driven run's rounds climb this high only when the policy is stalled (idling a plateau it can't
       // cross, e.g. a one-ply greedy on Masonry's multi-turn chain) — a real game ends in tens of rounds.
       // Record it as a first-class `stall` defeat so one stuck seed costs one loss, not the whole sweep,
       // and stop short of grinding to the `maxActions` wall thousands of rounds later.
-      const gameover: Gameover = { outcome: 'defeat', reason: STALL_REASON, missionId: state.G.missionId };
-      return { result: toRunResult(state.G, gameover), gameover, finalState: state.G, actionsApplied, cardPlays };
+      return endWith(STALL_REASON);
     }
+    const declined = policy.abort?.(state);
+    if (declined !== undefined && declined !== null) return endWith(declined);
     if (actionsApplied >= maxActions) {
       throw new Error(
         `simulateRun exceeded ${maxActions} actions without reaching gameover ` +

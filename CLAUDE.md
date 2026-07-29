@@ -85,7 +85,10 @@ surprise, so nothing shows a locked placeholder or a total count.
   board; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
   Influence can be ground before `ice_age` unlocks — a mission needing the shop there would be a
   softlock. Measured results live under `baselines/results/`, whose commit *is* their content-SHA
-  record. Both styles take `--seeds`/`--policies`/`--format` (text|json); `--seed <i>` switches to a
+  record — one file per recorded policy set (`greedy-planner` @100, `oracle` @10), so a policy with no
+  file there is simply unmeasured, not measured-and-absent; every row is swept at the **default search
+  beam**, so a `--search-beam` sweep is a diagnostic, never a baseline. Both styles take
+  `--seeds`/`--policies`/`--format` (text|json); `--seed <i>` switches to a
   single-run per-turn replay trace. See *Balance tooling*.
 - `npm run sim:profile` — the same sweep under `@platformatic/flame`, which writes a **markdown**
   hotspot report (annotated call tree + per-function callers/callees) beside an HTML flamegraph, into
@@ -436,8 +439,19 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   the `greedy`↔`greedy2` win-rate gap measures how much worker reassignment is a skill lever), the
   **`planner`** (`plannerPolicy.ts`) — the **fair competent** policy, a bounded determinized
   expectimax + beam that clears the multi-turn conversion chains the one-ply greedies *plateau* on (e.g.
-  Masonry), and the **`oracle`** (`oracle.ts` + `oracleKey.ts`) — a bounded, deterministic **graph
-  search** that *proves winnability* by finding a real winning line. The competent policies are
+  Masonry), and the **`oracle`**/**`prover`** pair (`oracle.ts` + `oracleKey.ts`) — one bounded,
+  deterministic **graph search** for a real winning line, wrapped two ways. They differ only in the
+  no-line case, and that difference is what each measures: `oracle` falls back to `deepPlanner` (the
+  strongest tier, so its wins dominate every policy's — the *best achievable*), while `prover` declines
+  the seed as a `noWinFound:<bound>` defeat, making its win rate the **search-proven winnability** rate.
+  Read an `oracle` number as a ceiling on play and a `prover` number as a lower bound on winnability —
+  never the first as the second. The suffix is the `SearchExhaustion` that stopped the search — `budget` /
+  `depth` / `deadEnd` — one `defeatCauses` bucket each, because "no line" alone names no knob to turn and
+  the three point at `nodeBudget`, `maxRounds` and `beamWidth` (or the ranking heuristic) respectively.
+  `proveWinnable` answers the same question offline, outside the policy machinery.
+  A policy declines through `Policy.abort`, the seam mirroring the drive loop's `stall`; both read the
+  sweep's `--max-rounds` as their search depth (`searchBoundsFor`), so neither proves a line the drive loop
+  would then discard as a stall. The competent policies are
   **goal-directed** via `sim/objective.ts`'s `objectiveProgress` (a sim-local `[0,1]` gradient the run
   engine doesn't expose), kept strictly in `sim/` — never a hook on a card/mission. See DESIGN.md →
   *Code architecture* for the `sim/`-is-a-consumer rule and the oracle's soundness/completeness argument.

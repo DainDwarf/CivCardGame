@@ -5,8 +5,13 @@ import { createRandomPolicy } from './randomPolicy';
 import { createGreedyPolicy } from './greedyPolicy';
 import { createGreedy2Policy } from './greedy2Policy';
 import { createHeuristicPolicy } from './heuristicPolicy';
-import { createOraclePolicy } from './oracle';
-import { createPlannerPolicy } from './plannerPolicy';
+import { createOraclePolicy, createProverPolicy, searchBoundsFor, type OracleOptions } from './oracle';
+import { createPlannerPolicy, DEEP_PLANNER_OPTIONS } from './plannerPolicy';
+
+/** Builds one run's policy from its seed. The sweep's {@link BatchOptions.sim} comes along so a policy
+ *  whose own search is bounded in *rounds* can align with the drive loop's cutoff rather than guess; every
+ *  other policy ignores it. */
+export type PolicyFactory = (policySeed: string, sim?: SimOptions, search?: OracleOptions) => Policy;
 
 /** The built-in move policies a sweep can run under, by name — the random fuzzer (floor), the greedy
  *  optimizer, the cheap heuristic baseline (ceiling), `greedy2` (greedy + a bounded staffing lookahead),
@@ -15,24 +20,30 @@ import { createPlannerPolicy } from './plannerPolicy';
  *  *winning* line — the true ceiling). The CLI sweeps a scenario under several to bracket its difficulty;
  *  the `greedy`↔`greedy2` gap is a standing readout of how much worker reassignment matters in a scenario
  *  (see `greedy2Policy`). `greedy2` grinds long survival games, the `planner` re-plans a search each turn,
- *  and the `oracle` runs a whole graph search per seed — the last two are slow and excluded from the
- *  default sweep (`DEFAULT_POLICY_NAMES`), named explicitly to include. */
-export const POLICY_FACTORIES: Record<string, (policySeed: string) => Policy> = {
+ *  and the `oracle`/`prover` run a whole graph search per seed — the last three are slow and excluded from
+ *  the default sweep (`DEFAULT_POLICY_NAMES`), named explicitly to include. */
+export const POLICY_FACTORIES: Record<string, PolicyFactory> = {
   random: createRandomPolicy,
   greedy: createGreedyPolicy,
   greedy2: createGreedy2Policy,
   heuristic: createHeuristicPolicy,
-  planner: createPlannerPolicy,
-  // The deep-analysis tier of the planner: the shipped `planner`'s lean enabler brain run with the
-  // calibrated search knobs (determinizations 8 · turnConfigLimit 16 · depth 2). Far slower per re-plan
-  // (~17.8k engine steps vs the default's shallow search), so it's for a few selected seeds, not a sweep.
-  deepPlanner: (s) => createPlannerPolicy(s, { determinizations: 8, turnConfigLimit: 16, depth: 2 }),
-  oracle: createOraclePolicy,
+  // Wrapped, not passed by reference: its second parameter is `PlannerOptions`, and the factory contract
+  // hands a second argument to everything.
+  planner: (s) => createPlannerPolicy(s),
+  // The deep-analysis tier of the planner — the shipped `planner`'s lean enabler brain run with the
+  // calibrated knobs. Also the `oracle`'s fallback, so both read the one `DEEP_PLANNER_OPTIONS`.
+  deepPlanner: (s) => createPlannerPolicy(s, DEEP_PLANNER_OPTIONS),
+  // The two search policies are the only factories that read `sim` — their round-depth cap tracks the
+  // sweep's own cutoff (`searchBoundsFor`) instead of searching to a depth the drive loop would discard.
+  oracle: (s, sim, search) => createOraclePolicy(s, { ...searchBoundsFor(sim), ...search }),
+  // The oracle's search with its fallback removed: wins are search-proven, and every other seed reports
+  // `noWinFound` rather than a stand-in policy's collapse cause. The honest winnability read.
+  prover: (s, sim, search) => createProverPolicy(s, { ...searchBoundsFor(sim), ...search }),
 };
 
 /** The policies a bare `npm run sim` sweeps when none is named — the fast built-ins. The `planner`
- *  (a search per turn) and the `oracle` (a full search per seed) are excluded so a default sweep stays
- *  quick; name either explicitly to include it. */
+ *  (a search per turn) and the `oracle`/`prover` (a full search per seed) are excluded so a default sweep
+ *  stays quick; name one explicitly to include it. */
 export const DEFAULT_POLICY_NAMES = ['random', 'greedy', 'greedy2', 'heuristic'];
 
 /**
@@ -61,13 +72,16 @@ export interface BatchOptions {
   /** How to build the move policy for a run from its policy seed. Defaults to the random-legal-move
    *  policy / fuzzer (`createRandomPolicy`); the greedy / heuristic policies slot in here (or pick one
    *  by name from `POLICY_FACTORIES`). */
-  policyFactory?: (policySeed: string) => Policy;
+  policyFactory?: PolicyFactory;
   /** Reporting label for the policy in use (e.g. `'greedy'`) — carried onto every `ScenarioRuns` so the
    *  report can show which policy produced which stats. Defaults to `'random'`, matching the default
    *  factory. */
   policyName?: string;
   /** Pass-through to each `simulateRun` (invariant checks, action cap). */
   sim?: SimOptions;
+  /** Search knobs for the policies that run one (`oracle`/`prover`); every other policy ignores them.
+   *  Merged *over* the depth derived from `sim` (`searchBoundsFor`), so an explicit `maxRounds` here wins. */
+  search?: OracleOptions;
   /** Fired after every completed run, so a caller can report progress on an otherwise-silent
    *  multi-hour sweep. The library never writes I/O itself — the CLI supplies the renderer. */
   onProgress?: (info: { policyName: string; scenarioLabel: string; runsDone: number; runsTotal: number }) => void;
@@ -105,7 +119,7 @@ export function runBatch(scenarios: Scenario[], opts: BatchOptions): ScenarioRun
         boardStickers: scenario.boardStickers,
         seed: `${scenario.label}-cfg-${i}`,
       });
-      outcomes.push(simulateRun(config, policyFactory(`${scenario.label}-pol-${i}`), opts.sim));
+      outcomes.push(simulateRun(config, policyFactory(`${scenario.label}-pol-${i}`, opts.sim, opts.search), opts.sim));
       opts.onProgress?.({ policyName, scenarioLabel: scenario.label, runsDone: i + 1, runsTotal: opts.seeds });
     }
     return { scenario, policyName, outcomes };

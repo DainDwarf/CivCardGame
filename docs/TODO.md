@@ -216,6 +216,38 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **A `prover` policy, and an honest oracle** ✅ — `oracle`'s win rate silently meant "winnable by search
+  **or** by the fallback policy", because a seed whose search found no line was played out by another
+  brain and its collapse filed under the oracle's name. Two changes. `Policy.abort` is a new seam — a
+  policy returns a `gameover.reason` to decline a run outright, mirroring how the drive loop synthesizes
+  `stall`; `simulate.ts` consults it before each action. On it rides **`prover`**: the same search with no
+  fallback, so its wins are search-proven and every other seed reports `noWinFound:<bound>`.
+  Read an `oracle` number as a ceiling on *play* and a `prover` number as a lower bound on *winnability* —
+  `noWinFound` means "not proven within the search bounds", never "unwinnable". Which bound is part of the
+  reason: `searchWinningLine` returns a `SearchResult` naming the `SearchExhaustion` that stopped it
+  — `budget` (out of `nodeBudget`), `depth` (survived `maxRounds` without a win) or `deadEnd` (a whole
+  level produced no successors, so the beam's *ranking* kept only positions that die). They are separate
+  `defeatCauses` buckets because each indicts a different knob, and a bare "no line" names none of them.
+  `oracle`'s fallback also moved `greedy2` → `deepPlanner`, whose knobs became the shared
+  `DEEP_PLANNER_OPTIONS` so the registry entry and the fallback can't drift.
+
+- **`--search-beam` exposes the oracle/prover beam width** ✅ — the diagnostic a `noWinFound:deadEnd`
+  demands: that mode says a whole level died, i.e. the beam's *ranking* kept only losing positions, and the
+  test is whether widening recovers wins the ranking had discarded. `BatchOptions.search?: OracleOptions`
+  rides alongside `sim` to the policy factories, merged *over* the depth `searchBoundsFor` derives, so the
+  same field reaches `nodeBudget`/`enablers` later without more plumbing. **Superlinear in the width** — a
+  wider beam keeps more states alive and so searches deeper, not merely wider (~3.3× per doubling measured
+  on one 50-seed cell). `baselines/results/` is swept at the default width throughout: a `--search-beam`
+  row is a diagnostic and is not comparable to it.
+
+- **`--max-rounds` sets the oracle/prover search depth** ✅ — the search's round cap was hardcoded at 50
+  while the drive loop's stall cutoff was a separate flag, so the two could disagree in both directions: a
+  proven line longer than the cutoff is discarded as a `stall` anyway (wasted search), and a cap shorter
+  than it reports `noWinFound` on seeds winnable inside the runs the sweep asked for (a false negative).
+  `POLICY_FACTORIES` entries now take the sweep's `SimOptions`, and the two search policies derive their
+  depth from it via `searchBoundsFor`. Only an *explicit finite* cutoff propagates — the drive loop's own
+  default (200) is a runaway backstop, not a search depth, and `Infinity` would never terminate.
+
 - **Mission detail panel shows mid-play injections** ✅ — the panel's card list read `threats`/`events`
   alone, so a card a run only *breeds* was invisible: Accounting is about Thieves, but the Thief is
   minted mid-run by the Envious Population threat and the player first met one in their own draw pile.

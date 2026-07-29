@@ -76,6 +76,12 @@ const DEFAULTS: Required<PlannerOptions> = {
   enablers: DEFAULT_ENABLER_TERMS,
 };
 
+/** The calibrated deep-analysis knobs: far slower per re-plan than {@link DEFAULTS}, so they are for a
+ *  few selected seeds rather than a sweep. Named here rather than at each call site because the batch's
+ *  `deepPlanner` entry and the oracle's fallback must be the *same* policy — a drift between them would
+ *  silently make the oracle's ceiling weaker or stronger than the tier it is reported against. */
+export const DEEP_PLANNER_OPTIONS: PlannerOptions = { determinizations: 8, turnConfigLimit: 16, depth: 2 };
+
 /** A reachable victory in a sampled world — dominates any heuristic leaf so a winning line is preferred. */
 const VICTORY = 1e9;
 

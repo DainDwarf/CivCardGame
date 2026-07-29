@@ -1,8 +1,8 @@
 import type { RunConfig } from '../contract';
 import { createRun, endTurn, type RunState } from '../run/engine';
-import { createGreedy2Policy } from './greedy2Policy';
+import { createPlannerPolicy, DEEP_PLANNER_OPTIONS } from './plannerPolicy';
 import { hashOf } from './oracleKey';
-import { type Policy, type SimAction } from './simulate';
+import { type Policy, type SimAction, type SimOptions } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
 import { scoreState } from './value';
 import { deriveEnablers, enablerPotential, enablerTermsOf, type EnablerTerms } from './enablers';
@@ -42,7 +42,8 @@ export interface OracleOptions {
    *  within-turn sub-search (worker-staffing / play permutations). */
   turnConfigLimit?: number;
   /** Hard round-depth cap. A finite deadline that guarantees the search terminates even on a mission
-   *  with no in-game deadline (e.g. a threshold `'standard'` mission). */
+   *  with no in-game deadline (e.g. a threshold `'standard'` mission). Wants to match the *drive loop's*
+   *  round cutoff ({@link SimOptions.maxRounds}) — see {@link searchBoundsFor}, which derives it. */
   maxRounds?: number;
   /** Total-engine-step backstop across the whole search — aborts (reporting no line) if exceeded, so a
    *  pathological branching factor can't run unbounded. */
@@ -55,6 +56,24 @@ export interface OracleOptions {
   enablers?: boolean | EnablerTerms;
 }
 
+/**
+ * Which bound stopped a search that found no line. Kept apart because each indicts a *different* knob, and
+ * a bare "no line" cannot tell you which to turn:
+ *
+ * - **`budget`** — {@link OracleOptions.nodeBudget} ran out mid-level. The search was still finding states
+ *   to expand; it simply could not afford them. Widening the beam spends the same cap on fewer rounds.
+ * - **`depth`** — the beam survived {@link OracleOptions.maxRounds} rounds without a win. The line, if any,
+ *   is longer than the search was allowed to look.
+ * - **`deadEnd`** — a whole level produced no successors, well inside budget: every kept branch either
+ *   *died* or transposed onto an already-seen state. The beam's **ranking** picked states with no future,
+ *   which indicts {@link OracleOptions.beamWidth} (too narrow to keep a survivor) or the heuristic itself
+ *   (it ranked losing states above living ones).
+ */
+export type SearchExhaustion = 'budget' | 'depth' | 'deadEnd';
+
+/** A found line, or which bound ended the search. */
+export type SearchResult = { found: true; line: SimAction[] } | { found: false; exhausted: SearchExhaustion };
+
 const DEFAULTS: Required<OracleOptions> = {
   beamWidth: 64,
   turnConfigLimit: 32,
@@ -65,7 +84,7 @@ const DEFAULTS: Required<OracleOptions> = {
 
 /**
  * Search for a winning line from `root` (a fresh `RunState`, e.g. from `createRun`). Returns the action
- * sequence that reaches `victory`, or `null` if none is found within the bounds.
+ * sequence that reaches `victory`, or *which bound stopped it* if none is found.
  *
  * The search collapses a turn into a single edge (per the plan's bound 1): from each turn-start node it
  * runs a bounded within-turn sub-search (`expandTurn`) enumerating the distinct reachable *pre-`endTurn`*
@@ -76,9 +95,11 @@ const DEFAULTS: Required<OracleOptions> = {
  * `beamWidth`/`turnConfigLimit` to very large values approaches the plan's *exact* (complete-within-
  * deadline) mode, tractable only on short/small missions.
  */
-export function searchWinningLine(root: RunState, options: OracleOptions = {}): SimAction[] | null {
+export function searchWinningLine(root: RunState, options: OracleOptions = {}): SearchResult {
   const opts = { ...DEFAULTS, ...options };
-  if (root.gameover) return root.gameover.outcome === 'victory' ? [] : null;
+  if (root.gameover) {
+    return root.gameover.outcome === 'victory' ? { found: true, line: [] } : { found: false, exhausted: 'deadEnd' };
+  }
 
   // Same leaf value the planner ranks by: fold in the enabler potential so the beam doesn't prune the
   // multi-turn growth lines `scoreState` alone undervalues. Derived once from the root; pure over `G`.
@@ -95,7 +116,7 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
     const successors: SearchNode[] = [];
     for (const node of beam) {
       const { win, configs } = expandTurn(node, opts.turnConfigLimit, budget, h);
-      if (win) return reconstruct(win);
+      if (win) return { found: true, line: reconstruct(win) };
       for (const cfg of configs) {
         const advanced = endTurn(cfg.state);
         // A config with a parked interaction can't end its turn (`endTurn` no-ops) — its resolved
@@ -109,7 +130,7 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
           h: 0,
         };
         if (advanced.gameover) {
-          if (advanced.gameover.outcome === 'victory') return reconstruct(child);
+          if (advanced.gameover.outcome === 'victory') return { found: true, line: reconstruct(child) };
           continue; // defeat this round — a dead branch
         }
         const k = hashOf(advanced.G);
@@ -119,22 +140,68 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
         child.h = h(advanced.G);
         successors.push(child);
       }
-      if (budget.steps >= budget.cap) return null;
+      if (budget.steps >= budget.cap) return { found: false, exhausted: 'budget' };
     }
-    if (successors.length === 0) return null;
+    if (successors.length === 0) return { found: false, exhausted: 'deadEnd' };
     // Level beam: keep the top-W successors by heuristic (higher `scoreState` = closer to a win).
     successors.sort((a, b) => b.h - a.h);
     beam = successors.length > opts.beamWidth ? successors.slice(0, opts.beamWidth) : successors;
   }
-  return null;
+  return { found: false, exhausted: 'depth' };
 }
 
 /** An oracle move-policy, plus a `foundLine` flag the caller can read *after* the run to tell a
  *  search-proven win from a fallback win (the report layer sees only the outcome). */
 export interface OraclePolicy extends Policy {
   /** Set on the policy's first invocation: whether the offline search found a winning line for this run.
-   *  `false` until the run starts, and stays `false` when the run then wins only via the greedy2 fallback. */
+   *  `false` until the run starts, and stays `false` when the run then wins only via the fallback. */
   foundLine: boolean;
+}
+
+/** Prefix of the `gameover.reason` {@link createProverPolicy} records when its search finds no line.
+ *  Distinct from every real collapse cause *and* from the drive loop's `stall`, so a report reads "the
+ *  search could not prove this seed" apart from "a policy played and lost". It means **not proven within
+ *  the search bounds**, so a prover win rate is a lower bound on winnability, never a proof of the
+ *  negative. */
+export const NO_WIN_REASON = 'noWinFound';
+
+/** The reason string for one {@link SearchExhaustion}, e.g. `noWinFound:deadEnd`. Suffixed rather than
+ *  separate constants so `defeatCauses` splits into one bucket per bound — naming which knob to turn —
+ *  while every unproven seed still greps as `noWinFound`. */
+export const noWinReason = (exhausted: SearchExhaustion): string => `${NO_WIN_REASON}:${exhausted}`;
+
+/**
+ * Derive a search's round-depth cap from the sweep's own round cutoff, so the two agree.
+ *
+ * They measure the same thing from opposite ends and disagreeing is always a bug: a line *longer* than the
+ * drive cutoff gets recorded as a `stall` even when the search finds it (wasted search), and a cap
+ * *shorter* than it reports `noWinFound` on seeds winnable inside the very runs the sweep asked for (a
+ * false negative). Only an explicit cutoff propagates — an absent one leaves the calibrated
+ * {@link DEFAULTS}, since the drive loop's own default (200) is a runaway backstop, not a statement about
+ * how deep anyone wants to search. `Infinity` is dropped for the same reason: it disables the drive
+ * cutoff, but an unbounded search would not terminate.
+ */
+export function searchBoundsFor(sim?: SimOptions): OracleOptions {
+  const cap = sim?.maxRounds;
+  return cap !== undefined && Number.isFinite(cap) ? { maxRounds: cap } : {};
+}
+
+/** Search once at the root, then dispense the line one action per call — the drive shared by the oracle
+ *  and the prover, which differ only in what they do when no line exists. */
+function createLineDispenser(options: OracleOptions) {
+  let result: SearchResult | null = null;
+  let cursor = 0;
+  return {
+    /** Idempotent: `simulateRun` hands the policy the root state first, so the first call searches from
+     *  exactly `createRun(config)` however the caller reaches it. */
+    search(state: RunState): SearchResult {
+      if (!result) result = searchWinningLine(state, options);
+      return result;
+    },
+    next(): SimAction | null {
+      return result?.found && cursor < result.line.length ? result.line[cursor++] : null;
+    },
+  };
 }
 
 /**
@@ -143,28 +210,21 @@ export interface OraclePolicy extends Policy {
  * root first), then **dispenses the found line one action per call**; determinism guarantees each dispensed
  * action lands on the same state the search saw, so the drive loop reproduces the win.
  *
- * When the search finds no line, it **falls back to `greedy2`** for the whole run — deliberately, not
- * `greedy`: `greedy2` is the strongest ceiling policy, so `oracle`-wins ⊇ `greedy2`-wins on every seed,
- * preserving the "a ceiling must dominate" invariant (the plan's acceptance test). The pure *search-proven*
- * win rate is available separately via {@link proveWinnable} / `foundLine`; a sweep's oracle win rate means
- * "winnable by search **or** greedy2".
+ * When the search finds no line, it **falls back to `deepPlanner`** for the whole run — the strongest
+ * policy available, so `oracle`-wins ⊇ that tier's wins on every seed, preserving the "a ceiling must
+ * dominate" invariant (the plan's acceptance test). So a sweep's oracle win rate means "winnable by search
+ * **or** by the best policy we have" — an upper bound on *achievable* play, not a winnability measurement.
+ * For that, use {@link createProverPolicy} (as a sweepable policy) or {@link proveWinnable} (offline).
  */
 export function createOraclePolicy(policySeed: string, options: OracleOptions = {}): OraclePolicy {
-  const fallback = createGreedy2Policy(policySeed);
-  let line: SimAction[] | null = null;
-  let cursor = 0;
-  let searched = false;
+  const fallback = createPlannerPolicy(policySeed, DEEP_PLANNER_OPTIONS);
+  const dispenser = createLineDispenser(options);
 
   const policy: OraclePolicy = ((state: RunState) => {
-    if (!searched) {
-      searched = true;
-      line = searchWinningLine(state, options);
-      policy.foundLine = line !== null;
-    }
-    if (line && cursor < line.length) return line[cursor++];
+    policy.foundLine = dispenser.search(state).found;
     // No line found, or the line is spent (it ends in a victory that has already ended the run, so this
-    // arm is normally only reached on the no-line path) — play out greedily so the run still terminates.
-    return fallback(state);
+    // arm is normally only reached on the no-line path) — play on so the run still terminates.
+    return dispenser.next() ?? fallback(state);
   }) as OraclePolicy;
   policy.seed = policySeed;
   policy.foundLine = false;
@@ -172,15 +232,45 @@ export function createOraclePolicy(policySeed: string, options: OracleOptions = 
 }
 
 /**
+ * The **prover**: the same search as {@link createOraclePolicy}, but with no fallback — a seed whose search
+ * finds no line ends immediately as a {@link noWinReason} defeat instead of being played out by another
+ * policy. So its win rate is the *search-proven* winnability rate, and its losses split by which bound
+ * stopped the search rather than wearing another policy's collapse causes under the oracle's name.
+ *
+ * The counterpart to {@link proveWinnable} for a sweep: same answer, but driven through the real engine so
+ * a proven seed still reports turns / end resources / card plays like any other cell.
+ */
+export function createProverPolicy(policySeed: string, options: OracleOptions = {}): OraclePolicy {
+  const dispenser = createLineDispenser(options);
+
+  const policy: OraclePolicy = ((_state: RunState) => {
+    // `abort` has already run the search and ended the run if it came back empty, so a line exists here.
+    // The `endTurn` arm is unreachable padding: the line ends in the victory that stops the drive loop.
+    return dispenser.next() ?? { kind: 'endTurn' };
+  }) as OraclePolicy;
+  policy.seed = policySeed;
+  policy.foundLine = false;
+  policy.abort = (state: RunState) => {
+    const result = dispenser.search(state);
+    policy.foundLine = result.found;
+    return result.found ? null : noWinReason(result.exhausted);
+  };
+  return policy;
+}
+
+/**
  * The honest **winnability prover**: search a fresh run of `config` and report whether a winning line
- * exists (with the line, for replay/inspection). This is the *pure* search-proven answer — no greedy2
- * fallback muddying it — so it's the API to use for "on what % of seeds is mission M winnable?" and the
- * one the end-to-end tests assert against.
+ * exists (with the line, for replay/inspection). This is the *pure* search-proven answer — no fallback
+ * muddying it — so it's the API to use for "on what % of seeds is mission M winnable?" and the one the
+ * end-to-end tests assert against. A negative carries the {@link SearchExhaustion} that produced it, since
+ * "not proven" is only actionable once you know which bound to raise.
  */
 export function proveWinnable(
   config: RunConfig,
   options: OracleOptions = {},
-): { winnable: boolean; line: SimAction[] | null } {
-  const line = searchWinningLine(createRun(config), options);
-  return { winnable: line !== null, line };
+): { winnable: boolean; line: SimAction[] | null; exhausted: SearchExhaustion | null } {
+  const result = searchWinningLine(createRun(config), options);
+  return result.found
+    ? { winnable: true, line: result.line, exhausted: null }
+    : { winnable: false, line: null, exhausted: result.exhausted };
 }

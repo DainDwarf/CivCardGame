@@ -22,6 +22,14 @@
 > fact. `npm run sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100`
 > regenerates the full set when those missions reach their pass.
 >
+> `oracle.json` was re-cut again when the oracle's no-line **fallback** moved `greedy2` → `deepPlanner`.
+> No win rate moved: nine of the eleven cells are *fully search-proven* (the fallback never runs, so they
+> are bit-identical), and the two 90% cells each have exactly one unproven seed that both fallbacks lose.
+> So the 90–100% above is a statement about the **search**, not about whichever policy stands in for it —
+> confirmed against the `prover` policy, which reports those unproven seeds as `noWinFound` instead of
+> playing them out. Re-cut with **no `--max-rounds`**: the flag now also sets the search's round depth, so
+> passing one would have changed what the rows measure rather than just how long a run may idle.
+>
 > Still to re-derive by hand: the **prose** that reasons about slots — the Chiefdom identity, the
 > Hunting board-slot cost, the first-trades slot economics — has lost its premise even where the
 > numbers now agree. The **rates** are mostly untouched by the change and carry over.

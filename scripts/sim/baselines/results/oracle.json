@@ -191,16 +191,16 @@
     "wins": 9,
     "winRate": 0.9,
     "turns": {
-      "min": 8,
-      "mean": 9.8,
+      "min": 9,
+      "mean": 9.9,
       "median": 10,
       "max": 10
     },
     "meanResources": {
-      "food": 0.1,
-      "production": 3.8,
+      "food": 0,
+      "production": 3.5,
       "science": 0,
-      "military": 4.3,
+      "military": 4.1,
       "money": 0,
       "population": 2,
       "culture": 0,
@@ -210,17 +210,17 @@
       "famine": 1
     },
     "cardPlays": {
-      "toolmaking": 34,
-      "foraging": 70,
+      "toolmaking": 33,
+      "foraging": 69,
       "bow": 13,
-      "farm": 9,
-      "dogs": 6
+      "farm": 10,
+      "dogs": 4
     },
     "unplayedCards": [
       "hut",
       "conquest"
     ],
-    "meanActions": 22.6
+    "meanActions": 22.4
   },
   {
     "label": "masonry",

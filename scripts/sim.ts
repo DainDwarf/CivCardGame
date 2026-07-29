@@ -17,8 +17,10 @@
  *
  * Each cell is swept under several policies with *identical* seed streams, so the comparison is paired:
  * `random` is the difficulty floor / crash fuzzer, `greedy` / `heuristic` the competent ceiling, and the gap
- * tells you how much skill a scenario rewards. `greedy2` (greedy + a staffing lookahead), the `planner` and
- * the `oracle` (a winnability prover) are nameable but slow — opt in with a small seed count.
+ * tells you how much skill a scenario rewards. `greedy2` (greedy + a staffing lookahead), the `planner`,
+ * the `oracle` (best achievable — a search for a winning line, falling back to `deepPlanner`) and the
+ * `prover` (the same search reporting `noWinFound` instead of falling back, so its win rate is the
+ * search-proven winnability rate) are nameable but slow — opt in with a small seed count.
  *
  * Usage:
  *   npm run sim -- --scenario growing_numbers --deck <file> --board settlement
@@ -32,7 +34,13 @@
  * and a content board id or board JSON path) **or** `--baseline` (comma-separated fixture paths, or a
  * directory of them); `--seeds` (default 100), `--policies` (default random,heuristic,greedy), `--format`
  * (text|json), `--max-rounds <n>` (stall cutoff — a policy idling past round `n` without winning/collapsing
- * is recorded as a `stall` defeat rather than ground to the action wall; default 200), and `--seed <i>` which
+ * is recorded as a `stall` defeat rather than ground to the action wall; default 200. Also caps how deep
+ * `oracle`/`prover` search, so they never prove a line the cutoff would then discard as a stall — raise it
+ * to let them find longer wins, at steeply more search cost), `--search-beam <n>` (the `oracle`/`prover`
+ * beam width — the diagnostic for a `noWinFound:deadEnd` result, which says the *ranking* kept only
+ * positions that die; more wins found under a wider beam means the heuristic was discarding real lines.
+ * **Costs superlinearly** — a wider beam keeps more states alive and so searches deeper, not just wider,
+ * and rows swept at a non-default width are not comparable to `baselines/results/`), and `--seed <i>` which
  * switches to **replay mode** — re-run the single (cell, policy, index) the batch would have run and print a
  * per-turn trace (needs exactly one cell and one policy).
  *
@@ -211,7 +219,7 @@ function loadBoardFile(path: string): { board: string; stickers: string[] } {
 
 // Wrap `parseArgs` so an unknown flag or stray positional (strict mode throws a raw `TypeError`) surfaces
 // as the same clean `sim: …` one-liner as every other user mistake, not a stack trace.
-let values: { scenario?: string; deck?: string; board?: string; baseline?: string; seeds?: string; policies?: string; format?: string; seed?: string; 'max-rounds'?: string };
+let values: { scenario?: string; deck?: string; board?: string; baseline?: string; seeds?: string; policies?: string; format?: string; seed?: string; 'max-rounds'?: string; 'search-beam'?: string };
 try {
   ({ values } = parseArgs({
     options: {
@@ -224,6 +232,7 @@ try {
       format: { type: 'string' },
       seed: { type: 'string' },
       'max-rounds': { type: 'string' },
+      'search-beam': { type: 'string' },
     },
     allowPositionals: false,
   }));
@@ -264,6 +273,15 @@ if (maxRounds !== undefined && (!Number.isInteger(maxRounds) || maxRounds <= 0))
   fail(`--max-rounds must be a positive integer, got '${values['max-rounds']}'.`);
 }
 const simOpts = maxRounds !== undefined ? { maxRounds } : undefined;
+
+// Beam width for the search policies (`oracle`/`prover`) — how many states survive each round's cut. The
+// knob a `noWinFound:deadEnd` result indicts: a whole level dying means the *ranking* kept only losing
+// positions, and a wider beam is what keeps a lower-ranked survivor alive. Omitted → `oracle.ts`'s default.
+const searchBeam = values['search-beam'] !== undefined ? Number(values['search-beam']) : undefined;
+if (searchBeam !== undefined && (!Number.isInteger(searchBeam) || searchBeam <= 0)) {
+  fail(`--search-beam must be a positive integer, got '${values['search-beam']}'.`);
+}
+const searchOpts = searchBeam !== undefined ? { beamWidth: searchBeam } : undefined;
 
 // The one place the two input styles converge. Ad-hoc: one deck/board shared across every named mission.
 // Baselines: one self-contained fixture per cell.
@@ -418,7 +436,7 @@ const onProgress = ({ policyName, scenarioLabel }: { policyName: string; scenari
   if (runsDone === runsTotal) process.stderr.write('\n');
 };
 
-const summaries = runPolicies(scenarios, policies, { seeds, sim: simOpts, onProgress }).map(summarize);
+const summaries = runPolicies(scenarios, policies, { seeds, sim: simOpts, search: searchOpts, onProgress }).map(summarize);
 
 if (format === 'json') {
   console.log(JSON.stringify(summaries, null, 2));
