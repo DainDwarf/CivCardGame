@@ -40,15 +40,14 @@ on City. The committed rows, at the standing protocol:
 
 | policy | win | turns med/mean/max | defeats |
 |---|---|---|---|
-| greedy @100 | 30% | 22.5 / 32.4 / 201 | famine 49 · ruin 18 · stall 3 |
-| planner @100 | **36%** | 29 / 30.0 / 83 | famine 41 · ruin 16 · bankruptcy 7 |
-| oracle @10 | 90% | 32 / 31.7 / 39 | famine 1 |
+| greedy @100 | 31% | 24 / 33.0 / 201 | famine 47 · ruin 19 · stall 3 |
+| planner @100 | **43%** | 36.5 / 31.4 / 81 | famine 38 · ruin 13 · bankruptcy 6 |
+| oracle @10 | 70% | 30 / 27.2 / 33 | famine 3 |
 
-**The oracle row is 10 seeds and should not be read as "in line with the 90–100% peers".** A 50-seed
-sweep of the same deck on a different seed stream put `oracle` at 60% and the pure `prover` at 58%, so
-9/10 is at the optimistic end of a wide interval. The honest statement is that winnability is not settled
-tighter than "somewhere in the 60s–90s", and it does not need to be: the mission ships on the `planner`
-figure.
+**The oracle row is 10 seeds, and it lands where the wider sweeps do.** A 50-seed sweep of the same deck
+on a different seed stream put `oracle` at 60% and the pure `prover` at 58% — 7/10 is one seed above that
+band rather than a reading of its own, so winnability settles around 60% and this mission is not among the
+90–100% peers. The mission ships on the `planner` figure either way.
 
 **Chiefdom is a deck/board mismatch, not a reading of the mission** — 0 starting territory against 8
 structures, 3🧍 eating from 8🌾; famine takes 80/100 by turn 6 (21% greedy / 2% planner on this deck). It
