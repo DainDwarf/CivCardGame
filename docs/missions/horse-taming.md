@@ -12,8 +12,8 @@ into **Bronze**.
 
 ## Identity (agreed)
 
-Opens the arc's **predatory money faucet** (military → money by raiding — Naval's aggressive twin, both
-feeding the tin-money sink). Bonus: thickens the thin ⚔️ economy — the **War Horse** reward is the first
+Opens the arc's **plunder burst** — Raiding turns a war party into the food and material it takes,
+once per copy, Naval's aggressive twin. Bonus: thickens the thin ⚔️ economy — the **War Horse** reward is the first
 ⚔️ producer that is a staffed work box (alongside City Walls, Bow, Dogs, Conquest). Theme: Bronze-Age
 steppe (Yamnaya / Sintashta); horses as war-mounts, **no mounted cavalry** (Iron Age).
 
@@ -23,7 +23,10 @@ steppe (Yamnaya / Sintashta); horses as war-mounts, **no mounted cavalry** (Iron
   end of turn, so it pays out once per play, not per round). Free to play (the Foraging/Trader
   shape), so the worker it occupies for that turn is its whole cost — the rate has to beat **Hunting**
   (free, 1⚔️ per worker-turn) or nobody would ever spend a worker on it.
-- **Reward — Raiding:** an **action**, spend **⚔️ → gain 🪙**.
+- **Reward — Raiding:** an **action**, spend **⚔️ → gain 🌾+🔨**, **single-use** (exiles itself on play,
+  the Bow shape). Single-use is what makes an inward converting edge admissible at all
+  ([`DESIGN.md`](../DESIGN.md) → *Core resources*); 🌾+🔨 rather than 🪙 because those are the two pools
+  Chiefdom — the board this branch is built for — is short of.
 
 ## Goal + pressure ✅ (converged)
 
@@ -56,7 +59,8 @@ all on the existing spine.
 
 - **Numbers:** 5 horses · **6⚔️** to tame each · **−1🔨** per untamed horse held at end of
   round · **−1🌾 per already-tamed horse** each round. All four held through the balance pass.
-- **Reward cards:** War Horse (work, free, 1 worker → **+4⚔️ per play**) and Raiding (action, **3⚔️ → 6🪙**).
+- **Reward cards:** War Horse (work, free, 1 worker → **+3⚔️ per play**, aligned with Trader's 3🪙) and
+  Raiding (action, single-use, **3⚔️ → 4🌾+4🔨**).
   Neither is available *in* mission — both are granted on clear — so the goal must be reachable on the
   owned ⚔️ economy alone.
 - No `defeat` hook: like Wheel, the drain runs food down to the universal `'ruin'` collapse, and
@@ -119,8 +123,9 @@ narrower than anything a player arrives holding.
 4. **First levers, in order:** `WILD_HORSES` → the tame ⚔️ cost → the drain coefficient → the let-pass 🔨
    bleed. Peak sustained drain is `(N−1) × coefficient` (the Nth horse wins on the move), so at 5 × 1 the
    heaviest round is −4🌾. A longer ramp is the mission's shape, a steeper one is not — so raise **N
-   before the coefficient**. If War Horse sweeps as too strong, drop it to +3⚔️ or give it a 1🌾 cost
-   rather than cutting the worker cap, which would just flatten it back into Hunting's shape.
+   before the coefficient**. War Horse sits at +3⚔️, level with Trader's 3🪙 per worker-turn; if it still
+   sweeps too strong, give it a 1🌾 cost rather than cutting the worker cap, which would just flatten it
+   back into Hunting's shape.
 - **Sweep on:** `scripts/sim/baselines/horse_taming.json`.
 
 ## Polish ⬜

@@ -254,7 +254,7 @@ export const CARDS: Record<string, CardDef> = {
   toolmaking: { id: 'toolmaking', name: 'Toolmaking', kind: 'work', cost: {}, workers: 1, display: { art: '🪨' }, produces: { resources: { production: 1 } } },
   beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 1 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 1 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
-  war_horse: { id: 'war_horse', name: 'War Horse', kind: 'work', cost: {}, workers: 1, display: { art: '🏇' }, produces: { resources: { military: 4 } } },
+  war_horse: { id: 'war_horse', name: 'War Horse', kind: 'work', cost: {}, workers: 1, display: { art: '🏇' }, produces: { resources: { military: 3 } } },
 
   // — Buildings —
   farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { food: 1 } }, workers: 1, display: { art: '🌱' } },
@@ -317,7 +317,11 @@ export const CARDS: Record<string, CardDef> = {
   },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
   dogs: { id: 'dogs', name: 'Hunting', kind: 'work', cost: {}, workers: 1, display: { art: '🐕' }, produces: { resources: { military: 1 } } },
-  raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } }, display: { art: '🏴' }, effect: { resources: { money: 6 } } },
+  raiding: {
+    id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } },
+    display: { art: '🏴', note: 'single use' },
+    effect: { resources: { food: 4, production: 4 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
+  },
   conquest: {
     id: 'conquest', name: 'Conquest', kind: 'work', workers: 1,
     display: { art: '🗡️', dynamicRule: 'cost doubles per use' },

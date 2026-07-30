@@ -165,7 +165,14 @@ Per-row notes, where the ⬜ isn't the whole story:
   sources plus Conquest competing for the same pool. That makes this a **🌾 mission wearing military
   clothes**, and the drain it is measured against is the one the goal generates itself. Chiefdom reads
   3% / 15% @100 and prover 80% @10 on the same deck; unfixtured, same open board gap as 12, 15 and 16.
-  `Strd` is 🟡 pending the reward discussion.
+  Its **rewards** then took two changes, downstream content no fixture here holds: **War Horse** dropped
+  to 3⚔️ to sit level with Trader, and **Raiding** stopped being a ⚔️→🪙 rate — it is now a *single-use*
+  3⚔️ → 4🌾+4🔨 burst, aimed at the two pools Chiefdom is short of. The second is what closed the
+  one-way-hub violation ([`DESIGN.md`](DESIGN.md) → *Core resources*, amended to forbid a **repeatable**
+  inward edge rather than any inward edge, since a self-exiling card is capped by copies owned and pumps
+  nothing). `Strd` stays 🟡: the **Raiding mission's** own design was authored against the old ⚔️→🪙
+  card, so its money retaliation and plunder burst need re-deciding
+  ([raiding](missions/raiding.md) → *Identity*).
 - **16 · `wheel` moved one number** — the Overextension drain took a **grace band**
   (`OVEREXTENSION_GRACE` = 2, so `max(0, gained − 2)`); `WHEEL_TERRITORY` held at 6. Its fixture is the
   Roads deck carried forward onto City: greedy 10% / planner 55% @100, oracle 100% @10 in 13–29 turns.
@@ -203,6 +210,7 @@ What every later cell is measured against. Each mission's reasoning and sweep is
 | 5 | **Irrigation** keeps +1🌾 and now also charges **+1🔨 to play**, reaching work cards as well as buildings · **Elegant** is new: **+1🎭, needs 🎭 level 1**, on a culture producer of either kind |
 | 7+ | Dogs → **Hunting**: the 1🌾→1⚔️ `action` becomes a free `work` box at **1⚔️**/worker (card id still `dogs`). ⚔️ stops being bought with 🌾 and starts costing a worker for the turn (the board slot it also cost when this was measured is no longer charged). Post-dates mission 7's pass rather than coming out of it — a trial, measured across all seven swept cells at once |
 | 9 | **Forge** 4🔨 → **3🔨**, output unchanged at 2🔨/worker — so it now undercuts the Archives it was priced level with. First **measured on cell 13**, the earliest swept cell that stocks it (it is `finding_copper`'s own reward, so it is absent from that cell's own deck): the single copy is played in 98 of 100 planner runs, 31 of 100 greedy, 10 of 10 oracle |
+| 14 | **War Horse** 4⚔️ → **3⚔️** per worker-turn, level with Trader's 3🪙 — so ⚔️ and 🪙 now cost the same worker-turn from their premium box · **Raiding** 3⚔️→6🪙 → **single-use, 3⚔️ → 4🌾+4🔨**. Both are `horse_taming`'s *rewards*, so no committed cell holds either and both ship unmeasured |
 
 The base-rate cut fixed three work-card/building pairs as a side effect — Farm now *matches* Foraging,
 Forge *doubles* Toolmaking, Archives *doubles* Storytelling. The culture pair went the other way, by
@@ -319,12 +327,6 @@ Consequences that outlived the restructure:
 
 ### Rates still to settle
 
-- **Raiding (3⚔️ → 6🪙) is the last converting edge.** Money's topology is a **one-way hub**: producers
-  only on the in-edges, spending outward, so there is no exchange rate to arbitrage — now graduated to
-  [`DESIGN.md`](DESIGN.md) → *Core resources*, including the stronger form (**a route may produce money
-  or non-money, but no card may convert that non-money output back into money**). Raiding predates the
-  rule and breaks it. Cut it, or charge it in **culture** — never spent and gating hand size, so it
-  can't be arbitraged back, and "raiders don't build civilizations" reads well.
 - **Does the workshop+route pair scale?** The First Trades measured a *single* pair, its deck holding one
   copy of each card, so no run there could build a second. The route out-rates the building that funds
   it, so pair *N* costs what pair 1 did with no diminishing term. **Sharper since the cap split**: the
@@ -336,11 +338,11 @@ Consequences that outlived the restructure:
   again.
 - **City Walls' maintenance is cut, unmeasured.** The card is now 3🔨 flat for +1⚔️/round with **no
   upkeep** (was 4🔨 and −1🔨/round). The rate reading that preceded it stands and is what the cut acts
-  on: the old "owed raise" against War Horse is **withdrawn** — that read set 4⚔️ *per play* against 1⚔️
-  *per round forever*, and City Walls takes no workers, so the worker-turn basis doesn't apply. Amortized
-  instead, one War Horse in a ~23-card deck at hand 4 is drawn about every 6th turn ≈ **0.7⚔️/turn**,
-  rising to ~0.9 as buildings thin the deck, against City Walls' flat **1⚔️/turn** — the building already
-  out-rates it. The *price* check that was still open (⚔️ at ~1.2🔨 each over a 20-turn run, against Bow's
+  on: the old "owed raise" against War Horse is **withdrawn** — that read set War Horse's per-play burst
+  against 1⚔️ *per round forever*, and City Walls takes no workers, so the worker-turn basis doesn't apply. Amortized
+  instead, one War Horse in a ~23-card deck at hand 4 is drawn about every 6th turn ≈ **0.5⚔️/turn** at
+  its 3⚔️, rising to ~0.65 as buildings thin the deck, against City Walls' flat **1⚔️/turn** — the
+  building already out-rates it. The *price* check that was still open (⚔️ at ~1.2🔨 each over a 20-turn run, against Bow's
   0.67🔨 capped at 3⚔️ per copy) is what the cut answers; it has not been swept.
 - **Science is never demanded in quantity.** Its identity (deck churn) is fine and it now has a sink at
   all, but both card sinks are 2🔬 one-shots (Calendar, Writing). `finding_copper`'s 15🔬 across three

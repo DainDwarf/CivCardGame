@@ -10,9 +10,15 @@ Prereq **horse-taming**; the branch converges into **Bronze**.
 
 ## Identity (agreed)
 
-The **payoff** of the arc's predatory money faucet: you now field the **War Horse** (a staffed ⚔️ work box) and the
-**Raiding** action (⚔️ → 🪙) unlocked by [Horse taming](horse-taming.md), and turn martial power into
-plunder.
+The **payoff** of the arc's plunder line: you now field the **War Horse** (a staffed ⚔️ work box, 3⚔️
+per play) and the **Raiding** action (single-use, 3⚔️ → 4🌾+4🔨) unlocked by
+[Horse taming](horse-taming.md), and turn martial power into plunder.
+
+⚠️ **The 🪙 half of this mission's design is now unmoored.** *Goal + pressure* below rests on money
+being what a raid pays — the retaliation drain and the plunder burst were both authored against the
+card's old ⚔️→🪙 shape. The card no longer touches money, so the mission's own 🪙 burst is either the
+one place plunder is still paid in coin, or it re-points onto 🌾+🔨 like the card. **Undecided** — it is
+the first thing to settle when this mission reaches Design.
 
 ## Agreed (settled at design)
 
@@ -20,8 +26,8 @@ plunder.
   line): a **military + money** government keeping Chiefdom's **low-territory / high-population** shape.
   Name **Warband** is locked. **Blocked on a Chiefdom rebalance first** — Warband's numbers derive from a
   re-tuned Chiefdom (a balance-stage task, not a design blocker). ✅ **Unblocked:** Chiefdom is now
-  measured and settled at pop 3 / terr 2 / 8🌾 (REBALANCE → *Chiefdom*), so Warband has a real board to
-  derive from.
+  measured and settled at pop 3 / terr **0** / 8🌾 (REBALANCE → *Chiefdom*), so Warband has a real board
+  to derive from — and its shortage is specifically a *building* shortage, which is what Warband inherits.
 
 ## Goal + pressure ✅ (converged; numbers provisional)
 
@@ -68,7 +74,7 @@ than Horse taming's self-inflicted food drain that **grows as you win**. Opposit
 ## Balance ⬜ — watch items recorded at design
 
 1. **Runaway / softlock spiral.** If a target fortifies faster than the thin ⚔️ economy (City Walls /
-   Bow / Dogs / Conquest / War Horse) can catch up, it can climb out of reach *while* its money upkeep
+   Bow / Hunting / Conquest / War Horse) can catch up, it can climb out of reach *while* its money upkeep
    bleeds — an unrecoverable death spiral. Decide at balance whether the counter needs a **hard cap**, a
    gentle increment, or just a careful sweep. Compounds with the Horse-taming watch note that the
    in-mission ⚔️ economy is thin.
