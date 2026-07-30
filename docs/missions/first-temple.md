@@ -113,8 +113,7 @@ Settlement-easier ordering every other Stone Age cell shows.
 the seven cleared prereqs grant (Farm · Hut · Conquest · Bead Workshop · Bartering · Beer · Storytelling
 · Fire · Sun Stone · Calendar), no purchases, on Settlement — the same shape [rites](rites.md) uses, and
 identical to its pool since `rites_rituals` grants a sticker rather than a card. The previous fixture
-stocked **Cave Art** and a **Burial**-turned-Sun-Stone and was missing **Fire**; re-cutting it leaves
-**five** baselines blocking Cave Art's deletion.
+stocked **Cave Art** and a **Burial**-turned-Sun-Stone and was missing **Fire**.
 
 ✅ **Results committed** — the `first_temple` rows in `baselines/results/` are re-measured on this
 fixture: `greedy-planner.json` (greedy 18% · planner 98% @100) and `oracle.json` (90% @10). The rows

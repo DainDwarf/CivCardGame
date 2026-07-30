@@ -421,7 +421,7 @@ describe('card-cost goal valuation', () => {
     ];
     const deckCardIds = [
       'hut', 'farm', 'forge', 'toolmaking', 'conquest', 'beer',
-      'storytelling', 'bow', 'dogs', 'foraging', 'bead_workshop', 'cave_art',
+      'storytelling', 'bow', 'dogs', 'foraging', 'bead_workshop', 'sun_stone',
     ];
     for (const missionId of resourceMissions) {
       const G = createRun(simConfig({ deckCardIds, board: 'settlement', missionId, seed: 'enablers-card-cost' })).G;

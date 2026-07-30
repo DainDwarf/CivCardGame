@@ -304,10 +304,6 @@ export const CARDS: Record<string, CardDef> = {
     // file once the effect has already filed the copy (see `moves.ts`'s `playCard`).
     effect: { resources: { military: 3 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
   },
-  // ⚠️ Cut, not yet deleted: it makes the same 2🎭 as Beer for no 🌾, so it obsoletes a shipped card and
-  //   has no reward slot to be granted from. It survives only because six sim baselines still stock it,
-  //   and each is re-cut at its own mission's balance pass — delete it with the last of them.
-  cave_art: { id: 'cave_art', name: 'Cave Art', kind: 'work', cost: {}, workers: 1, display: { art: '🖐️' }, produces: { resources: { culture: 2 } } },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
   dogs: { id: 'dogs', name: 'Hunting', kind: 'work', cost: {}, workers: 1, display: { art: '🐕' }, produces: { resources: { military: 1 } } },
   raiding: { id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } }, display: { art: '🏴' }, effect: { resources: { money: 6 } } },

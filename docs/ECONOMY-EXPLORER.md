@@ -173,7 +173,8 @@ not the fine-tuning one.** Details, because they should shape B's scope:
   Prefer these as the continuous "which way is it failing / how much margin" gradient.
 - **The oracle is a cheap, crisp ceiling at low seeds** — 20 seeds gave clean winnability reads (20/20
   baseline vs 18/20 for a diluted deck) *and* proved a mechanism by watching the line it played: on a
-  Cave-Art deck the oracle climbed culture to level 1 and played Cave Art 83–116×/100 runs to bank the
+  Cave-Art deck (that card — a free 2🎭 work box — has since been deleted; the lever it measured has not)
+  the oracle climbed culture to level 1 and played Cave Art 83–116×/100 runs to bank the
   `effectiveHandSize` +1-card draw, confirming **culture→draw is a real lever even on a territory
   mission**. It didn't raise this mission's ceiling (already 100% winnable, ~25 turns — too short for a
   culture engine to repay its dilution), but the oracle *pursued* it.

@@ -48,8 +48,7 @@ deadline. The five structures want ~5 slots against City's 2, so ~3 Conquests ar
 **🎭 L2 is not the term to give** if these ever move: the Pyramid wonder this mission unlocks is itself
 `cultureLevelReq: 2`, so a level-1 goal would grant a reward the player cannot play.
 
-**Fixt ✅** — `scripts/sim/baselines/pyramid.json` carries the deck above; `roads.json` is now the last
-fixture stocking Cave Art, so it alone blocks that card's deletion. Only City has a fixture: Chiefdom also
+**Fixt ✅** — `scripts/sim/baselines/pyramid.json` carries the deck above. Only City has a fixture: Chiefdom also
 reaches this mission but measures 0/100 on this deck and is **food-bound, not land-bound** (8🌾 start, one
 Farm, famine 54/100), so like Accounting it would need its own deck before a row there said anything.
 
