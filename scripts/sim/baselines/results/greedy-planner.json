@@ -477,6 +477,50 @@
     "meanActions": 44.74
   },
   {
+    "label": "writing",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 36,
+    "winRate": 0.36,
+    "turns": {
+      "min": 8,
+      "mean": 26.12,
+      "median": 24,
+      "max": 67
+    },
+    "meanResources": {
+      "food": 29.49,
+      "production": 5.65,
+      "science": 4.56,
+      "military": 5.93,
+      "money": 2,
+      "population": 2.49,
+      "culture": 0,
+      "territory": 3.43
+    },
+    "defeatCauses": {
+      "dark_age": 24,
+      "famine": 40
+    },
+    "cardPlays": {
+      "bow": 150,
+      "toolmaking": 981,
+      "storytelling": 984,
+      "farm": 56,
+      "foraging": 976,
+      "hut": 49,
+      "dogs": 487,
+      "fire": 1000,
+      "clay_tablet": 343,
+      "conquest": 143,
+      "forge": 31
+    },
+    "unplayedCards": [
+      "calendar"
+    ],
+    "meanActions": 77.76
+  },
+  {
     "label": "accounting",
     "policyName": "planner",
     "runs": 100,
@@ -948,5 +992,48 @@
     },
     "unplayedCards": [],
     "meanActions": 27.82
+  },
+  {
+    "label": "writing",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 79,
+    "winRate": 0.79,
+    "turns": {
+      "min": 9,
+      "mean": 19.93,
+      "median": 19,
+      "max": 50
+    },
+    "meanResources": {
+      "food": 19.69,
+      "production": 10.39,
+      "science": 0.62,
+      "military": 5.22,
+      "money": 2,
+      "population": 2.04,
+      "culture": 0,
+      "territory": 2.01
+    },
+    "defeatCauses": {
+      "dark_age": 14,
+      "famine": 7
+    },
+    "cardPlays": {
+      "bow": 137,
+      "toolmaking": 281,
+      "forge": 98,
+      "storytelling": 463,
+      "foraging": 315,
+      "dogs": 113,
+      "fire": 681,
+      "clay_tablet": 462,
+      "farm": 82,
+      "hut": 4,
+      "calendar": 3,
+      "conquest": 1
+    },
+    "unplayedCards": [],
+    "meanActions": 46.66
   }
 ]

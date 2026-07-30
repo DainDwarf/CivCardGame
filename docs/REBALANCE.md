@@ -95,7 +95,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 10 | `masonry` | ✅ | ✅ | ✅ | ✅ | [masonry](missions/masonry.md) |
 | 11 | `pyramid` | ⬜ | ⬜ | ⬜ | ⬜ | [pyramid](missions/pyramid.md) |
 | 12 | `accounting` | ✅ | ✅ | ✅ | ✅ | [accounting](missions/accounting.md) |
-| 13 | `writing` | 🟡 | ✅ | 🟡 | ⬜ | [writing](missions/writing.md) |
+| 13 | `writing` | ✅ | ✅ | ✅ | ✅ | [writing](missions/writing.md) |
 | 14 | `horse_taming` | ⬜ | ⬜ | ⬜ | ⬜ | [horse-taming](missions/horse-taming.md) |
 | 15 | `roads` | ⬜ | ⬜ | ⬜ | ⬜ | [roads](missions/roads.md) |
 | 16 | `wheel` | ⬜ | ⬜ | ⬜ | ⬜ | [wheel](missions/wheel.md) |
@@ -117,9 +117,12 @@ Per-row notes, where the ⬜ isn't the whole story:
   the deck. Its Forge price cut is a **rate move no committed cell measures**: the Forge is this
   mission's own reward, so it is absent from the very fixture that would have caught it, and the five
   cells that do stock it (11–13, 15–16) are all still ⬜.
-- **13 · `writing`** is mid-pass: the tablet moved to 4🔨 + 2🔬 and the fixture is re-cut and swept, but
-  the **drain** — the mission's only pressure — is still unswept, so `Rate`/`Swept` stay 🟡 and
-  `results/` carries **no** `writing` row on purpose. Numbers and the open list are in the dossier.
+- **13 · `writing`** moved its **cost onto the pool it drains** (6🔨+2🌾 → 4🔨+2🔬) and left the escalating
+  drain at its authored −0/−1/−2 — the cost move alone was enough to make the drain bite. That single
+  change took the planner 84% → 19%, and doubling the deck's science half recovered it to 79%, so this
+  cell is tuned against a **science-heavy** deck and the un-doubled one is strictly harder. Its `oracle`
+  row is 100% @10 while the planner sits 21 points back, part of which is a **planner** flaw the dossier
+  measures rather than a difficulty: it burns affordable tablets on Fire where the oracle records them.
 - **12 · `accounting`** is a second hoard goal, and **moved no rate** — 40🪙 and `THIEVES_PER_GOLD` = 10
   stand as authored, its hardness kept deliberately. The fixture is now the player's own winning deck on
   City, swept at the standing protocol: greedy 31% / planner 43% @100, oracle 70% @10. **Read that oracle
@@ -154,7 +157,7 @@ What every later cell is measured against. Each mission's reasoning and sweep is
 | 5 | The culture pair halved — **Beer** 1🌾 → **1🎭** (work) · **Sun Stone** **3🔨** → **1🎭**/worker (building). The level curve holds at cumulative **10 / 30 / 70** (`CULTURE_STEP = 10`): the producers were the freshly-rated numbers and the curve the oldest, so they moved |
 | 5 | **Irrigation** keeps +1🌾 and now also charges **+1🔨 to play**, reaching work cards as well as buildings · **Elegant** is new: **+1🎭, +1 🎭 level to play**, on a culture producer of either kind |
 | 7+ | Dogs → **Hunting**: the 1🌾→1⚔️ `action` becomes a free `work` box at **1⚔️**/worker (card id still `dogs`). ⚔️ stops being bought with 🌾 and starts costing a worker for the turn (the board slot it also cost when this was measured is no longer charged). Post-dates mission 7's pass rather than coming out of it — a trial, measured across all seven swept cells at once |
-| 9 | **Forge** 4🔨 → **3🔨**, output unchanged at 2🔨/worker — so it now undercuts the Archives it was priced level with. **Unmeasured**: it is `finding_copper`'s own reward and so absent from that cell's deck, and every cell that stocks it is still ⬜ |
+| 9 | **Forge** 4🔨 → **3🔨**, output unchanged at 2🔨/worker — so it now undercuts the Archives it was priced level with. First **measured on cell 13**, the earliest swept cell that stocks it (it is `finding_copper`'s own reward, so it is absent from that cell's own deck): the single copy is played in 98 of 100 planner runs, 31 of 100 greedy, 10 of 10 oracle |
 
 The base-rate cut fixed three work-card/building pairs as a side effect — Farm now *matches* Foraging,
 Forge *doubles* Toolmaking, Archives *doubles* Storytelling. The culture pair went the other way, by

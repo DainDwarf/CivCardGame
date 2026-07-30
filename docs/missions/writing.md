@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
 **Branch:** Bronze — the age's literacy node, on the centre axis.
 **Placement:** `prereqs: ['accounting']`, bronze col 7 row 0.
 **Reward influence:** 12.
@@ -30,15 +30,13 @@ escalating). No threat card — the events *are* the pressure (like Raiders).
 First shipping consumers of the `chooseCard` interaction, `recoverFromDiscard`, and the `discardEmpty`
 gate. Tablet cost is `{ production: 4, science: 2 }` in `cards.ts`.
 
-## Balance 🟡 (open)
+## Balance ✅ (settled)
 
-The 🔬 drain is the design's **load-bearing** number — it is the mission's *only* pressure.
+The 🔬 drain **stands at its authored −0 / −1 / −2** — it is the mission's only pressure, and the cost
+move onto 🔬 was enough to make it bite without touching it.
 
-Fixture: `scripts/sim/baselines/writing.json` (City, 26 cards, 13⭐ of the 98 arriving). Measured but
-**not yet recorded** — `baselines/results/` carries no `writing` row, and shouldn't until the drain
-settles.
-
-Measured at the 4🔨 + 2🔬 tablet, greedy/planner @100 · oracle @10:
+Fixture: `scripts/sim/baselines/writing.json` (City, 26 cards, 13⭐ of the 98 arriving), recorded in
+`baselines/results/` at the standing protocol — greedy/planner @100, oracle @10:
 
 | policy | win rate | turns (min/med/mean/max) | defeats |
 | --- | --- | --- | --- |
@@ -50,17 +48,24 @@ The cost move (6🔨+2🌾 → 4🔨+2🔬) alone cratered the cell — planner 
 end 🔬 negative at every tier — and doubling Storytelling/Fire to ×4 recovered it to the row above.
 So the mission is now tuned *against a science-heavy deck*; the un-doubled deck is the harder cell.
 
-Open questions, in order:
+Left open, none of them blocking:
 
-- **The drain is still the load-bearing number and is still unswept.** Nothing measured today moved it
-  off −0/−1/−2. Candidates if it proves too slight: start the escalation at 1, scale it by tablets *in
-  hand*, or advance `level` on something other than its own firing (which would also close the
-  discard-dodge's free ride — see the Design note on why that ride is intended).
-- **Planner underuses the designed dodge.** Over 20 replayed seeds, 149 discard-cost plays: a tablet
-  was in hand for 49, and it sacrificed one in 31. Split by whether the tablet was affordable, it takes
-  the dodge **80%** of the time when the tablet is *playable* but only **52%** when it is *unplayable* —
-  the inverse of the intended read, so 79% likely understates the deck's real ceiling and part of the
-  21-point gap to the oracle is policy quality, not difficulty.
+- **Planner mis-orders the designed dodge, and the oracle shows the right order.** Replaying 20 seeds
+  under each and splitting every discard-cost play by whether a tablet in hand was affordable:
+
+  | | playable → dodged | unplayable → dodged | no tablet in hand | outcomes |
+  | --- | --- | --- | --- | --- |
+  | planner | 16/20 = **80%** | 15/29 = **52%** | 100/149 | 15W 5L |
+  | oracle | 10/22 = **45%** | 9/15 = **60%** | 90/127 | 20W 0L |
+
+  The oracle dodges *more* when the tablet can't be paid for, which is the intent; the planner has it
+  backwards. The load-bearing cell is the `playable` one (80 vs 45) — holding an affordable tablet, the
+  planner burns it to Fire four times in five where the oracle records it. So part of the 21-point gap
+  is the planner's leaf valuation not crediting a held tablet for the goal step it converts into, and
+  **79% understates what the deck does in competent hands.** A `sim/` matter, not a content one.
+  (`TAB=playable` means *some* tablet in hand was affordable, not necessarily the discarded one — a
+  handful of 2+-tablet cases carry that slack. Direction is unaffected. Measured with a throwaway patch
+  naming the sacrifice in `formatAction`, which prints only the count; not committed.)
 - **Calendar is near-dead** in every configuration swept: 0 plays under greedy across six sweeps, 3 of
   100 runs under planner, 1 of 10 under oracle.
 - **Planner wins on one worker.** Its end state is pop 2.0 / terr 2.0 with 10.4🔨 banked; a replay shows

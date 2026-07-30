@@ -459,5 +459,46 @@
       "calendar"
     ],
     "meanActions": 26.1
+  },
+  {
+    "label": "writing",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 10,
+      "mean": 13.5,
+      "median": 13,
+      "max": 17
+    },
+    "meanResources": {
+      "food": 13.9,
+      "production": 3.1,
+      "science": 1.2,
+      "military": 4.7,
+      "money": 2,
+      "population": 2,
+      "culture": 0,
+      "territory": 2.3
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "bow": 14,
+      "toolmaking": 29,
+      "forge": 10,
+      "storytelling": 44,
+      "farm": 7,
+      "fire": 71,
+      "clay_tablet": 50,
+      "conquest": 3,
+      "foraging": 18,
+      "dogs": 12,
+      "calendar": 1
+    },
+    "unplayedCards": [
+      "hut"
+    ],
+    "meanActions": 41.8
   }
 ]
