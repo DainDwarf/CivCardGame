@@ -95,7 +95,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 10 | `masonry` | ✅ | ✅ | ✅ | ✅ | [masonry](missions/masonry.md) |
 | 11 | `pyramid` | ⬜ | ⬜ | ⬜ | ⬜ | [pyramid](missions/pyramid.md) |
 | 12 | `accounting` | ✅ | ✅ | ✅ | ✅ | [accounting](missions/accounting.md) |
-| 13 | `writing` | ⬜ | ⬜ | ⬜ | ⬜ | [writing](missions/writing.md) |
+| 13 | `writing` | 🟡 | ✅ | 🟡 | ⬜ | [writing](missions/writing.md) |
 | 14 | `horse_taming` | ⬜ | ⬜ | ⬜ | ⬜ | [horse-taming](missions/horse-taming.md) |
 | 15 | `roads` | ⬜ | ⬜ | ⬜ | ⬜ | [roads](missions/roads.md) |
 | 16 | `wheel` | ⬜ | ⬜ | ⬜ | ⬜ | [wheel](missions/wheel.md) |
@@ -117,6 +117,9 @@ Per-row notes, where the ⬜ isn't the whole story:
   the deck. Its Forge price cut is a **rate move no committed cell measures**: the Forge is this
   mission's own reward, so it is absent from the very fixture that would have caught it, and the five
   cells that do stock it (11–13, 15–16) are all still ⬜.
+- **13 · `writing`** is mid-pass: the tablet moved to 4🔨 + 2🔬 and the fixture is re-cut and swept, but
+  the **drain** — the mission's only pressure — is still unswept, so `Rate`/`Swept` stay 🟡 and
+  `results/` carries **no** `writing` row on purpose. Numbers and the open list are in the dossier.
 - **12 · `accounting`** is a second hoard goal, and **moved no rate** — 40🪙 and `THIEVES_PER_GOLD` = 10
   stand as authored, its hardness kept deliberately. The fixture is now the player's own winning deck on
   City, swept at the standing protocol: greedy 31% / planner 43% @100, oracle 70% @10. **Read that oracle

@@ -1,18 +1,19 @@
 {
   "id": "writing",
   "mission": "writing",
-  "note": "Purchased — a City-board deck promoted to a fixture once the escalating clay_tablet drain settled. Forge is the deck's permanent production line for tablet costs; Storytelling banks the science the tablets drain.",
+  "note": "Hand-authored City-board deck, the mission's balance reference while the clay_tablet drain is still open — measured (see docs/missions/writing.md) but deliberately NOT recorded in results/, since the drain is the open number. Built against a 4🔨 + 2🔬 tablet, which is why the science half is doubled: Storytelling ×4 is the standing faucet against a 0🔬 board and Fire ×4 buys 🔬 for a spare card, and at ×2 each the same cell measures 19% under the planner against 79% here. Toolmaking ×4 plus the single Forge is the 🔨 half, which no longer binds — the planner ends on ~10🔨 unspent. Hut and Conquest are the two cards that don't earn their keep: City's 2 territory holds only two of the three structures, so the third needs a Conquest tick, and the planner declines the whole line and wins on one worker. No money or culture engine: Trader (this node's own prereq reward), the Bead Workshop pair and Beer/Sun Stone/Göbekli are all owned here and all left out, since nothing in the goal or the drain asks for 🪙 or 🎭. Costs 13 of the 98 Influence guaranteed to have arrived (irrigation ×2 = 6; storytelling/fire each ×1→×4 = 3 apiece; conquest ×1→×2 = 1).",
   "board": "city",
   "deck": [
-    { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
-    { "cardId": "forge", "count": 2 },
-    { "cardId": "hut", "count": 2 },
-    { "cardId": "beer", "count": 1 },
-    { "cardId": "conquest", "count": 4 },
-    { "cardId": "toolmaking", "count": 2 },
-    { "cardId": "foraging", "count": 2 },
-    { "cardId": "bow", "count": 2 },
+    { "cardId": "farm", "count": 1, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "forge", "count": 1 },
+    { "cardId": "hut", "count": 1 },
+    { "cardId": "conquest", "count": 2 },
+    { "cardId": "foraging", "count": 4 },
+    { "cardId": "toolmaking", "count": 4 },
     { "cardId": "dogs", "count": 2 },
-    { "cardId": "storytelling", "count": 4 }
+    { "cardId": "storytelling", "count": 4 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "fire", "count": 4 },
+    { "cardId": "calendar", "count": 1 }
   ]
 }

@@ -420,7 +420,7 @@ export const CARDS: Record<string, CardDef> = {
   // — Events —
   raider: { id: 'raider', name: 'Raiders', kind: 'event', cost: { resources: { military: 3 } }, display: { art: '🪓' }, upkeep: { resources: { food: -1 } } },
   clay_tablet: {
-    id: 'clay_tablet', name: 'Clay Tablet', kind: 'event', cost: { resources: { production: 6, food: 2 } },
+    id: 'clay_tablet', name: 'Clay Tablet', kind: 'event', cost: { resources: { production: 4, science: 2 } },
     display: {
       art: '📜',
       description: '−🔬 at end of round, worsening',

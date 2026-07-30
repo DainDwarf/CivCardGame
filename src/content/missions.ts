@@ -392,9 +392,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     // so the mission can't seed a different count than the win asks for.
     events: Array.from({ length: CLAY_TABLETS }, () => 'clay_tablet'),
     objectiveCardId: 'writing_goal',
-    victoryHint: `Record all ${CLAY_TABLETS} clay tablets — pay 3 🔨 and 2 🌾 for each.`,
+    victoryHint: `Record all ${CLAY_TABLETS} clay tablets — pay 4 🔨 and 2 🔬 for each.`,
     failureHint:
-      'A tablet you draw and leave unrecorded loses 1 🔬 that round; let too much knowledge slip and a dark age ends the run.',
+      'A tablet left unrecorded drains 🔬 at the end of each round, deepening every time it goes ' +
+      'unwritten — let too much knowledge slip and a dark age ends the run.',
     kind: 'standard',
     // Opens the literacy half of the Bronze spine: the Archives (the first science *building*) and the
     // Writing action. Influence amount provisional (balance pending a sim sweep).

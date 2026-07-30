@@ -6,7 +6,7 @@ import { DEFAULT_ENABLER_TERMS, deriveEnablers, enablerPotential, goalValuedCard
 import { OBJECTIVE_WEIGHT } from './value';
 import { objectiveProgress } from './objective';
 import { CARDS, type CardDef } from '../content/cards';
-import { addBuilding, cultureForLevel, emptyResources, type GameState } from '../rules';
+import { addBuilding, cultureForLevel, emptyResources, type GameState, type Resources } from '../rules';
 
 // The two conversion costs the Masonry deck rides on, read from content so a rebalance re-targets these
 // expectations instead of silently breaking on a stale literal — the assertions pin the *relationship* (a
@@ -311,22 +311,28 @@ describe('card-cost goal valuation', () => {
     return (objectiveProgress(G) - before) * OBJECTIVE_WEIGHT;
   }
 
+  /** The cost keys the tablet actually charges — read off the card so a rebalance that moves the
+   *  tablet onto different resources re-targets these assertions instead of breaking them. */
+  const tabletCost = Object.entries(CARDS.clay_tablet.cost.resources!) as [keyof Resources, number][];
+
   it('banks each of the goal card\'s cost resources, capped at one card\'s worth', () => {
     const m = deriveEnablers(writingRoot());
-    expect(m.weight.production ?? 0).toBeGreaterThan(0);
-    expect(m.cap.production).toBe(CARDS.clay_tablet.cost.resources!.production!);
-    expect(m.weight.food ?? 0).toBeGreaterThan(0);
-    expect(m.cap.food).toBe(CARDS.clay_tablet.cost.resources!.food!);
+    expect(tabletCost.length).toBeGreaterThan(0);
+    for (const [key, amount] of tabletCost) {
+      expect(m.weight[key] ?? 0).toBeGreaterThan(0);
+      expect(m.cap[key]).toBe(amount);
+    }
   });
 
   it('attributes the goal step proportionally: one shared per-unit marginal across the cost keys', () => {
     const m = deriveEnablers(writingRoot());
-    expect(m.weight.production).toBe(m.weight.food);
+    const marginals = new Set(tabletCost.map(([key]) => m.weight[key]));
+    expect(marginals.size).toBe(1);
   });
 
   it('keeps a full cost bank worth strictly less than the goal step it converts into (sound shaping)', () => {
     const m = deriveEnablers(writingRoot());
-    const fullBank = m.weight.production! * m.cap.production! + m.weight.food! * m.cap.food!;
+    const fullBank = tabletCost.reduce((sum, [key]) => sum + m.weight[key]! * m.cap[key]!, 0);
     expect(fullBank).toBeGreaterThan(0);
     expect(fullBank).toBeLessThan(tabletStep());
   });
