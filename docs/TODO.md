@@ -199,6 +199,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   when the objective wants 3 of it, so the planner grows past the win and pays the upkeep. Measured on
   `first_temple` (3🧍): planner 98 → 96, famine 2 → 4. The cap is also inert for population/territory in
   practice — nothing reaches 12. `[size: S]`
+- **Population's capacity credit is gross, not net of its food curve** `[size: M]` — `strategicWeight`
+  credits a worker `CAPACITY_HORIZON` rounds of goal throughput and charges nothing for the upkeep it
+  commits to, on the stated argument that bands 2–3 cover it. They don't: on `wheel`/city House scores
+  **+200** against band 3's **−75**, and band 2 fires three rounds too late to brake. The credit was
+  tuned against `FOOD_PER_POP = 1` and never re-derived when upkeep became `floor(pop²/4)` — the curves
+  cross at pop 4, so the opening now reads *safer* than when it was tuned while `CAPACITY_CAP`'s pop 12
+  costs 36🌾/round instead of 12. Net `foodPerNextPop` off the credit, derived rather than a constant.
 - **`PRODUCER_CREDIT_CAP` is whole-tableau, so a structure's marginal credit is zero once reached** — on
   Pyramid five structures sum ~41 against a cap of 15, leaving a wonder worth ~27 adding nothing at the
   leaf. Raising it 0.05 → 0.25 was tried and **reverted**: it cost `accounting` 18 points by making the
