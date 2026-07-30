@@ -158,8 +158,11 @@ Per-row notes, where the ⬜ isn't the whole story:
   Masonry), but it has no committed cell and no recorded numbers.
 - **16 · `wheel` moved one number** — the Overextension drain took a **grace band**
   (`OVEREXTENSION_GRACE` = 2, so `max(0, gained − 2)`); `WHEEL_TERRITORY` held at 6. Its fixture is the
-  Roads deck carried forward onto City: greedy 10% / planner 55% @100, oracle 100% @10 in 13–29 turns,
-  famine the fair-competent failure mode. The rate reading that reaches forward is that the **🔨 crisis
+  Roads deck carried forward onto City: greedy 10% / planner 55% @100, oracle 100% @10 in 13–29 turns.
+  ⚠️ **Its `planner` row is not a difficulty reading** — read `oracle`/`prover`, as at 11 · `pyramid`.
+  The 35 famines are dominated by one *policy* opening error (House before the Farm, in 9 of 9 replayed
+  famine seeds and 0 of 16 others); `prover` finds a Farm-first line on three of them and wins in 17–21
+  turns. The rate reading that reaches forward is that the **🔨 crisis
   the mission is named for is not what kills a competent player** — greedy ruins 52 times ending on
   65🔨 unconverted, while the planner's losses are 35 famine to 1 ruin. Chiefdom reaches this node too
   and reads 30% planner / 80% oracle on the *same* deck; unfixtured, same open board gap as 12 and 15.

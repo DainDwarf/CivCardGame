@@ -58,10 +58,25 @@ arrived. Swept at the standing protocol:
 | planner | 100 | **55%** | 4 · 24 · 201 | 6.2 | famine 35 · stall 8 |
 | oracle | 10 | 100% | 13 · 18 · 29 | 8.0 | — |
 
-**Food, not production, is what the mission kills you with** at the fair-competent tier — 35 of the
-planner's 45 losses are famine, against one ruin. The 🔨 crisis the mission is named for shows up only
-in the greedy column, where 52 runs ruin: greedy ends holding 65🔨 mean and never converts it, so read
-that column as the one-ply plateau it is, not as the drain biting.
+⚠️ **The planner row is a floor, not a difficulty reading — read `oracle`/`prover` here.** Its 35 famines
+are dominated by one repeated *policy* opening error, not by the mission: across 25 replayed seeds,
+**9 of 9 famines** play House (+2🧍, so food upkeep goes 1 → 4/round on `floor(pop²/4)`) before the
+Farm is down, and **0 of 16 non-famines** do. Three of those famine seeds were handed to `prover`, which
+found a winning line in all three — Farm first, House 7–9 turns later, wins in 17–21 turns:
+
+| seed | planner | prover |
+|---|---|---|
+| 10 | House T1, no Farm → famine T4 | Farm T9 · House T10 → victory T21 |
+| 15 | House T1, no Farm → famine T6 | Farm T6 · House T9 → victory T17 |
+| 23 | House T1, no Farm → famine T4 | Farm T7 · House T8 → victory T17 |
+
+So the food question the mission asks **is** answerable on this deck. Same shape as the `pyramid` row's
+warning, and narrower than it — the gap here is one identifiable opening, and the cause is logged as
+simulator work rather than balance.
+
+The 🔨 crisis the mission is named for shows up only in the greedy column, where 52 runs ruin: greedy
+ends holding 65🔨 mean and never converts it, so read that column as the one-ply plateau it is, not as
+the drain biting.
 
 **Chiefdom is measurably harder on this same deck** — planner 30% / oracle 80% @10, famine again (68 of
 greedy's 100 runs, ending at mean −0.5🌾). It gets **no fixture**: at 0 starting territory against this
