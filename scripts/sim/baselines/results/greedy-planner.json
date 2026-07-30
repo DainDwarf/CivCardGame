@@ -276,6 +276,54 @@
     "meanActions": 26.01
   },
   {
+    "label": "horse_taming",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 9,
+    "winRate": 0.09,
+    "turns": {
+      "min": 5,
+      "mean": 45.1,
+      "median": 17,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 27.16,
+      "production": 49.53,
+      "science": 6.73,
+      "military": 18.55,
+      "money": 11,
+      "population": 2.02,
+      "culture": 0,
+      "territory": 3.44
+    },
+    "defeatCauses": {
+      "ruin": 32,
+      "famine": 39,
+      "stall": 15,
+      "bankruptcy": 5
+    },
+    "cardPlays": {
+      "fire": 673,
+      "bead_workshop": 33,
+      "farm": 49,
+      "bow": 133,
+      "trader": 301,
+      "toolmaking": 229,
+      "city_walls": 69,
+      "dogs": 473,
+      "wild_horse": 143,
+      "conquest": 144,
+      "forge": 46,
+      "bartering": 37,
+      "house": 1
+    },
+    "unplayedCards": [
+      "writing"
+    ],
+    "meanActions": 68.17
+  },
+  {
     "label": "masonry",
     "policyName": "greedy",
     "runs": 100,
@@ -930,6 +978,54 @@
       "conquest"
     ],
     "meanActions": 22.71
+  },
+  {
+    "label": "horse_taming",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 37,
+    "winRate": 0.37,
+    "turns": {
+      "min": 8,
+      "mean": 30.44,
+      "median": 24,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 3.92,
+      "production": 19.79,
+      "science": 6.95,
+      "military": 15.36,
+      "money": 7.41,
+      "population": 2,
+      "culture": 0,
+      "territory": 2.88
+    },
+    "defeatCauses": {
+      "famine": 47,
+      "bankruptcy": 8,
+      "ruin": 6,
+      "stall": 2
+    },
+    "cardPlays": {
+      "fire": 695,
+      "bead_workshop": 36,
+      "bow": 143,
+      "city_walls": 111,
+      "dogs": 583,
+      "toolmaking": 248,
+      "bartering": 76,
+      "wild_horse": 289,
+      "trader": 377,
+      "forge": 59,
+      "conquest": 89,
+      "farm": 47
+    },
+    "unplayedCards": [
+      "house",
+      "writing"
+    ],
+    "meanActions": 59.76
   },
   {
     "label": "masonry",

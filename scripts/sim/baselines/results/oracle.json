@@ -268,6 +268,51 @@
     "meanActions": 22.4
   },
   {
+    "label": "horse_taming",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 9,
+    "winRate": 0.9,
+    "turns": {
+      "min": 15,
+      "mean": 24.4,
+      "median": 25,
+      "max": 31
+    },
+    "meanResources": {
+      "food": 9.9,
+      "production": 9.4,
+      "science": 11.6,
+      "military": 2.9,
+      "money": 7.1,
+      "population": 2,
+      "culture": 0,
+      "territory": 4.7
+    },
+    "defeatCauses": {
+      "famine": 1
+    },
+    "cardPlays": {
+      "fire": 120,
+      "bead_workshop": 5,
+      "bow": 19,
+      "trader": 43,
+      "city_walls": 15,
+      "dogs": 64,
+      "wild_horse": 47,
+      "bartering": 9,
+      "toolmaking": 14,
+      "writing": 2,
+      "conquest": 27,
+      "forge": 13,
+      "farm": 10
+    },
+    "unplayedCards": [
+      "house"
+    ],
+    "meanActions": 74
+  },
+  {
     "label": "masonry",
     "policyName": "oracle",
     "runs": 10,

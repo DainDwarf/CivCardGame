@@ -1,12 +1,21 @@
 {
   "id": "horse_taming",
   "mission": "horse_taming",
-  "note": "City-board deck, the mission's balance reference. Sits on the 20-card floor for draw density: hand is 4 with a full recycle, so throughput is 4 cards/turn and the 5 seeded wild horses already inflate the pool to 25. All 30⚔️ of tame cost comes from Dogs — the whole goal is only 15🌾, so what is scarce is *drawing* 15 Dogs, not affording them. Two irrigated Farms fill City's 2 territory (3🌾/worker each), and Toolmaking covers the −1🔨 per untamed horse held; population never grows, because a Hut/House would cost one of the two Farm slots. Road is deliberately absent — Roads is a *sibling* branch off Writing, so it is not owned at this node (do not copy wheel.json's pool). Costs 25 of the 100 Influence guaranteed to have arrived here (farm ×2 = 1, four irrigation = 12, dogs ×8 = 7, foraging ×8 = 5).",
+  "note": "The player's own winning deck, swept at the standing protocol: greedy 9% / planner 37% @100, oracle 90% @10 in 15-31 turns. It is the Wheel deck carried forward with Road x2 traded for City Walls x2 and the Farm, Conquest and Hunting lines doubled. Taming costs 30 military across the 5 horses, drawn from three sources that price differently: Hunting x4 at 1 per worker-turn, City Walls x2 at 1 per round for a tableau slot and no worker, Bow x2 as a burst - while Conquest x4 spends the same pool on territory, so the deck's expansion and its win condition compete. City starts at 2 territory against 8 structures, which is what Conquest is there to widen. Famine is the failure mode at every tier - 47 of the planner's 63 losses, and the oracle's single loss - so the herd's food drain outruns the double-Irrigated Farms rather than the military ever binding. Writing is played 0 times by greedy or planner and is the deck's one dead card; House is played 0.01x/run by greedy and never by the planner. Costs 24 of the 110 Influence guaranteed to have arrived (irrigation x4 = 12; conquest x1->x4 and fire x1->x4 = 3 apiece; dogs x2->x4 = 2; city_walls/farm/forge/trader each x1->x2 = 1 apiece; toolmaking and bow are starting-collection copies). Chiefdom is where the deck was hand-won, on granary+stockpile, and reads greedy 3% / planner 15% @100 there; it stays unfixtured until it has a deck of its own.",
   "board": "city",
   "deck": [
+    { "cardId": "bead_workshop", "count": 1 },
+    { "cardId": "city_walls", "count": 2 },
     { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
-    { "cardId": "dogs", "count": 8 },
-    { "cardId": "foraging", "count": 6 },
-    { "cardId": "toolmaking", "count": 4 }
+    { "cardId": "forge", "count": 2 },
+    { "cardId": "house", "count": 1 },
+    { "cardId": "conquest", "count": 4 },
+    { "cardId": "dogs", "count": 4 },
+    { "cardId": "toolmaking", "count": 2 },
+    { "cardId": "trader", "count": 2 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "fire", "count": 4 },
+    { "cardId": "writing", "count": 1 },
+    { "cardId": "bartering", "count": 1 }
   ]
 }

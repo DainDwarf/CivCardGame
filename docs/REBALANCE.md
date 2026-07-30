@@ -96,7 +96,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 11 | `pyramid` | ✅ | ✅ | ✅ | ✅ | [pyramid](missions/pyramid.md) |
 | 12 | `accounting` | ✅ | ✅ | ✅ | ✅ | [accounting](missions/accounting.md) |
 | 13 | `writing` | ✅ | ✅ | ✅ | ✅ | [writing](missions/writing.md) |
-| 14 | `horse_taming` | ⬜ | ⬜ | ⬜ | ⬜ | [horse-taming](missions/horse-taming.md) |
+| 14 | `horse_taming` | ✅ | ✅ | ✅ | 🟡 | [horse-taming](missions/horse-taming.md) |
 | 15 | `roads` | ✅ | ✅ | ✅ | ✅ | [roads](missions/roads.md) |
 | 16 | `wheel` | ✅ | ✅ | ✅ | ✅ | [wheel](missions/wheel.md) |
 | — | `ice_age` · `sandbox` | ⬜ | ⬜ | ⬜ | ⬜ | — |
@@ -156,6 +156,16 @@ Per-row notes, where the ⬜ isn't the whole story:
   Both matter at 16 · `wheel`, whose goal *is* territory gained. **Only City is fixtured** — Chiefdom
   also reaches this node, and by here it is City's only alternative (Settlement was upgraded away at
   Masonry), but it has no committed cell and no recorded numbers.
+- **14 · `horse_taming` moved no number** — 5 horses · 6⚔️ each · −1🌾 per tamed · −1🔨 per untamed held
+  all stand as authored, the mission having been hand-won on **Chiefdom + granary + stockpile**. Its
+  fixture is that winning deck on City — the Wheel deck with Road ×2 traded for City Walls ×2 and the
+  Farm/Conquest/Hunting lines doubled: greedy 9% / planner 37% @100, oracle 90% @10 in 15–31 turns.
+  The rate reading that reaches forward is that **the ⚔️ side never binds** — every tier dies to famine
+  (47 of the planner's 63 losses, and the oracle's only one) even though the deck carries all three ⚔️
+  sources plus Conquest competing for the same pool. That makes this a **🌾 mission wearing military
+  clothes**, and the drain it is measured against is the one the goal generates itself. Chiefdom reads
+  3% / 15% @100 and prover 80% @10 on the same deck; unfixtured, same open board gap as 12, 15 and 16.
+  `Strd` is 🟡 pending the reward discussion.
 - **16 · `wheel` moved one number** — the Overextension drain took a **grace band**
   (`OVEREXTENSION_GRACE` = 2, so `max(0, gained − 2)`); `WHEEL_TERRITORY` held at 6. Its fixture is the
   Roads deck carried forward onto City: greedy 10% / planner 55% @100, oracle 100% @10 in 13–29 turns.
