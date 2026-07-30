@@ -230,7 +230,6 @@ export function DeckEditor({
   }
 
   return (
-    <>
     <div className={styles.editor}>
       <h1 className={styles.title}>Edit Deck</h1>
 
@@ -266,65 +265,62 @@ export function DeckEditor({
           </>
         )}
       </div>
-    </div>
 
-    {/* Outside `.editor`'s max-width column so it can span the full screen width — see
-        DeckEditor.module.css's `.banner`. */}
-    <div className={styles.banner} ref={bannerRef}>
-      <div className={styles.bannerHeader}>
-        <input
-          type="text"
-          className={styles.nameInput}
-          value={deck.name}
-          onChange={(e) => setDeck((d) => ({ ...d, name: e.target.value }))}
-          placeholder="Deck name"
-        />
-        <span className={styles.count}>{deck.cards.length} cards (min {MIN_DECK_SIZE})</span>
-        <div className={styles.bannerActions}>
-          <button type="button" className={styles.cancelBtn} onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className={styles.saveBtn}
-            disabled={deck.cards.length < MIN_DECK_SIZE}
-            title={deck.cards.length < MIN_DECK_SIZE ? `A deck needs at least ${MIN_DECK_SIZE} cards to save.` : 'Save this deck'}
-            onClick={() => onSave(deck)}
-          >
-            Save
-          </button>
+      <div className={styles.banner} ref={bannerRef}>
+        <div className={styles.bannerHeader}>
+          <input
+            type="text"
+            className={styles.nameInput}
+            value={deck.name}
+            onChange={(e) => setDeck((d) => ({ ...d, name: e.target.value }))}
+            placeholder="Deck name"
+          />
+          <span className={styles.count}>{deck.cards.length} cards (min {MIN_DECK_SIZE})</span>
+          <div className={styles.bannerActions}>
+            <button type="button" className={styles.cancelBtn} onClick={onCancel}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={styles.saveBtn}
+              disabled={deck.cards.length < MIN_DECK_SIZE}
+              title={deck.cards.length < MIN_DECK_SIZE ? `A deck needs at least ${MIN_DECK_SIZE} cards to save.` : 'Save this deck'}
+              onClick={() => onSave(deck)}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+        <div className={styles.bannerStrip}>
+          {deck.cards.length === 0 && (
+            <p className={styles.empty}>Click or drag a card above to add it.</p>
+          )}
+          {groupCounts(deck.cards, collection).map((g) => (
+            <CardFace
+              key={variantKey(g)}
+              as="button"
+              card={effectiveCard(CARDS[g.cardId], g)}
+              className={styles.bannerTile}
+              countBadge={g.count}
+              stickerBadge={g.stickers}
+              title="Click or drag out of the deck to remove a copy"
+              onPointerDown={(e) => onTilePointerDown(e, g, 'banner')}
+            />
+          ))}
         </div>
       </div>
-      <div className={styles.bannerStrip}>
-        {deck.cards.length === 0 && (
-          <p className={styles.empty}>Click or drag a card above to add it.</p>
-        )}
-        {groupCounts(deck.cards, collection).map((g) => (
-          <CardFace
-            key={variantKey(g)}
-            as="button"
-            card={effectiveCard(CARDS[g.cardId], g)}
-            className={styles.bannerTile}
-            countBadge={g.count}
-            stickerBadge={g.stickers}
-            title="Click or drag out of the deck to remove a copy"
-            onPointerDown={(e) => onTilePointerDown(e, g, 'banner')}
-          />
-        ))}
-      </div>
-    </div>
 
-    {/* The card clone following the cursor while it's dragged between the picker and the banner. */}
-    {drag?.active && (
-      <div className={styles.dragLayer} aria-hidden="true">
-        <CardFace
-          card={effectiveCard(CARDS[drag.card.cardId], drag.card)}
-          className={styles.dragClone}
-          stickerBadge={drag.card.stickers}
-          style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
-        />
-      </div>
-    )}
-    </>
+      {/* The card clone following the cursor while it's dragged between the picker and the banner. */}
+      {drag?.active && (
+        <div className={styles.dragLayer} aria-hidden="true">
+          <CardFace
+            card={effectiveCard(CARDS[drag.card.cardId], drag.card)}
+            className={styles.dragClone}
+            stickerBadge={drag.card.stickers}
+            style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
+          />
+        </div>
+      )}
+    </div>
   );
 }

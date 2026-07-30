@@ -23,15 +23,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## UI (`src/components/`)
 
-- **Deck editor: the fixed deck-tray banner swallows clicks on the picker's last section.** At a
-  ~949px-tall viewport the picker's bottom-most section sits *under* `.banner`
-  (`position: fixed; bottom: 0`) at the default unscrolled position — `.picker`'s
-  `padding-bottom: 260px` clearance isn't enough. `elementFromPoint` on a tile there resolves to a
-  card in the tray beneath, so the click silently toggles **a different card** out of the deck; no
-  error, no visual cue. Scrolling the picker down clears it. Found when Bartering became the first
-  *ownable* `trade` card and its new **Trade Routes** section landed last in the picker — so every
-  future kind added at the end walks into this. Fix the clearance/stacking, not the section order.
-  `[size: S]`
 - **Danger-button text contrast (app-wide)** — the `--danger-strong` / white pairing on danger
   buttons (GameMenu's Clear/Replace confirms, the deck-editor discard confirm, etc.) measures
   ~3.74:1 white-on-red — short of WCAG AA (4.5:1) for its bold ~15.7px size, in both light and dark.
@@ -256,6 +247,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The deck editor's tray no longer overlays its picker** ✅ — the tray was `position: fixed` over a
+  picker that scrolled with the whole meta content area, so whatever landed in the bottom ~260px at a
+  given scroll position was hidden *and* still under the pointer: a click there resolved to the tray
+  card painted on top and silently toggled a different card out of the deck. Bumping `.picker`'s
+  bottom padding can't fix it — padding grows the content by the same amount it moves the row down,
+  so the hidden band stays hidden. The editor is now a full-height flex column filling the content
+  area: the picker is the only scroll region and the tray is a flow sibling below it, so the two can
+  never occupy the same pixels (measured: picker bottom == tray top, at 700/949/1200px heights and
+  empty/full trays). Drops the tray's `left: 220px` coupling to the nav's width with it.
 - **A gated producer is worth reaching its gate, even when the gate is a goal term** ✅ — the strategic
   capacity credit was skipped whenever its pool was itself goal-valued, so nothing valued reaching 🎭 L1 to
   ungate a wonder paying the *other* goal terms. The derived credit now fires (with the pool's own key

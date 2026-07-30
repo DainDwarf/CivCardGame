@@ -165,7 +165,7 @@ export function MetaMenu({
           </button>
         ))}
       </nav>
-      <div className={styles.content}>
+      <div className={`${styles.content}${screen === 'deckEditor' ? ` ${styles.contentEditor}` : ''}`}>
         {screen === 'mission' && (
           <CampaignMap
             decks={decks}

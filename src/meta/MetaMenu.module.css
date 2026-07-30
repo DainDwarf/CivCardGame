@@ -2,10 +2,9 @@
   display: flex;
   /* Bounded height (not min-height) + overflow:hidden so tall content scrolls inside `.content`
      rather than growing the document body. Body scroll would move the UI-scale wrapper's fixed
-     children (the game-menu burger, the deck-editor banner) out of view, since a transform
-     ancestor makes them scroll with content instead of pinning (see App.module.css). Height is
-     100% of that wrapper (already sized to the viewport), not 100vh, so it doesn't overshoot
-     the scaled box. */
+     children (the game-menu burger) out of view, since a transform ancestor makes them scroll
+     with content instead of pinning (see App.module.css). Height is 100% of that wrapper
+     (already sized to the viewport), not 100vh, so it doesn't overshoot the scaled box. */
   height: 100%;
   overflow: hidden;
   background: var(--surface-sunken);
@@ -16,8 +15,7 @@
 
 .nav {
   /* border-box so its 220px flex-basis is the *true* rendered width (padding included, not
-     added on top) — DeckEditor.module.css's fixed-position `.banner` anchors off this exact
-     width to sit flush beside it. */
+     added on top). */
   box-sizing: border-box;
   flex: 0 0 220px;
   display: flex;
@@ -102,6 +100,14 @@
   min-height: 0;
   padding: 2rem 2rem 4rem;
   overflow-y: auto;
+}
+
+/* The deck editor owns the whole content area edge to edge: it splits it into a scrolling picker
+   and a bar pinned at the bottom, so the padding has to move onto those two pieces (a bar inset by
+   this padding would float rather than close the screen). */
+.contentEditor {
+  padding: 0;
+  overflow: hidden;
 }
 
 /* Discard-unsaved-changes confirm — the guard on every exit from the deck editor. Mirrors
