@@ -354,6 +354,50 @@
     "meanActions": 72.01
   },
   {
+    "label": "pyramid",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 0,
+    "winRate": 0,
+    "turns": {
+      "min": 12,
+      "mean": 40.71,
+      "median": 41,
+      "max": 41
+    },
+    "meanResources": {
+      "food": 35.67,
+      "production": 18.48,
+      "science": 0,
+      "military": 4.84,
+      "money": 56.19,
+      "population": 2,
+      "culture": 13.02,
+      "territory": 4.7
+    },
+    "defeatCauses": {
+      "the pharaoh died before his tomb was ready": 99,
+      "famine": 1
+    },
+    "cardPlays": {
+      "beer": 1302,
+      "bow": 100,
+      "toolmaking": 1172,
+      "dogs": 752,
+      "trader": 2581,
+      "conquest": 270,
+      "bartering": 68,
+      "farm": 31
+    },
+    "unplayedCards": [
+      "bead_workshop",
+      "forge",
+      "house",
+      "gobekli_tepe"
+    ],
+    "meanActions": 102.48
+  },
+  {
     "label": "raiders_at_border",
     "policyName": "greedy",
     "runs": 100,
@@ -871,6 +915,49 @@
     },
     "unplayedCards": [],
     "meanActions": 66.24
+  },
+  {
+    "label": "pyramid",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 18,
+    "winRate": 0.18,
+    "turns": {
+      "min": 13,
+      "mean": 38.28,
+      "median": 41,
+      "max": 41
+    },
+    "meanResources": {
+      "food": 11.76,
+      "production": 59.1,
+      "science": 0,
+      "military": 3.11,
+      "money": 47.54,
+      "population": 3.96,
+      "culture": 17.7,
+      "territory": 4.25
+    },
+    "defeatCauses": {
+      "famine": 11,
+      "the pharaoh died before his tomb was ready": 71
+    },
+    "cardPlays": {
+      "beer": 1134,
+      "bow": 195,
+      "bead_workshop": 96,
+      "forge": 100,
+      "trader": 1652,
+      "toolmaking": 258,
+      "bartering": 97,
+      "conquest": 225,
+      "house": 98,
+      "dogs": 178,
+      "farm": 87,
+      "gobekli_tepe": 32
+    },
+    "unplayedCards": [],
+    "meanActions": 83.12
   },
   {
     "label": "raiders_at_border",

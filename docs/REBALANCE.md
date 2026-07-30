@@ -93,7 +93,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 8 | `first_temple` | ✅ | ✅ | ✅ | ✅ | [first-temple](missions/first-temple.md) |
 | 9 | `finding_copper` | ✅ | ✅ | ✅ | ✅ | [copper](missions/copper.md) |
 | 10 | `masonry` | ✅ | ✅ | ✅ | ✅ | [masonry](missions/masonry.md) |
-| 11 | `pyramid` | ⬜ | ⬜ | ⬜ | ⬜ | [pyramid](missions/pyramid.md) |
+| 11 | `pyramid` | ✅ | ✅ | ✅ | ✅ | [pyramid](missions/pyramid.md) |
 | 12 | `accounting` | ✅ | ✅ | ✅ | ✅ | [accounting](missions/accounting.md) |
 | 13 | `writing` | ✅ | ✅ | ✅ | ✅ | [writing](missions/writing.md) |
 | 14 | `horse_taming` | ⬜ | ⬜ | ⬜ | ⬜ | [horse-taming](missions/horse-taming.md) |
@@ -113,6 +113,13 @@ Per-row notes, where the ⬜ isn't the whole story:
 - **8 · `first_temple`** kept its four-term conjunction's 🧍 and 🎭 terms and **dropped both spendable
   ones** (30🔨, 30🪙) — see *Re-point the money objectives*. It is the age's **long** mission by design:
   an oracle median of ~40 turns against the 11–16 band before it, accepted rather than tuned away.
+- **11 · `pyramid` moved no number** — the target (50🪙 · 40🔨 · 🎭 L2) and `PHARAOH_DEADLINE` (40) proved
+  sound as authored: hand-won first try and search-proven **50/50**, oracle 10/10 in 28–33 of the 40 rounds.
+  What changed is the deck, and the *simulator* — every policy read this cell 0% until two enabler-model
+  folds were fixed. ⚠️ Its committed `planner` row (18/100) is **not a difficulty reading**: it sits 82 points
+  under proven winnability, the widest such gap in the set, so read `oracle`/`prover` here until
+  [`TODO.md`](TODO.md) → *Simulator* closes. Only City is fixtured; Chiefdom reaches the mission but is
+  food-bound on this deck and needs its own.
 - **8 · `first_temple`'s planner row moved 98 → 96** (famine 2 → 4) — a *simulator* change, not a content
   one: the capacity credit now fires on a goal-valued pool, so its 3🧍 term earns a credit capped at 12 and
   the planner grows past the 3 the goal wants ([`TODO.md`](TODO.md) → *Simulator*). `baselines/results/` is

@@ -1,22 +1,20 @@
 {
   "id": "pyramid",
   "mission": "pyramid",
-  "note": "Purchased — an optional challenge leaf, so its pool is not its prereq closure: the player comes back to it after progressing further, and Forge and Trader are both fair game. The goal wants 50🪙 + 40🔨 + culture level 2 held at once inside the Pharaoh's deadline, so the deck runs three engines in parallel — Trader/Bead Workshop for money, Forge for production, Cave Art/Beer/Göbekli for culture — with Houses and Conquest widening the worker base that feeds all three. The Pyramid wonder itself is this mission's reward, so Göbekli is the deck's one wonder.",
+  "note": "An optional challenge leaf, so its pool is not its prereq closure — the player comes back to it later and Trader and Forge are both fair game. The goal wants 50🪙 + 40🔨 + culture level 2 held at once inside the Pharaoh's deadline, which no three separate engines fit: Göbekli Tepe is the pivot, paying 🔨+🪙+🎭 per worker from a single slot, and it appears in all 50 search-proven lines and none of the failures. So the deck carries exactly one of each structure it wants standing — Bead Workshop, irrigated Farm, Forge, House, Göbekli — rather than duplicates that would fill the slots the wonder needs. The 4 Conquest are the land: City starts on 2🗺️ and the five structures want ~5, and since the cost doubles per *copy*, four fresh copies buy four slots for 8⚔️ where two copies climbing would pay 12⚔️.",
   "board": "city",
   "deck": [
-    { "cardId": "trader", "count": 4 },
-    { "cardId": "forge", "count": 2 },
-    { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
-    { "cardId": "house", "count": 2 },
-    { "cardId": "hut", "count": 2 },
+    { "cardId": "bead_workshop", "count": 1 },
+    { "cardId": "farm", "count": 1, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "forge", "count": 1 },
+    { "cardId": "house", "count": 1 },
     { "cardId": "gobekli_tepe", "count": 1 },
+    { "cardId": "beer", "count": 2 },
     { "cardId": "conquest", "count": 4 },
-    { "cardId": "cave_art", "count": 4 },
-    { "cardId": "beer", "count": 1 },
-    { "cardId": "toolmaking", "count": 2 },
-    { "cardId": "bead_workshop", "count": 2 },
-    { "cardId": "foraging", "count": 2 },
     { "cardId": "dogs", "count": 2 },
-    { "cardId": "bow", "count": 2 }
+    { "cardId": "toolmaking", "count": 2 },
+    { "cardId": "trader", "count": 4 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "bartering", "count": 1 }
   ]
 }

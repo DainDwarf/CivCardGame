@@ -33,7 +33,9 @@ plus 4 Conquest · 2 Beer · 2 Hunting · 2 Toolmaking · 4 Trader · 2 Bow · B
 | policy | result |
 |---|---|
 | `prover` @50 | **50/50** |
+| `oracle` @10 | 10/10 · 28–33 turns |
 | `planner` @100 | 18/100 |
+| `greedy` @100 | 0/100 |
 
 **Göbekli Tepe is the mission's pivot** — it appears in all 50 proven lines and none of the failures, paying
 🔨+🪙+🎭 per worker from one slot, which is the only way three simultaneous thresholds fit inside the
@@ -46,9 +48,13 @@ deadline. The five structures want ~5 slots against City's 2, so ~3 Conquests ar
 **🎭 L2 is not the term to give** if these ever move: the Pyramid wonder this mission unlocks is itself
 `cultureLevelReq: 2`, so a level-1 goal would grant a reward the player cannot play.
 
-**Fixt ⬜** — `scripts/sim/baselines/pyramid.json` still holds an unmeasured 8-structure deck stocking 4 Cave
-Art. Re-cutting it onto the deck above would leave `roads.json` the last fixture blocking Cave Art's
-deletion. The earlier growth-window read (~34–38 turns) is untested and nothing measured was deadline-bound.
+**Fixt ✅** — `scripts/sim/baselines/pyramid.json` carries the deck above; `roads.json` is now the last
+fixture stocking Cave Art, so it alone blocks that card's deletion. Only City has a fixture: Chiefdom also
+reaches this mission but measures 0/100 on this deck and is **food-bound, not land-bound** (8🌾 start, one
+Farm, famine 54/100), so like Accounting it would need its own deck before a row there said anything.
+
+The earlier growth-window read (~34–38 turns) is untested; nothing measured was deadline-bound, and the
+oracle finishes in 28–33 of the 40 rounds.
 
 ## Polish ⬜ (not started)
 

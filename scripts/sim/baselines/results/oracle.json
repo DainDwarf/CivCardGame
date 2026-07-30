@@ -344,6 +344,46 @@
     "meanActions": 81.1
   },
   {
+    "label": "pyramid",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 28,
+      "mean": 30.2,
+      "median": 30,
+      "max": 33
+    },
+    "meanResources": {
+      "food": 10.3,
+      "production": 46.1,
+      "science": 0,
+      "military": 3,
+      "money": 55.3,
+      "population": 4,
+      "culture": 30.3,
+      "territory": 5.5
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "beer": 117,
+      "farm": 10,
+      "bow": 20,
+      "toolmaking": 40,
+      "trader": 197,
+      "forge": 10,
+      "conquest": 36,
+      "house": 10,
+      "bartering": 10,
+      "dogs": 42,
+      "bead_workshop": 9,
+      "gobekli_tepe": 10
+    },
+    "unplayedCards": [],
+    "meanActions": 97.5
+  },
+  {
     "label": "raiders_at_border",
     "policyName": "oracle",
     "runs": 10,
