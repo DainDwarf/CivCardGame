@@ -304,9 +304,12 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   `collectionFromCounts`). Counts must be **copy-tier-attainable** (the ×1→×2→×4→×8 ladder — so 1/2/4/8,
   never 3); `rules/collection.test.ts` pins that the starting collection covers the Founding deck.
 - **`stickers.ts`** — `STICKERS`; each `StickerDef` carries its own `appliesTo`/`applyGain`/`applyCost`
-  logic and an `icon`. Each is a **trade-off, not an upgrade**: it raises one output and charges for it
-  in another currency, so the decision is what the copy gives up rather than whether you can afford it.
-  A `applyCost` **discount** leaves an absent field absent; a **surcharge** materializes it.
+  logic and an `icon`. Each is a **trade-off, not an upgrade**: it buys one thing (a raised output, a
+  cut price) and charges for it in another currency, so the decision is what the copy gives up rather
+  than whether you can afford it. A `applyCost` **discount** leaves an absent field absent; a
+  **surcharge** materializes it. Two hooks that can meet on one copy must **commute** — `stickerSignature`
+  normalizes attach order away — which is why a prerequisite surcharge raises to a floor, never steps
+  (`content/stickers.test.ts` pins it over the catalogue).
 - **`boardStickers.ts`** — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
   `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
 - **`boards.ts`** — `BOARDS` (each sets all 8 starting resources) + `ORIGIN_BOARD_ID`. There is no

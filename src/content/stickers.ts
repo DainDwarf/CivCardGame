@@ -41,11 +41,18 @@ export interface StickerDef {
    *  `rules/stickers.ts`'s `effectiveGain`. `undefined` in → `undefined` out (a card with no
    *  gain has nothing to bump). Absent = no output change. */
   applyGain?: (base: Partial<Resources> | undefined) => Partial<Resources> | undefined;
-  /** This sticker's contribution to play cost, applied *once per attached copy* (fold in
-   *  `effectiveCost`). The whole `CardCost` in and out, so a sticker may touch any declarative
-   *  field — not only `resources`. Two shapes, and the difference is load-bearing: a **discount**
-   *  reads the field it cuts and leaves an absent one absent, while a **surcharge** materializes the
-   *  field on a card that never paid it. Absent = no cost change. */
+  /**
+   * This sticker's contribution to play cost, applied *once per attached copy* (fold in
+   * `effectiveCost`). The whole `CardCost` in and out, so a sticker may touch any declarative
+   * field — not only `resources`. Two shapes, and the difference is load-bearing: a **discount**
+   * reads the field it cuts and leaves an absent one absent, while a **surcharge** materializes the
+   * field on a card that never paid it. Absent = no cost change.
+   *
+   * Hooks that can meet on one copy must **commute**: `rules/collection.ts`'s `stickerSignature`
+   * normalizes attach order away, so two copies the collection pools as one variant have to price
+   * identically. Steps commute with steps and floors with floors, but a floor and a step on the same
+   * field do not — which is why every `cultureLevelReq` hook here is a floor.
+   */
   applyCost?: (cost: CardCost) => CardCost;
 }
 
@@ -54,10 +61,9 @@ export interface StickerDef {
  * (`MissionDef.reward.unlockStickerIds`) — a sticker becomes purchasable only once
  * `PlayerStore.unlockedStickers` holds its id (see `rules/upgrades.ts` / the Collection tray).
  *
- * `irrigation` and `elegant` are both **trade-offs, not upgrades**: each raises one producer's output
- * and charges for it in a different currency — 🔨 up front, or a culture level you must already have
- * reached. That is the shape a sticker takes here; a pure buff would make the only decision "can I
- * afford it".
+ * Every entry is a **trade-off, not an upgrade**: it buys one thing and charges for it in a different
+ * currency — 🔨 up front, or a culture level you must already have reached. That is the shape a
+ * sticker takes here; a pure buff would make the only decision "can I afford it".
  */
 
 /** A producer of `key` a sticker may bump: a staffable that already makes the resource, so a sticker
@@ -86,19 +92,19 @@ export const STICKERS: Record<string, StickerDef> = {
   elegant: {
     id: 'elegant',
     name: 'Elegant',
-    description: '+1 🎭, +1 🎭 level to play',
+    description: '+1 🎭, needs 🎭 level 1',
     icon: '✨',
     cost: 4,
     appliesTo: producerOf('culture'),
     applyGain: (base) => (base ? { ...base, culture: (base.culture ?? 0) + 1 } : base),
-    // The sticker pays for itself in the resource it makes: each copy demands one more culture level
-    // than the last, so a stack only turns on as the culture it produces accumulates.
-    applyCost: (cost) => ({ ...cost, cultureLevelReq: (cost.cultureLevelReq ?? 0) + 1 }),
+    // The sticker pays for itself in the resource it makes: it demands the culture level it then helps
+    // you climb, so an early copy sits idle until the run's first level lands.
+    applyCost: (cost) => ({ ...cost, cultureLevelReq: Math.max(1, cost.cultureLevelReq ?? 0) }),
   },
   wheel: {
     id: 'wheel',
     name: 'Wheel',
-    description: '−1 🔨',
+    description: '−1 🔨, needs 🎭 level 1',
     icon: '🛞',
     cost: 5,
     // Any card that actually pays 🔨, whatever its kind (so it can't be wasted on a card it can't
@@ -106,8 +112,12 @@ export const STICKERS: Record<string, StickerDef> = {
     // a kind list, so a card moving between kinds can't silently fall out of the sticker's reach.
     // `applyCost` owns its own floor at 0.
     appliesTo: (c) => (c.cost.resources?.production ?? 0) > 0,
+    // A card already demanding a culture level pays nothing extra for the cartwright, so the trade-off
+    // lands on the early cheap 🔨 cards it most wants to discount and fades on the ones a run reaches
+    // late anyway.
     applyCost: (cost) => ({
       ...cost,
+      cultureLevelReq: Math.max(1, cost.cultureLevelReq ?? 0),
       resources: { ...cost.resources, production: Math.max(0, (cost.resources?.production ?? 0) - 1) },
     }),
   },

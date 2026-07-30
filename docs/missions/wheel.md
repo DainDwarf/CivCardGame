@@ -22,13 +22,23 @@ push through a 🔨 crisis, earn 🔨 relief.
 - **Pressure:** the **Overextension** threat drains **−1🔨 per territory** each round (road upkeep —
   the wider the realm, the costlier to hold). It reads the just-gained territory *the same turn*, so
   the final push to N happens under the heaviest drain — you can't out-expand your economy.
-- **Reward:** the **Wheel** card sticker — **−1🔨** on any card paying 🔨, floored at 0 — the 🔨
-  relief that resolves the mission's own 🔨 crisis. Its `appliesTo` is keyed on the 🔨 cost alone, not
-  on a kind list: Road turning into an `action` had silently put this mission's own reward out of
-  reach of the mission's own territory card. Widening it also brought Bow and Bead Workshop (both pay
-  🔨) into range — **unmeasured**, and the balance pass's to judge. Note the second one is now a 2🔨
-  *building*, so the sticker halves a one-time build price; it used to be a 1🔨-per-play action, where
-  −1🔨 made a repeatable money faucet outright free. The sharper case is the one that went away.
+- **Reward:** the **Wheel** card sticker plus two **Caravan** actions, the branch-closing payoff.
+  - The sticker is **−1🔨** on any card paying 🔨, floored at 0, **against a 🎭-level-1 gate** — the
+    trade-off that makes it a decision rather than a flat discount. The gate is a **floor**
+    (`max(1, req)`), so it costs nothing extra on a card already gated and lands squarely on the cheap
+    early 🔨 cards it most wants to cut. **Elegant moved to a floor with it**: `stickerSignature`
+    normalizes attach order away, so two copies the collection pools as one variant must price the
+    same — and a floor and a step on the same field don't commute (Sun Stone takes both). Elegant's
+    single-copy behaviour is unchanged; only its stack is, a second copy now adding +1🎭 behind the
+    same level 1. Its `appliesTo` is keyed on the 🔨 cost
+    alone, not on a kind list: Road turning into an `action` had silently put this mission's own reward
+    out of reach of the mission's own territory card. Widening it also brought Bow and Bead Workshop
+    (both pay 🔨) into range — **unmeasured**, and a later pass's to judge.
+  - **Food Caravan** / **Material Caravan** — actions, **2🪙 → 3🌾** and **2🪙 → 3🔨**. They exist
+    because the collection had gone action-thin, and they answer this mission's own measured pressure:
+    a wide realm earns 🪙 and starves for 🌾. They set the 🪙→🌾/🔨 conversion rate, so nothing else
+    prices them: **unmeasured**, and the number to watch is Trader (3🪙/worker-turn) sustaining ~1.5
+    Caravans a turn — draw-limited rather than worker-limited.
 
 ## Implement ✅ (shipped)
 

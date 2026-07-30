@@ -344,6 +344,9 @@ export const CARDS: Record<string, CardDef> = {
     produces: { resources: { territory: 1 } },
   },
 
+  food_caravan: { id: 'food_caravan', name: 'Food Caravan', kind: 'action', cost: { resources: { money: 2 } }, display: { art: '🐫' }, effect: { resources: { food: 3 } } },
+  material_caravan: { id: 'material_caravan', name: 'Material Caravan', kind: 'action', cost: { resources: { money: 2 } }, display: { art: '🐂' }, effect: { resources: { production: 3 } } },
+
   fire: { id: 'fire', name: 'Fire', kind: 'action', cost: { discard: 1 }, display: { art: '🔥' }, effect: { resources: { science: 1 } } },
 
   // Calendar keys its two resolver passes on `ctx.answer === undefined` (0 is a valid answer). Its

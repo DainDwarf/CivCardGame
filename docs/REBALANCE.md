@@ -98,7 +98,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 13 | `writing` | ✅ | ✅ | ✅ | ✅ | [writing](missions/writing.md) |
 | 14 | `horse_taming` | ⬜ | ⬜ | ⬜ | ⬜ | [horse-taming](missions/horse-taming.md) |
 | 15 | `roads` | ✅ | ✅ | ✅ | ✅ | [roads](missions/roads.md) |
-| 16 | `wheel` | ✅ | ✅ | ✅ | 🟡 | [wheel](missions/wheel.md) |
+| 16 | `wheel` | ✅ | ✅ | ✅ | ✅ | [wheel](missions/wheel.md) |
 | — | `ice_age` · `sandbox` | ⬜ | ⬜ | ⬜ | ⬜ | — |
 
 Per-row notes, where the ⬜ isn't the whole story:
@@ -166,7 +166,10 @@ Per-row notes, where the ⬜ isn't the whole story:
   the mission is named for is not what kills a competent player** — greedy ruins 52 times ending on
   65🔨 unconverted, while the planner's losses are 35 famine to 1 ruin. Chiefdom reaches this node too
   and reads 30% planner / 80% oracle on the *same* deck; unfixtured, same open board gap as 12 and 15.
-  `Strd` is 🟡 pending the reward discussion.
+  Its **reward** then took two changes, downstream content that no fixture here holds: the Wheel sticker
+  gained a 🎭-level-1 floor so it trades rather than only discounts, and two **Caravan** actions
+  (2🪙 → 3🌾 / 3🔨) join it — the first cards that let a wide realm's 🪙 answer the 🌾 pressure this row
+  measured. Both are unmeasured; they set the 🪙→🌾/🔨 conversion rate later rows read against.
 - **`ice_age` · `sandbox`** are infinite, so `Swept` can never mean a win rate there: read the collapse
   round instead. They are last because nothing downstream depends on them.
 
@@ -187,7 +190,7 @@ What every later cell is measured against. Each mission's reasoning and sweep is
 | 3 | **Bead Workshop** → a `building` (2🔨, then 1🪙 per staffed worker) · **Bartering** → a route opening for 1🪙 at 1🪙 rent → **2🌾**/round. Both moved onto money's *producer* side, which is what keeps the one-way hub intact |
 | 4 | `FIRST_TRADES_FOOD` = **25🌾**, set on turn times (13 · 15 · 16 at oracle/planner/heuristic) · **Sun Stone** (the re-rated Burial) and **Calendar** (2🔬 → look at the top 3 and draw one) are `reading_seasons`' grants |
 | 5 | The culture pair halved — **Beer** 1🌾 → **1🎭** (work) · **Sun Stone** **3🔨** → **1🎭**/worker (building). The level curve holds at cumulative **10 / 30 / 70** (`CULTURE_STEP = 10`): the producers were the freshly-rated numbers and the curve the oldest, so they moved |
-| 5 | **Irrigation** keeps +1🌾 and now also charges **+1🔨 to play**, reaching work cards as well as buildings · **Elegant** is new: **+1🎭, +1 🎭 level to play**, on a culture producer of either kind |
+| 5 | **Irrigation** keeps +1🌾 and now also charges **+1🔨 to play**, reaching work cards as well as buildings · **Elegant** is new: **+1🎭, needs 🎭 level 1**, on a culture producer of either kind |
 | 7+ | Dogs → **Hunting**: the 1🌾→1⚔️ `action` becomes a free `work` box at **1⚔️**/worker (card id still `dogs`). ⚔️ stops being bought with 🌾 and starts costing a worker for the turn (the board slot it also cost when this was measured is no longer charged). Post-dates mission 7's pass rather than coming out of it — a trial, measured across all seven swept cells at once |
 | 9 | **Forge** 4🔨 → **3🔨**, output unchanged at 2🔨/worker — so it now undercuts the Archives it was priced level with. First **measured on cell 13**, the earliest swept cell that stocks it (it is `finding_copper`'s own reward, so it is absent from that cell's own deck): the single copy is played in 98 of 100 planner runs, 31 of 100 greedy, 10 of 10 oracle |
 

@@ -311,12 +311,18 @@ of buying copies outright in the shop.
 profile (board stickers *are* the "board modifiers" — one concept, not two). Card stickers
 need per-copy identity — decks reference owned copies by instance id, not bare `CardId[]`.
 
-A card sticker is a **trade-off, not an upgrade**: it raises one output and **charges for it in another
-currency**. A pure buff makes the only decision "can I afford it"; a trade-off makes it "what is this
-copy giving up", which is the decision a per-copy permanent purchase should carry. The charge may land
-on any part of the price, not just its resources — a culture-level prerequisite, a discarded card — and
-it may land on a card with no printed price at all, which is where the trade-off bites hardest, because
-there the sticker *creates* the cost.
+A card sticker is a **trade-off, not an upgrade**: it buys one thing — a raised output, a cut price —
+and **charges for it in another currency**. A pure buff makes the only decision "can I afford it"; a
+trade-off makes it "what is this copy giving up", which is the decision a per-copy permanent purchase
+should carry. The charge may land on any part of the price, not just its resources — a culture-level
+prerequisite, a discarded card — and it may land on a card with no printed price at all, which is where
+the trade-off bites hardest, because there the sticker *creates* the cost.
+
+Two stickers may meet on one copy, and **their folds must commute**: attach order is normalized away by
+the fungibility key (`rules/collection.ts`'s `stickerSignature`), so two copies the collection pools as
+one variant would otherwise price two different ways in a run. That is a real authoring constraint, not
+a theoretical one — it is why a sticker raising a *prerequisite* raises it to a floor rather than
+stepping it, so two such stickers compose to the same gate whichever went on first.
 
 *Permanent* here means "attached, not consumed per run" — not "irreversible". Either kind can be
 **destroyed** to free its slot, and destroying one **refunds nothing**: the slot comes back, the

@@ -108,8 +108,11 @@ the same way The First Trades records its Chiefdom sweep.
 
 ## Open
 
-- ✅ **The reward is 10⭐ + the `elegant` sticker** — the age's culture sticker: **+1🎭 output, +1 🎭
-  level to play**, on a culture-producing building *or* work card. It is the only reward that can be
+- ✅ **The reward is 10⭐ + the `elegant` sticker** — the age's culture sticker: **+1🎭 output, needs
+  🎭 level 1 to play**, on a culture-producing building *or* work card. The gate is a **floor**, not a
+  per-copy step, so a second copy stacks another +1🎭 behind the same level 1 (settled at `wheel`,
+  which needed both `cultureLevelReq` stickers to be floors so the `effectiveCost` fold commutes —
+  see [wheel](wheel.md) → *Design*). It is the only reward that can be
   spent on *either* branch's producer — Beer from the trade tip, Sun Stone from the season tip — so the
   convergence pays off both routes into it rather than picking one. Calendar was weighed for this slot
   first and went to `reading_seasons` instead ([reading-seasons](reading-seasons.md) → *Design*).

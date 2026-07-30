@@ -469,9 +469,14 @@ export const MISSIONS: Record<string, MissionDef> = {
       `The first ${OVEREXTENSION_GRACE} territory you gain are toll-free; every one past that drains 🔨 in upkeep ` +
       'each round, and overreaching your economy ends the run in ruin.',
     kind: 'standard',
-    // Closes the expansion branch: unlocks the Wheel sticker (−1🔨 on buildings/works), the 🔨 relief
-    // that resolves the mission's own 🔨 crisis. Influence amount provisional.
-    reward: { influence: 12, unlockStickerIds: ['wheel'] },
+    // Closes the expansion branch: the Wheel sticker (−1🔨 on any card paying 🔨) is the relief that
+    // resolves the mission's own 🔨 crisis, and the two Caravans turn the 🪙 a wide realm earns back
+    // into the 🌾 and 🔨 holding it costs. Influence amount provisional.
+    reward: {
+      influence: 12,
+      unlockCardIds: ['food_caravan', 'material_caravan'],
+      unlockStickerIds: ['wheel'],
+    },
     map: { col: 10, row: -1 },
     age: 'bronze',
   },
