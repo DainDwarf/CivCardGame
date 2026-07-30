@@ -30,11 +30,11 @@ on the Farm's two Irrigation stickers). No threshold moved; the deck is what cha
 
 | policy | win rate | turns (min/med/mean/max) | defeat causes |
 |---|---|---|---|
-| random | 0/100 | 2 / 9 / 9.0 / 20 | famine 57 · ruin 43 |
-| heuristic | 0/100 | 2 / 7 / 8.0 / 26 | ruin 91 · famine 9 |
-| greedy | 96/100 | 9 / 42 / 43.1 / 82 | famine 4 |
-| planner | 100/100 | 31 / 38 / 38.9 / 75 | — |
-| oracle | 10/10 | 30 / 33 / 33.0 / 37 | — |
+| random | 0/100 | 2 / 9 / 9.3 / 22 | famine 62 · ruin 38 |
+| heuristic | 0/100 | 2 / 7 / 7.6 / 26 | ruin 91 · famine 9 |
+| greedy | 96/100 | 10 / 41 / 41.7 / 73 | famine 4 |
+| planner | 100/100 | 31 / 39 / 40.1 / 91 | — |
+| oracle | 10/10 | 30 / 31.5 / 32.2 / 37 | — |
 
 **The money pair is a trap here, and that is the mission working.** The Bead Workshop is the Stone Age
 pool's only 🪙 faucet and it is a *building*, so once Bartering's 1🪙/round rent is running, the worker
