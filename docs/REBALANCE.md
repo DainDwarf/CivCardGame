@@ -30,9 +30,10 @@
 > playing them out. Re-cut with **no `--max-rounds`**: the flag now also sets the search's round depth, so
 > passing one would have changed what the rows measure rather than just how long a run may idle.
 >
-> Still to re-derive by hand: the **prose** that reasons about slots — the Chiefdom identity, the
-> Hunting board-slot cost, the first-trades slot economics — has lost its premise even where the
-> numbers now agree. The **rates** are mostly untouched by the change and carry over.
+> ✅ **The prose that reasoned about slots has been re-derived** — the Chiefdom identity (now argued
+> from terr 0), the Hunting board-slot cost (⚔️ at a worker-turn and no land), and the first-trades slot
+> economics — each now naming what is still *unmeasured* at the split cap where it sits. The **rates**
+> themselves were mostly untouched by the change and carry over.
 >
 > **Scope:** the *rates* — what a worker-round is worth per resource, what converts into what, and
 > what each mission is therefore asking for. A mission's own reasoning, sweep tables and readings live
@@ -79,7 +80,7 @@ pairs rather than one after the other.
 Stages: **Rate** (content realigned to the new numbers) · **Fixt** (baseline re-cut to a deck a player
 can actually own at that point) · **Swept** (measured, records in `scripts/sim/baselines/results/`
 updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Legend: ✅ done ·
-🟡 in progress/pending · ⬜ not started.
+🟡 in progress/pending · ⬜ not started · — not this pass's.
 
 | # | Mission | Rate | Fixt | Swept | Strd | Dossier |
 |---|---|:-:|:-:|:-:|:-:|---|
@@ -99,7 +100,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 14 | `horse_taming` | ✅ | ✅ | ✅ | 🟡 | [horse-taming](missions/horse-taming.md) |
 | 15 | `roads` | ✅ | ✅ | ✅ | ✅ | [roads](missions/roads.md) |
 | 16 | `wheel` | ✅ | ✅ | ✅ | ✅ | [wheel](missions/wheel.md) |
-| — | `ice_age` · `sandbox` | ⬜ | ⬜ | ⬜ | ⬜ | — |
+| — | `ice_age` · `sandbox` | — | — | — | — | out of this pass |
 
 Per-row notes, where the ⬜ isn't the whole story:
 
@@ -126,9 +127,9 @@ Per-row notes, where the ⬜ isn't the whole story:
   re-cut under the fix; it is the only row that moved — the other 25 greedy/planner rows and all 13 oracle
   rows are unchanged.
 - **9 · `finding_copper`** moved no threshold — the mission proved sound as authored and what changed is
-  the deck. Its Forge price cut is a **rate move no committed cell measures**: the Forge is this
-  mission's own reward, so it is absent from the very fixture that would have caught it, and the five
-  cells that do stock it (11–13, 15–16) are all still ⬜.
+  the deck. Its Forge price cut is absent from this mission's *own* fixture (the Forge is its reward), so
+  it is measured downstream instead: cell 13 is the earliest swept cell that stocks it, and the Landed
+  row carries the play counts.
 - **13 · `writing`** moved its **cost onto the pool it drains** (6🔨+2🌾 → 4🔨+2🔬) and left the escalating
   drain at its authored −0/−1/−2 — the cost move alone was enough to make the drain bite. That single
   change took the planner 84% → 19%, and doubling the deck's science half recovered it to 79%, so this
@@ -187,8 +188,10 @@ Per-row notes, where the ⬜ isn't the whole story:
   gained a 🎭-level-1 floor so it trades rather than only discounts, and two **Caravan** actions
   (2🪙 → 3🌾 / 3🔨) join it — the first cards that let a wide realm's 🪙 answer the 🌾 pressure this row
   measured. Both are unmeasured; they set the 🪙→🌾/🔨 conversion rate later rows read against.
-- **`ice_age` · `sandbox`** are infinite, so `Swept` can never mean a win rate there: read the collapse
-  round instead. They are last because nothing downstream depends on them.
+- **`ice_age` · `sandbox` are out of this pass.** Being infinite, `Swept` could never mean a win rate
+  there — the collapse round is the reading instead. But the reason they carry no stages is stronger than
+  that: both want a **total rework**, not a re-verification, and that rework belongs on `main`. Nothing
+  downstream depends on them.
 
 ## Landed
 
@@ -208,7 +211,7 @@ What every later cell is measured against. Each mission's reasoning and sweep is
 | 4 | `FIRST_TRADES_FOOD` = **25🌾**, set on turn times (13 · 15 · 16 at oracle/planner/heuristic) · **Sun Stone** (the re-rated Burial) and **Calendar** (2🔬 → look at the top 3 and draw one) are `reading_seasons`' grants |
 | 5 | The culture pair halved — **Beer** 1🌾 → **1🎭** (work) · **Sun Stone** **3🔨** → **1🎭**/worker (building). The level curve holds at cumulative **10 / 30 / 70** (`CULTURE_STEP = 10`): the producers were the freshly-rated numbers and the curve the oldest, so they moved |
 | 5 | **Irrigation** keeps +1🌾 and now also charges **+1🔨 to play**, reaching work cards as well as buildings · **Elegant** is new: **+1🎭, needs 🎭 level 1**, on a culture producer of either kind |
-| 7+ | Dogs → **Hunting**: the 1🌾→1⚔️ `action` becomes a free `work` box at **1⚔️**/worker (card id still `dogs`). ⚔️ stops being bought with 🌾 and starts costing a worker for the turn (the board slot it also cost when this was measured is no longer charged). Post-dates mission 7's pass rather than coming out of it — a trial, measured across all seven swept cells at once |
+| 7+ | Dogs → **Hunting**: the 1🌾→1⚔️ `action` becomes a free `work` box at **1⚔️**/worker (card id still `dogs`). ⚔️ stops being bought with 🌾 and costs a **worker-turn and no land** — putting it level with Foraging and Toolmaking, so **1⚔️ = 1🌾 = 1🔨 per worker-turn** is the base rate Bow, City Walls and War Horse are all read against. Post-dates mission 7's pass rather than coming out of it — a trial measured across all seven swept cells at once, and measured while a work box still spent a slot, so the shipped card is *cheaper* than that sweep, never dearer |
 | 9 | **Forge** 4🔨 → **3🔨**, output unchanged at 2🔨/worker — so it now undercuts the Archives it was priced level with. First **measured on cell 13**, the earliest swept cell that stocks it (it is `finding_copper`'s own reward, so it is absent from that cell's own deck): the single copy is played in 98 of 100 planner runs, 31 of 100 greedy, 10 of 10 oracle |
 | 14 | **War Horse** 4⚔️ → **3⚔️** per worker-turn, level with Trader's 3🪙 — so ⚔️ and 🪙 now cost the same worker-turn from their premium box · **Raiding** 3⚔️→6🪙 → **single-use, 3⚔️ → 4🌾+4🔨**. Both are `horse_taming`'s *rewards*, so no committed cell holds either and both ship unmeasured |
 
@@ -217,30 +220,32 @@ Forge *doubles* Toolmaking, Archives *doubles* Storytelling. The culture pair we
 **replacing the building rather than raising it**: Burial became Sun Stone at the Farm/Foraging shape
 (permanent output at the work card's rate), and Cave Art was cut, leaving Beer as culture's work card.
 
-### Chiefdom — pop 3 / terr **0** / 🌾 **8** ⚠️ premise changed
+### Chiefdom — pop 3 / terr **0** / 🌾 **8**
 
 Chiefdom is the *low-territory / high-population* government in
-[`missions/raiding.md`](missions/raiding.md) — which locks Warband as "keeping Chiefdom's shape". The
-shared-cap pass gave it territory 2 to make three workers share two slots; with the cap split it sits
-at **0** like Tribe, and the shortage it expresses is now specifically a *building* shortage — its
-three workers can all still work, just never in a building until it takes land.
+[`missions/raiding.md`](missions/raiding.md) — which locks Warband as "keeping Chiefdom's shape". At
+territory **0** it starts landless like Tribe, so the shortage it expresses is specifically a
+**building** shortage: all three workers can work from turn one, none of them *in a building* until the
+board takes land. That is the axis Warband inherits — three pairs of hands and nowhere to put them.
 
 **Why territory and not the spendable pools.** Five of a board's eight numbers are one-time and wash
 out by turn 10; only population and territory are standing capacities, felt every round. They are the
-whole persistent-differentiation budget a board has. This reasoning survives the cap change intact.
+whole persistent-differentiation budget a board has.
 
-**6⚔️ is still exactly two Conquests** (2⚔️ doubling per play per copy → 2 then 4), which is what
-kept the number when the cap moved. What that buys changed: two slots from a standing start rather
-than a top-up from 2 to 4 — and, now that Conquest is a `work` card, it also costs two worker-turns.
-**Unmeasured under the split cap.**
+**6⚔️ is exactly two Conquests** (2⚔️ doubling per play per copy → 2 then 4) — the board's opening
+military buys its first two slots from a standing start, and, Conquest being a `work` card, spends two
+worker-turns doing it. So Chiefdom's ⚔️ is really a land grant paid on delay: land at the price of two
+of the turns its extra worker exists to fill. **Unmeasured at terr 0** — the sweeps below were taken
+while a work box also spent a slot, which taxed that opening twice.
 
 Not pop 4: upkeep is `floor(pop²/4)`, so pop 4 eats 4🌾/round — break-even with *every* worker farming
 (see *Open*). Pop 4 on two slots is a spiral, not a push.
 
 **Food 6 → 8 ✅, measured** on the Rites & Rituals cell (the first mission a player can bring Chiefdom
-to with a full Stone Age collection). At 6🌾 and 2🌾/round upkeep the board had **three rounds** of
-slack, which is less than any food line in the deck takes to build — so the *ceiling* was runway-bound,
-not just the fair-competent tier:
+to with a full Stone Age collection) — an ad-hoc sweep, so unlike the committed rows it was **not**
+re-cut when the cap split. At 6🌾 and 2🌾/round upkeep the board had **three rounds** of slack, which is
+less than any food line in the deck takes to build — so the *ceiling* was runway-bound, not just the
+fair-competent tier:
 
 | policy | 6🌾 | **8🌾** | 10🌾 |
 |---|---|---|---|
@@ -256,15 +261,16 @@ fourth round is what the ceiling was missing; the default planner gains only a t
 because what *it* is short on is the depth to commit to a setup dip, not runway (deepPlanner on the
 same 8🌾 gets 90%). Paying two more food to move a number that isn't measuring the content is the
 wrong trade — and it would cost the trait: at 10🌾 Chiefdom's food would equal Tribe's and
-Settlement's, leaving terr 2 / pop 3 / 6⚔️ as its whole identity. At 8 it is still the lowest start
+Settlement's, leaving terr 0 / pop 3 / 6⚔️ as its whole identity. At 8 it is still the lowest start
 of the four, with **four rounds** of slack against Settlement's ten.
 
 **The board's own lines stay load-bearing at 8🌾**, which is the check that mattered: planner plays
-Conquest 1.7×/run ending at terr 3.7, and still opens the Bead Workshop + Bartering route in a fifth of
-its runs; the oracle's only unplayed card is Hut. Contrast a **2× Irrigation Farm** (3🌾/worker on one
-slot — swept *before* Irrigation gained its 🔨 surcharge, so the modern sticker is weaker than this),
-swept on the same cell as the alternative fix: greedy 0 → 76% while ending at territory **2.0**
-with Conquest *and* Bartering unplayed. That is the failure mode to watch on this board — a single card
+Conquest 1.7×/run ending at terr 3.7 — **+1.7 over the 2 the board then started with**, so what carries
+to terr 0 is the expansion, not the endpoint — and still opens the Bead Workshop + Bartering route in a
+fifth of its runs; the oracle's only unplayed card is Hut. Contrast a **2× Irrigation Farm** (3🌾/worker
+on one slot — swept *before* Irrigation gained its 🔨 surcharge, so the modern sticker is weaker than
+this), swept on the same cell as the alternative fix: greedy 0 → 76% while ending at territory **2.0**,
+i.e. never expanding at all, with Conquest *and* Bartering unplayed. That is the failure mode to watch on this board — a single card
 that answers both the slot shortage and the food clock at once switches off every decision the board
 exists to pose, where extra food buys the *time* to run those decisions.
 
@@ -318,32 +324,48 @@ Consequences that outlived the restructure:
 
 ### Before merging to `main`
 
-- **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is un-skipped and green, with no margin.**
+**Nothing blocks the merge.** The one item that ever sat here is resolved-and-accepted, below; everything
+else in this section is post-merge work, and the measurement debt this pass ran up is carried on
+[`BACKLOG.md`](BACKLOG.md) → Step 7 rather than here.
+
+- ✅ **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is un-skipped and green, with no margin.**
   It carries the re-cut deck now and passes at exactly its `>= 4` threshold (4/6). Those six seeds are a
   cold slice — the same fixture measures 86/100 over the full sweep — so the thinness is sampling, not the
   planner. Left as-is deliberately; the assertion is the **planner's capability claim** (the greedies win
   Masonry 0%), not a Masonry balance check, so if it ever goes red the move is a wider sample, never a
   lower bar.
 
+### Carried to Step 7, not to the merge
+
+Two things this pass ran up that are **Bronze-arc authoring work**, not branch-closing work. Both are
+tracked as forward notes on [`BACKLOG.md`](BACKLOG.md) → Step 7; kept here only as the pointer, so the
+per-row notes below aren't read as five separate open items.
+
+- **Content shipped ahead of any cell that holds it** — War Horse at 3⚔️, the re-pointed single-use
+  Raiding, the Wheel sticker's 🎭 floor and both Caravans. They are all *rewards* of the missions that
+  shipped them, so no fixture on this branch can stock them; the cells that will are the ones the Bronze
+  arc has yet to author. (City Walls is **not** in this set — see *Rates still to settle*.)
+- **Chiefdom is unfixtured from mission 11 on.** Rows 11, 12, 14, 15 and 16 each note Chiefdom reaches
+  the node with no committed cell, and by 15 it is City's only alternative. It is one piece of work, not
+  five, and it needs a Chiefdom deck before any of its numbers say anything. The same gap exists on
+  `main`, so it blocks nothing here.
+
 ### Rates still to settle
 
-- **Does the workshop+route pair scale?** The First Trades measured a *single* pair, its deck holding one
-  copy of each card, so no run there could build a second. The route out-rates the building that funds
-  it, so pair *N* costs what pair 1 did with no diminishing term. **Sharper since the cap split**: the
-  route half now costs no territory at all, so only the workshop is braked by slots and the rent is the
-  only thing that curves. Needs
-  a deliberately multi-copy deck on a slot-rich board: if two pairs simply double the food, the pair is
-  the dominant food line everywhere rather than an alternative to one, and either the rent or the return
-  has to curve. Trader (3🪙/worker) and whatever Naval adds arrive in Bronze and change the arithmetic
-  again.
-- **City Walls' maintenance is cut, unmeasured.** The card is now 3🔨 flat for +1⚔️/round with **no
-  upkeep** (was 4🔨 and −1🔨/round). The rate reading that preceded it stands and is what the cut acts
-  on: the old "owed raise" against War Horse is **withdrawn** — that read set War Horse's per-play burst
-  against 1⚔️ *per round forever*, and City Walls takes no workers, so the worker-turn basis doesn't apply. Amortized
-  instead, one War Horse in a ~23-card deck at hand 4 is drawn about every 6th turn ≈ **0.5⚔️/turn** at
-  its 3⚔️, rising to ~0.65 as buildings thin the deck, against City Walls' flat **1⚔️/turn** — the
-  building already out-rates it. The *price* check that was still open (⚔️ at ~1.2🔨 each over a 20-turn run, against Bow's
-  0.67🔨 capped at 3⚔️ per copy) is what the cut answers; it has not been swept.
+- ✅ **The workshop+route pair scales acceptably** — settled by play, not by sweep, so it is recorded as a
+  decision rather than a measurement. The question was whether pair *N* costs what pair 1 did: the route
+  out-rates the building that funds it and takes no territory, so only the workshop is braked by slots and
+  the rent is the only thing that curves. Played, that brake is enough — the pair reads as *an* alternative
+  food line rather than the dominant one, and neither the rent nor the return needs a diminishing term.
+  Re-open it only if Trader (3🪙/worker) or whatever Naval adds changes the funding arithmetic in Bronze.
+- ✅ **City Walls' maintenance cut is accepted unmeasured.** The card is now 3🔨 flat for +1⚔️/round with
+  **no upkeep** (was 4🔨 and −1🔨/round), and it has stood in several decks since. The rate reading that
+  preceded it is what the cut acts on: the old "owed raise" against War Horse is **withdrawn** — that read
+  set War Horse's per-play burst against 1⚔️ *per round forever*, and City Walls takes no workers, so the
+  worker-turn basis doesn't apply. Amortized instead, one War Horse in a ~23-card deck at hand 4 is drawn
+  about every 6th turn ≈ **0.5⚔️/turn** at its 3⚔️, rising to ~0.65 as buildings thin the deck, against
+  City Walls' flat **1⚔️/turn** — the building already out-rates it. The *price* check that was open (⚔️ at
+  ~1.2🔨 each over a 20-turn run, against Bow's 0.67🔨 capped at 3⚔️ per copy) is what the cut answers.
 - **Science is never demanded in quantity.** Its identity (deck churn) is fine and it now has a sink at
   all, but both card sinks are 2🔬 one-shots (Calendar, Writing). `finding_copper`'s 15🔬 across three
   veins is the only place quantity is asked for, and that's a mission-seeded event rather than a card.
@@ -353,17 +375,21 @@ Consequences that outlived the restructure:
 
 ### Placement and economy
 
-- **Re-point the money objectives.** Accounting (40🪙) and Pyramid (50🪙) are *hoard* goals, pushed
-  against by `envious_population`. A one-way hub whose point is spending sits awkwardly with them —
-  playable, but the wildcard is switched off during the missions built around it. Decide per mission
-  rather than discovering it in the sweep.
-  - ✅ **Göbekli Tepe's 30🪙 is dropped**, along with its 30🔨, leaving 4🧍 · 🎭 level 2 — the first of
-    the three resolved. Reasoning in [first-temple](missions/first-temple.md) → *Design*; the money
-    faucet+sink cancelling exactly, with the hoard gone, is logged as a strand in that dossier's *Open*.
-- **Trader's home is open.** It was `accounting`'s reward as "the money faucet that opens the money
-  spine", but the spine now opens five missions earlier. Either Trader moves up, or `accounting` keeps it
-  as a *better* faucet than Bead Workshop and its pitch is rewritten. Decide when the pass reaches
-  Accounting.
+- ✅ **The money objectives are decided, all three.** They are *hoard* goals against a one-way hub whose
+  point is spending, so each was read for whether the wildcard switches off during the mission built
+  around it:
+  - **Göbekli Tepe's 30🪙 is dropped**, along with its 30🔨, leaving 3🧍 · 🎭 level 2. Reasoning in
+    [first-temple](missions/first-temple.md) → *Design*; the money faucet+sink cancelling exactly, with
+    the hoard gone, is logged as a strand in that dossier's *Open*.
+  - **Accounting keeps 40🪙** and **Pyramid keeps 50🪙** — both checked and kept. The hoard is the point
+    on those two: Accounting's whole pressure is a threat that reads the pile (`envious_population` mints
+    a Thief per 10🪙), and Pyramid's target was hand-won and search-proven at its authored numbers. Both
+    rows are ✅ on the status board.
+- ✅ **Trader stays `accounting`'s reward, on the rate pitch.** It was granted there as "the money faucet
+  that opens the money spine", and the spine now opens five missions earlier at The First Trades — so the
+  card keeps its home and the *pitch* is what moved: Trader is a **better** faucet (3🪙/staffed worker
+  against Bead Workshop's 1🪙), not the first one. Rewritten in `content/missions.ts` and
+  [accounting](missions/accounting.md).
 - **The Influence faucet ledger has moved.** The First Trades inherited `rites_rituals`' 8⭐ deliberately,
   so the *swap* left `cumulativeInfluenceInto` unchanged downstream — but reinserting the culture node as
   a *new* mission adds its 10⭐ on top: arrival at `first_temple` is 40 → **50⭐** and at Masonry 52 →

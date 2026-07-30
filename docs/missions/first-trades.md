@@ -137,20 +137,18 @@ Read straight off the report, no interpretation attached:
 **The per-worker arithmetic the target was set against**, on Settlement (10🌾 / 5🔨 / 4🗺️ / 2🧍,
 upkeep `floor(pop²/4)` = 1🌾):
 
-⚠️ **Re-derive: this whole section counted routes against the slot budget.** Under the split cap a
-route costs no land, so only the Bead Workshop half is braked by slots and the numbers below are wrong
-in the direction of *too pessimistic*.
-
-- **One pair** — Bead Workshop (1 slot, 1 worker → 1🪙) funding Bartering (0 slots, 0 workers, −1🪙 →
+- **One pair** — Bead Workshop (1 slot, 1 worker → 1🪙) funding Bartering (no slot, no worker, −1🪙 →
   +2🌾). The second worker forages. ≈ **+2🌾/round** off a single slot, and the route's half of that is
   paid whether or not a Foraging card is in hand — which is the real advantage over a Farm line.
-- **Two pairs** — 2 slots on Settlement's board of 2, so the third worker's Hut needs a *third* slot,
-  which needs a Conquest. So the second pair still drags ⚔️ back into a mission that looks like it has
-  nothing to do with it — but one expansion later than it used to.
+- **Two pairs** — the route costs no land, so a second pair costs **one** slot, not two: both workshops
+  fit Settlement's board of 2, and the ⚔️ only enters when the third worker's Hut wants a *third* slot.
+  So the second pair is cheap in land and expensive in **workers** — it wants a third pair of hands
+  before it wants a Conquest.
 
-The second pair's marginal is +1🌾/round for roughly ten rounds of payback, so at 25🌾 one pair plus
-foraging is the line and the second is a choice rather than a requirement — which is the shape the
-target was picked for.
+The second pair's marginal is +1🌾/round for roughly ten rounds of payback, and it is worker-bound rather
+than slot-bound, so at 25🌾 one pair plus foraging is the line and the second is a choice rather than a
+requirement — which is the shape the target was picked for. The 25🌾 target itself is measured and stands
+(see the sweep above); what the split cap moved is only *why* the second pair is optional.
 
 **Settled by this sweep:**
 
@@ -165,10 +163,11 @@ target was picked for.
   its starting 4 under all three. greedy is the exception at 0.
 
 **Not this mission's to answer.** Whether the workshop+route pair scales — the route out-rates the
-building it depends on, so pair *N* costs what pair 1 did with territory the only brake — is a **rate**
-question about the trade zone itself, not about this mission's target. This cell can't even pose it: the
-deck holds one copy of each card, so no run could build a second pair. Carried to
-[`../REBALANCE.md`](../REBALANCE.md) → *Open* → *Rates still to settle*.
+building it depends on, and takes no land, so the workshop's slot and the route's rent are the only
+brakes — is a **rate** question about the trade zone itself, not about this mission's target. This cell
+can't even pose it: the deck holds one copy of each card, so no run could build a second pair. It was
+carried to [`../REBALANCE.md`](../REBALANCE.md), and **settled there by play**: the brake is enough, and
+neither the rent nor the return needs a diminishing term.
 
 Left as a measured observation, not a finding: **Chiefdom is the harder cell by a wide margin** (planner
 92/100 and greedy 0/100, against 100/100 for both on Settlement), failing to famine rather than

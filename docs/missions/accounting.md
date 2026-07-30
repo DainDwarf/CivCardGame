@@ -18,7 +18,9 @@ A single 🪙-stockpile goal fought against a **theft economy** — a fat treasu
   `floor(money / THIEVES_PER_GOLD)` of them (=10, provisional). An unpaid Thief skims 🪙+🔨 and recurs;
   paying its ⚔️ cost catches it (→ `removed`).
 - **Reward:** unlocks the **Trader** (work, free, 3🪙/staffed worker) + the **Opulence** board sticker
-  (+10 starting 🪙, the first money board sticker).
+  (+10 starting 🪙, the first money board sticker). Trader is pitched on **rate, not access** — money
+  opens five missions upstream at *The First Trades*, so what this mission grants is a faucet three times
+  the Bead Workshop's per staffed worker.
 - **Prereq feeds the fight:** Copper→Forge→🔨 pays for the Bead Workshops that are the income;
   Masonry→City Walls is the ⚔️ that catches thieves — each prereq feeds one half.
 

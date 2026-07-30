@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
 **Branch:** Bronze — the optional challenge leaf off Masonry.
 **Placement:** `prereqs: ['masonry']`, bronze col 6 row 1.
 **Reward influence:** 25 (challenge → bigger reward; provisional).
@@ -20,7 +20,7 @@
 
 First shipped use of the `defeat` hook (a deadline, not a drain).
 
-## Balance 🟡 (target holds; planner not yet a difficulty measurement)
+## Balance ✅ (target holds; the planner row is not a difficulty measurement)
 
 **Target (50🪙 · 40🔨 · 🎭 L2) and `PHARAOH_DEADLINE` (40) hold as authored.** Hand-won first try on City,
 and **search-proven on 50/50 seeds** — every line wins in 26–38 turns against the 40-round clock, ending at

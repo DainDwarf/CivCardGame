@@ -76,7 +76,7 @@
   |---|:-:|:-:|:-:|:-:|---|
   | Copper | ✅ | ✅ | ✅ | ⬜ | [copper](missions/copper.md) |
   | Masonry | ✅ | ✅ | ✅ | ⬜ | [masonry](missions/masonry.md) |
-  | Pyramid *(leaf)* | ✅ | ✅ | 🟡 | ⬜ | [pyramid](missions/pyramid.md) |
+  | Pyramid *(leaf)* | ✅ | ✅ | ✅ | ⬜ | [pyramid](missions/pyramid.md) |
   | Accounting | ✅ | ✅ | ✅ | ⬜ | [accounting](missions/accounting.md) |
   | Writing | ✅ | ✅ | ✅ | ⬜ | [writing](missions/writing.md) |
   | Hammurabi's Code *(leaf)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
@@ -103,7 +103,9 @@
   more than double the 7-mission Stone Age, all remixing existing mechanics. So author it in **order**,
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see [`missions/copper.md`](missions/copper.md)).
-  2. **Masonry** — DONE (see [`missions/masonry.md`](missions/masonry.md)). Optional **Pyramid** leaf — mechanics DONE (balance pending; see [`missions/pyramid.md`](missions/pyramid.md)).
+  2. **Masonry** — DONE (see [`missions/masonry.md`](missions/masonry.md)). Optional **Pyramid** leaf — DONE, balance
+     included (see [`missions/pyramid.md`](missions/pyramid.md); its target proved sound as authored, and its
+     `planner` row is a simulator floor rather than a difficulty reading).
   3. **Accounting** — DONE, balance included (see [`missions/accounting.md`](missions/accounting.md)). **Writing** — DONE,
      balance included (see [`missions/writing.md`](missions/writing.md)). The optional **Hammurabi's Code** leaf off Writing
      remains — the last piece of the literacy half.
@@ -137,6 +139,20 @@
     below (City board already granted at Masonry).
   - **Fall of the Bronze Age** (infinite, scored survival) → escalating money/military/production pressure
     (parallels Ice Age for Stone).
+
+  **Measurement debt carried in from the rebalance** — two items the `trade-redesign` pass ran up that
+  are this arc's to clear, not that branch's ([`REBALANCE.md`](REBALANCE.md) → *Carried to Step 7*):
+
+  - **Content shipped ahead of any cell that holds it** — War Horse at 3⚔️, the re-pointed single-use
+    Raiding (3⚔️ → 4🌾+4🔨), the Wheel sticker's 🎭-level-1 floor, and both **Caravan** actions
+    (2🪙 → 3🌾 / 3🔨). Each is a *reward* of the mission that shipped it, so no fixture upstream can stock
+    it — the cells that will are the ones authored from here on. The Caravans matter most: they set the
+    🪙→🌾/🔨 conversion rate every later mission is read against, and nothing has measured it yet.
+  - **Chiefdom is unfixtured from Pyramid onward.** Accounting, Pyramid, Horse taming, Roads and Wheel
+    each reach the node from Chiefdom with no committed cell, and from Roads on it is City's only
+    alternative (Settlement was upgraded away at Masonry). One piece of work, not five — and it needs a
+    Chiefdom *deck* first, since 0 starting territory against a structure-heavy goal is a deck problem
+    before it is a balance one. The same gap exists on `main`, so nothing waits on it.
 
   **Framing notes to honour when authoring:**
   - The two **convergences** (Accounting, Bronze) are ludic tree-narrowing, *not* historical dependencies —
@@ -209,23 +225,25 @@
     worth naming here, since nothing else spends it: it raises hand size a card per level, and gates the
     age's two wonders. **Post-clear:** the reward grants the **Elegant** sticker — the first sticker that
     charges as well as gives, so it's also where the tutorial can say what a sticker is for.
-  - **9.7 — Göbekli Tepe tutorial** — the capstone (mission 6.7 / `first_temple`, prereq **both** branch
-    tips). Teach **wonders**: a wonder plays exactly like a building (tableau slot, staffed, produces every
+  - **9.7 — Göbekli Tepe tutorial** — the capstone (mission 6.7 / `first_temple`, now prereq'd on the
+    **Rites & Rituals** reconvergence rather than the two branch tips directly, which 9.6b teaches
+    first). Teach **wonders**: a wonder plays exactly like a building (tableau slot, staffed, produces every
     round — Göbekli Tepe is the multi-worker one: +1🔨+1🪙+1🎭 *per* staffed worker, culture-level-1
     gated), but it's the age's capstone monument. Spotlight its **special decking rule**: at most
     `MAX_WONDERS_PER_DECK` (currently 1) per deck, its own Collection/deck-editor category, **no**
-    shop-bought copies, and **no** stickers. In-mission the objective is the broad end-of-age stockpile
-    (3🧍 pop · 🎭 level 2 · 30🔨 · 30🪙 held at once). **Post-clear:** the reward unlocks the **Göbekli
+    shop-bought copies, and **no** stickers. In-mission the objective is **3🧍 pop · 🎭 level 2** held at
+    once — the two spendable terms (30🔨 · 30🪙) were dropped at the rebalance, so the lesson lands on the
+    two *standing* gauges rather than a stockpile. **Post-clear:** the reward unlocks the **Göbekli
     Tepe wonder card** (add it to a deck under the wonder rule) and opens the endless sandbox — the age is
     mastered.
 
-- **Step 10 — Resource-economy rebalance pass** — **pulled forward; in progress on the
-  `trade-redesign` branch, tracked in its own file: [`REBALANCE.md`](REBALANCE.md).** The
-  trade-route zone was its prerequisite, so the rates follow there rather than waiting for Iron.
-  Worked mission by mission from the first. **The territory cap model changed mid-pass** — the
-  shared cap it was measured under has been reverted to the tableau alone — so its later rows and
-  every committed baseline result need re-cutting; see REBALANCE's own note.
-  Step 8 (Iron) still sequences after it. `[size: L]` `[?]`
+- **Step 10 — Resource-economy rebalance pass** — **pulled forward onto the `trade-redesign` branch,
+  tracked in its own file: [`REBALANCE.md`](REBALANCE.md).** The trade-route zone was its prerequisite,
+  so the rates follow there rather than waiting for Iron. Worked mission by mission from the first; all
+  sixteen standard missions are rated, fixtured and swept, and the branch's merge gate is empty. What it
+  leaves behind is the measurement debt noted under Step 7 above, plus `ice_age`/`sandbox`, which want a
+  **total rework** on `main` rather than a re-measure. Step 8 (Iron) still sequences after it.
+  `[size: L]` `[?]`
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*

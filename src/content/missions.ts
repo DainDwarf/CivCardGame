@@ -370,8 +370,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Amass 40 🪙. The richer you grow, the more thieves envy breeds — pay ⚔️ to catch them.',
     failureHint: `Each reshuffle, envy adds a thief to your deck for every ${THIEVES_PER_GOLD} 🪙 you hold; an uncaught thief skims 🪙 and 🔨 every round.`,
     kind: 'standard',
-    // Opens the money spine: unlocks the Trader (a 🪙 faucet) and the Opulence board sticker (a starting
-    // treasury). Influence amount provisional.
+    // Trader is a better 🪙 faucet than the Bead Workshop the player already owns, not their first one —
+    // money opens five missions upstream. Plus the Opulence board sticker (a starting treasury).
+    // Influence amount provisional.
     reward: { influence: 12, unlockCardIds: ['trader'], unlockBoardStickerIds: ['opulence'] },
     // Mainline convergence rejoining the centre axis (like first_temple); the pyramid leaf sits below at
     // col 7 row 1.
