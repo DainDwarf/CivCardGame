@@ -92,11 +92,13 @@ const PRODUCER_TAIL_HORIZON = 2;
  *  `HOP_DISCOUNT`'s conversion slope this is an intrinsic amortization constant, not sound potential
  *  shaping, so nothing but the cap and `scoreState`'s real costs stops a runaway.
  *
- *  It is the load-bearing constant of the two, and the horizon is nearly inert where it binds: a producer of
- *  a **goal-valued** resource derives a credit far above this cap (a Forge on a production-threshold mission
- *  is ~60 at horizon 2, against a cap of 15), so its whole tableau saturates here and scaling the horizon
- *  changes nothing. Where the goal names no resource the credit is a fraction of the cap and the horizon
- *  alone sets the slope. Tuned to the point where a long conversion mission stops regressing. */
+ *  Bounding the **tableau** rather than each structure is what expresses that: the runaway it guards against
+ *  is an unbounded board of engine, and a per-structure cap would let one grow past a goal step. The cost of
+ *  that shape is that the cap sets every structure's *marginal* credit to zero once reached, so it has to sit
+ *  above a realistic full tableau or the second building onward is priced at nothing — which is what a
+ *  multi-goal mission exposed: five structures summing ~41 against a cap of 15 left a wonder worth ~27 adding
+ *  literally zero at the leaf. Sized so a plausible board fits under it while a runaway still cannot reach a
+ *  goal step. Tuned, not derived. */
 const PRODUCER_CREDIT_CAP = 0.05 * OBJECTIVE_WEIGHT;
 
 /** Per-term ablation toggles for the enabler model. A missing key means **on** — you name what you switch
@@ -233,25 +235,38 @@ function runCardIds(G: GameState): Set<string> {
 }
 
 /** The best single-card goal throughput this run can unlock under a capacity role: the highest
- *  `output × marginal × OBJECTIVE_WEIGHT` over the deck's own cards that `accept`s — a staffable producer
+ *  `Σ output × marginal × OBJECTIVE_WEIGHT` over the deck's own cards that `accept`s — a staffable producer
  *  for population, any structure for territory, a gated producer for culture. `scanEffect` includes a
  *  card's one-shot placement `effect` (Hut/House grant population there, not in `produces`) alongside its
  *  per-round `produces`; population passes `false`, since it's the *staffing* of `produces` that yields
- *  output, not the play effect. */
+ *  output, not the play effect.
+ *
+ *  A card's contributions are **summed across goal terms, then maxed across cards** — it really does pay
+ *  every line of its `produces` each round, so a wonder paying three goal terms at once is worth their sum
+ *  and not merely its largest. Maxing both (a slot holds one card) would rank a single-output Forge above
+ *  such a wonder. `producerCredit` already sums this way; these two must agree on what a card produces.
+ *
+ *  `self` — the pool being credited — is excluded from the scan: crediting a pool for unlocking a producer
+ *  of *itself* re-states the objective's own slope on that pool, and on a gated producer of its own gate
+ *  (culture ungating a culture producer) it is circular. Vacuous unless `self` is goal-valued. */
 function bestGoalThroughput(
   ids: Set<string>,
   goalValued: Partial<Record<keyof Resources, number>>,
   accept: (card: CardDef) => boolean,
   scanEffect: boolean,
+  self: keyof Resources,
 ): number {
   let best = 0;
   for (const card of Object.values(CARDS)) {
     if (!ids.has(card.id) || !accept(card)) continue;
+    let perCard = 0;
     for (const [gk, marginal] of Object.entries(goalValued) as [keyof Resources, number][]) {
+      if (gk === self) continue;
       const output =
         (scanEffect ? positive(card.effect?.resources?.[gk]) : 0) + positive(card.produces?.resources?.[gk]);
-      if (output > 0) best = Math.max(best, output * (marginal * OBJECTIVE_WEIGHT));
+      if (output > 0) perCard += output * (marginal * OBJECTIVE_WEIGHT);
     }
+    best = Math.max(best, perCard);
   }
   return best;
 }
@@ -313,15 +328,20 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // A strategic pool's weight composes its two independent terms as a `max` — the derived throughput
   // (`capacity`) and the unconditional floor (`floor`) — so ablating either leaves the other intact; with
   // both off (or a zero derivation and no floor) the pool gets no weight at all.
-  const strategicWeight = (bestThroughput: number): number =>
-    Math.max(floor ? INTRINSIC_CAPACITY_CREDIT : 0, bestThroughput * CAPACITY_HORIZON);
+  // `floorEligible` is false for a goal-valued pool: the floor is a blind "a bigger engine is worth
+  // something" credit, which on a pool the objective scores directly would double its slope. The derived
+  // term carries no such risk — it prices *other* goal terms (see `bestGoalThroughput`'s `self`).
+  const strategicWeight = (bestThroughput: number, floorEligible: boolean): number =>
+    Math.max(floor && floorEligible ? INTRINSIC_CAPACITY_CREDIT : 0, bestThroughput * CAPACITY_HORIZON);
 
   // Strategic capacity enablers — territory, population, culture. None is *spent* on a card: each is a
   // durable capacity that unlocks a goal-producer's output every round, credited over `CAPACITY_HORIZON`
   // (not the consumables' one-shot `HOP_DISCOUNT`), saturated at `CAPACITY_CAP`, and floored per
-  // `strategicWeight`. Each is skipped when it is itself goal-valued — the objective scores it directly,
-  // the same reason the consumable loop below
-  // skips a goal-valued cost resource. Computed first so a capacity weight can itself be a conversion
+  // `strategicWeight`. A pool that is *itself* goal-valued still earns the derived credit — the objective
+  // scores it toward its own threshold, which is a different quantity from the throughput of the *other*
+  // goal terms it unlocks (a culture level ungating a wonder that pays the money and production terms). Only
+  // the pool's own key drops out of the scan, and only its floor is suppressed.
+  // Computed first so a capacity weight can itself be a conversion
   // target for the consumables. Complementarity (a staffed building needs both a slot and a worker) needs
   // no joint model: crediting the *total* pool never falls when one is consumed (strategic pools aren't
   // spent), so the two credits can't deter building what they jointly enable — the payoff materializes only
@@ -330,8 +350,11 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // Territory is the slot a structure stands in — and only a structure, since a Work box and a trade
   // route cost none — so it reads the best goal output over the deck's buildings and wonders: a
   // self-sufficient grant (Hut/House, on `effect`) or a staffed producer (Farm/Forge, on `produces`) alike.
-  if (goalValued.territory === undefined) {
-    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, isStructure, true) : 0);
+  {
+    const w = strategicWeight(
+      capacity ? bestGoalThroughput(ids, goalValued, isStructure, true, 'territory') : 0,
+      goalValued.territory === undefined,
+    );
     if (w > 0) {
       weight.territory = w;
       cap.territory = CAPACITY_CAP;
@@ -343,8 +366,11 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // once per play: what's credited is the *worker*, which restaffs whatever is drawn each round, so the
   // capacity recurs even when no single card does — the asymmetry with `producerCredit`, which credits
   // owning one named card and so excludes `work`.
-  if (goalValued.population === undefined) {
-    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, (c) => (c.workers ?? 0) >= 1, false) : 0);
+  {
+    const w = strategicWeight(
+      capacity ? bestGoalThroughput(ids, goalValued, (c) => (c.workers ?? 0) >= 1, false, 'population') : 0,
+      goalValued.population === undefined,
+    );
     if (w > 0) {
       weight.population = w;
       cap.population = CAPACITY_CAP;
@@ -352,11 +378,13 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   }
 
   // Culture's gate-unlock: reaching a level ungates a producer (a `cultureLevelReq` card), so raw culture
-  // banked toward it is credited that producer's goal output. Skipped when culture is itself the win (then
-  // reaching the level *is* the objective, already scored). Its hand-size throughput is the separate,
-  // no-skip nudge below.
-  if (goalValued.culture === undefined) {
-    const w = strategicWeight(capacity ? bestGoalThroughput(ids, goalValued, (c) => !!c.cost.cultureLevelReq, true) : 0);
+  // banked toward it is credited that producer's goal output. Its hand-size throughput is the separate
+  // nudge below, which rides no `self` exclusion at all — it is not objective-directed.
+  {
+    const w = strategicWeight(
+      capacity ? bestGoalThroughput(ids, goalValued, (c) => !!c.cost.cultureLevelReq, true, 'culture') : 0,
+      goalValued.culture === undefined,
+    );
     if (w > 0) {
       weight.culture = w;
       cap.culture = CAPACITY_CAP;
@@ -374,7 +402,9 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
     valued[k] = marginal * OBJECTIVE_WEIGHT;
   }
   for (const k of STRATEGIC_KEYS) {
-    if (weight[k] !== undefined) valued[k] = weight[k]!;
+    // `max`, not assignment: a goal-valued pool now carries both an objective marginal and a capacity
+    // weight, and taking the capacity one would *downgrade* what a unit of it is worth converting into.
+    if (weight[k] !== undefined) valued[k] = Math.max(valued[k] ?? 0, weight[k]!);
   }
 
   if (conversions) {

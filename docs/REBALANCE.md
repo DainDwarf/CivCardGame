@@ -113,6 +113,11 @@ Per-row notes, where the ⬜ isn't the whole story:
 - **8 · `first_temple`** kept its four-term conjunction's 🧍 and 🎭 terms and **dropped both spendable
   ones** (30🔨, 30🪙) — see *Re-point the money objectives*. It is the age's **long** mission by design:
   an oracle median of ~40 turns against the 11–16 band before it, accepted rather than tuned away.
+- **8 · `first_temple`'s planner row moved 98 → 96** (famine 2 → 4) — a *simulator* change, not a content
+  one: the capacity credit now fires on a goal-valued pool, so its 3🧍 term earns a credit capped at 12 and
+  the planner grows past the 3 the goal wants ([`TODO.md`](TODO.md) → *Simulator*). `baselines/results/` is
+  re-cut under the fix; it is the only row that moved — the other 25 greedy/planner rows and all 13 oracle
+  rows are unchanged.
 - **9 · `finding_copper`** moved no threshold — the mission proved sound as authored and what changed is
   the deck. Its Forge price cut is a **rate move no committed cell measures**: the Forge is this
   mission's own reward, so it is absent from the very fixture that would have caught it, and the five

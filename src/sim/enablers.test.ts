@@ -172,6 +172,20 @@ const CULTURE_PRODUCERS: Record<string, CardDef> = {
   },
 };
 
+// A one-goal-term producer and a two-goal-term one of the *same* per-key rate — the pair that separates
+// summing a card's goal contributions from taking its largest, which are indistinguishable on any
+// single-output card.
+const MULTI_OUTPUT_PRODUCERS: Record<string, CardDef> = {
+  test_one_term: {
+    id: 'test_one_term', name: 'Test One Term', kind: 'work',
+    cost: {}, workers: 1, produces: { resources: { production: 1 } },
+  },
+  test_two_terms: {
+    id: 'test_two_terms', name: 'Test Two Terms', kind: 'work',
+    cost: {}, workers: 1, produces: { resources: { production: 1, culture: 1 } },
+  },
+};
+
 describe('population capacity enabler', () => {
   beforeAll(() => installCards(CULTURE_PRODUCERS));
   afterAll(() => uninstallCards(CULTURE_PRODUCERS));
@@ -490,6 +504,34 @@ describe('durable producer credit', () => {
   });
 });
 
+describe('multi-output goal producers', () => {
+  beforeAll(() => {
+    installFixtures();
+    installCards(MULTI_OUTPUT_PRODUCERS);
+  });
+  afterAll(() => {
+    uninstallCards(MULTI_OUTPUT_PRODUCERS);
+    uninstallFixtures();
+  });
+
+  function twoTermRoot(deckCardIds: string[]): GameState {
+    const config = simConfig({
+      deckCardIds, board: 'settlement', missionId: 'test_culture_and_production_win', seed: 'enablers-multi',
+    });
+    return createRun(config).G;
+  }
+
+  it('sums a card\'s goal contributions rather than taking its largest', () => {
+    // Both producers pay 1🔨/worker; only one *also* pays 1🎭, and both are goal terms here. A card yields
+    // every line of its `produces` each round, so the two-term one must rate strictly higher — under a
+    // max-across-keys fold the two are identical, which is what this pins.
+    const one = deriveEnablers(twoTermRoot(['test_one_term', 'foraging']));
+    const two = deriveEnablers(twoTermRoot(['test_two_terms', 'foraging']));
+    expect(one.weight.population ?? 0).toBeGreaterThan(0);
+    expect(two.weight.population!).toBeGreaterThan(one.weight.population!);
+  });
+});
+
 describe('culture enabler', () => {
   beforeAll(installFixtures);
   afterAll(uninstallFixtures);
@@ -502,10 +544,19 @@ describe('culture enabler', () => {
     return createRun(config).G;
   }
 
-  // The synthetic culture mission wins *at* a culture level, so culture is goal-valued there — used to pin the
-  // gate-unlock skip and, contrastingly, the hand-size credit that survives it.
+  // The synthetic culture mission wins *at* a culture level and names no other term, so culture is the whole
+  // objective — used to pin the gate-unlock skip and, contrastingly, the hand-size credit that survives it.
   function cultureWinRoot(deckCardIds: string[]): GameState {
     const config = simConfig({ deckCardIds, board: 'settlement', missionId: 'test_culture_win', seed: 'enablers-culture-skip' });
+    return createRun(config).G;
+  }
+
+  // The same culture level conjoined with a production threshold: culture is goal-valued *and* has a sibling
+  // term, so the level a producer is gated behind is worth that producer's output on the sibling.
+  function cultureAndProductionRoot(deckCardIds: string[]): GameState {
+    const config = simConfig({
+      deckCardIds, board: 'settlement', missionId: 'test_culture_and_production_win', seed: 'enablers-culture-conj',
+    });
     return createRun(config).G;
   }
 
@@ -515,10 +566,21 @@ describe('culture enabler', () => {
     expect(m.cap.culture ?? 0).toBeGreaterThan(0);
   });
 
-  it('skips the gate-unlock when culture is itself the objective', () => {
-    // Reaching the level *is* the win there, scored directly — so the gated producer isn't a separate enabler.
+  it('skips the gate-unlock when culture is the objective\'s only term', () => {
+    // Reaching the level *is* the whole win there, scored directly, and the only thing the gated producer
+    // could be credited for is culture itself — which would restate that same slope.
     const m = deriveEnablers(cultureWinRoot(['gobekli_tepe', 'sun_stone', 'sun_stone']));
     expect(m.weight.culture ?? 0).toBe(0);
+  });
+
+  it('still credits the gate-unlock when culture is goal-valued alongside another term', () => {
+    // Göbekli is gated at culture level 1 and produces production — the sibling goal term — so banking
+    // culture toward that level is worth the production it ungates, which the objective's culture slope
+    // does not express. Without the gated producer there is nothing to credit and the weight goes away.
+    const gated = deriveEnablers(cultureAndProductionRoot(['gobekli_tepe', 'sun_stone', 'toolmaking']));
+    const ungated = deriveEnablers(cultureAndProductionRoot(['sun_stone', 'sun_stone', 'toolmaking']));
+    expect(gated.weight.culture ?? 0).toBeGreaterThan(0);
+    expect(ungated.weight.culture ?? 0).toBe(0);
   });
 
   it('credits hand-size throughput per culture level even when culture is goal-valued', () => {

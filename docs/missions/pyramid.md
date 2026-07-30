@@ -20,10 +20,35 @@
 
 First shipped use of the `defeat` hook (a deadline, not a drain).
 
-## Balance 🟡 (open)
+## Balance 🟡 (target holds; planner not yet a difficulty measurement)
 
-All numbers provisional pending a sim sweep — target (50🪙 · 40🔨 · 🎭 L2), `PHARAOH_DEADLINE` (40).
-The pop-2 Pyramid needs a growth window; a ~34–38 turn deadline is the sweet spot (scaffolding stashed).
+**Target (50🪙 · 40🔨 · 🎭 L2) and `PHARAOH_DEADLINE` (40) hold as authored.** Hand-won first try on City,
+and **search-proven on 50/50 seeds** — every line wins in 26–38 turns against the 40-round clock, ending at
+🎭 30.5 with no overshoot. The ~10 turns of slack at optimum is the room a first-try human win with late
+mistakes needs.
+
+Measured on a 22-card City deck: 1 each Bead Workshop · Farm+2 Irrigation · Forge · House · Göbekli Tepe,
+plus 4 Conquest · 2 Beer · 2 Hunting · 2 Toolmaking · 4 Trader · 2 Bow · Bartering.
+
+| policy | result |
+|---|---|
+| `prover` @50 | **50/50** |
+| `planner` @100 | 18/100 |
+
+**Göbekli Tepe is the mission's pivot** — it appears in all 50 proven lines and none of the failures, paying
+🔨+🪙+🎭 per worker from one slot, which is the only way three simultaneous thresholds fit inside the
+deadline. The five structures want ~5 slots against City's 2, so ~3 Conquests are load-bearing.
+
+**The 82-point planner gap is simulator fidelity, not difficulty** — two shaping fixes this session took it
+0 → 18 and the remaining causes are logged under [`../TODO.md`](../TODO.md) → *Simulator shaping*. Read
+`prover` here until that closes; the planner row is not yet a human-difficulty estimate.
+
+**🎭 L2 is not the term to give** if these ever move: the Pyramid wonder this mission unlocks is itself
+`cultureLevelReq: 2`, so a level-1 goal would grant a reward the player cannot play.
+
+**Fixt ⬜** — `scripts/sim/baselines/pyramid.json` still holds an unmeasured 8-structure deck stocking 4 Cave
+Art. Re-cutting it onto the deck above would leave `roads.json` the last fixture blocking Cave Art's
+deletion. The earlier growth-window read (~34–38 turns) is untested and nothing measured was deadline-bound.
 
 ## Polish ⬜ (not started)
 

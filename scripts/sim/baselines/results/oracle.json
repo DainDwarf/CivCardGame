@@ -122,39 +122,39 @@
     "winRate": 1,
     "turns": {
       "min": 41,
-      "mean": 44.9,
-      "median": 46,
-      "max": 49
+      "mean": 44.5,
+      "median": 45,
+      "max": 47
     },
     "meanResources": {
-      "food": 23,
-      "production": 4.4,
-      "science": 11.9,
-      "military": 4.1,
-      "money": 2.6,
+      "food": 26.1,
+      "production": 3.9,
+      "science": 12.3,
+      "military": 4,
+      "money": 2.1,
       "population": 3,
       "culture": 30,
-      "territory": 4.4
+      "territory": 4.3
     },
     "defeatCauses": {},
     "cardPlays": {
-      "dogs": 79,
-      "foraging": 76,
-      "toolmaking": 135,
-      "storytelling": 26,
+      "dogs": 70,
+      "foraging": 75,
+      "toolmaking": 131,
+      "storytelling": 28,
       "bow": 20,
-      "fire": 103,
-      "conquest": 24,
+      "fire": 104,
+      "conquest": 23,
       "bead_workshop": 10,
       "bartering": 10,
       "hut": 10,
-      "beer": 82,
+      "beer": 67,
       "farm": 9,
       "sun_stone": 10,
-      "calendar": 3
+      "calendar": 2
     },
     "unplayedCards": [],
-    "meanActions": 115.6
+    "meanActions": 110.8
   },
   {
     "label": "first_trades",

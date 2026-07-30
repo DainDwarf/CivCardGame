@@ -299,6 +299,17 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     goals: [{ icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(1) }],
     display: { description: 'Reach culture level 1.' },
   },
+  // A culture level *conjoined* with a spendable threshold: culture is goal-valued and has a sibling term,
+  // which is the shape that separates "the objective scores this pool" from "reaching this pool's level
+  // ungates a producer of the *other* term".
+  test_culture_and_production_objective: {
+    id: 'test_culture_and_production_objective', name: 'Test Culture And Production', kind: 'objective', cost: {},
+    goals: [
+      { icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(1) },
+      { icon: '🔨', measure: (G) => G.resources.production, target: 10 },
+    ],
+    display: { description: 'Reach culture level 1 and 10 Production.' },
+  },
   // An always-false objective — the win counterpart to the sandbox's `sandbox_goal`, for a fixture
   // *unwinnable* mission (no line exists at any depth). Pair with a deadline threat so a run still ends.
   test_never: {
@@ -402,6 +413,14 @@ export const FIXTURE_MISSIONS: Record<string, MissionDef> = {
     id: 'test_culture_win', name: 'Test Culture Win', lore: '', prereqs: [],
     objectiveCardId: 'test_culture_objective',
     victoryHint: 'Reach culture level 1.', failureHint: null,
+    kind: 'standard',
+  },
+  // Wins at a culture level *and* a production threshold — the two-term counterpart of `test_culture_win`,
+  // so the enabler tests can pin both sides of the gate-unlock rule without riding a shipped mission's goal.
+  test_culture_and_production_win: {
+    id: 'test_culture_and_production_win', name: 'Test Culture And Production Win', lore: '', prereqs: [],
+    objectiveCardId: 'test_culture_and_production_objective',
+    victoryHint: 'Reach culture level 1 and 10 production.', failureHint: null,
     kind: 'standard',
   },
   // An unwinnable mission bounded by a near deadline: `test_never` can never be met, so the only exit is

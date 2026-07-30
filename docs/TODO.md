@@ -106,17 +106,49 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   a drain reading a count — but **self-referential** where those aren't, since the card reads the size of
   the zone it sits in). Pure authoring, zero engine work; `sim/zoneOrderInvariance.test.ts` already pins
   the shape via its `test_route_scaling` fixture. A **balance** question, not a blocking one.
-- **Sim policies answer interactions blindly** `[size: S]` — `greedyPolicy`/`greedy2Policy` pick a
-  random `pendingInteraction` option and `heuristicPolicy` always answers `0`, each justified by a comment
-  ("options aren't scored — recovering a card to hand rarely moves `scoreState`") that stops being true the
-  moment a choice is a real decision, e.g. *which* route to close. Also worth recording alongside:
-  `heuristicPolicy`'s `staticValue` scores a trade route's 🪙 cost against no immediate gain, so that
-  policy will essentially never open one — a low heuristic win rate on a trade deck is the policy, not the
-  balance. Same trap one level down: a route's *only* positive signal in the value function is
-  `enablers.ts`'s `producerCredit` (`scoreState`'s operating-count credit deliberately excludes the zone,
-  since `isOperating` throws on a workerless card), so under `bareBest`/`plannerNoProducers` or any
-  producers-off ablation a route scores **pure negative**. Expect those cells to show routes as
-  strictly-bad; that's the ablation, not the card.
+
+## Tech debt / architecture
+
+- **Audit existing tests for the integration split** — the `*.integration.test.ts` convention (end-to-end/
+  balance-sensitive suites that drive a full `simulateRun`; see CLAUDE.md → *Conventions*) so far tags only
+  `plannerPolicy`. Sweep the rest of the suite for tests that belong there too (anything driving whole runs
+  / asserting emergent balance) and rename them, so `npm run test:unit` is a genuinely fast, deterministic
+  inner loop. `[size: S]`
+- **Buildings pay upkeep even when unstaffed** `[?]` — today a staffable's `upkeep` only fires while it's
+  *operating* (staffed), because `resolveEndTurn` runs only on operating boxes (the `isOperating` gate in
+  `events.ts`'s `dispatchEvent`). Make a built-but-idle building still pay its maintenance — an idle
+  structure is a cost, not free. Reverses the documented "idle staffable box never reacts" contract, so
+  decide the scope: upkeep only (production still gated on staffing), or the whole `endTurn` handler?
+  `workers: 0` cards (City Walls) are unaffected (always operating); the Pyramid's −2🌾 would then bleed
+  while idle. `[size: M]`
+- **Card art must be unique across the player collection** — nothing pins it today, and the near-miss
+  just happened: Fire wanted 🔥 and Raiding already held it (Raiding moved to 🏴). Two ownable cards
+  sharing a glyph is a **bug** — the art is how a card is recognized on the board and in the picker.
+  **The relaxation:** mission-only kinds (`objective`/`threat`/`event`) may share a glyph with each
+  other as long as **no single mission seeds both**, since the player never sees them side by side.
+  Belongs next to `content/cards.test.ts`'s existing "every deckable card sets its own art glyph"
+  coherence test, which is where art is ruled on. Note the relaxed half can't be checked off `CARDS`
+  alone — it has to read `MISSIONS`' `threats`/`events`/`objectiveCardId` lists to know what co-occurs.
+  The catalogue is clean as of the Fire/Raiding swap, so this lands green. `[size: S]`
+
+## Misc
+
+- **Rework the Influence economy and the copy-count ladder together.** Explicitly **not** the
+  `trade-redesign` branch's job — parked here so it isn't rediscovered from a card. How many copies of
+  a card a player can reach is what decides whether a second-rate line is worth building at all, and
+  right now that scarcity is doing load-bearing balance work it was never tuned for — a second Farm
+  is a shop purchase *and* a territory slot, while a second Bead Workshop + Bartering pair needs only the one slot
+  (see [`missions/first-trades.md`](missions/first-trades.md) → *Balance*). **Which of the two food
+  lines wins is therefore set by the copy ladder, not by their rates**, so re-read that pair when the
+  ladder moves. `npm run economy` prints the faucet ledger and price list the rework starts from.
+  `[size: L]`
+
+## Simulator (`src/sim/`, `scripts/sim.ts`)
+
+> Balance answers are only as good as the policies taking them. Items here are why a number is wrong,
+> or what would make the next one cheaper to get.
+
+### Fidelity — where a policy mis-measures
 
 - **The simulator can't steer a survival objective** `[size: M]` — a mission that wins on *rounds
   survived* names no resource in its goals, so `sim/objective.ts`'s `objectiveProgress` is a flat
@@ -158,30 +190,38 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   to a win says horizon, not weighting). The fix must be **general and mechanical** like its sibling
   above — a met goal's *carried* cost is derivable from the card's `effect`/`upkeep` against
   `foodUpkeep`, never a per-mission hint.
+- **`scoreState` credits a goal resource whose own accumulation is the threat** — the objective gradient
+  reads `pool / target` while bands 2/3/5 see one turn, so when *holding* the goal resource is the danger
+  the upside is scored and the liability is not. Accounting is the live case (`envious_population` mints a
+  Thief per 10🪙 on `on.reshuffle`, an event no band models): beam width alone moves proven winnability
+  46 → 70%. Generic to any goal whose pool feeds a threat's `on.*`. Fix stays sim-local. `[size: M]`
+- **`CAPACITY_CAP` ignores the goal's own threshold** — a strategic pool is credited linearly to 12 even
+  when the objective wants 3 of it, so the planner grows past the win and pays the upkeep. Measured on
+  `first_temple` (3🧍): planner 98 → 96, famine 2 → 4. The cap is also inert for population/territory in
+  practice — nothing reaches 12. `[size: S]`
+- **`PRODUCER_CREDIT_CAP` is whole-tableau, so a structure's marginal credit is zero once reached** — on
+  Pyramid five structures sum ~41 against a cap of 15, leaving a wonder worth ~27 adding nothing at the
+  leaf. Raising it 0.05 → 0.25 was tried and **reverted**: it cost `accounting` 18 points by making the
+  second Bead Workshop attractive over City Walls and Farms, and enabling `conversions` supersedes the
+  whole gain. Wants the shaping-config knob first. `[size: M]`
+- **Sim policies answer interactions blindly** `[size: S]` — `greedyPolicy`/`greedy2Policy` pick a
+  random `pendingInteraction` option and `heuristicPolicy` always answers `0`, each justified by a comment
+  ("options aren't scored — recovering a card to hand rarely moves `scoreState`") that stops being true the
+  moment a choice is a real decision, e.g. *which* route to close. Also worth recording alongside:
+  `heuristicPolicy`'s `staticValue` scores a trade route's 🪙 cost against no immediate gain, so that
+  policy will essentially never open one — a low heuristic win rate on a trade deck is the policy, not the
+  balance. Same trap one level down: a route's *only* positive signal in the value function is
+  `enablers.ts`'s `producerCredit` (`scoreState`'s operating-count credit deliberately excludes the zone,
+  since `isOperating` throws on a workerless card), so under `bareBest`/`plannerNoProducers` or any
+  producers-off ablation a route scores **pure negative**. Expect those cells to show routes as
+  strictly-bad; that's the ablation, not the card.
 
-## Tech debt / architecture
+### Tooling
 
-- **Audit existing tests for the integration split** — the `*.integration.test.ts` convention (end-to-end/
-  balance-sensitive suites that drive a full `simulateRun`; see CLAUDE.md → *Conventions*) so far tags only
-  `plannerPolicy`. Sweep the rest of the suite for tests that belong there too (anything driving whole runs
-  / asserting emergent balance) and rename them, so `npm run test:unit` is a genuinely fast, deterministic
-  inner loop. `[size: S]`
-- **Buildings pay upkeep even when unstaffed** `[?]` — today a staffable's `upkeep` only fires while it's
-  *operating* (staffed), because `resolveEndTurn` runs only on operating boxes (the `isOperating` gate in
-  `events.ts`'s `dispatchEvent`). Make a built-but-idle building still pay its maintenance — an idle
-  structure is a cost, not free. Reverses the documented "idle staffable box never reacts" contract, so
-  decide the scope: upkeep only (production still gated on staffing), or the whole `endTurn` handler?
-  `workers: 0` cards (City Walls) are unaffected (always operating); the Pyramid's −2🌾 would then bleed
-  while idle. `[size: M]`
-- **Card art must be unique across the player collection** — nothing pins it today, and the near-miss
-  just happened: Fire wanted 🔥 and Raiding already held it (Raiding moved to 🏴). Two ownable cards
-  sharing a glyph is a **bug** — the art is how a card is recognized on the board and in the picker.
-  **The relaxation:** mission-only kinds (`objective`/`threat`/`event`) may share a glyph with each
-  other as long as **no single mission seeds both**, since the player never sees them side by side.
-  Belongs next to `content/cards.test.ts`'s existing "every deckable card sets its own art glyph"
-  coherence test, which is where art is ruled on. Note the relaxed half can't be checked off `CARDS`
-  alone — it has to read `MISSIONS`' `threats`/`events`/`objectiveCardId` lists to know what co-occurs.
-  The catalogue is clean as of the Fire/Raiding swap, so this lands green. `[size: S]`
+- **Shaping config settable by option and by baseline file** — `EnablerTerms` is only reachable by editing
+  `DEFAULT_ENABLER_TERMS`, so an A/B costs a source edit per run, and a committed row in
+  `baselines/results/` cannot record which config produced it. Want a `npm run sim` flag *and* the terms
+  declared in the fixture, so a cell carries its shaping config like its mission/deck/board. `[size: M]`
 - **One sim baseline file per configuration, holding its own results** `[size: M]` — today a cell's
   launch config (`scripts/sim/baselines/<mission>.json`) and its measured numbers (a global
   `results/<policy-set>.json`) live apart, so re-cutting a fixture silently strands rows keyed by label
@@ -194,18 +234,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
   later fuzz pass. `[size: S] [blocked]`
 
-## Misc
-
-- **Rework the Influence economy and the copy-count ladder together.** Explicitly **not** the
-  `trade-redesign` branch's job — parked here so it isn't rediscovered from a card. How many copies of
-  a card a player can reach is what decides whether a second-rate line is worth building at all, and
-  right now that scarcity is doing load-bearing balance work it was never tuned for — a second Farm
-  is a shop purchase *and* a territory slot, while a second Bead Workshop + Bartering pair needs only the one slot
-  (see [`missions/first-trades.md`](missions/first-trades.md) → *Balance*). **Which of the two food
-  lines wins is therefore set by the copy ladder, not by their rates**, so re-read that pair when the
-  ladder moves. `npm run economy` prints the faucet ledger and price list the rework starts from.
-  `[size: L]`
-
 ---
 
 ## Done / shipped
@@ -216,6 +244,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **A gated producer is worth reaching its gate, even when the gate is a goal term** ✅ — the strategic
+  capacity credit was skipped whenever its pool was itself goal-valued, so nothing valued reaching 🎭 L1 to
+  ungate a wonder paying the *other* goal terms. The derived credit now fires (with the pool's own key
+  excluded, or it restates the objective's slope); only the intrinsic floor stays suppressed. Reaches
+  territory and population identically. Cost: `first_temple` planner 98 → 96.
+- **A multi-output producer is worth the sum of its goal terms** ✅ — `bestGoalThroughput` folded with
+  `Math.max` *across* goal keys, so a card paying 🔨+🪙+🎭 every round was credited for one of them, ranking a
+  single-output Forge above it. Now sums per card, then maxes across cards — matching `producerCredit`,
+  which already summed; the two folds disagreed about what one card produces.
 - **A `prover` policy, and an honest oracle** ✅ — `oracle`'s win rate silently meant "winnable by search
   **or** by the fallback policy", because a seed whose search found no line was played out by another
   brain and its collapse filed under the oracle's name. Two changes. `Policy.abort` is a new seam — a
@@ -516,26 +553,3 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   authoritative, so `clone.hand = []` joins `clone.workZone = []` in `sim/value.ts`. Band 3 was buffering
   ~3 turns against a one-round, hand-contingent drain (a 100-point swing on the pinning test); the drain
   still reads at collapse scale in band 2, which projects the *actual* next turn.
-
-
-## Jot — `scoreState` credits a goal resource whose own accumulation is the threat
-
-`sim/value.ts` scores the objective gradient (band 4, weight 300) off `objectiveProgress`, which for a
-threshold goal is just `pool / target`. Bands 2/3/5 read `projectNextTurn`/`applyUpkeep` — **one turn**.
-So when holding the goal resource is *itself* the danger, the upside is scored and the liability is not.
-
-Accounting is the live case: `envious_population` mints a Thief per 10🪙 held, on **`on.reshuffle`** — an
-event no band models at any horizon. Gold therefore reads as pure progress, the beam fills with
-gold-first states, and those states are unrecoverable (measured: **0 wins in 49** planner runs that
-reached 10🪙 with no City Walls up; 0 in 25 that got there with 2 Bead Workshops and no Walls). Whole
-search levels then die at once — `noWinFound:deadEnd` — and merely widening the beam recovers real
-winning lines the ranking had discarded: 50 seeds, City fixture, **46% → 58% → 66% → 70%** proven at beam
-16/64/128/256, `deadEnd` 26→20→15→13. Returns flatten, so this is a large part of that mission's
-apparent difficulty but not all of it.
-
-Generic, not per-mission: any goal whose measured pool feeds a threat's `on.*` handler hits it, and the
-gradient can't see the coupling because it reads only `goalProgress`. Related to the *uncharged goal-term
-upkeep* jot. Any fix stays sim-local ([[sim-logic-stays-in-sim]]) — a card/mission hook is not the answer.
-Note the mission itself is **not** a bug: its difficulty is wanted as authored, so this is a simulator
-fidelity item, and the `planner` number is the honest human-difficulty estimate precisely because a human
-has no proof search to rescue them either.
