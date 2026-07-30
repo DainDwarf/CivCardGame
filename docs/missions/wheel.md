@@ -5,7 +5,7 @@
 > Final design decisions graduate to [`DESIGN.md`](../DESIGN.md); measured balance results
 > compress to `CHANGELOG.md` at ship. This file holds only *live* state.
 
-**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
 **Branch:** Bronze — expansion/territory (Roads → Wheel), the branch's closing node.
 **Placement:** `prereqs: ['roads']`, bronze col 9 row -1.
 **Reward influence:** 12 (provisional).
@@ -40,21 +40,36 @@ push through a 🔨 crisis, earn 🔨 relief.
   (`sim/zoneOrderInvariance.test.ts`, synthetic fixtures). The `applyCost` fold + floor is already
   covered by the `test_costcut` fixture, so no new sticker test.
 
-## Balance 🟡 (open)
+## Balance ✅ (settled)
 
-Target and drain are **both untuned**. The raw `territory` multiplier is the design intent
-("heaviest drain at the final push") but may be **unwinnable**.
+`WHEEL_TERRITORY` held at **6**; the one number that moved is the drain, which took the **grace band**
+the levers list had ranked second: `OVEREXTENSION_GRACE = 2`, so Overextension charges
+`max(0, gained − 2)` and the ramp starts at the third expansion. The design intent survives it — the
+band shifts the ramp two steps later without flattening it, and the final push to 6 still happens under
+4🔨/round rather than 6.
 
-**Re-read under the split play area.** Territory is spent by buildings alone again, so ordinary play
-no longer competes with the goal for it — but Road and Conquest are `work` cards again, each costing a
-worker for the turn, so the goal's climb is paced by labour rather than by cost alone. The board also
-starts with less land (City 5 → 2). All of that needs re-measuring before any lever below is chosen.
+**Fixture:** the Roads deck carried forward onto City (`scripts/sim/baselines/wheel.json`) — Beer and
+the second Bead Workshop dropped for Road ×2 and a second Forge, 13⭐ of the 122 guaranteed to have
+arrived. Swept at the standing protocol:
 
-- **First levers, in order:** `WHEEL_TERRITORY`, then softening the drain to a grace band
-  (`max(0, territory − K)`) or a divisor.
-- **Feel-play watch:** a turn can field only as many Roads/Conquests as it has free workers, so
-  spiking territory to dodge the escalating drain is now bounded by population, not just by cost.
-- **Sweep on:** `scripts/sim/baselines/wheel.json`.
+| policy | seeds | win rate | turns (min · med · max) | end terr | failure mode |
+|---|---|---|---|---|---|
+| greedy | 100 | 10% | 6 · 16 · 201 | 5.2 | ruin 52 · stall 19 · famine 14 · bankruptcy 5 |
+| planner | 100 | **55%** | 4 · 24 · 201 | 6.2 | famine 35 · stall 8 |
+| oracle | 10 | 100% | 13 · 18 · 29 | 8.0 | — |
+
+**Food, not production, is what the mission kills you with** at the fair-competent tier — 35 of the
+planner's 45 losses are famine, against one ruin. The 🔨 crisis the mission is named for shows up only
+in the greedy column, where 52 runs ruin: greedy ends holding 65🔨 mean and never converts it, so read
+that column as the one-ply plateau it is, not as the drain biting.
+
+**Chiefdom is measurably harder on this same deck** — planner 30% / oracle 80% @10, famine again (68 of
+greedy's 100 runs, ending at mean −0.5🌾). It gets **no fixture**: at 0 starting territory against this
+deck's four structures it is a deck problem first, and a number taken on the wrong deck would read as a
+mission difficulty. Same shape as the gap logged at `roads` and `accounting`.
+
+**Writing is the deck's one dead card** — unplayed across all 200 greedy/planner runs, played once in
+10 oracle runs. Kept because the deck is the one the player arrives with.
 
 ## Polish ⬜ (not started)
 

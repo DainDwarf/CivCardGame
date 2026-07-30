@@ -222,6 +222,17 @@ function tamedHorses(G: GameState): number {
  *  opens at 0 territory and one that opens at 2. */
 export const WHEEL_TERRITORY = 6;
 
+/** Territory gained that the `overextension` drain lets through free — the first expansions are
+ *  toll-free on every board, and only the ones past the band are charged. Shared by the drain, its
+ *  readout and the mission's `failureHint` (`content/missions.ts`). */
+export const OVEREXTENSION_GRACE = 2;
+
+/** The 🔨 "The Wheel"'s road upkeep charges next round — shared by the `overextension` drain and its
+ *  readout, so the face can't quote a toll the threat doesn't take. */
+function overextensionDrain(G: GameState): number {
+  return Math.max(0, G.resources.territory - G.startResources.territory - OVEREXTENSION_GRACE);
+}
+
 /** The round by which the Pyramid tomb must be finished — shared by the `pharaohs_reign` threat's
  *  `defeat` deadline, its countdown readout, and the Pyramid mission's `failureHint`
  *  (`content/missions.ts`), so the shown deadline can't drift from the enforced one. Generous by
@@ -766,19 +777,19 @@ export const CARDS: Record<string, CardDef> = {
       },
     },
   },
-  // The Wheel's squeeze: road upkeep on the realm's *growth*, draining 🔨 by territory gained since
-  //   setup (`resources − startResources`), so a board's starting territory is toll-free and the
-  //   pressure only mounts as you expand.
+  // The Wheel's squeeze: road upkeep on the realm's *growth* past a grace band, so a board's starting
+  //   territory and the first few expansions are toll-free and the pressure only mounts once the realm
+  //   outruns what its roads carry.
   overextension: {
     id: 'overextension', name: 'Overextension', kind: 'threat', cost: {},
     display: {
       art: '🛤️',
-      description: '−1🔨 per territory gained',
-      dynamicText: (G) => `−${Math.max(0, G.resources.territory - G.startResources.territory)}🔨 next round`,
+      description: `−1🔨 per territory gained past ${OVEREXTENSION_GRACE}`,
+      dynamicText: (G) => `−${overextensionDrain(G)}🔨 next round`,
     },
     upkeep: {
       resolve: ({ G }) => {
-        subtractResources(G.resources, { production: Math.max(0, G.resources.territory - G.startResources.territory) });
+        subtractResources(G.resources, { production: overextensionDrain(G) });
       },
     },
   },

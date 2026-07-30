@@ -98,7 +98,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 13 | `writing` | ✅ | ✅ | ✅ | ✅ | [writing](missions/writing.md) |
 | 14 | `horse_taming` | ⬜ | ⬜ | ⬜ | ⬜ | [horse-taming](missions/horse-taming.md) |
 | 15 | `roads` | ✅ | ✅ | ✅ | ✅ | [roads](missions/roads.md) |
-| 16 | `wheel` | ⬜ | ⬜ | ⬜ | ⬜ | [wheel](missions/wheel.md) |
+| 16 | `wheel` | ✅ | ✅ | ✅ | 🟡 | [wheel](missions/wheel.md) |
 | — | `ice_age` · `sandbox` | ⬜ | ⬜ | ⬜ | ⬜ | — |
 
 Per-row notes, where the ⬜ isn't the whole story:
@@ -156,6 +156,14 @@ Per-row notes, where the ⬜ isn't the whole story:
   Both matter at 16 · `wheel`, whose goal *is* territory gained. **Only City is fixtured** — Chiefdom
   also reaches this node, and by here it is City's only alternative (Settlement was upgraded away at
   Masonry), but it has no committed cell and no recorded numbers.
+- **16 · `wheel` moved one number** — the Overextension drain took a **grace band**
+  (`OVEREXTENSION_GRACE` = 2, so `max(0, gained − 2)`); `WHEEL_TERRITORY` held at 6. Its fixture is the
+  Roads deck carried forward onto City: greedy 10% / planner 55% @100, oracle 100% @10 in 13–29 turns,
+  famine the fair-competent failure mode. The rate reading that reaches forward is that the **🔨 crisis
+  the mission is named for is not what kills a competent player** — greedy ruins 52 times ending on
+  65🔨 unconverted, while the planner's losses are 35 famine to 1 ruin. Chiefdom reaches this node too
+  and reads 30% planner / 80% oracle on the *same* deck; unfixtured, same open board gap as 12 and 15.
+  `Strd` is 🟡 pending the reward discussion.
 - **`ice_age` · `sandbox`** are infinite, so `Swept` can never mean a win rate there: read the collapse
   round instead. They are last because nothing downstream depends on them.
 

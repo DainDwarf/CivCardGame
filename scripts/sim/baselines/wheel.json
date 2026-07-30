@@ -1,17 +1,21 @@
 {
   "id": "wheel",
   "mission": "wheel",
-  "note": "City-board deck (Wheel follows Roads), the mission's balance reference. The goal/threat scale on territory *gained* since setup, so on the City board (starts at 2) the win is 8 absolute and the Overextension drain is toll-free on the opening 2. Road (money+production) and Conquest (military) are the territory faucets; Dogs feeds Conquest's military, Trader funds Road's money, Forge and the foraging/toolmaking works keep food and production ahead of the drain. ~60% under the planner, oracle-winnable 100% — a solid fair-play band. (The Chiefdom board starts at 0 territory and is far harder; that gap is a board-level issue, left open.)",
+  "note": "The Roads deck carried forward onto City, the expansion branch's closing node — swept at the standing protocol: greedy 10% / planner 55% @100, oracle 100% @10 in 13-29 turns. The goal and the Overextension drain both scale on territory *gained* since setup, so on City (starts at 2) the win is 8 absolute and the first 2 gained are free on top of the grace band. Road x2 (3🪙+3🔨) and Conquest x2 (doubling ⚔️) are the territory faucets, each costing a worker-turn: Trader x2 funds Road's money half, Hunting x2 Conquest's military, and Toolmaking x2 plus Forge x2 carries the 🔨 half against both the Roads and the drain. Food is the failure mode at every tier (planner famine 35 of its 45 losses) and rests on the double-Irrigated Farm plus the Bartering route. Writing is never played by greedy or planner and is the deck's one dead card. Costs 13 of the 122 Influence guaranteed to have arrived (irrigation x2 = 6; fire x1->x4 = 3; conquest/forge/road/trader each x1->x2 = 1 apiece; toolmaking/bow/dogs are starting-collection copies). Chiefdom also reaches this node and is measurably harder on this same deck (planner 30% / oracle 80% @10, famine again), but gets no fixture until it has a deck of its own.",
   "board": "city",
   "deck": [
-    { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
-    { "cardId": "forge", "count": 4 },
-    { "cardId": "house", "count": 2 },
-    { "cardId": "trader", "count": 4 },
-    { "cardId": "dogs", "count": 4 },
-    { "cardId": "road", "count": 4 },
-    { "cardId": "conquest", "count": 4 },
-    { "cardId": "foraging", "count": 4 },
-    { "cardId": "toolmaking", "count": 4 }
+    { "cardId": "bead_workshop", "count": 1 },
+    { "cardId": "farm", "count": 1, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "forge", "count": 2 },
+    { "cardId": "house", "count": 1 },
+    { "cardId": "conquest", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "road", "count": 2 },
+    { "cardId": "toolmaking", "count": 2 },
+    { "cardId": "trader", "count": 2 },
+    { "cardId": "bow", "count": 2 },
+    { "cardId": "fire", "count": 4 },
+    { "cardId": "writing", "count": 1 },
+    { "cardId": "bartering", "count": 1 }
   ]
 }

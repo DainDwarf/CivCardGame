@@ -81,7 +81,7 @@
   | Writing | ✅ | ✅ | ✅ | ⬜ | [writing](missions/writing.md) |
   | Hammurabi's Code *(leaf)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Roads | ✅ | ✅ | ✅ | ⬜ | [roads](missions/roads.md) |
-  | Wheel | ✅ | ✅ | 🟡 | ⬜ | [wheel](missions/wheel.md) |
+  | Wheel | ✅ | ✅ | ✅ | ⬜ | [wheel](missions/wheel.md) |
   | Horse taming | ✅ | ✅ | 🟡 | ⬜ | [horse-taming](missions/horse-taming.md) |
   | Raiding | ✅ | ⬜ | ⬜ | ⬜ | [raiding](missions/raiding.md) |
   | Naval (×2) | 🟡 | ⬜ | ⬜ | ⬜ | — |
@@ -108,8 +108,8 @@
      balance included (see [`missions/writing.md`](missions/writing.md)). The optional **Hammurabi's Code** leaf off Writing
      remains — the last piece of the literacy half.
   4. **Wheel+roads (×2)** first (now the **expansion/territory** branch — repositioned from the money
-     identity; see the reward proposal below). **Roads** — mechanics DONE (balance pending; see
-     [`missions/roads.md`](missions/roads.md)). **Wheel** — mechanics DONE (balance pending; see [`missions/wheel.md`](missions/wheel.md)).
+     identity; see the reward proposal below). **Roads** — DONE, balance included (see
+     [`missions/roads.md`](missions/roads.md)). **Wheel** — DONE, balance included (see [`missions/wheel.md`](missions/wheel.md)).
   5. **Horse (×2)** — **Horse taming** mechanics DONE (balance pending; see
      [`missions/horse-taming.md`](missions/horse-taming.md)); **Raiding** remains. Then **Naval (×2)**.
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.

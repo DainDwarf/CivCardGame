@@ -567,6 +567,53 @@
     "meanActions": 90
   },
   {
+    "label": "wheel",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 10,
+    "winRate": 0.1,
+    "turns": {
+      "min": 6,
+      "mean": 51.07,
+      "median": 16,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 58.24,
+      "production": 65.19,
+      "science": 9.26,
+      "military": 3.96,
+      "money": 11.65,
+      "population": 2.54,
+      "culture": 0,
+      "territory": 5.24
+    },
+    "defeatCauses": {
+      "ruin": 52,
+      "famine": 14,
+      "bankruptcy": 5,
+      "stall": 19
+    },
+    "cardPlays": {
+      "bow": 180,
+      "dogs": 248,
+      "bead_workshop": 51,
+      "trader": 325,
+      "conquest": 174,
+      "fire": 926,
+      "road": 150,
+      "bartering": 47,
+      "toolmaking": 258,
+      "forge": 74,
+      "farm": 45,
+      "house": 27
+    },
+    "unplayedCards": [
+      "writing"
+    ],
+    "meanActions": 75.93
+  },
+  {
     "label": "writing",
     "policyName": "greedy",
     "runs": 100,
@@ -1171,6 +1218,53 @@
       "writing"
     ],
     "meanActions": 53.11
+  },
+  {
+    "label": "wheel",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 55,
+    "winRate": 0.55,
+    "turns": {
+      "min": 4,
+      "mean": 36.3,
+      "median": 24,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 32.16,
+      "production": 4.35,
+      "science": 6.2,
+      "military": 2.71,
+      "money": 5.36,
+      "population": 3.76,
+      "culture": 0,
+      "territory": 6.18
+    },
+    "defeatCauses": {
+      "famine": 35,
+      "bankruptcy": 1,
+      "stall": 8,
+      "ruin": 1
+    },
+    "cardPlays": {
+      "bow": 157,
+      "dogs": 334,
+      "bead_workshop": 68,
+      "house": 88,
+      "toolmaking": 335,
+      "conquest": 214,
+      "fire": 620,
+      "bartering": 84,
+      "trader": 519,
+      "farm": 61,
+      "forge": 103,
+      "road": 204
+    },
+    "unplayedCards": [
+      "writing"
+    ],
+    "meanActions": 65.58
   },
   {
     "label": "writing",
