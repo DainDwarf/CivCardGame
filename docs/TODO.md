@@ -229,6 +229,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   them into a single per-configuration file carrying config **and** recorded results. Optional second
   half: teach `scripts/sim.ts` the format — report a sweep as a **delta against the recorded numbers**,
   and take a flag to overwrite them in place.
+- **Report the first 5 seeds of each outcome** — a sweep prints aggregate win rate and a defeat-cause
+  histogram but never says *which* seeds produced them, so replaying a representative win or loss means
+  re-running `--seed i` in a loop until one turns up. Have `summarize`/`formatReport` carry the first 5
+  seed indices per outcome bucket (victory, and each `defeatCauses` key) so the report hands over the
+  `--seed` arguments directly. `[size: S]`
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit

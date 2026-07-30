@@ -97,7 +97,7 @@ updated) · **Strd** (whatever it strands resolved, or logged under *Open*). Leg
 | 12 | `accounting` | ✅ | ✅ | ✅ | ✅ | [accounting](missions/accounting.md) |
 | 13 | `writing` | ✅ | ✅ | ✅ | ✅ | [writing](missions/writing.md) |
 | 14 | `horse_taming` | ⬜ | ⬜ | ⬜ | ⬜ | [horse-taming](missions/horse-taming.md) |
-| 15 | `roads` | ⬜ | ⬜ | ⬜ | ⬜ | [roads](missions/roads.md) |
+| 15 | `roads` | ✅ | ✅ | ✅ | ✅ | [roads](missions/roads.md) |
 | 16 | `wheel` | ⬜ | ⬜ | ⬜ | ⬜ | [wheel](missions/wheel.md) |
 | — | `ice_age` · `sandbox` | ⬜ | ⬜ | ⬜ | ⬜ | — |
 
@@ -147,6 +147,15 @@ Per-row notes, where the ⬜ isn't the whole story:
   winnability 46 → 70%, so every search figure here is a floor, and the `planner` row is the one to read.
   A `prover` spot-check @10 backs that: it declines seeds as `deadEnd`/`depth`, never `budget` — the
   ranking and the round bound are what bind here, not the node budget.
+- **15 · `roads` moved no number** — 6 segments · 8🔨 · −2🌾 stand as authored. It is worked ahead of 14
+  because both fork off the same `writing` clear. Its fixture is now the player's own winning deck on
+  City: greedy 17% / planner 60% @100, oracle 100% @10 in 27–32 turns, famine the whole failure mode.
+  Two rate readings reach forward from it. The 60% planner cell ends at territory **2.0 — the board's
+  own start, zero expansion** — winning on City's two slots with Conquest at 0.05 plays/run; and every
+  City cell ends at **pop 2.0**, House being the deck's only population card and played 0.01×/run.
+  Both matter at 16 · `wheel`, whose goal *is* territory gained. **Only City is fixtured** — Chiefdom
+  also reaches this node, and by here it is City's only alternative (Settlement was upgraded away at
+  Masonry), but it has no committed cell and no recorded numbers.
 - **`ice_age` · `sandbox`** are infinite, so `Swept` can never mean a win rate there: read the collapse
   round instead. They are last because nothing downstream depends on them.
 
@@ -277,12 +286,12 @@ Consequences that outlived the restructure:
 
 ### Before merging to `main`
 
-- **Cave Art is stranded.** Cut from the starting collection and unlocked by nothing, so it is
-  unobtainable in-game — and **nothing merges to `main` with a card stranded**. The cut is decided (it
-  made Beer's 2🎭 for no 🌾, obsoleting a shipped card, and no reward slot was left to grant it from);
-  it is not yet *deleted* because three baselines still stock it (`accounting`, `roads`, `pyramid`) and
-  would fail to load, so the card goes with the last of them to be re-cut. `finding_copper` and
-  `masonry` dropped it at their own re-cuts.
+- **Cave Art is stranded, and now unblocked.** Cut from the starting collection and unlocked by nothing,
+  so it is unobtainable in-game — and **nothing merges to `main` with a card stranded**. The cut is
+  decided (it made Beer's 2🎭 for no 🌾, obsoleting a shipped card, and no reward slot was left to grant
+  it from). What held the *deletion* was baselines that stock it and would fail to load; `roads` was the
+  last of them, so **no fixture references it any more** and the card can go whenever someone does it.
+  Its `CardDef` and the `⚠️ Cut, not yet deleted` comment on it are all that remain.
 - **`plannerPolicy.integration.test.ts`'s Masonry win-rate case is un-skipped and green, with no margin.**
   It carries the re-cut deck now and passes at exactly its `>= 4` threshold (4/6). Those six seeds are a
   cold slice — the same fixture measures 86/100 over the full sweep — so the thinness is sampling, not the

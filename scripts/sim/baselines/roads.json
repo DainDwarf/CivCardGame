@@ -1,17 +1,21 @@
 {
   "id": "roads",
   "mission": "roads",
-  "note": "Hand-made City-board deck (Roads follows Writing), tuned alongside the mission as its balance reference: 6 segments, 8 production each, -2 food per unpaved segment at end of round.",
+  "note": "The player's own winning deck on City, swept at the standing protocol: greedy 17% / planner 60% @100, oracle 100% @10 in 27-32 turns. Two food lines against the segments' bleed — 2 irrigated Farms filling City's 2 slots (3🌾/worker), and Trader ×4 funding the Bartering route (2🌾/round for no worker and no land), which is also the only 🪙 the deck needs. Toolmaking ×2 plus the single Forge is the whole 🔨 half against 48🔨 of paving, so the Fire ×4 / Writing churn is what finds it. Writing is never played by greedy or planner (twice in 10 oracle runs) and House once in 100 greedy runs — the deck's two dead cards, kept because they are what the player won with. Costs 22 of the 110 Influence guaranteed to have arrived (irrigation ×4 = 12; trader/fire each ×1→×4 = 3 apiece; bead_workshop/farm/beer/conquest each ×1→×2 = 1 apiece).",
   "board": "city",
   "deck": [
+    { "cardId": "bead_workshop", "count": 2 },
     { "cardId": "farm", "count": 2, "stickers": ["irrigation", "irrigation"] },
-    { "cardId": "forge", "count": 2 },
-    { "cardId": "house", "count": 2 },
-    { "cardId": "cave_art", "count": 2 },
-    { "cardId": "conquest", "count": 4 },
-    { "cardId": "foraging", "count": 4 },
-    { "cardId": "toolmaking", "count": 4 },
+    { "cardId": "forge", "count": 1 },
+    { "cardId": "house", "count": 1 },
+    { "cardId": "beer", "count": 2 },
+    { "cardId": "conquest", "count": 2 },
+    { "cardId": "dogs", "count": 2 },
+    { "cardId": "toolmaking", "count": 2 },
+    { "cardId": "trader", "count": 4 },
     { "cardId": "bow", "count": 2 },
-    { "cardId": "dogs", "count": 4 }
+    { "cardId": "fire", "count": 4 },
+    { "cardId": "writing", "count": 1 },
+    { "cardId": "bartering", "count": 1 }
   ]
 }

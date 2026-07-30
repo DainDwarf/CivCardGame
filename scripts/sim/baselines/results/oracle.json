@@ -501,6 +501,48 @@
     "meanActions": 26.1
   },
   {
+    "label": "roads",
+    "policyName": "oracle",
+    "runs": 10,
+    "wins": 10,
+    "winRate": 1,
+    "turns": {
+      "min": 27,
+      "mean": 29,
+      "median": 29,
+      "max": 32
+    },
+    "meanResources": {
+      "food": 17.8,
+      "production": 4.7,
+      "science": 13,
+      "military": 3.3,
+      "money": 8.2,
+      "population": 2.2,
+      "culture": 6.3,
+      "territory": 2.5
+    },
+    "defeatCauses": {},
+    "cardPlays": {
+      "fire": 134,
+      "beer": 63,
+      "farm": 9,
+      "bow": 12,
+      "forge": 10,
+      "toolmaking": 39,
+      "trader": 49,
+      "roadwork": 60,
+      "bartering": 6,
+      "bead_workshop": 3,
+      "dogs": 8,
+      "writing": 2,
+      "conquest": 5,
+      "house": 1
+    },
+    "unplayedCards": [],
+    "meanActions": 80.2
+  },
+  {
     "label": "writing",
     "policyName": "oracle",
     "runs": 10,

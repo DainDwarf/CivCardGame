@@ -521,6 +521,52 @@
     "meanActions": 44.74
   },
   {
+    "label": "roads",
+    "policyName": "greedy",
+    "runs": 100,
+    "wins": 17,
+    "winRate": 0.17,
+    "turns": {
+      "min": 5,
+      "mean": 70.34,
+      "median": 27.5,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 26.38,
+      "production": 3.77,
+      "science": 6.25,
+      "military": 4.89,
+      "money": 70.48,
+      "population": 2.02,
+      "culture": 0.98,
+      "territory": 2.39
+    },
+    "defeatCauses": {
+      "stall": 29,
+      "famine": 54
+    },
+    "cardPlays": {
+      "fire": 625,
+      "farm": 38,
+      "beer": 98,
+      "bow": 127,
+      "toolmaking": 187,
+      "trader": 450,
+      "dogs": 190,
+      "bead_workshop": 67,
+      "roadwork": 147,
+      "bartering": 19,
+      "conquest": 39,
+      "forge": 24,
+      "house": 1
+    },
+    "unplayedCards": [
+      "writing"
+    ],
+    "meanActions": 90
+  },
+  {
     "label": "writing",
     "policyName": "greedy",
     "runs": 100,
@@ -1079,6 +1125,52 @@
     },
     "unplayedCards": [],
     "meanActions": 27.82
+  },
+  {
+    "label": "roads",
+    "policyName": "planner",
+    "runs": 100,
+    "wins": 60,
+    "winRate": 0.6,
+    "turns": {
+      "min": 5,
+      "mean": 29.69,
+      "median": 27,
+      "max": 201
+    },
+    "meanResources": {
+      "food": 19.56,
+      "production": 4.78,
+      "science": 6.21,
+      "military": 4.28,
+      "money": 8.92,
+      "population": 2,
+      "culture": 0.01,
+      "territory": 2.05
+    },
+    "defeatCauses": {
+      "famine": 36,
+      "stall": 4
+    },
+    "cardPlays": {
+      "fire": 621,
+      "bow": 96,
+      "forge": 72,
+      "bead_workshop": 29,
+      "roadwork": 405,
+      "trader": 466,
+      "toolmaking": 298,
+      "bartering": 48,
+      "dogs": 150,
+      "farm": 40,
+      "conquest": 5,
+      "beer": 1
+    },
+    "unplayedCards": [
+      "house",
+      "writing"
+    ],
+    "meanActions": 53.11
   },
   {
     "label": "writing",
