@@ -48,8 +48,9 @@ permanent infrastructure, and the route is the most permanent thing in the pool.
   enter, then 3 staffed workers producing +3🔨 against the threat's −3🔨 — it nets zero production on the
   one board slot it costs. Not a strand (it clears `first_temple`, which grants it, and reads normally
   elsewhere), but this is the mission where a wonder is worth *nothing*, and the drain is why.
-- **Forge at 3🔨 is unmeasured** — it is this mission's reward, so no fixture here can reach it. See
-  [`../REBALANCE.md`](../REBALANCE.md) → the rate ledger.
+- **Forge at 3🔨 is unmeasured *here*** — it is this mission's reward, so no fixture in this cell can
+  reach it. It is measured downstream on [writing](writing.md)'s cell, the earliest swept one that
+  stocks it: the single copy is played in 98 of 100 planner runs, 31 of 100 greedy, and 10 of 10 oracle.
 
 ## Polish ⬜ (not started)
 

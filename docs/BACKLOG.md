@@ -8,9 +8,7 @@
 >
 > **Lifecycles:** decided design graduates to [`DESIGN.md`](DESIGN.md); a mission graduates to a
 > one-line [`CHANGELOG.md`](../CHANGELOG.md) entry (drawn from its dossier) once **all four stages**
-> are done. Narrative/age framing candidates live in [`IDEAS.md`](IDEAS.md). The one step big enough
-> to have outgrown this file is the **resource-economy rebalance** (Step 10), now its own working
-> thread in [`REBALANCE.md`](REBALANCE.md).
+> are done. Narrative/age framing candidates live in [`IDEAS.md`](IDEAS.md).
 
 > Phase 4 is content expansion + balance tuning with the headless simulator (see
 > [`DESIGN.md`](DESIGN.md) *Build roadmap*). The content target is the **first three ages —
@@ -35,23 +33,15 @@
     during the card tech-debt pass rather than carried through unused; reimplement it cleanly on the
     resolver spine (a `resolve` closure) when a real card wants it — Bronze/Iron, where a built-up
     settlement gives tearing-down its natural context. `[?]`
-  - **The arc's two middle branches are being restructured** on the `trade-redesign` branch —
-    `rites_rituals` and `restless_people` are replaced by *The First Trades* (🪙) and *Harsh Winter*
-    (famine threat), inverting each branch to pressure-first. Both branches have **landed and are
-    measured** (`restless_people` deleted, The First Trades and Harsh Winter shipped). The age's last
-    new mission — **Rites & Rituals**, the culture-goal node on the reconvergence
-    ([rites](missions/rites.md)) — is **designed, implemented and balanced**; it re-points
-    `first_temple`'s prereqs, shifts every mission behind it one column right, and grants the new
-    **Elegant** culture sticker. Only Polish is left on it. See
-    [`REBALANCE.md`](REBALANCE.md) → *The Stone Age DAG, restructured*, plus the
-    [first-trades](missions/first-trades.md) and [harsh-winter](missions/harsh-winter.md) dossiers.
-    Step 9's substeps below are written against the old arc and are stale for **9.3 / 9.5 / 9.6**;
-    **9.6b** is the new culture node's lesson.
-  - **The arc's re-rated missions carry dossiers now** —
-    [first-settlement](missions/first-settlement.md) · [growing-numbers](missions/growing-numbers.md) ·
-    [raiders](missions/raiders-at-border.md) · [reading-seasons](missions/reading-seasons.md). They
-    shipped in Steps 1–6 but were re-read on the same branch, so each is Design/Implement/Balance ✅
-    with **Polish** the one stage left.
+  - **The arc's two middle branches were restructured** by the rebalance (TODO → *Done / shipped*).
+    `rites_rituals` and `restless_people` gave way to *The First Trades* (🪙) and *Harsh Winter* (famine
+    threat), inverting each branch to **pressure-first**, and **Rites & Rituals** came back as the
+    culture node on the reconvergence — re-pointing `first_temple`'s prereqs, shifting every mission
+    behind it one column right, and granting the **Elegant** sticker. Every mission in the age is
+    designed, implemented and balanced; **Polish is the one stage left** across the arc, and the four
+    re-rated originals (First Settlement · Growing Numbers · Raiders · Reading the Seasons) are in the
+    same position. Step 9's substeps below are written against the old arc and are stale for
+    **9.3 / 9.5 / 9.6**; **9.6b** is the culture node's lesson.
 
 - **Step 7 — Bronze Age arc** (content expansion) — new cards + missions themed to the Bronze
   Age, **no new mechanics**. Continues unlocking cards/stickers/boards through mission rewards.
@@ -140,8 +130,8 @@
   - **Fall of the Bronze Age** (infinite, scored survival) → escalating money/military/production pressure
     (parallels Ice Age for Stone).
 
-  **Measurement debt carried in from the rebalance** — two items the `trade-redesign` pass ran up that
-  are this arc's to clear, not that branch's ([`REBALANCE.md`](REBALANCE.md) → *Carried to Step 7*):
+  **Measurement debt carried in from the rebalance** — two items that pass ran up which are this arc's
+  to clear, not the rebalance's:
 
   - **Content shipped ahead of any cell that holds it** — War Horse at 3⚔️, the re-pointed single-use
     Raiding (3⚔️ → 4🌾+4🔨), the Wheel sticker's 🎭-level-1 floor, and both **Caravan** actions
@@ -195,8 +185,7 @@
     teach **money and trade routes**: the standing trade zone, a route's per-round rent against its
     per-round yield, and why the faucet that pays the rent has to be a building. **Post-clear:** reward
     undecided, so the post-clear lesson is too. Where the **Culture** gauge (levels, hand size, the
-    `cultureLevelReq` play-gate) gets taught is settled — the convergence node
-    ([rites](missions/rites.md)) teaches it.
+    `cultureLevelReq` play-gate) gets taught is settled — the convergence node teaches it.
   - **9.4 — Raiders at the Border tutorial** — teach the **event** card mechanic: mission-injected
     disasters (the raider waves) that auto-resolve from hand each round, draining a resource, and are
     defused for good by *playing* them (paying the cost banishes the card unresolved). **Post-clear:**
@@ -217,9 +206,8 @@
     which pays 1🔬 for a card discarded from hand. **Post-clear:** the reward grants **Sun Stone** (the
     branch's culture card, for the convergence node) and **Calendar** — 🔬's first sink, so the lesson can
     close on what the stockpile was *for*, which until now nothing in the age answered.
-  - **9.6b — Rites & Rituals tutorial** — teach **culture** (🎭) on the reconvergence node
-    ([dossier](missions/rites.md)), the age's last unexercised resource, and the lesson where the two
-    routes rejoin. Sits between both branch tips and the capstone, so it runs before 9.7. In-mission the
+  - **9.6b — Rites & Rituals tutorial** — teach **culture** (🎭) on the reconvergence node, the age's
+    last unexercised resource, and the lesson where the two routes rejoin. Sits between both branch tips and the capstone, so it runs before 9.7. In-mission the
     objective is to reach **🎭 level 1**, off the two producers the branch tips granted — Beer (a work
     card) and Sun Stone (a building), so the lesson can contrast the two kinds. Culture's *own* payoff is
     worth naming here, since nothing else spends it: it raises hand size a card per level, and gates the
@@ -237,12 +225,13 @@
     Tepe wonder card** (add it to a deck under the wonder rule) and opens the endless sandbox — the age is
     mastered.
 
-- **Step 10 — Resource-economy rebalance pass** — **pulled forward onto the `trade-redesign` branch,
-  tracked in its own file: [`REBALANCE.md`](REBALANCE.md).** The trade-route zone was its prerequisite,
-  so the rates follow there rather than waiting for Iron. Worked mission by mission from the first; all
-  sixteen standard missions are rated, fixtured and swept, and the branch's merge gate is empty. What it
-  leaves behind is the measurement debt noted under Step 7 above, plus `ice_age`/`sandbox`, which want a
-  **total rework** on `main` rather than a re-measure. Step 8 (Iron) still sequences after it.
+- **Step 10 — Resource-economy rebalance pass — DONE** ✅, pulled forward onto the `trade-redesign`
+  branch once the trade-route zone (its prerequisite) shipped, rather than waiting for Iron. Worked
+  mission by mission from the first: all sixteen standard missions are rated, fixtured and swept, and
+  the decided design graduated to [`DESIGN.md`](DESIGN.md) (the worker-turn basis, where a board's
+  identity lives, hoard goals as a lever). Recorded in TODO → *Done / shipped*. What it leaves behind is
+  the measurement debt noted under Step 7 above, plus `ice_age`/`sandbox`, which want a **total rework**
+  rather than a re-measure. Step 8 (Iron) still sequences after it.
   `[size: L]` `[?]`
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is

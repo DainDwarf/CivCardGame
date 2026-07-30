@@ -217,6 +217,14 @@ Three civilization-level gauges that constrain and enable play. They are never d
 
 Further expansion axes (`Faith`, …) remain possible.
 
+#### Rating cards — the worker-turn
+
+The **worker-turn** is what makes a work card and a building comparable at all: a work box pays its printed number once per play and hands the worker back, while a building pays it every round it holds one. Equal printed numbers therefore mean equal throughput *per worker*, and the building's edge is reliability (never undrawn) and deck-thinning rather than rate. A card that takes no workers — a trade route, a wall — sits outside the basis entirely and is amortized against draw frequency instead.
+
+The basis is a **detector, not a target.** It exists to find the card that is wildly off, not to flatten the catalogue onto one rate: resources that all convert at par are one resource wearing five costumes, and deliberate unevenness is what keeps them five. The opening deck happens to sit near 1:1 across 🌾/🔨/⚔️, which is why the first mission has one live axis instead of two — tolerable as an opening, not a template.
+
+A **standing obligation** — a route's rent, a building's upkeep — is charged every round, so income against it has to clear it *in expectation*: draw probability × per-play yield × copies, with margin, because a core resource going negative ends the run immediately and a cold streak does not average out. The trap is a faucet whose per-play yield merely matches the obligation, since then no number of copies rescues it; lift the yield instead and a drawable faucet funds a permanent debt perfectly well.
+
 ## Mission system — objective & failure as data ✅
 
 A mission is the unit of a run. It carries everything that varies between runs. Its
@@ -248,6 +256,13 @@ same set-or-clear way by `rules/threats.ts`'s `evaluateDefeat`) — so it stays 
 reusable by the headless simulator, and a threshold win registers at the flush where it's crossed. A
 mission-specific *defeat* belongs on a threat's `defeat` hook, and core-resource collapse
 (Famine/Revolt/…) stays a *universal* failure in the engine, independent of any mission.
+
+**Hoard goals are a lever, not a hazard.** A goal that asks you to *hold* a resource pulls against
+spending it, and against money that pull is sharpest because the whole point of a one-way hub is to
+spend outward. That tension is worth having when the mission gives it something to bite on — a threat
+that reads the pile makes hoarding itself the pressure. It is worth avoiding when the mission has no
+other demand for the resource, because then the goal simply switches the resource off for its own
+duration.
 
 ### Illustrative missions 🔧 (show the variety the system buys us)
 
@@ -388,6 +403,12 @@ opening economy: a martial board might open with Military and a lean Population;
 mercantile one with Money and extra Territory. `createInitialState` seeds a run from
 the chosen board.
 
+**Where a board's identity actually lives.** Five of the eight starting numbers are one-time: they are
+spent or eaten early and have washed out by the time a run is decided. Only **population** and
+**territory** are standing capacities, felt every round for the whole run — so they are the persistent
+differentiation budget a board has, and a board that differs only in its spendable pools reads as a
+head start rather than as a different civilization.
+
 **Board vs. mission setup.** The two compose cleanly and keep their existing roles:
 the **board is the baseline** starting state, and the **mission seeds its threat/event
 cards on top**. In `setup.ts`: seed from the board, *then* seed the mission's cards.
@@ -415,6 +436,16 @@ on victory the meta loop looks up the mission's rewards (by the `RunResult`'s
 
 - The per-board sticker **cap** (provisionally 2) and how freely stickers should stack are
   balance details, still being tuned.
+- **Do boards get *behaviour*, not just numbers?** Deferred until the numbers-only version has been
+  played: with population and territory used as the persistent axis on purpose, that may already be a
+  complete answer. If it still reads bland, two options in order — (1) a board that starts with a card
+  already **in play**, which is flavour as loud as a rule while every rule stays printed on a readable
+  card face, though a landless board has nowhere to stand a building so it would have to be a route or a
+  granted slot; (2) a board rule keyed to a **concept** rather than a card, e.g. *territory gained is
+  doubled*, which survives any later expansion card where naming one would not. Ruled out either way: a
+  board rule that changes a **card's printed numbers**, which makes the card face lie on one board. Watch
+  that any such rule doesn't turn a board into the *answer* to the territory-hungry missions instead of a
+  *choice*.
 
 ## Code architecture ✅
 

@@ -57,8 +57,9 @@ one-ply value function simply started seeing it.
 - **Both rewards were re-cut after the sweep and are unmeasured** — City Walls 4🔨/−1🔨 upkeep → **3🔨
   flat, no upkeep**; the City board 6🔨 → **10🔨** start. They are this mission's own rewards, so no
   fixture here can reach them; the six City-board fixtures downstream (accounting, horse_taming,
-  pyramid, roads, wheel, writing) all predate the board change. See
-  [`../REBALANCE.md`](../REBALANCE.md) → the rate ledger.
+  pyramid, roads, wheel, writing) all predate the board change. City Walls' cut was accepted unmeasured
+  on the amortized reading — the card takes no workers, so it is priced against draw frequency rather
+  than the worker-turn, and its flat 1⚔️/round already out-rates a War Horse drawn about every sixth turn.
 
 ## Polish ⬜ (not started)
 

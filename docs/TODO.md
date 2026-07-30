@@ -121,6 +121,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   coherence test, which is where art is ruled on. Note the relaxed half can't be checked off `CARDS`
   alone — it has to read `MISSIONS`' `threats`/`events`/`objectiveCardId` lists to know what co-occurs.
   The catalogue is clean as of the Fire/Raiding swap, so this lands green. `[size: S]`
+- **A prereq id can be real and still wrong** `[size: S]` — `content/missions.test.ts` pins that every
+  `prereqs` id **exists** and that the graph is **acyclic**, which catches a typo and a cycle. It cannot
+  catch a mission pointed at the wrong *real* mission: naming an upstream node instead of the branch tips
+  passes both checks and quietly flattens the DAG, so a branch stops gating anything and no test says so.
+  Wants a shape assertion — expected in-degree, or the reconvergence nodes named — rather than another id
+  iterator.
 
 ## Misc
 
@@ -128,10 +134,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `trade-redesign` branch's job — parked here so it isn't rediscovered from a card. How many copies of
   a card a player can reach is what decides whether a second-rate line is worth building at all, and
   right now that scarcity is doing load-bearing balance work it was never tuned for — a second Farm
-  is a shop purchase *and* a territory slot, while a second Bead Workshop + Bartering pair needs only the one slot
-  (see [`missions/first-trades.md`](missions/first-trades.md) → *Balance*). **Which of the two food
-  lines wins is therefore set by the copy ladder, not by their rates**, so re-read that pair when the
-  ladder moves. `npm run economy` prints the faucet ledger and price list the rework starts from.
+  is a shop purchase *and* a territory slot, while a second Bead Workshop + Bartering pair needs only
+  the one slot (a route takes no land). **Which of the two food lines wins is therefore set by the copy
+  ladder, not by their rates**, so re-read that pair when the ladder moves. `npm run economy` prints the faucet ledger and price list the rework starts from.
   `[size: L]`
 
 ## Simulator (`src/sim/`, `scripts/sim.ts`)
@@ -247,6 +252,18 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Rebalanced the early game's resource economy** ✅ — a mission-by-mission pass over the rates from
+  the campaign's first node forward, on the `trade-redesign` branch. The converters were cut to a
+  **1-per-worker** base (Foraging, Toolmaking, Storytelling, Hunting — the last of the flat ×2 boxes
+  gone), food upkeep went superlinear at `floor(pop²/4)`, and Conquest became a per-copy doubling price
+  on the new cost spine. Money moved onto its **producer** side (a Bead Workshop building plus a
+  Bartering route) and entered in the Stone Age rather than the Bronze, which restructured the age's DAG:
+  each branch now leads with a **pressure** mission whose reward is the *next* mission's toolkit, and
+  both branches reconverge on a culture node before the wonder capstone. The Stone Age's twelve
+  thresholds were re-read against the new rates and the Bronze arc's nine measured cells re-cut on decks
+  a player can actually own at each node, with the results committed under
+  `scripts/sim/baselines/results/`. The **worker-turn** basis those rates were judged on, and the board
+  and objective notes the pass settled, graduated to [`DESIGN.md`](DESIGN.md).
 - **The deck editor's tray no longer overlays its picker** ✅ — the tray was `position: fixed` over a
   picker that scrolled with the whole meta content area, so whatever landed in the bottom ~260px at a
   given scroll position was hidden *and* still under the pointer: a click there resolved to the tray
@@ -319,14 +336,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   existed while work took a slot. Board territory went back to its pre-merge figures (Tribe 0,
   Settlement 2, Chiefdom 0, City 2). Two things from the merge were kept because they were never about
   the cap: `placedCards` as the one board-wide read, and the single `BoardBox` drawing all three zones.
-  **Everything measured under the shared cap is stale** — every row in `scripts/sim/baselines/results/`
-  and every "measured" claim in [`REBALANCE.md`](REBALANCE.md).
+  Everything measured under the shared cap was re-cut afterwards, so `scripts/sim/baselines/results/`
+  reads the split cap throughout.
 - **Trade-route zone** ✅ — a new `trade` **card kind** and a standing `G.tradeRoutes` zone. Playing a
   trade card files it there via `rules/tradeRoutes.ts`'s `openTradeRoute`, where the `endTurn` broadcast
   ticks it like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling. A route takes
   **no workers**, no territory, and nothing closes one, so the rent alone bounds it: an
   unpayable one runs money negative into **bankruptcy**. This is the sink money's one-way-hub topology
-  spends through (see [`REBALANCE.md`](REBALANCE.md)).
+  spends through.
   - **One design change from the original ticket: routes are permanent.** The ticket had them removable
     at will; removal is now its own deferred item above (a minted cancellation *card*), because the real
     subject turned out to be deck dilution.
