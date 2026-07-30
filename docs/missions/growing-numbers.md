@@ -35,8 +35,8 @@ fields plus a `resolve` escape hatch, absorbing the old `CardGate`. Decided desi
 ## Balance ✅
 
 ⚠️ **The table below was measured under the shared territory cap**, on a Tribe holding 2🗺️ against a
-4🗺️ goal, with Conquest an `action`. All three have since changed; `baselines/results/` is stale for
-the same reason.
+4🗺️ goal, with Conquest an `action`. All three have since changed; `baselines/results/` has been re-cut
+and now carries the re-measured table.
 
 **The ask it encoded did not change**, which is why the shape survived: +2🗺️ then, +2🗺️ now (Tribe
 **0** → a **2🗺️** goal), still exactly two plays of one Conquest at 2⚔️ + 4⚔️.
