@@ -294,7 +294,9 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   unplayed** fires `upkeep` at end of turn and files to `discard` so it recurs (`moves.playCard` /
   `upkeep.ts`'s `resolveHandEvents`). `isDeckable(card)` is the single "a card the player builds decks
   with" predicate (excludes event/threat/objective); `isStructure(card)` the single "enters the tableau
-  and takes a territory slot" one (`territory.ts`). Holds the Paleolithic starting set + the first
+  and takes a territory slot" one (`territory.ts`); `isDurableProducer(card)` names "stands on the board
+  for the rest of the run, so its `produces` pays every round" (structure ∪ trade — a Work box pays once
+  per play). Holds the Paleolithic starting set + the first
   Stone Age structures (Farm/Hut/Sun Stone, the Göbekli Tepe wonder) + the endless missions' own cards.
 - **`decks.ts`** — `DeckDef` (`cards` = meta instance ids) plus `DeckSeed`/`DEFAULT_DECKS` (authored in
   plain cardIds, resolved by `buildSeedDecks`). A fresh player starts with one editable deck — the

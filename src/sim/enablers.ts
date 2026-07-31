@@ -1,5 +1,5 @@
 import { CORE_KEYS, STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, placedCards, type GameState, type Resources } from '../rules';
-import { CARDS, isStructure, type CardDef } from '../content/cards';
+import { CARDS, isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import { objectiveProgress } from './objective';
 import { OBJECTIVE_WEIGHT } from './value';
 
@@ -150,7 +150,8 @@ export interface EnablerModel {
    *  linear in raw culture, and folded in `enablerPotential` regardless of whether culture is goal-valued. */
   handsizePerLevel?: number;
   /** Per-**cardId** credit for owning one of that durable producer, keyed rather than recomputed per leaf
-   *  because the planner evaluates this on every beam node. Only structures with a `produces` appear. */
+   *  because the planner evaluates this on every beam node. Only an `isDurableProducer` with a
+   *  `produces` appears, which is what lets `enablerPotential` walk the board unfiltered. */
   producerCredit: Partial<Record<string, number>>;
 }
 
@@ -434,12 +435,11 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
     }
   }
 
-  // Durable producers — the board cards that stand for the rest of the run and yield every round: a
-  // structure in the tableau or a trade route in its own zone. A Work box comes back off the board at
-  // end of turn, so it earns nothing here; its single turn of output is what the
-  // one-turn leaf already prices. Value one round of `produces` at the per-unit worth the model already
-  // carries — `valued` for a goal resource (whose core weight the consumables loop deliberately leaves
-  // unset), `weight` for one that is only a conversion input — then credit `PRODUCER_TAIL_HORIZON` of them.
+  // Durable producers (`isDurableProducer`) — a Work box earns nothing here, since its single turn of
+  // output is what the one-turn leaf already prices. Value one round of `produces` at the per-unit
+  // worth the model already carries — `valued` for a goal resource (whose core weight the consumables
+  // loop deliberately leaves unset), `weight` for one that is only a conversion input — then credit
+  // `PRODUCER_TAIL_HORIZON` of them.
   // Read at **one worker's** output (`produces.resources` is per-worker for a staffable, and already flat
   // for a workerless route): crediting full capacity would re-charge for the population that staffs it,
   // which the capacity pass above already weights.
@@ -454,7 +454,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
       if (v > 0) unitValue[k] = v;
     }
     for (const card of Object.values(CARDS)) {
-      if (!ids.has(card.id) || !(isStructure(card) || card.kind === 'trade') || !card.produces) continue;
+      if (!ids.has(card.id) || !isDurableProducer(card) || !card.produces) continue;
       let perRound = 0;
       for (const [k, v] of Object.entries(unitValue) as [keyof Resources, number][]) {
         perRound += positive(card.produces.resources?.[k]) * v;
@@ -482,7 +482,9 @@ export function enablerPotential(G: GameState, model: EnablerModel): number {
     s += model.handsizePerLevel * Math.min(cultureLevel(G.resources.culture), HANDSIZE_LEVEL_CAP);
   }
   let durable = 0;
-  for (const placed of [...G.tableau, ...G.tradeRoutes]) durable += model.producerCredit[placed.cardId] ?? 0;
+  // The whole board is walked rather than the durable zones: only an `isDurableProducer` id was ever
+  // keyed into `producerCredit`, so a Work box standing this turn looks up nothing.
+  for (const placed of placedCards(G)) durable += model.producerCredit[placed.cardId] ?? 0;
   s += Math.min(durable, PRODUCER_CREDIT_CAP);
   return s;
 }

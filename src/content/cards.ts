@@ -129,6 +129,14 @@ export function isStaffable(card: CardDef): boolean {
   return isStructure(card) || card.kind === 'work';
 }
 
+/** Whether a card, once played, stands on the board for the rest of the run and so yields its
+ *  `produces` every round — a structure holding its tableau slot, or a trade route in its own zone. A
+ *  Work box is deliberately out: it produces too, but comes off the board at end of turn, so its
+ *  `produces` pays once per play rather than per round. */
+export function isDurableProducer(card: CardDef): boolean {
+  return isStructure(card) || card.kind === 'trade';
+}
+
 /** Display order of card kinds — the primary key of `compareCards`; deckable kinds first. Total over
  *  `CardKind`, so its keys double as the enumeration of every kind: a new kind cannot type-check
  *  without landing here. */
