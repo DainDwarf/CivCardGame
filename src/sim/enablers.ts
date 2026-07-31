@@ -1,4 +1,5 @@
-import { CORE_KEYS, STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, placedCards, type GameState, type Resources } from '../rules';
+import { CORE_KEYS, STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, foodPerNextPop, placedCards, type GameState, type Resources } from '../rules';
+import { effectiveGain } from '../rules/stickers';
 import { CARDS, isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import { objectiveProgress } from './objective';
 import { OBJECTIVE_WEIGHT } from './value';
@@ -19,6 +20,8 @@ import { OBJECTIVE_WEIGHT } from './value';
  *   card gates. None is a cost, so none converts in a single hop; each is credited for the durable
  *   goal-throughput it *unlocks* over a horizon (build/staff/gate a goal-producer), saturated at a cap, and
  *   floored at a small intrinsic credit so an objective naming no resource still yields a growth slope.
+ *   Population's is further **net of the standing food its growth commits to**, the one capacity that
+ *   carries a recurring cost of its own.
  * - **Durable producers.** A structure is a capital cost bought against income spread over the rest of the
  *   run, so the one-turn leaf prices it below a free work box of the same yield and never builds it. Each
  *   *owned* structure is credited the rounds of its `produces` output that fall beyond the projected turn.
@@ -65,8 +68,9 @@ const CAPACITY_CAP = 12;
  *  (a never-winning sandbox goal) leaves the whole model empty and the planner unshaped. A bigger engine is worth
  *  something on any mission; how much is affordable is already priced by `scoreState`'s costs. Composed as
  *  `max(floor, derived)` so a pool the objective genuinely runs through is never downgraded by adding a
- *  floor. Uniform across the three pools: population's upkeep is the one asymmetry, and it lands as food
- *  drain in bands 2–3 rather than needing a smaller credit here. Tuned against win-rate, not derived. */
+ *  floor. Uniform across the three pools even though population's growth carries an upkeep the others
+ *  don't: that netting (`foodPerWorker`) rides on the *derived* credit alone, and would erase a floor this
+ *  small rather than shade it. Tuned against win-rate, not derived. */
 const INTRINSIC_CAPACITY_CREDIT = 0.01 * OBJECTIVE_WEIGHT;
 
 /** Per-culture-level credit for the bigger hand each level draws (`rules/culture.ts`'s `effectiveHandSize`
@@ -149,6 +153,11 @@ export interface EnablerModel {
   /** Non-keyed credit for culture's hand-size throughput (see `HANDSIZE_LEVEL_CREDIT`): level-based, not
    *  linear in raw culture, and folded in `enablerPotential` regardless of whether culture is goal-valued. */
   handsizePerLevel?: number;
+  /** The run's best per-worker 🌾 output — the denominator that converts a person's own food upkeep into
+   *  the fraction of a worker it eats, and so the units in which `enablerPotential` nets population's
+   *  credit. `0` means the deck can feed nobody. Present only where the capacity pass derived a real
+   *  population credit, so a pool carrying only the intrinsic floor, or none at all, is never charged. */
+  foodPerWorker?: number;
   /** Per-**cardId** credit for owning one of that durable producer, keyed rather than recomputed per leaf
    *  because the planner evaluates this on every beam node. Only an `isDurableProducer` with a
    *  `produces` appears, which is what lets `enablerPotential` walk the board unfiltered. */
@@ -280,6 +289,26 @@ function bestGoalThroughput(
   return best;
 }
 
+/** The best per-worker 🌾 a staffed worker in this run can produce — the rate at which a person's own
+ *  upkeep is paid, and so the denominator of population's net (see `enablerPotential`).
+ *
+ *  Walks the run's **instances** rather than `CARDS`, reading each through `effectiveGain`: a stickered
+ *  copy really does yield its bonus, and pricing an Irrigated Farm at its base rate would charge a person
+ *  several times what feeding them costs. Deliberately *not* symmetrized onto `bestGoalThroughput`, which
+ *  stays a static scan — widening that would move the credit on every mission at once and make a sweep
+ *  delta unattributable. */
+function bestFoodPerWorker(G: GameState): number {
+  let best = 0;
+  for (const zone of [G.deck, G.hand, G.discard, G.removed, placedCards(G)]) {
+    for (const inst of zone) {
+      const card = CARDS[inst.cardId];
+      if (!card || (card.workers ?? 0) < 1) continue;
+      best = Math.max(best, positive(effectiveGain(card.produces?.resources, inst)?.food));
+    }
+  }
+  return best;
+}
+
 /** Whether the run holds any card that outputs culture — the precondition for crediting culture's
  *  hand-size throughput (with no way to raise culture, the level never moves and the credit can't steer). */
 function canGrowCulture(ids: Set<string>): boolean {
@@ -375,11 +404,14 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // once per play: what's credited is the *worker*, which restaffs whatever is drawn each round, so the
   // capacity recurs even when no single card does — the asymmetry with `producerCredit`, which credits
   // owning one named card and so excludes `work`.
+  // Alone among the three, this capacity carries a standing cost: the person eats every round thereafter.
+  // `foodPerWorker` is the denominator that nets it (see `enablerPotential`), keyed on the *derived*
+  // throughput rather than the composed weight so it can never reach a pool holding only the floor.
+  const populationThroughput = capacity
+    ? bestGoalThroughput(ids, goalValued, (c) => (c.workers ?? 0) >= 1, false, 'population')
+    : 0;
   {
-    const w = strategicWeight(
-      capacity ? bestGoalThroughput(ids, goalValued, (c) => (c.workers ?? 0) >= 1, false, 'population') : 0,
-      goalValued.population === undefined,
-    );
+    const w = strategicWeight(populationThroughput, goalValued.population === undefined);
     if (w > 0) {
       weight.population = w;
       cap.population = CAPACITY_CAP;
@@ -467,6 +499,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
 
   const model: EnablerModel = { weight, cap, producerCredit };
   if (handSize && canGrowCulture(ids)) model.handsizePerLevel = HANDSIZE_LEVEL_CREDIT;
+  if (populationThroughput > 0) model.foodPerWorker = bestFoodPerWorker(G);
   return model;
 }
 
@@ -480,6 +513,31 @@ export function enablerPotential(G: GameState, model: EnablerModel): number {
   }
   if (model.handsizePerLevel) {
     s += model.handsizePerLevel * Math.min(cultureLevel(G.resources.culture), HANDSIZE_LEVEL_CAP);
+  }
+  // Net population's credit against the food its *growth* commits to. The capacity weight prices a worker's
+  // goal throughput and nothing else, so without this a person is credited for what they make and never
+  // charged for what they eat every round thereafter — and `foodPerNextPop` rises with the pool, so the gap
+  // widens exactly where growth stops paying.
+  //
+  // Charged **in worker-rounds, not score**: the n-th person eats `foodPerNextPop(n)`, which takes
+  // `foodPerNextPop(n) / foodPerWorker` of a worker to source, so that fraction of their own credit is
+  // spent feeding themselves. Both sides are then the same quantity — a worker's goal throughput — so the
+  // objective's target size cancels out of the ratio and the net can't turn on how large a number the
+  // mission happens to ask for. A deck with no per-worker food at all can feed nobody, so the credit goes.
+  //
+  // Counted only past the board's starting population, whose mouths are a sunk fact no line can undo, and
+  // clamped **per person** at their own credit — so growth saturates at the point it stops paying for
+  // itself (the derived counterpart of `CAPACITY_CAP`) rather than turning the potential negative.
+  if (model.foodPerWorker !== undefined) {
+    const pop = Math.max(0, G.resources.population);
+    const credited = Math.min(pop, model.cap.population ?? pop);
+    let forgone = 0;
+    for (let n = G.startResources.population + 1; n <= credited; n++) {
+      const need = foodPerNextPop(n);
+      if (need <= 0) continue;
+      forgone += model.foodPerWorker > 0 ? Math.min(1, need / model.foodPerWorker) : 1;
+    }
+    s -= (model.weight.population ?? 0) * forgone;
   }
   let durable = 0;
   // The whole board is walked rather than the durable zones: only an `isDurableProducer` id was ever

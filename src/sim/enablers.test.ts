@@ -6,7 +6,7 @@ import { DEFAULT_ENABLER_TERMS, deriveEnablers, enablerPotential, goalValuedCard
 import { OBJECTIVE_WEIGHT } from './value';
 import { objectiveProgress } from './objective';
 import { CARDS, type CardDef } from '../content/cards';
-import { addBuilding, cultureForLevel, emptyResources, type GameState, type Resources } from '../rules';
+import { addBuilding, cultureForLevel, emptyResources, type DeckCard, type GameState, type Resources } from '../rules';
 
 // The two conversion costs the Masonry deck rides on, read from content so a rebalance re-targets these
 // expectations instead of silently breaking on a stale literal — the assertions pin the *relationship* (a
@@ -154,9 +154,21 @@ describe('territory capacity enabler', () => {
 // pure enabler: staffing a per-worker producer (Toolmaking → production, a goal resource) converts a unit of
 // population into goal output every round. A real Pyramid run root, so the model derives through the same
 // path production uses.
-function pyramidRoot(deckCardIds: string[]): GameState {
+function pyramidRoot(deckCardIds: readonly (string | DeckCard)[]): GameState {
   const config = simConfig({ deckCardIds, board: 'city', missionId: 'pyramid', seed: 'enablers-pop-test' });
   return createRun(config).G;
+}
+
+/** The enabler potential of a Pyramid root holding `population` and nothing else — the deck's model
+ *  derived once, then read at each pool size. */
+function potOf(deckCardIds: readonly (string | DeckCard)[]): (population: number) => number {
+  const m = deriveEnablers(pyramidRoot(deckCardIds));
+  return (population) => {
+    const G = pyramidRoot(deckCardIds);
+    G.resources = emptyResources();
+    G.resources.population = population;
+    return enablerPotential(G, m);
+  };
 }
 
 // Two staffable culture producers whose only meaningful property is that one out-rates the other — local
@@ -169,6 +181,19 @@ const CULTURE_PRODUCERS: Record<string, CardDef> = {
   test_strong_culture: {
     id: 'test_strong_culture', name: 'Test Strong Culture', kind: 'work',
     cost: {}, workers: 1, produces: { resources: { culture: 6 } },
+  },
+};
+
+// Two staffable food producers differing only in rate — neither outputs a goal resource, so they move the
+// population *netting* (how much of a person's credit their own upkeep eats) and nothing else.
+const FOOD_PRODUCERS: Record<string, CardDef> = {
+  test_thin_food: {
+    id: 'test_thin_food', name: 'Test Thin Food', kind: 'work',
+    cost: {}, workers: 1, produces: { resources: { food: 1 } },
+  },
+  test_rich_food: {
+    id: 'test_rich_food', name: 'Test Rich Food', kind: 'work',
+    cost: {}, workers: 1, produces: { resources: { food: 8 } },
   },
 };
 
@@ -187,8 +212,8 @@ const MULTI_OUTPUT_PRODUCERS: Record<string, CardDef> = {
 };
 
 describe('population capacity enabler', () => {
-  beforeAll(() => installCards(CULTURE_PRODUCERS));
-  afterAll(() => uninstallCards(CULTURE_PRODUCERS));
+  beforeAll(() => installCards({ ...CULTURE_PRODUCERS, ...FOOD_PRODUCERS }));
+  afterAll(() => uninstallCards({ ...CULTURE_PRODUCERS, ...FOOD_PRODUCERS }));
 
   it('credits population as a durable, multi-round enabler when it is not itself goal-valued', () => {
     const deck = ['toolmaking', 'toolmaking', 'foraging', 'foraging', 'farm', 'farm', 'bead_workshop', 'bead_workshop'];
@@ -220,17 +245,63 @@ describe('population capacity enabler', () => {
     expect(withStrong.weight.population!).toBeGreaterThan(weakOnly.weight.population!);
   });
 
-  it('rises with banked population then saturates at the cap', () => {
-    const m = deriveEnablers(pyramidRoot(['toolmaking', 'toolmaking', 'foraging', 'foraging']));
+  it('credits the board\'s own population gross but nets what growth eats', () => {
+    const deck = ['toolmaking', 'toolmaking', 'foraging', 'foraging'];
+    const m = deriveEnablers(pyramidRoot(deck));
+    const start = pyramidRoot(deck).startResources.population;
+    const pot = potOf(deck);
+
+    expect(pot(0)).toBe(0);
+    // The mouths the board opens on are sunk — no line can undo them, so they cost the credit nothing.
+    expect(pot(start)).toBe(m.weight.population! * start);
+    // Every person past that pays their own upkeep out of their credit, so growth is worth strictly less
+    // than the gross rate — and eventually nothing at all, the derived saturation.
+    expect(pot(start + 2)).toBeLessThan(m.weight.population! * (start + 2));
+    expect(pot(100)).toBe(pot(50));
+  });
+
+  it('keeps more of the credit the better the run can feed a worker', () => {
+    // The netting is in worker-rounds: a person eats `foodPerNextPop` and it takes
+    // `foodPerNextPop / foodPerWorker` of a worker to source, so a richer food producer leaves more of the
+    // person's own credit intact. Neither producer outputs a goal resource, so `weight.population` is
+    // identical across the two and only the netting can move the potential.
+    const grown = pyramidRoot(['toolmaking']).startResources.population + 3;
+    const thin = potOf(['toolmaking', 'test_thin_food'])(grown);
+    const rich = potOf(['toolmaking', 'test_rich_food'])(grown);
+    expect(rich).toBeGreaterThan(thin);
+    expect(deriveEnablers(pyramidRoot(['toolmaking', 'test_rich_food'])).weight.population).toBe(
+      deriveEnablers(pyramidRoot(['toolmaking', 'test_thin_food'])).weight.population,
+    );
+  });
+
+  it('reads the food rate off the run\'s instances, so a stickered copy feeds what it really yields', () => {
+    // `foodPerWorker` walks instances rather than `CARDS`: an Irrigated Farm really does feed more, and
+    // pricing it at its base rate would charge a person several times what feeding them costs.
+    const grown = pyramidRoot(['toolmaking']).startResources.population + 3;
+    const bare = potOf(['toolmaking', 'farm'])(grown);
+    const irrigated = potOf(['toolmaking', { cardId: 'farm', stickers: ['irrigation', 'irrigation'] }])(grown);
+    expect(irrigated).toBeGreaterThan(bare);
+  });
+
+  it('feeds nobody from a deck with no per-worker food, so growth earns nothing', () => {
+    const deck = ['toolmaking', 'toolmaking'];
+    const start = pyramidRoot(deck).startResources.population;
+    const pot = potOf(deck);
+    expect(pot(start + 4)).toBe(pot(start));
+  });
+
+  it('charges no upkeep where the derived credit is absent, so a goal-valued pool is never penalised', () => {
+    // The netting rides on the *derived* throughput, not the composed weight: on Masonry growing population
+    // is the win, and a charge landing there would fight the objective band it serves.
+    const m = deriveEnablers(masonryRoot());
+    expect(m.foodPerWorker).toBeUndefined();
     const pot = (population: number) => {
-      const G = pyramidRoot(['toolmaking', 'toolmaking', 'foraging', 'foraging']);
+      const G = masonryRoot();
       G.resources = emptyResources();
       G.resources.population = population;
       return enablerPotential(G, m);
     };
-    expect(pot(0)).toBe(0);
-    expect(pot(5)).toBeGreaterThan(pot(0));
-    expect(pot(100)).toBe(pot(50)); // saturates at the cap — hoarding population past it earns nothing
+    expect(pot(6)).toBeGreaterThanOrEqual(pot(2));
   });
 
   it('does not double-credit population when it is itself the objective (Masonry)', () => {

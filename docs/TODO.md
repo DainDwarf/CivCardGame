@@ -151,25 +151,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `[size: M]` — `sim/objective.ts`'s `objectiveProgress` scores a met sub-goal as pure progress, so the
   planner takes one as soon as it can afford it even when holding it is a standing drain. The cost
   accrues over later rounds, past the beam's horizon, so nothing ever charges it back.
-  **Measured on `growing_numbers`**, where it inverts the policy bracket: **planner 78/100 vs greedy
-  97/100** — the only cell in the set where greedy beats the planner. Every planner loss is famine, and
-  `farm` plays/run is **0.78**, exactly its win rate: the Farm is the term it dies before reaching.
-  Planner ends on 3.3🌾, greedy on 10.6.
-  The mission's two building terms are asymmetric and share one slot (the goal's 2🗺️ is *exactly* Hut +
-  Farm, so at 1🗺️ they compete). **Farm** is a staffed permanent producer, +1🌾/worker/round. **Hut**
-  grants +1🧍, which raises upkeep from `floor(2²/4)=1` to `floor(3²/4)=2` — and the marginal worker
-  foraging returns +1🌾, so it is *break-even at best* and negative the moment that worker does anything
-  else. The Hut is a liability from the turn it lands until the turn you win.
-  `--seed 0` shows it cleanly on one shuffle: planner plays Hut turn 7, never affords the second
-  Conquest, and dies turn 13 on 0🌾 holding **7🔨 it has nothing to spend on** (its only slot is under
-  the Hut). Greedy on the same seed plays Farm turn 10, banks ⚔️, Conquests turn 17 and plays **Hut as
-  the winning move on turn 18**, never dropping below 8🌾 — paying the pop tax for zero rounds.
-  So this cell's 78% is a policy reading, not a difficulty one, and the same shape will bite any goal
-  whose terms carry ongoing upkeep. Next measurements, both cheap: `--policies greedy2 --seeds 100` on
-  the fixture (should also win high if this is the gap), and `--policies deepPlanner --seed 0` (a flip
-  to a win says horizon, not weighting). The fix must be **general and mechanical** like its sibling
-  above — a met goal's *carried* cost is derivable from the card's `effect`/`upkeep` against
-  `foodUpkeep`, never a per-mission hint.
+  **Needs a new case.** The one this was written from — `growing_numbers`, where the Hut's +1🧍 raised
+  upkeep faster than the marginal worker could forage and inverted the policy bracket at planner 78 vs
+  greedy 97 — no longer reproduces: netting population's capacity credit against its food took that cell
+  to **100/100**, every famine included. That fix charged the *pool* the goal term grants, not the goal
+  term itself, so the mechanism above is untested rather than disproven; it wants a goal whose met term
+  carries a drain the population net doesn't reach. The fix must stay **general and mechanical** — a met
+  goal's *carried* cost is derivable from the card's `effect`/`upkeep`, never a per-mission hint.
 - **`scoreState` credits a goal resource whose own accumulation is the threat** — the objective gradient
   reads `pool / target` while bands 2/3/5 see one turn, so when *holding* the goal resource is the danger
   the upside is scored and the liability is not. Accounting is the live case (`envious_population` mints a
@@ -177,15 +165,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   46 → 70%. Generic to any goal whose pool feeds a threat's `on.*`. Fix stays sim-local. `[size: M]`
 - **`CAPACITY_CAP` ignores the goal's own threshold** — a strategic pool is credited linearly to 12 even
   when the objective wants 3 of it, so the planner grows past the win and pays the upkeep. Measured on
-  `first_temple` (3🧍): planner 98 → 96, famine 2 → 4. The cap is also inert for population/territory in
-  practice — nothing reaches 12. `[size: S]`
-- **Population's capacity credit is gross, not net of its food curve** `[size: M]` — `strategicWeight`
-  credits a worker `CAPACITY_HORIZON` rounds of goal throughput and charges nothing for the upkeep it
-  commits to, on the stated argument that bands 2–3 cover it. They don't: on `wheel`/city House scores
-  **+200** against band 3's **−75**, and band 2 fires three rounds too late to brake. The credit was
-  tuned against `FOOD_PER_POP = 1` and never re-derived when upkeep became `floor(pop²/4)` — the curves
-  cross at pop 4, so the opening now reads *safer* than when it was tuned while `CAPACITY_CAP`'s pop 12
-  costs 36🌾/round instead of 12. Net `foodPerNextPop` off the credit, derived rather than a constant.
+  `first_temple` (3🧍): planner 98 → 96, famine 2 → 4. The cap is also inert for territory in practice —
+  nothing reaches 12 — and now for population too, whose food net saturates the credit well below it, so
+  only culture is still bounded by the constant. `[size: S]`
+- **Population's food net counts only worker-sourced food** `[size: S]` — `bestFoodPerWorker` requires
+  `workers >= 1`, so a trade route's flat yield (Bartering's 2🌾/round) contributes nothing to the
+  denominator and a route-fed deck is charged as if every mouth had to be foraged for. Defensible under the
+  worker-rounds framing — a route costs no worker, so it offsets no worker — but it *does* offset the food,
+  which is what the charge is actually about.
+- **The two sides of population's net are derived by different methods** `[size: S]` — `bestFoodPerWorker`
+  reads the run's *instances* through `effectiveGain` while `bestGoalThroughput` stays a static scan over
+  `CARDS`, so a stickered **food** producer is priced at what it really yields and a stickered **goal**
+  producer at its printed base. The asymmetry was deliberate — widening the goal side moves the credit on
+  every mission at once, which would have made the population-net sweep unattributable — but it leaves an
+  Elegant Sun Stone under-crediting the worker that staffs it. Wants its own measured pass.
 - **`PRODUCER_CREDIT_CAP` is whole-tableau, so a structure's marginal credit is zero once reached** — on
   Pyramid five structures sum ~41 against a cap of 15, leaving a wonder worth ~27 adding nothing at the
   leaf. Raising it 0.05 → 0.25 was tried and **reverted**: it cost `accounting` 18 points by making the
@@ -224,6 +217,28 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Population's capacity credit is net of its food curve** ✅ — `sim/enablers.ts` credited a unit of
+  population `CAPACITY_HORIZON` rounds of goal throughput and charged nothing for the food that person then
+  eats every round after, so on `wheel`/City a House scored **+200** with its +3🌾/round standing cost
+  unpriced. The two now net.
+  - Charged **in worker-rounds, not in score**: the n-th person eats `foodPerNextPop(n)`, which takes
+    `foodPerNextPop(n) / foodPerWorker` of a worker to source, so that fraction of their own credit goes on
+    feeding themselves. Both sides are then one quantity — a worker's goal throughput — and the goal's
+    target size cancels. Pricing the food in score was tried first, at band 3's own
+    `bufferTurns × bufferWeight = 75`, and **abandoned**: the credit is a goal *fraction*, so the same
+    worker is worth 100 on `wheel` (goal wants 6🗺️) and 10 on `pyramid` (40🔨), and a flat charge zeroes
+    one while sparing the other.
+  - `foodPerWorker` walks the run's **instances** through `effectiveGain`, so `wheel`'s double-Irrigated
+    Farm feeds at 3🌾/worker; at the static `CARDS` rate the credit would vanish from the second person on
+    every deck. Growth counts only past the board's starting population — those mouths are sunk — and is
+    clamped per person at their own credit, which is where the derived saturation comes from.
+  - Rides the *derived* throughput, not the composed weight, so a goal-valued pool (Masonry's population)
+    and one carrying only the intrinsic floor are never charged.
+  - Planner @100 over the standing set: `growing_numbers` **78 → 100** (famine 22 → 0), `wheel`
+    **55 → 73** (famine 35 → 13, stall 8 → 12), `reading_seasons` 96 → 100, `rites_rituals` 96 → 99,
+    `first_temple` 96 → 98, `pyramid` **18 → 13** (the deadline it now misses more often, having stopped
+    dying of famine); the other 11 cells' win rates unmoved. Oracle @10 unmoved at every cell — the
+    ceiling is unchanged, only the lines it takes to reach it.
 - **Continuous integration on GitHub** ✅ — one workflow on every push to `main`/`Latest`: a fast
   `typecheck` · `test` · `build` job, plus a **fixture-per-runner** job that re-measures the standing
   baseline set and asserts it still describes the code (sweep → `sim:report --against` into the job

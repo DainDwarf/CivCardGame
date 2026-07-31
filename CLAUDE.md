@@ -528,7 +528,10 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   card the objective *counts*, probed by injecting run cards into the goal-measured zones), a held
   strategic resource (territory/population/culture) for the goal-throughput its capacity *unlocks*, and
   an owned durable producer for the output rounds past the projected turn, turning the greedies' flat
-  plateau into a slope. Each mechanism is a separately-ablatable `EnablerTerms` toggle: the planner
+  plateau into a slope. Population's capacity credit is **net of the food its growth commits to** — the
+  one capacity carrying a standing cost — charged in worker-rounds (`foodPerNextPop / foodPerWorker`,
+  the latter read off the run's *instances* so a stickered producer feeds what it really yields) rather
+  than in score, so the netting can't turn on how large a number the mission's goal happens to ask for. Each mechanism is a separately-ablatable `EnablerTerms` toggle: the planner
   ships the measured lean subset (`DEFAULT_ENABLER_TERMS` — capacity/producers/cardCosts), the oracle
   the full all-on model (it proves winnability, and the full model finds strictly more wins — the
   decision is recorded on `DEFAULT_ENABLER_TERMS` in `sim/enablers.ts`). `turnSearch.ts` is the
