@@ -231,8 +231,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   because the simulator is deterministic: rows that no longer reproduce mean the content moved and owes a
   re-record.
   - The fan-out is derived from each fixture's own `results` keys and row counts
-    (`scripts/baselineMatrix.mjs`), never from a named protocol — so an unmeasured fixture drops out
-    instead of being swept into a false failure the moment a mission ships.
+    (`scripts/baselineMatrix.mjs`), never from a named protocol, so a cell measured under a different
+    policy set re-verifies under that set. A fixture with no rows has nothing to sweep and falls out of
+    the matrix — so a **separate job** asserts the set is fully measured, since a fixture is cut by a
+    balance pass and one committed without its rows is an accident, not a stage.
   - Each runner uploads its sweep CSV, so a legitimate rebalance is recorded from CI's measurement
     rather than paying for the sweep a second time locally.
   - The Pages deploy became this workflow's tail (`deploy.yml` folded in), gated on both jobs, so a red

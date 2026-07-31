@@ -148,9 +148,11 @@ the simulator is deterministic, so recorded rows that no longer reproduce mean t
 **owes a re-record** — which is the whole point of the check. Each runner uploads its sweep CSV, so a
 legitimate rebalance is recorded from CI's measurement (`npm run sim:record -- <sweep>.csv`) instead of
 paying for the sweep again locally. `scripts/baselineMatrix.mjs` derives the fan-out from each fixture's
-own `results` keys and row counts rather than naming the protocol, so an unmeasured fixture drops out
-instead of being swept into a false failure. The Pages deploy is the same DAG's tail, gated on both jobs
-and on `Latest` — a red baseline blocks it.
+own `results` keys and row counts rather than naming the protocol, so a cell measured under a different
+policy set re-verifies under that set. Its `--verify` mode is a **separate job**: an unmeasured fixture
+has nothing to sweep and so falls out of the matrix, and a fixture is cut *by* a balance pass, so one
+committed without its rows is an accident and fails there rather than passing in silence. The Pages
+deploy is the same DAG's tail, gated on all three jobs and on `Latest` — a red baseline blocks it.
 
 ## Architecture
 

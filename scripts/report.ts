@@ -75,10 +75,10 @@ interface Measurement {
   configs: Map<string, CellConfig>;
 }
 
-/** Fold every fixture under `arg` (a fixture path or a directory of them) into its recorded runs. An
- *  unmeasured fixture is a normal member of the standing set — a freshly-shipped mission has one until its
- *  balance pass cuts it — so folding a directory skips it and says so on stderr rather than failing the
- *  whole read. Naming one explicitly still fails: there is nothing else the caller could have meant. */
+/** Fold every fixture under `arg` (a fixture path or a directory of them) into its recorded runs. A
+ *  fixture is unmeasured only between being written and being recorded, so folding a directory skips it
+ *  and says so on stderr rather than failing a read of the other sixteen. Naming one explicitly still
+ *  fails: there is nothing else the caller could have meant. */
 function readFixtures(arg: string): Measurement {
   const paths = expandBaselinePaths([arg]);
   const out: Measurement = { records: [], configs: new Map() };

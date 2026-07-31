@@ -28,6 +28,19 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  # Its own job rather than a step of `fixtures`, so one unrecorded fixture cannot skip the whole matrix
+  # and take the other cells' verification down with it.
+  standing-set:
+    name: standing set is measured
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node scripts/baselineMatrix.mjs --verify
+
   # One matrix entry per *measured* fixture, derived from the standing set itself — see the script.
   fixtures:
     name: list baselines
@@ -111,7 +124,7 @@ jobs:
   pages:
     name: build Pages
     if: github.ref == 'refs/heads/Latest'
-    needs: [check, baselines]
+    needs: [check, standing-set, baselines]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
