@@ -147,27 +147,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   more rounds the current stores survive — the same way `enablers.ts` derives its slope from
   `cost`→`produces` rather than from authored hints. Blocks trusting greedy/planner on any
   rounds-survived mission; `ice_age` and `sandbox` dodge it only because the sim doesn't drive them.
-- **The objective gradient credits a goal term the instant it lands, ignoring what it then costs**
-  `[size: M]` — `sim/objective.ts`'s `objectiveProgress` scores a met sub-goal as pure progress, so the
-  planner takes one as soon as it can afford it even when holding it is a standing drain. The cost
-  accrues over later rounds, past the beam's horizon, so nothing ever charges it back.
-  **Needs a new case.** The one this was written from — `growing_numbers`, where the Hut's +1🧍 raised
-  upkeep faster than the marginal worker could forage and inverted the policy bracket at planner 78 vs
-  greedy 97 — no longer reproduces: netting population's capacity credit against its food took that cell
-  to **100/100**, every famine included. That fix charged the *pool* the goal term grants, not the goal
-  term itself, so the mechanism above is untested rather than disproven; it wants a goal whose met term
-  carries a drain the population net doesn't reach. The fix must stay **general and mechanical** — a met
-  goal's *carried* cost is derivable from the card's `effect`/`upkeep`, never a per-mission hint.
 - **`scoreState` credits a goal resource whose own accumulation is the threat** — the objective gradient
   reads `pool / target` while bands 2/3/5 see one turn, so when *holding* the goal resource is the danger
   the upside is scored and the liability is not. Accounting is the live case (`envious_population` mints a
   Thief per 10🪙 on `on.reshuffle`, an event no band models): beam width alone moves proven winnability
   46 → 70%. Generic to any goal whose pool feeds a threat's `on.*`. Fix stays sim-local. `[size: M]`
-- **`CAPACITY_CAP` ignores the goal's own threshold** — a strategic pool is credited linearly to 12 even
-  when the objective wants 3 of it, so the planner grows past the win and pays the upkeep. Measured on
-  `first_temple` (3🧍): planner 98 → 96, famine 2 → 4. The cap is also inert for territory in practice —
-  nothing reaches 12 — and now for population too, whose food net saturates the credit well below it, so
-  only culture is still bounded by the constant. `[size: S]`
 - **Population's food net counts only worker-sourced food** `[size: S]` — `bestFoodPerWorker` requires
   `workers >= 1`, so a trade route's flat yield (Bartering's 2🌾/round) contributes nothing to the
   denominator and a route-fed deck is charged as if every mouth had to be foraged for. Defensible under the
