@@ -88,7 +88,7 @@ export const CODEX_CARD_KINDS: CardKindEntry[] = [
     kind: 'trade',
     name: 'Trade route',
     definition:
-      'Pay their cost to open a route on one of your territories. A route needs no workers, but it holds its slot and its rent is charged every round for the rest of the run — there is no way to close one, so a treasury that cannot pay goes bankrupt.',
+      'Pay their cost to open a route. A route needs no workers and no territory, but its rent is charged every round for the rest of the run — there is no way to close one, so a treasury that cannot pay goes bankrupt.',
   },
   {
     kind: 'event',

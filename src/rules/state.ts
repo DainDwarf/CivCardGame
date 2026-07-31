@@ -58,9 +58,9 @@ export type WorkInstance = PlacedCard;
 export type ThreatInstance = CardInstance;
 
 /** A trade route standing in the `tradeRoutes` zone, ticking through the `endTurn` broadcast like a
- *  threat but *played* by the player. It holds a territory slot for the rest of the run like a building,
- *  and is a `PlacedCard` at `workers: 0` — it takes no workers, which is exactly what a zero worker
- *  count means anywhere else on the board (`population.ts`'s self-sufficient case). Its card is not
+ *  threat but *played* by the player. It costs no land — `territory.ts`'s `usedTerritory` measures the
+ *  tableau alone — and is a `PlacedCard` at `workers: 0`, which is exactly what a zero worker count
+ *  means anywhere else on the board (`population.ts`'s self-sufficient case). Its card is not
  *  `isStaffable`, so nothing looks up a worker *capacity* for it. */
 export type TradeRouteInstance = PlacedCard;
 

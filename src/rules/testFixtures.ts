@@ -125,7 +125,7 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
     cost: {}, workers: 1, produces: { resources: { food: 3 } },
   },
 
-  // --- Trade route: stands in its own zone once played, taking a territory slot but no workers, and
+  // --- Trade route: stands in its own zone once played, taking neither land nor workers, and
   // both yields (`produces`, flat) and pays rent (`upkeep`) at every upkeep boundary until the run
   // ends. ---
   test_trade: {
@@ -434,12 +434,8 @@ export const FIXTURE_MISSIONS: Record<string, MissionDef> = {
   },
 };
 
-// --- Install / uninstall ---------------------------------------------------------------------------
+// --- Instance minting ------------------------------------------------------------------------------
 
-/** Splice an arbitrary card record into the live `CARDS` for a test's duration — the generic primitive
- *  a test uses to install *its own* local fixtures (e.g. `events.test.ts`'s cascade/self-removal cards,
- *  which are specific to that suite and don't belong in the shared set) on top of the shared ones,
- *  without itself value-importing `content/cards`. Pair with `uninstallCards` in teardown. */
 /** Mint one card instance to hand to `addBuilding`/`addWork`/`openTradeRoute`, which take the played
  *  copy rather than a cardId. Ids come from `nextInstanceId`, the same source `moves.ts` draws the
  *  played instance's id from, so a test never invents an id that collides with a seeded zone. */
@@ -447,6 +443,12 @@ export function mint(G: GameState, cardId: string, stickers?: string[]): CardIns
   return { id: nextInstanceId(G), cardId, ...(stickers?.length ? { stickers } : {}) };
 }
 
+// --- Install / uninstall ---------------------------------------------------------------------------
+
+/** Splice an arbitrary card record into the live `CARDS` for a test's duration — the generic primitive
+ *  a test uses to install *its own* local fixtures (e.g. `events.test.ts`'s cascade/self-removal cards,
+ *  which are specific to that suite and don't belong in the shared set) on top of the shared ones,
+ *  without itself value-importing `content/cards`. Pair with `uninstallCards` in teardown. */
 export function installCards(cards: Record<string, CardDef>): void {
   for (const [id, def] of Object.entries(cards)) CARDS[id] = def;
 }

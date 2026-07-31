@@ -219,9 +219,9 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   the UI preview `projectedDelta` so the two can't drift.
 - **`territory.ts`** — the **play area** and the tableau's cap, two separate things. `placedCards` is
   the single read-path for everything standing on the board (tableau ∪ workZone ∪ tradeRoutes — not
-  the mission's threats/objective), used by the instance-id scan and the UI. The cap is narrower:
-  `usedTerritory`/`freeTerritory` measure the **tableau alone** (`cards.ts`'s `isStructure`, the gate
-  in `playability.ts`), so land is what buildings and wonders compete for. The other two board zones
+  the mission's threats/objective), used by the instance-id scan and the sim's staffable enumeration.
+  The cap is narrower: `usedTerritory`/`freeTerritory` measure the **tableau alone** (`cards.ts`'s
+  `isStructure`, the gate in `playability.ts`), so land is what buildings and wonders compete for. The other two board zones
   are uncapped and bounded by their own economics instead — a Work box by the workers free to run it,
   a trade route by its rent.
 - **`deckBuilder.ts`** — deck *construction* in terms of the **`DeckCard`** variant (a cardId + the
