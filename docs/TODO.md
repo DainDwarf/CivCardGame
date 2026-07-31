@@ -45,22 +45,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Run loop (`src/rules/`, `src/run/`)
 
-- **Collapse the three board zones into one** `[size: M]` `[?]` — `GameState` still holds `tableau`,
-  `workZone` and `tradeRoutes` as three separate `PlacedCard[]`s; they are already *presented* as one
-  board in the data (`territory.ts`'s `placedCards` concatenates them for the instance-id scan and the
-  UI's box lookup) even though they now render as three zones again and only the tableau is capped.
-  Merging them into one array would read the per-kind behaviour off `CARDS[c.cardId].kind` where it's
-  actually needed. **Re-read under the zone split before building it** — the three zones being visible
-  again weakens the "they're already one board" argument this item opened with.
-  - **What the split still encodes** is lifecycle, and that's what has to survive the merge: the
-    tableau persists, the workZone clears every end of turn (`upkeep.ts`'s `discardWorkZone`), routes
-    persist but take no workers and tick flat rather than per-worker. Today those are "which array am
-    I in"; after, they're a kind check at the filing and production sites.
-  - **Consequence for goals/effects that count board cards:** `first_trades_goal` reads
-    `G.tradeRoutes.length` to mean "a route stands". Against one merged array that has to become a
-    kind filter, or it counts every Farm. Sweep for other zone-name reads before starting —
-    `sim/enablers.ts`'s goal probe and `oracleKey.ts`'s per-zone folds both name the zones directly.
-  - Was an IDEAS candidate; promoted here 2026-07-27.
 - **Removal cards — trade cancellation + building destroy** `[size: M]` `[?]` — the trade zone ships with
   routes **permanent**; this is the half deliberately held back. Playing a trade route would *also* mint a
   free **Trade Cancellation** into the **discard**; playing that closes one chosen route (route →
