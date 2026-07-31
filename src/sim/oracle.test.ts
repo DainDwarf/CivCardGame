@@ -124,8 +124,8 @@ describe('seeded oracle — winnability search + replay seam', () => {
 
   it('derives the search depth from the sweep cutoff, and only from an explicit finite one', () => {
     expect(searchBoundsFor({ maxRounds: 120 })).toEqual({ maxRounds: 120 });
-    // An absent or disabled cutoff must leave the calibrated default rather than write `undefined` over
-    // it (the options spread would) or search unbounded.
+    // An absent or disabled cutoff must leave the module default rather than write `undefined` over it
+    // (the options spread would) or search unbounded.
     expect(searchBoundsFor({})).toEqual({});
     expect(searchBoundsFor(undefined)).toEqual({});
     expect(searchBoundsFor({ maxRounds: Infinity })).toEqual({});

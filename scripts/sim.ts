@@ -346,8 +346,9 @@ function formatAction(action: SimAction, G: GameState): string {
 }
 
 function replay(cell: Cell, policyName: string, idx: number): void {
-  // The seed keys must be built from the cell *label*, exactly as `runBatch` does — that's what makes a
-  // replay re-run the same shuffle and moves as the batch cell it is reproducing.
+  // A replay must reconstruct the batch cell *whole*: the seed keys built from the cell label exactly as
+  // `runBatch` does (same shuffle, same moves), and the same sweep options handed to the policy factory —
+  // a search policy built at different bounds would report a different outcome for the row it reproduces.
   const config = simConfig({
     deckCardIds: cell.deck,
     board: cell.board.board,
@@ -355,7 +356,7 @@ function replay(cell: Cell, policyName: string, idx: number): void {
     missionId: cell.missionId,
     seed: `${cell.label}-cfg-${idx}`,
   });
-  const policy = POLICY_FACTORIES[policyName](`${cell.label}-pol-${idx}`);
+  const policy = POLICY_FACTORIES[policyName](`${cell.label}-pol-${idx}`, simOpts, searchOpts);
 
   const lines: string[] = [];
   let turnStart = '';

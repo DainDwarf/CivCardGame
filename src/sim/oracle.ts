@@ -77,7 +77,7 @@ export type SearchResult = { found: true; line: SimAction[] } | { found: false; 
 const DEFAULTS: Required<OracleOptions> = {
   beamWidth: 64,
   turnConfigLimit: 32,
-  maxRounds: 50,
+  maxRounds: 200,
   nodeBudget: 3_000_000,
   enablers: true,
 };
@@ -176,10 +176,9 @@ export const noWinReason = (exhausted: SearchExhaustion): string => `${NO_WIN_RE
  * They measure the same thing from opposite ends and disagreeing is always a bug: a line *longer* than the
  * drive cutoff gets recorded as a `stall` even when the search finds it (wasted search), and a cap
  * *shorter* than it reports `noWinFound` on seeds winnable inside the very runs the sweep asked for (a
- * false negative). Only an explicit cutoff propagates — an absent one leaves the calibrated
- * {@link DEFAULTS}, since the drive loop's own default (200) is a runaway backstop, not a statement about
- * how deep anyone wants to search. `Infinity` is dropped for the same reason: it disables the drive
- * cutoff, but an unbounded search would not terminate.
+ * false negative). With no cutoff named the two already agree — {@link DEFAULTS} carries the drive loop's
+ * own default depth — so this only has to carry an *explicit* one across. `Infinity` is dropped: it
+ * disables the drive cutoff, but an unbounded search would not terminate.
  */
 export function searchBoundsFor(sim?: SimOptions): OracleOptions {
   const cap = sim?.maxRounds;

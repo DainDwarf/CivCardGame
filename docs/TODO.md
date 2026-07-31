@@ -295,8 +295,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   proven line longer than the cutoff is discarded as a `stall` anyway (wasted search), and a cap shorter
   than it reports `noWinFound` on seeds winnable inside the runs the sweep asked for (a false negative).
   `POLICY_FACTORIES` entries now take the sweep's `SimOptions`, and the two search policies derive their
-  depth from it via `searchBoundsFor`. Only an *explicit finite* cutoff propagates — the drive loop's own
-  default (200) is a runaway backstop, not a search depth, and `Infinity` would never terminate.
+  depth from it via `searchBoundsFor`. The search's own default moved 50 → 200 to match the drive loop's,
+  so an unflagged sweep agrees by construction; only an *explicit finite* cutoff propagates, `Infinity`
+  being dropped as an unbounded search would never terminate. Re-measuring `baselines/results/oracle.json`
+  across the move left every row unchanged — depth was not the binding bound on the standing set. Replay (`--seed`) builds its policy from the
+  same `SimOptions`/`OracleOptions` as the batch, or it would reproduce a row at different bounds.
 
 - **Mission detail panel shows mid-play injections** ✅ — the panel's card list read `threats`/`events`
   alone, so a card a run only *breeds* was invisible: Accounting is about Thieves, but the Thief is
