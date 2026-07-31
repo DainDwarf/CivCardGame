@@ -47,7 +47,7 @@ npm run sim -- --baseline <paths|dir>
 npm run sim -- --scenario <ids> --deck <file> --board <id|file>
                [--seeds 100] [--policies random,heuristic,greedy] [--max-rounds 200] [--seed <i>] [--verbose]
 
-npm run sim:report -- <sweep.csv | fixture.json | baselines dir> [--format text|json]
+npm run sim:report -- <sweep.csv | fixture.json | baselines dir> [--format text|json] [--against <paths|dir>]
 npm run sim:record -- <sweep.csv> [--baseline <paths|dir>]
 ```
 
@@ -79,7 +79,11 @@ has no comment syntax to hide it, so `sim:report --format json` needs `--silent`
 
 And on `sim:report`: `--format text` (default, the human report) or `json` (the raw summaries).
 Takes a sweep file, a baseline fixture, a directory of fixtures, or stdin if nothing is given —
-so the standing set's committed numbers are readable with no sweep at all.
+so the standing set's committed numbers are readable with no sweep at all. `--against
+<paths|dir>` **compares** instead of folding: the input is the new measurement, the flag names the
+recorded one, and the output is one block per cell that moved — win rate, turns, the end pools that
+shifted, the defeat causes that traded, and which seeds crossed the win/defeat line. Unmoved cells
+collapse to a count. See *Compare a content variant*.
 
 And on `sim:record`: `--baseline <paths|dir>` says where the fixtures live (default
 `scripts/sim/baselines`). It replaces one `results[policy]` key per swept policy and touches
@@ -98,6 +102,7 @@ npm run --silent sim -- --baseline scripts/sim/baselines --policies greedy,plann
 npm run sim:report -- sweep.csv
 npm run sim:record -- sweep.csv
 npm run sim:report -- scripts/sim/baselines/masonry.json
+npm run sim:report -- variant.csv --against scripts/sim/baselines
 npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies oracle --seeds 20 > oracle.csv
 npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board <board> --seeds 500 > sweep.csv
 ```
@@ -276,23 +281,27 @@ Two kinds of variable:
   process can never see an edit made after it started. Do it as an automated baseline → edit → variant
   → rollback → compare sequence:
 
-  1. Fix the `--scenario` / `--deck` / `--board` / `--seeds` so both runs are a paired comparison
-     (same seeds → identical shuffles → the content edit is the only variable). Use a policy that
-     actually reaches the mechanic (`greedy`/`heuristic` past the early game; `random` barely survives).
-  2. **Baseline numbers** — on a baseline-fixture cell, read the fixture's own committed rows
-     (`npm run sim:report -- scripts/sim/baselines/<id>.json`) and skip this run entirely; match the
-     variant sweep's `--policies`/`--seeds` to what the fixture holds (its `results[policy].rows`
-     length *is* the seed count). Only *measure* a baseline when the cell has none — an ad-hoc
-     `--deck`/`--board` comparison, or a fixture never swept. Capture to `scratchpad/baseline.csv`.
-  3. **Edit** the content value (the `Edit` tool on the real `src/content/*.ts`).
-  4. **Variant run** — same flags, capture to `scratchpad/variant.csv`.
-  5. **Roll back** with `git checkout -- src/content/<file>.ts`, then **verify clean**:
+  1. Pick the cells and the `--policies`/`--seeds`. On a baseline-fixture cell **match what the
+     fixture already holds** (`results[policy].rows` length *is* its seed count, the standing protocol
+     being greedy/planner @100, oracle @10) — the recorded rows are the baseline half, so there is no
+     baseline run. Use a policy that actually reaches the mechanic (`greedy`/`heuristic` past the early
+     game; `random` barely survives).
+  2. **Edit** the content value (the `Edit` tool on the real `src/content/*.ts`).
+  3. **Variant run** — capture to `scratchpad/variant.csv`.
+  4. **Roll back** with `git checkout -- src/content/<file>.ts`, then **verify clean**:
      `git status --porcelain src/content/<file>.ts` must print nothing. If it prints anything, the
      rollback failed — say so loudly and stop; do not report the comparison as if the tree were clean.
      (This repo commits directly to `main`; a stray content edit would be swept into the next commit.)
-  6. **Compare** — `sim:report` both files — and present the deltas — win rate, turns
-     (min/median/mean/max), defeat-cause histogram — not the raw dumps, and not a verdict on whether
-     the edit is an improvement. Both CSVs are kept, so a follow-up question (which seeds flipped?)
-     is a join on the `seed` column rather than a third sweep.
+  5. **Compare** — `npm run sim:report -- scratchpad/variant.csv --against scripts/sim/baselines`.
+     One block per cell that moved (win rate, turns, the end pools that shifted, the defeat causes that
+     traded, and which seeds crossed the win/defeat line); cells that did not move collapse to a count.
+     Present those deltas — not the raw dumps, and not a verdict on whether the edit is an improvement.
 
-  The player never sees the edit: it exists only between steps 3 and 5.
+  On an **ad-hoc** (`--deck`/`--board`) cell there is nothing recorded, so it needs a baseline run of
+  its own before step 2, and `--against` takes that CSV instead of the fixtures.
+
+  Read the caveats the report prints. `⚠ different seed counts` means the win-rate delta is across
+  different *n*; `not paired — no per-seed reading` means seed *i* is not the same shuffle on both
+  sides (the deck/board/mission differ), so the aggregate still compares but the flip list is withheld.
+
+  The player never sees the edit: it exists only between steps 2 and 4.

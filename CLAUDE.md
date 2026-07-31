@@ -103,9 +103,15 @@ surprise, so nothing shows a locked placeholder or a total count.
   or stdin) or a **baseline fixture / directory of them**, discriminated by content rather than
   extension, so the standing set's numbers are readable with no sweep at all — which is where a dossier's
   table comes from. `--format text|json`. `summarize` folds a `RunRecord[]` whatever its provenance, so a
-  live sweep, a re-read file and a committed fixture give the same numbers by construction. **Redirect
-  through `npm run --silent`** — npm's own `> package@version script` preamble goes to stdout, and while
-  the CSV reader skips past it, JSON has no comment syntax to hide it.
+  live sweep, a re-read file and a committed fixture give the same numbers by construction.
+  **`--against <paths|dir>`** compares instead of folding — the input is the new measurement, the flag
+  names the recorded one — printing one block per cell that moved (win rate · turns · the end pools that
+  shifted · the defeat causes that traded · **which seeds crossed the win/defeat line**) and collapsing
+  unmoved cells to a count. The per-seed reading is paired only because seed `i` shuffles the same deck
+  on both sides, so a differing seed set or a drifted deck/board/mission keeps the aggregate comparison
+  and withholds the flip list. **Redirect through `npm run --silent`** — npm's own `> package@version
+  script` preamble goes to stdout, and while the CSV reader skips past it, JSON has no comment syntax to
+  hide it.
 - `npm run sim:record` — recording tool (`scripts/record.ts`): merges a sweep's rows into the baseline
   fixtures that produced them (`--baseline <paths|dir>`, default `scripts/sim/baselines`), one
   `results[policy]` key replaced per swept policy and nothing else touched — the `note` in particular is
@@ -522,7 +528,9 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   what makes `--seed` a filter rather than a second code path. `groupRecords`/`summarize`/`formatReport`
   (`report.ts`) then fold a `RunRecord[]` — live or parsed back out of a sweep file, identically — into a
   per-cell win rate · turns · mean end resources · a defeat-cause histogram off the authoritative
-  recorded `outcome`. `RunRecord.outcome` is **one** field: `'win'`, else the defeat's reason verbatim
+  recorded `outcome`. `diffRecords`/`formatDiffReport` fold *two* such lists against each other, pairing
+  by (cell, policy) and then by seed — which is what makes "these 19 seeds went win→loss" sayable, and
+  what `paired` withholds when the seed sets or the underlying content differ. `RunRecord.outcome` is **one** field: `'win'`, else the defeat's reason verbatim
   (`WIN_OUTCOME`), so wins/defeats/one-cause are all a single equality. `runPolicies` sweeps one scenario
   under several named policies with *paired* seeds. `simConfig(...)` builds a content-agnostic
   `RunConfig` from a cardId/`DeckCard` deck (the sim counterpart to `buildRunConfig`).

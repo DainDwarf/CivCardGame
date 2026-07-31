@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { groupRecords, summarize } from './report';
+import { diffRecords, formatDiffReport, groupRecords, summarize, unpairDiff } from './report';
 import { runBatch, type Scenario } from './batch';
 import { simConfig, simulateRun, createRandomPolicy, STALL_REASON, WIN_OUTCOME, type RunRecord } from './index';
 import { emptyResources, type Resources } from '../rules/resources';
@@ -17,11 +17,13 @@ function record(opts: {
   cardPlays?: Record<string, number>;
   actions?: number;
   resources?: Partial<Resources>;
+  cell?: string;
+  seed?: number;
 }): RunRecord {
   return {
-    cell: 's',
+    cell: opts.cell ?? 's',
     policy: 'test',
-    seed: 0,
+    seed: opts.seed ?? 0,
     outcome: opts.outcome,
     turns: opts.turns,
     actions: opts.actions ?? 0,
@@ -149,5 +151,80 @@ describe('simulateRun cardPlays instrumentation', () => {
     expect(o.result.outcome).toBe('defeat');
     expect(o.gameover.reason).toBe(STALL_REASON);
     expect(o.result.stats.turnsTaken).toBe(o.finalState.round); // built through the real toRunResult
+  });
+});
+
+describe('diffRecords', () => {
+  const win = (seed: number, cell?: string) => record({ outcome: WIN_OUTCOME, turns: 5, seed, ...(cell ? { cell } : {}) });
+  const loss = (seed: number) => record({ outcome: 'famine', turns: 3, seed });
+
+  it('names the seeds that crossed the win/defeat line, each way', () => {
+    const before = [win(0), win(1), loss(2), loss(3)];
+    const after = [win(0), loss(1), win(2), loss(3)];
+    const [d] = diffRecords(before, after);
+    expect(d.flippedToLoss).toEqual([1]);
+    expect(d.flippedToWin).toEqual([2]);
+    expect(d.paired).toBe(true);
+    expect(d.unchanged).toBe(false);
+  });
+
+  it('calls a cell unchanged when every run is identical field-for-field', () => {
+    const runs = [win(0), loss(1)];
+    const [d] = diffRecords(runs, runs.map((r) => ({ ...r })));
+    expect(d.unchanged).toBe(true);
+    expect(d.flippedToWin).toEqual([]);
+  });
+
+  // Same outcomes, different turn counts: a rebalance that only moved the clock still moved something.
+  it('does not call a cell unchanged when a run differs off the outcome', () => {
+    const [d] = diffRecords([win(0)], [record({ outcome: WIN_OUTCOME, turns: 9, seed: 0 })]);
+    expect(d.unchanged).toBe(false);
+    expect(d.flippedToWin).toEqual([]);
+  });
+
+  // Ten runs against a hundred can have every shared seed agree while the two are not the same
+  // measurement — reading a win-rate delta across them is the mistake this guards.
+  it('refuses to pair two sides swept over different seed sets', () => {
+    const [d] = diffRecords([win(0), win(1), loss(2)], [loss(0)]);
+    expect(d.paired).toBe(false);
+    expect(d.unchanged).toBe(false);
+    expect(d.flippedToLoss).toEqual([]);
+    expect(d.before?.runs).toBe(3);
+    expect(d.after?.runs).toBe(1);
+  });
+
+  it('carries a cell only one side has, with the missing side absent', () => {
+    const diffs = diffRecords([win(0, 'old')], [win(0, 'new')]);
+    const fresh = diffs.find((d) => d.label === 'new')!;
+    const gone = diffs.find((d) => d.label === 'old')!;
+    expect(fresh.before).toBeUndefined();
+    expect(gone.after).toBeUndefined();
+    expect(fresh.paired).toBe(false);
+  });
+
+  it('drops the per-seed reading when the caller says the content changed', () => {
+    const [d] = diffRecords([win(0), win(1)], [win(0), loss(1)]);
+    const unpaired = unpairDiff(d, 'deck');
+    expect(unpaired.flippedToLoss).toEqual([]);
+    expect(unpaired.note).toBe('deck');
+    expect(unpaired.after).toEqual(d.after);
+  });
+});
+
+describe('formatDiffReport', () => {
+  it('collapses unchanged cells to a count and blocks only the ones that moved', () => {
+    const still = [record({ outcome: WIN_OUTCOME, turns: 5, seed: 0, cell: 'quiet' })];
+    const before = [record({ outcome: WIN_OUTCOME, turns: 5, seed: 0, cell: 'noisy' })];
+    const after = [record({ outcome: 'famine', turns: 5, seed: 0, cell: 'noisy' })];
+    const text = formatDiffReport(diffRecords([...still, ...before], [...still.map((r) => ({ ...r })), ...after]));
+    expect(text).toContain('## noisy');
+    expect(text).not.toContain('## quiet');
+    expect(text).toContain('unchanged: 1 of 2 swept cells');
+    expect(text).toContain('win→loss (0)');
+  });
+
+  it('says so plainly when nothing moved at all', () => {
+    const runs = [record({ outcome: WIN_OUTCOME, turns: 5, seed: 0 })];
+    expect(formatDiffReport(diffRecords(runs, runs.map((r) => ({ ...r }))))).toContain('nothing moved.');
   });
 });

@@ -6,6 +6,8 @@
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { variantKey } from '../src/rules/deckBuilder';
+import type { CellManifest } from '../src/sim';
 
 /** Print a clean one-line error and exit — a bad flag/file is a user mistake, not a stack-trace-worthy
  *  crash. */
@@ -54,6 +56,56 @@ export function simFileTools(fail: Fail): SimFileTools {
   };
 
   return { readJson, expandBaselinePaths };
+}
+
+// ---- Is a measurement still about this cell? ---------------------------------------------------------
+
+/** The three axes a cell *is*, in a form two differently-shaped sources compare through: a fixture on
+ *  disk and the `#cell` manifest a sweep carries. */
+export interface CellConfig {
+  mission: string;
+  board: string;
+  boardStickers: string[];
+  /** Variant key → copies, so the comparison survives presentation: the manifest groups the expanded deck
+   *  by variant, while a fixture may author the same variant as several entries, in any order. */
+  deck: Record<string, number>;
+}
+
+function deckTally(entries: { cardId: string; count?: number; stickers?: string[] }[]): Record<string, number> {
+  const tally: Record<string, number> = {};
+  for (const e of entries ?? []) {
+    const key = variantKey({ cardId: e.cardId, ...(e.stickers?.length ? { stickers: e.stickers } : {}) });
+    tally[key] = (tally[key] ?? 0) + (e.count ?? 1);
+  }
+  return tally;
+}
+
+export function cellConfigOfFixture(file: any): CellConfig {
+  const board = typeof file.board === 'string' ? { board: file.board, stickers: [] } : file.board ?? {};
+  return {
+    mission: file.mission,
+    board: board.board,
+    boardStickers: board.stickers ?? [],
+    deck: deckTally(file.deck ?? []),
+  };
+}
+
+export function cellConfigOfManifest(cell: CellManifest): CellConfig {
+  return { mission: cell.mission, board: cell.board, boardStickers: cell.boardStickers, deck: deckTally(cell.deck) };
+}
+
+/** What differs between two readings of the same cell, or `undefined` when nothing does. Two callers,
+ *  one question: `sim:record` refuses to file rows against a fixture that no longer describes them, and
+ *  `sim:report --against` drops the per-seed pairing, since the same seed index shuffles a different deck
+ *  on each side. */
+export function configDrift(a: CellConfig, b: CellConfig): string | undefined {
+  if (a.mission !== b.mission) return `mission '${a.mission}' vs '${b.mission}'`;
+  if (a.board !== b.board) return `board '${a.board}' vs '${b.board}'`;
+  if ([...a.boardStickers].sort().join() !== [...b.boardStickers].sort().join()) return 'board stickers';
+  // Sorted, because a tally's key order follows whichever entry order the source happened to author.
+  const tally = (d: Record<string, number>) => Object.keys(d).sort().map((k) => `${k}x${d[k]}`).join(',');
+  if (tally(a.deck) !== tally(b.deck)) return 'deck';
+  return undefined;
 }
 
 /** One line, spaced the way the fixtures are hand-authored (`{ "cardId": "farm", "count": 1 }`). */

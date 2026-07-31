@@ -209,11 +209,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `DEFAULT_ENABLER_TERMS`, so an A/B costs a source edit per run, and a fixture's recorded rows cannot
   say which config produced them. Want a `npm run sim` flag *and* the terms
   declared in the fixture, so a cell carries its shaping config like its mission/deck/board. `[size: M]`
-- **Report a sweep as a delta against a fixture's recorded rows** `[size: S]` — a baseline fixture now
-  holds its own rows, so `npm run sim:report -- sweep.csv --against <fixture|dir>` could fold both and
-  print recorded → new side by side (win rate, turns, defeat causes, which seeds flipped) instead of
-  leaving a rebalance's effect to be read off a per-seed `git diff`. The second half of the
-  one-file-per-configuration item, deliberately deferred: the diff already carries the raw signal.
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
@@ -229,6 +224,18 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **A sweep reports as a delta against what was recorded** ✅ — `npm run sim:report -- variant.csv
+  --against scripts/sim/baselines` pairs two measurements by (cell, policy) and then **by seed**, so a
+  content edit reports as one block per cell that moved — win rate, turns, the end pools that shifted,
+  the defeat causes that traded, and the seeds that crossed the win/defeat line — with unmoved cells
+  collapsed to a count. That last is what a `git diff` over rows could not say without a hand join.
+  - The per-seed reading is **paired only because seed `i` shuffles the same deck on both sides**, so
+    `diffRecords` withholds the flip list when the seed sets differ, and `sim:report` withholds it when
+    the fixture's deck/board/mission no longer matches what was swept (the check `sim:record` already
+    made, lifted to `scripts/simFiles.ts` and shared). The aggregate comparison survives both, since
+    comparing a rebalanced deck against the old baseline is a legitimate thing to want.
+  - Collapses the *Compare a content variant* recipe from six steps to five: the baseline run is gone
+    (the fixture holds it) and the two-report hand-diff is one command.
 - **A baseline fixture holds its own rows** ✅ — a cell's launch config
   (`scripts/sim/baselines/<id>.json`) and its measured numbers (a global `results/<policy-set>.json`)
   lived apart, bound only by a label string, so re-cutting a fixture stranded rows in a file nobody
@@ -245,7 +252,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     stale rows. `#sweep` now records **effective** values, so a sweep that named no flag still says what
     it ran at.
   - `sim:report` reads a fixture (or a directory of them) as well as a sweep file, which is where a
-    dossier's table now comes from. The delta report is deferred to its own item.
+    dossier's table now comes from.
 - **The simulator measures; a second tool folds** ✅ — `npm run sim` had two unrelated front-ends over
   one engine: a batch mode that destroyed every per-run fact in-process behind an aggregate report, and
   a `--seed` replay that was a separate code path with a different output. So a second question about a
