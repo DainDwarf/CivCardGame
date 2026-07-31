@@ -14,6 +14,12 @@
    look like a rule with no job: a deck too thin to survive its own reshuffle is already punished by
    the game, so the cap may be protecting against nothing. Would remove a committed core rule, so it
    wants a deliberate look rather than a quiet deletion.
+ - **Filter the card listings** (Collection + the deck editor's picker) — at least by age, maybe by
+   kind or by "has a sticker". The plumbing is already shaped for it: both screens hand one
+   `CardDef[]` to `cardSections`, which drops empty groups, so a predicate applied to that list is
+   the whole feature. The blocker is data — no `CardDef` carries an age. `missions.ts` documents the
+   intended derivation (a card's age = its unlocking mission's, via `reward.unlockCardIds` ×
+   `MissionDef.age`), which needs a fallback for the `STARTING_COLLECTION` cards no mission unlocks.
  - Give the military boards a +1 territory per conquest/territory giving cards?
  - Decreasing effectiveness of old cards? (If card comes from 2 ages ago, output -1, -2, etc?)
  - **Parameterized objective/threat cards** — today an "N-of-something" mission

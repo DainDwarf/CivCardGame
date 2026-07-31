@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { CARDS, compareCards, isDeckable } from '../content/cards';
+import { Fragment, useState } from 'react';
+import { CARDS, cardSections, isDeckable } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import { CardFace } from '../components/CardFace';
 import { copiesOwned, isOwned, type OwnedCards } from '../rules/collection';
@@ -46,21 +46,16 @@ export function Collection({
 
   // Mission-injected cards (event/threat/objective) are never part of the player's collection.
   const cards = Object.values(CARDS).filter((c) => isDeckable(c) && isOwned(collection, c.id));
-  const buildings = cards.filter((c) => c.kind === 'building').sort(compareCards);
-  const wonders = cards.filter((c) => c.kind === 'wonder').sort(compareCards);
-  const works = cards.filter((c) => c.kind === 'work').sort(compareCards);
-  const actions = cards.filter((c) => c.kind === 'action').sort(compareCards);
-  const trades = cards.filter((c) => c.kind === 'trade').sort(compareCards);
 
   return (
     <div className={styles.collection}>
       <h1 className={styles.title}>Collection</h1>
 
-      {buildings.length > 0 && (
-        <>
-          <h2 className={styles.sectionTitle}>Buildings</h2>
+      {cardSections(cards).map((section) => (
+        <Fragment key={section.kind}>
+          <h2 className={styles.sectionTitle}>{section.heading}</h2>
           <div className={styles.grid}>
-            {buildings.map((c) => (
+            {section.cards.map((c) => (
               <CardFace
                 key={c.id}
                 card={c}
@@ -71,80 +66,8 @@ export function Collection({
               />
             ))}
           </div>
-        </>
-      )}
-
-      {wonders.length > 0 && (
-        <>
-          <h2 className={styles.sectionTitle}>Wonders</h2>
-          <div className={styles.grid}>
-            {wonders.map((c) => (
-              <CardFace
-                key={c.id}
-                card={c}
-                className={styles.tile}
-                countBadge={copiesOwned(collection, c.id)}
-                upgradeHint={cardUpgradeAvailable(collection, influence, c.id, unlockedStickers)}
-                onClick={() => setDetail(c.id)}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      {works.length > 0 && (
-        <>
-          <h2 className={styles.sectionTitle}>Work</h2>
-          <div className={styles.grid}>
-            {works.map((c) => (
-              <CardFace
-                key={c.id}
-                card={c}
-                className={styles.tile}
-                countBadge={copiesOwned(collection, c.id)}
-                upgradeHint={cardUpgradeAvailable(collection, influence, c.id, unlockedStickers)}
-                onClick={() => setDetail(c.id)}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      {actions.length > 0 && (
-        <>
-          <h2 className={styles.sectionTitle}>Actions</h2>
-          <div className={styles.grid}>
-            {actions.map((c) => (
-              <CardFace
-                key={c.id}
-                card={c}
-                className={styles.tile}
-                countBadge={copiesOwned(collection, c.id)}
-                upgradeHint={cardUpgradeAvailable(collection, influence, c.id, unlockedStickers)}
-                onClick={() => setDetail(c.id)}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      {trades.length > 0 && (
-        <>
-          <h2 className={styles.sectionTitle}>Trade routes</h2>
-          <div className={styles.grid}>
-            {trades.map((c) => (
-              <CardFace
-                key={c.id}
-                card={c}
-                className={styles.tile}
-                countBadge={copiesOwned(collection, c.id)}
-                upgradeHint={cardUpgradeAvailable(collection, influence, c.id, unlockedStickers)}
-                onClick={() => setDetail(c.id)}
-              />
-            ))}
-          </div>
-        </>
-      )}
+        </Fragment>
+      ))}
 
       {detail && (
         <CardInstancePanel

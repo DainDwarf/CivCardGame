@@ -296,7 +296,11 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   with" predicate (excludes event/threat/objective); `isStructure(card)` the single "enters the tableau
   and takes a territory slot" one (`territory.ts`); `isDurableProducer(card)` names "stands on the board
   for the rest of the run, so its `produces` pays every round" (structure ∪ trade — a Work box pays once
-  per play). Holds the Paleolithic starting set + the first
+  per play). Also the display spine every card *listing* folds through: `KIND_RANK` (order) →
+  `compareCards` (the one comparator) → `KIND_SECTION_LABEL` (plural section headings) →
+  `cardSections(cards)`, which groups a listing into its per-kind sections and drops the empty ones —
+  so both meta card grids (`Collection.tsx`, `DeckEditor.tsx`'s picker) are one `map`, and a new kind
+  lands in the two compiler-total records alone. Holds the Paleolithic starting set + the first
   Stone Age structures (Farm/Hut/Sun Stone, the Göbekli Tepe wonder) + the endless missions' own cards.
 - **`decks.ts`** — `DeckDef` (`cards` = meta instance ids) plus `DeckSeed`/`DEFAULT_DECKS` (authored in
   plain cardIds, resolved by `buildSeedDecks`). A fresh player starts with one editable deck — the

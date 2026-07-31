@@ -151,6 +151,20 @@ export const KIND_RANK: Record<CardKind, number> = {
   objective: 7,
 };
 
+/** Section heading for a card listing grouped by kind — plural, where the codex's `name` is the
+ *  singular register. Total over `CardKind` like `KIND_RANK`, so a new kind cannot type-check
+ *  without a heading. */
+export const KIND_SECTION_LABEL: Record<CardKind, string> = {
+  building: 'Buildings',
+  wonder: 'Wonders',
+  work: 'Work',
+  action: 'Actions',
+  trade: 'Trade routes',
+  event: 'Events',
+  threat: 'Threats',
+  objective: 'Objectives',
+};
+
 /** Sort key: a leading "The " is dropped so "The Colossus" sorts under C. */
 function sortName(card: CardDef): string {
   return card.name.replace(/^the\s+/i, '');
@@ -160,6 +174,28 @@ function sortName(card: CardDef): string {
  *  add their own instance-id tiebreak to keep a card's copies contiguous. */
 export function compareCards(a: CardDef, b: CardDef): number {
   return KIND_RANK[a.kind] - KIND_RANK[b.kind] || sortName(a).localeCompare(sortName(b));
+}
+
+/** One kind's slice of a card listing. */
+export interface CardSection {
+  kind: CardKind;
+  heading: string;
+  cards: CardDef[];
+}
+
+/** Group a card listing into its display sections: one per kind actually present, in `KIND_RANK`
+ *  order, `compareCards`-sorted within each. A kind with no card yields no section, so a caller
+ *  narrowing its input renders fewer sections rather than empty ones. */
+export function cardSections(cards: CardDef[]): CardSection[] {
+  const byKind = new Map<CardKind, CardDef[]>();
+  for (const card of cards) {
+    const group = byKind.get(card.kind);
+    if (group) group.push(card);
+    else byKind.set(card.kind, [card]);
+  }
+  return [...byKind.entries()]
+    .sort(([a], [b]) => KIND_RANK[a] - KIND_RANK[b])
+    .map(([kind, group]) => ({ kind, heading: KIND_SECTION_LABEL[kind], cards: group.sort(compareCards) }));
 }
 
 /** The buildings "Growing Numbers" wants — shared by the win goal, the `dynamicText` readout, and the

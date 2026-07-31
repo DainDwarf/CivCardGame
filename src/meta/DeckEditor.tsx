@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CARDS, compareCards, isDeckable, type CardDef } from '../content/cards';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import { CARDS, cardSections, isDeckable, type CardDef } from '../content/cards';
 import type { DeckDef } from '../content/decks';
 import {
   addCard,
@@ -92,11 +92,6 @@ export function DeckEditor({
   // Mission-injected cards (event/threat/objective) can never be added to a deck; the picker
   // only offers deckable cards the player has actually unlocked.
   const cards = Object.values(CARDS).filter((c) => isDeckable(c) && isOwned(collection, c.id));
-  const buildings = cards.filter((c) => c.kind === 'building').sort(compareCards);
-  const wonders = cards.filter((c) => c.kind === 'wonder').sort(compareCards);
-  const works = cards.filter((c) => c.kind === 'work').sort(compareCards);
-  const actions = cards.filter((c) => c.kind === 'action').sort(compareCards);
-  const trades = cards.filter((c) => c.kind === 'trade').sort(compareCards);
 
   // Copies of `card`'s variant still available to add — the owned ones not already in the deck,
   // exactly the pool `addCard` picks from. Shared by `atCap` and the picker's badge so both read
@@ -234,36 +229,12 @@ export function DeckEditor({
       <h1 className={styles.title}>Edit Deck</h1>
 
       <div className={styles.picker}>
-        {buildings.length > 0 && (
-          <>
-            <h2 className={styles.sectionTitle}>Buildings</h2>
-            <div className={styles.grid}>{buildings.flatMap(pickerTiles)}</div>
-          </>
-        )}
-        {wonders.length > 0 && (
-          <>
-            <h2 className={styles.sectionTitle}>Wonders</h2>
-            <div className={styles.grid}>{wonders.flatMap(pickerTiles)}</div>
-          </>
-        )}
-        {works.length > 0 && (
-          <>
-            <h2 className={styles.sectionTitle}>Work</h2>
-            <div className={styles.grid}>{works.flatMap(pickerTiles)}</div>
-          </>
-        )}
-        {actions.length > 0 && (
-          <>
-            <h2 className={styles.sectionTitle}>Actions</h2>
-            <div className={styles.grid}>{actions.flatMap(pickerTiles)}</div>
-          </>
-        )}
-        {trades.length > 0 && (
-          <>
-            <h2 className={styles.sectionTitle}>Trade routes</h2>
-            <div className={styles.grid}>{trades.flatMap(pickerTiles)}</div>
-          </>
-        )}
+        {cardSections(cards).map((section) => (
+          <Fragment key={section.kind}>
+            <h2 className={styles.sectionTitle}>{section.heading}</h2>
+            <div className={styles.grid}>{section.cards.flatMap(pickerTiles)}</div>
+          </Fragment>
+        ))}
       </div>
 
       <div className={styles.banner} ref={bannerRef}>
