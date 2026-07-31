@@ -411,6 +411,21 @@ describe('card-cost goal valuation', () => {
     expect(m.cap.production).toBe(CARDS.farm.cost.resources!.production!);
   });
 
+  it('probes a standing zone only with the kinds that reach it', () => {
+    // First Trades counts open routes, and `run/moves.ts`'s `playCard` opens one only for a `trade` card.
+    // Conquest is `work`, so an ungated route probe would credit banking its military toward a goal step
+    // with no path to happen — competing with the money that buys the route that actually moves it.
+    const config = simConfig({
+      deckCardIds: ['bartering', 'conquest', 'foraging', 'foraging', 'toolmaking', 'toolmaking'],
+      board: 'settlement',
+      missionId: 'first_trades',
+      seed: 'enablers-card-cost',
+    });
+    const m = goalValuedCardCosts(createRun(config).G);
+    expect(m.military).toBeUndefined();
+    expect(m.money!.costAmt).toBe(CARDS.bartering.cost.resources!.money!);
+  });
+
   it('registers nothing on a resource-threshold objective, so those missions\' models are untouched', () => {
     // The guarantee the acceptance sweep leans on: on every mission whose goals read only `G.resources`,
     // the probe is provably a no-op, so `deriveEnablers` output — and hence every planner/oracle

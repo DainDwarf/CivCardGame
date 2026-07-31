@@ -93,12 +93,10 @@ const PRODUCER_TAIL_HORIZON = 2;
  *  shaping, so nothing but the cap and `scoreState`'s real costs stops a runaway.
  *
  *  Bounding the **tableau** rather than each structure is what expresses that: the runaway it guards against
- *  is an unbounded board of engine, and a per-structure cap would let one grow past a goal step. The cost of
- *  that shape is that the cap sets every structure's *marginal* credit to zero once reached, so it has to sit
- *  above a realistic full tableau or the second building onward is priced at nothing — which is what a
- *  multi-goal mission exposed: five structures summing ~41 against a cap of 15 left a wonder worth ~27 adding
- *  literally zero at the leaf. Sized so a plausible board fits under it while a runaway still cannot reach a
- *  goal step. Tuned, not derived. */
+ *  is an unbounded board of engine, and a per-structure cap would let one grow past a goal step. It binds
+ *  well under a full board — one producer of a goal resource can saturate it alone — and past that point a
+ *  further structure's *marginal* credit is zero, so the leaf ranks building one no better than not.
+ *  Tuned, not derived. */
 const PRODUCER_CREDIT_CAP = 0.05 * OBJECTIVE_WEIGHT;
 
 /** Per-term ablation toggles for the enabler model. A missing key means **on** — you name what you switch
@@ -179,8 +177,9 @@ function positive(x: number | undefined): number {
 
 /** The card-count counterpart of `goalValuedResources`: which core resources fund a card the objective
  *  *counts*, probed by injecting a synthetic instance of each run card into the zones a goal can measure
- *  (`removed` for a played event, `tableau` for a building, `tradeRoutes` for
- *  an open route — the three a card *stays* in, so a goal can count it) and diffing `objectiveProgress`. A card that
+ *  (`removed` for a played event, `tableau` for a building, `tradeRoutes` for an open route — the three a
+ *  card *stays* in, so a goal can count it), each only for the kinds that reach it, and diffing
+ *  `objectiveProgress`. A card that
  *  moves the gradient makes its `cost` bankable: paying it *is* the goal step. The per-card progress
  *  delta is attributed **proportionally** over the card's total core cost — one shared per-unit marginal,
  *  so a full multi-resource bank sums to `HOP_DISCOUNT · delta`, keeping the shaping sound (a per-key
@@ -201,16 +200,25 @@ export function goalValuedCardCosts(
     let totalCost = 0;
     for (const ck of CORE_KEYS) totalCost += positive(card.cost.resources?.[ck]);
     if (totalCost <= 0) continue; // a free card needs no banking, so its costs can't be enablers
-    // Not filtered by kind: actions can self-exile via `resolve`, so any card may be what `removed` counts.
+    // `removed` is not filtered by kind: actions can self-exile via `resolve`, so any card may be what it
+    // counts. The two standing zones are, since `run/moves.ts`'s `playCard` is their only writer and routes
+    // by kind — probing a card into a zone it can never reach would credit banking toward a goal step that
+    // has no path to happen (military toward a route-count goal, whose only card is a `trade`).
     probe.removed.push({ id: -1, cardId });
     const removedDelta = objectiveProgress(probe) - base;
     probe.removed.pop();
-    probe.tableau.push({ id: -2, cardId, workers: 0 });
-    const tableauDelta = objectiveProgress(probe) - base;
-    probe.tableau.pop();
-    probe.tradeRoutes.push({ id: -3, cardId, workers: 0 });
-    const routeDelta = objectiveProgress(probe) - base;
-    probe.tradeRoutes.pop();
+    let tableauDelta = 0;
+    if (isStructure(card)) {
+      probe.tableau.push({ id: -2, cardId, workers: 0 });
+      tableauDelta = objectiveProgress(probe) - base;
+      probe.tableau.pop();
+    }
+    let routeDelta = 0;
+    if (card.kind === 'trade') {
+      probe.tradeRoutes.push({ id: -3, cardId, workers: 0 });
+      routeDelta = objectiveProgress(probe) - base;
+      probe.tradeRoutes.pop();
+    }
     const delta = Math.max(removedDelta, tableauDelta, routeDelta);
     if (delta <= 0) continue;
     const marginal = delta / totalCost;

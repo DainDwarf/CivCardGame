@@ -874,17 +874,17 @@
     "winRate": 1,
     "turns": {
       "min": 10,
-      "mean": 15.03,
+      "mean": 15.1,
       "median": 15,
-      "max": 20
+      "max": 21
     },
     "meanResources": {
-      "food": 25.23,
-      "production": 2.94,
+      "food": 25.25,
+      "production": 2.95,
       "science": 0,
-      "military": 3.63,
-      "money": 1.47,
-      "population": 2,
+      "military": 3.62,
+      "money": 1.56,
+      "population": 2.01,
       "culture": 0,
       "territory": 2.46
     },
@@ -893,16 +893,15 @@
       "bead_workshop": 100,
       "dogs": 120,
       "bartering": 100,
-      "bow": 113,
-      "toolmaking": 324,
-      "foraging": 765,
-      "farm": 52,
-      "conquest": 46
+      "bow": 112,
+      "toolmaking": 332,
+      "foraging": 752,
+      "farm": 55,
+      "conquest": 46,
+      "hut": 1
     },
-    "unplayedCards": [
-      "hut"
-    ],
-    "meanActions": 31.77
+    "unplayedCards": [],
+    "meanActions": 31.88
   },
   {
     "label": "growing_numbers",

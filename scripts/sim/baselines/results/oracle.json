@@ -164,16 +164,16 @@
     "winRate": 1,
     "turns": {
       "min": 9,
-      "mean": 12.7,
-      "median": 13,
+      "mean": 12.3,
+      "median": 12.5,
       "max": 15
     },
     "meanResources": {
-      "food": 25,
-      "production": 2.9,
+      "food": 25.1,
+      "production": 3.1,
       "science": 0,
       "military": 3.3,
-      "money": 1,
+      "money": 0.6,
       "population": 2,
       "culture": 0,
       "territory": 2
@@ -181,12 +181,12 @@
     "defeatCauses": {},
     "cardPlays": {
       "bead_workshop": 10,
-      "toolmaking": 32,
-      "bow": 8,
-      "foraging": 44,
+      "toolmaking": 35,
       "bartering": 10,
+      "bow": 9,
       "farm": 8,
-      "dogs": 9
+      "foraging": 34,
+      "dogs": 6
     },
     "unplayedCards": [
       "hut",
