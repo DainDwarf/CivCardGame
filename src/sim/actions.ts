@@ -67,17 +67,10 @@ export function enumerateActions(G: GameState): SimAction[] {
 }
 
 /** The single `playCard` a consumer takes when it doesn't want to weigh the sacrifice itself (the
- *  `heuristicPolicy` ladder): the discard-cost sacrifices are the first eligible other-hand cards.
- *  Ascending-index, like `enumeratePlays`'s walk, so this is that list's head. */
+ *  `heuristicPolicy` ladder): `enumeratePlays`'s head, so the ladder's pick is an enumerated action by
+ *  construction. */
 export function canonicalPlay(G: GameState, playHandIdx: number, card: CardDef): SimAction {
-  const required = discardCount(card, { G, self: G.hand[playHandIdx] });
-  let discardHandIdxs: number[] | undefined;
-  if (required > 0) {
-    const idxs: number[] = [];
-    for (let i = 0; i < G.hand.length && idxs.length < required; i++) if (i !== playHandIdx) idxs.push(i);
-    discardHandIdxs = idxs;
-  }
-  return { kind: 'playCard', playHandIdx, discardHandIdxs };
+  return enumeratePlays(G, playHandIdx, card)[0];
 }
 
 /**

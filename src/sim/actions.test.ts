@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { canonicalPlay, enumerateActions, enumeratePlays } from './actions';
+import { enumerateActions, enumeratePlays } from './actions';
 import { applyAction, simConfig, createRandomPolicy } from './index';
 import { createRun } from '../run/engine';
 import { blankState, bumpCounter } from '../rules';
@@ -57,12 +57,6 @@ describe('enumerateActions', () => {
     G.hand = [mint(G, 'test_discard'), mint(G, 'test_action'), mint(G, 'test_action')];
     bumpCounter(G.hand[2], 'level');
     expect(enumeratePlays(G, 0, CARDS.test_discard)).toHaveLength(2);
-  });
-
-  it('leads with the canonical play, so the heuristic ladder picks an enumerated action', () => {
-    const G = blankState('test');
-    G.hand = [mint(G, 'test_discard'), mint(G, 'test_action'), mint(G, 'test_food')];
-    expect(enumeratePlays(G, 0, CARDS.test_discard)[0]).toEqual(canonicalPlay(G, 0, CARDS.test_discard));
   });
 
   it('offers a single sacrifice-free play when the discard cost is waived', () => {

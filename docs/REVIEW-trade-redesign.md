@@ -6,32 +6,15 @@ Untracked working file. 8 finder angles over `main...trade-redesign` (116 files,
 dropped on the pre-alpha rule; the two `sim/enablers.ts` findings, the replay-bounds
 finding, the cost-schema finding, the per-copy cost merge, the Codex territory
 contradiction, the orphaned docstring, the territory-weight rationale, the trade
-face's dropped play-time effect, the `placedCards` bypass and the twice-encoded durable
-producer have been fixed and removed; the 3 below are open.
+face's dropped play-time effect, the `placedCards` bypass, the twice-encoded durable
+producer and the re-implemented `canonicalPlay` have been fixed and removed; the 2 below
+are open.
 
 ---
 
 ## Cleanup / altitude
 
-### 1. `canonicalPlay` re-implements `enumeratePlays[0]` — `src/sim/actions.ts:72-81`
-
-Equivalence holds in all reachable cases: both compute `required` identically
-(`:73` / `:96`); `cost.ts:115-118` waives the cost to 0 when the hand cannot spare
-enough, so `plays` is never empty and `[0]` is never `undefined`; `walk` is an
-ascending combination walk (`:114`) whose first combo is exactly what `canonicalPlay`
-builds, and `seen` is empty at the first push. For `required === 0` one returns
-`discardHandIdxs: undefined` and the other omits the key — indistinguishable to the
-sole consumer, `sim/simulate.ts:111` (`?? []`).
-
-The fast-path defence fails: every call site (`heuristicPolicy.ts:163/179/196`) is
-immediately followed by `applyAction`, i.e. a full `cloneState` deep walk. The only
-discard-cost card shipped is `fire` (`content/cards.ts:354`).
-
-Fix: `return enumeratePlays(G, playHandIdx, card)[0];`, delete the tautological pinning
-test at `actions.test.ts:62-66`, retarget the docstring. Net ~−14 lines and one
-invariant that can no longer drift.
-
-### 2. Five copy-pasted card-kind sections, in two files
+### 1. Five copy-pasted card-kind sections, in two files
 
 - `src/meta/Collection.tsx:59-147` — five ~17-line blocks differing only in the
   guard/list identifier and the `<h2>` text; every `CardFace` prop list is
@@ -45,7 +28,7 @@ One shared table beside `compareCards`/`isDeckable` in `content/cards.ts` plus a
 in each file. As it stands, a sixth card kind needs four more edit sites across two
 files.
 
-### 3. Hot-path cost re-resolution — `src/rules/cost.ts:80` / `:92`
+### 2. Hot-path cost re-resolution — `src/rules/cost.ts:80` / `:92`
 
 Repeated cost re-resolution on a hot path, plus `canAfford`'s new `Object.entries`
 allocation. One drop-in fast path at those two sites covers most of it.
