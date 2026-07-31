@@ -29,7 +29,7 @@ import { isOwned, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
 import { discardCount, runCard } from '../rules/cost';
 import { sortDeckEntries } from '../rules/deckBuilder';
-import { CardFace, RESOURCE_ICON, StickerRow, artFor, describeBuilding, describeTradeFlow } from './CardFace';
+import { CardFace, RESOURCE_ICON, StickerRow, artFor, describeBuilding, describeRoundFlow } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
 
@@ -457,9 +457,10 @@ function StaffPips({
  *  workers, showing its per-round flow. Each box is a single instance (same-type boxes are never
  *  coalesced), so its stable `id` keys it. The three *zones* differ; the box does not.
  *
- *  Two things vary by kind, both display-only: a route reads its per-round exchange from
- *  `describeTradeFlow` rather than scaling a `produces` per worker, and it carries no staffing tint
- *  because it has no staffing to signal (the green/tan pair is the staffed/idle cue). */
+ *  Two things vary with the box's worker dimension, both display-only: one without it (a trade route
+ *  today) reads its per-round exchange from `describeRoundFlow` rather than scaling a `produces` per
+ *  worker, and carries no staffing tint because it has no staffing to signal (the green/tan pair is the
+ *  staffed/idle cue). */
 function BoardBox({
   inst,
   gameover,
@@ -511,7 +512,7 @@ function BoardBox({
     .join(' ');
   const flow = staffable
     ? boxOutputLabels(card.produces?.resources, producingUnits(inst)).join(' ')
-    : describeTradeFlow(card);
+    : describeRoundFlow(card);
   return (
     <div className={className} ref={boxRef} onPointerDown={onPointerDown} onClick={onZoomClick}>
       {cap > 0 && (

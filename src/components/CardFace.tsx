@@ -141,11 +141,13 @@ export function describeBuilding(b: CardDef, includeWorkers = true): string {
   return parts.join(' · ');
 }
 
-/** Presentation-only summary of a trade route's per-round exchange, e.g. "1🪙 → 1🌾" — its `upkeep`
- *  rent and its `produces` yield netted into one bag and split across the arrow, so the face reads as
- *  the conversion it is rather than as two unrelated deltas. Shared by the card face and the run
- *  board's route box. */
-export function describeTradeFlow(c: CardDef): string {
+/** Presentation-only summary of one round's exchange, e.g. "1🪙 → 1🌾" — a card's `upkeep` rent and
+ *  `produces` yield netted into one bag and split across the arrow, so the face reads as the conversion
+ *  it is rather than as two unrelated deltas. Sound only where both slots are flat, which is why the
+ *  callers gate it on `isStaffable`: a staffable's `produces` scales per worker while its `upkeep`
+ *  doesn't (`rules/effects.ts`), so those two aren't in the same unit and can't be netted. Shared by the
+ *  card face and the run board's box. */
+export function describeRoundFlow(c: CardDef): string {
   const net = {} as Partial<Record<keyof Resources, number>>;
   for (const bag of [c.upkeep?.resources, c.produces?.resources]) {
     for (const [k, v] of Object.entries(bag ?? {}) as [keyof Resources, number][]) {
@@ -156,14 +158,11 @@ export function describeTradeFlow(c: CardDef): string {
   const paid = entries.filter(([, v]) => v < 0).map(([k, v]) => `${-v}${RESOURCE_ICON[k]}`);
   const got = entries.filter(([, v]) => v > 0).map(([k, v]) => `${v}${RESOURCE_ICON[k]}`);
   if (paid.length && got.length) return `${paid.join(' ')} → ${got.join(' ')}`;
-  // A one-sided route (pure rent or pure gift) has nothing to point the arrow at, so it falls back to
-  // the signed reading every other card uses.
+  // A one-sided card (a threat's pure drain, a route's pure rent) has nothing to point the arrow at, so
+  // it falls back to the signed reading every other card uses.
   return paid.map((p) => `-${p}`).concat(got.map((g) => `+${g}`)).join(' ');
 }
 
-/** Presentation-only summary of what a card does (no game logic here). A card whose behavior the
- *  declarative `effect` fields can't express (an `effect.resolve` closure) authors its own
- *  `description`, which wins over the auto-generated text below. */
 function describeSignedResources(res: Partial<Resources> | undefined, into: string[]): void {
   if (!res) return;
   // Every resource — core or strategic — renders the same way through the shared icon map. The
@@ -176,22 +175,26 @@ function describeSignedResources(res: Partial<Resources> | undefined, into: stri
   if (drains.length) into.push(drains.map(([k, v]) => `${v}${RESOURCE_ICON[k]}`).join(' '));
 }
 
+/** Presentation-only summary of what a card does (no game logic here). A card whose behavior the
+ *  declarative `effect` fields can't express (an `effect.resolve` closure) authors its own
+ *  `description`, which wins over the auto-generated text below. */
 export function describeCard(c: CardDef): string {
   if (c.display?.description) return c.display.description;
-  if (c.kind === 'trade') return describeTradeFlow(c);
-  const e = c.effect;
   const parts: string[] = [];
-  describeSignedResources(e?.resources, parts);
-  // Recurring `upkeep` (a hazard's drain, a staffable's maintenance) shows its signed delta the same
-  // way, appended after any one-shot `effect` above — a card may carry both (e.g. a threat with an
-  // entry `effect` plus a per-round drain), and the two just concatenate.
-  describeSignedResources(c.upkeep?.resources, parts);
-  // A staffable shows its declarative standing output — `produces` — here (its workers are shown as
-  // meeples, not text). This is the sole path for a production output; the `effect` branch above is its
-  // one-shot only. It must stay cadence-free: a Work box's number is per play, a building's per round.
+  // The one-shot play-time `effect` leads for every kind — an entry effect the engine resolves must
+  // reach the face — and the card's recurring reading appends after it.
+  describeSignedResources(c.effect?.resources, parts);
   if (isStaffable(c)) {
+    // A staffable's two recurring slots are in different units, so they read as separate deltas: the
+    // flat `upkeep` maintenance, then the declarative `produces` its workers scale (shown as meeples,
+    // not text). That output line must stay cadence-free — a Work box's number is per play, a
+    // building's per round.
+    describeSignedResources(c.upkeep?.resources, parts);
     const stats = describeBuilding(c, false);
     if (stats) parts.push(stats);
+  } else {
+    const flow = describeRoundFlow(c);
+    if (flow) parts.push(flow);
   }
   return parts.join(' · ') || 'action';
 }

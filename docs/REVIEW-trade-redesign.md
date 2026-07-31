@@ -5,31 +5,14 @@ Untracked working file. 8 finder angles over `main...trade-redesign` (116 files,
 **12 CONFIRMED · 4 PLAUSIBLE · 0 REFUTED**. Two save-compatibility findings were
 dropped on the pre-alpha rule; the two `sim/enablers.ts` findings, the replay-bounds
 finding, the cost-schema finding, the per-copy cost merge, the Codex territory
-contradiction, the orphaned docstring and the territory-weight rationale have been
-fixed and removed; the 6 below are open.
-
----
-
-## Correctness
-
-### 1. Trade face drops a play-time effect the engine resolves — `src/components/CardFace.tsx:182`
-
-`if (c.kind === 'trade') return describeTradeFlow(c);` lands before `const e = c.effect`
-and `describeSignedResources`, while `rules/tradeRoutes.ts:14` `openTradeRoute` calls
-`resolveCard` on the route — "a no-op for the usual effect-less route", i.e. a
-non-no-op is anticipated.
-
-A Bronze/Iron route with a one-time entry effect and no hand-written
-`display.description` would ship a card that charges or pays a delta its face never
-states; only the netted arrow renders. Latent — `bartering` is the sole shipped trade
-card and has no effect. Composing the flow line alongside the effect description (the
-way threats compose entry effect + drain) keeps face and engine in step.
+contradiction, the orphaned docstring, the territory-weight rationale and the trade
+face's dropped play-time effect have been fixed and removed; the 5 below are open.
 
 ---
 
 ## Cleanup / altitude
 
-### 2. `placedCards` is bypassed by three sweeps in its own branch
+### 1. `placedCards` is bypassed by three sweeps in its own branch
 
 `src/rules/territory.ts:3-8` introduces it as "the one read-path for what is on the
 board … so a new board zone reaches them by landing here". Adding the one new board
@@ -59,7 +42,7 @@ Not a blanket pattern. These must stay hand-listed: `events.ts:131-137` (per-zon
 No import obstacle — `territory.ts` imports only types from `state.ts`, and
 `rules/index.ts:15` re-exports it.
 
-### 3. "Durable standing producer" encoded twice — `src/sim/enablers.ts:457` and `:485`
+### 2. "Durable standing producer" encoded twice — `src/sim/enablers.ts:457` and `:485`
 
 A kind filter (`isStructure(card) || card.kind === 'trade'`) and a zone walk
 (`[...G.tableau, ...G.tradeRoutes]`) hold the same concept with nothing tying them
@@ -76,7 +59,7 @@ other `kind === 'trade'` in the repo is a routing or display branch that genuine
 needs the distinction. A sim-motivated kind predicate in a game file is the "sim logic
 stays in sim" violation.
 
-### 4. `canonicalPlay` re-implements `enumeratePlays[0]` — `src/sim/actions.ts:72-81`
+### 3. `canonicalPlay` re-implements `enumeratePlays[0]` — `src/sim/actions.ts:72-81`
 
 Equivalence holds in all reachable cases: both compute `required` identically
 (`:73` / `:96`); `cost.ts:115-118` waives the cost to 0 when the hand cannot spare
@@ -94,7 +77,7 @@ Fix: `return enumeratePlays(G, playHandIdx, card)[0];`, delete the tautological 
 test at `actions.test.ts:62-66`, retarget the docstring. Net ~−14 lines and one
 invariant that can no longer drift.
 
-### 5. Five copy-pasted card-kind sections, in two files
+### 4. Five copy-pasted card-kind sections, in two files
 
 - `src/meta/Collection.tsx:59-147` — five ~17-line blocks differing only in the
   guard/list identifier and the `<h2>` text; every `CardFace` prop list is
@@ -108,7 +91,7 @@ One shared table beside `compareCards`/`isDeckable` in `content/cards.ts` plus a
 in each file. As it stands, a sixth card kind needs four more edit sites across two
 files.
 
-### 6. Hot-path cost re-resolution — `src/rules/cost.ts:80` / `:92`
+### 5. Hot-path cost re-resolution — `src/rules/cost.ts:80` / `:92`
 
 Repeated cost re-resolution on a hot path, plus `canAfford`'s new `Object.entries`
 allocation. One drop-in fast path at those two sites covers most of it.
