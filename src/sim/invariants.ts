@@ -1,5 +1,5 @@
 import type { GameState } from '../rules';
-import { freePopulation, usedTerritory, workerCapOf } from '../rules';
+import { freePopulation, placedCards, usedTerritory, workerCapOf } from '../rules';
 
 /** Enough of the run's identity to reproduce a violation: the config (deck/board/mission) seed and
  *  the move-policy seed together replay a headless run exactly, and `round`/`actionsApplied` locate
@@ -35,7 +35,7 @@ export function assertRunInvariants(G: GameState, ctx: InvariantContext = {}): v
 
   // Instance ids are unique across *every* zone (see `rules/state.ts`).
   const seen = new Set<number>();
-  const zones = [G.hand, G.deck, G.discard, G.removed, G.tableau, G.workZone, G.threats, G.tradeRoutes];
+  const zones = [G.hand, G.deck, G.discard, G.removed, placedCards(G), G.threats];
   for (const zone of zones) {
     for (const inst of zone) {
       if (seen.has(inst.id)) fail(`duplicate instance id ${inst.id}`);

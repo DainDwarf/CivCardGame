@@ -2,6 +2,7 @@ import { findStaffable, isOperating } from './population';
 import { runEventHandler, resolveEndTurn } from './effects';
 import { evaluateObjective } from './objective';
 import { evaluateDefeat } from './threats';
+import { placedCards } from './territory';
 import { CARDS, isStaffable } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, ValueSnapshot } from './state';
 
@@ -67,10 +68,8 @@ function findLiveInstance(G: GameState, id: number): CardInstance | undefined {
     G.deck.find((c) => c.id === id) ??
     G.discard.find((c) => c.id === id) ??
     G.removed.find((c) => c.id === id) ??
-    G.tableau.find((c) => c.id === id) ??
-    G.workZone.find((c) => c.id === id) ??
-    G.threats.find((c) => c.id === id) ??
-    G.tradeRoutes.find((c) => c.id === id)
+    placedCards(G).find((c) => c.id === id) ??
+    G.threats.find((c) => c.id === id)
   );
 }
 

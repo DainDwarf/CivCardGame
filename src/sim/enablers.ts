@@ -1,4 +1,4 @@
-import { CORE_KEYS, STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, type GameState, type Resources } from '../rules';
+import { CORE_KEYS, STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, placedCards, type GameState, type Resources } from '../rules';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
 import { objectiveProgress } from './objective';
 import { OBJECTIVE_WEIGHT } from './value';
@@ -236,7 +236,7 @@ export function goalValuedCardCosts(
  *  all of `CARDS` would credit a conversion the deck can't perform (an unlocked-but-undecked card). */
 function runCardIds(G: GameState): Set<string> {
   const ids = new Set<string>();
-  for (const zone of [G.deck, G.hand, G.discard, G.removed, G.tableau, G.workZone, G.tradeRoutes]) {
+  for (const zone of [G.deck, G.hand, G.discard, G.removed, placedCards(G)]) {
     for (const c of zone) ids.add(c.cardId);
   }
   return ids;
