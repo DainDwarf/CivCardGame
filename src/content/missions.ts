@@ -134,8 +134,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: `Build a 🛖 Hut and a 🌱 Farm, while holding ${GROWING_NUMBERS_TERRITORY} 🗺️ territory.`,
     failureHint: null,
     kind: 'standard',
-    // Raising the roof is what upgrades the Tribe board into the settled `settlement` government — so
-    // this mission is the last one played on Tribe, and its own territory goal is fought at Tribe's 2 🗺️.
+    // Raising the roof is what upgrades the Tribe board into the settled `settlement` government, so
+    // this is the last mission played on Tribe.
     reward: {
       influence: 6,
       unlockStickerIds: ['irrigation'],
