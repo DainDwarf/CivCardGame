@@ -235,8 +235,6 @@ function staticValue(card: CardDef): number {
   v -= bundleValue(card.cost.resources ?? {});
   v += ((card.effect?.resources?.population ?? 0) + (card.produces?.resources?.population ?? 0)) * 3;
   v += ((card.effect?.resources?.culture ?? 0) + (card.produces?.resources?.culture ?? 0)) * 0.6;
-  // Territory is now the cap on the whole play area, not just on buildings — a slot hosts a building,
-  // a Work box or a route — so a point of it is worth more than when it gated structures alone.
-  v += ((card.effect?.resources?.territory ?? 0) + (card.produces?.resources?.territory ?? 0)) * 3;
+  v += ((card.effect?.resources?.territory ?? 0) + (card.produces?.resources?.territory ?? 0)) * 1.5;
   return v;
 }
