@@ -224,6 +224,19 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Continuous integration on GitHub** ✅ — one workflow on every push to `main`/`Latest`: a fast
+  `typecheck` · `test` · `build` job, plus a **fixture-per-runner** job that re-measures the standing
+  baseline set and asserts it still describes the code (sweep → `sim:report --against` into the job
+  summary → `sim:record` → `git diff --exit-code`). The gate is byte-exactness rather than a tolerance
+  because the simulator is deterministic: rows that no longer reproduce mean the content moved and owes a
+  re-record.
+  - The fan-out is derived from each fixture's own `results` keys and row counts
+    (`scripts/baselineMatrix.mjs`), never from a named protocol — so an unmeasured fixture drops out
+    instead of being swept into a false failure the moment a mission ships.
+  - Each runner uploads its sweep CSV, so a legitimate rebalance is recorded from CI's measurement
+    rather than paying for the sweep a second time locally.
+  - The Pages deploy became this workflow's tail (`deploy.yml` folded in), gated on both jobs, so a red
+    baseline blocks a release.
 - **A sweep reports as a delta against what was recorded** ✅ — `npm run sim:report -- variant.csv
   --against scripts/sim/baselines` pairs two measurements by (cell, policy) and then **by seed**, so a
   content edit reports as one block per cell that moved — win rate, turns, the end pools that shifted,

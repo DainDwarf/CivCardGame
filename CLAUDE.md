@@ -138,6 +138,20 @@ surprise, so nothing shows a locked placeholder or a total count.
   *demand* half (what a mission forces you to buy) and a grind-normalized yardstick both need the
   simulator and would be later phases.
 
+## Continuous integration
+
+One workflow (`.github/workflows/ci.yml`) on every push to `main`/`Latest`. A fast job runs
+`typecheck` · `test` · `build`; a fanned-out job re-measures **one baseline fixture per runner** and
+asserts the standing set still describes the code — sweep, `sim:report --against` into the job summary,
+`sim:record`, then `git diff --exit-code` on the fixture. The gate is byte-exactness, not a tolerance:
+the simulator is deterministic, so recorded rows that no longer reproduce mean the content moved and
+**owes a re-record** — which is the whole point of the check. Each runner uploads its sweep CSV, so a
+legitimate rebalance is recorded from CI's measurement (`npm run sim:record -- <sweep>.csv`) instead of
+paying for the sweep again locally. `scripts/baselineMatrix.mjs` derives the fan-out from each fixture's
+own `results` keys and row counts rather than naming the protocol, so an unmeasured fixture drops out
+instead of being swept into a false failure. The Pages deploy is the same DAG's tail, gated on both jobs
+and on `Latest` — a red baseline blocks it.
+
 ## Architecture
 
 The codebase is split into a **pure core** and a thin **React shell**. The one rule that matters: the

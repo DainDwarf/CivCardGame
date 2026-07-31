@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [main, Latest]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: typecheck · test · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  # One matrix entry per *measured* fixture, derived from the standing set itself — see the script.
+  fixtures:
+    name: list baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      list: ${{ steps.list.outputs.fixtures }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - id: list
+        run: echo "fixtures=$(node scripts/baselineMatrix.mjs)" >> "$GITHUB_OUTPUT"
+
+  # The simulator is deterministic, so a fixture's committed rows must re-measure byte-for-byte. Re-sweeping
+  # and recording turns "is the standing set still true of this code?" into a git diff — a content change
+  # that shifts balance fails here until it is re-recorded, which is the reminder the check exists to give.
+  baselines:
+    name: baseline · ${{ matrix.fixture.id }}
+    needs: fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        fixture: ${{ fromJSON(needs.fixtures.outputs.list) }}
+    env:
+      FIXTURE: ${{ matrix.fixture.path }}
+      SWEEPS: ${{ matrix.fixture.sweeps }}
+      ID: ${{ matrix.fixture.id }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Sweep
+        run: |
+          mkdir -p sweeps
+          for group in $SWEEPS; do
+            IFS=: read -r policies seeds rounds <<<"$group"
+            npm run --silent sim -- --baseline "$FIXTURE" \
+              --policies "$policies" --seeds "$seeds" --max-rounds "$rounds" \
+              > "sweeps/$ID-${policies//,/+}.csv"
+          done
+
+      # Before recording, which overwrites the very rows the comparison reads.
+      - name: Compare against the recorded rows
+        run: |
+          {
+            echo "## \`$ID\`"
+            echo '```'
+            for f in sweeps/*.csv; do npm run --silent sim:report -- "$f" --against "$FIXTURE"; done
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record
+        run: |
+          for f in sweeps/*.csv; do npm run --silent sim:record -- "$f" --baseline "$FIXTURE"; done
+
+      - name: Fixture must still reproduce
+        run: |
+          git --no-pager diff --exit-code -- "$FIXTURE" || {
+            echo "::error::$ID no longer reproduces its recorded rows. Download the sweep artifact and run: npm run sim:record -- <sweep>.csv"
+            exit 1
+          }
+
+      # Always, so a legitimate rebalance is recorded from this sweep instead of paying for it again locally.
+      - name: Upload the sweep
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sweep-${{ matrix.fixture.id }}
+          path: sweeps/
+          retention-days: 14
+
+  pages:
+    name: build Pages
+    if: github.ref == 'refs/heads/Latest'
+    needs: [check, baselines]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    name: deploy Pages
+    needs: pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
