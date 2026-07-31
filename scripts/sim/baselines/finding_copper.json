@@ -1,7 +1,6 @@
 {
   "id": "finding_copper",
   "mission": "finding_copper",
-  "note": "Purchased — 62 Influence has arrived by here, and 6 of it buys the two Irrigation stickers on the Farm (unlocked back at Growing Numbers). Pool is the Stone Age set + Göbekli Tepe (the Forge is this mission's own reward). Three deliberate omissions, each measured: **Bartering + Bead Workshop** are a trap in this cell — the Workshop is the pool's only 🪙 faucet and it is a *building*, so the route's 1🪙/round rent pins a worker into the Failing Stone Tools drain, and the only alternative to ruin is bankruptcy (planner opened the route in 67 of 100 runs and ruined in 67; every replayed ruin had it open, and no replayed run without it ruined). The route is not the only path to ruin — any staffed building feeds the drain — but it is the one that makes ruin inescapable. **Beer + Sun Stone** produce culture, which nothing here asks for. **Göbekli Tepe** costs 8🔨 and a culture level to enter and then staffs 3 workers for +3🔨 against the threat's −3🔨, netting zero production — no policy ever played it, oracle included. What is left is works-leaning on purpose: the drain counts workers staffed in the tableau only, so Foraging/Toolmaking/Hunting/Storytelling carry the economy and the Hut (workers: 0) adds population without feeding it.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },

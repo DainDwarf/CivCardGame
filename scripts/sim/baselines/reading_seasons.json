@@ -1,7 +1,6 @@
 {
   "id": "reading_seasons",
   "mission": "reading_seasons",
-  "note": "Minimal: Harsh Winter's deck plus the science pair that mission grants, one copy each -- the arrival state on the lower branch, where reading_seasons sits at col 3 behind harsh_winter. No purchases, per the Stone Age convention.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },

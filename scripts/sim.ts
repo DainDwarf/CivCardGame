@@ -52,7 +52,7 @@
  * File schemas — a deck file is `{ "cards": [{ "cardId", "count"?, "stickers"? }, ...] }` (count expands
  * to that many copies; stickers ride on every copy of the entry); a board file is
  * `{ "board": "<id>", "stickers"?: [...] }` (only needed to attach board stickers — a bare `--board <id>`
- * skips it); a baseline file is `{ "id", "mission", "note"?, "board", "deck", "results"? }`, where `board`
+ * skips it); a baseline file is `{ "id", "mission", "board", "deck", "results"? }`, where `board`
  * takes either form, `deck` takes the deck file's `cards` array directly, and `results` is what
  * `npm run sim:record` writes back — this cell's own measured rows, which the sweep path never reads.
  * Ready-made examples live under `scripts/sim/`.

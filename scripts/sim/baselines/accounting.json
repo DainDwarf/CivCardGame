@@ -1,7 +1,6 @@
 {
   "id": "accounting",
   "mission": "accounting",
-  "note": "The player's own winning deck. City Walls are the load-bearing card, not the Bead Workshops: crossing the 10🪙 spawn line with no Walls up lost every run it was measured on, so the deck buys defence before treasury. Two Bead Workshops are the whole money faucet — the Trader is this mission's own reward, so it is not in the pool. Chiefdom is the other board reaching this mission but wants its own deck (0 starting territory against 8 structures), so it gets no fixture here.",
   "board": "city",
   "deck": [
     { "cardId": "bead_workshop", "count": 2 },

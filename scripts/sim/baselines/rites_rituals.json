@@ -1,7 +1,6 @@
 {
   "id": "rites_rituals",
   "mission": "rites_rituals",
-  "note": "Minimal: the Founding deck plus one copy of every card the six cleared prereqs granted — this node ANDs both Stone branches, so its arrival pool is the whole age's unlocks (Farm/Hut/Conquest from the first two missions, the money pair from Raiders, Beer from The First Trades, the science pair from Harsh Winter, Sun Stone + Calendar from Reading the Seasons). No bought copies and no stickers, though 40 Influence has arrived unspent by here. On Settlement, the settled line's board; Chiefdom is the other launchable choice and measures far harder (planner 8/100 against 99/100 here, famine every one of its 92 losses — a board that opens on pop 3 against a deck whose only standing food is one Farm) — deliberately not cut as a fixture, since the standing set is one cell per mission.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },

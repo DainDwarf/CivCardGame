@@ -1,7 +1,6 @@
 {
   "id": "pyramid",
   "mission": "pyramid",
-  "note": "An optional challenge leaf, so its pool is not its prereq closure — the player comes back to it later and Trader and Forge are both fair game. The goal wants 50🪙 + 40🔨 + culture level 2 held at once inside the Pharaoh's deadline, which no three separate engines fit: Göbekli Tepe is the pivot, paying 🔨+🪙+🎭 per worker from a single slot, and it appears in all 50 search-proven lines and none of the failures. So the deck carries exactly one of each structure it wants standing — Bead Workshop, irrigated Farm, Forge, House, Göbekli — rather than duplicates that would fill the slots the wonder needs. The 4 Conquest are the land: City starts on 2🗺️ and the five structures want ~5, and since the cost doubles per *copy*, four fresh copies buy four slots for 8⚔️ where two copies climbing would pay 12⚔️.",
   "board": "city",
   "deck": [
     { "cardId": "bead_workshop", "count": 1 },

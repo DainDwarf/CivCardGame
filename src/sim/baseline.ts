@@ -25,8 +25,7 @@ export interface RecordedResults {
   rows: string[];
 }
 
-/** A baseline fixture as this module sees it. The config half is passed through untouched — in
- *  particular the `note`, which is authored prose no rewrite may clobber. */
+/** A baseline fixture as this module sees it. The config half is passed through untouched. */
 export interface BaselineResultsFile {
   id: string;
   results?: Record<string, RecordedResults>;
@@ -56,8 +55,8 @@ export function recordedRuns(file: BaselineResultsFile): RunRecord[] {
   return out;
 }
 
-/** Replace one policy's recorded rows, leaving every other key — the other policies, the config, the
- *  `note` — exactly as it was. Rows are sorted by seed so the committed file is a function of the
+/** Replace one policy's recorded rows, leaving every other key — the other policies, the config —
+ *  exactly as it was. Rows are sorted by seed so the committed file is a function of the
  *  measurement alone, not of the order runs happened to land in. */
 export function withRecordedPolicy(
   file: BaselineResultsFile,

@@ -1,7 +1,6 @@
 {
   "id": "growing_numbers",
   "mission": "growing_numbers",
-  "note": "Minimal: the starting collection plus one copy each of First Settlement's reward (farm/hut/conquest). That mission grants 0 Influence, so nothing can be bought here. Still on Tribe — this mission's own clear is what upgrades the board to Settlement, so its 4 territory goal is fought from Tribe's 0, i.e. entirely off the one Conquest at its doubling price (2+4+8+16 military).",
   "board": "tribe",
   "deck": [
     { "cardId": "foraging", "count": 4 },

@@ -114,8 +114,8 @@ surprise, so nothing shows a locked placeholder or a total count.
   hide it.
 - `npm run sim:record` — recording tool (`scripts/record.ts`): merges a sweep's rows into the baseline
   fixtures that produced them (`--baseline <paths|dir>`, default `scripts/sim/baselines`), one
-  `results[policy]` key replaced per swept policy and nothing else touched — the `note` in particular is
-  authored prose no rewrite may clobber. A third verb rather than a `--record` flag on `sim`: it keeps the
+  `results[policy]` key replaced per swept policy and the config half untouched. A third verb rather than
+  a `--record` flag on `sim`: it keeps the
   simulator a pure measurer, and every refusal reads a fact off the sweep's own `#sweep`/`#cell` header
   rather than off which flags were combined, so it holds for a sweep file taken any time. It declines a
   seed-filtered sweep (a replay), a non-default search beam (a diagnostic), a run count short of the

@@ -1,7 +1,6 @@
 {
   "id": "harsh_winter",
   "mission": "harsh_winter",
-  "note": "Minimal: identical to the Growing Numbers deck — Harsh Winter forks straight off it on the lower branch, the mirror of raiders_at_border on the upper one, so neither can assume what the other grants. Settlement is the only board, Growing Numbers' clear having retired Tribe, the 6 star influence unspent and Irrigation unbought. READ THE POLICY NUMBERS ON THIS CELL WITH CARE: the mission wins on rounds survived, so its objective names no resource, objectiveProgress is a flat function of the round, and deriveEnablers therefore builds an empty model — greedy and planner are given no reason to bank food or build a Farm and bank production they cannot use. Measured: temporarily blending a synthetic 'stockpile 20 food' term into the gradient moved greedy 3 -> 37 percent and planner 25 -> 73 percent on this exact cell, with no content change. Only the oracle reads true here, since it searches the real shuffle rather than steering by the gradient. Until the simulator can steer a survival objective, treat the oracle as this cell's reference and the rest as a floor.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },

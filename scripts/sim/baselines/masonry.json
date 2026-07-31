@@ -1,7 +1,6 @@
 {
   "id": "masonry",
   "mission": "masonry",
-  "note": "Purchased — hand-authored and hand-verified as a clear. House and the City board are this mission's own rewards, so population runs through Huts, with Conquest opening the territory slots they need. Paired with masonry_chiefdom.json: the same deck on the other board this mission is reached from.",
   "board": "settlement",
   "deck": [
     { "cardId": "bead_workshop", "count": 1 },

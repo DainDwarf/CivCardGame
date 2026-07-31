@@ -1,7 +1,6 @@
 {
   "id": "masonry_chiefdom",
   "mission": "masonry",
-  "note": "masonry.json's deck on Chiefdom — the two boards a player can bring here trade the same 6🧍 goal against opposite starting profiles (Settlement 2🧍/4🏞️ vs Chiefdom 3🧍/2🏞️), so the mission needs a row for each.",
   "board": "chiefdom",
   "deck": [
     { "cardId": "bead_workshop", "count": 1 },

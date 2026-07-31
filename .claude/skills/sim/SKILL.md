@@ -149,7 +149,6 @@ Baseline — a whole cell in one file:
 {
   "id": "masonry",              // the report row label, and the seed-stream key
   "mission": "masonry",         // a real content/missions.ts id
-  "note": "why this deck",      // free text, for the reader
   "board": "settlement",        // a board id, or { "board": "city", "stickers": [...] }
   "deck": [ { "cardId": "hut", "count": 4 } ],  // the deck file's `cards` array, same shape
 

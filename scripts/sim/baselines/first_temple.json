@@ -1,7 +1,6 @@
 {
   "id": "first_temple",
   "mission": "first_temple",
-  "note": "Minimal: the Founding deck plus one copy of every card the seven cleared prereqs granted — identical to the rites_rituals pool, since that node grants a sticker rather than a card. No bought copies and no stickers, though 50 Influence has arrived unspent by here. The goal's 3 population term is exactly what this deck can reach: Hut (+1) is the age's only population source and an unlock grants one copy, so Settlement's pop 2 + one Hut = 3 with no shop purchase — the softlock check this fixture exists to run, and it passes. Chiefdom is the other launchable choice and gets no committed cell, since the standing set is one per mission.",
   "board": "settlement",
   "deck": [
     { "cardId": "foraging", "count": 4 },

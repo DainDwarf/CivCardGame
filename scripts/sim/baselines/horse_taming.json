@@ -1,7 +1,6 @@
 {
   "id": "horse_taming",
   "mission": "horse_taming",
-  "note": "The player's own winning deck, swept at the standing protocol: greedy 9% / planner 37% @100, oracle 90% @10 in 15-31 turns. It is the Wheel deck carried forward with Road x2 traded for City Walls x2 and the Farm, Conquest and Hunting lines doubled. Taming costs 30 military across the 5 horses, drawn from three sources that price differently: Hunting x4 at 1 per worker-turn, City Walls x2 at 1 per round for a tableau slot and no worker, Bow x2 as a burst - while Conquest x4 spends the same pool on territory, so the deck's expansion and its win condition compete. City starts at 2 territory against 8 structures, which is what Conquest is there to widen. Famine is the failure mode at every tier - 47 of the planner's 63 losses, and the oracle's single loss - so the herd's food drain outruns the double-Irrigated Farms rather than the military ever binding. Writing is played 0 times by greedy or planner and is the deck's one dead card; House is played 0.01x/run by greedy and never by the planner. Costs 24 of the 110 Influence guaranteed to have arrived (irrigation x4 = 12; conquest x1->x4 and fire x1->x4 = 3 apiece; dogs x2->x4 = 2; city_walls/farm/forge/trader each x1->x2 = 1 apiece; toolmaking and bow are starting-collection copies). Chiefdom is where the deck was hand-won, on granary+stockpile, and reads greedy 3% / planner 15% @100 there; it stays unfixtured until it has a deck of its own.",
   "board": "city",
   "deck": [
     { "cardId": "bead_workshop", "count": 1 },

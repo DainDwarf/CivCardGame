@@ -25,7 +25,6 @@ function fixture(over: Partial<BaselineResultsFile> = {}): BaselineResultsFile {
   return {
     id: 'cell',
     mission: 'test',
-    note: 'authored prose no rewrite may clobber',
     board: 'tribe',
     deck: [{ cardId: 'a', count: 2 }],
     ...over,
@@ -48,7 +47,8 @@ describe('recording a policy', () => {
   it('leaves the config half and the other policies untouched', () => {
     const base = withRecordedPolicy(fixture(), 'oracle', [record({ policy: 'oracle' })], { maxRounds: 200 });
     const merged = withRecordedPolicy(base, 'greedy', [record()], { maxRounds: 40 });
-    expect(merged.note).toBe(base.note);
+    expect(merged.mission).toBe(base.mission);
+    expect(merged.board).toBe(base.board);
     expect(merged.deck).toEqual(base.deck);
     expect(merged.results!.oracle).toEqual(base.results!.oracle);
     expect(merged.results!.greedy.maxRounds).toBe(40);
