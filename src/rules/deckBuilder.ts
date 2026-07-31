@@ -125,17 +125,15 @@ export function groupCounts(instanceIds: string[], collection: OwnedCards): Deck
 
 /** Stable order for `groupCounts`/`groupCards`-style entries: `compareCards` first, then keep a
  *  card's variants contiguous — its plain copies (empty signature, which sorts first) before its
- *  stickered ones. `instanceId` is the last resort for entries that group by neither, i.e. the pile
- *  viewer's per-copy `dynamicText` singles. */
-export function sortDeckEntries<T extends DeckCard & { instanceId?: string | number }>(entries: T[]): T[] {
+ *  stickered ones. `escalation` is the last resort for entries that group by neither: run copies of
+ *  one variant that differ only in their per-copy `counters`, ordered by how far each has climbed. */
+export function sortDeckEntries<T extends DeckCard & { escalation?: number }>(entries: T[]): T[] {
   return entries.sort((a, b) => {
     const byCard = compareCards(CARDS[a.cardId], CARDS[b.cardId]) || a.cardId.localeCompare(b.cardId);
     if (byCard) return byCard;
     const bySticker = stickerSignature(a.stickers).localeCompare(stickerSignature(b.stickers));
     if (bySticker) return bySticker;
-    if (a.instanceId === undefined) return b.instanceId === undefined ? 0 : -1;
-    if (b.instanceId === undefined) return 1;
-    return Number(a.instanceId) - Number(b.instanceId);
+    return (a.escalation ?? 0) - (b.escalation ?? 0);
   });
 }
 

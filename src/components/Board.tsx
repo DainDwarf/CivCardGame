@@ -4,6 +4,7 @@ import { useGame } from '../run/GameContext';
 import {
   COLLAPSE_BY_RESOURCE,
   CORE_KEYS,
+  contentKey,
   cultureProgress,
   foodPerNextPop,
   foodUpkeep,
@@ -27,7 +28,7 @@ import { computeRewards } from '../rules/rewards';
 import { isOwned, type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
 import { discardCount, runCard } from '../rules/cost';
-import { sortDeckEntries, variantKey } from '../rules/deckBuilder';
+import { sortDeckEntries } from '../rules/deckBuilder';
 import { CardFace, RESOURCE_ICON, StickerRow, artFor, describeBuilding, describeTradeFlow } from './CardFace';
 import { CardZoomOverlay } from './CardZoomOverlay';
 import styles from './Board.module.css';
@@ -274,29 +275,27 @@ function BoardRightColumn({
   );
 }
 
-/** Collapse a list of card instances into one tile per **variant** with a count — copies sharing a
- *  cardId *and* their stickers are interchangeable (`variantKey`), so one face with a ×N badge says
- *  everything about the stack. A card with `dynamicText` is the exception and never groups: each copy
- *  carries its own live value (e.g. two self-scaling copies with different play counts), so a shared
- *  count would have to pick one copy's value to speak for the rest. Each entry carries a
- *  representative instance so the caller can compute the tile's `dynamicText`/`effectiveCard` — sound
- *  for a group precisely because its members are interchangeable. */
-type PileGroup = { key: string; cardId: string; stickers?: string[]; inst: CardInstance; count: number; instanceId?: number };
+/** Collapse a list of card instances into one tile per **content** with a count — `contentKey` folds
+ *  in a copy's `counters` as well as its stickers, which is exactly the state a tile's face reads
+ *  through (a per-copy escalating price via `runCard`, a live `dynamicText`). So the representative
+ *  instance each entry carries speaks for the whole group: two copies that group render an identical
+ *  face, and two that would not (a twice-played Conquest beside a fresh one) stay separate tiles.
+ *  `escalation` orders those same-card tiles cheapest-first — a group property, not the
+ *  representative's, since which copy represents a group depends on pile order. */
+type PileGroup = { key: string; cardId: string; stickers?: string[]; inst: CardInstance; count: number; escalation: number };
 
 function groupCards(insts: CardInstance[]): PileGroup[] {
   const groups = new Map<string, PileGroup>();
-  const singles: PileGroup[] = [];
   for (const inst of insts) {
-    const entry = { key: variantKey(inst), cardId: inst.cardId, stickers: inst.stickers, inst, count: 1 };
-    if (CARDS[inst.cardId].display?.dynamicText) {
-      singles.push({ ...entry, key: String(inst.id), instanceId: inst.id });
-      continue;
-    }
-    const group = groups.get(entry.key);
+    const key = contentKey(inst);
+    const group = groups.get(key);
     if (group) group.count += 1;
-    else groups.set(entry.key, entry);
+    else {
+      const escalation = Object.values(inst.counters ?? {}).reduce((sum, n) => sum + n, 0);
+      groups.set(key, { key, cardId: inst.cardId, stickers: inst.stickers, inst, count: 1, escalation });
+    }
   }
-  return sortDeckEntries([...groups.values(), ...singles]);
+  return sortDeckEntries([...groups.values()]);
 }
 
 /** A pile token flanking the hand (deck / discard / removed). Clickable when `onView` is given. */
