@@ -4,10 +4,11 @@
  * The simulator (`src/sim/`) plays a *locked* deck vs. a mission on the real engine under a move policy;
  * a single run answers little, but running one cell over many seeds gives statistical balance answers no
  * human can grind. This tool only *measures*: it emits **one CSV row per run** to stdout, flushed as each
- * run lands, and folds nothing. Aggregation is `npm run sim:report`, a separate pass over that CSV — so a
- * sweep is paid for once and re-analysed any number of times (filter by outcome, pull the outliers, group
- * by any column) without re-running it, and a long sweep is followable as rows arrive. It re-implements
- * **no** game logic — it composes `runPolicies` from `src/sim`.
+ * run lands, and folds nothing. Aggregation is `npm run sim:report` and committing a measurement is
+ * `npm run sim:record`, both separate passes over that CSV — so a sweep is paid for once and re-analysed
+ * any number of times (filter by outcome, pull the outliers, group by any column) without re-running it,
+ * and a long sweep is followable as rows arrive. It re-implements **no** game logic — it composes
+ * `runPolicies` from `src/sim`.
  *
  * A sweep names its cells one of two ways. **Ad-hoc**, the three axes are decoupled the way the campaign
  * menu presents them: pick the **mission(s)** by id (looked up live from `content/missions.ts` — no copied
@@ -42,7 +43,8 @@
  * beam width — the diagnostic for a `noWinFound:deadEnd` result, which says the *ranking* kept only
  * positions that die; more wins found under a wider beam means the heuristic was discarding real lines.
  * **Costs superlinearly** — a wider beam keeps more states alive and so searches deeper, not just wider,
- * and rows swept at a non-default width are not comparable to `baselines/results/`), `--seed <i>` (a
+ * and rows swept at a non-default width are not comparable to a fixture's recorded ones, so
+ * `sim:record` refuses them), `--seed <i>` (a
  * **filter** — sweep only that seed index, keeping its seed streams identical to the full sweep's, so a
  * row that lost can be re-run verbatim), and `--verbose` (add a per-turn trace on **stderr**; stdout stays
  * pure CSV, so it composes with a redirect).
@@ -50,22 +52,26 @@
  * File schemas — a deck file is `{ "cards": [{ "cardId", "count"?, "stickers"? }, ...] }` (count expands
  * to that many copies; stickers ride on every copy of the entry); a board file is
  * `{ "board": "<id>", "stickers"?: [...] }` (only needed to attach board stickers — a bare `--board <id>`
- * skips it); a baseline file is `{ "id", "mission", "note"?, "board", "deck" }`, where `board` takes either
- * form and `deck` takes the deck file's `cards` array directly. Ready-made examples live under `scripts/sim/`.
+ * skips it); a baseline file is `{ "id", "mission", "note"?, "board", "deck", "results"? }`, where `board`
+ * takes either form, `deck` takes the deck file's `cards` array directly, and `results` is what
+ * `npm run sim:record` writes back — this cell's own measured rows, which the sweep path never reads.
+ * Ready-made examples live under `scripts/sim/`.
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { join } from 'node:path';
 import {
   runPolicies,
   csvHeaderLine,
   manifestLines,
   recordToCsvLine,
+  sweepLine,
   POLICY_FACTORIES,
+  DEFAULT_MAX_ROUNDS,
+  DEFAULT_BEAM_WIDTH,
   type RunRecord,
   type Scenario,
   type SimAction,
 } from '../src/sim';
+import { simFileTools } from './simFiles';
 import type { RunState } from '../src/run/engine';
 import { MISSIONS } from '../src/content/missions';
 import { CARDS } from '../src/content/cards';
@@ -79,31 +85,15 @@ import { findStaffable, freePopulation, type DeckCard, type GameState } from '..
  *  means "every built-in except oracle" and is a separate contract other readers rely on). */
 const DEFAULT_POLICIES = ['random', 'heuristic', 'greedy'];
 
-/** Print a clean one-line error and exit — a bad flag/file is a user mistake, not a stack-trace-worthy
- *  crash. */
 function fail(msg: string): never {
   console.error(`sim: ${msg}`);
   process.exit(1);
 }
 
+const { readJson, expandBaselinePaths } = simFileTools(fail);
+
 function csv(s: string | undefined): string[] {
   return (s ?? '').split(',').map((x) => x.trim()).filter(Boolean);
-}
-
-// Returns parsed JSON as `any` — the loaders below validate every field they read against the real
-// content catalogues, so the untyped shape is checked at use, not by the type system.
-function readJson(path: string): any {
-  let text: string;
-  try {
-    text = readFileSync(path, 'utf8');
-  } catch {
-    return fail(`cannot read file '${path}'.`);
-  }
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    return fail(`file '${path}' is not valid JSON: ${(e as Error).message}`);
-  }
 }
 
 /** Validate a card-entry array into a run-ready `DeckCard[]`, expanding each `{ cardId, count, stickers }`
@@ -164,26 +154,6 @@ function loadBaseline(path: string): Cell {
   if (raw.board === undefined) fail(`baseline file '${path}' must have a 'board'.`);
   const board = typeof raw.board === 'string' ? resolveBoardId(path, raw.board) : readBoard(path, raw.board);
   return { label: raw.id, missionId: raw.mission, deck: readCards(path, raw.deck), board };
-}
-
-/** Expand each `--baseline` argument: a directory yields every `.json` directly inside it (so the
- *  committed set sweeps by naming its folder), a file yields itself. Sorted, so a batch's cell order —
- *  and therefore its report — is stable across machines. */
-function expandBaselinePaths(args: string[]): string[] {
-  const paths = args.flatMap((arg) => {
-    let isDir: boolean;
-    try {
-      isDir = statSync(arg).isDirectory();
-    } catch {
-      return fail(`cannot read baseline path '${arg}'.`);
-    }
-    if (!isDir) return [arg];
-    const found = readdirSync(arg).filter((f) => f.endsWith('.json')).sort().map((f) => join(arg, f));
-    if (found.length === 0) fail(`baseline directory '${arg}' contains no .json fixtures.`);
-    return found;
-  });
-  if (paths.length === 0) fail('--baseline needs at least one fixture path.');
-  return paths;
 }
 
 /** Resolve a bare board id against the real catalogue, reporting against the file that named it. */
@@ -407,8 +377,17 @@ const tracer = values.verbose ? createTracer() : undefined;
 // The manifest: what each cell label stands for, so the CSV is a complete record of its own sweep. The
 // data rows carry no constant-per-cell field, and a deck's *composition* (copy counts, per-copy stickers)
 // is expressible nowhere else.
+// The `#sweep` line records the **effective** cutoff and beam, not the flags that set them: an omitted
+// flag still ran at a value, and `sim:record` has to know which one to decide whether the rows are a
+// baseline or a diagnostic.
 const out: string[] = [
-  `#sweep ${JSON.stringify({ seeds, policies, ...(seedIndices ? { seedIndices } : {}), ...simOpts, ...searchOpts })}`,
+  sweepLine({
+    seeds,
+    policies,
+    ...(seedIndices ? { seedIndices } : {}),
+    maxRounds: maxRounds ?? DEFAULT_MAX_ROUNDS,
+    beamWidth: searchBeam ?? DEFAULT_BEAM_WIDTH,
+  }),
   ...manifestLines(scenarios),
   csvHeaderLine(),
 ];

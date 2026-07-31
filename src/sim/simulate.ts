@@ -74,6 +74,10 @@ export interface SimOutcome {
  *  sweep the way the thrown action backstop does. */
 export const STALL_REASON = 'stall';
 
+/** The stall cutoff a run takes when `SimOptions.maxRounds` is omitted. Exported so a tool can record the
+ *  *effective* cutoff a sweep ran at rather than the flag that was absent. */
+export const DEFAULT_MAX_ROUNDS = 200;
+
 /** Options for {@link simulateRun}. */
 export interface SimOptions {
   /** Assert structural invariants after every action (the fuzzer teeth). Default `true`. */
@@ -81,9 +85,10 @@ export interface SimOptions {
   /** Round cutoff for a **stalled** run — a headless policy can idle a driven run's rounds upward forever
    *  without ever winning or collapsing (a one-ply greedy that can't cross a multi-turn conversion chain,
    *  e.g. Masonry). Past this round the run is recorded as a `stall` defeat ({@link STALL_REASON}) instead
-   *  of ground out to the far larger `maxActions` wall thousands of rounds later. Default 200 — well above
-   *  any real game's length (a winnable run ends in tens of rounds), so it never cuts a legitimate run
-   *  short. Set `Infinity` to disable and lean on the action backstop alone. */
+   *  of ground out to the far larger `maxActions` wall thousands of rounds later. Default
+   *  {@link DEFAULT_MAX_ROUNDS} — well above any real game's length (a winnable run ends in tens of
+   *  rounds), so it never cuts a legitimate run short. Set `Infinity` to disable and lean on the action
+   *  backstop alone. */
   maxRounds?: number;
   /** Hard backstop against a run stuck **within a turn** — actions piling up without the round advancing
    *  is a real engine bug (an effect loop), so exceeding this **throws** with the seed pair as the repro
@@ -132,7 +137,7 @@ export function applyAction(state: RunState, action: SimAction): RunState {
 export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions = {}): SimOutcome {
   const check = opts.check ?? true;
   const maxActions = opts.maxActions ?? 10_000;
-  const maxRounds = opts.maxRounds ?? 200;
+  const maxRounds = opts.maxRounds ?? DEFAULT_MAX_ROUNDS;
   const ctx = { configSeed: config.seed, policySeed: policy.seed };
 
   let state = createRun(config);

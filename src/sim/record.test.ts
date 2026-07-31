@@ -5,6 +5,7 @@ import {
   manifestLines,
   parseRecordCsv,
   recordToCsvLine,
+  sweepLine,
   toRunRecord,
   type RunRecord,
 } from './record';
@@ -159,9 +160,29 @@ describe('the manifest header', () => {
     expect(records).toHaveLength(1);
   });
 
-  // Metadata lines the writer may grow (the sweep's own flags) must not break a reader that predates them.
+  // Metadata lines the writer may grow must not break a reader that predates them.
   it('skips a comment line it does not recognize', () => {
-    const text = ['#sweep {"seeds":3}', '# a bare note', csvHeaderLine(), recordToCsvLine(record())].join('\n');
+    const text = ['#future {"x":1}', '# a bare note', csvHeaderLine(), recordToCsvLine(record())].join('\n');
     expect(parseRecordCsv(text).records).toHaveLength(1);
+  });
+});
+
+describe('the sweep header', () => {
+  it('reads back the flags the sweep ran under', () => {
+    const header = { seeds: 100, policies: ['greedy', 'planner'], maxRounds: 200, beamWidth: 64 };
+    const text = [sweepLine(header), csvHeaderLine(), recordToCsvLine(record())].join('\n');
+    expect(parseRecordCsv(text).sweep).toEqual(header);
+  });
+
+  // A `--seed <i>` replay is one row on the streams the full sweep would have given it — readable as a
+  // sweep, but a filtered one, which is what tells a consumer it measured nothing.
+  it('carries the seed filter that narrowed the sweep', () => {
+    const header = { seeds: 100, policies: ['planner'], seedIndices: [3], maxRounds: 200, beamWidth: 64 };
+    const text = [sweepLine(header), csvHeaderLine(), recordToCsvLine(record())].join('\n');
+    expect(parseRecordCsv(text).sweep?.seedIndices).toEqual([3]);
+  });
+
+  it('is absent from a file that carries no header line', () => {
+    expect(parseRecordCsv([csvHeaderLine(), recordToCsvLine(record())].join('\n')).sweep).toBeUndefined();
   });
 });

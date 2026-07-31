@@ -74,8 +74,12 @@ export type SearchExhaustion = 'budget' | 'depth' | 'deadEnd';
 /** A found line, or which bound ended the search. */
 export type SearchResult = { found: true; line: SimAction[] } | { found: false; exhausted: SearchExhaustion };
 
+/** The beam width a search takes when `OracleOptions.beamWidth` is omitted. Exported so a tool can record
+ *  the *effective* width a sweep ran at, and refuse to record one taken at any other. */
+export const DEFAULT_BEAM_WIDTH = 64;
+
 const DEFAULTS: Required<OracleOptions> = {
-  beamWidth: 64,
+  beamWidth: DEFAULT_BEAM_WIDTH,
   turnConfigLimit: 32,
   maxRounds: 200,
   nodeBudget: 3_000_000,

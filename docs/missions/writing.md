@@ -35,8 +35,8 @@ gate. Tablet cost is `{ production: 4, science: 2 }` in `cards.ts`.
 The 🔬 drain **stands at its authored −0 / −1 / −2** — it is the mission's only pressure, and the cost
 move onto 🔬 was enough to make it bite without touching it.
 
-Fixture: `scripts/sim/baselines/writing.json` (City, 26 cards, 13⭐ of the 98 arriving), recorded in
-`baselines/results/` at the standing protocol — greedy/planner @100, oracle @10:
+Fixture: `scripts/sim/baselines/writing.json` (City, 26 cards, 13⭐ of the 98 arriving), which carries its
+own rows at the standing protocol — greedy/planner @100, oracle @10:
 
 | policy | win rate | turns (min/med/mean/max) | defeats |
 | --- | --- | --- | --- |

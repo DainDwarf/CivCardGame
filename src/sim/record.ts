@@ -168,6 +168,20 @@ export interface CellManifest {
 
 const MANIFEST_TAG = '#cell ';
 
+/** How a sweep was taken — the flags that decide whether its rows are comparable to anything else.
+ *  `maxRounds`/`beamWidth` are the **effective** values, never the raw flags, so a file that names no
+ *  flag still says what it ran at. `seedIndices` marks a `--seed <i>` replay: a filtered sweep is a
+ *  diagnostic, not a measurement. */
+export interface SweepHeader {
+  seeds: number;
+  policies: string[];
+  seedIndices?: number[];
+  maxRounds: number;
+  beamWidth: number;
+}
+
+const SWEEP_TAG = '#sweep ';
+
 /** Regroup a scenario's expanded draw-order deck back into `{ cardId, count, stickers }` entries — the
  *  shape the deck/baseline files are authored in. Grouped by `variantKey`, so two copies differing only
  *  in sticker *order* count as one entry, matching how the deck editor pools them. */
@@ -197,17 +211,26 @@ export function manifestLines(scenarios: readonly Scenario[]): string[] {
   return scenarios.map((s) => `${MANIFEST_TAG}${JSON.stringify(manifestOf(s))}`);
 }
 
+export function sweepLine(header: SweepHeader): string {
+  return `${SWEEP_TAG}${JSON.stringify(header)}`;
+}
+
 // ---- Reading a sweep file ----------------------------------------------------------------------------
 
-/** Parse a sweep file back into its records and manifest — the seam that lets an analysis pass run off a
- *  re-read file exactly as it would off a live sweep. Unknown `#` lines are skipped, so metadata can be
- *  added above the header without breaking older files, and so is anything before the header row: a
- *  redirected `npm run sim > sweep.csv` prepends npm's own `> package@version script` preamble to stdout,
- *  and a sweep file that fails to load over that is a trap, not a diagnostic. */
-export function parseRecordCsv(text: string): { records: RunRecord[]; manifest: CellManifest[] } {
+/** Parse a sweep file back into its records, manifest and sweep header — the seam that lets an analysis
+ *  pass run off a re-read file exactly as it would off a live sweep. Unknown `#` lines are skipped, so
+ *  metadata can be added above the header without breaking older files, and so is anything before the
+ *  header row: a redirected `npm run sim > sweep.csv` prepends npm's own `> package@version script`
+ *  preamble to stdout, and a sweep file that fails to load over that is a trap, not a diagnostic. */
+export function parseRecordCsv(text: string): {
+  records: RunRecord[];
+  manifest: CellManifest[];
+  sweep?: SweepHeader;
+} {
   const records: RunRecord[] = [];
   const manifest: CellManifest[] = [];
   const header = csvHeaderLine();
+  let sweep: SweepHeader | undefined;
   let columns: string[] | null = null;
   let firstSkipped: string | undefined;
 
@@ -216,6 +239,7 @@ export function parseRecordCsv(text: string): { records: RunRecord[]; manifest: 
     if (!line.trim()) continue;
     if (line.startsWith('#')) {
       if (line.startsWith(MANIFEST_TAG)) manifest.push(JSON.parse(line.slice(MANIFEST_TAG.length)));
+      else if (line.startsWith(SWEEP_TAG)) sweep = JSON.parse(line.slice(SWEEP_TAG.length));
       continue;
     }
     if (!columns) {
@@ -250,5 +274,5 @@ export function parseRecordCsv(text: string): { records: RunRecord[]; manifest: 
         (firstSkipped ? `\n  first data line ${firstSkipped}\n  expected header ${header}` : ''),
     );
   }
-  return { records, manifest };
+  return { records, manifest, ...(sweep ? { sweep } : {}) };
 }

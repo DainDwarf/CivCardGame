@@ -26,11 +26,13 @@ If the numbers look surprising and you want to say something, say the surprising
 offer the next *measurement* ("`--seed 3` would replay that loss"), not a conclusion. The
 sections below on reading the report are reference material for when the user does ask.
 
-The tool is two CLIs — **no scratchpad scripts.** `npm run sim` (`scripts/sim.ts`)
+The tool is three CLIs — **no scratchpad scripts.** `npm run sim` (`scripts/sim.ts`)
 **measures**: one CSV row per run on stdout, flushed as it lands, aggregating nothing.
-`npm run sim:report` (`scripts/report.ts`) **folds** that CSV into the report. Measure
-once, re-analyse as often as the questions require: filtering by outcome, pulling the
-outliers or grouping by another column re-reads the file rather than re-running the sweep.
+`npm run sim:report` (`scripts/report.ts`) **folds** that CSV into the report.
+`npm run sim:record` (`scripts/record.ts`) **commits** it, merging the rows into the baseline
+fixtures that produced them. Measure once, re-analyse as often as the questions require:
+filtering by outcome, pulling the outliers or grouping by another column re-reads the file
+rather than re-running the sweep.
 
 A sweep names its cells one of two mutually-exclusive ways: **`--baseline`** loads
 self-contained fixtures (the committed standing set — reach for this first), or the
@@ -45,7 +47,8 @@ npm run sim -- --baseline <paths|dir>
 npm run sim -- --scenario <ids> --deck <file> --board <id|file>
                [--seeds 100] [--policies random,heuristic,greedy] [--max-rounds 200] [--seed <i>] [--verbose]
 
-npm run sim:report -- <sweep.csv> [--format text|json]
+npm run sim:report -- <sweep.csv | fixture.json | baselines dir> [--format text|json]
+npm run sim:record -- <sweep.csv> [--baseline <paths|dir>]
 ```
 
 **Always capture the sweep to a file** (`> scratchpad/sweep.csv`), then report off it — that
@@ -74,9 +77,16 @@ has no comment syntax to hide it, so `sim:report --format json` needs `--silent`
 - `--verbose` — add a per-turn trace on **stderr**; stdout stays pure CSV, so it composes with
   a redirect.
 
-And on `sim:report`: `--format text` (default, the human report) or `json` (the raw summaries —
-the same shape committed under `baselines/results/`, so recording a measurement is piping a
-sweep through it). Takes a path, or stdin if none is given.
+And on `sim:report`: `--format text` (default, the human report) or `json` (the raw summaries).
+Takes a sweep file, a baseline fixture, a directory of fixtures, or stdin if nothing is given —
+so the standing set's committed numbers are readable with no sweep at all.
+
+And on `sim:record`: `--baseline <paths|dir>` says where the fixtures live (default
+`scripts/sim/baselines`). It replaces one `results[policy]` key per swept policy and touches
+nothing else. Every refusal reads a fact off the sweep's own header, so it holds for a file taken
+any time: a seed-filtered sweep (a replay), a non-default search beam (a diagnostic), a run count
+short of `--seeds` (interrupted), a cell no fixture answers to (renamed), or a fixture whose
+deck/board/mission no longer matches what was swept.
 
 One invocation sweeps `[missions] × {the one deck} × {the one board}`. To **compare two
 decks or boards**, edit a file or invoke twice (same `--seeds` → identical shuffles, so the
@@ -86,16 +96,20 @@ Examples:
 ```
 npm run --silent sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100 > sweep.csv
 npm run sim:report -- sweep.csv
+npm run sim:record -- sweep.csv
+npm run sim:report -- scripts/sim/baselines/masonry.json
 npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies oracle --seeds 20 > oracle.csv
 npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board <board> --seeds 500 > sweep.csv
 ```
 
 ## The sweep file
 
-Above the rows sit `#`-comment lines (which standard parsers skip): the sweep's own flags,
-then one **manifest** line per cell naming its mission, board and deck. So a sweep file is a
-complete record of itself — a data row carries no constant-per-cell field, and a deck's copy
-counts and per-copy stickers live nowhere else.
+Above the rows sit `#`-comment lines (which standard parsers skip): the sweep's own flags — the
+**effective** `maxRounds`/`beamWidth`, not the ones a flag happened to name — then one
+**manifest** line per cell naming its mission, board and deck. So a sweep file is a complete
+record of itself: a data row carries no constant-per-cell field, a deck's copy counts and
+per-copy stickers live nowhere else, and `sim:record` decides off that header alone whether the
+rows are a baseline or a diagnostic.
 
 One row per run:
 `cell,policy,seed,outcome,turns,actions,`(the 8 pools)`,structures,routes,reshuffles,cardsPlayed`
@@ -132,9 +146,22 @@ Baseline — a whole cell in one file:
   "mission": "masonry",         // a real content/missions.ts id
   "note": "why this deck",      // free text, for the reader
   "board": "settlement",        // a board id, or { "board": "city", "stickers": [...] }
-  "deck": [ { "cardId": "hut", "count": 4 } ]   // the deck file's `cards` array, same shape
+  "deck": [ { "cardId": "hut", "count": 4 } ],  // the deck file's `cards` array, same shape
+
+  "results": {                  // written by `sim:record`; the sweep path never reads it
+    "planner": {
+      "maxRounds": 200,         // the effective cutoff these rows were swept at
+      "columns": "cell,policy,seed,outcome,…",   // the header they were written against
+      "rows": [ "masonry,planner,0,win,21,…" ]   // verbatim sweep rows, one per run
+    }
+  }
 }
 ```
+A fixture holds its **own** measurement, one entry per policy — so the seed counts of the
+standing protocol (greedy/planner @100, oracle @10) live in one file, and re-measuring one
+policy replaces one key. The rows are raw, not the folded report: the fold is cheap and
+re-runnable, the sweep is not, so keeping them means "which seeds flipped?" is answerable
+without re-measuring, and a rebalance reads as a per-seed `git diff`.
 
 ## The standing set — `scripts/sim/baselines/`
 
@@ -152,11 +179,11 @@ since a fixture holds exactly one board:
 - An optional challenge **leaf** (Pyramid) is revisitable, so its pool is *not* its prereq
   closure — it may use anything the campaign eventually fields.
 
-Measured results live under `baselines/results/`; committing them *is* the record of which
-content SHA they were taken at. Recording one is piping a sweep through the fold —
-`npm run --silent sim:report -- sweep.csv --format json > baselines/results/<policy-set>.json`.
-When new shipped content deserves a standing cell, add a fixture and commit it.
-`--deck`/`--board` remain for hand-written ad-hoc decks.
+A fixture carries its own measured rows in `results`; committing them *is* the record of which
+content SHA they were taken at. Recording one is `npm run sim:record -- sweep.csv`. Reading one
+back is `npm run sim:report -- scripts/sim/baselines/<id>.json` — no sweep needed, and that is
+where a dossier's table comes from. When new shipped content deserves a standing cell, add a
+fixture and commit it. `--deck`/`--board` remain for hand-written ad-hoc decks.
 
 **A committed result *is* the current baseline — never re-measure one to obtain it.** It is
 committed because it describes the tree as it stands; a result known to have gone stale is
@@ -252,9 +279,10 @@ Two kinds of variable:
   1. Fix the `--scenario` / `--deck` / `--board` / `--seeds` so both runs are a paired comparison
      (same seeds → identical shuffles → the content edit is the only variable). Use a policy that
      actually reaches the mechanic (`greedy`/`heuristic` past the early game; `random` barely survives).
-  2. **Baseline numbers** — on a baseline-fixture cell, read the committed rows in
-     `baselines/results/` and skip this run entirely; match the sweep's `--policies`/`--seeds` to
-     what they were measured at. Only *measure* a baseline when the cell has none — an ad-hoc
+  2. **Baseline numbers** — on a baseline-fixture cell, read the fixture's own committed rows
+     (`npm run sim:report -- scripts/sim/baselines/<id>.json`) and skip this run entirely; match the
+     variant sweep's `--policies`/`--seeds` to what the fixture holds (its `results[policy].rows`
+     length *is* the seed count). Only *measure* a baseline when the cell has none — an ad-hoc
      `--deck`/`--board` comparison, or a fixture never swept. Capture to `scratchpad/baseline.csv`.
   3. **Edit** the content value (the `Edit` tool on the real `src/content/*.ts`).
   4. **Variant run** — same flags, capture to `scratchpad/variant.csv`.

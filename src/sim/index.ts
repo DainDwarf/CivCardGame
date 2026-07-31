@@ -11,4 +11,5 @@ export * from './value';
 export * from './invariants';
 export * from './batch';
 export * from './record';
+export * from './baseline';
 export * from './report';

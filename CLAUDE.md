@@ -72,12 +72,13 @@ surprise, so nothing shows a locked placeholder or a total count.
   target set derive from `content/missions.ts` — missions are never hard-coded.
 - `npm run sim` — balance tool (`scripts/sim.ts`): sweeps the headless simulator and **measures** it —
   one CSV row per run on stdout, flushed as each run lands, aggregating nothing. Folding is
-  `npm run sim:report`'s separate job, so a sweep is paid for once and re-analysed as often as the
-  questions require (filter by outcome, pull the outliers, group by any column) without re-running it,
-  and a long sweep is followable as rows arrive. Above the rows sits a `#`-comment header — the sweep's
-  own flags, then one manifest line per cell naming its mission, board and deck — so a sweep file is a
-  complete record of itself (a data row carries no constant-per-cell field, and a deck's copy counts and
-  per-copy stickers are expressible nowhere else). `cardsPlayed` is **zero-filled** over the deck plus
+  `npm run sim:report`'s separate job and committing is `npm run sim:record`'s, so a sweep is paid for
+  once and re-analysed as often as the questions require (filter by outcome, pull the outliers, group by
+  any column) without re-running it, and a long sweep is followable as rows arrive. Above the rows sits a
+  `#`-comment header — the sweep's own flags (the **effective** `maxRounds`/`beamWidth`, not the ones a
+  flag happened to name), then one manifest line per cell naming its mission, board and deck — so a sweep
+  file is a complete record of itself (a data row carries no constant-per-cell field, and a deck's copy
+  counts and per-copy stickers are expressible nowhere else). `cardsPlayed` is **zero-filled** over the deck plus
   the mission's `events` and `alsoDisplay`, which makes "unplayed" a per-run fact and keeps the key set
   identical across every row of a cell. Cells are named one of two mutually-exclusive ways. **Ad-hoc**, over a mission ×
   deck × board matrix: `--scenario <ids>` names missions (live from `content/missions.ts`),
@@ -89,20 +90,32 @@ surprise, so nothing shows a locked placeholder or a total count.
   a fixture holds exactly one board, so a mission the campaign reaches from two boards gets one per
   board; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
   Influence can be ground before `ice_age` unlocks — a mission needing the shop there would be a
-  softlock. Measured results live under `baselines/results/`, whose commit *is* their content-SHA
-  record — one file per recorded policy set (`greedy-planner` @100, `oracle` @10), so a policy with no
-  file there is simply unmeasured, not measured-and-absent; every row is swept at the **default search
-  beam**, so a `--search-beam` sweep is a diagnostic, never a baseline. Both styles take
+  softlock. A fixture carries its **own** measured rows in a `results` key, one entry per policy
+  (`greedy`/`planner` @100, `oracle` @10 is the standing protocol), whose commit *is* their content-SHA
+  record — so a policy with no entry is simply unmeasured, not measured-and-absent, and a re-cut fixture
+  can no longer strand rows in a file nobody edits. Every row is swept at the **default search beam**, so
+  a `--search-beam` sweep is a diagnostic, never a baseline. Both styles take
   `--seeds`/`--policies`; `--seed <i>` is a **filter** (sweep only that index, on the seed streams the
   full sweep would have given it — so a row that lost replays verbatim) and `--verbose` adds a per-turn
   trace on **stderr**, stdout staying pure CSV. See *Balance tooling*.
-- `npm run sim:report` — analysis tool (`scripts/report.ts`): folds a sweep file back into the
-  aggregated report (win rate · turns · defeat causes · card plays · unplayed cards). Takes a path or
-  stdin, `--format text|json`. `summarize` folds a `RunRecord[]` whatever its provenance, so a live
-  sweep and a re-read file give the same numbers by construction. Its `--format json` is the
-  `ScenarioSummary[]` shape committed under `baselines/results/`, so recording a measurement is piping a
-  sweep through this. **Redirect through `npm run --silent`** — npm's own `> package@version script`
-  preamble goes to stdout, and while the CSV reader skips past it, JSON has no comment syntax to hide it.
+- `npm run sim:report` — analysis tool (`scripts/report.ts`): folds measured runs into the aggregated
+  report (win rate · turns · defeat causes · card plays · unplayed cards). Takes a **sweep file** (path
+  or stdin) or a **baseline fixture / directory of them**, discriminated by content rather than
+  extension, so the standing set's numbers are readable with no sweep at all — which is where a dossier's
+  table comes from. `--format text|json`. `summarize` folds a `RunRecord[]` whatever its provenance, so a
+  live sweep, a re-read file and a committed fixture give the same numbers by construction. **Redirect
+  through `npm run --silent`** — npm's own `> package@version script` preamble goes to stdout, and while
+  the CSV reader skips past it, JSON has no comment syntax to hide it.
+- `npm run sim:record` — recording tool (`scripts/record.ts`): merges a sweep's rows into the baseline
+  fixtures that produced them (`--baseline <paths|dir>`, default `scripts/sim/baselines`), one
+  `results[policy]` key replaced per swept policy and nothing else touched — the `note` in particular is
+  authored prose no rewrite may clobber. A third verb rather than a `--record` flag on `sim`: it keeps the
+  simulator a pure measurer, and every refusal reads a fact off the sweep's own `#sweep`/`#cell` header
+  rather than off which flags were combined, so it holds for a sweep file taken any time. It declines a
+  seed-filtered sweep (a replay), a non-default search beam (a diagnostic), a run count short of the
+  sweep's `--seeds` (an interrupted sweep), a cell no fixture answers to (renamed or removed), and a
+  fixture whose deck/board/mission no longer matches what was swept. All-or-nothing: every cell is
+  validated before any file is written.
 - `npm run sim:profile` — the same sweep under `@platformatic/flame`, which writes a **markdown**
   hotspot report (annotated call tree + per-function callers/callees) beside an HTML flamegraph, into
   the gitignored `cpu-profile-*`/`heap-profile-*` in the CWD. Markdown so the report is readable
@@ -513,10 +526,21 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   (`WIN_OUTCOME`), so wins/defeats/one-cause are all a single equality. `runPolicies` sweeps one scenario
   under several named policies with *paired* seeds. `simConfig(...)` builds a content-agnostic
   `RunConfig` from a cardId/`DeckCard` deck (the sim counterpart to `buildRunConfig`).
-- **CLI** (`scripts/sim.ts`) — sweeps a **mission × deck × board** matrix, three axes decoupled:
-  `--scenario` names missions (live from `MISSIONS`), `--deck`/`--board` load hand-editable JSON
-  (examples under `scripts/sim/`), swept under `--policies`/`--seeds` and written out as CSV.
-  `scripts/report.ts` reads that CSV back (`parseRecordCsv`) and prints the report.
+- **`baseline.ts`** — the third pass: committing. A baseline fixture holds its own measurement in
+  `results[policy]` as **verbatim** `recordToCsvLine` rows, so the expensive half of a sweep survives the
+  fold and every later question is answerable without re-measuring. `recordedRuns` reads a fixture back
+  into `RunRecord[]` — through the same `parseRecordCsv`, so a committed fixture and the sweep it came
+  from summarize identically — and `withRecordedPolicy` replaces one policy's rows, touching nothing
+  else. The rows keep the `cell`/`policy` columns that are constant within a file *because* that
+  redundancy is checkable: a row naming another cell means the fixture was renamed out from under its
+  measurement, and `maxRounds`/`columns` sit inside each policy entry so a partial re-record can't
+  certify a sibling's stale rows.
+- **CLI** — three tools over one currency. `scripts/sim.ts` sweeps a **mission × deck × board** matrix,
+  three axes decoupled: `--scenario` names missions (live from `MISSIONS`), `--deck`/`--board` load
+  hand-editable JSON (examples under `scripts/sim/`), swept under `--policies`/`--seeds` and written out
+  as CSV. `scripts/report.ts` reads that CSV back (`parseRecordCsv`) — or a fixture's recorded rows — and
+  prints the report; `scripts/record.ts` merges the rows into their fixtures. Shared path/JSON loading
+  lives in `scripts/simFiles.ts`; each tool passes its own `fail` so a message carries its name.
 
 ## Conventions
 

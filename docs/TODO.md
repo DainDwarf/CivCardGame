@@ -206,18 +206,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 ### Tooling
 
 - **Shaping config settable by option and by baseline file** — `EnablerTerms` is only reachable by editing
-  `DEFAULT_ENABLER_TERMS`, so an A/B costs a source edit per run, and a committed row in
-  `baselines/results/` cannot record which config produced it. Want a `npm run sim` flag *and* the terms
+  `DEFAULT_ENABLER_TERMS`, so an A/B costs a source edit per run, and a fixture's recorded rows cannot
+  say which config produced them. Want a `npm run sim` flag *and* the terms
   declared in the fixture, so a cell carries its shaping config like its mission/deck/board. `[size: M]`
-- **One sim baseline file per configuration, holding its own results** `[size: M]` — today a cell's
-  launch config (`scripts/sim/baselines/<mission>.json`) and its measured numbers (a global
-  `results/<policy-set>.json`) live apart, so re-cutting a fixture silently strands rows keyed by label
-  in a file nobody edits, and one mission can't hold two cells without hand-splicing both sides. Fold
-  them into a single per-configuration file carrying config **and** recorded results. Optional second
-  half: report a sweep as a **delta against the recorded numbers**, and take a flag to overwrite them in
-  place. Cheaper now that the measure/analyse split landed: a sweep CSV already carries a `#cell`
-  manifest of the config that produced it, so the two halves travel together in one file — what's left
-  is making that file the *committed* form.
+- **Report a sweep as a delta against a fixture's recorded rows** `[size: S]` — a baseline fixture now
+  holds its own rows, so `npm run sim:report -- sweep.csv --against <fixture|dir>` could fold both and
+  print recorded → new side by side (win rate, turns, defeat causes, which seeds flipped) instead of
+  leaving a rebalance's effect to be read off a per-seed `git diff`. The second half of the
+  one-file-per-configuration item, deliberately deferred: the diff already carries the raw signal.
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
@@ -233,6 +229,23 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **A baseline fixture holds its own rows** ✅ — a cell's launch config
+  (`scripts/sim/baselines/<id>.json`) and its measured numbers (a global `results/<policy-set>.json`)
+  lived apart, bound only by a label string, so re-cutting a fixture stranded rows in a file nobody
+  edits and one mission couldn't hold two cells without hand-splicing both sides. A fixture now carries
+  a `results` key, one entry per policy, holding **verbatim CSV rows** rather than the folded report —
+  so the sweep survives the fold and "which seeds flipped?" is answerable without re-measuring, and a
+  rebalance reads as a per-seed `git diff` instead of two moved percentages.
+  - **Recording is a third tool, `npm run sim:record`**, not a `--record` flag on the sweep. That keeps
+    `sim` a pure measurer, and moves every "is this a baseline?" rule off flag combinations and onto the
+    sweep file's own `#sweep`/`#cell` header — so a filtered sweep, a non-default beam, an interrupted
+    run count, a renamed cell and a fixture edited mid-sweep are each refused for a file taken any time.
+  - The rows keep their constant `cell`/`policy` columns *because* that redundancy is checkable, and
+    `maxRounds`/`columns` sit inside each policy entry so a partial re-record can't certify a sibling's
+    stale rows. `#sweep` now records **effective** values, so a sweep that named no flag still says what
+    it ran at.
+  - `sim:report` reads a fixture (or a directory of them) as well as a sweep file, which is where a
+    dossier's table now comes from. The delta report is deferred to its own item.
 - **The simulator measures; a second tool folds** ✅ — `npm run sim` had two unrelated front-ends over
   one engine: a batch mode that destroyed every per-run fact in-process behind an aggregate report, and
   a `--seed` replay that was a separate code path with a different output. So a second question about a
@@ -240,7 +253,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   Now the sweep's **only** output is one CSV row per run (`sim/record.ts`'s `RunRecord`), written as each
   run lands, and `npm run sim:report` folds that file into the same report as before. `summarize` takes a
   `RunRecord[]` whatever its provenance, so a live sweep and a re-read file agree by construction; its
-  `--format json` is the `baselines/results/` shape, so recording a measurement is piping a sweep through
+  `--format json` was the committed-results shape, so recording a measurement was piping a sweep through
   it and nothing committed needed migrating. Verified by re-sweeping `masonry_chiefdom` and `accounting`
   × greedy/planner × 100 seeds: all four cells reproduce the committed rows field-for-field.
   - **`--seed` became a filter, not a mode** (`BatchOptions.seedIndices` keeps the selected index on the
@@ -270,8 +283,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   each branch now leads with a **pressure** mission whose reward is the *next* mission's toolkit, and
   both branches reconverge on a culture node before the wonder capstone. The Stone Age's twelve
   thresholds were re-read against the new rates and the Bronze arc's nine measured cells re-cut on decks
-  a player can actually own at each node, with the results committed under
-  `scripts/sim/baselines/results/`. The **worker-turn** basis those rates were judged on, and the board
+  a player can actually own at each node, with the results committed alongside the fixtures under
+  `scripts/sim/baselines/`. The **worker-turn** basis those rates were judged on, and the board
   and objective notes the pass settled, graduated to [`DESIGN.md`](DESIGN.md).
 - **The deck editor's tray no longer overlays its picker** ✅ — the tray was `position: fixed` over a
   picker that scrolled with the whole meta content area, so whatever landed in the bottom ~260px at a
@@ -312,8 +325,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   rides alongside `sim` to the policy factories, merged *over* the depth `searchBoundsFor` derives, so the
   same field reaches `nodeBudget`/`enablers` later without more plumbing. **Superlinear in the width** — a
   wider beam keeps more states alive and so searches deeper, not merely wider (~3.3× per doubling measured
-  on one 50-seed cell). `baselines/results/` is swept at the default width throughout: a `--search-beam`
-  row is a diagnostic and is not comparable to it.
+  on one 50-seed cell). The standing set's recorded rows are swept at the default width throughout: a
+  `--search-beam` row is a diagnostic and is not comparable to them.
 
 - **`--max-rounds` sets the oracle/prover search depth** ✅ — the search's round cap was hardcoded at 50
   while the drive loop's stall cutoff was a separate flag, so the two could disagree in both directions: a
@@ -322,8 +335,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `POLICY_FACTORIES` entries now take the sweep's `SimOptions`, and the two search policies derive their
   depth from it via `searchBoundsFor`. The search's own default moved 50 → 200 to match the drive loop's,
   so an unflagged sweep agrees by construction; only an *explicit finite* cutoff propagates, `Infinity`
-  being dropped as an unbounded search would never terminate. Re-measuring `baselines/results/oracle.json`
-  across the move left every row unchanged — depth was not the binding bound on the standing set. Replay (`--seed`) builds its policy from the
+  being dropped as an unbounded search would never terminate. Re-measuring the standing set's `oracle`
+  rows across the move left every one unchanged — depth was not the binding bound on the standing set. Replay (`--seed`) builds its policy from the
   same `SimOptions`/`OracleOptions` as the batch, or it would reproduce a row at different bounds.
 
 - **Mission detail panel shows mid-play injections** ✅ — the panel's card list read `threats`/`events`
@@ -348,8 +361,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   existed while work took a slot. Board territory went back to its pre-merge figures (Tribe 0,
   Settlement 2, Chiefdom 0, City 2). Two things from the merge were kept because they were never about
   the cap: `placedCards` as the one board-wide read, and the single `BoardBox` drawing all three zones.
-  Everything measured under the shared cap was re-cut afterwards, so `scripts/sim/baselines/results/`
-  reads the split cap throughout.
+  Everything measured under the shared cap was re-cut afterwards, so the standing set's recorded rows
+  read the split cap throughout.
 - **Trade-route zone** ✅ — a new `trade` **card kind** and a standing `G.tradeRoutes` zone. Playing a
   trade card files it there via `rules/tradeRoutes.ts`'s `openTradeRoute`, where the `endTurn` broadcast
   ticks it like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling. A route takes
@@ -382,8 +395,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   Backdrop-click keeps editing. Dialog reuses GameMenu's confirm styling.
 - **Golden scenarios — simulator trust harness** ✅ — landed as the committed **baseline fixture
   system** (`scripts/sim/baselines/`): self-contained `(mission, deck, board)` fixtures that each own
-  their three axes, swept via `npm run sim -- --baseline`, with measured results committed under
-  `baselines/results/` whose commit *is* their content-SHA record — the regression pins for the
+  their three axes, swept via `npm run sim -- --baseline`, with measured results committed beside them
+  whose commit *is* their content-SHA record — the regression pins for the
   *instrument*, decoupling "policy too weak" from "content too hard". Standing set is First Settlement →
   Writing (the Stone-Age ones deliberately minimal no-purchase decks). Soundness-only framing holds (a
   found win is fact; a *not*-found win is only "not within budget", never a mission verdict); human
