@@ -14,6 +14,7 @@
     "test:integration": "vitest run integration.test",
     "seed-save": "node scripts/bundle.mjs && node scripts/.bundle/seed-save.mjs",
     "sim": "node scripts/bundle.mjs && node scripts/.bundle/sim.mjs",
+    "sim:report": "node scripts/bundle.mjs && node scripts/.bundle/report.mjs",
     "sim:profile": "node scripts/bundle.mjs && npx -y @platformatic/flame@1.7.0 run --delay=none --md-format=detailed scripts/.bundle/sim.mjs --",
     "economy": "node scripts/bundle.mjs && node scripts/.bundle/economy.mjs"
   },

@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { summarize } from './report';
-import { runBatch, type Scenario, type ScenarioRuns } from './batch';
-import { simConfig, simulateRun, createRandomPolicy, STALL_REASON, type SimOutcome } from './index';
-import { blankState } from '../rules';
+import { groupRecords, summarize } from './report';
+import { runBatch, type Scenario } from './batch';
+import { simConfig, simulateRun, createRandomPolicy, STALL_REASON, WIN_OUTCOME, type RunRecord } from './index';
 import { emptyResources, type Resources } from '../rules/resources';
 import { installFixtures, uninstallFixtures, TEST_BOARD_ID } from '../rules/testFixtures';
 
@@ -10,42 +9,38 @@ import { installFixtures, uninstallFixtures, TEST_BOARD_ID } from '../rules/test
 // reliably plays *some* card over a short run, and the whole run stays independent of the shipped catalogue.
 const FIXTURE_DECK = ['test_work', 'test_bespoke', 'test_dynamic', 'test_growing', 'test_action', 'test_settlers'];
 
-/** Build a minimal `SimOutcome` for aggregation tests. `summarize` reads only `result`/`gameover`/
- *  `actionsApplied`/`cardPlays`, so `finalState` is a throwaway `blankState()` (built via the real
- *  helper, not a cast). */
-function outcome(opts: {
-  outcome: 'victory' | 'defeat';
-  turnsTaken: number;
-  reason?: string;
+/** Build a `RunRecord` for the aggregation tests. `cardPlays` is written the way `toRunRecord` writes it
+ *  — zero-filled over the whole deck — since that is what `summarize` reads unplayed cards off. */
+function record(opts: {
+  outcome: string;
+  turns: number;
   cardPlays?: Record<string, number>;
-  actionsApplied?: number;
-  finalResources?: Partial<Resources>;
-}): SimOutcome {
-  const finalResources = { ...emptyResources(), ...opts.finalResources };
+  actions?: number;
+  resources?: Partial<Resources>;
+}): RunRecord {
   return {
-    result: { outcome: opts.outcome, missionId: 'test', stats: { turnsTaken: opts.turnsTaken, finalResources } },
-    gameover: { outcome: opts.outcome, reason: opts.reason, missionId: 'test' },
-    finalState: blankState('test'),
-    actionsApplied: opts.actionsApplied ?? 0,
-    cardPlays: opts.cardPlays ?? {},
+    cell: 's',
+    policy: 'test',
+    seed: 0,
+    outcome: opts.outcome,
+    turns: opts.turns,
+    actions: opts.actions ?? 0,
+    resources: { ...emptyResources(), ...opts.resources },
+    structures: 0,
+    routes: 0,
+    reshuffles: 0,
+    cardPlays: { a: 0, b: 0, c: 0, ...opts.cardPlays },
   };
 }
 
-const scenario: Scenario = { label: 's', deckCardIds: ['a', 'b', 'c'], board: 'tribe', missionId: 'test' };
-
 describe('summarize', () => {
   it('computes win rate, turns stats, and mean actions', () => {
-    const runs: ScenarioRuns = {
-      scenario,
-      policyName: 'test',
-      outcomes: [
-        outcome({ outcome: 'victory', turnsTaken: 4, actionsApplied: 10 }),
-        outcome({ outcome: 'defeat', turnsTaken: 2, reason: 'famine', actionsApplied: 6 }),
-        outcome({ outcome: 'defeat', turnsTaken: 8, reason: 'famine', actionsApplied: 20 }),
-        outcome({ outcome: 'defeat', turnsTaken: 6, reason: 'ruin', actionsApplied: 12 }),
-      ],
-    };
-    const s = summarize(runs);
+    const s = summarize([
+      record({ outcome: WIN_OUTCOME, turns: 4, actions: 10 }),
+      record({ outcome: 'famine', turns: 2, actions: 6 }),
+      record({ outcome: 'famine', turns: 8, actions: 20 }),
+      record({ outcome: 'ruin', turns: 6, actions: 12 }),
+    ]);
     expect(s.runs).toBe(4);
     expect(s.wins).toBe(1);
     expect(s.winRate).toBe(0.25);
@@ -53,49 +48,46 @@ describe('summarize', () => {
     expect(s.meanActions).toBe(12);
   });
 
-  it('groups defeat causes off gameover.reason, keeping a deadline defeat separate from a famine', () => {
-    const runs: ScenarioRuns = {
-      scenario,
-      policyName: 'test',
-      outcomes: [
-        outcome({ outcome: 'defeat', turnsTaken: 3, reason: 'famine' }),
-        outcome({ outcome: 'defeat', turnsTaken: 3, reason: 'famine' }),
-        // A deadline defeat leaves NO negative pool — only `gameover.reason` distinguishes it.
-        outcome({ outcome: 'defeat', turnsTaken: 51, reason: 'the deadline' }),
-        // A victory contributes no defeat cause.
-        outcome({ outcome: 'victory', turnsTaken: 5 }),
-      ],
-    };
-    const s = summarize(runs);
+  it('groups defeat causes off the outcome, keeping a deadline defeat separate from a famine', () => {
+    const s = summarize([
+      record({ outcome: 'famine', turns: 3 }),
+      record({ outcome: 'famine', turns: 3 }),
+      // A deadline defeat leaves NO negative pool — only the recorded cause distinguishes it.
+      record({ outcome: 'the deadline', turns: 51 }),
+      // A victory contributes no defeat cause.
+      record({ outcome: WIN_OUTCOME, turns: 5 }),
+    ]);
     expect(s.defeatCauses).toEqual({ famine: 2, 'the deadline': 1 });
   });
 
-  it('sums card plays across runs and derives unplayed cards from the scenario deck', () => {
-    const runs: ScenarioRuns = {
-      scenario, // deck is ['a', 'b', 'c']
-      policyName: 'test',
-      outcomes: [
-        outcome({ outcome: 'defeat', turnsTaken: 2, cardPlays: { a: 2, b: 1 } }),
-        outcome({ outcome: 'defeat', turnsTaken: 2, cardPlays: { a: 3 } }),
-      ],
-    };
-    const s = summarize(runs);
+  it('sums card plays across runs and reads unplayed cards off the zero-filled counts', () => {
+    const s = summarize([
+      record({ outcome: 'famine', turns: 2, cardPlays: { a: 2, b: 1 } }),
+      record({ outcome: 'famine', turns: 2, cardPlays: { a: 3 } }),
+    ]);
     expect(s.cardPlays).toEqual({ a: 5, b: 1 });
-    // 'c' was never played → flagged dead; 'a'/'b' were played.
+    // 'c' stayed at 0 in every run → flagged dead, and dropped from the play counts.
     expect(s.unplayedCards).toEqual(['c']);
   });
 
   it('averages final resources — core and strategic alike, in one bundle', () => {
-    const runs: ScenarioRuns = {
-      scenario,
-      policyName: 'test',
-      outcomes: [
-        outcome({ outcome: 'defeat', turnsTaken: 1, finalResources: { food: 2, production: 4, money: 6, population: 2, territory: 1, culture: 0 } }),
-        outcome({ outcome: 'defeat', turnsTaken: 1, finalResources: { food: 4, population: 4, territory: 3, culture: 2 } }),
-      ],
-    };
-    const s = summarize(runs);
+    const s = summarize([
+      record({ outcome: 'famine', turns: 1, resources: { food: 2, production: 4, money: 6, population: 2, territory: 1, culture: 0 } }),
+      record({ outcome: 'famine', turns: 1, resources: { food: 4, population: 4, territory: 3, culture: 2 } }),
+    ]);
     expect(s.meanResources).toEqual({ food: 3, production: 2, science: 0, military: 0, money: 3, population: 3, territory: 2, culture: 1 });
+  });
+});
+
+describe('groupRecords', () => {
+  it('splits a flat sweep into one group per cell and policy, in encounter order', () => {
+    const at = (cell: string, policy: string): RunRecord => ({ ...record({ outcome: WIN_OUTCOME, turns: 1 }), cell, policy });
+    const groups = groupRecords([at('x', 'greedy'), at('y', 'greedy'), at('x', 'planner'), at('x', 'greedy')]);
+    expect(groups.map((g) => `${g[0].cell}/${g[0].policy} ×${g.length}`)).toEqual([
+      'x/greedy ×2',
+      'y/greedy ×1',
+      'x/planner ×1',
+    ]);
   });
 });
 
@@ -103,17 +95,29 @@ describe('runBatch', () => {
   beforeAll(installFixtures);
   afterAll(uninstallFixtures);
 
-  it('is reproducible — the same scenarios and seed count yield identical outcomes', () => {
-    const scenarios: Scenario[] = [
-      { label: 'fixture/unwinnable', deckCardIds: FIXTURE_DECK, board: TEST_BOARD_ID, missionId: 'test_unwinnable' },
-    ];
-    const a = runBatch(scenarios, { seeds: 3 });
-    const b = runBatch(scenarios, { seeds: 3 });
-    const results = (rs: typeof a) => rs[0].outcomes.map((o) => o.result);
-    expect(results(a)).toEqual(results(b));
+  const scenarios: Scenario[] = [
+    { label: 'fixture/unwinnable', deckCardIds: FIXTURE_DECK, board: TEST_BOARD_ID, missionId: 'test_unwinnable' },
+  ];
+
+  it('is reproducible — the same scenarios and seed count yield identical records', () => {
+    expect(runBatch(scenarios, { seeds: 3 })).toEqual(runBatch(scenarios, { seeds: 3 }));
     // A defeat-only mission (`test_never` objective is `() => false`) — sanity that the sweep actually ran.
-    expect(a[0].outcomes).toHaveLength(3);
-    expect(a[0].outcomes.every((o) => o.result.outcome === 'defeat')).toBe(true);
+    const records = runBatch(scenarios, { seeds: 3 });
+    expect(records).toHaveLength(3);
+    expect(records.every((r) => r.outcome !== WIN_OUTCOME)).toBe(true);
+  });
+
+  // What makes `--seed <i>` a filter over the sweep rather than a second code path: the run it selects
+  // must be the *same* run, seed streams and all, that the full sweep would have produced at that index.
+  it('reproduces a full sweep row exactly when only that seed index is run', () => {
+    const full = runBatch(scenarios, { seeds: 3 });
+    expect(runBatch(scenarios, { seeds: 3, seedIndices: [2] })).toEqual([full[2]]);
+  });
+
+  it('streams each record through onRun as it lands, in the order returned', () => {
+    const streamed: RunRecord[] = [];
+    const returned = runBatch(scenarios, { seeds: 3, onRun: (r) => streamed.push(r) });
+    expect(streamed).toEqual(returned);
   });
 });
 

@@ -1,11 +1,13 @@
 /**
- * Balance tool — sweep the headless simulator over a mission × deck × board matrix and print a report.
+ * Balance tool — sweep the headless simulator over a mission × deck × board matrix and **measure** it.
  *
  * The simulator (`src/sim/`) plays a *locked* deck vs. a mission on the real engine under a move policy;
  * a single run answers little, but running one cell over many seeds gives statistical balance answers no
- * human can grind: is a mission winnable (win rate), is the food economy too tight (turn distribution +
- * defeat-cause histogram), is a card ever played (per-card play counts + the unplayed-cards list). This
- * re-implements **no** game logic — it composes `runPolicies` → `summarize` → `formatReport` from `src/sim`.
+ * human can grind. This tool only *measures*: it emits **one CSV row per run** to stdout, flushed as each
+ * run lands, and folds nothing. Aggregation is `npm run sim:report`, a separate pass over that CSV — so a
+ * sweep is paid for once and re-analysed any number of times (filter by outcome, pull the outliers, group
+ * by any column) without re-running it, and a long sweep is followable as rows arrive. It re-implements
+ * **no** game logic — it composes `runPolicies` from `src/sim`.
  *
  * A sweep names its cells one of two ways. **Ad-hoc**, the three axes are decoupled the way the campaign
  * menu presents them: pick the **mission(s)** by id (looked up live from `content/missions.ts` — no copied
@@ -23,26 +25,27 @@
  * search-proven winnability rate) are nameable but slow — opt in with a small seed count.
  *
  * Usage:
- *   npm run sim -- --scenario growing_numbers --deck <file> --board settlement
+ *   npm run sim -- --scenario growing_numbers --deck <file> --board settlement > sweep.csv
  *   npm run sim -- --scenario growing_numbers --deck <file> --board scripts/sim/boards/city-stockpiled.json
  *   npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board <file> --seeds 500
  *   npm run sim -- --scenario first_trades --deck <file> --board <file> --policies greedy,heuristic
- *   npm run sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100 --format json
- *   npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies planner --seed 3   # replay one run
+ *   npm run sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100 > sweep.csv
+ *   npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies planner --seed 3 --verbose
  *
  * Flags: `--scenario` + `--deck` + `--board` (the ad-hoc trio — one or more mission ids, a deck JSON path,
  * and a content board id or board JSON path) **or** `--baseline` (comma-separated fixture paths, or a
- * directory of them); `--seeds` (default 100), `--policies` (default random,heuristic,greedy), `--format`
- * (text|json), `--max-rounds <n>` (stall cutoff — a policy idling past round `n` without winning/collapsing
+ * directory of them); `--seeds` (default 100), `--policies` (default random,heuristic,greedy),
+ * `--max-rounds <n>` (stall cutoff — a policy idling past round `n` without winning/collapsing
  * is recorded as a `stall` defeat rather than ground to the action wall; default 200. Also caps how deep
  * `oracle`/`prover` search, so they never prove a line the cutoff would then discard as a stall — raise it
  * to let them find longer wins, at steeply more search cost), `--search-beam <n>` (the `oracle`/`prover`
  * beam width — the diagnostic for a `noWinFound:deadEnd` result, which says the *ranking* kept only
  * positions that die; more wins found under a wider beam means the heuristic was discarding real lines.
  * **Costs superlinearly** — a wider beam keeps more states alive and so searches deeper, not just wider,
- * and rows swept at a non-default width are not comparable to `baselines/results/`), and `--seed <i>` which
- * switches to **replay mode** — re-run the single (cell, policy, index) the batch would have run and print a
- * per-turn trace (needs exactly one cell and one policy).
+ * and rows swept at a non-default width are not comparable to `baselines/results/`), `--seed <i>` (a
+ * **filter** — sweep only that seed index, keeping its seed streams identical to the full sweep's, so a
+ * row that lost can be re-run verbatim), and `--verbose` (add a per-turn trace on **stderr**; stdout stays
+ * pure CSV, so it composes with a redirect).
  *
  * File schemas — a deck file is `{ "cards": [{ "cardId", "count"?, "stickers"? }, ...] }` (count expands
  * to that many copies; stickers ride on every copy of the entry); a board file is
@@ -52,17 +55,18 @@
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { basename, join } from 'node:path';
+import { join } from 'node:path';
 import {
   runPolicies,
-  summarize,
-  formatReport,
-  simConfig,
-  simulateRun,
+  csvHeaderLine,
+  manifestLines,
+  recordToCsvLine,
   POLICY_FACTORIES,
+  type RunRecord,
   type Scenario,
   type SimAction,
 } from '../src/sim';
+import type { RunState } from '../src/run/engine';
 import { MISSIONS } from '../src/content/missions';
 import { CARDS } from '../src/content/cards';
 import { BOARDS } from '../src/content/boards';
@@ -139,19 +143,13 @@ function resolveBoard(arg: string): { board: string; stickers: string[] } {
 
 /** One swept cell: a mission + the exact deck and board it is played with. The ad-hoc trio expands into
  *  one per `--scenario` mission (all sharing the one deck/board); `--baseline` yields one per fixture, each
- *  carrying its *own* deck and board. Everything downstream — batch and replay alike — reads only this, so
- *  neither path is a special case. `source` names where the deck came from, for the replay header. */
+ *  carrying its *own* deck and board. Everything downstream reads only this, so neither input style is a
+ *  special case. */
 interface Cell {
   label: string;
   missionId: string;
   deck: DeckCard[];
   board: { board: string; stickers: string[] };
-  source: string;
-}
-
-/** A cell's board rendered for the report header — the id, plus any stickers it carries. */
-function boardLabelOf(cell: Cell): string {
-  return `${cell.board.board}${cell.board.stickers.length ? ` +${cell.board.stickers.join(',')}` : ''}`;
 }
 
 /** Load + validate a self-contained baseline fixture. `deck` and `board` reuse the deck/board loaders
@@ -165,14 +163,7 @@ function loadBaseline(path: string): Cell {
   if (!Array.isArray(raw.deck)) fail(`baseline file '${path}' must have a 'deck' array.`);
   if (raw.board === undefined) fail(`baseline file '${path}' must have a 'board'.`);
   const board = typeof raw.board === 'string' ? resolveBoardId(path, raw.board) : readBoard(path, raw.board);
-  const deck = readCards(path, raw.deck);
-  return {
-    label: raw.id,
-    missionId: raw.mission,
-    deck,
-    board,
-    source: `${basename(path)} (${deck.length} cards)`,
-  };
+  return { label: raw.id, missionId: raw.mission, deck: readCards(path, raw.deck), board };
 }
 
 /** Expand each `--baseline` argument: a directory yields every `.json` directly inside it (so the
@@ -219,7 +210,7 @@ function loadBoardFile(path: string): { board: string; stickers: string[] } {
 
 // Wrap `parseArgs` so an unknown flag or stray positional (strict mode throws a raw `TypeError`) surfaces
 // as the same clean `sim: …` one-liner as every other user mistake, not a stack trace.
-let values: { scenario?: string; deck?: string; board?: string; baseline?: string; seeds?: string; policies?: string; format?: string; seed?: string; 'max-rounds'?: string; 'search-beam'?: string };
+let values: { scenario?: string; deck?: string; board?: string; baseline?: string; seeds?: string; policies?: string; seed?: string; verbose?: boolean; 'max-rounds'?: string; 'search-beam'?: string };
 try {
   ({ values } = parseArgs({
     options: {
@@ -229,8 +220,8 @@ try {
       baseline: { type: 'string' },
       seeds: { type: 'string' },
       policies: { type: 'string' },
-      format: { type: 'string' },
       seed: { type: 'string' },
+      verbose: { type: 'boolean' },
       'max-rounds': { type: 'string' },
       'search-beam': { type: 'string' },
     },
@@ -262,8 +253,14 @@ for (const p of policies) {
   if (!POLICY_FACTORIES[p]) fail(`unknown policy '${p}'. Known: ${Object.keys(POLICY_FACTORIES).join(', ')}.`);
 }
 
-const format = values.format ?? 'text';
-if (format !== 'text' && format !== 'json') fail(`--format must be 'text' or 'json', got '${format}'.`);
+// A filter, not a mode: sweep only this seed index. The index keys the same `(cfg, pol)` streams the
+// full sweep would have used, so the row is identical to the one it reproduces.
+const seedIndices = (() => {
+  if (values.seed === undefined) return undefined;
+  const idx = Number(values.seed);
+  if (!Number.isInteger(idx) || idx < 0) fail(`--seed must be a non-negative integer index, got '${values.seed}'.`);
+  return [idx];
+})();
 
 // Stall cutoff: a policy that idles a run's rounds upward forever (a one-ply greedy stuck on a multi-turn
 // chain) is recorded as a `stall` defeat past this round rather than ground to the action wall. Omitted →
@@ -291,16 +288,10 @@ const cells: Cell[] =
     : (() => {
         const deck = loadDeck(values.deck!);
         const board = resolveBoard(values.board!);
-        return csv(values.scenario!).map((missionId) => ({
-          label: missionId,
-          missionId,
-          deck,
-          board,
-          source: `${basename(values.deck!)} (${deck.length} cards)`,
-        }));
+        return csv(values.scenario!).map((missionId) => ({ label: missionId, missionId, deck, board }));
       })();
 
-// ---- Replay mode: re-run one exact cell with a per-turn trace ----------------------------------------
+// ---- `--verbose`: a per-turn trace alongside the measurement -----------------------------------------
 
 /** A one-line economy readout for a turn: the 5 core resources plus population (assigned/total),
  *  territory, and culture. */
@@ -345,20 +336,14 @@ function formatAction(action: SimAction, G: GameState): string {
   }
 }
 
-function replay(cell: Cell, policyName: string, idx: number): void {
-  // A replay must reconstruct the batch cell *whole*: the seed keys built from the cell label exactly as
-  // `runBatch` does (same shuffle, same moves), and the same sweep options handed to the policy factory —
-  // a search policy built at different bounds would report a different outcome for the row it reproduces.
-  const config = simConfig({
-    deckCardIds: cell.deck,
-    board: cell.board.board,
-    boardStickers: cell.board.stickers,
-    missionId: cell.missionId,
-    seed: `${cell.label}-cfg-${idx}`,
-  });
-  const policy = POLICY_FACTORIES[policyName](`${cell.label}-pol-${idx}`, simOpts, searchOpts);
-
-  const lines: string[] = [];
+/**
+ * Buffers one run's per-turn trace and prints it to **stderr** when the run finishes. Runs are swept
+ * sequentially, so one buffer is enough; `onRun` is what closes a run out, and it carries the record —
+ * which is where the cell/policy/seed labelling comes from, rather than inferring a run boundary from
+ * the step stream.
+ */
+function createTracer() {
+  let lines: string[] = [];
   let turnStart = '';
   let turnActions: string[] = [];
   let sawFirst = false;
@@ -369,54 +354,44 @@ function replay(cell: Cell, policyName: string, idx: number): void {
     turnActions = [];
   };
 
-  const header = `# Replay — ${MISSIONS[cell.missionId].name} · ${policyName} · seed ${idx}\n#   deck: ${cell.source} · board: ${boardLabelOf(cell)}\n`;
+  /** Print whatever is buffered, however the run ended. `label` may be partial on an aborted run. */
+  const flush = (label: string, footer: string, lastRound: number) => {
+    // A run that ends mid-turn (a play triggers win/loss before any endTurn) leaves a partial turn.
+    if (turnActions.length) flushTurn(lastRound);
+    process.stderr.write(`\n${label}\n${lines.join('\n')}\n${footer}\n`);
+    lines = [];
+    turnActions = [];
+    turnStart = '';
+    sawFirst = false;
+  };
 
-  let outcome: ReturnType<typeof simulateRun>;
-  try {
-    outcome = simulateRun(config, policy, {
-      ...simOpts,
-      onStep: ({ action, prev, next, accepted }) => {
-        // Turn 1's starting economy is the very first call's `prev` (the post-setup state); every later
-        // turn's start is the state right after the endTurn that closed the previous one.
-        if (!sawFirst) {
-          turnStart = snapshot(prev.G);
-          sawFirst = true;
-        }
-        if (accepted && action.kind !== 'endTurn') turnActions.push(formatAction(action, prev.G));
-        if (action.kind === 'endTurn' && accepted) {
-          flushTurn(prev.G.round);
-          turnStart = snapshot(next.G);
-        }
-      },
-    });
-  } catch (err) {
-    // A non-terminating (or invariant-violating) run still accumulated a trace via `onStep` — print it so
-    // the abort is *diagnostic*, showing exactly what the policy was doing, then re-raise for a non-zero exit.
-    if (turnActions.length) flushTurn(NaN);
-    console.log(header);
-    console.log(lines.join('\n'));
-    console.error(`\n✗ ${(err as Error).message}`);
-    throw err;
-  }
-  // A run that ends mid-turn (a play triggers win/loss before any endTurn) leaves a partial turn buffered.
-  if (turnActions.length) flushTurn(outcome.finalState.round);
-
-  const g = outcome.gameover;
-  console.log(header);
-  console.log(lines.join('\n'));
-  console.log(`\n→ ${g.outcome}${g.reason ? ` (${g.reason})` : ''} · round ${outcome.finalState.round} · ${outcome.actionsApplied} actions`);
+  return {
+    onStep: ({ action, prev, next, accepted }: { action: SimAction; prev: RunState; next: RunState; accepted: boolean }) => {
+      // Turn 1's starting economy is the very first call's `prev` (the post-setup state); every later
+      // turn's start is the state right after the endTurn that closed the previous one.
+      if (!sawFirst) {
+        turnStart = snapshot(prev.G);
+        sawFirst = true;
+      }
+      if (accepted && action.kind !== 'endTurn') turnActions.push(formatAction(action, prev.G));
+      if (action.kind === 'endTurn' && accepted) {
+        flushTurn(prev.G.round);
+        turnStart = snapshot(next.G);
+      }
+    },
+    finishRun: (record: RunRecord) => {
+      const mission = MISSIONS[cellsByLabel.get(record.cell)!.missionId].name;
+      flush(
+        `# trace — ${mission} · ${record.cell} · ${record.policy} · seed ${record.seed}`,
+        `→ ${record.outcome} · round ${record.turns} · ${record.actions} actions`,
+        record.turns,
+      );
+    },
+    // A run that throws (an invariant violation, a non-terminating turn) never reaches `onRun`, and its
+    // trace is exactly the diagnostic showing what the policy was doing — so print it before re-raising.
+    abandonRun: (err: Error) => flush('# trace — aborted run', `✗ ${err.message}`, NaN),
+  };
 }
-
-if (values.seed !== undefined) {
-  const idx = Number(values.seed);
-  if (!Number.isInteger(idx) || idx < 0) fail(`--seed must be a non-negative integer index, got '${values.seed}'.`);
-  if (cells.length !== 1) fail(`replay (--seed) needs exactly one cell, got ${cells.length}.`);
-  if (policies.length !== 1) fail(`replay (--seed) needs exactly one --policies policy, got ${policies.length}.`);
-  replay(cells[0], policies[0], idx);
-  process.exit(0);
-}
-
-// ---- Batch mode ---------------------------------------------------------------------------------------
 
 const scenarios: Scenario[] = cells.map((cell) => ({
   label: cell.label,
@@ -425,29 +400,44 @@ const scenarios: Scenario[] = cells.map((cell) => ({
   missionId: cell.missionId,
   boardStickers: cell.board.stickers,
 }));
+const cellsByLabel = new Map(cells.map((cell) => [cell.label, cell]));
 
-// Progress on stderr (stdout stays clean for the report / JSON): a multi-hour sweep is otherwise
-// silent until it finishes. `runsTotal` here is the whole sweep, not one cell.
-const runsTotal = policies.length * scenarios.length * seeds;
+const tracer = values.verbose ? createTracer() : undefined;
+
+// The manifest: what each cell label stands for, so the CSV is a complete record of its own sweep. The
+// data rows carry no constant-per-cell field, and a deck's *composition* (copy counts, per-copy stickers)
+// is expressible nowhere else.
+const out: string[] = [
+  `#sweep ${JSON.stringify({ seeds, policies, ...(seedIndices ? { seedIndices } : {}), ...simOpts, ...searchOpts })}`,
+  ...manifestLines(scenarios),
+  csvHeaderLine(),
+];
+for (const line of out) process.stdout.write(`${line}\n`);
+
+// Progress on stderr (stdout stays pure CSV). Suppressed under `--verbose`, which is already writing
+// traces there — the `\r`-rewritten line would shred them.
+const runsTotal = policies.length * scenarios.length * (seedIndices?.length ?? seeds);
 let runsDone = 0;
-const onProgress = ({ policyName, scenarioLabel }: { policyName: string; scenarioLabel: string }) => {
-  runsDone += 1;
-  const pct = ((100 * runsDone) / runsTotal).toFixed(0);
-  process.stderr.write(`\r[sim] ${String(runsDone).padStart(String(runsTotal).length)}/${runsTotal} (${pct}%) · ${policyName} · ${scenarioLabel}`.padEnd(72));
-  if (runsDone === runsTotal) process.stderr.write('\n');
-};
 
-const summaries = runPolicies(scenarios, policies, { seeds, sim: simOpts, search: searchOpts, onProgress }).map(summarize);
-
-if (format === 'json') {
-  console.log(JSON.stringify(summaries, null, 2));
-} else {
-  console.log(`# Simulator batch — ${seeds} seed(s) per cell · policies: ${policies.join(', ')}`);
-  // One line per cell: with baselines each carries its own deck and board, so a single shared header
-  // would be a lie about every row but the first.
-  for (const cell of cells) {
-    console.log(`#   ${cell.label} — ${cell.missionId} · ${cell.deck.length} cards · board: ${boardLabelOf(cell)}`);
-  }
-  console.log('');
-  console.log(formatReport(summaries));
+try {
+  runPolicies(scenarios, policies, {
+    seeds,
+    seedIndices,
+    sim: { ...simOpts, ...(tracer ? { onStep: tracer.onStep } : {}) },
+    search: searchOpts,
+    onRun: (record) => {
+      // Written per run rather than at the end: the measurement is the output, so it must survive a
+      // sweep that is interrupted — and a multi-hour run becomes followable.
+      process.stdout.write(`${recordToCsvLine(record)}\n`);
+      tracer?.finishRun(record);
+      runsDone += 1;
+      if (tracer) return;
+      const pct = ((100 * runsDone) / runsTotal).toFixed(0);
+      process.stderr.write(`\r[sim] ${String(runsDone).padStart(String(runsTotal).length)}/${runsTotal} (${pct}%) · ${record.policy} · ${record.cell}`.padEnd(72));
+      if (runsDone === runsTotal) process.stderr.write('\n');
+    },
+  });
+} catch (err) {
+  tracer?.abandonRun(err as Error);
+  throw err;
 }

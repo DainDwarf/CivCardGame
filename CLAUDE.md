@@ -70,8 +70,16 @@ surprise, so nothing shows a locked placeholder or a total count.
   convergence (which would clear it and grant its reward); `--influence <n>` overrides the
   spendable balance; `--seed`/`--out` set randomization and output path. The DAG walk and default
   target set derive from `content/missions.ts` — missions are never hard-coded.
-- `npm run sim` — balance tool (`scripts/sim.ts`): sweeps the headless simulator and prints an
-  aggregated report. Cells are named one of two mutually-exclusive ways. **Ad-hoc**, over a mission ×
+- `npm run sim` — balance tool (`scripts/sim.ts`): sweeps the headless simulator and **measures** it —
+  one CSV row per run on stdout, flushed as each run lands, aggregating nothing. Folding is
+  `npm run sim:report`'s separate job, so a sweep is paid for once and re-analysed as often as the
+  questions require (filter by outcome, pull the outliers, group by any column) without re-running it,
+  and a long sweep is followable as rows arrive. Above the rows sits a `#`-comment header — the sweep's
+  own flags, then one manifest line per cell naming its mission, board and deck — so a sweep file is a
+  complete record of itself (a data row carries no constant-per-cell field, and a deck's copy counts and
+  per-copy stickers are expressible nowhere else). `cardsPlayed` is **zero-filled** over the deck plus
+  the mission's `events` and `alsoDisplay`, which makes "unplayed" a per-run fact and keeps the key set
+  identical across every row of a cell. Cells are named one of two mutually-exclusive ways. **Ad-hoc**, over a mission ×
   deck × board matrix: `--scenario <ids>` names missions (live from `content/missions.ts`),
   `--deck`/`--board` point at JSON files (examples under `scripts/sim/`). **`--baseline <paths|dir>`**
   loads *self-contained* fixtures that each own their own mission, deck and board — so one sweep spans
@@ -85,8 +93,16 @@ surprise, so nothing shows a locked placeholder or a total count.
   record — one file per recorded policy set (`greedy-planner` @100, `oracle` @10), so a policy with no
   file there is simply unmeasured, not measured-and-absent; every row is swept at the **default search
   beam**, so a `--search-beam` sweep is a diagnostic, never a baseline. Both styles take
-  `--seeds`/`--policies`/`--format` (text|json); `--seed <i>` switches to a
-  single-run per-turn replay trace. See *Balance tooling*.
+  `--seeds`/`--policies`; `--seed <i>` is a **filter** (sweep only that index, on the seed streams the
+  full sweep would have given it — so a row that lost replays verbatim) and `--verbose` adds a per-turn
+  trace on **stderr**, stdout staying pure CSV. See *Balance tooling*.
+- `npm run sim:report` — analysis tool (`scripts/report.ts`): folds a sweep file back into the
+  aggregated report (win rate · turns · defeat causes · card plays · unplayed cards). Takes a path or
+  stdin, `--format text|json`. `summarize` folds a `RunRecord[]` whatever its provenance, so a live
+  sweep and a re-read file give the same numbers by construction. Its `--format json` is the
+  `ScenarioSummary[]` shape committed under `baselines/results/`, so recording a measurement is piping a
+  sweep through this. **Redirect through `npm run --silent`** — npm's own `> package@version script`
+  preamble goes to stdout, and while the CSV reader skips past it, JSON has no comment syntax to hide it.
 - `npm run sim:profile` — the same sweep under `@platformatic/flame`, which writes a **markdown**
   hotspot report (annotated call tree + per-function callers/callees) beside an HTML flamegraph, into
   the gitignored `cpu-profile-*`/`heap-profile-*` in the CWD. Markdown so the report is readable
@@ -484,18 +500,23 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   within-turn search skeleton (`expandTurn`) the planner
   and oracle share, parameterized by the ranking heuristic — which it hands the node's transposition key
   alongside `G`, a memo hint the planner caches its (expensive, projection-based) leaf value on.
-- **Batch + reporting** — `runBatch(scenarios, { seeds })` (`batch.ts`) sweeps a flat `Scenario[]` ×N
-  seeds (two deterministic streams per run — `…-cfg-i` shuffle, `…-pol-i` moves — so a batch is
-  reproducible); `summarize`/`formatReport` (`report.ts`) fold the `SimOutcome`s (including a per-run
-  `cardPlays` map — the dead-card signal) into a per-scenario win rate · turns · mean end resources · a
-  defeat-cause histogram off the authoritative `gameover.reason`. `runPolicies` sweeps one scenario
+- **Measure, then fold** — the two are separate passes over one currency, `record.ts`'s **`RunRecord`**
+  (one finished run: cell · policy · seed · outcome · turns · actions · all 8 end pools · structures/
+  routes/reshuffles · zero-filled `cardPlays`). `runBatch(scenarios, { seeds })` (`batch.ts`) sweeps a
+  flat `Scenario[]` ×N seeds (two deterministic streams per run — `…-cfg-i` shuffle, `…-pol-i` moves —
+  so a batch is reproducible) and emits one record per run through `onRun` as it lands, aggregating
+  nothing; `seedIndices` narrows the sweep to chosen indices without disturbing their streams, which is
+  what makes `--seed` a filter rather than a second code path. `groupRecords`/`summarize`/`formatReport`
+  (`report.ts`) then fold a `RunRecord[]` — live or parsed back out of a sweep file, identically — into a
+  per-cell win rate · turns · mean end resources · a defeat-cause histogram off the authoritative
+  recorded `outcome`. `RunRecord.outcome` is **one** field: `'win'`, else the defeat's reason verbatim
+  (`WIN_OUTCOME`), so wins/defeats/one-cause are all a single equality. `runPolicies` sweeps one scenario
   under several named policies with *paired* seeds. `simConfig(...)` builds a content-agnostic
   `RunConfig` from a cardId/`DeckCard` deck (the sim counterpart to `buildRunConfig`).
 - **CLI** (`scripts/sim.ts`) — sweeps a **mission × deck × board** matrix, three axes decoupled:
   `--scenario` names missions (live from `MISSIONS`), `--deck`/`--board` load hand-editable JSON
-  (examples under `scripts/sim/`), swept under `--policies`/`--seeds`/`--format`. `--seed <i>` switches
-  to a single-run replay: it rebuilds the exact `(cfg,pol)` seed pair for batch cell `i` and drives
-  `simulateRun` under an `onStep` observer to print a per-turn trace.
+  (examples under `scripts/sim/`), swept under `--policies`/`--seeds` and written out as CSV.
+  `scripts/report.ts` reads that CSV back (`parseRecordCsv`) and prints the report.
 
 ## Conventions
 

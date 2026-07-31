@@ -1,6 +1,7 @@
 import type { BoardId } from '../content/boards';
 import type { DeckCard } from '../rules/deckBuilder';
-import { simConfig, simulateRun, type Policy, type SimOptions, type SimOutcome } from './simulate';
+import { simConfig, simulateRun, type Policy, type SimOptions } from './simulate';
+import { toRunRecord, type RunRecord } from './record';
 import { createRandomPolicy } from './randomPolicy';
 import { createGreedyPolicy } from './greedyPolicy';
 import { createGreedy2Policy } from './greedy2Policy';
@@ -67,14 +68,18 @@ export interface Scenario {
 }
 
 export interface BatchOptions {
-  /** Runs per scenario. Each is a fresh, independently-seeded run. */
+  /** Runs per scenario — seed indices `0 … seeds-1`. Each is a fresh, independently-seeded run. */
   seeds: number;
+  /** Run exactly these seed indices instead of `0 … seeds-1`, leaving each one's seed streams (and so
+   *  its outcome) identical to what the full sweep would have produced. What makes replaying a single
+   *  run a *filter* over the sweep rather than a second code path. */
+  seedIndices?: readonly number[];
   /** How to build the move policy for a run from its policy seed. Defaults to the random-legal-move
    *  policy / fuzzer (`createRandomPolicy`); the greedy / heuristic policies slot in here (or pick one
    *  by name from `POLICY_FACTORIES`). */
   policyFactory?: PolicyFactory;
-  /** Reporting label for the policy in use (e.g. `'greedy'`) — carried onto every `ScenarioRuns` so the
-   *  report can show which policy produced which stats. Defaults to `'random'`, matching the default
+  /** Reporting label for the policy in use (e.g. `'greedy'`) — carried onto every `RunRecord` so the
+   *  fold can group by which policy produced which runs. Defaults to `'random'`, matching the default
    *  factory. */
   policyName?: string;
   /** Pass-through to each `simulateRun` (invariant checks, action cap). */
@@ -82,36 +87,33 @@ export interface BatchOptions {
   /** Search knobs for the policies that run one (`oracle`/`prover`); every other policy ignores them.
    *  Merged *over* the depth derived from `sim` (`searchBoundsFor`), so an explicit `maxRounds` here wins. */
   search?: OracleOptions;
-  /** Fired after every completed run, so a caller can report progress on an otherwise-silent
-   *  multi-hour sweep. The library never writes I/O itself — the CLI supplies the renderer. */
-  onProgress?: (info: { policyName: string; scenarioLabel: string; runsDone: number; runsTotal: number }) => void;
-}
-
-/** Every run of one scenario, outcomes kept whole so the report layer can reach `gameover.reason`
- *  and `cardPlays` — the fields `RunResult` alone doesn't carry. */
-export interface ScenarioRuns {
-  scenario: Scenario;
-  /** Which policy played these runs (for the report), from `BatchOptions.policyName`. */
-  policyName: string;
-  outcomes: SimOutcome[];
+  /** Fired with each run's measurement the moment it finishes — the streaming seam. A caller writes the
+   *  record out (and renders progress) as the sweep goes, so a multi-hour run is followable and its
+   *  measurement survives the process. The library never writes I/O itself — the CLI supplies the sink.
+   *  Carries no run counter: `runPolicies` sweeps one `runBatch` per policy, so only the caller knows how
+   *  many runs the whole sweep is. */
+  onRun?: (record: RunRecord) => void;
 }
 
 /**
- * Play every `scenario` `opts.seeds` times and collect the raw outcomes — the sweep the reporting
- * layer (`report.ts`) folds into summaries. Re-implements no game logic and no drive loop: it just
- * composes `simConfig` → `simulateRun`.
+ * Play every `scenario` once per seed index and **measure** each run — one {@link RunRecord} per run,
+ * emitted through `onRun` as it lands and returned as a flat list. It aggregates nothing: folding a set
+ * of records into statistics is `report.ts`'s separate pass, which reads a re-read sweep file exactly as
+ * it reads a live one. Re-implements no game logic and no drive loop: it composes `simConfig` →
+ * `simulateRun` → `toRunRecord`.
  *
  * Each run draws two independent, deterministic seed streams (like `sim.test.ts`): `${label}-cfg-${i}`
  * feeds the deck shuffle, `${label}-pol-${i}` feeds move choice. That `(configSeed, policySeed)` pair
  * is exactly the invariant-violation reproduction key (`sim/invariants.ts`), so a whole batch is
- * reproducible and its report diffable across code changes.
+ * reproducible and its records diffable across code changes.
  */
-export function runBatch(scenarios: Scenario[], opts: BatchOptions): ScenarioRuns[] {
+export function runBatch(scenarios: Scenario[], opts: BatchOptions): RunRecord[] {
   const policyFactory = opts.policyFactory ?? createRandomPolicy;
   const policyName = opts.policyName ?? 'random';
-  return scenarios.map((scenario) => {
-    const outcomes: SimOutcome[] = [];
-    for (let i = 0; i < opts.seeds; i++) {
+  const indices = opts.seedIndices ?? Array.from({ length: opts.seeds }, (_, i) => i);
+  const records: RunRecord[] = [];
+  for (const scenario of scenarios) {
+    for (const i of indices) {
       const config = simConfig({
         deckCardIds: scenario.deckCardIds,
         board: scenario.board,
@@ -119,21 +121,23 @@ export function runBatch(scenarios: Scenario[], opts: BatchOptions): ScenarioRun
         boardStickers: scenario.boardStickers,
         seed: `${scenario.label}-cfg-${i}`,
       });
-      outcomes.push(simulateRun(config, policyFactory(`${scenario.label}-pol-${i}`, opts.sim, opts.search), opts.sim));
-      opts.onProgress?.({ policyName, scenarioLabel: scenario.label, runsDone: i + 1, runsTotal: opts.seeds });
+      const outcome = simulateRun(config, policyFactory(`${scenario.label}-pol-${i}`, opts.sim, opts.search), opts.sim);
+      const record = toRunRecord(scenario, policyName, i, outcome);
+      records.push(record);
+      opts.onRun?.(record);
     }
-    return { scenario, policyName, outcomes };
-  });
+  }
+  return records;
 }
 
 /**
  * Sweep every scenario under several named policies, holding the seed streams identical across policies
- * so the comparison is *paired* (same deck shuffles → the only variable is how the policy plays). Flat
- * result list, one `ScenarioRuns` per (scenario × policy), ready for `summarize`/`formatReport`. The
- * whole point of the greedy/heuristic policies: bracket a scenario's difficulty between the random floor
- * and a competent ceiling. Unknown policy names throw (fail fast on a CLI typo).
+ * so the comparison is *paired* (same deck shuffles → the only variable is how the policy plays). One
+ * flat record list across every (scenario × policy × seed). The whole point of the greedy/heuristic
+ * policies: bracket a scenario's difficulty between the random floor and a competent ceiling. Unknown
+ * policy names throw (fail fast on a CLI typo).
  */
-export function runPolicies(scenarios: Scenario[], policyNames: string[], opts: BatchOptions): ScenarioRuns[] {
+export function runPolicies(scenarios: Scenario[], policyNames: string[], opts: BatchOptions): RunRecord[] {
   return policyNames.flatMap((name) => {
     const factory = POLICY_FACTORIES[name];
     if (!factory) throw new Error(`Unknown policy '${name}'. Known: ${Object.keys(POLICY_FACTORIES).join(', ')}.`);

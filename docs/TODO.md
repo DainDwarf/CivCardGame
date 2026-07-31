@@ -214,13 +214,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `results/<policy-set>.json`) live apart, so re-cutting a fixture silently strands rows keyed by label
   in a file nobody edits, and one mission can't hold two cells without hand-splicing both sides. Fold
   them into a single per-configuration file carrying config **and** recorded results. Optional second
-  half: teach `scripts/sim.ts` the format — report a sweep as a **delta against the recorded numbers**,
-  and take a flag to overwrite them in place.
-- **Report the first 5 seeds of each outcome** — a sweep prints aggregate win rate and a defeat-cause
-  histogram but never says *which* seeds produced them, so replaying a representative win or loss means
-  re-running `--seed i` in a loop until one turns up. Have `summarize`/`formatReport` carry the first 5
-  seed indices per outcome bucket (victory, and each `defeatCauses` key) so the report hands over the
-  `--seed` arguments directly. `[size: S]`
+  half: report a sweep as a **delta against the recorded numbers**, and take a flag to overwrite them in
+  place. Cheaper now that the measure/analyse split landed: a sweep CSV already carries a `#cell`
+  manifest of the config that produced it, so the two halves travel together in one file — what's left
+  is making that file the *committed* form.
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
@@ -236,6 +233,34 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The simulator measures; a second tool folds** ✅ — `npm run sim` had two unrelated front-ends over
+  one engine: a batch mode that destroyed every per-run fact in-process behind an aggregate report, and
+  a `--seed` replay that was a separate code path with a different output. So a second question about a
+  finished sweep — which seeds lost, what the outliers held, how the wins differ — cost a whole re-run.
+  Now the sweep's **only** output is one CSV row per run (`sim/record.ts`'s `RunRecord`), written as each
+  run lands, and `npm run sim:report` folds that file into the same report as before. `summarize` takes a
+  `RunRecord[]` whatever its provenance, so a live sweep and a re-read file agree by construction; its
+  `--format json` is the `baselines/results/` shape, so recording a measurement is piping a sweep through
+  it and nothing committed needed migrating. Verified by re-sweeping `masonry_chiefdom` and `accounting`
+  × greedy/planner × 100 seeds: all four cells reproduce the committed rows field-for-field.
+  - **`--seed` became a filter, not a mode** (`BatchOptions.seedIndices` keeps the selected index on the
+    streams the full sweep would have given it, so its row is byte-identical), and `--verbose` carries
+    the per-turn trace — on **stderr**, so stdout is pure CSV under every flag combination.
+  - **`outcome` is one column** — `win`, else the defeat's authoritative cause verbatim. Wins, all
+    defeats, and one cause are each a single equality, against a cause set that keeps growing
+    (`noWinFound:budget`/`:depth`/`:deadEnd` alone are three).
+  - **`cardsPlayed` is zero-filled** over the deck ∪ the mission's `events` ∪ its `alsoDisplay`. The
+    last is what a run can only *mint* mid-play, so including it keeps the key set identical across
+    every row of a cell — the packed column parses rectangular — and it makes "unplayed" a **per-run**
+    fact where the summary could only ever say "never in any run of the cell". Measured immediately:
+    29 of accounting's 100 greedy runs never play a Thief, which the old aggregate could not express.
+  - A `#`-comment header carries the sweep's flags and one manifest line per cell (mission, board, and
+    the deck regrouped into counts + per-copy stickers), so a sweep file is a complete record of itself.
+    The reader skips anything ahead of the header, because `npm run sim > sweep.csv` prepends npm's own
+    preamble to stdout and a sweep file that failed to load over that would be a trap; JSON has no
+    comment syntax, so `sim:report --format json` wants `npm run --silent`.
+  - Supersedes the *"report the first 5 seeds of each outcome"* item — filter the CSV and read the
+    `seed` column.
 - **Rebalanced the early game's resource economy** ✅ — a mission-by-mission pass over the rates from
   the campaign's first node forward, on the `trade-redesign` branch. The converters were cut to a
   **1-per-worker** base (Foraging, Toolmaking, Storytelling, Hunting — the last of the flat ×2 boxes
@@ -407,10 +432,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     that fixes that too.
 
 - **Per-cell progress line on stderr** ✅ — a multi-hour sweep no longer prints nothing until it
-  finishes: `runBatch` fires an optional `onProgress` after every run (the sim library writes no I/O
-  itself — tests stay quiet), and `scripts/sim.ts` renders a `\r`-updated stderr line tracking the whole
-  sweep (`runsDone/runsTotal` across every policy × scenario cell, plus the active policy/scenario).
-  stdout (report / JSON) stays clean.
+  finishes: `runBatch` fires an optional per-run callback (the sim library writes no I/O itself — tests
+  stay quiet), and `scripts/sim.ts` renders a `\r`-updated stderr line tracking the whole sweep
+  (`runsDone/runsTotal` across every policy × scenario cell, plus the active policy/scenario). stdout
+  stays clean. That callback later became the streaming seam for the measurement itself.
 
 - **Value parked planner lines through their answers** ✅ — the parked-line half of the reveal-boundary
   design (above), shipped ahead of the content that needs the rest: `evalLine` no longer scores a line

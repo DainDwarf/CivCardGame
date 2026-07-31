@@ -10,4 +10,5 @@ export * from './oracleKey';
 export * from './value';
 export * from './invariants';
 export * from './batch';
+export * from './record';
 export * from './report';

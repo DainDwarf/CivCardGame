@@ -26,7 +26,12 @@ If the numbers look surprising and you want to say something, say the surprising
 offer the next *measurement* ("`--seed 3` would replay that loss"), not a conclusion. The
 sections below on reading the report are reference material for when the user does ask.
 
-The whole tool is the `npm run sim` CLI (`scripts/sim.ts`) — **no scratchpad scripts.**
+The tool is two CLIs — **no scratchpad scripts.** `npm run sim` (`scripts/sim.ts`)
+**measures**: one CSV row per run on stdout, flushed as it lands, aggregating nothing.
+`npm run sim:report` (`scripts/report.ts`) **folds** that CSV into the report. Measure
+once, re-analyse as often as the questions require: filtering by outcome, pulling the
+outliers or grouping by another column re-reads the file rather than re-running the sweep.
+
 A sweep names its cells one of two mutually-exclusive ways: **`--baseline`** loads
 self-contained fixtures (the committed standing set — reach for this first), or the
 **ad-hoc trio** decouples the three axes the way the campaign menu presents them —
@@ -38,8 +43,15 @@ when it carries stickers).
 ```
 npm run sim -- --baseline <paths|dir>
 npm run sim -- --scenario <ids> --deck <file> --board <id|file>
-               [--seeds 100] [--policies random,heuristic,greedy] [--format text] [--max-rounds 200] [--seed <i>]
+               [--seeds 100] [--policies random,heuristic,greedy] [--max-rounds 200] [--seed <i>] [--verbose]
+
+npm run sim:report -- <sweep.csv> [--format text|json]
 ```
+
+**Always capture the sweep to a file** (`> scratchpad/sweep.csv`), then report off it — that
+is what makes a follow-up question free. **Redirect through `npm run --silent`**: npm's own
+`> package@version script` preamble goes to stdout. The CSV reader skips past it, but JSON
+has no comment syntax to hide it, so `sim:report --format json` needs `--silent`.
 
 - `--baseline` — comma-separated baseline fixture paths, or a **directory** of them
   (`--baseline scripts/sim/baselines` sweeps the whole committed set). Each fixture owns its
@@ -54,12 +66,17 @@ npm run sim -- --scenario <ids> --deck <file> --board <id|file>
 - `--seeds` — runs per cell (default 100).
 - `--policies` — comma-separated policy names (default `random,heuristic,greedy`). Also
   available: `greedy2`, `planner`, `deepPlanner`, and `oracle` (the last three slow — see below).
-- `--format` — `text` (default, the human report) or `json` (the raw summaries, for diffing
-  or post-processing).
 - `--max-rounds <n>` — stall cutoff (default 200). A policy that idles past round `n` without
   winning or collapsing is recorded as a `stall` defeat rather than ground to the action wall —
   see *Reading the report*. Lower it for a faster sweep when you expect stalls.
-- `--seed <i>` — **replay mode** (see below).
+- `--seed <i>` — sweep **only** that seed index, on the exact seed streams the full sweep would
+  have given it (see *Replay one run*).
+- `--verbose` — add a per-turn trace on **stderr**; stdout stays pure CSV, so it composes with
+  a redirect.
+
+And on `sim:report`: `--format text` (default, the human report) or `json` (the raw summaries —
+the same shape committed under `baselines/results/`, so recording a measurement is piping a
+sweep through it). Takes a path, or stdin if none is given.
 
 One invocation sweeps `[missions] × {the one deck} × {the one board}`. To **compare two
 decks or boards**, edit a file or invoke twice (same `--seeds` → identical shuffles, so the
@@ -67,11 +84,28 @@ deck/board is the only variable — a paired comparison).
 
 Examples:
 ```
-npm run sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100
-npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies oracle --seeds 20
-npm run sim -- --scenario growing_numbers --deck <file> --board settlement
-npm run sim -- --scenario first_settlement,growing_numbers,first_trades --deck <file> --board <board> --seeds 500
+npm run --silent sim -- --baseline scripts/sim/baselines --policies greedy,planner --seeds 100 > sweep.csv
+npm run sim:report -- sweep.csv
+npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies oracle --seeds 20 > oracle.csv
+npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board <board> --seeds 500 > sweep.csv
 ```
+
+## The sweep file
+
+Above the rows sit `#`-comment lines (which standard parsers skip): the sweep's own flags,
+then one **manifest** line per cell naming its mission, board and deck. So a sweep file is a
+complete record of itself — a data row carries no constant-per-cell field, and a deck's copy
+counts and per-copy stickers live nowhere else.
+
+One row per run:
+`cell,policy,seed,outcome,turns,actions,`(the 8 pools)`,structures,routes,reshuffles,cardsPlayed`
+
+- **`outcome` is one column**: `win` on a victory, else the defeat's authoritative cause
+  verbatim. Wins are `== win`, all defeats `!= win`, one cause an equality.
+- **`cardsPlayed` is zero-filled** over the cell's deck plus the mission's `events` and
+  `alsoDisplay` (what a run can only mint mid-play — Accounting's Thief). So "unplayed" is a
+  *per-run* fact readable off the row, and the key set is identical across every row of a cell.
+  Threats and the objective are absent: they never route through `playCard`.
 
 ## File schemas (JSON)
 
@@ -119,27 +153,33 @@ since a fixture holds exactly one board:
   closure — it may use anything the campaign eventually fields.
 
 Measured results live under `baselines/results/`; committing them *is* the record of which
-content SHA they were taken at. When new shipped content deserves a standing cell, add a
-fixture and commit it. `--deck`/`--board` remain for hand-written ad-hoc decks.
+content SHA they were taken at. Recording one is piping a sweep through the fold —
+`npm run --silent sim:report -- sweep.csv --format json > baselines/results/<policy-set>.json`.
+When new shipped content deserves a standing cell, add a fixture and commit it.
+`--deck`/`--board` remain for hand-written ad-hoc decks.
 
 **A committed result *is* the current baseline — never re-measure one to obtain it.** It is
 committed because it describes the tree as it stands; a result known to have gone stale is
 called out as stale where it is tracked. Re-running a baseline sweep to "confirm" a committed
 row measures nothing and costs as much as the variant run it precedes.
 
-## Replay one run — `--seed <i>`
+## Replay one run — `--seed <i> --verbose`
 
-Passing `--seed <i>` re-runs the single `(cell, policy, index)` the batch would have run and prints
-a **per-turn trace** — each turn's starting economy (resources · pop assigned/total · territory ·
-culture), the accepted moves that turn, and the final outcome line. Needs exactly one cell and one
-`--policies`, from either input style:
+`--seed <i>` is a **filter**, not a separate mode: it sweeps only that index, on the same seed
+streams the full sweep gave it (`<label>-cfg-i` / `<label>-pol-i`, where the label is the mission
+id ad-hoc or the fixture's `id` for a baseline). The CSV row it prints is byte-identical to that
+run's row in the full sweep, so a row that lost can be re-run verbatim to see *what happened*:
+
 ```
-npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies planner --seed 3
-npm run sim -- --scenario growing_numbers --deck <file> --board <board> --policies greedy --seed 3
+npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies planner --seed 3 --verbose
 ```
-The index `i` matches the batch's seed stream (`<label>-cfg-i` / `<label>-pol-i`, where the label is
-the mission id ad-hoc or the fixture's `id` for a baseline), so a cell that lost/won in a sweep can be
-re-run verbatim to see *what happened*.
+
+`--verbose` adds the **per-turn trace** on stderr — each turn's starting economy (resources · pop
+assigned/total · territory · culture), the accepted moves that turn, and the final outcome line.
+
+**Which index to replay is a question the sweep file already answers**: filter the CSV for the
+outcome you want (`famine`, `stall`, `noWinFound:deadEnd`, `win`) and read the `seed` column. Never
+re-run the sweep in a loop looking for a representative run.
 
 ## Reference: reading the report (when asked) — the two things that go wrong
 
@@ -175,8 +215,12 @@ the card is genuinely unplayable. Under **greedy/heuristic** it means "a card `s
 recovery, since hand contents aren't scored) shows as unplayed though it's perfectly playable.
 Trust random for *playability*; read a competent policy's unplayed list as a *value-function gap*.
 
+The report's list is the cell-wide one (never played in *any* run); the CSV's zero-filled
+`cardsPlayed` gives the same reading **per run**, so "played in 71 of 100 runs" is a question the
+sweep file answers and the report does not.
+
 Also in the report: `win rate` (winnable?), `turns` + `defeat causes` (is the economy too tight? —
-the histogram is the authoritative `gameover.reason`, not re-derived from resources), `card plays`
+the histogram is the authoritative recorded cause, not re-derived from resources), `card plays`
 (is a card ever played?).
 
 **`stall` in the defeat histogram is a policy signal, not a balance one.** A `stall: N` bucket means a
@@ -211,15 +255,16 @@ Two kinds of variable:
   2. **Baseline numbers** — on a baseline-fixture cell, read the committed rows in
      `baselines/results/` and skip this run entirely; match the sweep's `--policies`/`--seeds` to
      what they were measured at. Only *measure* a baseline when the cell has none — an ad-hoc
-     `--deck`/`--board` comparison, or a fixture never swept. Capture to `scratchpad/baseline.txt`
-     (or `--format json`).
+     `--deck`/`--board` comparison, or a fixture never swept. Capture to `scratchpad/baseline.csv`.
   3. **Edit** the content value (the `Edit` tool on the real `src/content/*.ts`).
-  4. **Variant run** — same flags, capture to `scratchpad/variant.txt`.
+  4. **Variant run** — same flags, capture to `scratchpad/variant.csv`.
   5. **Roll back** with `git checkout -- src/content/<file>.ts`, then **verify clean**:
      `git status --porcelain src/content/<file>.ts` must print nothing. If it prints anything, the
      rollback failed — say so loudly and stop; do not report the comparison as if the tree were clean.
      (This repo commits directly to `main`; a stray content edit would be swept into the next commit.)
-  6. **Compare** and present the deltas — win rate, turns (min/median/mean/max), defeat-cause
-     histogram — not the raw dumps, and not a verdict on whether the edit is an improvement.
+  6. **Compare** — `sim:report` both files — and present the deltas — win rate, turns
+     (min/median/mean/max), defeat-cause histogram — not the raw dumps, and not a verdict on whether
+     the edit is an improvement. Both CSVs are kept, so a follow-up question (which seeds flipped?)
+     is a join on the `seed` column rather than a third sweep.
 
   The player never sees the edit: it exists only between steps 3 and 5.

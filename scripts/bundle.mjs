@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 
 await build({
-  entryPoints: ['sim', 'seed-save', 'economy'].map((name) => join(here, `${name}.ts`)),
+  entryPoints: ['sim', 'report', 'seed-save', 'economy'].map((name) => join(here, `${name}.ts`)),
   outdir: join(here, '.bundle'),
   outExtension: { '.js': '.mjs' },
   bundle: true,
