@@ -1,4 +1,4 @@
-import { canAfford, subtractResources, type Resources } from './resources';
+import { canAfford, subtractResources, type CoreResources } from './resources';
 import { cultureLevel } from './culture';
 import { effectiveCard, effectiveCost } from './stickers';
 import type { CardDef } from '../content/cards';
@@ -11,7 +11,7 @@ import type { CardInstance, GameState } from './state';
  * dimming/rejection messaging share one source of truth.
  */
 export type UnplayableReason =
-  | { kind: 'cost'; missing: Partial<Resources> }
+  | { kind: 'cost'; missing: Partial<CoreResources> }
   | { kind: 'cultureLevel'; required: number }
   | { kind: 'territory' }
   | { kind: 'emptyDrawPile' }
@@ -36,8 +36,14 @@ export interface CostContext {
  * that is what `resolve` is for.
  */
 export interface CardCost {
-  /** Pools spent. Any of the eight — a culture or population price is a value here, not a new field. */
-  resources?: Partial<Resources>;
+  /**
+   * Pools spent — the core five only. Each strategic pool is already gated by the system that owns
+   * it (territory by `playability.ts`'s placement check, population by staffing, culture by
+   * `cultureLevelReq` below), and this field is paid by a blind `subtractResources` in `payCost`, so
+   * pricing one here would spend past its gate: `{ population: 1 }` with every worker staffed pays
+   * fine and leaves `freePopulation` negative.
+   */
+  resources?: Partial<CoreResources>;
   /** Other cards discarded from hand to play this. Scales down rather than blocking: playing with
    *  fewer cards to spare than this costs no discard at all (`payCost`). */
   discard?: number;
@@ -92,8 +98,8 @@ export function runCard(card: CardDef, ctx: CostContext): CardDef {
 export function costReason(card: CardDef, ctx: CostContext): UnplayableReason | null {
   const cost = currentCost(card, ctx);
   if (cost.resources && !canAfford(ctx.G.resources, cost.resources)) {
-    const missing: Partial<Resources> = {};
-    for (const [k, v] of Object.entries(cost.resources) as [keyof Resources, number][]) {
+    const missing: Partial<CoreResources> = {};
+    for (const [k, v] of Object.entries(cost.resources) as [keyof CoreResources, number][]) {
       if (v > 0 && ctx.G.resources[k] < v) missing[k] = v - ctx.G.resources[k];
     }
     return { kind: 'cost', missing };

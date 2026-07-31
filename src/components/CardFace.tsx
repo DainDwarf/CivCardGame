@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { isStaffable, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
-import { type Resources } from '../rules';
+import { type CoreResources, type Resources } from '../rules';
 import { cardWorkerCap } from '../rules/population';
 import styles from './CardFace.module.css';
 
@@ -100,10 +100,9 @@ export function StickerRow({
 }
 
 /** Presentation-only cost label, e.g. "2🌾" · "3🔨" · "" (blank when free). Extra conditions
- *  (culture level, reserved population, discard cost) are shown separately — see
- *  `describeConditions`. */
+ *  (culture level, discard cost) are shown separately — see `describeConditions`. */
 export function describeCost(c: CardDef): string {
-  const parts = (Object.entries(c.cost.resources ?? {}) as [keyof Resources, number][])
+  const parts = (Object.entries(c.cost.resources ?? {}) as [keyof CoreResources, number][])
     .filter(([, v]) => v)
     .map(([k, v]) => `${v}${RESOURCE_ICON[k]}`);
   return parts.join(' · ');

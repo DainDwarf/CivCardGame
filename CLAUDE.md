@@ -131,9 +131,11 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   drained to `[]` in any committed/undo-visible state — undo, clone, and determinism depend on it.
 - **`resources.ts`** — the three resource types and their arithmetic: `CoreResources` (5 spendable —
   food/production/science/military/money), `StrategicResources` (population/culture/territory), and
-  combined `Resources` (all 8). Both a `CardEffect`'s `resources` delta and a `CardCost`'s price are a
-  `Partial<Resources>` — either may touch any of the 8. Helpers: `add`/`subtract`, `scaleResources`,
-  `canAfford` (over the keys a cost names), `coreOf`, and `CORE_KEYS`.
+  combined `Resources` (all 8). A `CardEffect`'s `resources` delta is a `Partial<Resources>` — a grant
+  or drain may touch any of the 8 — while a `CardCost`'s price is a `Partial<CoreResources>`: only the
+  core five are spendable, since each strategic pool is gated by the system that owns it (see
+  `cost.ts`). Helpers: `add`/`subtract`, `scaleResources`, `canAfford` (core, over the keys a cost
+  names), `coreOf`, and `CORE_KEYS`.
 - **`deck.ts`** — draw + discard reshuffle (`reshuffleIntoDeck`, seeded off `G.rngState`; bumps
   `reshuffleCount`, a UI-only shuffle-animation cue `Board.tsx` diffs). Also the card-facing deck
   primitives a peek/draw card resolves *through* instead of touching zones directly (the deck

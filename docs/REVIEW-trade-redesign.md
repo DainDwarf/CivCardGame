@@ -3,8 +3,8 @@
 Untracked working file. 8 finder angles over `main...trade-redesign` (116 files,
 +5206/−2653), deduped to 16 candidates, each put through one recall-biased verifier:
 **12 CONFIRMED · 4 PLAUSIBLE · 0 REFUTED**. Two save-compatibility findings were
-dropped on the pre-alpha rule; the two `sim/enablers.ts` findings and the
-replay-bounds finding have been fixed and removed; the 11 below are open.
+dropped on the pre-alpha rule; the two `sim/enablers.ts` findings, the replay-bounds
+finding and the cost-schema finding have been fixed and removed; the 10 below are open.
 
 ---
 
@@ -56,25 +56,7 @@ consumer that does not exist — `Board.tsx:857-858` builds its own per-zone map
 repo-wide grep for `placedCards` returns zero component hits. The real second consumer
 is `sim/actions.ts:46`.
 
-### 4. Cost schema invites prices nothing checks — `src/rules/cost.ts:39`
-
-The field doc invites it — "Any of the eight — a culture or population price is a
-value here, not a new field" — yet `cost.ts` imports neither `population.ts` nor
-`territory.ts`. `costReason` gates on `canAfford` (a raw-pool read), `payCost`
-subtracts unconditionally, and `rules/playability.ts:15`'s territory check is a
-*placement* gate that only fires for `isStructure`.
-
-A work/action card priced `{ population: 1 }`, played with every worker staffed,
-passes the gate → `assignedWorkers > population` → `freePopulation < 0` →
-`sim/invariants.ts:56` throws every step. `{ territory: 1 }` on a non-structure trips
-`invariants.ts:61` and breaks `Board.tsx:1294`'s documented "territory is monotonic"
-layout assumption.
-
-Latent today — every shipped cost names core pools only — but the schema invites the
-first such card. Note `cost.ts:44` already declares culture "a prerequisite, not a
-price … never consumed", contradicting the neighbouring doc.
-
-### 5. Trade face drops a play-time effect the engine resolves — `src/components/CardFace.tsx:182`
+### 4. Trade face drops a play-time effect the engine resolves — `src/components/CardFace.tsx:182`
 
 `if (c.kind === 'trade') return describeTradeFlow(c);` lands before `const e = c.effect`
 and `describeSignedResources`, while `rules/tradeRoutes.ts:14` `openTradeRoute` calls
@@ -91,7 +73,7 @@ way threats compose entry effect + drain) keeps face and engine in step.
 
 ## Cleanup / altitude
 
-### 6. `placedCards` is bypassed by three sweeps in its own branch
+### 5. `placedCards` is bypassed by three sweeps in its own branch
 
 `src/rules/territory.ts:3-8` introduces it as "the one read-path for what is on the
 board … so a new board zone reaches them by landing here". Adding the one new board
@@ -121,7 +103,7 @@ Not a blanket pattern. These must stay hand-listed: `events.ts:131-137` (per-zon
 No import obstacle — `territory.ts` imports only types from `state.ts`, and
 `rules/index.ts:15` re-exports it.
 
-### 7. "Durable standing producer" encoded twice — `src/sim/enablers.ts:457` and `:485`
+### 6. "Durable standing producer" encoded twice — `src/sim/enablers.ts:457` and `:485`
 
 A kind filter (`isStructure(card) || card.kind === 'trade'`) and a zone walk
 (`[...G.tableau, ...G.tradeRoutes]`) hold the same concept with nothing tying them
@@ -138,10 +120,10 @@ other `kind === 'trade'` in the repo is a routing or display branch that genuine
 needs the distinction. A sim-motivated kind predicate in a game file is the "sim logic
 stays in sim" violation.
 
-### 8. `canonicalPlay` re-implements `enumeratePlays[0]` — `src/sim/actions.ts:72-81`
+### 7. `canonicalPlay` re-implements `enumeratePlays[0]` — `src/sim/actions.ts:72-81`
 
 Equivalence holds in all reachable cases: both compute `required` identically
-(`:73` / `:96`); `cost.ts:109-112` waives the cost to 0 when the hand cannot spare
+(`:73` / `:96`); `cost.ts:115-118` waives the cost to 0 when the hand cannot spare
 enough, so `plays` is never empty and `[0]` is never `undefined`; `walk` is an
 ascending combination walk (`:114`) whose first combo is exactly what `canonicalPlay`
 builds, and `seen` is empty at the first push. For `required === 0` one returns
@@ -156,7 +138,7 @@ Fix: `return enumeratePlays(G, playHandIdx, card)[0];`, delete the tautological 
 test at `actions.test.ts:62-66`, retarget the docstring. Net ~−14 lines and one
 invariant that can no longer drift.
 
-### 9. Five copy-pasted card-kind sections, in two files
+### 8. Five copy-pasted card-kind sections, in two files
 
 - `src/meta/Collection.tsx:59-147` — five ~17-line blocks differing only in the
   guard/list identifier and the `<h2>` text; every `CardFace` prop list is
@@ -170,14 +152,14 @@ One shared table beside `compareCards`/`isDeckable` in `content/cards.ts` plus a
 in each file. As it stands, a sixth card kind needs four more edit sites across two
 files.
 
-### 10. Orphaned docstring — `src/rules/testFixtures.ts:439-450`
+### 9. Orphaned docstring — `src/rules/testFixtures.ts:439-450`
 
 `mint` was inserted between the pre-existing `installCards` docstring and
 `installCards` itself, so two stacked doc comments now precede `mint` — the first
 describing splicing into `CARDS`, i.e. semantic bleeding onto unrelated code — and
 `installCards:450` is left bare. Zero-net-line fix: move lines 439-442 above line 450.
 
-### 11. Hot-path cost re-resolution — `src/rules/cost.ts:74` / `:87`
+### 10. Hot-path cost re-resolution — `src/rules/cost.ts:80` / `:92`
 
 Repeated cost re-resolution on a hot path, plus `canAfford`'s new `Object.entries`
 allocation. One drop-in fast path at those two sites covers most of it.

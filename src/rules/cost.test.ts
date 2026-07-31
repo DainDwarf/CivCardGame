@@ -82,16 +82,6 @@ describe('costReason', () => {
     // Base 2 would be affordable at 3⚔️; the resolved 4 is not.
     expect(costReason(doubling, { G, self })).toEqual({ kind: 'cost', missing: { military: 1 } });
   });
-
-  it('prices a non-core pool like any other', () => {
-    const card: CardDef = { id: 'cultic', name: 'Cultic', kind: 'action', cost: { resources: { culture: 3 } } };
-    const G = blankState('test');
-    G.resources.culture = 1;
-    expect(costReason(card, { G, self: { id: 1, cardId: 'cultic' } })).toEqual({
-      kind: 'cost',
-      missing: { culture: 2 },
-    });
-  });
 });
 
 describe('payCost', () => {
