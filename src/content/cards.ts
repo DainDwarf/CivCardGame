@@ -547,26 +547,31 @@ export const CARDS: Record<string, CardDef> = {
   // Stronghold: cracking it is playing it — the ⚔️ buys the walls down, the play choke exiles it to
   //   `removed` (what `raiding_goal` counts), and the effect hands the plunder. Held unplayed at end of
   //   round its one upkeep does both halves of the pressure: the garrison rides out for 🪙, and the
-  //   walls go up — the `walls` counter its own cost reads back, so a target hardens only on a turn it
-  //   was held and passed over.
+  //   walls go up — one `walls` counter both that drain and its own cost read back, so a target hardens
+  //   only on a turn it was held and passed over, and one number tunes both halves.
   stronghold: {
     id: 'stronghold', name: 'Stronghold', kind: 'event',
     cost: {
       resources: { military: 8 },
       resolve: ({ self }, base) => ({
         ...base,
-        resources: { ...base.resources, military: (base.resources?.military ?? 0) + 2 * getCounter(self, 'walls') },
+        resources: { ...base.resources, military: (base.resources?.military ?? 0) + 3 * getCounter(self, 'walls') },
       }),
     },
     display: {
       art: '🏰',
       description: '−2 🪙 at end of round while it stands',
-      dynamicRule: 'cost rises each round it stands',
+      dynamicRule: 'cost and reprisal rise each round it stands',
     },
     effect: { resources: { money: 6 } },
     upkeep: {
       resources: { money: -2 },
-      resolve: ({ self }) => { bumpCounter(self, 'walls'); },
+      // Drain off the walls already raised, *then* raise them, so the first round a target is held
+      //   costs the printed 2🪙 and only a passed-over one bleeds more.
+      resolve: ({ G, self }) => {
+        subtractResources(G.resources, { money: 2 * getCounter(self, 'walls') });
+        bumpCounter(self, 'walls');
+      },
     },
   },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as

@@ -73,7 +73,7 @@
   | Roads | ✅ | ✅ | ✅ | ⬜ | [roads](missions/roads.md) |
   | Wheel | ✅ | ✅ | ✅ | ⬜ | [wheel](missions/wheel.md) |
   | Horse taming | ✅ | ✅ | ✅ | ⬜ | [horse-taming](missions/horse-taming.md) |
-  | Raiding | ✅ | ✅ | ⬜ | ⬜ | [raiding](missions/raiding.md) |
+  | Raiding | ✅ | ✅ | ✅ | ⬜ | [raiding](missions/raiding.md) |
   | Naval (×2) | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Bronze *(convergence)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Sword & chariot | 🟡 | ⬜ | ⬜ | ⬜ | — |
@@ -103,8 +103,8 @@
      identity; see the reward proposal below). **Roads** — DONE, balance included (see
      [`missions/roads.md`](missions/roads.md)). **Wheel** — DONE, balance included (see [`missions/wheel.md`](missions/wheel.md)).
   5. **Horse (×2)** — **Horse taming** DONE, balance included (see
-     [`missions/horse-taming.md`](missions/horse-taming.md)); **Raiding** implemented, its balance pass
-     open (see [`missions/raiding.md`](missions/raiding.md)). Then **Naval (×2)**.
+     [`missions/horse-taming.md`](missions/horse-taming.md)); **Raiding** DONE, balance included (see
+     [`missions/raiding.md`](missions/raiding.md)). Then **Naval (×2)**.
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
 
   **Mechanical identity `[?]`:** IDEAS frames the age as "trade-dependent palace civilizations" → the
@@ -130,11 +130,12 @@
   **Measurement debt carried in from the rebalance** — two items that pass ran up which are this arc's
   to clear, not the rebalance's:
 
-  - **Content shipped ahead of any cell that holds it** — War Horse at 3⚔️, the re-pointed single-use
-    Raiding (3⚔️ → 4🌾+4🔨), the Wheel sticker's 🎭-level-1 floor, and both **Caravan** actions
-    (2🪙 → 3🌾 / 3🔨). Each is a *reward* of the mission that shipped it, so no fixture upstream can stock
-    it — the cells that will are the ones authored from here on. The Caravans matter most: they set the
-    🪙→🌾/🔨 conversion rate every later mission is read against, and nothing has measured it yet.
+  - **Content shipped ahead of any cell that holds it** — the Wheel sticker's 🎭-level-1 floor and both
+    **Caravan** actions (2🪙 → 3🌾 / 3🔨). Each is a *reward* of the mission that shipped it, so no
+    fixture upstream can stock it — the cells that will are the ones authored from here on. The Caravans
+    matter most: they set the 🪙→🌾/🔨 conversion rate every later mission is read against, and nothing
+    has measured it yet. War Horse and the single-use Raiding cleared this list: the two `raiding` cells
+    stock both, and War Horse is the most-played card in every one of their six rows.
   - **Chiefdom is fixtured, and the Raider Camp made it a real alternative.** Ten `<mission>_chiefdom`
     cells cover it from Rites & Rituals to Wheel, each swept on the same deck its City/Settlement
     counterpart uses, so the board is the only variable. Before the perk it came back **never higher**
