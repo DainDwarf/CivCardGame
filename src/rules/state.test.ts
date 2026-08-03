@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { cloneState, type GameState } from './state';
+import { snapshot } from './events';
+import { addWork } from './population';
+import { openTradeRoute } from './tradeRoutes';
 import { applyMove, createRun, endTurn } from '../run/engine';
 import { playCard } from '../run/moves';
 import type { RunConfig } from '../contract';
@@ -18,7 +21,7 @@ function livedState(): GameState {
     ].map((cardId) => ({ cardId })),
     board: TEST_BOARD_ID,
     boardStickers: [],
-    missionId: 'test',
+    missionId: 'test_win', // seeds both a threat and an objective card
     deckId: 'fixture',
     seed: 'clone-seed',
   };
@@ -30,11 +33,22 @@ function livedState(): GameState {
   // Optional per-copy state the zones don't otherwise carry — a clone that drops either would alias it.
   G.hand[0].counters = { plays: 2 };
   G.hand[0].stickers = ['irrigation'];
-  // The one nested shape a settled turn leaves empty: a parked choice holding its own instances.
+  // The board zones a settled turn leaves empty, filed through the production helpers so each holds
+  // what a real run puts there.
+  addWork(G, { id: 500, cardId: 'test_work' });
+  openTradeRoute(G, { id: 501, cardId: 'test_trade' });
+  G.removed.push({ id: 502, cardId: 'test_event' });
+  // The three nested shapes no settled state carries: a parked choice holding its own instances, a
+  // drained bus (a `resourceChange` nests a whole snapshot), and a declared defeat.
   G.pendingInteraction = {
     cardId: 'test_action', instanceId: G.hand[0].id, kind: 'chooseCard',
     prompt: 'pick one', options: [{ ...G.deck[0] }], pick: 1,
   };
+  G.events = [
+    { type: 'resourceChange', before: snapshot(G) },
+    { type: 'draw', instanceId: G.hand[0].id, cardId: G.hand[0].cardId, source: 'effect' },
+  ];
+  G.pendingDefeat = { reason: 'fixture defeat' };
   return G;
 }
 
@@ -48,6 +62,19 @@ function* walk(v: unknown, path = '$'): Generator<[string, unknown]> {
 }
 
 describe('cloneState', () => {
+  it('is checked against a state carrying every field', () => {
+    const G = livedState();
+    // `cloneState` is spelled out field by field, so the way it fails is by forgetting one — and each
+    // assertion below only reaches what the fixture populates: an absent field is indistinguishable
+    // from a dropped one, and an empty zone never runs the clone's per-element path for it. Reading
+    // the key set off the state is what makes this self-extending — a field added to `GameState`
+    // surfaces here until `livedState` carries one.
+    const vacuous = Object.entries(G)
+      .filter(([, v]) => v === undefined || (Array.isArray(v) && v.length === 0))
+      .map(([k]) => k);
+    expect(vacuous).toEqual([]);
+  });
+
   it('reproduces the state exactly', () => {
     const G = livedState();
     expect(cloneState(G)).toEqual(structuredClone(G));
@@ -55,9 +82,6 @@ describe('cloneState', () => {
 
   it('shares no object reference with the original', () => {
     const G = livedState();
-    // Guard the fixture itself: an empty tableau/discard would let this pass without walking either.
-    expect(G.tableau.length).toBeGreaterThan(0);
-    expect(G.discard.length).toBeGreaterThan(0);
     const copy = cloneState(G);
     const originals = new Set([...walk(G)].map(([, v]) => v));
     const shared = [...walk(copy)].filter(([, v]) => originals.has(v)).map(([path]) => path);
