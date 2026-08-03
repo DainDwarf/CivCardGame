@@ -266,27 +266,88 @@ export function blankState(missionId: string): GameState {
 
 /**
  * A deep copy of a run state — the snapshot primitive every move, undo entry, and projection is built
- * on (`run/engine.ts`, `rules/upkeep.ts`'s `projectNextTurn`).
+ * on (`run/engine.ts`, `rules/upkeep.ts`'s `projectNextTurn`). `state.test.ts` pins the
+ * no-shared-references guarantee.
  *
- * `GameState` is plain serializable data by construction — nested objects, arrays, and primitives, with
- * no Maps/Sets/Dates/cycles and no functions (a card's behaviour lives on its `CardDef`, never on an
- * instance). So this recursive walk is exhaustive, and it is ~12× faster than `structuredClone`, whose
- * generality none of the state uses. `state.test.ts` pins the no-shared-references guarantee.
+ * Spelled out field by field rather than walked generically. A generic walk has to ask *what is this
+ * value* at every node, and since it sees numbers, strings, nine array shapes and six object shapes,
+ * those checks go megamorphic — writing the shapes out gives each copy site one resident shape instead.
+ * The simulator clones once per engine action and several times per search node, so this is its
+ * single hottest frame.
+ *
+ * Every key is assigned unconditionally, `undefined` included: a conditional key would hand V8 two
+ * shapes for the same type and give back what the spelling-out bought. **A new *optional* `GameState`
+ * field must be added here by hand** — a required one is a compile error, an optional one would be
+ * silently dropped.
  */
 export function cloneState(G: GameState): GameState {
-  return deepClone(G);
+  const p = G.pendingInteraction;
+  const d = G.pendingDefeat;
+  return {
+    round: G.round,
+    resources: { ...G.resources },
+    startResources: { ...G.startResources },
+    hand: cloneInstances(G.hand),
+    deck: cloneInstances(G.deck),
+    discard: cloneInstances(G.discard),
+    removed: cloneInstances(G.removed),
+    tableau: clonePlaced(G.tableau),
+    workZone: clonePlaced(G.workZone),
+    threats: cloneInstances(G.threats),
+    tradeRoutes: clonePlaced(G.tradeRoutes),
+    objective: G.objective === undefined ? undefined : cloneInstance(G.objective),
+    handSize: G.handSize,
+    missionId: G.missionId,
+    rngState: G.rngState.slice(),
+    pendingInteraction:
+      p === null
+        ? null
+        : { cardId: p.cardId, instanceId: p.instanceId, kind: p.kind, prompt: p.prompt, options: cloneInstances(p.options), pick: p.pick },
+    events: cloneEvents(G.events),
+    pendingDefeat: d ? { reason: d.reason } : d,
+    pendingVictory: G.pendingVictory,
+    reshuffleCount: G.reshuffleCount,
+    revealCount: G.revealCount,
+  };
 }
 
-function deepClone<T>(v: T): T {
-  if (v === null || typeof v !== 'object') return v;
-  if (Array.isArray(v)) {
-    const out = new Array(v.length);
-    for (let i = 0; i < v.length; i++) out[i] = deepClone(v[i]);
-    return out as unknown as T;
+function cloneInstance(c: CardInstance): CardInstance {
+  return {
+    id: c.id,
+    cardId: c.cardId,
+    counters: c.counters === undefined ? undefined : { ...c.counters },
+    stickers: c.stickers === undefined ? undefined : c.stickers.slice(),
+  };
+}
+
+function cloneInstances(cards: readonly CardInstance[]): CardInstance[] {
+  const out = new Array<CardInstance>(cards.length);
+  for (let i = 0; i < cards.length; i++) out[i] = cloneInstance(cards[i]!);
+  return out;
+}
+
+/** The board zones' copy — a separate walk from `cloneInstances` so each stays on one resident shape,
+ *  the whole point of spelling the clone out. */
+function clonePlaced(cards: readonly PlacedCard[]): PlacedCard[] {
+  const out = new Array<PlacedCard>(cards.length);
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i]!;
+    out[i] = {
+      id: c.id,
+      cardId: c.cardId,
+      counters: c.counters === undefined ? undefined : { ...c.counters },
+      stickers: c.stickers === undefined ? undefined : c.stickers.slice(),
+      workers: c.workers,
+    };
   }
-  const out: Record<string, unknown> = {};
-  for (const k in v) out[k] = deepClone((v as Record<string, unknown>)[k]);
-  return out as T;
+  return out;
+}
+
+/** Always `[]` at a committed clone site, so this is a copy that costs nothing in practice — but the
+ *  bus is drained *between* steps, and a `resourceChange` nests a snapshot that must not alias. */
+function cloneEvents(events: readonly GameEvent[]): GameEvent[] {
+  if (events.length === 0) return [];
+  return events.map((e) => (e.type === 'resourceChange' ? { type: e.type, before: { resources: { ...e.before.resources } } } : { ...e }));
 }
 
 /**

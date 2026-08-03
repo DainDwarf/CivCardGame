@@ -181,8 +181,9 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   `objective`, and `pendingInteraction` (a suspended
   card effect; while set, `endTurn` no-ops and undo is blocked). `instancesFromCardIds` mints;
   `blankState()` builds an empty one; `cloneState()` is the snapshot primitive every move, undo entry
-  and projection copies through (a plain-data deep walk — `G` has no Maps/Sets/cycles/functions, so
-  `structuredClone`'s generality bought nothing and cost ~12× the time).
+  and projection copies through — the simulator's hottest frame, so it is spelled out field by field
+  (one resident shape per copy site) rather than walked generically, and a new **optional** `GameState`
+  field must be added to it by hand.
   Instance ids are unique across *all* zones. `G.events` is always
   drained to `[]` in any committed/undo-visible state — undo, clone, and determinism depend on it.
 - **`resources.ts`** — the three resource types and their arithmetic: `CoreResources` (5 spendable —

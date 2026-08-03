@@ -207,6 +207,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Spell `cloneState` out field by field** ✅ — the generic recursive walk asked *what is this value* at
+  every node while seeing numbers, strings, nine array shapes and six object shapes, so its checks ran
+  megamorphic; writing the `GameState` shape out (plus a `CardInstance`/`PlacedCard`/`GameEvent` helper
+  apiece, and every optional key assigned unconditionally so no type gets two shapes) gives each copy site
+  one resident shape. Measured on `raiding_city` under the `profile` skill: the clone frame **36.4% →
+  9.1%** self on planner·100 (24.6 s → 3.3 s of a 67.5 → 36.3 s run) and **41.6% → 7.0%** on prover·10
+  (43.3 s → 3.6 s of 104.2 → 51.0 s) — **~7–12× on the frame**, well past the ~4.4× a toy benchmark
+  predicted, so the recursive walk's self time had been under-attributed. Whole-sweep runtime roughly
+  **halved** on both cells. Unprofiled 3-rep wall clock corroborates (prover 90.9/88.4/87.3 s →
+  21.6/45.5/45.6 s) but is too noisy on Windows to lead with. Sweep output **byte-identical**, and
+  `state.test.ts`'s three clone assertions passed untouched — the change is semantically invisible.
+  En route, two things the profile settled: `assertRunInvariants` appears in **neither** capture (it runs
+  only on applied drive-loop actions, a rounding error against search steps), and the follow-on
+  *share-the-leaves* idea (clone sharing `CardInstance` objects, copying only the zone arrays) was
+  **declined** — it would have traded `cloneState`'s no-shared-references contract, which the run-loop
+  undo stack also leans on, for a frame now worth single digits. What the halving promoted instead:
+  the transposition key (`tokenHash` 12.5/14.6% + `contentKey` 6.6/6.8% self) and the event bus
+  (`dispatchEvent` 9.2/7.4% + `flushEvents` 7.9/6.1% self) are now the top two costs.
 - **The measured runs are queryable as one table** ✅ — `npm run sim:report -- --format csv` flattens
   instead of folding: the runs come out as the same `recordToCsvLine` rows a sweep writes, so the standing
   set — a fixture apiece, nesting its rows a policy deep — reads as one rectangle. A sweep is already that
