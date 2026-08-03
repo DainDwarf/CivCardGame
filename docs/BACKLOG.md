@@ -73,7 +73,7 @@
   | Roads | ✅ | ✅ | ✅ | ⬜ | [roads](missions/roads.md) |
   | Wheel | ✅ | ✅ | ✅ | ⬜ | [wheel](missions/wheel.md) |
   | Horse taming | ✅ | ✅ | ✅ | ⬜ | [horse-taming](missions/horse-taming.md) |
-  | Raiding | ✅ | ⬜ | ⬜ | ⬜ | [raiding](missions/raiding.md) |
+  | Raiding | ✅ | ✅ | ⬜ | ⬜ | [raiding](missions/raiding.md) |
   | Naval (×2) | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Bronze *(convergence)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Sword & chariot | 🟡 | ⬜ | ⬜ | ⬜ | — |
@@ -103,7 +103,8 @@
      identity; see the reward proposal below). **Roads** — DONE, balance included (see
      [`missions/roads.md`](missions/roads.md)). **Wheel** — DONE, balance included (see [`missions/wheel.md`](missions/wheel.md)).
   5. **Horse (×2)** — **Horse taming** DONE, balance included (see
-     [`missions/horse-taming.md`](missions/horse-taming.md)); **Raiding** remains. Then **Naval (×2)**.
+     [`missions/horse-taming.md`](missions/horse-taming.md)); **Raiding** implemented, its balance pass
+     open (see [`missions/raiding.md`](missions/raiding.md)). Then **Naval (×2)**.
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
 
   **Mechanical identity `[?]`:** IDEAS frames the age as "trade-dependent palace civilizations" → the
@@ -116,10 +117,6 @@
 
   - **Hammurabi's Code** (optional leaf off Writing) → law/culture: a sticker or stability card, not a
     wonder. Still to author.
-  - **Raiding** (military branch, M2 — M1 Horse taming is built) — rewards the **Chiefdom → Warband**
-    board upgrade (military+money, Chiefdom's low-territory/high-pop shape; needs a Chiefdom rebalance
-    first). Draft/traction horse dropped; mounted cavalry stays *out* (Iron Age). See
-    [`missions/raiding.md`](missions/raiding.md).
   - **Naval (×2)** → a sea-trade money work (sailing ship), then the **tin route** (long-distance trade
     that enables Bronze). IDEAS' "defend your trade routes" money-drain event/threat fits here.
   - **Bronze** (convergence) → **Bronzeworking** building (consumes 🪙 → 🔨) + **Bronze tools** sticker
@@ -138,10 +135,10 @@
     (2🪙 → 3🌾 / 3🔨). Each is a *reward* of the mission that shipped it, so no fixture upstream can stock
     it — the cells that will are the ones authored from here on. The Caravans matter most: they set the
     🪙→🌾/🔨 conversion rate every later mission is read against, and nothing has measured it yet.
-  - **Chiefdom is fixtured, and the War Camp made it a real alternative.** Ten `<mission>_chiefdom`
+  - **Chiefdom is fixtured, and the Raider Camp made it a real alternative.** Ten `<mission>_chiefdom`
     cells cover it from Rites & Rituals to Wheel, each swept on the same deck its City/Settlement
     counterpart uses, so the board is the only variable. Before the perk it came back **never higher**
-    at any cell or policy; with the pre-built War Camp (+4🌾 per territory taken) it now **passes its
+    at any cell or policy; with the pre-built Raider Camp (+4🌾 per territory taken) it now **passes its
     counterpart on three cells at the planner** — `masonry` 92 vs 89, `pyramid` 54 vs 13, `wheel` 77 vs
     73 — and sits below on the other seven. Famine, which was every cell's dominant defeat, is largely
     gone. It still ends with **more** land than the settled boards almost everywhere (finding_copper

@@ -52,13 +52,14 @@
   color: var(--text);
 }
 
-/* Settlement shares Tribe's ground tint — the settled version of the same people (see Board.module.css). */
+/* An upgraded board shares the tint of the one it replaces (see Board.module.css). */
 .ground[data-board='tribe'],
 .ground[data-board='settlement'] {
   background: var(--board-tribe-ground);
 }
 
-.ground[data-board='chiefdom'] {
+.ground[data-board='chiefdom'],
+.ground[data-board='warband'] {
   background: var(--board-chiefdom-ground);
 }
 

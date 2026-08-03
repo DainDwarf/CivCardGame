@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -428,6 +428,32 @@ export const MISSIONS: Record<string, MissionDef> = {
     // amount provisional.
     reward: { influence: 12, unlockCardIds: ['war_horse', 'raiding'] },
     map: { col: 9, row: 0 },
+    age: 'bronze',
+  },
+  raiding: {
+    id: 'raiding',
+    name: 'Raiding',
+    lore:
+      'The herds are broken to the halter, and word of them has run ahead of you. Behind their ditches ' +
+      'and timber walls the valley chiefs are counting your riders and thickening their gates, and every ' +
+      'season you leave them standing they raise the palisade another course and send their own men out ' +
+      'after your grain. Their walls will never be lower than they are this year. Ride out, break them ' +
+      'open, and let what they hoarded pay for the horses that took it.',
+    prereqs: ['horse_taming'],
+    // One `stronghold` per target, tied to the objective's threshold by the shared RAID_TARGETS const
+    // so the mission can't seed a different count than the win asks for. No threat: the strongholds are
+    // the whole pressure, and they are the rare one that pushes *back* — each left standing raids you.
+    events: Array.from({ length: RAID_TARGETS }, () => 'stronghold'),
+    objectiveCardId: 'raiding_goal',
+    victoryHint: `Sack all ${RAID_TARGETS} strongholds — pay 8 ⚔️ for each, and take 🪙 in plunder.`,
+    failureHint:
+      'Every stronghold you leave standing raids you back for 🪙 at the end of each round and raises its ' +
+      'walls another 2 ⚔️ — bleed the treasury dry and the run ends.',
+    kind: 'standard',
+    // Closes the military branch: the reward is the government itself, upgrading the martial board into
+    // Warband rather than handing out another card. Influence amount provisional.
+    reward: { influence: 12, boardUpgrade: { from: 'chiefdom', to: 'warband' } },
+    map: { col: 10, row: 0 },
     age: 'bronze',
   },
   roads: {

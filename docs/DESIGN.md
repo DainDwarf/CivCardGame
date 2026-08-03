@@ -427,7 +427,7 @@ its pre-built structure stands in, so its free building room is unchanged and th
 never had.
 
 **A board's rule should pay what that board is short of, not more of what it already does.** The
-first cut of Chiefdom's War Camp paid *more territory* per conquest — doubling the thing the board was
+first cut of Chiefdom's Raider Camp paid *more territory* per conquest — doubling the thing the board was
 already best at, which compounds a lead rather than covering a weakness, and on the one mission that
 both counts territory and taxes it, scaled the reward and the punishment together. It pays **food**
 instead: the martial board's actual failure mode is that three people and no fields starve, so plunder
@@ -469,9 +469,6 @@ on victory the meta loop looks up the mission's rewards (by the `RunResult`'s
 
 - The per-board sticker **cap** (provisionally 2) and how freely stickers should stack are
   balance details, still being tuned.
-- **How many boards should carry behaviour?** One does today (Chiefdom's War Camp). Whether every
-  board eventually earns a standing rule, or whether it stays the thing that marks a few of them out,
-  is a balance question the content pass answers.
 
 ## Code architecture ✅
 

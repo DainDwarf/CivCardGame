@@ -257,6 +257,10 @@ export const ROADWORKS = 6;
  *  (`content/missions.ts`), the `horse_taming_goal` win threshold, and its progress readout. */
 export const WILD_HORSES = 5;
 
+/** How many strongholds "Raiding" seeds — shared by the mission's injected event list
+ *  (`content/missions.ts`), the `raiding_goal` win threshold, and its progress readout. */
+export const RAID_TARGETS = 4;
+
 /** Horses already tamed: a wild horse reaches `removed` only by being played (paying its ⚔️), so the
  *  count there *is* the tally. Shared by the win threshold, its readout, and the `tamed_horses` drain,
  *  so the herd the threat feeds can't differ from the herd the goal counts. */
@@ -333,17 +337,26 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🧱', description: '+1 ⚔️ / round' },
     produces: { resources: { military: 1 } },
   },
-  // The Chiefdom board's standing perk (`boards.ts`'s `prebuilt`) rather than a card anyone draws or
-  //   buys: it produces nothing itself and pays only through what the rest of the board takes. The
-  //   spoils scale with the land, so a bigger seizure is worth proportionally more and the face's
-  //   "each 🗺️" reads literally.
-  war_camp: {
-    id: 'war_camp', name: 'War Camp', kind: 'building', cost: {}, workers: 0,
+  // The martial boards' standing perks (`boards.ts`'s `prebuilt`) rather than cards anyone draws or
+  //   buys: neither produces anything itself, and both pay only through what the rest of the board
+  //   takes. The spoils scale with the land, so a bigger seizure is worth proportionally more and each
+  //   face's "each 🗺️" reads literally.
+  raider_camp: {
+    id: 'raider_camp', name: 'Raider Camp', kind: 'building', cost: {}, workers: 0,
     display: { art: '🏕️', description: 'Each 🗺️ you take:\n+4🌾' },
     modifyGain: (base) => {
       const taken = base?.territory ?? 0;
       if (!base || taken <= 0) return base;
       return { ...base, food: (base.food ?? 0) + 4 * taken };
+    },
+  },
+  war_camp: {
+    id: 'war_camp', name: 'War Camp', kind: 'building', cost: {}, workers: 0,
+    display: { art: '⛺', description: 'Each 🗺️ you take:\n+8🌾 +2🪙' },
+    modifyGain: (base) => {
+      const taken = base?.territory ?? 0;
+      if (!base || taken <= 0) return base;
+      return { ...base, food: (base.food ?? 0) + 8 * taken, money: (base.money ?? 0) + 2 * taken };
     },
   },
 
@@ -530,6 +543,31 @@ export const CARDS: Record<string, CardDef> = {
     id: 'wild_horse', name: 'Wild Horse', kind: 'event', cost: { resources: { military: 6 } },
     display: { art: '🐎', description: '−1 🔨 at end of round while untamed' },
     upkeep: { resources: { production: -1 } },
+  },
+  // Stronghold: cracking it is playing it — the ⚔️ buys the walls down, the play choke exiles it to
+  //   `removed` (what `raiding_goal` counts), and the effect hands the plunder. Held unplayed at end of
+  //   round its one upkeep does both halves of the pressure: the garrison rides out for 🪙, and the
+  //   walls go up — the `walls` counter its own cost reads back, so a target hardens only on a turn it
+  //   was held and passed over.
+  stronghold: {
+    id: 'stronghold', name: 'Stronghold', kind: 'event',
+    cost: {
+      resources: { military: 8 },
+      resolve: ({ self }, base) => ({
+        ...base,
+        resources: { ...base.resources, military: (base.resources?.military ?? 0) + 2 * getCounter(self, 'walls') },
+      }),
+    },
+    display: {
+      art: '🏰',
+      description: '−2 🪙 at end of round while it stands',
+      dynamicRule: 'cost rises each round it stands',
+    },
+    effect: { resources: { money: 6 } },
+    upkeep: {
+      resources: { money: -2 },
+      resolve: ({ self }) => { bumpCounter(self, 'walls'); },
+    },
   },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
@@ -743,6 +781,23 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       description: `Tame all ${WILD_HORSES} wild horses`,
       dynamicText: (G) => `🐎 ${Math.min(tamedHorses(G), WILD_HORSES)}/${WILD_HORSES} tamed`,
+    },
+  },
+
+  // A stronghold reaches `removed` only by being played, so counting them there counts the sacked ones.
+  raiding_goal: {
+    id: 'raiding_goal', name: 'Raiding', kind: 'objective', cost: {},
+    goals: [
+      {
+        icon: '🏰',
+        measure: (G) => G.removed.filter((c) => c.cardId === 'stronghold').length,
+        target: RAID_TARGETS,
+      },
+    ],
+    display: {
+      description: `Sack all ${RAID_TARGETS} strongholds`,
+      dynamicText: (G) =>
+        `🏰 ${Math.min(G.removed.filter((c) => c.cardId === 'stronghold').length, RAID_TARGETS)}/${RAID_TARGETS} sacked`,
     },
   },
 

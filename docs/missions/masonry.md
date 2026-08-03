@@ -35,7 +35,7 @@ from opposite ends. Same 21-card deck (the First Temple pool, Bead Workshop · F
 4 Hut · 4 Foraging · 2 Hunting · 4 Toolmaking · 2 Bow · 2 Conquest · Bartering):
 
 Re-measured under the split territory cap (Conquest a `work` card; Settlement 2🏞️ free, Chiefdom none —
-its one slot holds the pre-built War Camp):
+its one slot holds the pre-built Raider Camp):
 
 | board | greedy | planner | oracle |
 |---|---|---|---|
@@ -46,7 +46,7 @@ Turns (min/med/mean/max) under planner: settlement 8 / 31 / 29.4 / 40 · chiefdo
 Every defeat on both boards is famine — **the stalls are gone** — and Conquest is played ~3.3–4.0×/run
 under *both* policies.
 
-**This is the one cell where Chiefdom passes Settlement**, and the War Camp is why: +4🌾 on each of
+**This is the one cell where Chiefdom passes Settlement**, and the Raider Camp is why: +4🌾 on each of
 those ~3.3–4.0 Conquests lands directly on the only thing that was killing the board here, taking
 famine 43 → 3. The board that has to go and take its land now feeds itself off taking it, which on a
 population goal is worth more than the two slots Settlement is handed. Read the pair as the arc's

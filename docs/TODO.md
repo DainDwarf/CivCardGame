@@ -223,7 +223,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     min/median/mean/max turns, mean actions, mean pools and the famine counts exactly across all three
     policies, and the unpacked `cardsPlayed` totals match its card-plays list card for card.
 - **Boards can stand a card on the table, and a standing card can bend what others yield** ✅ — two
-  seams shipped together for Chiefdom's **War Camp**: a pre-built 🏕️ paying **+4🌾** per territory the
+  seams shipped together for Chiefdom's **Raider Camp**: a pre-built 🏕️ paying **+4🌾** per territory the
   board takes.
   - `BoardDef.prebuilt` lists structures `run/setup.ts` stands in the tableau at setup (through the
     real `addBuilding`, minted past the deck's ids, resolving **no** entry `effect` — so a board's own
@@ -244,7 +244,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     92 vs 89, pyramid 54 vs 13, wheel 77 vs 73) and behind everywhere else, which is the shipped rate.
     The 🔨 half was what funded repeat Conquests — `horse_taming`, whose deck holds 4 of them, swung
     78% → 4% when it was dropped.
-  - Chiefdom went `territory: 0 → 1` with the War Camp standing in it, so its **free** building room
+  - Chiefdom went `territory: 0 → 1` with the Raider Camp standing in it, so its **free** building room
     is unchanged and it stays landless in practice. `meta/Stats.tsx` subtracts `prebuiltCardIds()`
     from the collection denominator — a card nobody can own would otherwise put `X/N` out of reach.
   - **`sim/enablers.ts` reads a card's output through the same fold**, via `effects.ts`'s exported

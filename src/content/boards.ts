@@ -46,8 +46,10 @@ export const ORIGIN_BOARD_ID: BoardId = 'tribe';
  * retires Tribe for the settled version — see `rules/boardUpgrade.ts`). Other boards land through
  * `unlockBoardIds` rewards — `chiefdom`, the first military-leaning government, is unlocked by the
  * "Raiders at the Border" mission, where the arc teaches board choice (Chiefdom vs. the settled
- * government at launch). `settlement` in turn upgrades into `city` — the Bronze Age government — on
- * clearing the "Masonry" mission. All four boards' numbers are provisional and unmeasured against the
+ * government at launch). Both lines then upgrade in the Bronze Age: `settlement` into `city` on
+ * clearing "Masonry", and `chiefdom` into `warband` on clearing "Raiding" — so the martial line has a
+ * successor of its own rather than dead-ending at the age it was unlocked in. All five boards' numbers
+ * are provisional and unmeasured against the
  * split cap; the territory figures in particular are the content pass's to settle. Territory now buys
  * *buildings* alone — work and trade cost none — so it is a building budget rather than a whole-board
  * one, and the numbers are back to what they were before the caps were merged. `tribe` starts with
@@ -68,11 +70,21 @@ export const BOARDS: Record<BoardId, BoardDef> = {
   chiefdom: {
     id: 'chiefdom',
     name: 'Chiefdom',
-    // Landless in practice like Tribe — its one slot is spoken for by the War Camp standing in it —
-    // but its 6⚔️ is exactly two plays of one Conquest copy (2⚔️ doubling per play), and the War Camp
-    // turns each of those into spoils. Where the settled boards are handed land and have to feed it,
-    // this one is handed the means to take land and is fed *by* taking it.
+    // Landless in practice like Tribe — its one slot is spoken for by the Raider Camp standing in it —
+    // but its 6⚔️ is exactly two plays of one Conquest copy (2⚔️ doubling per play), and the camp turns
+    // each of those into spoils. Where the settled boards are handed land and have to feed it, this one
+    // is handed the means to take land and is fed *by* taking it.
     resources: { food: 8, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 1, culture: 0 },
+    prebuilt: ['raider_camp'],
+  },
+  warband: {
+    id: 'warband',
+    name: 'Warband',
+    // Chiefdom's successor keeps its shape rather than out-scaling it: a fourth pair of hands with the
+    // same single slot still spoken for, so the shortage stays specifically a *building* shortage. The
+    // opening food is three eating turns at that population — the same runway Chiefdom has at three.
+    // Its treasury is the War Camp's 🪙, not a starting pool: a warband banks what it takes.
+    resources: { food: 12, production: 2, science: 0, military: 8, money: 0, population: 4, territory: 1, culture: 0 },
     prebuilt: ['war_camp'],
   },
   city: {

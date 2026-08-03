@@ -89,7 +89,7 @@ ends holding 65🔨 mean and never converts it, so read that column as the one-p
 the drain biting.
 
 **Chiefdom edges City at the planner here** — 77% vs 73%, oracle 100% both, on the same deck. Its
-**War Camp** (+4🌾 per 🗺️ taken) pays on exactly the action this mission demands most, and famine was
+**Raider Camp** (+4🌾 per 🗺️ taken) pays on exactly the action this mission demands most, and famine was
 what used to kill it (68 of greedy's 100 runs before the perk). Greedy stays at 1%: the ⚔️→🗺️ chain is
 multi-turn, so a one-ply policy never starts it and never collects the spoils either.
 
