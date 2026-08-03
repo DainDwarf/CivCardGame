@@ -213,10 +213,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   apiece, and every optional key assigned unconditionally so no type gets two shapes) gives each copy site
   one resident shape. Measured on `raiding_city` under the `profile` skill: the clone frame **36.4% →
   9.1%** self on planner·100 (24.6 s → 3.3 s of a 67.5 → 36.3 s run) and **41.6% → 7.0%** on prover·10
-  (43.3 s → 3.6 s of 104.2 → 51.0 s) — **~7–12× on the frame**, well past the ~4.4× a toy benchmark
-  predicted, so the recursive walk's self time had been under-attributed. Whole-sweep runtime roughly
-  **halved** on both cells. Unprofiled 3-rep wall clock corroborates (prover 90.9/88.4/87.3 s →
-  21.6/45.5/45.6 s) but is too noisy on Windows to lead with. Sweep output **byte-identical**, and
+  (43.3 s → 3.6 s of 104.2 → 51.0 s), with whole-sweep runtime roughly **halved** on both cells.
+  No per-frame multiplier is claimed: the old frame was self-recursive and the two captures sampled at
+  different rates (21→35 Hz, 8→13 Hz), so these support "the share collapsed and the total halved" and
+  not a ratio. Unprofiled 3-rep wall clock agrees in direction (prover 90.9/88.4/87.3 s →
+  21.6/45.5/45.6 s) but spreads 2× within one condition, so it can't lead. Sweep output **byte-identical**, and
   `state.test.ts`'s three clone assertions passed untouched — the change is semantically invisible.
   En route, two things the profile settled: `assertRunInvariants` appears in **neither** capture (it runs
   only on applied drive-loop actions, a rounding error against search steps), and the follow-on
