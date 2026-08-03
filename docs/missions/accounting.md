@@ -49,7 +49,7 @@ on a different seed stream put `oracle` at 60% and the pure `prover` at 58% — 
 band rather than a reading of its own, so winnability settles around 60% and this mission is not among the
 90–100% peers. The mission ships on the `planner` figure either way.
 
-**Chiefdom is a deck/board mismatch, not a reading of the mission** — 0 starting territory against 8
+**Chiefdom is a deck/board mismatch, not a reading of the mission** — no free slot against 8
 structures, 3🧍 eating from 8🌾; famine takes 80/100 by turn 6 (21% greedy / 2% planner on this deck). It
 gets no fixture: a baseline holds one board, and a Chiefdom cell would need its own deck before its number
 said anything about Accounting.

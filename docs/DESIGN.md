@@ -184,6 +184,9 @@ the engine matches that:
   auto-resolution of Events left in hand — depend on the order its siblings resolve in. The
   engine dispatches in a *fixed* order (for replay determinism), but the result must be the
   same under any order.
+- **A standing card's claim on another's output is order-independent.** Every gain passes through
+  each standing card's gain modifier in turn, and those cards sit in unordered zones — so any two
+  such hooks that can stand together must **commute**, exactly as two stickers on one copy must.
 
 Both together mean the whole run state reduces to *one ordered draw pile + a set of
 unordered heaps*. This is a genuine game-design choice (it's the faithful model), and it is
@@ -400,7 +403,8 @@ begin*. Themed as a form of government/era (Tribe, Monarchy, Republic, …).
 five *core* resources (Food / Production / Money / Science / Military) and the three
 *strategic* gauges (Population / Territory / Culture). Choosing a board is choosing your
 opening economy: a martial board might open with Military and a lean Population; a
-mercantile one with Money and extra Territory. `createInitialState` seeds a run from
+mercantile one with Money and extra Territory. It may also stand structures **pre-built** on the
+table (see *Behaviour, as a card on the table* below). `createInitialState` seeds a run from
 the chosen board.
 
 **Where a board's identity actually lives.** Five of the eight starting numbers are one-time: they are
@@ -408,6 +412,20 @@ spent or eaten early and have washed out by the time a run is decided. Only **po
 **territory** are standing capacities, felt every round for the whole run — so they are the persistent
 differentiation budget a board has, and a board that differs only in its spendable pools reads as a
 head start rather than as a different civilization.
+
+**Behaviour, as a card on the table.** A board is not only numbers: it may stand structures
+**pre-built** when the run opens (`BoardDef.prebuilt`), and a standing card may carry a rule keyed to
+a *concept* rather than to a named card — "each territory you take brings one more" — through the
+gain seam every card's output already passes down (`rules/effects.ts`'s `modifyGain`). The two
+together are what lets a board differ in *how it plays* and not merely in what it starts holding.
+
+Doing it as a card is the point. A board rule that quietly changed a **card's printed numbers** is
+ruled out — it makes the same card face lie on one board and tell the truth on another. Here the
+printed card is untouched and the extra output comes from a second card the player can see, read and
+zoom, standing in a slot it visibly paid for. A landless board is no obstacle: it is granted the slot
+its pre-built structure stands in, so its free building room is unchanged and the perk costs land it
+never had. The watch-out is unchanged too — such a rule must stay a *choice* and not become the
+**answer** to every mission that wants what it grants.
 
 **Board vs. mission setup.** The two compose cleanly and keep their existing roles:
 the **board is the baseline** starting state, and the **mission seeds its threat/event
@@ -436,16 +454,9 @@ on victory the meta loop looks up the mission's rewards (by the `RunResult`'s
 
 - The per-board sticker **cap** (provisionally 2) and how freely stickers should stack are
   balance details, still being tuned.
-- **Do boards get *behaviour*, not just numbers?** Deferred until the numbers-only version has been
-  played: with population and territory used as the persistent axis on purpose, that may already be a
-  complete answer. If it still reads bland, two options in order — (1) a board that starts with a card
-  already **in play**, which is flavour as loud as a rule while every rule stays printed on a readable
-  card face, though a landless board has nowhere to stand a building so it would have to be a route or a
-  granted slot; (2) a board rule keyed to a **concept** rather than a card, e.g. *territory gained is
-  doubled*, which survives any later expansion card where naming one would not. Ruled out either way: a
-  board rule that changes a **card's printed numbers**, which makes the card face lie on one board. Watch
-  that any such rule doesn't turn a board into the *answer* to the territory-hungry missions instead of a
-  *choice*.
+- **How many boards should carry behaviour?** One does today (Chiefdom's War Camp). Whether every
+  board eventually earns a standing rule, or whether it stays the thing that marks a few of them out,
+  is a balance question the content pass answers.
 
 ## Code architecture ✅
 

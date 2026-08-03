@@ -55,6 +55,19 @@ export const TEST_BOARD_2: BoardDef = {
   resources: { food: 2, production: 6, science: 1, military: 4, money: 3, population: 1, territory: 5, culture: 0 },
 };
 
+/** A third synthetic board, the only one standing a structure `prebuilt`. Kept separate from
+ *  `TEST_BOARD` because a pre-built card lands in the tableau of *every* run seeded off its board,
+ *  which the many suites that open on an empty table would then have to account for. Its territory
+ *  leaves one slot free past the pre-built one, so a test can tell "the slot was spent" from "the
+ *  board has no room". */
+export const TEST_BOARD_PREBUILT_ID = 'test_board_prebuilt' as BoardId;
+export const TEST_BOARD_PREBUILT: BoardDef = {
+  id: TEST_BOARD_PREBUILT_ID,
+  name: 'Test Board Prebuilt',
+  resources: { food: 3, production: 3, science: 2, military: 1, money: 2, population: 2, territory: 2, culture: 0 },
+  prebuilt: ['test_modifier'],
+};
+
 // --- Synthetic cards -------------------------------------------------------------------------------
 
 /** Base gain of the dynamic-text fixture — the single source both its `resolve` and its `dynamicText`
@@ -123,6 +136,29 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
   test_work_food: {
     id: 'test_work_food', name: 'Test Work Food', kind: 'work',
     cost: {}, workers: 1, produces: { resources: { food: 3 } },
+  },
+
+  // --- Gain modifiers: the passive that acts from the board rather than at a timing slot
+  // (`CardDef.modifyGain`). Both bend a territory *grant* by +1 and leave everything else — including
+  // a territory drain — alone, which is the shape every such hook has to hold. The pair differs only
+  // in staffing, so a test can pin that an unstaffed modifier stops bending. ---
+  test_modifier: {
+    id: 'test_modifier', name: 'Test Modifier', kind: 'building',
+    cost: { resources: { production: 1 } }, workers: 0,
+    modifyGain: (base) =>
+      base && (base.territory ?? 0) > 0 ? { ...base, territory: base.territory! + 1 } : base,
+  },
+  test_modifier_staffed: {
+    id: 'test_modifier_staffed', name: 'Test Modifier Staffed', kind: 'building',
+    cost: { resources: { production: 1 } }, workers: 1,
+    modifyGain: (base) =>
+      base && (base.territory ?? 0) > 0 ? { ...base, territory: base.territory! + 1 } : base,
+  },
+  // A territory producer with room for more than one worker — the only fixture that can tell a
+  // per-gain modifier apart from a per-worker one, since `resolveProduction` scales before the fold.
+  test_terr_multiworker: {
+    id: 'test_terr_multiworker', name: 'Test Territory Multi-Worker', kind: 'work',
+    cost: {}, workers: 2, produces: { resources: { territory: 1 } },
   },
 
   // --- Trade route: stands in its own zone once played, taking neither land nor workers, and
@@ -467,6 +503,7 @@ export function installFixtures(): void {
   for (const [id, def] of Object.entries(FIXTURE_MISSIONS)) MISSIONS[id] = def;
   BOARDS[TEST_BOARD_ID] = TEST_BOARD;
   BOARDS[TEST_BOARD_2_ID] = TEST_BOARD_2;
+  BOARDS[TEST_BOARD_PREBUILT_ID] = TEST_BOARD_PREBUILT;
 }
 
 /** Remove every shared fixture from the live catalogues, restoring them to their pre-install contents. */
@@ -477,4 +514,5 @@ export function uninstallFixtures(): void {
   for (const id of Object.keys(FIXTURE_MISSIONS)) delete MISSIONS[id];
   delete BOARDS[TEST_BOARD_ID];
   delete BOARDS[TEST_BOARD_2_ID];
+  delete BOARDS[TEST_BOARD_PREBUILT_ID];
 }

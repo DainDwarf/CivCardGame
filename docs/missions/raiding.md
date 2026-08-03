@@ -26,10 +26,12 @@ the first thing to settle when this mission reaches Design.
   line): a **military + money** government keeping Chiefdom's **low-territory / high-population** shape.
   Name **Warband** is locked. **Blocked on a Chiefdom rebalance first** — Warband's numbers derive from a
   re-tuned Chiefdom (a balance-stage task, not a design blocker). ✅ **Unblocked:** Chiefdom is now
-  measured and settled at pop 3 / terr **0** / 8🌾, so Warband has a real board to derive from — and at
-  territory 0 its shortage is specifically a *building* shortage (three pairs of hands, none of them
-  working *in a building* until the board takes land), which is what Warband inherits. The axis is the
-  one [`DESIGN.md`](../DESIGN.md) → *Government boards* names as a board's persistent identity.
+  measured and settled at pop 3 / terr **1** / 8🌾, with its one slot spent on the pre-built **War
+  Camp** (each territory taken brings one more) — so Warband has a real board to derive from, and with
+  **no free slot** its shortage is specifically a *building* shortage (three pairs of hands, none of
+  them working *in a building* until the board takes land). What Warband inherits is that pair: a
+  landless start and a reason to expand out of it. The axis is the one
+  [`DESIGN.md`](../DESIGN.md) → *Government boards* names as a board's persistent identity.
 
 ## Goal + pressure ✅ (converged; numbers provisional)
 

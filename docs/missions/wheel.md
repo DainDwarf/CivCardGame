@@ -89,9 +89,13 @@ ends holding 65🔨 mean and never converts it, so read that column as the one-p
 the drain biting.
 
 **Chiefdom is measurably harder on this same deck** — planner 30% / oracle 80% @10, famine again (68 of
-greedy's 100 runs, ending at mean −0.5🌾). It gets **no fixture**: at 0 starting territory against this
+greedy's 100 runs, ending at mean −0.5🌾). It gets **no fixture**: with no free slot against this
 deck's four structures it is a deck problem first, and a number taken on the wrong deck would read as a
 mission difficulty. Same shape as the gap logged at `roads` and `accounting`.
+
+Those figures predate Chiefdom's **War Camp** (every 🗺️ taken brings one more), which cuts both ways
+here — the goal counts territory gained and `overextension`'s toll is charged on it — so they owe a
+re-measure before they read as anything.
 
 **Writing is the deck's one dead card** — unplayed across all 200 greedy/planner runs, played once in
 10 oracle runs. Kept because the deck is the one the player arrives with.

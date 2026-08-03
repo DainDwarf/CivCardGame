@@ -1,4 +1,5 @@
 import { blankState, instancesFromDeckCards, seededRng, seedObjective, type GameState } from '../rules';
+import { addBuilding, nextInstanceId } from '../rules/population';
 import { effectiveBoard } from '../rules/boardStickers';
 import { MISSIONS, seedMissionCards } from '../content/missions';
 import { BOARDS } from '../content/boards';
@@ -6,9 +7,9 @@ import type { RunConfig } from '../contract';
 
 /**
  * Build the initial run state from an assembled `RunConfig`. The board (with its snapshotted
- * stickers folded in via `effectiveBoard`) sets the baseline (all 8 starting resources); the
- * mission's declarative `threats`/`events` are then seeded on top (see docs/DESIGN.md,
- * "Government boards").
+ * stickers folded in via `effectiveBoard`) sets the baseline — all 8 starting resources, plus any
+ * structures it stands pre-built; the mission's declarative `threats`/`events` are then seeded on
+ * top (see docs/DESIGN.md, "Government boards").
  */
 export function createInitialState(config: RunConfig): GameState {
   const board = effectiveBoard(BOARDS[config.board], config.boardStickers);
@@ -20,6 +21,10 @@ export function createInitialState(config: RunConfig): GameState {
   // sticker's bonus) can ride with it. Any later mint (a mission's injected cards, a card played)
   // continues past these ids via `nextInstanceId`.
   G.deck = instancesFromDeckCards(config.deck);
+  // The board's pre-built structures, minted past the deck's ids. Placed only — no entry `effect` is
+  // resolved (unlike a played building or a seeded threat), so nothing a board stands on the table
+  // can register as a *gain* against the `startResources` snapshot taken above.
+  for (const cardId of board.prebuilt ?? []) addBuilding(G, { id: nextInstanceId(G), cardId });
   G.rngState = seededRng(config.seed).getState();
   const mission = MISSIONS[config.missionId];
   // Seed the mission's win/lose condition as a card (`GameState.objective`) before its threats/

@@ -1,7 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createInitialState } from './setup';
 import type { RunConfig } from '../contract';
-import { TEST_BOARD, TEST_BOARD_ID, installFixtures, uninstallFixtures } from '../rules/testFixtures';
+import {
+  TEST_BOARD,
+  TEST_BOARD_ID,
+  TEST_BOARD_PREBUILT,
+  TEST_BOARD_PREBUILT_ID,
+  installFixtures,
+  uninstallFixtures,
+} from '../rules/testFixtures';
+import { freeTerritory, usedTerritory } from '../rules/territory';
 
 // Seeds off the synthetic TEST_BOARD (installed into BOARDS); the missionId is a label (no MISSIONS
 // entry exists for it, so createInitialState simply seeds no objective/threats — fine for these
@@ -48,5 +56,34 @@ describe('createInitialState: board stickers', () => {
     const base = createInitialState({ ...config, boardStickers: [] });
     const G = createInitialState({ ...config, boardStickers: ['test_bs_territory'] });
     expect(G.resources.territory).toBe(base.resources.territory + 1);
+  });
+});
+
+describe("createInitialState: a board's prebuilt structures", () => {
+  const prebuiltConfig: RunConfig = { ...config, board: TEST_BOARD_PREBUILT_ID };
+
+  it('stands each one in the tableau, auto-staffed like any placed building', () => {
+    const G = createInitialState(prebuiltConfig);
+    expect(G.tableau.map((b) => b.cardId)).toEqual(TEST_BOARD_PREBUILT.prebuilt);
+    expect(G.tableau[0].workers).toBe(0); // test_modifier is self-sufficient
+  });
+
+  it('mints past the deck, so no two instances share an id', () => {
+    const G = createInitialState(prebuiltConfig);
+    const ids = [...G.deck, ...G.tableau].map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('spends a territory slot, leaving the rest free', () => {
+    const G = createInitialState(prebuiltConfig);
+    expect(usedTerritory(G)).toBe(TEST_BOARD_PREBUILT.prebuilt!.length);
+    expect(freeTerritory(G)).toBe(TEST_BOARD_PREBUILT.resources.territory - TEST_BOARD_PREBUILT.prebuilt!.length);
+  });
+
+  // What a mission measuring territory *gained* reads against (`wheel_goal`, the overextension
+  // drain): standing a structure occupies land, it never grants any.
+  it('leaves startResources at the board baseline', () => {
+    const G = createInitialState(prebuiltConfig);
+    expect(G.startResources).toEqual(TEST_BOARD_PREBUILT.resources);
   });
 });

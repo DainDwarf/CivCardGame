@@ -2,7 +2,7 @@ import { addResources, scaleResources, type Resources } from './resources';
 import { CARDS } from '../content/cards';
 import type { CardInstance, GameEvent, GameState, PendingInteraction } from './state';
 import { effectiveGain } from './stickers';
-import { findStaffable, producingUnits } from './population';
+import { findStaffable, producingUnits, standingCards } from './population';
 
 /**
  * A card's "what happens" descriptor, carried in four timing slots on `CardDef`: `effect` (on play),
@@ -50,11 +50,59 @@ export interface EffectContext {
 /** A bespoke effect closure: mutate `ctx.G` given the resolving card and its target. */
 export type Resolver = (ctx: EffectContext) => void;
 
-/** The ONE path a card's output reaches `G`: fold this copy's stickers over `base`, then add. Every
- *  gain routes through here, so nothing reaches `G` unstickered. No-op on an absent/empty bag. */
+/**
+ * A standing card's continuous claim on what *other* cards yield (`CardDef.modifyGain`): a pure
+ * transform of a gain bundle on its way to `G`, applied for as long as the card is in play. The
+ * counterpart of a sticker's `applyGain` one zone up — a sticker bends the copy it rides, this bends
+ * the board — and the seam a passive has instead of a timing slot, since `effect`/`produces`/`upkeep`
+ * all fire at a moment and this one never fires at all.
+ *
+ * A hook is handed `self` so it can read its own counters/staffing, but must stay **pure over `G`** —
+ * writing there would recurse straight back through `gainResources`. Two hooks that can stand together
+ * must **commute**: they meet on one bundle in the arbitrary order of zones that are heaps (see
+ * DESIGN.md → *Determinism & order-independence*). And signs are neutral in a gain bundle, so a hook
+ * meaning "more" reads the entry it amplifies as positive — an unguarded `+1` would deepen a drain as
+ * readily as it raises a yield.
+ */
+export type GainModifier = (
+  base: Partial<Resources> | undefined,
+  G: GameState,
+  self: CardInstance,
+) => Partial<Resources> | undefined;
+
+/** Fold every standing card's `modifyGain` over `base` in order. Same `?? out` idiom as
+ *  `stickers.ts`'s `effectiveGain`, so stacking (two copies of a modifier) and composing (two
+ *  different ones) fall out for free, and a card without the hook is skipped. */
+function modifiedGain(G: GameState, base: Partial<Resources> | undefined): Partial<Resources> | undefined {
+  let out = base;
+  for (const c of standingCards(G)) {
+    const modify = CARDS[c.cardId]?.modifyGain;
+    if (modify) out = modify(out, G, c) ?? out;
+  }
+  return out;
+}
+
+/** The ONE path a card's output reaches `G`: fold this copy's stickers over `base`, then every
+ *  standing card's `modifyGain`, then add. Every gain routes through here, so nothing reaches `G`
+ *  unstickered or unmodified. The order is what makes the two compose predictably — a sticker sets
+ *  the copy's own rate and a board modifier bends the result, mirroring `cost.ts`'s sticker-then-
+ *  `resolve` price fold.
+ *
+ *  An **empty** bag returns before the fold, which is both the rule (a modifier bends a gain; it may
+ *  not conjure one out of nothing) and what keeps the board walk off the hot path — `resolveProduction`
+ *  hands `{}` to every producer whose output is all closure. */
 export function gainResources(ctx: EffectContext, base: Partial<Resources> | undefined): void {
   const g = effectiveGain(base, ctx.self);
-  if (g) addResources(ctx.G.resources, g);
+  if (!g || isEmptyBag(g)) return;
+  const m = modifiedGain(ctx.G, g);
+  if (m) addResources(ctx.G.resources, m);
+}
+
+/** Allocation-free `Object.keys(bag).length === 0` — this sits on `gainResources`'s hot path, which
+ *  the sim's search re-runs per node. */
+function isEmptyBag(bag: Partial<Resources>): boolean {
+  for (const _ in bag) return false;
+  return true;
 }
 
 /**

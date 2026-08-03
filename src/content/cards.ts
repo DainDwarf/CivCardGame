@@ -1,6 +1,6 @@
 import { scaleResources, subtractResources } from '../rules/resources';
 import { bumpCounter, getCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
-import { type CardEffect, suspendChoice } from '../rules/effects';
+import { type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
 import type { CardCost } from '../rules/cost';
 import { drawInstance, peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
 import { assignedWorkers } from '../rules/population';
@@ -88,6 +88,10 @@ export interface CardDef {
    * A threat's driven defeat does NOT go through `on` — see `defeat` below.
    */
   on?: Partial<Record<GameEventType, CardEffect>>;
+  /** A passive claim on what *other* cards yield, live for as long as this card stands on the board
+   *  (`rules/effects.ts`'s `GainModifier`, folded by `gainResources`). Unlike the four timing slots
+   *  above it fires at no moment of its own — every gain anywhere passes through it. */
+  modifyGain?: GainModifier;
   /** `objective` cards only: the mission's win condition as declarative sub-goals — the single source
    *  the boolean predicate, the live readout, and the sim's steering gradient all derive from
    *  (`rules/objective.ts`). Won when *every* goal is met; a bare-read over `G`, never mutating it,
@@ -328,6 +332,14 @@ export const CARDS: Record<string, CardDef> = {
     id: 'city_walls', name: 'City Walls', kind: 'building', cost: { resources: { production: 3 } }, workers: 0,
     display: { art: '🧱', description: '+1 ⚔️ / round' },
     produces: { resources: { military: 1 } },
+  },
+  // The Chiefdom board's standing perk (`boards.ts`'s `prebuilt`) rather than a card anyone draws or
+  //   buys: it produces nothing itself and pays only through what the rest of the board takes.
+  war_camp: {
+    id: 'war_camp', name: 'War Camp', kind: 'building', cost: {}, workers: 0,
+    display: { art: '🏕️', description: 'Each 🗺️ you take\nbrings +1 more.' },
+    modifyGain: (base) =>
+      base && (base.territory ?? 0) > 0 ? { ...base, territory: base.territory! + 1 } : base,
   },
 
   // — Wonders —

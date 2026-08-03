@@ -34,7 +34,8 @@ prohibitive: hand-won on the second try, and the sweep clears it on both boards.
 from opposite ends. Same 21-card deck (the First Temple pool, Bead Workshop · Farm+2 Irrigation ·
 4 Hut · 4 Foraging · 2 Hunting · 4 Toolmaking · 2 Bow · 2 Conquest · Bartering):
 
-Re-measured under the split territory cap (Conquest a `work` card; Settlement 2🏞️, Chiefdom 0🏞️):
+Re-measured under the split territory cap (Conquest a `work` card; Settlement 2🏞️ free, Chiefdom none —
+its one slot holds the pre-built War Camp):
 
 | board | greedy | planner | oracle |
 |---|---|---|---|
@@ -44,6 +45,9 @@ Re-measured under the split territory cap (Conquest a `work` card; Settlement 2�
 Turns (min/med/mean/max) under planner: settlement 8 / 31 / 29.4 / 40 · chiefdom 6 / 29 / 23.8 / 62.
 Chiefdom still wins faster and loses more. Every defeat on both boards is now famine — **the stalls
 are gone**, and Conquest is played ~3.3–4.0×/run under *both* policies.
+
+The chiefdom row predates the War Camp, which doubles what each of those ~3.3–4.0 Conquests yields, so
+it owes a re-measure; the settlement row is unaffected.
 
 **Greedy went 0/100 → 77 and 0/100 → 57**, which is the largest move anywhere in the re-measure. The
 old reading — "greedy wins neither board; the ⚔️→🏞️→🧍 chain is multi-turn, so Conquest goes unplayed

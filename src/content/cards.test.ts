@@ -3,6 +3,7 @@ import { CARDS, COPPER_VEINS, isDeckable, isStaffable, RAIDER_WAVES, THIEVES_PER
 import { STARTING_COLLECTION } from './collection';
 import { DEFAULT_DECKS } from './decks';
 import { blankState, dispatchEvent, objectiveMet, resolveUpkeep, seedObjective } from '../rules';
+import { CORE_KEYS, type Resources } from '../rules/resources';
 
 // Internal coherence of the CARDS catalogue (mirrors `boards.test.ts`'s id-check), plus the
 // cross-catalogue invariant that everything a player can *own* or *deck* is actually a deckable
@@ -46,6 +47,49 @@ describe('CARDS', () => {
   it('every staffable card declares its workers capacity', () => {
     for (const card of Object.values(CARDS)) {
       if (isStaffable(card)) expect(card.workers, `${card.id} has no workers`).not.toBeUndefined();
+    }
+  });
+
+  // A `modifyGain` hook meets a bag alongside every other standing card's, in the arbitrary order of
+  // zones that are unordered heaps — so the fold's result must not depend on it. The sticker
+  // counterpart of `stickers.test.ts`'s commutation check, over probe bags rather than the catalogue's
+  // own numbers, since the fold is board-wide and reaches gains no single card prints.
+  const MODIFIERS = () => Object.values(CARDS).filter((c) => c.modifyGain);
+  const PROBE_BAGS: Partial<Resources>[] = [
+    ...CORE_KEYS.map((k) => ({ [k]: 3 })),
+    ...CORE_KEYS.map((k) => ({ [k]: -3 })),
+    { population: 2, territory: 2, culture: 2 },
+    { population: -2, territory: -2, culture: -2 },
+    { food: 4, territory: 1, culture: -1 },
+  ];
+
+  it('every pair of modifyGain hooks commutes', () => {
+    const G = blankState('test');
+    const self = { id: 1, cardId: 'x' };
+    for (const a of MODIFIERS()) {
+      for (const b of MODIFIERS()) {
+        for (const bag of PROBE_BAGS) {
+          const ab = b.modifyGain!(a.modifyGain!(bag, G, self), G, self);
+          const ba = a.modifyGain!(b.modifyGain!(bag, G, self), G, self);
+          expect(ab, `${a.id}+${b.id} on ${JSON.stringify(bag)}`).toEqual(ba);
+        }
+      }
+    }
+  });
+
+  // Signs are neutral in a gain bag — a declarative negative `upkeep.resources` routes through
+  // `gainResources` like any other — so a hook meaning "more" that forgets to gate on a positive
+  // entry would deepen every drain it touches.
+  it('no modifyGain hook pushes a drain further from zero', () => {
+    const G = blankState('test');
+    const self = { id: 1, cardId: 'x' };
+    for (const card of MODIFIERS()) {
+      for (const bag of PROBE_BAGS) {
+        const out = card.modifyGain!(bag, G, self) ?? bag;
+        for (const [key, value] of Object.entries(bag) as [keyof Resources, number][]) {
+          if (value < 0) expect(out[key] ?? 0, `${card.id} on ${key}`).toBeGreaterThanOrEqual(value);
+        }
+      }
     }
   });
 

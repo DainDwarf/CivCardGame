@@ -144,7 +144,8 @@
     greedy ties, both 0), with `horse_taming` and `roads` at **0 across greedy/planner/oracle alike** —
     and `rites_rituals`, two nodes after the board is handed out, at 0/9/60. Those decks are built for a board that starts
     with land, so a Chiefdom-native deck is the next piece — until one exists these rate the pairing, not
-    the board, and none of them reads as a difficulty verdict.
+    the board, and none of them reads as a difficulty verdict. **All ten cells now owe a re-measure**:
+    the board gained its pre-built War Camp, so every territory it takes brings one more.
 
   **Framing notes to honour when authoring:**
   - The two **convergences** (Accounting, Bronze) are ludic tree-narrowing, *not* historical dependencies —

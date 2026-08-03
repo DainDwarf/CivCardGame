@@ -47,6 +47,22 @@ export function producingUnits(s: Staffable): number {
   return cap === 0 ? 1 : s.workers;
 }
 
+/**
+ * Every card standing in play and *running*, in one fixed-order list: the operating tableau buildings,
+ * this turn's operating Work boxes, the mission's threats, and the open trade routes. Threats and
+ * routes hold no workers, so there is nothing to gate them on. The read-path for a passive that acts
+ * from the board rather than at a timing slot — `effects.ts`'s standing-modifier fold. Freshly
+ * allocated, so a caller may mutate a zone while walking it.
+ */
+export function standingCards(G: GameState): CardInstance[] {
+  return [
+    ...G.tableau.filter(isOperating),
+    ...G.workZone.filter(isOperating),
+    ...G.threats,
+    ...G.tradeRoutes,
+  ];
+}
+
 /** Total population currently assigned across a set of staffables (tableau or workZone). */
 export function assignedWorkers(instances: Staffable[]): number {
   return instances.reduce((sum, s) => sum + s.workers, 0);

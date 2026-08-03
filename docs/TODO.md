@@ -147,6 +147,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   more rounds the current stores survive — the same way `enablers.ts` derives its slope from
   `cost`→`produces` rather than from authored hints. Blocks trusting greedy/planner on any
   rounds-survived mission; `ice_age` and `sandbox` dodge it only because the sim doesn't drive them.
+- **`enablers.ts` is blind to a standing card's `modifyGain`** `[size: S]` — it derives a card's worth
+  mechanically from `cost` → `produces` over the static `CARDS` catalogue, and a gain modifier is
+  neither. Chiefdom's War Camp is the live case: Conquest and Road each really yield **+2🗺️** there,
+  and every policy values them at +1, so expansion is systematically **under**-valued on the one board
+  built around it. Every `*_chiefdom` cell's territory-hungry numbers are therefore a floor. The fix
+  stays mechanical, not per-card: fold the modifiers standing at projection time over the `produces`
+  bag `enablerPotential` already derives, the same way `foodPerWorker` walks the run's instances
+  instead of the catalogue's printed rate.
 - **`scoreState` credits a goal resource whose own accumulation is the threat** — the objective gradient
   reads `pool / target` while bands 2/3/5 see one turn, so when *holding* the goal resource is the danger
   the upside is scored and the liability is not. Accounting is the live case (`envious_population` mints a
@@ -201,6 +209,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Boards can stand a card on the table, and a standing card can bend what others yield** ✅ — two
+  seams shipped together for Chiefdom's **War Camp**: a pre-built 🏕️ that turns every territory the
+  board takes into two.
+  - `BoardDef.prebuilt` lists structures `run/setup.ts` stands in the tableau at setup (through the
+    real `addBuilding`, minted past the deck's ids, resolving **no** entry `effect` — so a board's own
+    card can never register as a *gain* against the `startResources` snapshot the Wheel goal and the
+    Overextension drain both read).
+  - `CardDef.modifyGain` is a passive folded by `gainResources` over every standing card, after the
+    resolving copy's stickers — the fifth `CardDef` slot and the only one that fires at no timing of
+    its own. Answers DESIGN.md's *"do boards get behaviour?"* without the ruled-out shape: Conquest's
+    printed numbers are untouched, and the extra territory comes from a card the player can see.
+  - Chiefdom went `territory: 0 → 1` with the War Camp standing in it, so its **free** building room
+    is unchanged and it stays landless in practice. `meta/Stats.tsx` subtracts `prebuiltCardIds()`
+    from the collection denominator — a card nobody can own would otherwise put `X/N` out of reach.
 - **Population's capacity credit is net of its food curve** ✅ — `sim/enablers.ts` credited a unit of
   population `CAPACITY_HORIZON` rounds of goal throughput and charged nothing for the food that person then
   eats every round after, so on `wheel`/City a House scored **+200** with its +3🌾/round standing cost

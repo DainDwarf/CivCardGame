@@ -102,6 +102,83 @@ describe('gainResources', () => {
   });
 });
 
+// `test_modifier` stands on the board and adds +1 to any territory *grant* routed through
+// `gainResources` — the passive seam a card has instead of a timing slot.
+describe('gainResources — the standing modifyGain fold', () => {
+  /** A state with `n` copies of a modifier standing in the tableau, staffed to capacity. */
+  const withModifiers = (cardId: string, n: number, workers = 0) => {
+    const G = blankState('test');
+    for (let i = 0; i < n; i++) G.tableau.push({ id: 100 + i, cardId, workers });
+    return G;
+  };
+
+  it('bends a gain granted by another card', () => {
+    const G = withModifiers('test_modifier', 1);
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { territory: 1 });
+    expect(G.resources.territory).toBe(8); // blankState seeds 6, +1 granted, +1 modifier
+  });
+
+  it('leaves a drain alone — signs are neutral, so a granting hook gates on a positive entry', () => {
+    const G = withModifiers('test_modifier', 1);
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { territory: -1 });
+    expect(G.resources.territory).toBe(5);
+  });
+
+  it('leaves the keys it does not name alone', () => {
+    const G = withModifiers('test_modifier', 1);
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { food: 2 });
+    expect(G.resources.food).toBe(2);
+    expect(G.resources.territory).toBe(6);
+  });
+
+  it('stacks across copies', () => {
+    const G = withModifiers('test_modifier', 2);
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { territory: 1 });
+    expect(G.resources.territory).toBe(9); // 6 + 1 granted + 1 per copy
+  });
+
+  it("runs after the resolving copy's stickers, so it bends the stickered rate", () => {
+    const G = withModifiers('test_modifier', 1);
+    gainResources({ G, self: { id: 1, cardId: 'x', stickers: ['test_addgain'] } }, { territory: 1 });
+    expect(G.resources.territory).toBe(9); // 6 + 1 granted, sticker → 2, modifier → 3
+  });
+
+  it('does not fold while the modifier is unstaffed, and does once it is', () => {
+    const idle = withModifiers('test_modifier_staffed', 1, 0);
+    gainResources({ G: idle, self: { id: 1, cardId: 'x' } }, { territory: 1 });
+    expect(idle.resources.territory).toBe(7);
+
+    const staffed = withModifiers('test_modifier_staffed', 1, 1);
+    gainResources({ G: staffed, self: { id: 1, cardId: 'x' } }, { territory: 1 });
+    expect(staffed.resources.territory).toBe(8);
+  });
+
+  it('folds from every standing zone, not the tableau alone', () => {
+    const G = blankState('test');
+    G.workZone.push({ id: 100, cardId: 'test_modifier', workers: 0 });
+    G.threats.push({ id: 101, cardId: 'test_modifier' });
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, { territory: 1 });
+    expect(G.resources.territory).toBe(9); // 6 + 1 granted + 1 per standing copy
+  });
+
+  it('does not conjure a gain out of an empty bag', () => {
+    const G = withModifiers('test_modifier', 1);
+    const before = structuredClone(G.resources);
+    gainResources({ G, self: { id: 1, cardId: 'x' } }, {});
+    expect(G.resources).toEqual(before);
+  });
+
+  // `resolveProduction` scales by `producingUnits` *before* the bag reaches the fold, so the modifier
+  // pays once for the play and not once per worker — invisible while every shipped territory card
+  // takes a single worker, and exactly what a later multi-worker one would get wrong.
+  it('applies once per gain, not once per worker', () => {
+    const G = withModifiers('test_modifier', 1);
+    G.workZone.push({ id: 200, cardId: 'test_terr_multiworker', workers: 2 });
+    resolveProduction({ G, self: { id: 200, cardId: 'test_terr_multiworker' } });
+    expect(G.resources.territory).toBe(9); // 6 + (1 × 2 workers) + 1 modifier
+  });
+});
+
 describe('resolveProduction', () => {
   it("an additive-gain sticker bumps a building's per-round produces by 1 per resource", () => {
     const G = blankState('test');

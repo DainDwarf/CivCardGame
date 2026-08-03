@@ -16,6 +16,18 @@ export interface BoardDef {
    *  gauges (population / territory / culture). Mirrors `GameState.resources`, so `run/setup.ts`
    *  seeds a run by copying it directly. */
   resources: Resources;
+  /** Structures already standing when the run opens, by card id — how a board carries a *standing*
+   *  rule instead of only an opening number, as a visible card on the table rather than an invisible
+   *  board clause. Each spends a territory slot like any other structure, so a board must start with
+   *  at least as much `resources.territory` as it lists (pinned by `boards.test.ts`). */
+  prebuilt?: string[];
+}
+
+/** Every card id some board stands pre-built. Not a card the player can ever own, so the collection
+ *  denominator excludes it (`meta/Stats.tsx`) — a card nothing unlocks would otherwise put the
+ *  collectathon's `X/N` permanently out of reach. */
+export function prebuiltCardIds(): Set<string> {
+  return new Set(Object.values(BOARDS).flatMap((b) => b.prebuilt ?? []));
 }
 
 /** The board every fresh profile starts with, and the guaranteed fallback if the unlocked set is ever
@@ -56,9 +68,12 @@ export const BOARDS: Record<BoardId, BoardDef> = {
   chiefdom: {
     id: 'chiefdom',
     name: 'Chiefdom',
-    // Landless like Tribe, but its 6⚔️ is exactly two plays of one Conquest copy (2⚔️ doubling per
-    // play) — the board hands you the means to take room rather than the room itself.
-    resources: { food: 8, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 0, culture: 0 },
+    // Landless in practice like Tribe — its one slot is spoken for by the War Camp standing in it —
+    // but its 6⚔️ is exactly two plays of one Conquest copy (2⚔️ doubling per play), and the War Camp
+    // makes each of those pay double. The board hands you the means to take room, and a reason to
+    // keep taking it, rather than the room itself.
+    resources: { food: 8, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 1, culture: 0 },
+    prebuilt: ['war_camp'],
   },
   city: {
     id: 'city',

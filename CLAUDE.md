@@ -228,6 +228,14 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   `produces.resources` per staffed worker. `EffectContext` = `{ G, self, answer? }`. An interactive
   effect suspends via `suspendChoice` into `pendingInteraction` and re-enters via
   `moves.resolveInteraction` — all plain data, so undo/clone survive.
+  Every gain reaches `G` through `gainResources` alone, which folds **twice**: the resolving copy's
+  stickers (`effectiveGain`), then every standing card's `CardDef.modifyGain` — the fifth slot, and the
+  only one that fires at no timing of its own, so a card can bend what *other* cards yield for as long
+  as it stands (`population.ts`'s `standingCards` is the set). Order is load-bearing: a sticker sets
+  the copy's rate, a standing modifier bends the result. An **empty** bag returns before the second
+  fold, which is both the rule (a modifier bends a gain, it may not conjure one) and what keeps the
+  board walk off the sim's hot path. `content/cards.test.ts` pins the catalogue's hooks commute and
+  none deepens a drain.
 - **`events.ts`** — the **event bus**: lets a card react to an event whose *timing it doesn't own* via
   `CardDef.on?: { draw/discard/resourceChange/reshuffle/endTurn }`, each a `CardEffect` run through the
   same `runEffect` spine (`ctx.event` set). Two verbs, split so the bus never dispatches mid-mutation:
@@ -368,7 +376,10 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   (`content/stickers.test.ts` pins it over the catalogue).
 - **`boardStickers.ts`** — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
   `appliesTo`/`applyToBoard` logic and an `icon` (a separate catalogue from card `stickers.ts`).
-- **`boards.ts`** — `BOARDS` (each sets all 8 starting resources) + `ORIGIN_BOARD_ID`. There is no
+- **`boards.ts`** — `BOARDS` (each sets all 8 starting resources, and may stand structures on the
+  table `prebuilt` — how a board carries a standing *rule* as a visible card rather than an invisible
+  clause; `prebuiltCardIds` is the "nobody can ever own this" set the collection denominator subtracts)
+  + `ORIGIN_BOARD_ID`. There is no
   `starting` flag: availability is purely membership in `PlayerStore.unlockedBoards`, read through
   `meta/boardDisplay.ts`'s `availableBoardIds` (which falls back to the origin board if the set is ever
   empty, so a player can never be locked out). `unlockBoardIds` **adds**; a `boardUpgrade` **swaps** one
@@ -392,8 +403,10 @@ logic that rides on it. **A building card *is* the building** — there's no sep
 ### Shell — run loop (`src/run/`)
 
 - **`setup.ts`** — `createInitialState(config)`: constructs the pre-play `GameState`. The board sets
-  all 8 starting resources; the mission's `threats`/`events` then seed on top via `seedMissionCards`.
-  `config.deck` arrives already shuffled (deterministically from `config.seed`).
+  all 8 starting resources and stands its `prebuilt` structures in the tableau (minted past the deck's
+  ids, via `addBuilding`, resolving **no** entry `effect` — so nothing a board stands can register as a
+  *gain* against the `startResources` snapshot); the mission's `threats`/`events` then seed on top via
+  `seedMissionCards`. `config.deck` arrives already shuffled (deterministically from `config.seed`).
 - **`engine.ts`** — the turn state machine. `RunState = { G, gameover }`. `createRun` bootstraps
   (`createInitialState` → first `beginTurn`). `endTurn` runs `applyUpkeep`, checks win/loss, hands off
   to `settleEndOfTurn`, re-checks, then starts the next turn. `applyMove(state, moveFn, ...)` clones `G`
@@ -419,7 +432,9 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   name/cost/kind banner/art/workers/effect, shared by hand/deck-editor/Collection; shows `effectiveCard`
   numbers + a `StickerRow` badge; also owns the `RESOURCE_ICON` map for all 8 resources),
   `CardZoomOverlay.tsx`, `BoardMini.tsx` (a read-only board miniature driven off `effectiveBoard`,
-  reused across meta screens), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
+  reused across meta screens; its slot grid seats a board's `prebuilt` art in the leading slots, while
+  the `locked`/`upgrade` branches render no slots at all so neither the territory count nor the perk
+  leaks before the unlock), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
   `.objectiveCorner` above a scrolling `.threatZone` of `G.threats` — all `CardFace`s reading only
   `GameState`, never the mission) and its mirror `BoardRightColumn` (a `.tradeZone` of `G.tradeRoutes`,
   rendered only once a route opens). The play area is **three zones**, matching the three board zones
@@ -584,8 +599,10 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   the declarative base is the only number there is, so a scaling card reads there at its floor.)
   A sticker likewise carries its behaviour on its
   `StickerDef` (`appliesTo`/`applyGain`/`applyCost`), dispatched generically by `rules/stickers.ts` — no
-  sticker-specific branches at call sites. Adding a mechanic means adding a closure/hook on the data, not
-  a branch in the engine.
+  sticker-specific branches at call sites. A standing card's claim on *other* cards' output rides the
+  same way, on `CardDef.modifyGain` and folded generically by `gainResources`; two such hooks that can
+  stand together must **commute** and none may mutate `G`, exactly as for stickers. Adding a mechanic
+  means adding a closure/hook on the data, not a branch in the engine.
 - **Comments state non-obvious intent about the code they sit on — nothing else.** A comment earns its
   place only by expressing a rationale/constraint the adjacent code can't, and you **re-shave a comment
   when you edit near it** rather than appending. Reject three failure modes: **paraphrase** (restating

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BOARDS, ORIGIN_BOARD_ID } from './boards';
+import { CARDS, isStructure } from './cards';
 import { availableBoardIds } from '../meta/boardDisplay';
 
 describe('BOARDS', () => {
@@ -22,6 +23,25 @@ describe('BOARDS', () => {
   // it must exist in the catalogue.
   it('the origin board is a real catalogue entry', () => {
     expect(BOARDS[ORIGIN_BOARD_ID]).toBeDefined();
+  });
+
+  it('every prebuilt id names a real structure that declares its workers', () => {
+    for (const board of Object.values(BOARDS)) {
+      for (const cardId of board.prebuilt ?? []) {
+        const card = CARDS[cardId];
+        expect(card, `board '${board.id}' stands unknown card '${cardId}'`).toBeDefined();
+        expect(isStructure(card)).toBe(true);
+        expect(card.workers).toBeDefined();
+      }
+    }
+  });
+
+  // A board standing more structures than it has land opens every run over its own territory cap,
+  // which surfaces as a mid-sweep `assertRunInvariants` throw rather than as an authoring mistake.
+  it('no board stands more prebuilt structures than it has territory', () => {
+    for (const board of Object.values(BOARDS)) {
+      expect((board.prebuilt ?? []).length).toBeLessThanOrEqual(board.resources.territory);
+    }
   });
 });
 

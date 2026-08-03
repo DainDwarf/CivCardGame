@@ -1,4 +1,5 @@
 import { BOARDS, type BoardId } from '../content/boards';
+import { CARDS } from '../content/cards';
 import { BOARD_STICKERS } from '../content/boardStickers';
 import { effectiveBoard } from '../rules/boardStickers';
 import { cultureLevel } from '../rules/culture';
@@ -135,9 +136,18 @@ export function BoardMini({
       </div>
 
       <div className={styles.slotGrid}>
-        {Array.from({ length: b.resources.territory }, (_, i) => (
-          <div key={i} className={styles.slotEmpty} />
-        ))}
+        {Array.from({ length: b.resources.territory }, (_, i) => {
+          // Pre-built structures take the leading slots, matching the order `run/setup.ts` places
+          // them in, so the preview reads as the table the run actually opens on.
+          const standing = b.prebuilt?.[i];
+          return standing ? (
+            <div key={i} className={styles.slotFilled} title={CARDS[standing]?.name}>
+              <span aria-hidden="true">{CARDS[standing]?.display?.art}</span>
+            </div>
+          ) : (
+            <div key={i} className={styles.slotEmpty} />
+          );
+        })}
       </div>
 
       <StickerRow

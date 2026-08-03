@@ -1,5 +1,6 @@
 import { MISSIONS, infiniteMissionsInOrder } from '../content/missions';
 import { CARDS, isDeckable } from '../content/cards';
+import { prebuiltCardIds } from '../content/boards';
 import { RESOURCE_ICON } from '../components/CardFace';
 import type { RunResult } from '../contract';
 import { distinctCardIdsOwned, type OwnedCards } from '../rules/collection';
@@ -38,7 +39,10 @@ export function Stats({
 }) {
   const missionProgress = standardMissionProgress(MISSIONS, mapProgress);
 
-  const cardsTotal = Object.values(CARDS).filter(isDeckable).length;
+  // A board's pre-built structure is deckable by kind but ownable by nobody, so it would raise the
+  // denominator to a number the numerator can never reach.
+  const prebuilt = prebuiltCardIds();
+  const cardsTotal = Object.values(CARDS).filter((c) => isDeckable(c) && !prebuilt.has(c.id)).length;
   const cardsUnlocked = distinctCardIdsOwned(collection).filter((id) => CARDS[id] && isDeckable(CARDS[id])).length;
 
   const { runsPlayed, victories, influenceEarned } = lifetime;
