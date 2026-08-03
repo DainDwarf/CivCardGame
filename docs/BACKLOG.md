@@ -140,8 +140,9 @@
     🪙→🌾/🔨 conversion rate every later mission is read against, and nothing has measured it yet.
   - **Chiefdom is fixtured; the deck is what's left.** Nine `<mission>_chiefdom` cells now cover it from
     Rites & Rituals to Wheel, each swept on the same deck its City/Settlement counterpart uses, so the
-    board is the only variable. It comes back lower at **every** cell and policy, with `horse_taming` and
-    `roads` at **0 across greedy/planner/oracle alike**. Those decks are built for a board that starts
+    board is the only variable. It comes back **never higher** at any cell or policy (only `pyramid`'s
+    greedy ties, both 0), with `horse_taming` and `roads` at **0 across greedy/planner/oracle alike** —
+    and `rites_rituals`, two nodes after the board is handed out, at 0/9/60. Those decks are built for a board that starts
     with land, so a Chiefdom-native deck is the next piece — until one exists these rate the pairing, not
     the board, and none of them reads as a difficulty verdict.
 
