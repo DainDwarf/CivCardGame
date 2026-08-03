@@ -70,8 +70,8 @@ export const BOARDS: Record<BoardId, BoardDef> = {
     name: 'Chiefdom',
     // Landless in practice like Tribe — its one slot is spoken for by the War Camp standing in it —
     // but its 6⚔️ is exactly two plays of one Conquest copy (2⚔️ doubling per play), and the War Camp
-    // makes each of those pay double. The board hands you the means to take room, and a reason to
-    // keep taking it, rather than the room itself.
+    // turns each of those into spoils. Where the settled boards are handed land and have to feed it,
+    // this one is handed the means to take land and is fed *by* taking it.
     resources: { food: 8, production: 2, science: 0, military: 6, money: 0, population: 3, territory: 1, culture: 0 },
     prebuilt: ['war_camp'],
   },

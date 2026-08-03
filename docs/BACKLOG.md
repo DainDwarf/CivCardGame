@@ -145,7 +145,7 @@
     and `rites_rituals`, two nodes after the board is handed out, at 0/9/60. Those decks are built for a board that starts
     with land, so a Chiefdom-native deck is the next piece — until one exists these rate the pairing, not
     the board, and none of them reads as a difficulty verdict. **All ten cells now owe a re-measure**:
-    the board gained its pre-built War Camp, so every territory it takes brings one more.
+    the board gained its pre-built War Camp, paying +3🌾 +3🔨 on every territory it takes.
 
   **Framing notes to honour when authoring:**
   - The two **convergences** (Accounting, Bronze) are ludic tree-narrowing, *not* historical dependencies —

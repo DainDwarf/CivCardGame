@@ -208,8 +208,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
 - **Boards can stand a card on the table, and a standing card can bend what others yield** ✅ — two
-  seams shipped together for Chiefdom's **War Camp**: a pre-built 🏕️ that turns every territory the
-  board takes into two.
+  seams shipped together for Chiefdom's **War Camp**: a pre-built 🏕️ paying **+3🌾 +3🔨** on every
+  territory the board takes.
   - `BoardDef.prebuilt` lists structures `run/setup.ts` stands in the tableau at setup (through the
     real `addBuilding`, minted past the deck's ids, resolving **no** entry `effect` — so a board's own
     card can never register as a *gain* against the `startResources` snapshot the Wheel goal and the
@@ -217,7 +217,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - `CardDef.modifyGain` is a passive folded by `gainResources` over every standing card, after the
     resolving copy's stickers — the fifth `CardDef` slot and the only one that fires at no timing of
     its own. Answers DESIGN.md's *"do boards get behaviour?"* without the ruled-out shape: Conquest's
-    printed numbers are untouched, and the extra territory comes from a card the player can see.
+    printed numbers are untouched, and the spoils come from a card the player can see.
+  - **The perk pays what the board is short of, not more of what it already does.** The first cut gave
+    +1🗺️ per conquest — doubling Chiefdom's own strength, and on `wheel` (which counts territory *and*
+    taxes it via `overextension`) scaling reward and punishment together for a net +4pp under 28 seeds
+    of churn. Every Chiefdom cell's defeats are famine, so the spoils pay 🌾/🔨 instead. Rationale on
+    DESIGN.md → *Government boards*.
   - Chiefdom went `territory: 0 → 1` with the War Camp standing in it, so its **free** building room
     is unchanged and it stays landless in practice. `meta/Stats.tsx` subtracts `prebuiltCardIds()`
     from the collection denominator — a card nobody can own would otherwise put `X/N` out of reach.

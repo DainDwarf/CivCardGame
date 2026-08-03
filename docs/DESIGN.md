@@ -415,8 +415,8 @@ head start rather than as a different civilization.
 
 **Behaviour, as a card on the table.** A board is not only numbers: it may stand structures
 **pre-built** when the run opens (`BoardDef.prebuilt`), and a standing card may carry a rule keyed to
-a *concept* rather than to a named card — "each territory you take brings one more" — through the
-gain seam every card's output already passes down (`rules/effects.ts`'s `modifyGain`). The two
+a *concept* rather than to a named card — "whenever you take territory, take spoils with it" — through
+the gain seam every card's output already passes down (`rules/effects.ts`'s `modifyGain`). The two
 together are what lets a board differ in *how it plays* and not merely in what it starts holding.
 
 Doing it as a card is the point. A board rule that quietly changed a **card's printed numbers** is
@@ -424,8 +424,17 @@ ruled out — it makes the same card face lie on one board and tell the truth on
 printed card is untouched and the extra output comes from a second card the player can see, read and
 zoom, standing in a slot it visibly paid for. A landless board is no obstacle: it is granted the slot
 its pre-built structure stands in, so its free building room is unchanged and the perk costs land it
-never had. The watch-out is unchanged too — such a rule must stay a *choice* and not become the
-**answer** to every mission that wants what it grants.
+never had.
+
+**A board's rule should pay what that board is short of, not more of what it already does.** The
+first cut of Chiefdom's War Camp paid *more territory* per conquest — doubling the thing the board was
+already best at, which compounds a lead rather than covering a weakness, and on the one mission that
+both counts territory and taxes it, scaled the reward and the punishment together. It pays food and
+production instead: the martial board's actual failure mode is that three people and no fields
+starve, so plunder is what turns a war party into a civilization. This is also the guard against the
+older watch-out — a rule must stay a *choice*, not become the **answer** to every mission that wants
+what it grants — since a board that converts its own surplus into its own scarcity is a different
+shape to play, not a strictly better one.
 
 **Board vs. mission setup.** The two compose cleanly and keep their existing roles:
 the **board is the baseline** starting state, and the **mission seeds its threat/event
