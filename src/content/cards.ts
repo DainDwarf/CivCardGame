@@ -270,10 +270,6 @@ function tamedHorses(G: GameState): number {
  *  opens at 0 territory and one that opens at 2. */
 export const WHEEL_TERRITORY = 6;
 
-/** 🌾 and 🔨 the War Camp's spoils pay on each territory gain — shared by the hook and its face, so the
- *  card can't quote a haul it doesn't hand over. */
-const WAR_CAMP_SPOILS = 3;
-
 /** Territory gained that the `overextension` drain lets through free — the first expansions are
  *  toll-free on every board, and only the ones past the band are charged. Shared by the drain, its
  *  readout and the mission's `failureHint` (`content/missions.ts`). */
@@ -343,15 +339,11 @@ export const CARDS: Record<string, CardDef> = {
   //   "each 🗺️" reads literally.
   war_camp: {
     id: 'war_camp', name: 'War Camp', kind: 'building', cost: {}, workers: 0,
-    display: { art: '🏕️', description: `Each 🗺️ you take:\n+${WAR_CAMP_SPOILS}🌾 +${WAR_CAMP_SPOILS}🔨` },
+    display: { art: '🏕️', description: 'Each 🗺️ you take:\n+4🌾' },
     modifyGain: (base) => {
       const taken = base?.territory ?? 0;
       if (!base || taken <= 0) return base;
-      return {
-        ...base,
-        food: (base.food ?? 0) + WAR_CAMP_SPOILS * taken,
-        production: (base.production ?? 0) + WAR_CAMP_SPOILS * taken,
-      };
+      return { ...base, food: (base.food ?? 0) + 4 * taken };
     },
   },
 

@@ -88,14 +88,16 @@ The 🔨 crisis the mission is named for shows up only in the greedy column, whe
 ends holding 65🔨 mean and never converts it, so read that column as the one-ply plateau it is, not as
 the drain biting.
 
-**Chiefdom is measurably harder on this same deck** — planner 30% / oracle 80% @10, famine again (68 of
-greedy's 100 runs, ending at mean −0.5🌾). It gets **no fixture**: with no free slot against this
-deck's four structures it is a deck problem first, and a number taken on the wrong deck would read as a
-mission difficulty. Same shape as the gap logged at `roads` and `accounting`.
+**Chiefdom edges City at the planner here** — 77% vs 73%, oracle 100% both, on the same deck. Its
+**War Camp** (+4🌾 per 🗺️ taken) pays on exactly the action this mission demands most, and famine was
+what used to kill it (68 of greedy's 100 runs before the perk). Greedy stays at 1%: the ⚔️→🗺️ chain is
+multi-turn, so a one-ply policy never starts it and never collects the spoils either.
 
-Those figures predate Chiefdom's **War Camp** (+3🌾 +3🔨 per 🗺️ taken), so they owe a re-measure. It
-pays into famine, which is what kills this cell, and leaves the goal and `overextension`'s toll on
-their own rates — a territory-paying perk would have scaled both at once.
+Note the perk deliberately pays **food, not territory**. This is the one mission that both counts
+territory gained *and* taxes it through `overextension`, so a land-paying perk would have scaled the
+win condition and the toll together — measured at the time as a net +4pp underneath 28 of 100 seeds
+changing outcome, which is churn, not a reading. Chiefdom ends on **6.4🗺️ against City's 7.3**, so it
+clears the 6-territory goal with less overshoot and pays less toll doing it.
 
 **Writing is the deck's one dead card** — unplayed across all 200 greedy/planner runs, played once in
 10 oracle runs. Kept because the deck is the one the player arrives with.

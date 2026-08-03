@@ -429,12 +429,18 @@ never had.
 **A board's rule should pay what that board is short of, not more of what it already does.** The
 first cut of Chiefdom's War Camp paid *more territory* per conquest — doubling the thing the board was
 already best at, which compounds a lead rather than covering a weakness, and on the one mission that
-both counts territory and taxes it, scaled the reward and the punishment together. It pays food and
-production instead: the martial board's actual failure mode is that three people and no fields
-starve, so plunder is what turns a war party into a civilization. This is also the guard against the
-older watch-out — a rule must stay a *choice*, not become the **answer** to every mission that wants
-what it grants — since a board that converts its own surplus into its own scarcity is a different
-shape to play, not a strictly better one.
+both counts territory and taxes it, scaled the reward and the punishment together. It pays **food**
+instead: the martial board's actual failure mode is that three people and no fields starve, so plunder
+is what turns a war party into a civilization. A board that converts its own surplus into its own
+scarcity is a different shape to play, not a strictly better one — which is what keeps such a rule a
+*choice* rather than the **answer** to every mission that wants what it grants.
+
+**Where the ceiling is.** That guard is measurable, and it bounded the number: the perk was swept at
+several rates against the settled boards' recorded cells. Paying food *and* production put Chiefdom
+above its counterpart on half the campaign; food alone at a rate that still clears famine leaves it
+ahead on a handful of cells and behind on the rest. A board's rule is tuned against that comparison,
+not against its own before/after — "did this board get better" is the wrong question, "did it pass the
+board it is an alternative to" is the right one.
 
 **Board vs. mission setup.** The two compose cleanly and keep their existing roles:
 the **board is the baseline** starting state, and the **mission seeds its threat/event

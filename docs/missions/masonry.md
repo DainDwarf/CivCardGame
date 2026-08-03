@@ -40,15 +40,17 @@ its one slot holds the pre-built War Camp):
 | board | greedy | planner | oracle |
 |---|---|---|---|
 | settlement | 77/100 · famine 23 | **89/100** · famine 11 | 10/10 |
-| chiefdom | 57/100 · famine 43 | **64/100** · famine 36 | 9/10 |
+| chiefdom | 97/100 · famine 3 | **92/100** · famine 8 | 10/10 |
 
-Turns (min/med/mean/max) under planner: settlement 8 / 31 / 29.4 / 40 · chiefdom 6 / 29 / 23.8 / 62.
-Chiefdom still wins faster and loses more. Every defeat on both boards is now famine — **the stalls
-are gone**, and Conquest is played ~3.3–4.0×/run under *both* policies.
+Turns (min/med/mean/max) under planner: settlement 8 / 31 / 29.4 / 40 · chiefdom 10 / 29 / 29.2 / 69.
+Every defeat on both boards is famine — **the stalls are gone** — and Conquest is played ~3.3–4.0×/run
+under *both* policies.
 
-The chiefdom row predates the War Camp, which pays +3🌾 +3🔨 on each of those ~3.3–4.0 Conquests — into
-the famine that is this cell's only defeat cause — so it owes a re-measure; the settlement row is
-unaffected.
+**This is the one cell where Chiefdom passes Settlement**, and the War Camp is why: +4🌾 on each of
+those ~3.3–4.0 Conquests lands directly on the only thing that was killing the board here, taking
+famine 43 → 3. The board that has to go and take its land now feeds itself off taking it, which on a
+population goal is worth more than the two slots Settlement is handed. Read the pair as the arc's
+board lesson finally having two live answers rather than a right one and a punishing one.
 
 **Greedy went 0/100 → 77 and 0/100 → 57**, which is the largest move anywhere in the re-measure. The
 old reading — "greedy wins neither board; the ⚔️→🏞️→🧍 chain is multi-turn, so Conquest goes unplayed

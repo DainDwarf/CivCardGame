@@ -208,8 +208,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
 - **Boards can stand a card on the table, and a standing card can bend what others yield** ✅ — two
-  seams shipped together for Chiefdom's **War Camp**: a pre-built 🏕️ paying **+3🌾 +3🔨** on every
-  territory the board takes.
+  seams shipped together for Chiefdom's **War Camp**: a pre-built 🏕️ paying **+4🌾** per territory the
+  board takes.
   - `BoardDef.prebuilt` lists structures `run/setup.ts` stands in the tableau at setup (through the
     real `addBuilding`, minted past the deck's ids, resolving **no** entry `effect` — so a board's own
     card can never register as a *gain* against the `startResources` snapshot the Wheel goal and the
@@ -221,8 +221,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - **The perk pays what the board is short of, not more of what it already does.** The first cut gave
     +1🗺️ per conquest — doubling Chiefdom's own strength, and on `wheel` (which counts territory *and*
     taxes it via `overextension`) scaling reward and punishment together for a net +4pp under 28 seeds
-    of churn. Every Chiefdom cell's defeats are famine, so the spoils pay 🌾/🔨 instead. Rationale on
+    of churn. Every Chiefdom cell's defeats are famine, so the spoils pay 🌾 instead. Rationale on
     DESIGN.md → *Government boards*.
+  - **The rate was swept against the settled boards, not against its own before/after.** Three
+    candidates over the ten cells: `+3🌾 +3🔨` cleared famine so completely it put Chiefdom above its
+    counterpart on **5 of 10** cells at planner; `+3🌾` left it ahead on 2; **`+4🌾` on 3** (masonry
+    92 vs 89, pyramid 54 vs 13, wheel 77 vs 73) and behind everywhere else, which is the shipped rate.
+    The 🔨 half was what funded repeat Conquests — `horse_taming`, whose deck holds 4 of them, swung
+    78% → 4% when it was dropped.
   - Chiefdom went `territory: 0 → 1` with the War Camp standing in it, so its **free** building room
     is unchanged and it stays landless in practice. `meta/Stats.tsx` subtracts `prebuiltCardIds()`
     from the collection denominator — a card nobody can own would otherwise put `X/N` out of reach.

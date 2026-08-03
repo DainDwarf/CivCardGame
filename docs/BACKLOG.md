@@ -138,14 +138,18 @@
     (2🪙 → 3🌾 / 3🔨). Each is a *reward* of the mission that shipped it, so no fixture upstream can stock
     it — the cells that will are the ones authored from here on. The Caravans matter most: they set the
     🪙→🌾/🔨 conversion rate every later mission is read against, and nothing has measured it yet.
-  - **Chiefdom is fixtured; the deck is what's left.** Nine `<mission>_chiefdom` cells now cover it from
-    Rites & Rituals to Wheel, each swept on the same deck its City/Settlement counterpart uses, so the
-    board is the only variable. It comes back **never higher** at any cell or policy (only `pyramid`'s
-    greedy ties, both 0), with `horse_taming` and `roads` at **0 across greedy/planner/oracle alike** —
-    and `rites_rituals`, two nodes after the board is handed out, at 0/9/60. Those decks are built for a board that starts
-    with land, so a Chiefdom-native deck is the next piece — until one exists these rate the pairing, not
-    the board, and none of them reads as a difficulty verdict. **All ten cells now owe a re-measure**:
-    the board gained its pre-built War Camp, paying +3🌾 +3🔨 on every territory it takes.
+  - **Chiefdom is fixtured, and the War Camp made it a real alternative.** Ten `<mission>_chiefdom`
+    cells cover it from Rites & Rituals to Wheel, each swept on the same deck its City/Settlement
+    counterpart uses, so the board is the only variable. Before the perk it came back **never higher**
+    at any cell or policy; with the pre-built War Camp (+4🌾 per territory taken) it now **passes its
+    counterpart on three cells at the planner** — `masonry` 92 vs 89, `pyramid` 54 vs 13, `wheel` 77 vs
+    73 — and sits below on the other seven. Famine, which was every cell's dominant defeat, is largely
+    gone. It still ends with **more** land than the settled boards almost everywhere (finding_copper
+    3.8 vs 2.0, writing 3.2 vs 2.0), which is the shape the board is meant to have.
+  - **`accounting`, `horse_taming` and `roads` are the deck gap, not the board.** They read 1/11/4% at
+    the planner against counterparts at 43/37/60, and the perk barely moved them. These decks are built
+    for a board that starts with land, so a **Chiefdom-native deck** is the next piece — until one exists
+    those three rate the pairing, not the board, and none reads as a difficulty verdict.
 
   **Framing notes to honour when authoring:**
   - The two **convergences** (Accounting, Bronze) are ludic tree-narrowing, *not* historical dependencies —
