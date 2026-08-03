@@ -207,6 +207,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The measured runs are queryable as one table** ✅ — `npm run sim:report -- --format csv` flattens
+  instead of folding: the runs come out as the same `recordToCsvLine` rows a sweep writes, so the standing
+  set — a fixture apiece, nesting its rows a policy deep — reads as one rectangle. A sweep is already that
+  shape, so **one query spans a fresh measurement and the committed one alike**, and a `JOIN` on
+  `(cell, policy, seed)` says exactly which runs moved. Incompatible with `--against`, which compares
+  summaries rather than emitting runs.
+  - The report folds along **fixed axes**, so a question outside them — a median or a percentile rather
+    than a mean, "dead in how many runs", what the *losses* ended holding — cost a hand-rolled re-parse
+    every time it was asked. It is a *query*, not a missing tool: `duckdb` (winget `DuckDB.cli`) reads a
+    CSV in place, so nothing loads and no session state has to be kept warm. Recipe in the `sim` skill →
+    *Query the runs*.
+  - **Checked against the fold rather than assumed**, since a dropped or mis-split row would make every
+    later answer silently wrong: over `masonry`, SQL on the export reproduces `sim:report`'s win rate,
+    min/median/mean/max turns, mean actions, mean pools and the famine counts exactly across all three
+    policies, and the unpacked `cardsPlayed` totals match its card-plays list card for card.
 - **Boards can stand a card on the table, and a standing card can bend what others yield** ✅ — two
   seams shipped together for Chiefdom's **War Camp**: a pre-built 🏕️ paying **+4🌾** per territory the
   board takes.

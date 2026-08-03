@@ -18,21 +18,30 @@
  * fixture no longer describes what was swept keeps its aggregate comparison and loses its per-seed one.
  * Cells that did not move at all collapse to a trailing count.
  *
+ * `--format csv` folds nothing — it flattens, emitting the runs themselves as the same `recordToCsvLine`
+ * rows a sweep writes. That is what makes the standing set queryable as one table: 26 fixtures nesting
+ * their rows three policies deep come out as one rectangle a SQL engine reads directly, and since a sweep
+ * is already in that shape, one query answers a fresh measurement and the committed one alike. Every row
+ * names its own `cell` and `policy`, so concatenating across fixtures loses nothing.
+ *
  * Usage:
  *   npm run sim:report -- sweep.csv
  *   npm run sim:report -- scripts/sim/baselines/writing.json
  *   npm run sim:report -- scripts/sim/baselines --format json
+ *   npm run sim:report -- scripts/sim/baselines --format csv > runs.csv
  *   npm run sim:report -- variant.csv --against scripts/sim/baselines
  *   npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies greedy | npm run sim:report
  */
 import { readFileSync, statSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import {
+  csvHeaderLine,
   diffRecords,
   formatDiffReport,
   formatReport,
   groupRecords,
   parseRecordCsv,
+  recordToCsvLine,
   recordedRuns,
   summarize,
   unpairDiff,
@@ -65,7 +74,12 @@ try {
 }
 
 const format = values.format ?? 'text';
-if (format !== 'text' && format !== 'json') fail(`--format must be 'text' or 'json', got '${format}'.`);
+if (format !== 'text' && format !== 'json' && format !== 'csv') {
+  fail(`--format must be 'text', 'json' or 'csv', got '${format}'.`);
+}
+if (format === 'csv' && values.against !== undefined) {
+  fail('--format csv emits runs; --against compares summaries. Use --format text or json.');
+}
 if (positionals.length > 1) fail(`expected at most one input, got ${positionals.length}.`);
 
 /** Runs plus what each cell was measured *on* — the second half is what lets a comparison say whether the
@@ -151,7 +165,9 @@ function read(arg: string | undefined): Measurement {
 
 const now = read(positionals[0]);
 
-if (values.against === undefined) {
+if (format === 'csv') {
+  console.log([csvHeaderLine(), ...now.records.map(recordToCsvLine)].join('\n'));
+} else if (values.against === undefined) {
   const summaries = groupRecords(now.records).map(summarize);
   console.log(format === 'json' ? JSON.stringify(summaries, null, 2) : formatReport(summaries));
 } else {

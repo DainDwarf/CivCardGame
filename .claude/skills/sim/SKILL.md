@@ -47,7 +47,7 @@ npm run sim -- --baseline <paths|dir>
 npm run sim -- --scenario <ids> --deck <file> --board <id|file>
                [--seeds 100] [--policies random,heuristic,greedy] [--max-rounds 200] [--seed <i>] [--verbose]
 
-npm run sim:report -- <sweep.csv | fixture.json | baselines dir> [--format text|json] [--against <paths|dir>]
+npm run sim:report -- <sweep.csv | fixture.json | baselines dir> [--format text|json|csv] [--against <paths|dir>]
 npm run sim:record -- <sweep.csv> [--baseline <paths|dir>]
 ```
 
@@ -77,7 +77,9 @@ has no comment syntax to hide it, so `sim:report --format json` needs `--silent`
 - `--verbose` — add a per-turn trace on **stderr**; stdout stays pure CSV, so it composes with
   a redirect.
 
-And on `sim:report`: `--format text` (default, the human report) or `json` (the raw summaries).
+And on `sim:report`: `--format text` (default, the human report), `json` (the raw summaries) or
+`csv` (the runs themselves, unfolded — see *Query the runs*; incompatible with `--against`, which
+compares summaries rather than emitting runs).
 Takes a sweep file, a baseline fixture, a directory of fixtures, or stdin if nothing is given —
 so the standing set's committed numbers are readable with no sweep at all. `--against
 <paths|dir>` **compares** instead of folding: the input is the new measurement, the flag names the
@@ -125,6 +127,40 @@ One row per run:
   `alsoDisplay` (what a run can only mint mid-play — Accounting's Thief). So "unplayed" is a
   *per-run* fact readable off the row, and the key set is identical across every row of a cell.
   Threats and the objective are absent: they never route through `playCard`.
+
+## Query the runs — SQL over the rows
+
+The report folds along fixed axes. A question outside them — a median or a percentile rather than a
+mean, "how many runs never played X", what the *losses* ended holding, which seeds sit in a tail — is
+a **query**, not a missing feature. Answer it in SQL; never hand-roll a script to re-parse a CSV.
+
+`duckdb` (CLI, on PATH) reads a CSV in place, so there is nothing to load and no session state:
+
+```
+duckdb -c "SELECT policy, median(turns), quantile(turns,0.9) FROM read_csv('scratchpad/sweep.csv', comment='#') GROUP BY 1"
+```
+
+`comment='#'` skips a sweep's `#sweep`/`#cell` header lines. The standing set is the same rows nested
+inside a fixture apiece, so flatten it once and query it identically:
+
+```
+npm run --silent sim:report -- scripts/sim/baselines --format csv > scratchpad/runs.csv
+```
+
+Every row names its own `cell` and `policy`, so concatenating across fixtures is unambiguous — which
+is what lets one query span cells, and lets a fresh sweep `JOIN` the committed rows on
+`(cell, policy, seed)` to see exactly what moved.
+
+`cardsPlayed` unpacks into a long table in one expression, which is where the per-run readings live
+(`count(*) FILTER (WHERE n = 0)` per card is "dead in how many runs"):
+
+```sql
+SELECT cell, policy, seed, split_part(kv,':',1) AS card, CAST(split_part(kv,':',2) AS INT) AS n
+FROM read_csv('scratchpad/runs.csv', comment='#'), unnest(str_split(cardsPlayed,';')) AS t(kv)
+```
+
+**This does not loosen *Report the numbers, not a diagnosis*** — a query answers a question that was
+asked, and is not licence to go fishing for one.
 
 ## File schemas (JSON)
 

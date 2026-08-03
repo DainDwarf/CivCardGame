@@ -104,6 +104,11 @@ surprise, so nothing shows a locked placeholder or a total count.
   extension, so the standing set's numbers are readable with no sweep at all — which is where a dossier's
   table comes from. `--format text|json`. `summarize` folds a `RunRecord[]` whatever its provenance, so a
   live sweep, a re-read file and a committed fixture give the same numbers by construction.
+  **`--format csv`** folds nothing, flattening instead: the runs come out as the same `recordToCsvLine`
+  rows a sweep writes, so the standing set — a fixture apiece, nesting its rows a policy deep — reads as
+  one rectangle a SQL engine queries directly, and since a sweep is already that shape, one query spans a
+  fresh measurement and the committed one alike (each row names its own `cell`/`policy`, so the
+  concatenation is unambiguous). The seam behind asking a question the fixed fold has no axis for.
   **`--against <paths|dir>`** compares instead of folding — the input is the new measurement, the flag
   names the recorded one — printing one block per cell that moved (win rate · turns · the end pools that
   shifted · the defeat causes that traded · **which seeds crossed the win/defeat line**) and collapsing
