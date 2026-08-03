@@ -55,7 +55,10 @@ describe('CARDS', () => {
   // counterpart of `stickers.test.ts`'s commutation check, over probe bags rather than the catalogue's
   // own numbers, since the fold is board-wide and reaches gains no single card prints.
   const MODIFIERS = () => Object.values(CARDS).filter((c) => c.modifyGain);
-  const PROBE_BAGS: Partial<Resources>[] = [
+  // Rebuilt per use: a hook must treat `base` as read-only (`sim/enablers.ts` folds over the
+  // catalogue's own `produces.resources`), and a shared const would let a mutating one pass by
+  // corrupting the probe instead of failing.
+  const probeBags = (): Partial<Resources>[] => [
     ...CORE_KEYS.map((k) => ({ [k]: 3 })),
     ...CORE_KEYS.map((k) => ({ [k]: -3 })),
     { population: 2, territory: 2, culture: 2 },
@@ -68,11 +71,26 @@ describe('CARDS', () => {
     const self = { id: 1, cardId: 'x' };
     for (const a of MODIFIERS()) {
       for (const b of MODIFIERS()) {
-        for (const bag of PROBE_BAGS) {
+        for (const bag of probeBags()) {
           const ab = b.modifyGain!(a.modifyGain!(bag, G, self), G, self);
           const ba = a.modifyGain!(b.modifyGain!(bag, G, self), G, self);
           expect(ab, `${a.id}+${b.id} on ${JSON.stringify(bag)}`).toEqual(ba);
         }
+      }
+    }
+  });
+
+  // `sim/enablers.ts` folds these hooks over `CARDS[id].produces.resources` itself to price a card at
+  // what the board really pays for it, so a hook that wrote through `base` would corrupt the catalogue
+  // for the rest of the process rather than fail anything.
+  it('no modifyGain hook mutates the bag it is handed', () => {
+    const G = blankState('test');
+    const self = { id: 1, cardId: 'x' };
+    for (const card of MODIFIERS()) {
+      for (const bag of probeBags()) {
+        const before = structuredClone(bag);
+        card.modifyGain!(bag, G, self);
+        expect(bag, `${card.id} mutated its input`).toEqual(before);
       }
     }
   });
@@ -84,7 +102,7 @@ describe('CARDS', () => {
     const G = blankState('test');
     const self = { id: 1, cardId: 'x' };
     for (const card of MODIFIERS()) {
-      for (const bag of PROBE_BAGS) {
+      for (const bag of probeBags()) {
         const out = card.modifyGain!(bag, G, self) ?? bag;
         for (const [key, value] of Object.entries(bag) as [keyof Resources, number][]) {
           if (value < 0) expect(out[key] ?? 0, `${card.id} on ${key}`).toBeGreaterThanOrEqual(value);

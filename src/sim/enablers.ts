@@ -1,5 +1,6 @@
 import { CORE_KEYS, STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, foodPerNextPop, placedCards, type GameState, type Resources } from '../rules';
 import { effectiveGain } from '../rules/stickers';
+import { realizedGain } from '../rules/effects';
 import { CARDS, isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import { objectiveProgress } from './objective';
 import { OBJECTIVE_WEIGHT } from './value';
@@ -268,6 +269,7 @@ function runCardIds(G: GameState): Set<string> {
  *  of *itself* re-states the objective's own slope on that pool, and on a gated producer of its own gate
  *  (culture ungating a culture producer) it is circular. Vacuous unless `self` is goal-valued. */
 function bestGoalThroughput(
+  G: GameState,
   ids: Set<string>,
   goalValued: Partial<Record<keyof Resources, number>>,
   accept: (card: CardDef) => boolean,
@@ -277,11 +279,12 @@ function bestGoalThroughput(
   let best = 0;
   for (const card of Object.values(CARDS)) {
     if (!ids.has(card.id) || !accept(card)) continue;
+    const effect = scanEffect ? realizedGain(G, card.effect?.resources) : undefined;
+    const produces = realizedGain(G, card.produces?.resources);
     let perCard = 0;
     for (const [gk, marginal] of Object.entries(goalValued) as [keyof Resources, number][]) {
       if (gk === self) continue;
-      const output =
-        (scanEffect ? positive(card.effect?.resources?.[gk]) : 0) + positive(card.produces?.resources?.[gk]);
+      const output = positive(effect?.[gk]) + positive(produces?.[gk]);
       if (output > 0) perCard += output * (marginal * OBJECTIVE_WEIGHT);
     }
     best = Math.max(best, perCard);
@@ -292,18 +295,21 @@ function bestGoalThroughput(
 /** The best per-worker 🌾 a staffed worker in this run can produce — the rate at which a person's own
  *  upkeep is paid, and so the denominator of population's net (see `enablerPotential`).
  *
- *  Walks the run's **instances** rather than `CARDS`, reading each through `effectiveGain`: a stickered
- *  copy really does yield its bonus, and pricing an Irrigated Farm at its base rate would charge a person
- *  several times what feeding them costs. Deliberately *not* symmetrized onto `bestGoalThroughput`, which
- *  stays a static scan — widening that would move the credit on every mission at once and make a sweep
- *  delta unattributable. */
+ *  Walks the run's **instances** rather than `CARDS`, reading each through the same
+ *  `effectiveGain`→`realizedGain` pair a real gain takes: a stickered copy really does yield its bonus,
+ *  and pricing an Irrigated Farm at its base rate would charge a person several times what feeding them
+ *  costs. The *sticker* half is deliberately not symmetrized onto `bestGoalThroughput`, which stays a
+ *  static scan — widening that would move the credit on every mission at once and make a sweep delta
+ *  unattributable. The board-modifier half is symmetrized, precisely because it doesn't have that
+ *  problem: it is the identity on every board standing no modifier, so it moves one board's cells and
+ *  leaves the rest byte-identical. */
 function bestFoodPerWorker(G: GameState): number {
   let best = 0;
   for (const zone of [G.deck, G.hand, G.discard, G.removed, placedCards(G)]) {
     for (const inst of zone) {
       const card = CARDS[inst.cardId];
       if (!card || (card.workers ?? 0) < 1) continue;
-      best = Math.max(best, positive(effectiveGain(card.produces?.resources, inst)?.food));
+      best = Math.max(best, positive(realizedGain(G, effectiveGain(card.produces?.resources, inst))?.food));
     }
   }
   return best;
@@ -311,9 +317,13 @@ function bestFoodPerWorker(G: GameState): number {
 
 /** Whether the run holds any card that outputs culture — the precondition for crediting culture's
  *  hand-size throughput (with no way to raise culture, the level never moves and the credit can't steer). */
-function canGrowCulture(ids: Set<string>): boolean {
+function canGrowCulture(G: GameState, ids: Set<string>): boolean {
   return Object.values(CARDS).some(
-    (c) => ids.has(c.id) && positive(c.effect?.resources?.culture) + positive(c.produces?.resources?.culture) > 0,
+    (c) =>
+      ids.has(c.id) &&
+      positive(realizedGain(G, c.effect?.resources)?.culture) +
+        positive(realizedGain(G, c.produces?.resources)?.culture) >
+        0,
   );
 }
 
@@ -390,7 +400,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // self-sufficient grant (Hut/House, on `effect`) or a staffed producer (Farm/Forge, on `produces`) alike.
   {
     const w = strategicWeight(
-      capacity ? bestGoalThroughput(ids, goalValued, isStructure, true, 'territory') : 0,
+      capacity ? bestGoalThroughput(G, ids, goalValued, isStructure, true, 'territory') : 0,
       goalValued.territory === undefined,
     );
     if (w > 0) {
@@ -408,7 +418,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // `foodPerWorker` is the denominator that nets it (see `enablerPotential`), keyed on the *derived*
   // throughput rather than the composed weight so it can never reach a pool holding only the floor.
   const populationThroughput = capacity
-    ? bestGoalThroughput(ids, goalValued, (c) => (c.workers ?? 0) >= 1, false, 'population')
+    ? bestGoalThroughput(G, ids, goalValued, (c) => (c.workers ?? 0) >= 1, false, 'population')
     : 0;
   {
     const w = strategicWeight(populationThroughput, goalValued.population === undefined);
@@ -423,7 +433,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   // nudge below, which rides no `self` exclusion at all — it is not objective-directed.
   {
     const w = strategicWeight(
-      capacity ? bestGoalThroughput(ids, goalValued, (c) => !!c.cost.cultureLevelReq, true, 'culture') : 0,
+      capacity ? bestGoalThroughput(G, ids, goalValued, (c) => !!c.cost.cultureLevelReq, true, 'culture') : 0,
       goalValued.culture === undefined,
     );
     if (w > 0) {
@@ -451,8 +461,10 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   if (conversions) {
     for (const card of Object.values(CARDS)) {
       if (!ids.has(card.id)) continue;
+      const effect = realizedGain(G, card.effect?.resources);
+      const produces = realizedGain(G, card.produces?.resources);
       for (const [vk, valuePerUnit] of Object.entries(valued) as [keyof Resources, number][]) {
-        const output = positive(card.effect?.resources?.[vk]) + positive(card.produces?.resources?.[vk]);
+        const output = positive(effect?.[vk]) + positive(produces?.[vk]);
         if (output <= 0) continue;
         for (const ck of CORE_KEYS) {
           const costAmt = card.cost.resources?.[ck] ?? 0;
@@ -487,9 +499,10 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
     }
     for (const card of Object.values(CARDS)) {
       if (!ids.has(card.id) || !isDurableProducer(card) || !card.produces) continue;
+      const produces = realizedGain(G, card.produces.resources);
       let perRound = 0;
       for (const [k, v] of Object.entries(unitValue) as [keyof Resources, number][]) {
-        perRound += positive(card.produces.resources?.[k]) * v;
+        perRound += positive(produces?.[k]) * v;
       }
       // A one-shot placement grant (Hut's population, on `effect`) is not durable income and earns nothing
       // here; it lands once in the resource pool, where the strategic weights already credit it.
@@ -498,7 +511,7 @@ export function deriveEnablers(G: GameState, terms: EnablerTerms = {}): EnablerM
   }
 
   const model: EnablerModel = { weight, cap, producerCredit };
-  if (handSize && canGrowCulture(ids)) model.handsizePerLevel = HANDSIZE_LEVEL_CREDIT;
+  if (handSize && canGrowCulture(G, ids)) model.handsizePerLevel = HANDSIZE_LEVEL_CREDIT;
   if (populationThroughput > 0) model.foodPerWorker = bestFoodPerWorker(G);
   return model;
 }

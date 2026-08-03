@@ -58,11 +58,14 @@ export type Resolver = (ctx: EffectContext) => void;
  * all fire at a moment and this one never fires at all.
  *
  * A hook is handed `self` so it can read its own counters/staffing, but must stay **pure over `G`** —
- * writing there would recurse straight back through `gainResources`. Two hooks that can stand together
- * must **commute**: they meet on one bundle in the arbitrary order of zones that are heaps (see
- * DESIGN.md → *Determinism & order-independence*). And signs are neutral in a gain bundle, so a hook
- * meaning "more" reads the entry it amplifies as positive — an unguarded `+1` would deepen a drain as
- * readily as it raises a yield.
+ * writing there would recurse straight back through `gainResources`. `base` is likewise **read-only**:
+ * return a new bundle, never mutate the one handed in. That is not fastidiousness — `sim/enablers.ts`
+ * projects a card's printed output through this fold, so the bundle may be `CARDS[id].produces.resources`
+ * itself, and a hook that wrote through it would corrupt the catalogue for the rest of the process.
+ * Two hooks that can stand together must **commute**: they meet on one bundle in the arbitrary order of
+ * zones that are heaps (see DESIGN.md → *Determinism & order-independence*). And signs are neutral in a
+ * gain bundle, so a hook meaning "more" reads the entry it amplifies as positive — an unguarded `+1`
+ * would deepen a drain as readily as it raises a yield.
  */
 export type GainModifier = (
   base: Partial<Resources> | undefined,
@@ -70,10 +73,22 @@ export type GainModifier = (
   self: CardInstance,
 ) => Partial<Resources> | undefined;
 
-/** Fold every standing card's `modifyGain` over `base` in order. Same `?? out` idiom as
- *  `stickers.ts`'s `effectiveGain`, so stacking (two copies of a modifier) and composing (two
- *  different ones) fall out for free, and a card without the hook is skipped. */
-function modifiedGain(G: GameState, base: Partial<Resources> | undefined): Partial<Resources> | undefined {
+/**
+ * What `base` really becomes on this board: fold every standing card's `modifyGain` over it, in the
+ * `?? out` idiom of `stickers.ts`'s `effectiveGain`, so stacking (two copies of a modifier) and
+ * composing (two different ones) fall out for free and a card without the hook is skipped.
+ *
+ * An **empty** bag returns untouched. That is the rule — a modifier bends a gain, it may not conjure
+ * one out of nothing — and it also keeps the board walk off the hot path, since `resolveProduction`
+ * hands `{}` to every producer whose output is all closure.
+ *
+ * Exported because it is a **pure read**: `sim/enablers.ts` projects a card's printed output forward
+ * to decide what banking toward it is worth, and reading the printed number where the board would pay
+ * a different one is how a policy comes to under-value the very card a board is built around. Sharing
+ * this function is what stops the projection and the payment disagreeing.
+ */
+export function realizedGain(G: GameState, base: Partial<Resources> | undefined): Partial<Resources> | undefined {
+  if (!base || isEmptyBag(base)) return base;
   let out = base;
   for (const c of standingCards(G)) {
     const modify = CARDS[c.cardId]?.modifyGain;
@@ -82,20 +97,14 @@ function modifiedGain(G: GameState, base: Partial<Resources> | undefined): Parti
   return out;
 }
 
-/** The ONE path a card's output reaches `G`: fold this copy's stickers over `base`, then every
- *  standing card's `modifyGain`, then add. Every gain routes through here, so nothing reaches `G`
- *  unstickered or unmodified. The order is what makes the two compose predictably — a sticker sets
- *  the copy's own rate and a board modifier bends the result, mirroring `cost.ts`'s sticker-then-
- *  `resolve` price fold.
- *
- *  An **empty** bag returns before the fold, which is both the rule (a modifier bends a gain; it may
- *  not conjure one out of nothing) and what keeps the board walk off the hot path — `resolveProduction`
- *  hands `{}` to every producer whose output is all closure. */
+/** The ONE path a card's output reaches `G`: fold this copy's stickers over `base`, then the board's
+ *  standing modifiers, then add. Every gain routes through here, so nothing reaches `G` unstickered or
+ *  unmodified. The order is what makes the two compose predictably — a sticker sets the copy's own
+ *  rate and a standing modifier bends the result, mirroring `cost.ts`'s sticker-then-`resolve` price
+ *  fold. */
 export function gainResources(ctx: EffectContext, base: Partial<Resources> | undefined): void {
-  const g = effectiveGain(base, ctx.self);
-  if (!g || isEmptyBag(g)) return;
-  const m = modifiedGain(ctx.G, g);
-  if (m) addResources(ctx.G.resources, m);
+  const g = realizedGain(ctx.G, effectiveGain(base, ctx.self));
+  if (g) addResources(ctx.G.resources, g);
 }
 
 /** Allocation-free `Object.keys(bag).length === 0` — this sits on `gainResources`'s hot path, which

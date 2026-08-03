@@ -147,14 +147,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   more rounds the current stores survive — the same way `enablers.ts` derives its slope from
   `cost`→`produces` rather than from authored hints. Blocks trusting greedy/planner on any
   rounds-survived mission; `ice_age` and `sandbox` dodge it only because the sim doesn't drive them.
-- **`enablers.ts` is blind to a standing card's `modifyGain`** `[size: S]` — it derives a card's worth
-  mechanically from `cost` → `produces` over the static `CARDS` catalogue, and a gain modifier is
-  neither. Chiefdom's War Camp is the live case: Conquest and Road each really yield **+2🗺️** there,
-  and every policy values them at +1, so expansion is systematically **under**-valued on the one board
-  built around it. Every `*_chiefdom` cell's territory-hungry numbers are therefore a floor. The fix
-  stays mechanical, not per-card: fold the modifiers standing at projection time over the `produces`
-  bag `enablerPotential` already derives, the same way `foodPerWorker` walks the run's instances
-  instead of the catalogue's printed rate.
+- **The enabler model is derived once, from the root state** `[size: S]` — the planner memoizes it on
+  first `replan` and never invalidates, so it reads the board as it stood at turn 1. Harmless for
+  everything shipped (a deck and its stickers are fixed at launch, and the one `modifyGain` card is
+  pre-built, so it is standing when the model is cut) — but a modifier card the player could *play*
+  would be priced as absent for the whole run, silently. Either re-derive when the standing modifier
+  set changes, or keep `modifyGain` to pre-built cards deliberately rather than by accident.
 - **`scoreState` credits a goal resource whose own accumulation is the threat** — the objective gradient
   reads `pool / target` while bands 2/3/5 see one turn, so when *holding* the goal resource is the danger
   the upside is scored and the liability is not. Accounting is the live case (`envious_population` mints a
@@ -223,6 +221,29 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   - Chiefdom went `territory: 0 → 1` with the War Camp standing in it, so its **free** building room
     is unchanged and it stays landless in practice. `meta/Stats.tsx` subtracts `prebuiltCardIds()`
     from the collection denominator — a card nobody can own would otherwise put `X/N` out of reach.
+  - **`sim/enablers.ts` reads a card's output through the same fold**, via `effects.ts`'s exported
+    `realizedGain` — the read-only half of `gainResources`, sharing its empty-bag rule, so a projection
+    over a card's printed output and the payment that output actually makes cannot disagree. Widening
+    the *static* scans this way carries none of the objection that keeps the **sticker** fold off them
+    (recorded on `bestFoodPerWorker`): a board standing no modifier gets the identity.
+  - **Measured effect: none, and the reason is worth keeping.** Re-swept over all ten `*_chiefdom`
+    cells, greedy+planner came back **20 of 20 unchanged** and oracle moved three cells by a few actions
+    with **no win rate touched**. Conquest and Road are `work` cards, and every output-valuing mechanism
+    the planner ships excludes them — `producerCredit` by `isDurableProducer` (deliberate: a Work box's
+    single turn is what the one-turn leaf already prices), `bestGoalThroughput`'s territory pass by
+    `isStructure`, and the conversions loop by being off in `DEFAULT_ENABLER_TERMS`. So the planner never
+    priced Conquest's territory at the printed rate either; it never priced it here at all. Greedy carries
+    no enabler term and already saw the real +2 through `scoreState`'s projection. The fix is a
+    correctness one — it stops a `modifyGain` card being mis-priced the moment one lands on a card these
+    terms *do* value — not a measured improvement, and the earlier "these numbers are a floor" reading of
+    the Chiefdom cells was wrong.
+  - Three checks, because no one of them covers it. **Neutrality** — `wheel`/City and `masonry`/Settlement
+    re-swept unchanged under greedy+planner *and* under oracle; the oracle pass is the load-bearing one,
+    since the planner's `conversions`/`handSize` being off means it never enters two of the five widened
+    sites. **Refactor safety** — folding the guard into `realizedGain` left all 1000 `greedy` rows on the
+    *Chiefdom* cells byte-identical, the only check taken on a board where the fold actually fires.
+    **Catalogue safety** — `enablers.ts` now folds hooks over `CARDS[id].produces.resources` itself, so
+    `cards.test.ts` pins that no hook mutates the bag it is handed.
 - **Population's capacity credit is net of its food curve** ✅ — `sim/enablers.ts` credited a unit of
   population `CAPACITY_HORIZON` rounds of goal throughput and charged nothing for the food that person then
   eats every round after, so on `wheel`/City a House scored **+200** with its +3🌾/round standing cost

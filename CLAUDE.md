@@ -229,13 +229,15 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   effect suspends via `suspendChoice` into `pendingInteraction` and re-enters via
   `moves.resolveInteraction` — all plain data, so undo/clone survive.
   Every gain reaches `G` through `gainResources` alone, which folds **twice**: the resolving copy's
-  stickers (`effectiveGain`), then every standing card's `CardDef.modifyGain` — the fifth slot, and the
-  only one that fires at no timing of its own, so a card can bend what *other* cards yield for as long
-  as it stands (`population.ts`'s `standingCards` is the set). Order is load-bearing: a sticker sets
-  the copy's rate, a standing modifier bends the result. An **empty** bag returns before the second
-  fold, which is both the rule (a modifier bends a gain, it may not conjure one) and what keeps the
-  board walk off the sim's hot path. `content/cards.test.ts` pins the catalogue's hooks commute and
-  none deepens a drain.
+  stickers (`effectiveGain`), then `realizedGain` — every standing card's `CardDef.modifyGain`, the
+  fifth slot and the only one that fires at no timing of its own, so a card can bend what *other* cards
+  yield for as long as it stands (`population.ts`'s `standingCards` is the set). Order is load-bearing:
+  a sticker sets the copy's rate, a standing modifier bends the result. An **empty** bag returns
+  untouched — a modifier bends a gain, it may not conjure one — which also keeps the board walk off the
+  sim's hot path. `realizedGain` is exported because it is a **pure read**: `sim/enablers.ts` projects a
+  card's printed output forward and must not price it at a rate the board wouldn't pay, so the
+  projection and the payment share one function. `content/cards.test.ts` pins the catalogue's hooks
+  commute and none deepens a drain.
 - **`events.ts`** — the **event bus**: lets a card react to an event whose *timing it doesn't own* via
   `CardDef.on?: { draw/discard/resourceChange/reshuffle/endTurn }`, each a `CardEffect` run through the
   same `runEffect` spine (`ctx.event` set). Two verbs, split so the bus never dispatches mid-mutation:
@@ -538,7 +540,9 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   as `revealCount` isn't yet a reliable known-prefix length), from the policy's own seed stream — and the
   planner averages a shallow beam over them (Perfect-Information Monte Carlo), re-planning per turn.
   `enablers.ts` is the leaf accelerator that keeps the beam shallow: `enablerPotential`, derived
-  **mechanically from card `cost`→`produces`/`effect`** (reusable by the ECONOMY-EXPLORER demand phase),
+  **mechanically from card `cost`→`produces`/`effect`** — every output read through `rules/effects.ts`'s
+  `realizedGain`, so a board standing a `modifyGain` card is priced at what it really pays rather than at
+  the printed rate, and the identity everywhere else — (reusable by the ECONOMY-EXPLORER demand phase),
   credits a banked consumable for the objective progress it *converts into* (including the cost of a
   card the objective *counts*, probed by injecting run cards into the goal-measured zones), a held
   strategic resource (territory/population/culture) for the goal-throughput its capacity *unlocks*, and
