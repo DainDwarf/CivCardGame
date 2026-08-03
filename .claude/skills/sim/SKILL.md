@@ -242,7 +242,9 @@ npm run sim -- --baseline scripts/sim/baselines/masonry.json --policies planner 
 ```
 
 `--verbose` adds the **per-turn trace** on stderr — each turn's starting economy (resources · pop
-assigned/total · territory · culture), the accepted moves that turn, and the final outcome line.
+assigned/total · territory · culture), the hand it opens on, the accepted moves that turn, and the
+final outcome line. A play that pays a discard cost names the card given up, so *which* sacrifice the
+policy chose is readable; the hand line is where a card it **passed over** shows.
 
 **Which index to replay is a question the sweep file already answers**: filter the CSV for the
 outcome you want (`famine`, `stall`, `noWinFound:deadEnd`, `win`) and read the `seed` column. Never

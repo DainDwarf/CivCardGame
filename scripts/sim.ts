@@ -280,15 +280,37 @@ function staffName(G: GameState, id: number): string {
   return s ? CARDS[s.cardId]?.name ?? s.cardId : `#${id}`;
 }
 
+function handName(G: GameState, idx: number): string {
+  const card = G.hand[idx];
+  return card ? CARDS[card.cardId]?.name ?? card.cardId : `#${idx}`;
+}
+
+/** The hand a turn opens on, as counted names — the choice set every play that turn was drawn from,
+ *  and the only place a card the policy *passed over* is visible. Sorted, since hand order is not a
+ *  game fact. */
+function handList(G: GameState): string {
+  const counts = new Map<string, number>();
+  for (const card of G.hand) {
+    const name = CARDS[card.cardId]?.name ?? card.cardId;
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  return [...counts]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, n]) => (n > 1 ? `${name} ×${n}` : name))
+    .join(', ');
+}
+
 /** Render one accepted action readably. Names resolve against `G` = the state *before* the action
  *  (a played hand index only means anything pre-move). */
 function formatAction(action: SimAction, G: GameState): string {
   switch (action.kind) {
     case 'playCard': {
-      const card = G.hand[action.playHandIdx];
-      const name = card ? CARDS[card.cardId]?.name ?? card.cardId : `#${action.playHandIdx}`;
-      let s = `play ${name}`;
-      if (action.discardHandIdxs?.length) s += ` (discard ${action.discardHandIdxs.length})`;
+      let s = `play ${handName(G, action.playHandIdx)}`;
+      // Name the sacrifice, not just how many: `enumeratePlays` offers one action per distinct
+      //   sacrifice, so *which* card was given up is the decision the policy made here.
+      if (action.discardHandIdxs?.length) {
+        s += ` (discard ${action.discardHandIdxs.map((i) => handName(G, i)).join(', ')})`;
+      }
       return s;
     }
     case 'assignWorker':
@@ -315,11 +337,13 @@ function formatAction(action: SimAction, G: GameState): string {
 function createTracer() {
   let lines: string[] = [];
   let turnStart = '';
+  let turnHand = '';
   let turnActions: string[] = [];
   let sawFirst = false;
 
   const flushTurn = (round: number) => {
     lines.push(`Turn ${round}  ${turnStart}`);
+    lines.push(`  hand: ${turnHand || '(empty)'}`);
     lines.push(`  ${turnActions.length ? turnActions.join(' · ') : '(no moves)'}`);
     turnActions = [];
   };
@@ -341,12 +365,14 @@ function createTracer() {
       // turn's start is the state right after the endTurn that closed the previous one.
       if (!sawFirst) {
         turnStart = snapshot(prev.G);
+        turnHand = handList(prev.G);
         sawFirst = true;
       }
       if (accepted && action.kind !== 'endTurn') turnActions.push(formatAction(action, prev.G));
       if (action.kind === 'endTurn' && accepted) {
         flushTurn(prev.G.round);
         turnStart = snapshot(next.G);
+        turnHand = handList(next.G);
       }
     },
     finishRun: (record: RunRecord) => {
