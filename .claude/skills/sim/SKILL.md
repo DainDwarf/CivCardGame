@@ -170,7 +170,7 @@ without re-measuring, and a rebalance reads as a per-seed `git diff`.
 ## The standing set — `scripts/sim/baselines/`
 
 The committed baselines are the standing regression references (the equivalent of the old
-`SCENARIOS` rows), covering First Settlement → Writing, each pinning the deck and board a
+`SCENARIOS` rows), covering the measured standard missions, each pinning the deck and board a
 player actually has **arriving** at it. Usually one per mission; a mission reachable from two
 boards that play it differently gets one fixture per board (`masonry` / `masonry_chiefdom`),
 since a fixture holds exactly one board:

@@ -138,11 +138,12 @@
     (2🪙 → 3🌾 / 3🔨). Each is a *reward* of the mission that shipped it, so no fixture upstream can stock
     it — the cells that will are the ones authored from here on. The Caravans matter most: they set the
     🪙→🌾/🔨 conversion rate every later mission is read against, and nothing has measured it yet.
-  - **Chiefdom is unfixtured from Pyramid onward.** Accounting, Pyramid, Horse taming, Roads and Wheel
-    each reach the node from Chiefdom with no committed cell, and from Roads on it is City's only
-    alternative (Settlement was upgraded away at Masonry). One piece of work, not five — and it needs a
-    Chiefdom *deck* first, since 0 starting territory against a structure-heavy goal is a deck problem
-    before it is a balance one. The same gap exists on `main`, so nothing waits on it.
+  - **Chiefdom is fixtured; the deck is what's left.** Nine `<mission>_chiefdom` cells now cover it from
+    Rites & Rituals to Wheel, each swept on the same deck its City/Settlement counterpart uses, so the
+    board is the only variable. It comes back lower at **every** cell and policy, with `horse_taming` and
+    `roads` at **0 across greedy/planner/oracle alike**. Those decks are built for a board that starts
+    with land, so a Chiefdom-native deck is the next piece — until one exists these rate the pairing, not
+    the board, and none of them reads as a difficulty verdict.
 
   **Framing notes to honour when authoring:**
   - The two **convergences** (Accounting, Bronze) are ludic tree-narrowing, *not* historical dependencies —
