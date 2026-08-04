@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -505,6 +505,35 @@ export const MISSIONS: Record<string, MissionDef> = {
       unlockStickerIds: ['wheel'],
     },
     map: { col: 10, row: -1 },
+    age: 'bronze',
+  },
+  setting_sail: {
+    id: 'setting_sail',
+    name: 'Setting Sail',
+    lore:
+      'Every field you own has a fence around it, and every neighbour who might sell you tin wants a ' +
+      'war party escorted through his valley first. But the water past the headland belongs to nobody, ' +
+      'and beyond it lie coasts your carts will never reach. Lay a keel, cut a sail, and pay the ' +
+      'chandlers what they ask — then find crews willing to go, and send them while they are still ' +
+      'willing. Men who wait on a beach for a ship that never launches find another beach.',
+    prereqs: ['writing'],
+    threats: ['impatient_crews'],
+    // One `voyage` per ship, tied to the objective's threshold by the shared VOYAGES const so the
+    // mission can't seed a different count than the win asks for.
+    events: Array.from({ length: VOYAGES }, () => 'voyage'),
+    objectiveCardId: 'setting_sail_goal',
+    victoryHint: `Launch all ${VOYAGES} voyages — pay 5 🪙, 5 🔨 and one idle 🧍 for each.`,
+    failureHint:
+      `Go ${CREW_PATIENCE} rounds without launching and the crews take berths elsewhere, ending the run. ` +
+      'Every voyage that does sail takes a citizen with it for good, so each one leaves you fewer hands ' +
+      'to earn the next.',
+    kind: 'standard',
+    // Opens the naval branch: the Coastal Route gives the trade zone a second card (the next mission's
+    // multi-route goal is unreachable with Bartering alone), and the Port board is a *new* government
+    // line rather than an upgrade — few hands, but paid for the water it opens. Influence amount
+    // provisional.
+    reward: { influence: 12, unlockCardIds: ['coastal_route'], unlockBoardIds: ['port'] },
+    map: { col: 9, row: 1 },
     age: 'bronze',
   },
   ice_age: {

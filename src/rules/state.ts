@@ -378,9 +378,16 @@ export function getCounter(inst: CardInstance, key: string): number {
 /** Add `by` (default 1) to a per-instance counter and return the new value, lazily creating the
  *  `counters` map so instances that never use one stay bare. */
 export function bumpCounter(inst: CardInstance, key: string, by = 1): number {
-  const next = getCounter(inst, key) + by;
-  (inst.counters ??= {})[key] = next;
-  return next;
+  return setCounter(inst, key, getCounter(inst, key) + by);
+}
+
+/** Write a per-instance counter outright, lazily creating the `counters` map. The primitive a
+ *  *resettable* counter needs — a run of consecutive rounds, a streak — which `bumpCounter` alone can
+ *  only express as a bump by its own negated value. Note the key stays present at `0` rather than
+ *  being deleted, so a reset copy's `contentKey` differs from one that never counted. */
+export function setCounter(inst: CardInstance, key: string, value: number): number {
+  (inst.counters ??= {})[key] = value;
+  return value;
 }
 
 /** Mint fresh card instances from an ordered list of card ids, assigning sequential ids from

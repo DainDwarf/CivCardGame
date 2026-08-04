@@ -1,9 +1,9 @@
 import { scaleResources, subtractResources } from '../rules/resources';
-import { bumpCounter, getCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
-import { type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
+import { bumpCounter, getCounter, setCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
+import { gainResources, type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
 import type { CardCost } from '../rules/cost';
 import { drawInstance, peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
-import { assignedWorkers } from '../rules/population';
+import { assignedWorkers, freePopulation } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'trade' | 'event' | 'threat' | 'objective';
@@ -268,6 +268,23 @@ function tamedHorses(G: GameState): number {
   return G.removed.filter((c) => c.cardId === 'wild_horse').length;
 }
 
+/** How many voyages "Setting Sail" seeds — shared by the mission's injected event list
+ *  (`content/missions.ts`), the `setting_sail_goal` win threshold, and its progress readout. */
+export const VOYAGES = 3;
+
+/** Consecutive rounds without a launch before the `impatient_crews` threat gives the run away —
+ *  shared by the clock's tick, its countdown readout and the mission's `failureHint`. It is a pace
+ *  limit, not a deadline: a launch puts it back to zero, so the run's hard ceiling is
+ *  `VOYAGES × CREW_PATIENCE` rounds. Provisional (balance pending a sim sweep). */
+export const CREW_PATIENCE = 12;
+
+/** Voyages already launched: a voyage reaches `removed` only by being played (paying its 🪙+🔨 and
+ *  its citizen), so the count there *is* the fleet. Shared by the win threshold, its readout and the
+ *  `impatient_crews` clock, so the fleet the clock counts can't drift from the one the goal counts. */
+function voyagesLaunched(G: GameState): number {
+  return G.removed.filter((c) => c.cardId === 'voyage').length;
+}
+
 /** Territory the player must *gain* over the board's starting size to win "The Wheel" — shared by the
  *  `wheel_goal` win threshold, its progress readout, and the mission's `victoryHint`
  *  (`content/missions.ts`). Measured against `startResources` so it reads the same on a board that
@@ -360,6 +377,21 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // The Port board's standing perk, a prebuilt like the two war camps above rather than a card anyone
+  //   draws or buys — and the same bargain read off the other side: it produces nothing itself and pays
+  //   only for the lanes the rest of the board opens. On `produces.resolve` rather than a declarative
+  //   bundle because the amount comes off the trade zone, which `resolveProduction`'s per-worker scaling
+  //   has no way to express — and this box holds no workers to scale by.
+  wharf: {
+    id: 'wharf', name: 'Wharf', kind: 'building', cost: {}, workers: 0,
+    display: {
+      art: '⚓',
+      description: 'Each open 🚢 route:\n+1🎭 / round',
+      dynamicText: (G) => `+${G.tradeRoutes.length}🎭 / round`,
+    },
+    produces: { resolve: (ctx) => gainResources(ctx, { culture: ctx.G.tradeRoutes.length }) },
+  },
+
   // — Wonders —
   gobekli_tepe: {
     id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
@@ -390,6 +422,16 @@ export const CARDS: Record<string, CardDef> = {
     effect: { resources: { military: 3 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
   },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
+  // The zone's second route, and Bartering at Bronze scale: the same buy-standing-yield-with-standing-
+  //   rent shape, landing on 🔨 rather than 🌾. Its net 1.5🔨 per 🪙 is the Material Caravan's rate made
+  //   permanent — the caravan pays it all at once and is gone, the lane pays it every round and the rent
+  //   never stops, and nothing closes a route. Numbers provisional (balance pending a sim sweep).
+  coastal_route: {
+    id: 'coastal_route', name: 'Coastal Route', kind: 'trade', cost: { resources: { money: 3 } },
+    display: { art: '🚢' },
+    produces: { resources: { production: 3 } },
+    upkeep: { resources: { money: -2 } },
+  },
   dogs: { id: 'dogs', name: 'Hunting', kind: 'work', cost: {}, workers: 1, display: { art: '🐕' }, produces: { resources: { military: 1 } } },
   raiding: {
     id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } },
@@ -573,6 +615,22 @@ export const CARDS: Record<string, CardDef> = {
         bumpCounter(self, 'walls');
       },
     },
+  },
+  // Voyage: outfitting the hull and provisioning it *is* the launch — the play choke exiles the played
+  //   event to `removed`, which `setting_sail_goal` counts. The crew is the other half of the price:
+  //   population is not a payable `cost.resources` field (that half is spent blind, past the staffing
+  //   that gates the pool), so the citizen leaves through `effect` with a `check` standing in for the
+  //   gate the field would have carried — idle hands only, since a ship crewed off a farm would push
+  //   `freePopulation` negative. No `upkeep`: a voyage left in hand bleeds nothing and recurs, so all
+  //   the mission's pressure sits on the clock and on the citizens already at sea.
+  voyage: {
+    id: 'voyage', name: 'Voyage', kind: 'event',
+    cost: {
+      resources: { money: 5, production: 5 },
+      check: ({ G }) => (freePopulation(G) < 1 ? { kind: 'noIdlePopulation' } : null),
+    },
+    display: { art: '⛵', description: 'Sails with 1 idle 🧍, for good' },
+    effect: { resources: { population: -1 } },
   },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
@@ -806,6 +864,15 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  setting_sail_goal: {
+    id: 'setting_sail_goal', name: 'Setting Sail', kind: 'objective', cost: {},
+    goals: [{ icon: '⛵', measure: voyagesLaunched, target: VOYAGES }],
+    display: {
+      description: `Launch all ${VOYAGES} voyages`,
+      dynamicText: (G) => `⛵ ${Math.min(voyagesLaunched(G), VOYAGES)}/${VOYAGES} launched`,
+    },
+  },
+
   // Measures territory *gained* since setup (`resources − startResources`), not the absolute realm
   //   size: occupying a slot doesn't lower the resource, and Road/Conquest raise it, so the difference
   //   is pure expansion — and reads the same win on every board regardless of its starting territory.
@@ -948,6 +1015,33 @@ export const CARDS: Record<string, CardDef> = {
       dynamicText: (G) => `⏳ ${Math.max(0, PHARAOH_DEADLINE - G.round + 1)} rounds left`,
     },
     defeat: (G) => G.round > PHARAOH_DEADLINE && 'the pharaoh died before his tomb was ready',
+  },
+  // Setting Sail's pace clock: a deadline on *stalling* rather than on the mission, so a patient build
+  //   is fine at any length so long as it is punctuated. The tick reads the fleet through the same
+  //   `voyagesLaunched` tally the goal counts, against a `seen` mark, so nothing couples the voyage card
+  //   to this one. `defeat` stays a pure read off the `idle` streak the tick maintains.
+  //   Launching on the round the clock would run out is safe by the reset, not by a race: the tick runs
+  //   inside `applyUpkeep`'s `endTurn` broadcast and `evaluateDefeat` only re-derives at the flush after
+  //   it, so the streak is already back to 0 before anything reads it. Two launches in one round buy one
+  //   reset, not two rounds of slack — the clock measures quiet rounds, not unspent voyages.
+  impatient_crews: {
+    id: 'impatient_crews', name: 'Impatient Crews', kind: 'threat', cost: {},
+    display: {
+      art: '⏱️',
+      description: `Launch a voyage at least every ${CREW_PATIENCE} rounds.`,
+      dynamicText: (_G, self) => `⏱️ ${Math.max(0, CREW_PATIENCE - getCounter(self, 'idle'))} rounds left`,
+    },
+    upkeep: {
+      resolve: ({ G, self }) => {
+        const launched = voyagesLaunched(G);
+        if (launched > getCounter(self, 'seen')) {
+          setCounter(self, 'seen', launched);
+          setCounter(self, 'idle', 0);
+        } else bumpCounter(self, 'idle');
+      },
+    },
+    defeat: (_G, self) =>
+      getCounter(self, 'idle') >= CREW_PATIENCE && 'the crews took berths in another port',
   },
   // Accounting's engine: envy breeds thieves in proportion to the untracked hoard. Each reshuffle mints
   //   `floor(money / THIEVES_PER_GOLD)` `thief` events into the deck (via `spawnIntoDeck`, so the mint

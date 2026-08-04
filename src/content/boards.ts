@@ -48,7 +48,8 @@ export const ORIGIN_BOARD_ID: BoardId = 'tribe';
  * "Raiders at the Border" mission, where the arc teaches board choice (Chiefdom vs. the settled
  * government at launch). Both lines then upgrade in the Bronze Age: `settlement` into `city` on
  * clearing "Masonry", and `chiefdom` into `warband` on clearing "Raiding" — so the martial line has a
- * successor of its own rather than dead-ending at the age it was unlocked in. All five boards' numbers
+ * successor of its own rather than dead-ending at the age it was unlocked in. `port`, unlocked by
+ * "Setting Sail", opens a third line beside the settled and martial ones. All six boards' numbers
  * are provisional and unmeasured against the
  * split cap; the territory figures in particular are the content pass's to settle. Territory now buys
  * *buildings* alone — work and trade cost none — so it is a building budget rather than a whole-board
@@ -86,6 +87,16 @@ export const BOARDS: Record<BoardId, BoardDef> = {
     // Its treasury is the War Camp's 🪙, not a starting pool: a warband banks what it takes.
     resources: { food: 12, production: 2, science: 0, military: 8, money: 0, population: 4, territory: 1, culture: 0 },
     prebuilt: ['war_camp'],
+  },
+  port: {
+    id: 'port',
+    name: 'Port',
+    // The one board whose output doesn't scale with the hands it can feed: a single citizen, but the
+    // room and the treasury to open sea lanes with, and the Wharf standing in one of its three slots
+    // turning each of those into 🎭. Where Chiefdom is fed by taking land, this one is paid by opening
+    // water — which needs nobody.
+    resources: { food: 10, production: 0, science: 0, military: 0, money: 6, population: 1, territory: 3, culture: 0 },
+    prebuilt: ['wharf'],
   },
   city: {
     id: 'city',

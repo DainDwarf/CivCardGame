@@ -264,6 +264,7 @@ function BoardRightColumn({
         {G.tradeRoutes.map((r) => (
           <BoardBox
             key={r.id}
+            G={G}
             inst={r}
             gameover={gameover}
             idle={idle}
@@ -462,6 +463,7 @@ function StaffPips({
  *  worker, and carries no staffing tint because it has no staffing to signal (the green/tan pair is the
  *  staffed/idle cue). */
 function BoardBox({
+  G,
   inst,
   gameover,
   idle,
@@ -475,6 +477,7 @@ function BoardBox({
   onZoomClick,
   staffRef,
 }: {
+  G: GameState;
   inst: PlacedCard;
   gameover: boolean;
   idle: number;
@@ -510,9 +513,16 @@ function BoardBox({
   ]
     .filter(Boolean)
     .join(' ');
-  const flow = staffable
-    ? boxOutputLabels(card.produces?.resources, producingUnits(inst)).join(' ')
-    : describeRoundFlow(card);
+  // The card's own run-aware text answers first, as it does on every other surface in this file. Both
+  // readers below walk the *declarative* `produces`/`upkeep` bundles alone, so a card whose output is a
+  // closure over the board leaves them with nothing to find, and its `dynamicText` is the only thing
+  // that can describe it. A closure taking over from the staffable branch takes over its per-worker
+  // scaling with it.
+  const flow =
+    card.display?.dynamicText?.(G, inst) ??
+    (staffable
+      ? boxOutputLabels(card.produces?.resources, producingUnits(inst)).join(' ')
+      : describeRoundFlow(card));
   return (
     <div className={className} ref={boxRef} onPointerDown={onPointerDown} onClick={onZoomClick}>
       {cap > 0 && (
@@ -699,6 +709,8 @@ function whyUnplayable(card: CardDef, G: GameState, self: CardInstance): string 
       return 'no cards to reveal';
     case 'discardEmpty':
       return 'discard empty';
+    case 'noIdlePopulation':
+      return `need an idle ${RESOURCE_ICON.population}`;
   }
 }
 
@@ -1704,6 +1716,7 @@ export function Board({
                 >
                   {inst && (
                     <BoardBox
+                      G={G}
                       inst={inst}
                       gameover={!!gameover}
                       idle={idle}
@@ -1742,6 +1755,7 @@ export function Board({
                 return (
                   <BoardBox
                     key={w.id}
+                    G={G}
                     inst={w}
                     gameover={!!gameover}
                     idle={idle}
@@ -1991,7 +2005,7 @@ export function Board({
               height: px(slotDrag.h),
             }}
           >
-            <BoardBox inst={buildingById.get(slotDrag.id)!} gameover idle={idle} dragging />
+            <BoardBox G={G} inst={buildingById.get(slotDrag.id)!} gameover idle={idle} dragging />
           </div>
         </div>
       )}

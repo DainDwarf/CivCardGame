@@ -156,6 +156,9 @@
   /* ── Board ground tints (per government board — placeholder hues, tune later) ── */
   --board-tribe-ground: #c8a97e;     /* same as --ground: humble/rustic, no change from default */
   --board-chiefdom-ground: #a9b7c4;  /* cool steel slate-blue — martial */
+  /* Pale sea mist — separated from the other two by *lightness* rather than hue, since tan-vs-slate
+     already spends the one axis every colour-vision theme keeps. */
+  --board-port-ground: #dce8ec;
 
   /* ── Building states (green) ──────────────────────── */
   --operating-bg: #f1f7ef;
@@ -338,6 +341,7 @@
   /* ── Board ground tints ── */
   --board-tribe-ground: #4f4130;     /* same as --ground */
   --board-chiefdom-ground: #3a4550;
+  --board-port-ground: #5b757e;
 
   /* ── Building states (green) ── */
   --operating-bg: #1f2a1e;

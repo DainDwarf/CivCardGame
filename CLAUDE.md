@@ -91,7 +91,8 @@ surprise, so nothing shows a locked placeholder or a total count.
   board; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
   Influence can be ground before `ice_age` unlocks — a mission needing the shop there would be a
   softlock. A fixture carries its **own** measured rows in a `results` key, one entry per policy
-  (`greedy`/`planner` @100, `oracle` @10 is the standing protocol), whose commit *is* their content-SHA
+  (`greedy`/`planner` @100, `oracle` @10 is the standing protocol — a cell whose open question is
+  *winnability* rather than the play ceiling records `prover` @10 in its place), whose commit *is* their content-SHA
   record — so a policy with no entry is simply unmeasured, not measured-and-absent, and a re-cut fixture
   can no longer strand rows in a file nobody edits. Every row is swept at the **default search beam**, so
   a `--search-beam` sweep is a diagnostic, never a baseline. Both styles take
@@ -174,7 +175,8 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
 - **`state.ts`** — `GameState` (the serializable run state `G`): the combined `resources: Resources`
   (all 8), the card zones `deck`/`hand`/`discard`/`removed` (each a `CardInstance[]` — `{ id, cardId,
   counters? }`, so every copy has a stable per-run **instance id** and its own per-copy `counters` via
-  `getCounter`/`bumpCounter`), the three board zones — `tableau`, `workZone` (played `work` awaiting
+  `getCounter`/`bumpCounter`/`setCounter` — the last for a counter that *resets*, like a streak of
+  rounds), the three board zones — `tableau`, `workZone` (played `work` awaiting
   staffing) and `tradeRoutes`, each a `PlacedCard[]` (`CardInstance` + `workers`, `0` on a box that
   takes none), so `territory.ts`'s `placedCards` reads them as one list (a board-wide read, *not* the
   territory cap — only the tableau spends land) — plus `threats`,
@@ -391,8 +393,8 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   `starting` flag: availability is purely membership in `PlayerStore.unlockedBoards`, read through
   `meta/boardDisplay.ts`'s `availableBoardIds` (which falls back to the origin board if the set is ever
   empty, so a player can never be locked out). `unlockBoardIds` **adds**; a `boardUpgrade` **swaps** one
-  for another. Four so far: **Tribe** (the origin), **Settlement** (Tribe's upgrade), **Chiefdom**,
-  **City** (Settlement's upgrade).
+  for another. Six so far, in three lines: **Tribe** (the origin) → **Settlement** → **City**;
+  **Chiefdom** → **Warband**; and **Port**, a line of its own.
 - **`missions.ts`** — `MISSIONS`; each names an `objectiveCardId` (its win card, seeded into
   `G.objective`) plus optional `threats`/`events` card-id lists (seeded via `seedMissionCards`, the
   single injection site, called once by `run/setup.ts`) and `kind`/`prereqs`/`map`/`age`/`reward`/

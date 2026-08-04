@@ -15,7 +15,8 @@ export type UnplayableReason =
   | { kind: 'cultureLevel'; required: number }
   | { kind: 'territory' }
   | { kind: 'emptyDrawPile' }
-  | { kind: 'discardEmpty' };
+  | { kind: 'discardEmpty' }
+  | { kind: 'noIdlePopulation' };
 
 /** What a cost closure may read: the live state and the exact copy being priced. Mirrors
  *  `effects.ts`'s `EffectContext`. */

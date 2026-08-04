@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { blankState, getCounter, bumpCounter, instancesFromDeckCards, type CardInstance } from './state';
+import { blankState, getCounter, bumpCounter, setCounter, instancesFromDeckCards, type CardInstance } from './state';
 import { scaleResources } from './resources';
 import { resolveCard } from './effects';
 import { installFixtures, uninstallFixtures } from './testFixtures';
@@ -54,6 +54,20 @@ describe('per-instance counter accessors', () => {
     expect(bumpCounter(inst, 'plays')).toBe(1);
     expect(bumpCounter(inst, 'plays', 4)).toBe(5);
     expect(inst.counters?.plays).toBe(5);
+  });
+
+  it('set writes outright, so a counter can go back down without a negated bump', () => {
+    const inst: CardInstance = { id: 1, cardId: 'k' };
+    bumpCounter(inst, 'idle', 3);
+    expect(setCounter(inst, 'idle', 0)).toBe(0);
+    expect(getCounter(inst, 'idle')).toBe(0);
+    expect(bumpCounter(inst, 'idle')).toBe(1);
+  });
+
+  it('set lazily creates the map on an untouched instance', () => {
+    const inst: CardInstance = { id: 1, cardId: 'k' };
+    setCounter(inst, 'seen', 2);
+    expect(inst.counters?.seen).toBe(2);
   });
 });
 

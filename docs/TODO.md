@@ -74,6 +74,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     removal exists, a play-time `gate.check` leaks: `gate` is evaluated at play and `upkeep` fires at the
     `endTurn` boundary, so play-route → play-building → close-route-before-ending-turn pays zero 🪙 and
     keeps the building forever. Continuous gating also gives the Sea Peoples capstone its teeth.
+- **Defeat on population ≤ 0** `[size: S]` `[?]` — a civilization at 0🧍 produces nothing and can only
+  regrow through a card that costs 🔨 it can no longer make, so the run is over but keeps playing. Measured
+  on Setting Sail: **50 of 84** planner crews-defeats on City end at population 0, some frozen for 11+
+  rounds with both pools unchanged. Wants the same pull-not-push shape as the other defeats (re-derived
+  each flush), and a decision on whether the trigger is `population <= 0` outright or that plus no
+  reachable regrowth.
 - **Escalating route rent** `[size: S]` `[?]` — routes ship with a **flat** rent. The treasury is the
   zone's *only* cap again, so the case for this is back at full strength. The originally-planned
   auto-cap is a rent that scales with the number of parallel
@@ -147,6 +153,31 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   more rounds the current stores survive — the same way `enablers.ts` derives its slope from
   `cost`→`produces` rather than from authored hints. Blocks trusting greedy/planner on any
   rounds-survived mission; `ice_age` and `sandbox` dodge it only because the sim doesn't drive them.
+- **A card-count goal derives no strategic capacity credit at all** `[size: M]` — `goalValuedResources`
+  probes the 8 *resource pools* against `objectiveProgress`, so on a goal that counts cards in a zone
+  (Writing, Roads, Copper, Setting Sail) every delta is zero and `goalValued` comes back empty. The
+  capacity pass reads only that map, so `bestGoalThroughput` returns 0 for territory, population **and**
+  culture; with `floor: false` in the shipped `DEFAULT_ENABLER_TERMS` their weight is then 0 outright.
+  `goalValuedCardCosts` — the card-injection probe — does fire and correctly shapes the goal card's cost
+  pools, but it is deliberately kept out of `goalValued` (crediting engine at a card-count marginal would
+  price it above the goal itself), so it can't restore the capacity half.
+  - **Live case: Setting Sail**, where the Voyage costs 5🪙 + 5🔨 **+ one idle 🧍**. Planner passes on
+    affordable Houses and strands itself at 0🧍 (50 of 84 City crews-defeats end at population 0), while
+    the prover — full model, so `floor` on — plays House in nearly every winning line. Planner 19/31%
+    vs prover 4/10 · 9/10 proven on the two committed cells, a gap **not yet attributed** between content
+    difficulty and this blindness.
+  - **A second, narrower hole under it:** `goalValuedCardCosts` attributes only over `CORE_KEYS`, so a
+    strategic cost is invisible to the probe by construction — and the Voyage's population spend rides on
+    `effect` rather than `cost.resources` anyway (that field is core-only), so even widening the key set
+    wouldn't reach it. A goal card that charges a strategic pool has no path into the model today.
+  - **Paths, cheapest first:** (1) derive `deriveEnablers` on a card-count-goal run state and read
+    `weight`/`cap` back — confirms or kills the mechanism with no sweep; (2) `deepPlanner` on seeds where
+    prover wins and planner loses, which separates *search depth* from *valuation*; (3) an A/B with
+    `floor: true`, the only term that gives population weight on such a mission — needs a registry entry,
+    since the `plannerNo*`/`plannerOnly*` ablation policies described elsewhere in this file are no longer
+    registered in `sim/batch.ts`; (4) the real fix — let a card-count goal derive capacity credit, e.g. by
+    probing what a *worker/slot/level* unlocks toward the counted card rather than toward a goal-valued
+    pool. Whatever lands must stay mechanical, never a per-mission steering term.
 - **The enabler model is derived once, from the root state** `[size: S]` — the planner memoizes it on
   first `replan` and never invalidates, so it reads the board as it stood at turn 1. Harmless for
   everything shipped (a deck and its stickers are fixed at launch, and the one `modifyGain` card is

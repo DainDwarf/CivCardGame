@@ -74,7 +74,8 @@
   | Wheel | ✅ | ✅ | ✅ | ⬜ | [wheel](missions/wheel.md) |
   | Horse taming | ✅ | ✅ | ✅ | ⬜ | [horse-taming](missions/horse-taming.md) |
   | Raiding | ✅ | ✅ | ✅ | ⬜ | [raiding](missions/raiding.md) |
-  | Naval (×2) | 🟡 | ⬜ | ⬜ | ⬜ | — |
+  | Setting Sail | ✅ | ✅ | 🟡 | ⬜ | [setting-sail](missions/setting-sail.md) |
+  | Sea Lanes | 🟡 | ⬜ | ⬜ | ⬜ | [sea-lanes](missions/sea-lanes.md) |
   | Bronze *(convergence)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Sword & chariot | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | The Sea Peoples *(capstone)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
@@ -104,7 +105,9 @@
      [`missions/roads.md`](missions/roads.md)). **Wheel** — DONE, balance included (see [`missions/wheel.md`](missions/wheel.md)).
   5. **Horse (×2)** — **Horse taming** DONE, balance included (see
      [`missions/horse-taming.md`](missions/horse-taming.md)); **Raiding** DONE, balance included (see
-     [`missions/raiding.md`](missions/raiding.md)). Then **Naval (×2)**.
+     [`missions/raiding.md`](missions/raiding.md)). Then **Naval (×2)** — in design (see
+     [`missions/setting-sail.md`](missions/setting-sail.md) and
+     [`missions/sea-lanes.md`](missions/sea-lanes.md)).
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
 
   **Mechanical identity `[?]`:** IDEAS frames the age as "trade-dependent palace civilizations" → the
@@ -117,8 +120,9 @@
 
   - **Hammurabi's Code** (optional leaf off Writing) → law/culture: a sticker or stability card, not a
     wonder. Still to author.
-  - **Naval (×2)** → a sea-trade money work (sailing ship), then the **tin route** (long-distance trade
-    that enables Bronze). IDEAS' "defend your trade routes" money-drain event/threat fits here.
+  - **Naval (×2)** → in design; detail in [setting-sail](missions/setting-sail.md) /
+    [sea-lanes](missions/sea-lanes.md). It grants a third **board** line, so the Bronze proposals below
+    are the last that can assume two.
   - **Bronze** (convergence) → **Bronzeworking** building (consumes 🪙 → 🔨) + **Bronze tools** sticker
     (+1🔨 for production buildings *and* work cards).
   - **Sword & chariot** → Sword (military, needs bronze) + Chariot (spoked wheel + horse + bronze).

@@ -393,6 +393,10 @@
   background: var(--board-chiefdom-ground);
 }
 
+.groundBackdrop[data-board='port'] {
+  background: var(--board-port-ground);
+}
+
 /* The play area: a row holding the left strip (objective corner + threat zone, when seeded) beside
    the main play column (slot grid above the work strip), bounded to end exactly above the hand bar
    so neither scrolls nor sits behind it. It spans top:0 → the left strip rises into the true
