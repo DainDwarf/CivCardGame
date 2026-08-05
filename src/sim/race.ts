@@ -45,9 +45,11 @@ import { DEFAULT_MAX_ROUNDS } from './simulate';
 const RACE = {
   /** Score points — a met objective ends the run, so it dwarfs any margin the horizon can express. */
   victory: 1_000_000,
-  /** Rounds: the log-sum-exp temperature of the goal fold. Tuned rather than derived because it prices
-   *  a preference, not a quantity — how much a *non*-bottleneck goal still pulls. A pure `max` has zero
-   *  gradient on every goal but the slowest, which lets a beam abandon a side goal for free. */
+  /** Rounds: the log-sum-exp temperature of every `max` this module folds — across a goal's goals, and
+   *  across the payment and delivery clocks within one. Tuned rather than derived because it prices a
+   *  preference, not a quantity: how much the clock that *isn't* binding still pulls. A pure `max` has
+   *  zero gradient on it, which lets a beam abandon a side goal, or the economy a plan is waiting on,
+   *  for free. One temperature for both, since both fold rounds against rounds. */
   goalSoftening: 1,
   /** Dimensionless multiplier on a losing margin, decaying with `T̂loss`. Tuned because it prices the
    *  *noise* in the two estimates rather than anything the state contains: both are projections, and a
@@ -325,6 +327,23 @@ function outstanding(
  * toward the win rather than a shuffle of the same copies between zones, and it is the gradient the
  * payment term structurally cannot supply. Copies the run no longer holds cannot be dealt at all.
  */
+/**
+ * When a plan lands, from the two clocks that must both run out: earning its price and drawing its copies
+ * overlap, so it is the later of the two rather than their sum.
+ *
+ * Softened for the same reason the goal fold is, and against the same temperature: a hard `max` has zero
+ * gradient on whichever clock isn't binding, and here the masked one is routinely the *payment* — the
+ * half that carries every earning and spending decision the run makes. A beam that can see only the
+ * binding clock stops building the economy the other one is waiting on. The softening costs at most
+ * `temperature·ln 2` rounds where the two meet and decays to exact `max` as they part.
+ *
+ * An infinite clock is taken hard: `exp(∞ − ∞)` is a NaN, and a NaN leaves a beam's sort order undefined.
+ */
+export function landingClock(payment: number, delivery: number): number {
+  if (!Number.isFinite(payment) || !Number.isFinite(delivery)) return Math.max(payment, delivery);
+  return softMax([payment, delivery], RACE.goalSoftening);
+}
+
 function deliveryClock(G: GameState, cardId: string, copies: number): number {
   if (copies <= 0) return 0;
   let held = 0;
@@ -385,15 +404,13 @@ function goalClock(
     const { landing } = plan;
     const copies = need / landing.delta;
     const paid = outstanding(landing.price, copies, banked, unitCost);
-    // Earning the price and drawing the copies run at once — the workforce produces while the deck
-    // cycles — so the plan lands when the later of the two finishes, not when their sum does.
-    const lands = Math.max(paid.workerRounds / workforce, deliveryClock(banked, landing.cardId, copies));
+    const lands = landingClock(paid.workerRounds / workforce, deliveryClock(banked, landing.cardId, copies));
     take(lands, 'landing', landing.cardId, paid.netted);
   }
   if (workforce > 0 && plan?.building) {
     const { building } = plan;
     const paid = outstanding(building.price, 1, banked, unitCost);
-    const stands = Math.max(paid.workerRounds / workforce, deliveryClock(banked, building.cardId, 1));
+    const stands = landingClock(paid.workerRounds / workforce, deliveryClock(banked, building.cardId, 1));
     // Collecting from the producer *is* sequential with standing it, unlike the two halves of standing it.
     take(stands + need / building.tau, 'building', building.cardId, paid.netted);
   }

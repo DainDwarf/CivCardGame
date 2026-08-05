@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { addBuilding, addWork, blankState, bumpCounter, getCounter, seedObjective, setCounter, type GameState } from '../rules';
 import { CARDS, CREW_PATIENCE, type CardDef } from '../content/cards';
-import { deriveRace, raceBreakdown, raceScore, type GoalRoute } from './race';
+import { deriveRace, landingClock, raceBreakdown, raceScore, type GoalRoute } from './race';
 
 /** The factor the scale-invariance pair differs by. Every quantity on `race_goal_scaled` is this many
  *  times `race_goal`'s, and the measure stays *linear* in the pool — a `floor` anywhere inside it would
@@ -260,29 +260,30 @@ describe('T̂win', () => {
 describe('plans', () => {
   it('prices a card-count goal as the copies still to buy', () => {
     // Three relics at 4🔨 each, on an economy where a 🔨 is half a worker-round and one person works:
-    // 12🔨 is 6 worker-rounds is 6 rounds. Nothing about that measure moves per round, so without the
-    // plan it would read as the horizon on every line.
+    // 12🔨 is 6 worker-rounds is 6 rounds of paying. Three copies out of a three-card pile is 0.75 of a
+    // round of drawing. Nothing about that measure moves per round, so without the plan it would read as
+    // the horizon on every line.
     const c = clockOf(planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic']));
     expect(c.route).toBe('landing');
     expect(c.cardId).toBe('race_relic');
     expect(c.tau).toBe(0);
-    expect(c.t).toBeCloseTo(6);
+    expect(c.t).toBeCloseTo(landingClock(6, 0.75));
 
     // …and lands as they do.
     const landed = clockOf(planned('race_goal_count', ['race_relic', 'race_relic'], { removed: ['race_relic'] }));
-    expect(landed.t).toBeCloseTo(4);
+    expect(landed.t).toBeCloseTo(landingClock(4, 0.5));
   });
 
-  it('leaves a played copy and its banked price at the same distance from the win', () => {
-    // A bank far short of the plan is where payment binds, and netting there is exact: the bank is worth
-    // precisely the rounds of production it stands in for, which makes the two *equal* rather than one
-    // of them better. What the model owes is that they don't come apart, and in particular that the
-    // tie-break doesn't quietly prefer the bank to the thing the bank buys.
+  it('brings a played copy nearer the win than the bank that would buy it', () => {
+    // Their payment clocks are equal by construction — netting is exact, so a bank is worth precisely the
+    // rounds of production it stands in for — and the tie-break sees the same wealth either way. Every
+    // bit of the difference is delivery: the played copy is one the deck no longer owes. The softened
+    // fold is what carries that through a payment clock four times its size.
     const banked = valued(planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 4 }));
     const played = valued(planned('race_goal_count', ['race_relic', 'race_relic'], { removed: ['race_relic'] }));
-    expect(banked.goals[0].t).toBeCloseTo(played.goals[0].t);
+    expect(played.goals[0].t).toBeLessThan(banked.goals[0].t);
     expect(banked.wealth).toBeCloseTo(played.wealth);
-    expect(banked.total).toBeCloseTo(played.total);
+    expect(played.total).toBeGreaterThan(banked.total);
   });
 
   it('still counts a bank past every price it could pay', () => {
@@ -297,11 +298,13 @@ describe('plans', () => {
   });
 
   it('prices a goal with no producer standing as building one, then running it', () => {
-    // 3🔨 for the science building is 1.5 worker-rounds over two people, then 10🔬 at 2🔬 a round.
+    // 3🔨 for the science building is 1.5 worker-rounds over two people, and its one copy is a quarter of
+    // a round's draw away — standing it is the two at once. Then 10🔬 at 2🔬 a round, which is not: the
+    // producer has to be standing before it pays.
     const c = clockOf(planned('race_goal', ['test_sci'], { population: 2 }));
     expect(c.route).toBe('building');
     expect(c.cardId).toBe('test_sci');
-    expect(c.t).toBeCloseTo(0.75 + 5);
+    expect(c.t).toBeCloseTo(landingClock(0.75, 0.25) + 5);
 
     // Once it stands, the setup is paid and the permanent economy carries the goal on its own.
     const standing = clockOf(planned('race_goal', ['test_sci'], { population: 2, standing: ['test_sci'] }));
@@ -316,8 +319,8 @@ describe('plans', () => {
     const plan = deriveRace(G).plans[0];
     expect(plan.building).toBeUndefined();
     expect(plan.landing).toMatchObject({ cardId: 'race_hut', delta: 2 });
-    // 1🧍 of 3, so one hut closes it: 4🔨 is 2 worker-rounds, one person.
-    expect(clockOf(G).t).toBeCloseTo(2);
+    // 1🧍 of 3, so one hut closes it: 4🔨 is 2 worker-rounds over one person, against a quarter-round draw.
+    expect(clockOf(G).t).toBeCloseTo(landingClock(2, 0.25));
   });
 });
 

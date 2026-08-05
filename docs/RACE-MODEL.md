@@ -68,9 +68,12 @@ over-investing in the cheapest goal.
   every pool the play `effect` drains, each component priced by what it costs to obtain), divided by the
   workforce's worker-round income; a banked 🔨 shortens it. **Delivery** — the copies still to play,
   divided by `k·h/D`: the plan copies a round's draw surfaces, off the supply the run holds (deck,
-  discard and hand alike) and the culture-adjusted hand size it refills to. `t` is the **max** of the
-  two, not their sum: earning the price and drawing the copies overlap, so the plan lands when the later
-  one finishes. Both figures are read off `G`; the census below is unchanged.
+  discard and hand alike) and the culture-adjusted hand size it refills to. `t` folds the two as a
+  **softened max**, not a sum: earning the price and drawing the copies overlap, so the plan lands when
+  the later one finishes — softened against the same temperature as the goal fold, because the clock a
+  hard `max` masks is routinely the payment one, and that is the half carrying every earning and spending
+  decision the run makes. Both figures are read off `G`; the census below is unchanged, the softening
+  reusing constant 1 rather than adding a fifth.
 - **Zero current throughput, deck can build it**: `t = t_setup + need / τ_achievable`, where
   `t_setup` is the worker-round price of the best goal-producer chain the probes find
   (afford → build → staff). The sole surviving descendant of the capacity/producer machinery —
@@ -187,12 +190,13 @@ that bet is priced by the step-4 sweeps.
 
 Two more, measured on step 2's landing plans and recorded before step 4 reads a sweep:
 
-- **The `max` hides whichever half isn't binding.** A plan whose payment runs long against a small deck
-  sees delivery masked, and payment is the flat half — so play-vs-bank can go momentarily flat, and
-  under flatness the wealth tie-break leans toward banking. Believed convergent (the bank keeps growing,
-  so delivery ends up binding), and a step-4 crossing is the place to check it: if a referee re-run shows
-  a residual stall there, the remedy is softening the `max` with the existing `goalSoftening`, not a
-  fifth constant.
+- **A hard `max` masked the payment gradient — measured, and closed.** The crossover was not convergent:
+  a plan whose delivery binds hides payment entirely, and payment is where the run's earning and spending
+  live. On paired 30-seed sweeps a hard fold sent both planner cells to **0%** (`masonry` from 96.7%,
+  `writing` from 93.3%) while fixing `masonry · greedy`; softening it against the existing
+  `goalSoftening` carries `masonry` at 100% under both policies and lifts `writing · greedy` to the
+  classic scorer's own rate. The soft fold is the shipped form. What remains open is `writing · planner`,
+  still below its classic 84% — a step-4 question, not a fifth constant.
 - **A distinct-count goal over-counts its copies.** `growing_numbers_goal` measures *distinct*
   building ids present; the probe reads `delta = 1` off whichever is cheapest and the clock then asks
   for `need` copies of that one card, which would move a distinct count by exactly 1. The estimate is
