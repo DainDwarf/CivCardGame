@@ -8,6 +8,7 @@ import {
   isOperating,
   producingUnits,
   realizedGain,
+  resolveEndTurn,
   scaleResources,
   type CardInstance,
   type CoreResources,
@@ -57,10 +58,10 @@ const RACE = {
   wealthCap: 50,
 };
 
-/** What bound `T̂loss`: the core pool that runs out first, the drive loop's round cutoff, or a defeat
- *  already pending. Naming it is the difference between "this state is 3 rounds from death" and an
- *  answer a balance question can act on. */
-export type LossCause = keyof CoreResources | 'horizon' | 'defeat';
+/** What bound `T̂loss`: the core pool that runs out first, a threat's own deadline, the drive loop's
+ *  round cutoff, or a defeat already pending. Naming it is the difference between "this state is 3
+ *  rounds from death" and an answer a balance question can act on. */
+export type LossCause = keyof CoreResources | 'horizon' | 'deadline' | 'defeat';
 
 /** Which route the goal's clock was read off: it is already satisfied (`met`), its satisfaction is a
  *  bespoke predicate with no threshold to divide (`flat`), the standing economy carries it
@@ -92,6 +93,8 @@ export interface RaceBreakdown {
   tWin: number;
   tLoss: number;
   lossCause: LossCause;
+  /** The threat whose deadline bound `T̂loss`; absent unless `lossCause` is `'deadline'`. */
+  lossCardId?: string;
   /** `T̂loss − T̂win` — the race margin, the value proper. */
   margin: number;
   /** The near-death steepening, ≤ 0. */
@@ -215,6 +218,43 @@ function bankedState(G: GameState): GameState {
   const pending = inFlight(G);
   if (Object.keys(pending).length === 0) return G;
   return { ...G, resources: addResources({ ...G.resources }, pending) };
+}
+
+/**
+ * Rounds until this threat's own `defeat` fires with the rest of the run **frozen** — the death clock a
+ * pool drain cannot express. A deadline is not a rate: neither `G.round` passing a number nor a streak
+ * counter climbing shows up anywhere in `pool / drain`, so without this probe a driven mission reads as
+ * having until the drive cutoff whatever its threat actually says.
+ *
+ * The frozen world is the correct pessimism, and it is also what makes a *resetting* clock legible with
+ * nothing authored for it: acting on a clock is the search's job and seeing where the clock stands is
+ * this one's, so a leaf that has just done the thing the clock watches probes its own reset window while
+ * one that banked instead probes the shrunken one.
+ *
+ * The tick is `resolveEndTurn` — the whole per-round broadcast a threat receives — rather than the
+ * `upkeep` slot alone: a threat maintaining its counter in `on.endTurn` would otherwise probe as a clock
+ * that never advances, which is a deadline invisible to precisely the value this feeds.
+ */
+function threatClock(G: GameState, index: number, cap: number): number {
+  const threat = G.threats[index];
+  const card = CARDS[threat.cardId];
+  if (!card?.defeat) return Infinity;
+  // A threat with no tick slot varies in nothing but the round, and `defeat` is a pure read by contract,
+  // so it needs no `cloneState` — which is the cheap path *and* the common one, an absolute deadline
+  // having nothing else to do each round.
+  const inert = card.upkeep === undefined && card.produces === undefined && card.on?.endTurn === undefined;
+  const world = inert ? { ...G, resources: { ...G.resources } } : cloneState(G);
+  const self = world.threats[index];
+  if (card.defeat(world, self)) return 0;
+  // The round advances *after* the boundary, as it does in the engine: the tick ending round `r` runs,
+  // then `beginTurn` makes it `r + 1`, and the flush after that is where a defeat is first seen. A clock
+  // at or past `cap` is whatever already bound `T̂loss`, so there is nothing to learn past it.
+  for (let t = 1; t < cap; t++) {
+    if (!inert) resolveEndTurn({ G: world, self });
+    world.round = G.round + t;
+    if (card.defeat(world, self)) return t;
+  }
+  return Infinity;
 }
 
 /** A smooth maximum — `max` plus a term that decays exponentially as a value falls behind it, shifted so
@@ -400,10 +440,11 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
   for (let i = 0; i < goals.length; i++) if (bottleneck < 0 || goals[i].t > goals[bottleneck].t) bottleneck = i;
   const tWin = goals.length > 0 ? softMax(goals.map((c) => c.t), RACE.goalSoftening) : horizon;
 
-  // T̂loss — the soonest clock that ends the run: a core pool emptying under the permanent drain, or the
-  // drive cutoff.
+  // T̂loss — the soonest clock that ends the run: a core pool emptying under the permanent drain, a
+  // threat's own deadline running out, or the drive cutoff.
   let tLoss = horizon;
   let lossCause: LossCause = 'horizon';
+  let lossCardId: string | undefined;
   if (G.pendingDefeat) {
     tLoss = 0;
     lossCause = 'defeat';
@@ -417,6 +458,16 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
       if (t < tLoss) {
         tLoss = t;
         lossCause = k;
+      }
+    }
+    // Each probe is capped at what already binds, which narrows as they land: a clock longer than the
+    // shortest one found so far changes nothing, and the search is charged per round it looks at.
+    for (let i = 0; i < G.threats.length; i++) {
+      const t = threatClock(G, i, tLoss);
+      if (t < tLoss) {
+        tLoss = t;
+        lossCause = 'deadline';
+        lossCardId = G.threats[i].cardId;
       }
     }
   }
@@ -444,7 +495,19 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
   const victory = G.pendingVictory ? RACE.victory : 0;
   total += victory;
 
-  return { goals, bottleneck, tWin, tLoss, lossCause, margin, nearDeath, wealth, victory, total };
+  return {
+    goals,
+    bottleneck,
+    tWin,
+    tLoss,
+    lossCause,
+    ...(lossCardId !== undefined ? { lossCardId } : {}),
+    margin,
+    nearDeath,
+    wealth,
+    victory,
+    total,
+  };
 }
 
 /** The scalar a policy ranks by. */

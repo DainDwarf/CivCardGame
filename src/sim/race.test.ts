@@ -1,13 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
-import { addBuilding, addWork, blankState, seedObjective, type GameState } from '../rules';
-import { CARDS, type CardDef } from '../content/cards';
+import { addBuilding, addWork, blankState, bumpCounter, getCounter, seedObjective, setCounter, type GameState } from '../rules';
+import { CARDS, CREW_PATIENCE, type CardDef } from '../content/cards';
 import { deriveRace, raceBreakdown, raceScore, type GoalRoute } from './race';
 
 /** The factor the scale-invariance pair differs by. Every quantity on `race_goal_scaled` is this many
  *  times `race_goal`'s, and the measure stays *linear* in the pool — a `floor` anywhere inside it would
  *  make the invariance approximate and turn the assertion into a tolerance question. */
 const SCALE = 3;
+
+/** Idle rounds `race_clock` tolerates — read by its own `defeat` and by every assertion against it, so
+ *  the suite pins the countdown rather than a copy of it. */
+const RACE_CLOCK_PATIENCE = 6;
 
 const FIXTURES: Record<string, CardDef> = {
   race_goal: {
@@ -66,6 +70,21 @@ const FIXTURES: Record<string, CardDef> = {
   race_hut: {
     id: 'race_hut', name: 'Race Hut', kind: 'building', workers: 0,
     cost: { resources: { production: 4 } }, effect: { resources: { population: 2 } },
+  },
+  // A *pace* clock: its own tick maintains the idle streak its `defeat` reads, and progress on the thing
+  // it watches (culture here) resets the streak. Neither a round count nor a drain can express it, which
+  // is why the probe is a frozen-world replay of the threat's own hooks rather than a read of either.
+  race_clock: {
+    id: 'race_clock', name: 'Race Clock', kind: 'threat', cost: {},
+    upkeep: {
+      resolve: ({ G, self }) => {
+        if (G.resources.culture > getCounter(self, 'seen')) {
+          setCounter(self, 'seen', G.resources.culture);
+          setCounter(self, 'idle', 0);
+        } else bumpCounter(self, 'idle');
+      },
+    },
+    defeat: (_G, self) => getCounter(self, 'idle') >= RACE_CLOCK_PATIENCE && 'the clock ran out',
   },
 };
 
@@ -343,6 +362,86 @@ describe('T̂loss', () => {
     const b = raceBreakdown(G);
     expect(b.tLoss).toBe(0);
     expect(b.lossCause).toBe('defeat');
+  });
+});
+
+describe('the deadline probe', () => {
+  /** A state whose only pressure is `threatCardId`, minted so a case can set its counters first. */
+  function threatened(threatCardId: string, counters: Record<string, number> = {}) {
+    const G = state('race_goal', { producers: 1 });
+    const threat = mint(G, threatCardId);
+    for (const [k, v] of Object.entries(counters)) setCounter(threat, k, v);
+    G.threats.push(threat);
+    return { G, threat };
+  }
+
+  it('reads an absolute deadline as the rounds left before it fires', () => {
+    // `test_deadline` gives away the run once round 5 has fully elapsed, so from round 2 there are 4
+    // boundaries left — the same shape the horizon takes, which is what says the two are commensurable.
+    const { G } = threatened('test_deadline');
+    G.round = 2;
+    const b = raceBreakdown(G);
+    expect(b.tLoss).toBe(4);
+    expect(b.lossCause).toBe('deadline');
+    expect(b.lossCardId).toBe('test_deadline');
+  });
+
+  it('counts a streak clock down from wherever its counter stands', () => {
+    for (const idle of [0, 1, RACE_CLOCK_PATIENCE - 1]) {
+      expect(raceBreakdown(threatened('race_clock', { idle }).G).tLoss).toBe(RACE_CLOCK_PATIENCE - idle);
+    }
+  });
+
+  it('sees the reset a leaf has already earned', () => {
+    // The pace clock's whole point, and the thing no authored field could tell the value function: two
+    // leaves differing only in whether the progress the clock watches landed this turn. The one that
+    // moved spends the probe's first round on the reset and then has the full patience again.
+    const reset = threatened('race_clock', { seen: 0 });
+    const banked = threatened('race_clock', { seen: 1 });
+    for (const { G } of [reset, banked]) G.resources.culture = 1;
+    expect(raceBreakdown(reset.G).tLoss).toBe(RACE_CLOCK_PATIENCE + 1);
+    expect(raceBreakdown(banked.G).tLoss).toBe(RACE_CLOCK_PATIENCE);
+  });
+
+  it('leaves a threat with no deadline to the pool drains', () => {
+    // `test_threat` drains 2🌾 a round on top of 4 citizens eating: a rate, which the permanent
+    // projection already carries. Probing it too would name the threat for a clock the pools own.
+    const { G } = threatened('test_threat');
+    G.resources.food = 7;
+    G.resources.population = 4;
+    const b = raceBreakdown(G);
+    expect(b.lossCause).toBe('food');
+    expect(b.tLoss).toBeCloseTo(7 / 6);
+    expect(b.lossCardId).toBeUndefined();
+  });
+
+  it('leaves a clock past the cutoff to the horizon', () => {
+    const { G } = threatened('test_deadline_far'); // round 30, well past the cutoff below
+    const b = raceBreakdown(G, { maxRounds: 10 });
+    expect(b.tLoss).toBe(10);
+    expect(b.lossCause).toBe('horizon');
+  });
+
+  it('disturbs nothing it probes', () => {
+    const { G, threat } = threatened('race_clock', { idle: 2 });
+    raceBreakdown(G);
+    expect(getCounter(threat, 'idle')).toBe(2);
+    expect(G.round).toBe(1);
+    expect(G.resources.food).toBe(10_000);
+  });
+
+  it('reads Setting Sail\'s pace clock unauthored', () => {
+    // Nothing on `impatient_crews` was written for this: the probe replays the threat's own tick, and the
+    // frozen fleet is what makes the streak climb at all.
+    for (const idle of [0, 3, CREW_PATIENCE - 1]) {
+      const { G } = threatened('impatient_crews', { idle });
+      expect(raceBreakdown(G).tLoss).toBe(CREW_PATIENCE - idle);
+    }
+    // …and a voyage launched this turn is a reset the tick has yet to apply — the clock the leaf really
+    // faces, not the one its counter currently reads.
+    const { G } = threatened('impatient_crews');
+    G.removed.push(mint(G, 'voyage'));
+    expect(raceBreakdown(G).tLoss).toBe(CREW_PATIENCE + 1);
   });
 });
 

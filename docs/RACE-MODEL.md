@@ -96,7 +96,9 @@ depth, not pocketed.
 - **(a)** each draining core pool's `pool / drain`, off the same stripped projection;
 - **(b)** the drive cutoff, `maxRounds − round` (threaded via `searchBoundsFor`, as for the oracle);
 - **(c)** each threat's **frozen-world probe** (step 3): clone `G`, repeatedly run *that threat's
-  own* `resolveUpkeep` + `defeat` hooks with everything else frozen, counting rounds until the
+  own* `resolveEndTurn` (its whole per-round broadcast, not the `upkeep` slot alone — a threat
+  keeping its counter in `on.endTurn` would otherwise probe as a clock that never advances) +
+  `defeat` hooks with everything else frozen, counting rounds until the
   defeat fires, capped at (b). No new field on any card — the threat's hooks already describe its
   clock (per the sim-is-a-consumer rule). It is a per-leaf read, so pace clocks work unauthored:
   `impatient_crews`'s probe yields exactly `CREW_PATIENCE − idle` from whatever state is being
@@ -214,16 +216,13 @@ clone. A **landing** plan is copies of a card the goal reads (present in a zone 
 by the play); a **building** plan is a durable producer's per-round output — a work box is neither,
 since its worker is the very unit every price is quoted in.
 
-### Step 3 — the deadline probe ☐  ← merge gate
+### Step 3 — the deadline probe ✅  ← merge gate
 
-- **Build**: per-threat frozen-world time-to-defeat in `src/sim/race.ts` (or a sibling module):
-  clone, iterate the threat's `resolveUpkeep` (`src/rules/effects.ts`) + `defeat`
-  (`src/rules/threats.ts`'s `defeatMet` shape) with the rest of `G` frozen, capped at the cutoff;
-  fold into `T̂loss`. Unit test on a synthetic counter-clock threat; integration case:
-  `setting_sail` (`content/cards.ts`'s `impatient_crews` — probe must equal
-  `CREW_PATIENCE − idle`).
-- **Done when**: clock-visibility tests green; a Setting Sail leaf's `T̂loss` moves when its `idle`
-  counter does.
+`threatClock` in `src/sim/race.ts`, folded into `T̂loss` as a third branch and named by a
+`'deadline'` `LossCause` + the `lossCardId` that bound it. Each probe is capped at what already
+binds rather than at the cutoff, so a clock longer than the shortest one found costs nothing; a
+threat with no `defeat` is skipped, and one with no tick slot at all (an absolute deadline) probes
+off a shallow copy instead of a `cloneState`, since only its round varies.
 
 ### Step 4 — wiring + the referee ☐
 
