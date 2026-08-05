@@ -473,6 +473,21 @@ describe('the catalogue', () => {
     // measured in mission-injected events that only the widened universe above puts in the run.
     expect(routes.has('landing')).toBe(true);
   });
+
+  it('gives every authored deadline a clock the frozen world can run down', () => {
+    // The threat counterpart of the sweep above. A `defeat` hook only reaches `T̂loss` if replaying the
+    // threat's own tick against a still board arrives at it; one that never does reads as the horizon,
+    // which is indistinguishable from a mission carrying no deadline at all — the exact blindness this
+    // probe exists to close, so it must not pass in silence.
+    for (const card of Object.values(CARDS)) {
+      if (card.kind !== 'threat' || !card.defeat) continue;
+      const G = state('race_goal', { producers: 1 });
+      G.threats.push(mint(G, card.id));
+      const b = raceBreakdown(G);
+      expect(b.lossCause, card.id).toBe('deadline');
+      expect(b.tLoss, card.id).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe('victory', () => {

@@ -239,6 +239,9 @@ function threatClock(G: GameState, index: number, cap: number): number {
   const threat = G.threats[index];
   const card = CARDS[threat.cardId];
   if (!card?.defeat) return Infinity;
+  // Nothing left to bind: whatever already closed the window is at least as soon as this, and the caller
+  // rejects a tie either way — so this is the answer rather than a clone spent on a loop that can't run.
+  if (cap <= 0) return Infinity;
   // A threat with no tick slot varies in nothing but the round, and `defeat` is a pure read by contract,
   // so it needs no `cloneState` — which is the cheap path *and* the common one, an absolute deadline
   // having nothing else to do each round.

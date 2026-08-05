@@ -242,7 +242,10 @@ off a shallow copy instead of a `cloneState`, since only its round varies.
 Each measured separately (attributable deltas): beam **diversity** in the oracle's level beam
 (`src/sim/oracle.ts` — stratify the kept set by a coarse signature, or k-per-parent);
 **per-replan re-derive** of the race inputs in `plannerPolicy.ts`; planner **defaults revisited**
-(`DEFAULTS` — depth 2 affordable now the leaf is one clone).
+(`DEFAULTS` — depth 2 on a one-clone leaf). That last premise now holds only where the deadline probe
+is inert: a threat carrying an `upkeep` (Setting Sail's crews) costs a **second** clone plus its own
+tick per probe round, so read a depth verdict per cell rather than once for the branch, and don't
+mistake a slower `setting_sail` sweep in step 4 for model noise.
 
 - **Done when**: each rider's paired sweep is separately recorded in the step-4 style, kept or
   reverted on its own numbers.
