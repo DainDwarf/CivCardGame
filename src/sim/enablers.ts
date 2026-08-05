@@ -1,8 +1,9 @@
-import { CORE_KEYS, STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, foodPerNextPop, placedCards, type GameState, type Resources } from '../rules';
+import { STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, foodPerNextPop, placedCards, type GameState, type Resources } from '../rules';
 import { effectiveGain } from '../rules/stickers';
 import { realizedGain } from '../rules/effects';
 import { CARDS, isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import { objectiveProgress } from './objective';
+import { cardPrice, positive, presenceDelta, replacementCost, runCardIds } from './probes';
 import { OBJECTIVE_WEIGHT } from './value';
 
 /**
@@ -293,30 +294,6 @@ function goalValuedResources(G: GameState): Partial<Record<keyof Resources, numb
   return out;
 }
 
-function positive(x: number | undefined): number {
-  return x !== undefined && x > 0 ? x : 0;
-}
-
-/** What playing a card charges, over all 8 pools: its declarative `cost.resources` plus every pool its
- *  play `effect` *takes away*. A negative play delta is semantically a price — the citizen a Voyage sails
- *  with is as much the cost of the launch as its 🪙 — and it has nowhere else to ride: `CardCost.resources`
- *  is core-only by construction, since a strategic pool is gated by the system that owns it rather than
- *  spent blind. Read through `realizedGain` like every other effect here, so a board bending what a card
- *  takes is priced at what it really takes. A card's recurring `upkeep` is not a price: it buys no play,
- *  and `value.ts`'s `permanentDelta` already charges it. */
-function cardPrice(G: GameState, card: CardDef): Partial<Record<keyof Resources, number>> {
-  const price: Partial<Record<keyof Resources, number>> = {};
-  for (const ck of CORE_KEYS) {
-    const amt = positive(card.cost.resources?.[ck]);
-    if (amt > 0) price[ck] = amt;
-  }
-  const effect = realizedGain(G, card.effect?.resources);
-  for (const [k, delta] of Object.entries(effect ?? {}) as [keyof Resources, number][]) {
-    if (delta < 0) price[k] = (price[k] ?? 0) - delta;
-  }
-  return price;
-}
-
 /** The card-count counterpart of `goalValuedResources`: which resources fund a card the objective
  *  *counts*, probed by injecting a synthetic instance of each run card into the zones a goal can measure
  *  (`removed` for a played event, `tableau` for a building, `tradeRoutes` for an open route — the three a
@@ -331,10 +308,12 @@ function cardPrice(G: GameState, card: CardDef): Partial<Record<keyof Resources,
  *  clone: resource terms cancel in the diff, and a goal already at target correctly reads zero. Like the
  *  resource probe this runs once at the run root, so a goal card satisfied mid-run doesn't drop out of the
  *  model until the next derive. Exported for the tests that pin a resource-threshold mission's model as
- *  untouched by this probe (it must return `{}` there). */
+ *  untouched by this probe (it must return `{}` there).
+ *
+ *  Only `presenceDelta` is read, never `grantDelta`: what a card *grants* moves a resource, and a resource
+ *  the objective scores is already the direct probe's business. */
 export function goalValuedCardCosts(G: GameState): Partial<Record<keyof Resources, CardCostExplain>> {
   const probe = cloneState(G);
-  const base = objectiveProgress(probe);
   const out: Partial<Record<keyof Resources, CardCostExplain>> = {};
   const ids = runCardIds(G);
   const wr = replacementCost(G, ids);
@@ -352,26 +331,7 @@ export function goalValuedCardCosts(G: GameState): Partial<Record<keyof Resource
       totalCost += amt * (unitCost?.[k] ?? 1);
     }
     if (totalCost <= 0) continue; // a free card needs no banking, so its costs can't be enablers
-    // `removed` is not filtered by kind: actions can self-exile via `resolve`, so any card may be what it
-    // counts. The two standing zones are, since `run/moves.ts`'s `playCard` is their only writer and routes
-    // by kind — probing a card into a zone it can never reach would credit banking toward a goal step that
-    // has no path to happen (military toward a route-count goal, whose only card is a `trade`).
-    probe.removed.push({ id: -1, cardId });
-    const removedDelta = objectiveProgress(probe) - base;
-    probe.removed.pop();
-    let tableauDelta = 0;
-    if (isStructure(card)) {
-      probe.tableau.push({ id: -2, cardId, workers: 0 });
-      tableauDelta = objectiveProgress(probe) - base;
-      probe.tableau.pop();
-    }
-    let routeDelta = 0;
-    if (card.kind === 'trade') {
-      probe.tradeRoutes.push({ id: -3, cardId, workers: 0 });
-      routeDelta = objectiveProgress(probe) - base;
-      probe.tradeRoutes.pop();
-    }
-    const delta = Math.max(removedDelta, tableauDelta, routeDelta);
+    const delta = presenceDelta(probe, card, objectiveProgress);
     if (delta <= 0) continue;
     const progressPerCost = delta / totalCost;
     const copies = copiesInRun(G, cardId);
@@ -396,52 +356,6 @@ export function goalValuedCardCosts(G: GameState): Partial<Record<keyof Resource
   return out;
 }
 
-/** What a unit of each pool costs to *obtain*, in **worker-rounds** — the currency the game's production
- *  actually runs on, and the one `bestFoodPerWorker` already prices population's food in.
- *
- *  Why it exists: the goal step a card's price buys is split across that price, and splitting it by *unit
- *  count* asserts that a 🪙 and a 🧍 are the same size of thing. They aren't — a Trader mints 3🪙 a round for
- *  free while a citizen exists only if a 6🔨 House is bought — so a count-based split systematically
- *  under-prices the scarce half of a price and over-prices the cheap half.
- *
- *  Two sources, in order. A pool with a **staffed producer** costs `1 / its best per-worker output`: the
- *  marginal cost of that output is the worker standing in the box, which is exactly one worker-round, and
- *  the building's own capital cost is deliberately not amortized in (it is paid once and produces for the
- *  rest of the run). A pool with **no per-round source** is priced through the cheapest one-shot grant that
- *  mints it — a House's 6🔨 for 2🧍 — which is why this relaxes rather than reads once: that card's own
- *  price is in pools this same map prices. Two passes past the seed resolve every chain in the catalogue;
- *  the bound is what makes a cyclic pair terminate instead of diverging.
- *
- *  A pool neither source reaches has **no** entry, and a price naming one is left on the count split
- *  rather than rebased against a guess. */
-function replacementCost(G: GameState, ids: Set<string>): Partial<Record<keyof Resources, number>> {
-  const wr: Partial<Record<keyof Resources, number>> = {};
-  const runCards = Object.values(CARDS).filter((c) => ids.has(c.id));
-  for (const card of runCards) {
-    if ((card.workers ?? 0) < 1) continue;
-    const produces = realizedGain(G, card.produces?.resources);
-    for (const [k, out] of Object.entries(produces ?? {}) as [keyof Resources, number][]) {
-      if (out > 0 && 1 / out < (wr[k] ?? Infinity)) wr[k] = 1 / out;
-    }
-  }
-  for (let pass = 0; pass < 3; pass++) {
-    for (const card of runCards) {
-      const grant = realizedGain(G, card.effect?.resources);
-      if (!grant) continue;
-      let priced = 0;
-      for (const [k, amt] of Object.entries(cardPrice(G, card)) as [keyof Resources, number][]) {
-        if (wr[k] === undefined) { priced = NaN; break; }
-        priced += amt * wr[k];
-      }
-      if (!(priced > 0)) continue;
-      for (const [k, out] of Object.entries(grant) as [keyof Resources, number][]) {
-        if (out > 0 && priced / out < (wr[k] ?? Infinity)) wr[k] = priced / out;
-      }
-    }
-  }
-  return wr;
-}
-
 /** Whether anything in the run pays this pool **every round** — a staffed producer's or a route's
  *  `produces`. A one-shot placement grant is deliberately not a source: a House mints citizens by being
  *  *bought*, so a pool fed only that way is refilled by spending, not by waiting, and a bank sized at one
@@ -458,16 +372,6 @@ function copiesInRun(G: GameState, cardId: string): number {
     for (const c of zone) if (c.cardId === cardId) n += 1;
   }
   return n;
-}
-
-/** Every card id present anywhere in the run — the conversions actually available to this deck. Scanning
- *  all of `CARDS` would credit a conversion the deck can't perform (an unlocked-but-undecked card). */
-function runCardIds(G: GameState): Set<string> {
-  const ids = new Set<string>();
-  for (const zone of [G.deck, G.hand, G.discard, G.removed, placedCards(G)]) {
-    for (const c of zone) ids.add(c.cardId);
-  }
-  return ids;
 }
 
 /** The best single-card goal throughput this run can unlock under a capacity role: the highest

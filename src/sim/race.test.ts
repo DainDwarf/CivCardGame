@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { addBuilding, addWork, blankState, seedObjective, type GameState } from '../rules';
-import type { CardDef } from '../content/cards';
-import { raceBreakdown, raceScore } from './race';
+import { CARDS, isDeckable, type CardDef } from '../content/cards';
+import { deriveRace, raceBreakdown, raceScore } from './race';
 
 /** The factor the scale-invariance pair differs by. Every quantity on `race_goal_scaled` is this many
  *  times `race_goal`'s, and the measure stays *linear* in the pool — a `floor` anywhere inside it would
@@ -50,6 +50,23 @@ const FIXTURES: Record<string, CardDef> = {
     id: 'race_work_sci', name: 'Race Work Science', kind: 'work',
     cost: {}, workers: 1, produces: { resources: { science: 3 } },
   },
+  // The lumpy shape: a goal counting played copies, which no economy moves per round however good it is.
+  race_goal_count: {
+    id: 'race_goal_count', name: 'Race Goal Count', kind: 'objective', cost: {},
+    goals: [{ icon: '⛏️', measure: (G) => G.removed.filter((c) => c.cardId === 'race_relic').length, target: 3 }],
+  },
+  race_relic: {
+    id: 'race_relic', name: 'Race Relic', kind: 'action', cost: { resources: { production: 4 } },
+  },
+  // A pool nothing `produces` per round — it exists only as what a play grants.
+  race_goal_pop: {
+    id: 'race_goal_pop', name: 'Race Goal Pop', kind: 'objective', cost: {},
+    goals: [{ icon: '🧍', measure: (G) => G.resources.population, target: 3 }],
+  },
+  race_hut: {
+    id: 'race_hut', name: 'Race Hut', kind: 'building', workers: 0,
+    cost: { resources: { production: 4 } }, effect: { resources: { population: 2 } },
+  },
 };
 
 beforeAll(() => {
@@ -83,6 +100,39 @@ function state(
   for (let i = 0; i < producers; i++) addBuilding(G, mint(G, 'test_sci'));
   for (let i = 0; i < earners; i++) addBuilding(G, mint(G, 'test_money'));
   return G;
+}
+
+/**
+ * A state whose run cards are exactly one staffed `test_prod` plus what `deck` and `removed` name —
+ * `runCardIds` reads every zone, so the deck is what the plans are allowed to use, and a suite that
+ * wants to pin *which* plan won has to say so. The producer is there to give 🔨 a worker-round price;
+ * at 2🔨 a worker it is half a worker-round to the unit.
+ */
+function planned(
+  objectiveCardId: string,
+  deck: string[],
+  { production = 0, population = 1, food = 20, removed = [] as string[], standing = [] as string[] } = {},
+): GameState {
+  const G = blankState('race_test');
+  G.round = 1;
+  G.resources.production = production;
+  G.resources.food = food;
+  G.resources.population = population;
+  seedObjective(G, objectiveCardId);
+  addBuilding(G, mint(G, 'test_prod'));
+  for (const id of standing) addBuilding(G, mint(G, id));
+  for (const id of deck) G.deck.push(mint(G, id));
+  for (const id of removed) G.removed.push(mint(G, id));
+  return G;
+}
+
+/** Valued with the run's own plans — how every consumer will read it. */
+function valued(G: GameState) {
+  return raceBreakdown(G, { model: deriveRace(G) });
+}
+
+function clockOf(G: GameState) {
+  return valued(G).goals[0];
 }
 
 describe('scale invariance', () => {
@@ -175,6 +225,70 @@ describe('T̂win', () => {
   });
 });
 
+describe('plans', () => {
+  it('prices a card-count goal as the copies still to buy', () => {
+    // Three relics at 4🔨 each, on an economy where a 🔨 is half a worker-round and one person works:
+    // 12🔨 is 6 worker-rounds is 6 rounds. Nothing about that measure moves per round, so without the
+    // plan it would read as the horizon on every line.
+    const c = clockOf(planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic']));
+    expect(c.route).toBe('landing');
+    expect(c.cardId).toBe('race_relic');
+    expect(c.tau).toBe(0);
+    expect(c.t).toBeCloseTo(6);
+
+    // …and lands as they do.
+    const landed = clockOf(planned('race_goal_count', ['race_relic', 'race_relic'], { removed: ['race_relic'] }));
+    expect(landed.t).toBeCloseTo(4);
+  });
+
+  it('leaves a played copy and its banked price at the same distance from the win', () => {
+    // Not "strictly beats": exact netting is the honest arithmetic, and it makes the two *equal* — the
+    // bank is worth precisely the rounds of production it stands in for. What the model owes here is
+    // that they don't come apart, and in particular that the tie-break doesn't quietly prefer the bank
+    // to the thing the bank buys.
+    const banked = valued(planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 4 }));
+    const played = valued(planned('race_goal_count', ['race_relic', 'race_relic'], { removed: ['race_relic'] }));
+    expect(banked.goals[0].t).toBeCloseTo(played.goals[0].t);
+    expect(banked.wealth).toBeCloseTo(played.wealth);
+    expect(banked.total).toBeCloseTo(played.total);
+  });
+
+  it('still counts a bank past every price it could pay', () => {
+    // The exclusion is of what a plan *spent*, not of the pool: 12🔨 buys all three relics, and the 4
+    // beyond that is wealth like any other.
+    const G = (production: number) => planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production });
+    const exact = valued(G(12));
+    const spare = valued(G(16));
+    expect(exact.goals[0].t).toBeCloseTo(0);
+    expect(spare.goals[0].t).toBeCloseTo(0);
+    expect(spare.wealth).toBeGreaterThan(exact.wealth);
+  });
+
+  it('prices a goal with no producer standing as building one, then running it', () => {
+    // 3🔨 for the science building is 1.5 worker-rounds over two people, then 10🔬 at 2🔬 a round.
+    const c = clockOf(planned('race_goal', ['test_sci'], { population: 2 }));
+    expect(c.route).toBe('building');
+    expect(c.cardId).toBe('test_sci');
+    expect(c.t).toBeCloseTo(0.75 + 5);
+
+    // Once it stands, the setup is paid and the permanent economy carries the goal on its own.
+    const standing = clockOf(planned('race_goal', ['test_sci'], { population: 2, standing: ['test_sci'] }));
+    expect(standing.route).toBe('throughput');
+    expect(standing.t).toBeCloseTo(5);
+  });
+
+  it('reads a placement grant as a play to repeat, not a rate to collect', () => {
+    // The hut's citizens arrive when it is *bought*; nothing about it pays per round. Routing that into
+    // τ would have the goal finish itself while the run stands still.
+    const G = planned('race_goal_pop', ['race_hut']);
+    const plan = deriveRace(G).plans[0];
+    expect(plan.building).toBeUndefined();
+    expect(plan.landing).toMatchObject({ cardId: 'race_hut', delta: 2 });
+    // 1🧍 of 3, so one hut closes it: 4🔨 is 2 worker-rounds, one person.
+    expect(clockOf(G).t).toBeCloseTo(2);
+  });
+});
+
 describe('deadline honesty', () => {
   it('credits a producer nothing when it cannot repay before the run is cut off', () => {
     const idle = state('race_goal');
@@ -229,6 +343,25 @@ describe('T̂loss', () => {
     const b = raceBreakdown(G);
     expect(b.tLoss).toBe(0);
     expect(b.lossCause).toBe('defeat');
+  });
+});
+
+describe('the catalogue', () => {
+  it('gives every authored goal a clock that is a number of rounds', () => {
+    // A coherence check over live content, not a balance one: every objective anyone has authored has to
+    // come out of the plan machinery as rounds — no NaN from a zero rate, nothing past the cutoff, no
+    // measure the probes can't hold. Every deckable card is in the deck, so each goal is probed against
+    // the whole catalogue rather than against whatever one mission happens to seed.
+    const deckable = Object.values(CARDS).filter(isDeckable).map((c) => c.id);
+    for (const card of Object.values(CARDS)) {
+      if (card.kind !== 'objective') continue;
+      const G = planned(card.id, deckable, { population: 3, production: 5 });
+      for (const c of valued(G).goals) {
+        expect(Number.isFinite(c.t), `${card.id} ${c.icon}`).toBe(true);
+        expect(c.t).toBeGreaterThanOrEqual(0);
+        expect(c.t).toBeLessThanOrEqual(200);
+      }
+    }
   });
 });
 

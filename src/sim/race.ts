@@ -15,6 +15,8 @@ import {
   type Resources,
 } from '../rules';
 import { effectiveGain } from '../rules/stickers';
+import { isDurableProducer } from '../content/cards';
+import { cardPrice, grantDelta, outputDelta, presenceDelta, replacementCost, runCardIds } from './probes';
 import { DEFAULT_MAX_ROUNDS } from './simulate';
 
 /**
@@ -60,6 +62,12 @@ const RACE = {
  *  answer a balance question can act on. */
 export type LossCause = keyof CoreResources | 'horizon' | 'defeat';
 
+/** Which route the goal's clock was read off: it is already satisfied (`met`), its satisfaction is a
+ *  bespoke predicate with no threshold to divide (`flat`), the standing economy carries it
+ *  (`throughput`), the deck lands copies of a card it reads (`landing`) or stands a producer it reads
+ *  (`building`), or nothing the run holds reaches it at all (`none`). */
+export type GoalRoute = 'met' | 'flat' | 'throughput' | 'landing' | 'building' | 'none';
+
 /** One goal's clock. `need` and `tau` are in the goal's own measure units; `t` is in rounds. */
 export interface GoalClock {
   icon: string;
@@ -69,6 +77,9 @@ export interface GoalClock {
   tau: number;
   /** Rounds to satisfy this goal, clamped to the horizon. */
   t: number;
+  route: GoalRoute;
+  /** The card the winning plan runs on; absent unless `route` names one. */
+  cardId?: string;
 }
 
 /** One state's value, split into the terms that composed it. `total` is accumulated in the same
@@ -99,6 +110,53 @@ export interface RaceOptions {
    *  `T̂loss − T̂win` an `∞ − ∞` NaN on any state with no drain and no throughput, and a NaN comparator
    *  leaves a beam's sort order undefined. */
   maxRounds?: number;
+  /** The run's plans (`deriveRace`, at the run root). Without it a goal the standing economy doesn't
+   *  already carry reads as unreachable — correct, and flat, which is the whole reason the plans exist. */
+  model?: RaceModel;
+}
+
+/**
+ * How this run's deck can reach each goal that its standing economy will not. Derived **once at the run
+ * root**, because every figure in it is a probe over the catalogue rather than a read of the moment —
+ * and because an evaluation must stay at one clone (`permanentProjection`) for the search to afford any
+ * depth at all.
+ *
+ * The plans are what make a lumpy goal legible. A mission counting mined veins, or one asking for
+ * citizens no card *produces* per round, has a τ of exactly zero however well the run is going: nothing
+ * in the permanent economy moves its measure, so the clock would sit at the horizon and the value would
+ * be flat over every line that approaches the win. A plan restates the same goal as a price — what the
+ * deck must pay, in worker-rounds — which the workforce then pays off at a rate.
+ */
+export interface RaceModel {
+  /** Worker-rounds per unit of each pool (`replacementCost`): the rate a plan's price converts through. */
+  unitCost: Partial<Record<keyof Resources, number>>;
+  /** One per goal, in the objective card's own order. */
+  plans: GoalPlan[];
+}
+
+/** The two shapes a deck can move a goal in. Both may be absent: a goal no card in the run touches has
+ *  no plan, which is the model reporting that rather than guessing at one. */
+export interface GoalPlan {
+  landing?: LandingPlan;
+  building?: BuildingPlan;
+}
+
+/** Landing copies of a card the goal reads — by standing in a zone it counts, or by what the play grants.
+ *  Repeatable: `need / delta` copies, each at `price`. */
+export interface LandingPlan {
+  cardId: string;
+  delta: number;
+  /** What one play charges, per pool. Every component of it carries a `unitCost`, or there is no plan. */
+  price: Partial<Record<keyof Resources, number>>;
+}
+
+/** Standing a durable producer whose per-round output the goal reads: pay `price` once, then collect
+ *  `tau` a round. A work box is deliberately not one — it produces once per play, and its worker is
+ *  already the unit `unitCost` prices everything in. */
+export interface BuildingPlan {
+  cardId: string;
+  tau: number;
+  price: Partial<Record<keyof Resources, number>>;
 }
 
 /**
@@ -169,23 +227,144 @@ function softMax(values: number[], temperature: number): number {
   return max + temperature * Math.log(sum);
 }
 
+/** The goals the seeded objective declares — `deriveRace` and `raceBreakdown` index their arrays off the
+ *  same list, so a plan and the clock it feeds always name the same goal. */
+function objectiveGoals(G: GameState): readonly ObjectiveGoal[] {
+  return (G.objective ? CARDS[G.objective.cardId]?.goals : undefined) ?? [];
+}
+
+/** What paying `price` `copies` times still costs in **worker-rounds** once the bank has been spent on
+ *  it, and how much of the bank that took. Netting is exact rather than discounted: a bank is worth the
+ *  rounds of production it stands in for, no more and no less — which is why holding the price of a card
+ *  and having played it come out at the same distance from the win. */
+function outstanding(
+  price: Partial<Record<keyof Resources, number>>,
+  copies: number,
+  banked: GameState,
+  unitCost: RaceModel['unitCost'],
+): { workerRounds: number; netted: Partial<Record<keyof Resources, number>> } {
+  let workerRounds = 0;
+  const netted: Partial<Record<keyof Resources, number>> = {};
+  for (const [k, amt] of Object.entries(price) as [keyof Resources, number][]) {
+    const total = amt * copies;
+    const paid = Math.min(Math.max(0, banked.resources[k]), total);
+    if (paid > 0) netted[k] = paid;
+    workerRounds += (total - paid) * (unitCost[k] ?? 0);
+  }
+  return { workerRounds, netted };
+}
+
 /**
- * One goal's rounds-to-completion. `need` reads the **banked** state and τ the **permanent** one, which
- * is what counts each contribution exactly once: a tableau producer's output is throughput (τ) and a
- * staffed work box's is a level already reached (`need`).
+ * One goal's rounds-to-completion, over every route the run has to it. `need` reads the **banked** state
+ * and τ the **permanent** one, which is what counts each contribution exactly once: a tableau producer's
+ * output is throughput (τ) and a staffed work box's is a level already reached (`need`).
  *
  * Read off raw `measure`/`target` rather than `goalProgress`, which caps at the target and returns 1
  * once met — either would erase the very quantity `need` is. A goal carrying a bespoke `met` is flat by
  * construction: its satisfaction isn't a threshold, so there is no `need` to divide.
+ *
+ * The routes are all costed and the **soonest** taken, with no test of whether the standing economy
+ * "needs" a plan: `min` is the honest fold over alternatives, and a gate deciding which route to price
+ * is a branch that can fire the wrong way. A plan's price is paid at the **workforce**'s rate — the
+ * population, not the workers currently in boxes, because `unitCost` prices a pool at the output of a
+ * worker standing in the best box for it, and a denominator counting only staffed workers would then
+ * disagree with its own numerator about the same person.
  */
-function goalClock(goal: ObjectiveGoal, G: GameState, banked: GameState, perm: GameState, horizon: number): GoalClock {
+function goalClock(
+  goal: ObjectiveGoal,
+  G: GameState,
+  banked: GameState,
+  perm: GameState,
+  horizon: number,
+  plan: GoalPlan | undefined,
+  unitCost: RaceModel['unitCost'],
+): { clock: GoalClock; netted: Partial<Record<keyof Resources, number>> } {
   const need = Math.max(0, goal.target - goal.measure(banked));
   const tau = goal.measure(perm) - goal.measure(G);
-  let t: number;
-  if (goalMet(goal, banked)) t = 0;
-  else if (goal.met) t = horizon;
-  else t = tau > 0 ? Math.min(need / tau, horizon) : horizon;
-  return { icon: goal.icon, need, tau, t };
+  const bare = { icon: goal.icon, need, tau };
+  if (goalMet(goal, banked)) return { clock: { ...bare, t: 0, route: 'met' }, netted: {} };
+  if (goal.met) return { clock: { ...bare, t: horizon, route: 'flat' }, netted: {} };
+
+  let t = tau > 0 ? need / tau : Infinity;
+  let route: GoalRoute = 'throughput';
+  let cardId: string | undefined;
+  let netted: Partial<Record<keyof Resources, number>> = {};
+  const workforce = Math.max(0, banked.resources.population);
+  const take = (candidate: number, r: GoalRoute, id: string, n: Partial<Record<keyof Resources, number>>) => {
+    if (!(candidate < t)) return;
+    t = candidate;
+    route = r;
+    cardId = id;
+    netted = n;
+  };
+  if (workforce > 0 && plan?.landing) {
+    const { landing } = plan;
+    const paid = outstanding(landing.price, need / landing.delta, banked, unitCost);
+    take(paid.workerRounds / workforce, 'landing', landing.cardId, paid.netted);
+  }
+  if (workforce > 0 && plan?.building) {
+    const { building } = plan;
+    const paid = outstanding(building.price, 1, banked, unitCost);
+    take(paid.workerRounds / workforce + need / building.tau, 'building', building.cardId, paid.netted);
+  }
+
+  return {
+    clock: {
+      ...bare,
+      t: Math.min(t, horizon),
+      route: Number.isFinite(t) ? route : 'none',
+      ...(cardId !== undefined ? { cardId } : {}),
+    },
+    netted,
+  };
+}
+
+/**
+ * Derive the run's plans — once, at the root. Every card the run holds is probed against every goal for
+ * the three ways it can move a measure, and the best of each kind is kept.
+ *
+ * "Best" is not the same question for the two plans. A landing is repeatable, so the one that matters is
+ * the **cheapest per unit of measure**; a producer is bought once and then collected forever, so the one
+ * that matters is the **fastest**, exactly as the model it replaces chose. Ties resolve to first in
+ * catalogue order, so the same run derives the same plan every time.
+ *
+ * A price with any component `replacementCost` could not reach yields **no plan** at all. Worker-rounds
+ * are the currency here, and a pool nothing in the run can obtain has no figure in it — carrying the raw
+ * unit count in beside real prices would produce a number in no currency at all.
+ */
+export function deriveRace(G: GameState): RaceModel {
+  const ids = runCardIds(G);
+  const unitCost = replacementCost(G, ids);
+  const probe = cloneState(G);
+  const cards = Object.values(CARDS).filter((c) => ids.has(c.id));
+  const plans = objectiveGoals(G).map((goal) => {
+    const plan: GoalPlan = {};
+    let cheapest = Infinity;
+    let fastest = 0;
+    for (const card of cards) {
+      const price = cardPrice(G, card);
+      if (Object.keys(price).some((k) => unitCost[k as keyof Resources] === undefined)) continue;
+      const workerRounds = Object.entries(price).reduce(
+        (n, [k, amt]) => n + amt * unitCost[k as keyof Resources]!,
+        0,
+      );
+      const delta = Math.max(presenceDelta(probe, card, goal.measure), grantDelta(probe, card, goal.measure));
+      if (delta > 0 && workerRounds / delta < cheapest) {
+        cheapest = workerRounds / delta;
+        plan.landing = { cardId: card.id, delta, price };
+      }
+      // Only a durable producer's `produces` is a rate; a work box pays its once per play, and the
+      // worker it pays it through is the very unit `unitCost` quotes every price in.
+      if (!isDurableProducer(card)) continue;
+      const tau = outputDelta(probe, card, goal.measure);
+      if (tau > fastest) {
+        fastest = tau;
+        plan.building = { cardId: card.id, tau, price };
+      }
+    }
+    return plan;
+  });
+  return { unitCost, plans };
 }
 
 /** Value one state as the race margin, split into the terms that composed it. */
@@ -202,8 +381,19 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
 
   // T̂win — the bottleneck goal, softened so the others still pull. With no objective seeded there is
   // no clock to run down, which reads as the horizon: unwinnable, and flat.
-  const objectiveGoals = (G.objective ? CARDS[G.objective.cardId]?.goals : undefined) ?? [];
-  const goals = objectiveGoals.map((g) => goalClock(g, G, banked, perm, horizon));
+  const unitCost = opts.model?.unitCost ?? {};
+  const clocked = objectiveGoals(G).map((g, i) =>
+    goalClock(g, G, banked, perm, horizon, opts.model?.plans[i], unitCost),
+  );
+  const goals = clocked.map((c) => c.clock);
+  // The deepest a single goal's plan spent of each pool. `max` rather than a sum: each goal's plan is
+  // priced as if it had the whole bank, since the run may spend it on whichever it likes.
+  const spent: Partial<Record<keyof Resources, number>> = {};
+  for (const { netted } of clocked) {
+    for (const [k, v] of Object.entries(netted) as [keyof Resources, number][]) {
+      spent[k] = Math.max(spent[k] ?? 0, v);
+    }
+  }
   let bottleneck = -1;
   for (let i = 0; i < goals.length; i++) if (bottleneck < 0 || goals[i].t > goals[bottleneck].t) bottleneck = i;
   const tWin = goals.length > 0 ? softMax(goals.map((c) => c.t), RACE.goalSoftening) : horizon;
@@ -240,7 +430,12 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
 
   // Among states the race cannot tell apart, prefer the deeper bank — the wealth that buys the next
   // play. Linear to its cap so it keeps discriminating over the range a bank actually spans.
-  const core = CORE_KEYS.reduce((n, k) => n + Math.max(0, banked.resources[k]), 0);
+  //
+  // Only the bank *past* what a goal's plan already spent counts. Exact netting makes holding a card's
+  // price and having played it the same distance from the win, so a tie-break that counted the same
+  // resource a second time would break that tie toward the bank — the model preferring the price to the
+  // thing the price buys.
+  const core = CORE_KEYS.reduce((n, k) => n + Math.max(0, banked.resources[k] - (spent[k] ?? 0)), 0);
   const wealth = (Math.min(core, RACE.wealthCap) / RACE.wealthCap) * RACE.wealthRounds;
   total += wealth;
 

@@ -73,6 +73,13 @@ over-investing in the cheapest goal.
   same probes, output in rounds, no constants.
 - **Bespoke `met` goal**: flat, unshapeable (today's sandbox rule, unchanged).
 
+Every route a goal has is costed and the **soonest** taken — no test of whether the standing economy
+"needs" a plan. `min` is the honest fold over alternatives, where a gate deciding which route to price
+is a branch that can fire the wrong way. The workforce a plan's price is paid at is the **population**,
+not the workers currently in boxes: a pool's worker-round price is the output of a worker standing in
+the best box for it, so a denominator counting only staffed workers would disagree with its own
+numerator about the same person.
+
 All `t` clamp at the remaining drive cutoff; a goal past the horizon reads dead, tamely.
 
 **Projection cost.** τ and the drains come from **one** stripped projection (the old
@@ -110,7 +117,10 @@ four, down from ~15:
    gradient on them and would let the beam abandon side goals).
 2. **Near-death penalty steepness.**
 3. **Tie-break weight** — banked worker-round wealth among equal-margin states (band 5's heir,
-   in-currency); sized so its maximum stays below the smallest meaningful margin step.
+   in-currency); sized so its maximum stays below the smallest meaningful margin step. Counted only
+   over the bank *past* what a goal's plan already spent: exact netting makes holding a card's price
+   and having played it equal, and a tie-break that counted the same resource twice would break that
+   tie toward the bank — preferring the price to the thing the price buys.
 4. **`VICTORY` sentinel** (unchanged).
 
 ### Fate of every old term
@@ -121,7 +131,7 @@ four, down from ~15:
 | `collapseCliff` / `buffer` bands | replaced by `T̂loss` + near-death penalty |
 | `operating` nudge | falls out of τ |
 | `accumulate` band | tie-break term, in worker-rounds |
-| `HOP_DISCOUNT`, conversions | derived: bank credit = rounds saved, strictly less than converting |
+| `HOP_DISCOUNT`, conversions | derived: a bank is worth exactly the rounds of production it stands in for, so holding a card's price and having played it come out *equal* — the over-credit `HOP_DISCOUNT` bounded is unexpressible, and there is nothing left to discount |
 | capacity terms, both horizons, `CAPACITY_CAP`, intrinsic floor | `t_setup`, derived, no constants |
 | `producerCredit` + cap | falls out of τ / `t_setup` |
 | `handSize` credit | **deleted, unreplaced** — a diffuse effect the search should see via depth; re-added only if the step-4 paired sweeps prove the loss |
@@ -132,8 +142,9 @@ four, down from ~15:
 - **Scale invariance** — the test that makes fault 1 unrepeatable: two synthetic objectives over
   the same economy whose measures/targets differ only by a scale factor `k` must rank corresponding
   states identically.
-- **Conversion soundness, in time**: playing an affordable conversion strictly beats holding its
-  bank.
+- **Conversion soundness, in time**: playing an affordable conversion is never worse than holding its
+  bank — equality by construction, so what the test pins is that the two don't come apart and that the
+  tie-break doesn't quietly prefer the bank.
 - **Deadline honesty**: a producer that cannot repay before `T̂loss` contributes ~0.
 - **Clock visibility** (step 3): a synthetic counter-clock threat's probe equals its authored
   countdown from any mid-run counter state.
@@ -179,15 +190,15 @@ The new module, policies untouched.
   `src/rules/population.ts` (`producingUnits`), `src/rules/upkeep.ts` (`applyUpkeep`).
 - **Done when**: module + tests green, imported by nothing.
 
-### Step 2 — lumpy goals + setup time ☐
+### Step 2 — lumpy goals + setup time ✅
 
-- **Build**: card-count `t_g` on the worker-round pricing probes (port from `src/sim/enablers.ts`:
-  `goalValuedCardCosts`, `cardPrice`, the injection probe into `removed`/`tableau`/`tradeRoutes`);
-  `t_setup`/`τ_achievable` for zero-throughput goals off the capacity-probe scan
-  (`bestGoalThroughput`'s structure, re-emitted in rounds). Conversion-soundness test in time
-  units. The probes move or are re-exported — they must not fork.
-- **Read first**: `src/sim/enablers.ts` (the probe half), `src/sim/race.ts` as landed by step 1.
-- **Done when**: every goal kind in the catalogue yields a finite-or-clamped `t_g`; tests green.
+The probes moved to `src/sim/probes.ts` — `cardPrice`, `replacementCost`, `runCardIds`, and the
+injection probe generalized onto any `measure: (G) => number` — which is the line step 6 cuts anyway.
+`enablers.ts` consumes them unchanged (its suite passes unedited, which is what says nothing forked).
+`deriveRace(G)` derives one `RaceModel` at the run root; `raceBreakdown` takes it and stays at one
+clone. A **landing** plan is copies of a card the goal reads (present in a zone it counts, or granted
+by the play); a **building** plan is a durable producer's per-round output — a work box is neither,
+since its worker is the very unit every price is quoted in.
 
 ### Step 3 — the deadline probe ☐  ← merge gate
 

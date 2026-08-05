@@ -568,6 +568,12 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   **fair** worlds — the deck as an unordered multiset (never the real order; v1 shuffles the whole deck,
   as `revealCount` isn't yet a reliable known-prefix length), from the policy's own seed stream — and the
   planner averages a shallow beam over them (Perfect-Information Monte Carlo), re-planning per turn.
+  `probes.ts` is the derivation front end under all of that — what a card charges (`cardPrice`), what a
+  unit of each pool costs to obtain in **worker-rounds** (`replacementCost`), and what one more play or
+  one more round of a card moves a `(G) => number` by (the injection/grant/output probes). It is the half
+  with no currency of its own: a probe reports what moved, and the model above it decides what that is
+  worth, so two models pricing the same card share one derivation instead of drifting apart at the first
+  retune.
   `enablers.ts` is the leaf accelerator that keeps the beam shallow: `enablerPotential`, derived
   **mechanically from card `cost`→`produces`/`effect`** — every output read through `rules/effects.ts`'s
   `realizedGain`, so a board standing a `modifyGain` card is priced at what it really pays rather than at
