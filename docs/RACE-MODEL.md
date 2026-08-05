@@ -117,15 +117,25 @@ All `t` clamp at the remaining drive cutoff; a goal past the horizon reads dead,
 **Projection cost.** τ and the drains come from **one** stripped projection (the old
 `permanentDelta` clone: transients dropped, one `applyUpkeep`). Pending one-shot output (a staffed
 work box this turn) must still be visible pre-`endTurn` so staffing registers immediately — read it
-directly off `workZone`/hand card data (`producingUnits` arithmetic, no clone) instead of the old
+directly off `workZone` card data (`producingUnits` arithmetic, no clone) instead of the old
 second full projection. Net: one clone per leaf instead of two; the saving is earmarked for search
 depth, not pocketed.
+
+**The hand keeps its events.** The work zone is the only transient the projection drops. An `event` left
+unplayed is not an incident but a **rate**: it fires its `upkeep` at the boundary, files to the discard,
+and the deck deals it back, so a mission whose whole pressure is a recurring event drains for as long as
+the run holds the copies. `applyUpkeep` settles them at the slot the engine does (its own
+`resolveHandEvents`), which is what reaches an amount a card computes in a `resolve` closure — an
+escalating drain reading a counter it bumps has no declarative bag to read, and clearing the hand before
+the projection hid it twice over. Every non-event hand card drains nothing and files itself away at the
+same boundary, so it is still dropped.
 
 ### T̂loss — rounds to death
 
 `min` of:
 
-- **(a)** each draining core pool's `pool / drain`, off the same stripped projection;
+- **(a)** each draining core pool's `pool / drain`, off the same stripped projection — which is where a
+  recurring unplayed event's disaster enters, at whatever its own resolver really takes;
 - **(b)** the drive cutoff, `maxRounds − round` (threaded via `searchBoundsFor`, as for the oracle);
 - **(c)** each threat's **frozen-world probe** (step 3): clone `G`, repeatedly run *that threat's
   own* `resolveEndTurn` (its whole per-round broadcast, not the `upkeep` slot alone — a threat
@@ -205,6 +215,18 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   `goalSoftening` carries `masonry` at 100% under both policies and lifts `writing · greedy` to the
   classic scorer's own rate. The soft fold is the shipped form. What remains open is `writing · planner`,
   still below its classic 84% — a step-4 question, not a fifth constant.
+
+  **Re-tested against a live `T̂loss`, and it still holds.** The obvious next attempt is that the hard
+  fold only failed because the death clock was blind — give the margin a real `T̂loss` (the hand-event
+  settle above) and the masked payment gradient stops mattering, because survival supplies one. It does
+  not. The candidate was the *serial spill*, `t = t_deliver + max(0, outstanding − workforce·t_deliver) /
+  workforce`, which reads as a derivation but is algebraically **exactly** `max(payment, delivery)` — the
+  same hard fold. On paired 30-seed sweeps with the hand-event settle already in, it reproduced the
+  original fingerprint: `masonry · planner` 100% → **0%** (30/30 stalls), `writing · planner` 56.7% →
+  **0%**, `raiding_city · planner` 50% → 20%. The mechanism is the one named above and it is not
+  conditional on `T̂loss`: where the deck is slower than the workforce — the common shape — a hard fold
+  leaves `T̂win` flat over every economic decision the run can make, and a beam with a flat objective
+  idles to the cutoff. Any future candidate here must keep a gradient on the **non-binding** clock.
 - **A distinct-count goal over-counts its copies.** `growing_numbers_goal` measures *distinct*
   building ids present; the probe reads `delta = 1` off whichever is cheapest and the clock then asks
   for `need` copies of that one card, which would move a distinct count by exactly 1. The estimate is

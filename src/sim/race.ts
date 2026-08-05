@@ -12,7 +12,6 @@ import {
   realizedGain,
   resolveEndTurn,
   scaleResources,
-  type CardInstance,
   type CoreResources,
   type GameState,
   type Resources,
@@ -45,11 +44,9 @@ import { DEFAULT_MAX_ROUNDS } from './simulate';
 const RACE = {
   /** Score points — a met objective ends the run, so it dwarfs any margin the horizon can express. */
   victory: 1_000_000,
-  /** Rounds: the log-sum-exp temperature of every `max` this module folds — across a goal's goals, and
-   *  across the payment and delivery clocks within one. Tuned rather than derived because it prices a
-   *  preference, not a quantity: how much the clock that *isn't* binding still pulls. A pure `max` has
-   *  zero gradient on it, which lets a beam abandon a side goal, or the economy a plan is waiting on,
-   *  for free. One temperature for both, since both fold rounds against rounds. */
+  /** Rounds: the log-sum-exp temperature of the fold across a goal's goals. Tuned rather than derived
+   *  because it prices a preference, not a quantity: how much the goal that *isn't* binding still pulls.
+   *  A pure `max` has zero gradient on it, which lets a beam abandon a side goal for free. */
   goalSoftening: 1,
   /** Dimensionless multiplier on a losing margin, decaying with `T̂loss`. Tuned because it prices the
    *  *noise* in the two estimates rather than anything the state contains: both are projections, and a
@@ -179,9 +176,18 @@ export interface BuildingPlan {
 
 /**
  * The run's **permanent** economy one round on: tableau production, trade rent, threat drains, building
- * maintenance and population food, with both transient zones dropped — the work zone (a work box
- * produces once, then recycles) and the hand (an unplayed event's drain is contingent on it staying
- * there). This is the one clone per evaluation; τ and the pool drains are both read off it.
+ * maintenance, population food, and the disaster of every `event` left unplayed in hand. This is the one
+ * clone per evaluation; τ and the pool drains are both read off it.
+ *
+ * The hand keeps its events and drops everything else. Holding this copy is contingent, but *being held*
+ * is not: an unplayed event fires at the boundary and files to the discard, from which the deck deals it
+ * back, so a mission whose pressure is a recurring event drains for as long as the run owes the copies.
+ * Reading that as a rate is the same pessimism `threatClock` takes — the run pictured doing nothing about
+ * it — and it is the only term a death clock has, this being the one projection an evaluation can afford.
+ * `applyUpkeep` settles them at the slot the engine does (its own `resolveHandEvents`), which is what
+ * reaches an amount a card computes in a `resolve` closure: an escalating drain reading a counter it
+ * bumps has no declarative bag to read off. Every other hand card drains nothing and files itself away at
+ * the same boundary, so carrying it would buy the walk nothing.
  *
  * The counter advances **after** the boundary, which is what makes "one round on" true of the whole
  * state rather than of the pools alone: a drain keyed to the round is charged at the round it is
@@ -191,7 +197,7 @@ export interface BuildingPlan {
 function permanentProjection(G: GameState): GameState {
   const clone = cloneState(G);
   clone.workZone = [];
-  clone.hand = [];
+  clone.hand = clone.hand.filter((c) => CARDS[c.cardId]?.kind === 'event');
   applyUpkeep(clone);
   clone.round = G.round + 1;
   return clone;
@@ -199,36 +205,29 @@ function permanentProjection(G: GameState): GameState {
 
 /**
  * What this turn's boundary will settle that the permanent projection deliberately drops: a staffed work
- * box's one-shot production, and the `upkeep` disaster of every `event` still sitting unplayed in hand.
- * One bag, because both are the same thing — a level this turn reaches once, not a rate.
+ * box's one-shot production — a level this turn reaches once, not a rate, which is why the projection
+ * empties the work zone and this reads it instead.
  *
  * Read straight off the cards rather than through a second projection, so an evaluation stays one clone.
- * The folds mirror the resolvers exactly (a box scales per staffed worker, then the copy's stickers, then
- * the board's standing modifiers; an event's flat drain skips only the scaling), because an amount
- * arrived at differently would price the very play it is meant to judge at a number the board won't pay.
- * A card whose output is all closure reads as nothing in flight — the price of not projecting.
+ * The fold mirrors the resolver exactly (per staffed worker, then the copy's stickers, then the board's
+ * standing modifiers), because an amount arrived at differently would price the very play it is meant to
+ * judge at a number the board won't pay. A box whose output is all closure reads as nothing in flight —
+ * the price of not projecting.
  */
 function inFlight(G: GameState): Partial<Resources> {
   const out: Partial<Resources> = {};
-  const settle = (base: Partial<Resources> | undefined, self: CardInstance) => {
-    const bag = realizedGain(G, effectiveGain(base, self));
-    for (const [k, v] of Object.entries(bag ?? {}) as [keyof Resources, number][]) out[k] = (out[k] ?? 0) + v;
-  };
   for (const w of G.workZone) {
     const produces = CARDS[w.cardId]?.produces?.resources;
-    if (produces && isOperating(w)) settle(scaleResources(produces, producingUnits(w)), w);
-  }
-  for (const c of G.hand) {
-    const card = CARDS[c.cardId];
-    if (card?.kind === 'event') settle(card.upkeep?.resources, c);
+    if (!produces || !isOperating(w)) continue;
+    const bag = realizedGain(G, effectiveGain(scaleResources(produces, producingUnits(w)), w));
+    for (const [k, v] of Object.entries(bag ?? {}) as [keyof Resources, number][]) out[k] = (out[k] ?? 0) + v;
   }
   return out;
 }
 
 /** `G` with this turn's boundary settled — what every *level* read (a goal's `need`, a pool's depth)
- *  measures against, so staffing a box registers the turn it happens and a hand event's disaster is
- *  charged before it lands. A shallow copy: the zones are only read from here. Returns `G` itself when
- *  nothing is in flight. */
+ *  measures against, so staffing a box registers the turn it happens rather than the turn after. A
+ *  shallow copy: the zones are only read from here. Returns `G` itself when nothing is in flight. */
 function bankedState(G: GameState): GameState {
   const pending = inFlight(G);
   if (Object.keys(pending).length === 0) return G;
@@ -330,21 +329,6 @@ function outstanding(
 }
 
 /**
- * Rounds until the deck has dealt `copies` more plays of `cardId` into a hand. A plan is not only *paid
- * for* at the workforce's rate, it is *delivered* at the deck's: a run banking the whole price of five
- * copies while four of them sit unshuffled is not one play from the win.
- *
- * The supply is every copy the run still holds — deck, discard and hand alike, since the hand recycles at
- * each boundary — over those same three zones' size, so `k·h/D` is what a round's draw surfaces. A copy in
- * hand is therefore credited when it *lands*, not while it is held: that is what makes playing one a step
- * toward the win rather than a shuffle of the same copies between zones, and it is the gradient the
- * payment term structurally cannot supply.
- *
- * A copy spent by landing is one the run no longer holds, so a plan asking for more than it holds cannot
- * be dealt at all. A copy that `recycles` is dealt again, and then the cadence is the whole of the clock:
- * six units off two work boxes is the rounds it takes those two to come round four more times.
- */
-/**
  * When a plan lands, from the two clocks that must both run out: earning its price and drawing its copies
  * overlap, so it is the later of the two rather than their sum.
  *
@@ -361,6 +345,21 @@ export function landingClock(payment: number, delivery: number): number {
   return softMax([payment, delivery], RACE.goalSoftening);
 }
 
+/**
+ * Rounds until the deck has dealt `copies` more plays of `cardId` into a hand. A plan is not only *paid
+ * for* at the workforce's rate, it is *delivered* at the deck's: a run banking the whole price of five
+ * copies while four of them sit unshuffled is not one play from the win.
+ *
+ * The supply is every copy the run still holds — deck, discard and hand alike, since the hand recycles at
+ * each boundary — over those same three zones' size, so `k·h/D` is what a round's draw surfaces. A copy in
+ * hand is therefore credited when it *lands*, not while it is held: that is what makes playing one a step
+ * toward the win rather than a shuffle of the same copies between zones, and it is the gradient the
+ * payment term structurally cannot supply.
+ *
+ * A copy spent by landing is one the run no longer holds, so a plan asking for more than it holds cannot
+ * be dealt at all. A copy that `recycles` is dealt again, and then the cadence is the whole of the clock:
+ * six units off two work boxes is the rounds it takes those two to come round four more times.
+ */
 function deliveryClock(G: GameState, cardId: string, copies: number, recycles = false): number {
   if (copies <= 0) return 0;
   let held = 0;

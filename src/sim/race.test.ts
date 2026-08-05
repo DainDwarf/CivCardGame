@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
-import { addBuilding, addWork, blankState, bumpCounter, getCounter, seedObjective, setCounter, type GameState } from '../rules';
+import { addBuilding, addWork, blankState, bumpCounter, getCounter, seedObjective, setCounter, subtractResources, type GameState } from '../rules';
 import { CARDS, CREW_PATIENCE, type CardDef } from '../content/cards';
 import { deriveRace, landingClock, raceBreakdown, raceScore, type GoalRoute } from './race';
 
@@ -82,6 +82,17 @@ const FIXTURES: Record<string, CardDef> = {
   race_claim: {
     id: 'race_claim', name: 'Race Claim', kind: 'work', cost: {}, workers: 1,
     produces: { resources: { territory: 1 } },
+  },
+  // An event whose drain is computed rather than printed, and deepens every time the copy comes round.
+  // Nothing declarative can be read off it, so only settling the boundary reaches the amount at all.
+  race_blight: {
+    id: 'race_blight', name: 'Race Blight', kind: 'event', cost: {},
+    upkeep: {
+      resolve: ({ G, self }) => {
+        subtractResources(G.resources, { science: 1 + getCounter(self, 'level') });
+        bumpCounter(self, 'level');
+      },
+    },
   },
   // A *pace* clock: its own tick maintains the idle streak its `defeat` reads, and progress on the thing
   // it watches (culture here) resets the streak. Neither a round count nor a drain can express it, which
@@ -438,19 +449,43 @@ describe('T̂loss', () => {
     expect(a.total).toBeLessThan(b.total);
   });
 
-  it('sees an unplayed event\'s disaster land, without reading it as a rate', () => {
-    // `test_event` drains 2⚔️ at the boundary it is left in hand for. The permanent economy has no
-    // military drain at all, so the *only* way this is visible is the level it carries the pool to.
-    const doomed = state('race_goal', { military: 1 });
+  it('reads an unplayed event\'s disaster as the drain it keeps taking', () => {
+    // `test_event` takes 2⚔️ at every boundary it is left in hand for, and files to the discard the deck
+    // deals it back from — so it is a rate, and the permanent economy having no military drain of its
+    // own makes it the whole of the clock.
+    const doomed = state('race_goal', { military: 5 });
     doomed.hand.push(mint(doomed, 'test_event'));
     const b = raceBreakdown(doomed);
-    expect(b.tLoss).toBe(0);
     expect(b.lossCause).toBe('military');
+    expect(b.tLoss).toBeCloseTo(2.5);
 
-    const survivable = state('race_goal', { military: 5 });
-    survivable.hand.push(mint(survivable, 'test_event'));
-    // A one-shot drain the pool absorbs is not a countdown: nothing recurring is emptying it.
-    expect(raceBreakdown(survivable).lossCause).toBe('horizon');
+    // A hand card that is no event drains nothing and files itself away, so the projection drops it.
+    const idle = state('race_goal', { military: 5 });
+    idle.hand.push(mint(idle, 'race_relic'));
+    expect(raceBreakdown(idle).lossCause).toBe('horizon');
+  });
+
+  it('settles a held event whose drain is a closure, and deepens with it', () => {
+    // The pressure whole missions are built on, and the one no declarative read can reach: the amount is
+    // computed from a counter the card bumps itself, so a projection that drops the hand — or reads only
+    // the printed bag — sees a run in perfect health right up to the round it collapses.
+    const clear = state('race_goal', { science: 12 });
+    expect(raceBreakdown(clear).lossCause).toBe('horizon');
+
+    const blighted = state('race_goal', { science: 12 });
+    blighted.hand.push(mint(blighted, 'race_blight'));
+    const fresh = raceBreakdown(blighted);
+    expect(fresh.lossCause).toBe('science');
+    expect(fresh.tLoss).toBeCloseTo(12);
+
+    // A copy that has already come round three times takes four times as much, and the clock says so.
+    const worn = state('race_goal', { science: 12 });
+    const copy = mint(worn, 'race_blight');
+    setCounter(copy, 'level', 3);
+    worn.hand.push(copy);
+    expect(raceBreakdown(worn).tLoss).toBeCloseTo(3);
+    // …and the projection that read it left the counter where it found it.
+    expect(getCounter(copy, 'level')).toBe(3);
   });
 
   it('reads a pending defeat as no rounds left at all', () => {
