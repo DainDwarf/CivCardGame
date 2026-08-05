@@ -2,8 +2,10 @@ import { randInt, seededRng } from '../rules';
 import { CARDS, isStaffable } from '../content/cards';
 import type { RunState } from '../run/engine';
 import { enumerateActions } from './actions';
+import { type GreedyOptions } from './greedyPolicy';
+import { DEFAULT_SCORER } from './scorer';
 import { applyAction, type Policy, type SimAction } from './simulate';
-import { scoreState } from './value';
+import type { Heuristic } from './turnSearch';
 
 /** The staffing moves a play's second-ply lookahead may follow up with — assigning idle pop or
  *  relocating a worker into a freshly-placed box. `endTurn` and further plays are deliberately
@@ -39,10 +41,13 @@ const STAFFING_KINDS = new Set<SimAction['kind']>([
  * staffed). Ties on both keys fall to the same seeded coin flip greedy uses, so the *only* behavioural
  * variable vs. greedy is the lookahead itself.
  */
-export function createGreedy2Policy(policySeed: string): Policy {
+export function createGreedy2Policy(policySeed: string, options: GreedyOptions = {}): Policy {
   const rng = seededRng(policySeed);
+  const scorer = options.scorer ?? DEFAULT_SCORER;
+  let scored: Heuristic | null = null;
   const policy: Policy = (state) => {
     const G = state.G;
+    const score = (scored ??= scorer(G, { maxRounds: options.maxRounds }));
 
     // A parked interaction is exclusive — answer it (mirrors greedy).
     if (G.pendingInteraction) {
@@ -50,7 +55,7 @@ export function createGreedy2Policy(policySeed: string): Policy {
       return { kind: 'resolveInteraction', answer: n > 0 ? randInt(rng, 0, n - 1) : 0 };
     }
 
-    const baseline = scoreState(G);
+    const baseline = score(G);
     let best: SimAction | null = null;
     let bestLook = baseline; // s2 — score incl. best staffing follow-up (the acceptance key)
     let bestImmediate = baseline; // s1 of the chosen action — the tie-break key
@@ -58,8 +63,8 @@ export function createGreedy2Policy(policySeed: string): Policy {
       if (action.kind === 'endTurn') continue;
       const next = applyAction(state, action);
       if (next === state) continue; // rejected (shouldn't happen for an enumerated action) — skip
-      const s1 = scoreState(next.G);
-      const s2 = lookaheadScore(state, next, action, s1);
+      const s1 = score(next.G);
+      const s2 = lookaheadScore(state, next, action, s1, score);
       // Accept on strict lookahead improvement; rank by (s2, s1); coin-flip a full tie (as greedy does).
       if (
         s2 > bestLook ||
@@ -81,7 +86,13 @@ export function createGreedy2Policy(policySeed: string): Policy {
  *  reachable by one staffing follow-up from the post-play state (else the freshly-placed box would look
  *  worthless until a later turn staffs it). For every other action it is just the immediate score `s1` —
  *  so the policy is plain greedy outside the one case this experiment targets. */
-function lookaheadScore(state: RunState, next: RunState, action: SimAction, s1: number): number {
+function lookaheadScore(
+  state: RunState,
+  next: RunState,
+  action: SimAction,
+  s1: number,
+  score: Heuristic,
+): number {
   if (action.kind !== 'playCard') return s1;
   const played = state.G.hand[action.playHandIdx];
   const card = played && CARDS[played.cardId];
@@ -92,7 +103,7 @@ function lookaheadScore(state: RunState, next: RunState, action: SimAction, s1: 
     if (!STAFFING_KINDS.has(follow.kind)) continue;
     const after = applyAction(next, follow);
     if (after === next) continue;
-    const sc = scoreState(after.G);
+    const sc = score(after.G);
     if (sc > best) best = sc;
   }
   return best;

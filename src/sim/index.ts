@@ -8,6 +8,7 @@ export * from './heuristicPolicy';
 export * from './oracle';
 export * from './oracleKey';
 export * from './value';
+export * from './scorer';
 export * from './enablers';
 export * from './valuationReport';
 export * from './invariants';

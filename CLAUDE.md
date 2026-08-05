@@ -94,9 +94,12 @@ surprise, so nothing shows a locked placeholder or a total count.
   (`greedy`/`planner` @100, `oracle` @10 is the standing protocol — a cell whose open question is
   *winnability* rather than the play ceiling records `prover` @10 in its place), whose commit *is* their content-SHA
   record — so a policy with no entry is simply unmeasured, not measured-and-absent, and a re-cut fixture
-  can no longer strand rows in a file nobody edits. Every row is swept at the **default search beam**, so
-  a `--search-beam` sweep is a diagnostic, never a baseline. Both styles take
-  `--seeds`/`--policies`; `--seed <i>` is a **filter** (sweep only that index, on the seed streams the
+  can no longer strand rows in a file nobody edits. Every row is swept at the **default search beam** and
+  the **default scorer**, so a `--search-beam` or `--scorer` sweep is a diagnostic, never a baseline. Both styles take
+  `--seeds`/`--policies`; `--scorer <name>` picks the value function every competent policy ranks by
+  (`classic`, today's bands + enabler shaping, or `race`, the rounds-margin challenger) — one setting
+  across all of them, so a paired sweep under the same policy names isolates the brain;
+  `--seed <i>` is a **filter** (sweep only that index, on the seed streams the
   full sweep would have given it — so a row that lost replays verbatim) and `--verbose` adds a per-turn
   trace on **stderr**, stdout staying pure CSV. See *Balance tooling*.
 - `npm run sim:report` — analysis tool (`scripts/report.ts`): folds measured runs into the aggregated
@@ -124,7 +127,7 @@ surprise, so nothing shows a locked placeholder or a total count.
   a `--record` flag on `sim`: it keeps the
   simulator a pure measurer, and every refusal reads a fact off the sweep's own `#sweep`/`#cell` header
   rather than off which flags were combined, so it holds for a sweep file taken any time. It declines a
-  seed-filtered sweep (a replay), a non-default search beam (a diagnostic), a run count short of the
+  seed-filtered sweep (a replay), a non-default search beam or scorer (a diagnostic), a run count short of the
   sweep's `--seeds` (an interrupted sweep), a cell no fixture answers to (renamed or removed), and a
   fixture whose deck/board/mission no longer matches what was swept. All-or-nothing: every cell is
   validated before any file is written.
@@ -541,8 +544,13 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   bounds — deliberately **not** resource non-negativity, since a collapse ending legitimately leaves a
   negative pool), run after every action. The random policy doubles as a crash/illegal-state fuzzer,
   throwing with both seeds as the repro key.
+- **`scorer.ts`** — the **scorer seam**: which value function the five competent policies rank by, selected
+  once for all of them (`--scorer`, `BatchOptions.scorer`). A `Scorer` is a factory over the **run root**,
+  not a `(G) => number`, because each candidate derives something once per run no leaf can afford to redo —
+  `classic` its enabler model, `race` its goal plans. `classic` (`value.ts` + `enablers.ts`) is the shipping
+  default; `race` (`race.ts`) is the rounds-margin challenger under measurement (`docs/RACE-MODEL.md`).
 - **Policies** — `randomPolicy` (random legal move), `greedyPolicy` (a two-phase one-ply optimizer over
-  `value.ts`'s survival-first `scoreState`, splitting off the `endTurn` decision), `heuristicPolicy` (a
+  the `Scorer`'s value, splitting off the `endTurn` decision), `heuristicPolicy` (a
   cheaper hand-written priority ladder), `greedy2Policy` (greedy + a bounded 2-ply staffing lookahead —
   the `greedy`↔`greedy2` win-rate gap measures how much worker reassignment is a skill lever), the
   **`planner`** (`plannerPolicy.ts`) — the **fair competent** policy, a bounded determinized

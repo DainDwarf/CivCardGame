@@ -44,7 +44,10 @@
  * positions that die; more wins found under a wider beam means the heuristic was discarding real lines.
  * **Costs superlinearly** — a wider beam keeps more states alive and so searches deeper, not just wider,
  * and rows swept at a non-default width are not comparable to a fixture's recorded ones, so
- * `sim:record` refuses them), `--seed <i>` (a
+ * `sim:record` refuses them), `--scorer <name>` (which value
+ * function the competent policies rank by — `classic` (default) or `race`; one setting across every policy,
+ * so a paired sweep under the same policy names isolates the brain. Like `--search-beam`, a non-default
+ * scorer's rows are a diagnostic and `sim:record` refuses them), `--seed <i>` (a
  * **filter** — sweep only that seed index, keeping its seed streams identical to the full sweep's, so a
  * row that lost can be re-run verbatim), and `--verbose` (add a per-turn trace on **stderr**; stdout stays
  * pure CSV, so it composes with a redirect).
@@ -65,8 +68,10 @@ import {
   recordToCsvLine,
   sweepLine,
   POLICY_FACTORIES,
+  SCORERS,
   DEFAULT_MAX_ROUNDS,
   DEFAULT_BEAM_WIDTH,
+  DEFAULT_SCORER_NAME,
   type RunRecord,
   type Scenario,
   type SimAction,
@@ -95,7 +100,7 @@ function csv(s: string | undefined): string[] {
 
 // Wrap `parseArgs` so an unknown flag or stray positional (strict mode throws a raw `TypeError`) surfaces
 // as the same clean `sim: …` one-liner as every other user mistake, not a stack trace.
-let values: { scenario?: string; deck?: string; board?: string; baseline?: string; seeds?: string; policies?: string; seed?: string; verbose?: boolean; 'max-rounds'?: string; 'search-beam'?: string };
+let values: { scenario?: string; deck?: string; board?: string; baseline?: string; seeds?: string; policies?: string; seed?: string; verbose?: boolean; 'max-rounds'?: string; 'search-beam'?: string; scorer?: string };
 try {
   ({ values } = parseArgs({
     options: {
@@ -109,6 +114,7 @@ try {
       verbose: { type: 'boolean' },
       'max-rounds': { type: 'string' },
       'search-beam': { type: 'string' },
+      scorer: { type: 'string' },
     },
     allowPositionals: false,
   }));
@@ -164,6 +170,12 @@ if (searchBeam !== undefined && (!Number.isInteger(searchBeam) || searchBeam <= 
   fail(`--search-beam must be a positive integer, got '${values['search-beam']}'.`);
 }
 const searchOpts = searchBeam !== undefined ? { beamWidth: searchBeam } : undefined;
+
+// Which value function every competent policy ranks by. One flag across all of them, so a sweep under the
+// same policy names differs in exactly this — which is what makes `sim:report --against` read as a
+// measurement of the brain rather than of two differently-configured tools.
+const scorerName = values.scorer ?? DEFAULT_SCORER_NAME;
+if (!SCORERS[scorerName]) fail(`unknown scorer '${scorerName}'. Known: ${Object.keys(SCORERS).join(', ')}.`);
 
 // The one place the two input styles converge. Ad-hoc: one deck/board shared across every named mission.
 // Baselines: one self-contained fixture per cell.
@@ -328,6 +340,7 @@ const out: string[] = [
     ...(seedIndices ? { seedIndices } : {}),
     maxRounds: maxRounds ?? DEFAULT_MAX_ROUNDS,
     beamWidth: searchBeam ?? DEFAULT_BEAM_WIDTH,
+    scorer: scorerName,
   }),
   ...manifestLines(scenarios),
   csvHeaderLine(),
@@ -345,6 +358,7 @@ try {
     seedIndices,
     sim: { ...simOpts, ...(tracer ? { onStep: tracer.onStep } : {}) },
     search: searchOpts,
+    scorer: SCORERS[scorerName],
     onRun: (record) => {
       // Written per run rather than at the end: the measurement is the output, so it must survive a
       // sweep that is interrupted — and a multi-hour run becomes followable.

@@ -8,11 +8,23 @@ import { createGreedy2Policy } from './greedy2Policy';
 import { createHeuristicPolicy } from './heuristicPolicy';
 import { createOraclePolicy, createProverPolicy, searchBoundsFor, type OracleOptions } from './oracle';
 import { createPlannerPolicy, DEEP_PLANNER_OPTIONS } from './plannerPolicy';
+import { DEFAULT_SCORER, type Scorer } from './scorer';
 
-/** Builds one run's policy from its seed. The sweep's {@link BatchOptions.sim} comes along so a policy
- *  whose own search is bounded in *rounds* can align with the drive loop's cutoff rather than guess; every
- *  other policy ignores it. */
-export type PolicyFactory = (policySeed: string, sim?: SimOptions, search?: OracleOptions) => Policy;
+/** What a factory builds a policy *from*, beyond its seed — one bag rather than a run of transposable
+ *  optional positionals, since each is read by a different subset of the policies. */
+export interface PolicyBuild {
+  /** The sweep's own drive settings. A policy bounded in *rounds* aligns with the cutoff here rather than
+   *  guessing at one; every other policy ignores it. */
+  sim?: SimOptions;
+  /** Search knobs, read only by the policies that run one (`oracle`/`prover`). */
+  search?: OracleOptions;
+  /** The value function the competent policies rank by. Required rather than optional so a factory can
+   *  forward it into an options spread without an explicit `undefined` clobbering the policy's own default. */
+  scorer: Scorer;
+}
+
+/** Builds one run's policy from its seed. */
+export type PolicyFactory = (policySeed: string, build: PolicyBuild) => Policy;
 
 /** The built-in move policies a sweep can run under, by name — the random fuzzer (floor), the greedy
  *  optimizer, the cheap heuristic baseline (ceiling), `greedy2` (greedy + a bounded staffing lookahead),
@@ -25,21 +37,20 @@ export type PolicyFactory = (policySeed: string, sim?: SimOptions, search?: Orac
  *  the default sweep (`DEFAULT_POLICY_NAMES`), named explicitly to include. */
 export const POLICY_FACTORIES: Record<string, PolicyFactory> = {
   random: createRandomPolicy,
-  greedy: createGreedyPolicy,
-  greedy2: createGreedy2Policy,
+  greedy: (s, b) => createGreedyPolicy(s, { scorer: b.scorer, maxRounds: b.sim?.maxRounds }),
+  greedy2: (s, b) => createGreedy2Policy(s, { scorer: b.scorer, maxRounds: b.sim?.maxRounds }),
   heuristic: createHeuristicPolicy,
-  // Wrapped, not passed by reference: its second parameter is `PlannerOptions`, and the factory contract
-  // hands a second argument to everything.
-  planner: (s) => createPlannerPolicy(s),
+  planner: (s, b) => createPlannerPolicy(s, { scorer: b.scorer, maxRounds: b.sim?.maxRounds }),
   // The deep-analysis tier of the planner — the shipped `planner`'s lean enabler brain run with the
   // calibrated knobs. Also the `oracle`'s fallback, so both read the one `DEEP_PLANNER_OPTIONS`.
-  deepPlanner: (s) => createPlannerPolicy(s, DEEP_PLANNER_OPTIONS),
-  // The two search policies are the only factories that read `sim` — their round-depth cap tracks the
-  // sweep's own cutoff (`searchBoundsFor`) instead of searching to a depth the drive loop would discard.
-  oracle: (s, sim, search) => createOraclePolicy(s, { ...searchBoundsFor(sim), ...search }),
+  deepPlanner: (s, b) =>
+    createPlannerPolicy(s, { ...DEEP_PLANNER_OPTIONS, scorer: b.scorer, maxRounds: b.sim?.maxRounds }),
+  // The two search policies are the only ones whose *own* depth is in rounds — it tracks the sweep's cutoff
+  // (`searchBoundsFor`) instead of searching to a depth the drive loop would discard.
+  oracle: (s, b) => createOraclePolicy(s, { ...searchBoundsFor(b.sim), ...b.search, scorer: b.scorer }),
   // The oracle's search with its fallback removed: wins are search-proven, and every other seed reports
   // `noWinFound` rather than a stand-in policy's collapse cause. The honest winnability read.
-  prover: (s, sim, search) => createProverPolicy(s, { ...searchBoundsFor(sim), ...search }),
+  prover: (s, b) => createProverPolicy(s, { ...searchBoundsFor(b.sim), ...b.search, scorer: b.scorer }),
 };
 
 /** The policies a bare `npm run sim` sweeps when none is named — the fast built-ins. The `planner`
@@ -87,6 +98,10 @@ export interface BatchOptions {
   /** Search knobs for the policies that run one (`oracle`/`prover`); every other policy ignores them.
    *  Merged *over* the depth derived from `sim` (`searchBoundsFor`), so an explicit `maxRounds` here wins. */
   search?: OracleOptions;
+  /** The value function every competent policy in the sweep ranks by (`sim/scorer.ts`). One setting across
+   *  all of them, so a sweep under the same policy names differs in exactly this. Defaults to
+   *  {@link DEFAULT_SCORER}. */
+  scorer?: Scorer;
   /** Fired with each run's measurement the moment it finishes — the streaming seam. A caller writes the
    *  record out (and renders progress) as the sweep goes, so a multi-hour run is followable and its
    *  measurement survives the process. The library never writes I/O itself — the CLI supplies the sink.
@@ -110,6 +125,7 @@ export interface BatchOptions {
 export function runBatch(scenarios: Scenario[], opts: BatchOptions): RunRecord[] {
   const policyFactory = opts.policyFactory ?? createRandomPolicy;
   const policyName = opts.policyName ?? 'random';
+  const build: PolicyBuild = { sim: opts.sim, search: opts.search, scorer: opts.scorer ?? DEFAULT_SCORER };
   const indices = opts.seedIndices ?? Array.from({ length: opts.seeds }, (_, i) => i);
   const records: RunRecord[] = [];
   for (const scenario of scenarios) {
@@ -121,7 +137,7 @@ export function runBatch(scenarios: Scenario[], opts: BatchOptions): RunRecord[]
         boardStickers: scenario.boardStickers,
         seed: `${scenario.label}-cfg-${i}`,
       });
-      const outcome = simulateRun(config, policyFactory(`${scenario.label}-pol-${i}`, opts.sim, opts.search), opts.sim);
+      const outcome = simulateRun(config, policyFactory(`${scenario.label}-pol-${i}`, build), opts.sim);
       const record = toRunRecord(scenario, policyName, i, outcome);
       records.push(record);
       opts.onRun?.(record);

@@ -3,15 +3,8 @@ import { endTurn, type RunState } from '../run/engine';
 import { enumerateActions } from './actions';
 import { applyAction, type Policy, type SimAction } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
-import { scoreState } from './value';
-import {
-  DEFAULT_ENABLER_TERMS,
-  deriveEnablers,
-  enablerPotential,
-  enablerTermsOf,
-  type EnablerModel,
-  type EnablerTerms,
-} from './enablers';
+import { DEFAULT_SCORER, type Scorer } from './scorer';
+import { DEFAULT_ENABLER_TERMS, type EnablerTerms } from './enablers';
 import { determinize } from './determinize';
 import { seededRng, type GameState } from '../rules';
 
@@ -28,8 +21,9 @@ import { seededRng, type GameState } from '../rules';
  * (`determinize` — sampled deck, real hand), evaluates every candidate line in each, and **averages** the
  * value across worlds (Perfect-Information Monte Carlo). Within a world the game is deterministic, so each
  * world is a plain shallow beam over the shared turn-search skeleton (`sim/turnSearch.ts`), with leaves
- * scored by `scoreState` **plus the enabler potential** (`sim/enablers.ts`) — the shaping that lets the
- * horizon stay shallow (and thus cheap). Reuses the engine seams verbatim; lives strictly in `sim/`.
+ * scored by the `Scorer` (`sim/scorer.ts`), derived once from the run root — a leaf value strong enough to
+ * let the horizon stay shallow (and thus cheap) is what the shallow beam rests on. Reuses the engine seams
+ * verbatim; lives strictly in `sim/`.
  *
  * **Online, per information-reveal.** Unlike the oracle it doesn't plan once — sampled worlds differ from
  * the real future, so it re-plans whenever new information lands. It commits a turn's line into a buffer
@@ -63,17 +57,28 @@ export interface PlannerOptions {
   /** Fold the enabler potential into the leaf value (the shaping that steers the conversion chains).
    *  Defaults to `DEFAULT_ENABLER_TERMS` (the measured lean set); `true` is the full all-on model, off
    *  isolates the bare `scoreState` planner, and an `EnablerTerms` object ablates individual mechanisms
-   *  (per-term attribution). */
+   *  (per-term attribution). Read only by the scorers that have enabler shaping to fold. */
   enablers?: boolean | EnablerTerms;
+  /** The value function the leaves are ranked by (`sim/scorer.ts`), derived once from the run root. */
+  scorer?: Scorer;
+  /** The drive loop's round cutoff, forwarded to the scorer. Not a search bound of its own — the planner
+   *  looks `depth` turns ahead wherever the run stands, and re-plans every turn. */
+  maxRounds?: number;
 }
 
-const DEFAULTS: Required<PlannerOptions> = {
+/** A planner's settled knobs — every option resolved except `maxRounds`, which stays optional because an
+ *  omitted cutoff is a fact the scorer resolves, and a default here would restate the drive loop's own in a
+ *  second place. */
+type PlannerConfig = Required<Omit<PlannerOptions, 'maxRounds'>> & Pick<PlannerOptions, 'maxRounds'>;
+
+const DEFAULTS: Required<Omit<PlannerOptions, 'maxRounds'>> = {
   depth: 1,
   beamWidth: 4,
   turnConfigLimit: 8,
   determinizations: 2,
   nodeBudget: 100_000,
   enablers: DEFAULT_ENABLER_TERMS,
+  scorer: DEFAULT_SCORER,
 };
 
 /** The calibrated deep-analysis knobs: far slower per re-plan than {@link DEFAULTS}, so they are for a
@@ -95,7 +100,7 @@ function makeNode(state: RunState, h: Heuristic): SearchNode {
  * a bounded, deterministic beam. A reachable `victory` short-circuits to `VICTORY`; a defeat branch is
  * pruned. Each turn's own pre-`endTurn` configs are candidate leaves (so "wait a round" is considered).
  */
-function beamValue(root: RunState, depth: number, opts: Required<PlannerOptions>, budget: Budget, h: Heuristic): number {
+function beamValue(root: RunState, depth: number, opts: PlannerConfig, budget: Budget, h: Heuristic): number {
   const rootNode = makeNode(root, h);
   let best = rootNode.h;
   let beam: SearchNode[] = [rootNode];
@@ -132,7 +137,7 @@ function beamValue(root: RunState, depth: number, opts: Required<PlannerOptions>
  *  undervalue commit-at-the-reveal lines against fully-played ones; note it still can't make an
  *  information-only peek *attractive* — inside a sampled world the lookahead already knows the deck, so a
  *  reveal has no modeled upside there (the PIMC strategy-fusion ceiling). */
-function evalLine(cfg: RunState, opts: Required<PlannerOptions>, budget: Budget, h: Heuristic): number {
+function evalLine(cfg: RunState, opts: PlannerConfig, budget: Budget, h: Heuristic): number {
   const advanced = endTurn(cfg);
   if (advanced === cfg) {
     let best = -Infinity;
@@ -171,8 +176,8 @@ function commitPrefix(cfg: SearchNode): SimAction[] {
 }
 
 export function createPlannerPolicy(policySeed: string, options: PlannerOptions = {}): Policy {
-  const opts = { ...DEFAULTS, ...options };
-  let model: EnablerModel | null = null;
+  const opts: PlannerConfig = { ...DEFAULTS, ...options };
+  let scored: Heuristic | null = null;
   let rngState = seededRng(policySeed).getState();
   const buffer: SimAction[] = [];
 
@@ -180,22 +185,20 @@ export function createPlannerPolicy(policySeed: string, options: PlannerOptions 
    *  by the one field the value reads that the fingerprint drops (`pendingVictory` — derived, so it *would*
    *  follow from the key, but splitting on it removes the argument). `objective`/`missionId`, also dropped,
    *  are constant within a run and this cache never outlives one. Worth it because the beam and the sampled
-   *  worlds re-score ~25% of states, each score costing two upkeep projections — far more than a lookup. */
+   *  worlds re-score ~25% of states, and every scorer's leaf projects at least one upkeep — far more than a
+   *  lookup. */
   const leafCache = new Map<number, number>();
   const leafCacheVictory = new Map<number, number>();
 
   const replan = (state: RunState): void => {
-    if (!model) {
-      const terms = enablerTermsOf(opts.enablers);
-      model = terms ? deriveEnablers(state.G, terms) : { weight: {}, cap: {}, producerCredit: {} };
-    }
-    const enablers = model;
+    // The first re-plan is at the run root, which is where a scorer derives its per-run model.
+    const score = (scored ??= opts.scorer(state.G, { maxRounds: opts.maxRounds, enablers: opts.enablers }));
     const h: Heuristic = (G: GameState, key?: number) => {
-      if (key === undefined) return scoreState(G) + enablerPotential(G, enablers);
+      if (key === undefined) return score(G);
       const cache = G.pendingVictory ? leafCacheVictory : leafCache;
       const hit = cache.get(key);
       if (hit !== undefined) return hit;
-      const value = scoreState(G) + enablerPotential(G, enablers);
+      const value = score(G);
       cache.set(key, value);
       return value;
     };

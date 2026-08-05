@@ -4,8 +4,8 @@ import { createPlannerPolicy, DEEP_PLANNER_OPTIONS } from './plannerPolicy';
 import { hashOf } from './oracleKey';
 import { type Policy, type SimAction, type SimOptions } from './simulate';
 import { expandTurn, reconstruct, type Budget, type Heuristic, type SearchNode } from './turnSearch';
-import { scoreState } from './value';
-import { deriveEnablers, enablerPotential, enablerTermsOf, type EnablerTerms } from './enablers';
+import { DEFAULT_SCORER, type Scorer } from './scorer';
+import { type EnablerTerms } from './enablers';
 
 /**
  * A **seeded perfect-information oracle** over the headless sim: a bounded, heuristic-guided,
@@ -28,9 +28,8 @@ import { deriveEnablers, enablerPotential, enablerTermsOf, type EnablerTerms } f
  * to find a line is *evidence* of unwinnability, not a proof.
  *
  * Reuses the existing seams verbatim — `enumerateActions` / `applyAction` / `endTurn` for transitions and,
- * as the search heuristic, `sim/value.ts`'s `scoreState` folded with the enabler potential
- * (`sim/enablers.ts`) — the same leaf value the planner ranks by, so the beam keeps the multi-turn growth
- * lines a bare `scoreState` would prune (population is invisible to it). So the oracle stays
+ * as the search heuristic, the `Scorer` (`sim/scorer.ts`) — the same leaf value the planner ranks by, so
+ * the beam keeps the multi-turn growth lines a weaker one would prune. So the oracle stays
  * **mission-agnostic** and adds *no* hook to any card/mission/rule file (per [[sim-logic-stays-in-sim]]). It
  * lives strictly in `sim/`.
  */
@@ -52,8 +51,11 @@ export interface OracleOptions {
    *  lines a bare `scoreState` prunes. Defaults to the **full all-on model** — deliberately *not* the
    *  planner's `DEFAULT_ENABLER_TERMS`: the oracle's job is proving winnability, and the full model
    *  measured strictly more wins found (the lean set drops seeds to stalls). Off recovers the
-   *  pure-`scoreState` oracle; an `EnablerTerms` object ablates individual mechanisms. */
+   *  pure-`scoreState` oracle; an `EnablerTerms` object ablates individual mechanisms. Read only by the
+   *  scorers that have enabler shaping to fold. */
   enablers?: boolean | EnablerTerms;
+  /** The value function the beam ranks by (`sim/scorer.ts`), derived once from the root. */
+  scorer?: Scorer;
 }
 
 /**
@@ -84,6 +86,7 @@ const DEFAULTS: Required<OracleOptions> = {
   maxRounds: 200,
   nodeBudget: 3_000_000,
   enablers: true,
+  scorer: DEFAULT_SCORER,
 };
 
 /**
@@ -94,7 +97,7 @@ const DEFAULTS: Required<OracleOptions> = {
  * runs a bounded within-turn sub-search (`expandTurn`) enumerating the distinct reachable *pre-`endTurn`*
  * configurations, then advances each with one `endTurn`. This cuts the main-search depth from hundreds of
  * micro-actions to ~rounds. A **level-synchronized beam** keeps the top-`beamWidth` successors per round
- * by the heuristic (`scoreState` + enabler potential); a global transposition set dedups turn-start states
+ * by the heuristic; a global transposition set dedups turn-start states
  * across the whole search. Setting
  * `beamWidth`/`turnConfigLimit` to very large values approaches the plan's *exact* (complete-within-
  * deadline) mode, tractable only on short/small missions.
@@ -105,11 +108,9 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
     return root.gameover.outcome === 'victory' ? { found: true, line: [] } : { found: false, exhausted: 'deadEnd' };
   }
 
-  // Same leaf value the planner ranks by: fold in the enabler potential so the beam doesn't prune the
-  // multi-turn growth lines `scoreState` alone undervalues. Derived once from the root; pure over `G`.
-  const terms = enablerTermsOf(opts.enablers);
-  const model = terms ? deriveEnablers(root.G, terms) : null;
-  const h: Heuristic = model ? (G) => scoreState(G) + enablerPotential(G, model) : scoreState;
+  // The same seam the planner ranks by, so the two search tiers can't drift apart on what a state is
+  // worth. Derived once from the root; pure over `G`.
+  const h: Heuristic = opts.scorer(root.G, { maxRounds: opts.maxRounds, enablers: opts.enablers });
 
   const budget: Budget = { steps: 0, cap: opts.nodeBudget };
   const rootNode: SearchNode = { state: root, parent: null, action: null, key: hashOf(root.G), h: h(root.G) };
@@ -147,7 +148,7 @@ export function searchWinningLine(root: RunState, options: OracleOptions = {}): 
       if (budget.steps >= budget.cap) return { found: false, exhausted: 'budget' };
     }
     if (successors.length === 0) return { found: false, exhausted: 'deadEnd' };
-    // Level beam: keep the top-W successors by heuristic (higher `scoreState` = closer to a win).
+    // Level beam: keep the top-W successors by heuristic (higher = closer to a win).
     successors.sort((a, b) => b.h - a.h);
     beam = successors.length > opts.beamWidth ? successors.slice(0, opts.beamWidth) : successors;
   }
@@ -220,7 +221,14 @@ function createLineDispenser(options: OracleOptions) {
  * For that, use {@link createProverPolicy} (as a sweepable policy) or {@link proveWinnable} (offline).
  */
 export function createOraclePolicy(policySeed: string, options: OracleOptions = {}): OraclePolicy {
-  const fallback = createPlannerPolicy(policySeed, DEEP_PLANNER_OPTIONS);
+  const opts = { ...DEFAULTS, ...options };
+  // The fallback ranks by the *same* scorer and clock as the search that gave up: a ceiling assembled from
+  // two value functions would report neither.
+  const fallback = createPlannerPolicy(policySeed, {
+    ...DEEP_PLANNER_OPTIONS,
+    scorer: opts.scorer,
+    maxRounds: opts.maxRounds,
+  });
   const dispenser = createLineDispenser(options);
 
   const policy: OraclePolicy = ((state: RunState) => {

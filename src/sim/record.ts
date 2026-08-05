@@ -169,8 +169,8 @@ export interface CellManifest {
 const MANIFEST_TAG = '#cell ';
 
 /** How a sweep was taken — the flags that decide whether its rows are comparable to anything else.
- *  `maxRounds`/`beamWidth` are the **effective** values, never the raw flags, so a file that names no
- *  flag still says what it ran at. `seedIndices` marks a `--seed <i>` replay: a filtered sweep is a
+ *  `maxRounds`/`beamWidth`/`scorer` are the **effective** values, never the raw flags, so a file that names
+ *  no flag still says what it ran at. `seedIndices` marks a `--seed <i>` replay: a filtered sweep is a
  *  diagnostic, not a measurement. */
 export interface SweepHeader {
   seeds: number;
@@ -178,6 +178,10 @@ export interface SweepHeader {
   seedIndices?: number[];
   maxRounds: number;
   beamWidth: number;
+  /** Which value function the competent policies ranked by (`sim/scorer.ts`). The only record of it: a
+   *  fixture's `results` entry stores the rows, not the brain that produced them, so this header is what
+   *  keeps a non-default scorer's rows out of the standing set. */
+  scorer: string;
 }
 
 const SWEEP_TAG = '#sweep ';
