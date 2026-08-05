@@ -106,12 +106,18 @@ export interface RaceOptions {
  * maintenance and population food, with both transient zones dropped — the work zone (a work box
  * produces once, then recycles) and the hand (an unplayed event's drain is contingent on it staying
  * there). This is the one clone per evaluation; τ and the pool drains are both read off it.
+ *
+ * The counter advances **after** the boundary, which is what makes "one round on" true of the whole
+ * state rather than of the pools alone: a drain keyed to the round is charged at the round it is
+ * charged for, while a goal measured in rounds derives its τ of 1 from the same subtraction every other
+ * goal uses.
  */
 function permanentProjection(G: GameState): GameState {
   const clone = cloneState(G);
   clone.workZone = [];
   clone.hand = [];
   applyUpkeep(clone);
+  clone.round = G.round + 1;
   return clone;
 }
 

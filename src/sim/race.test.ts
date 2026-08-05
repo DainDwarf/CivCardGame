@@ -40,6 +40,11 @@ const FIXTURES: Record<string, CardDef> = {
       { icon: '🪙', measure: (G) => G.resources.money, target: 10 },
     ],
   },
+  // Wins by surviving, the way Harsh Winter does — the one measure that moves without an economy.
+  race_goal_round: {
+    id: 'race_goal_round', name: 'Race Goal Round', kind: 'objective', cost: {},
+    goals: [{ icon: '❄️', measure: (G) => G.round, target: 8 }],
+  },
   // A work box on the goal's own pool: output in flight this turn, which the permanent projection drops.
   race_work_sci: {
     id: 'race_work_sci', name: 'Race Work Science', kind: 'work',
@@ -143,6 +148,16 @@ describe('T̂win', () => {
     // …but the one that isn't binding is still worth something, which is what constant 1 buys: under a
     // pure `max` this is exactly zero and a beam may abandon the side goal for free.
     expect(pair(0, 8).total).toBeGreaterThan(base.total);
+  });
+
+  it('counts down a goal measured in rounds', () => {
+    // No economy touches this measure — the projection being a whole round on, counter included, is
+    // the only thing that gives it a rate at all.
+    const G = state('race_goal_round');
+    G.round = 5;
+    const b = raceBreakdown(G);
+    expect(b.goals[0].tau).toBe(1);
+    expect(b.tWin).toBeCloseTo(3);
   });
 
   it('reads a bespoke-`met` goal as flat', () => {
