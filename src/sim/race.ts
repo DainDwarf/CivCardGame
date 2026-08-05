@@ -249,7 +249,9 @@ function outstanding(
     const total = amt * copies;
     const paid = Math.min(Math.max(0, banked.resources[k]), total);
     if (paid > 0) netted[k] = paid;
-    workerRounds += (total - paid) * (unitCost[k] ?? 0);
+    // A pool with no rate makes the plan unreachable, never free. `deriveRace` emits no such plan, and
+    // this is what keeps that true of a model built anywhere else.
+    if (total > paid) workerRounds += (total - paid) * (unitCost[k] ?? Infinity);
   }
   return { workerRounds, netted };
 }

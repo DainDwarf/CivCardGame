@@ -157,6 +157,20 @@ Named up front so the first friction isn't a surprise: small-τ clamping must be
 deliberately leans on depth-2 search for short build chains now that the diffuse nudges are gone —
 that bet is priced by the step-4 sweeps.
 
+Two more, measured on step 2's landing plans and recorded before step 4 reads a sweep:
+
+- **The affordable end is flat.** Once the bank covers a card-count goal's whole outstanding price,
+  `T̂win` is 0 and stays 0 for every remaining finishing play — banked 12🔨 with none of three relics
+  landed values *identically* to none banked with all three landed. That is the same equality that
+  makes the bank sound, arriving where it stops being useful: the model has no notion of one play per
+  turn, so having the money is having won. A card-count cell stalling in step 4 points at **depth**,
+  not at a fifth constant.
+- **A distinct-count goal over-counts its copies.** `growing_numbers_goal` measures *distinct*
+  building ids present; the probe reads `delta = 1` off whichever is cheapest and the clock then asks
+  for `need` copies of that one card, which would move a distinct count by exactly 1. The estimate is
+  optimistic and, being root-derived, doesn't correct as ids land. Don't misattribute a
+  `growing_numbers` regression to the fold.
+
 ## Decisions already made
 
 - The old model stays the shipping default until the new one **dominates the standing set** in

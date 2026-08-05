@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { addBuilding, addWork, blankState, seedObjective, type GameState } from '../rules';
-import { CARDS, isDeckable, type CardDef } from '../content/cards';
-import { deriveRace, raceBreakdown, raceScore } from './race';
+import { CARDS, type CardDef } from '../content/cards';
+import { deriveRace, raceBreakdown, raceScore, type GoalRoute } from './race';
 
 /** The factor the scale-invariance pair differs by. Every quantity on `race_goal_scaled` is this many
  *  times `race_goal`'s, and the measure stays *linear* in the pool — a `floor` anywhere inside it would
@@ -350,18 +350,29 @@ describe('the catalogue', () => {
   it('gives every authored goal a clock that is a number of rounds', () => {
     // A coherence check over live content, not a balance one: every objective anyone has authored has to
     // come out of the plan machinery as rounds — no NaN from a zero rate, nothing past the cutoff, no
-    // measure the probes can't hold. Every deckable card is in the deck, so each goal is probed against
-    // the whole catalogue rather than against whatever one mission happens to seed.
-    const deckable = Object.values(CARDS).filter(isDeckable).map((c) => c.id);
+    // measure the probes can't hold. The universe is every card a run can *hold* — which is wider than
+    // `isDeckable`, since every shipped card-count goal counts a mission-injected `event` in `removed`,
+    // and a universe without those would leave exactly the goal kind these plans exist for unprobed.
+    const held = Object.values(CARDS)
+      .filter((c) => c.kind !== 'threat' && c.kind !== 'objective')
+      .map((c) => c.id);
+    const routes = new Set<GoalRoute>();
     for (const card of Object.values(CARDS)) {
       if (card.kind !== 'objective') continue;
-      const G = planned(card.id, deckable, { population: 3, production: 5 });
+      const G = planned(card.id, held, { population: 3, production: 5 });
       for (const c of valued(G).goals) {
         expect(Number.isFinite(c.t), `${card.id} ${c.icon}`).toBe(true);
         expect(c.t).toBeGreaterThanOrEqual(0);
         expect(c.t).toBeLessThanOrEqual(200);
+        // A finite-and-clamped clock passes just as happily on a goal that found no route at all and
+        // fell back to the horizon, which is the shape this whole check is meant to catch.
+        expect(c.route, `${card.id} ${c.icon}`).not.toBe('none');
+        routes.add(c.route);
       }
     }
+    // And the lumpy kind really is reached: the card-count goals are why the plans exist, and they are
+    // measured in mission-injected events that only the widened universe above puts in the run.
+    expect(routes.has('landing')).toBe(true);
   });
 });
 
