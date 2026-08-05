@@ -27,6 +27,19 @@ const FIXTURES: Record<string, CardDef> = {
     id: 'race_goal_48', name: 'Race Goal 48', kind: 'objective', cost: {},
     goals: [{ icon: '🔬', measure: (G) => G.resources.science, target: 48 }],
   },
+  // Same measure, ten times the target — the pair that pins a goal's *size* out of the per-unit slope.
+  race_goal_100: {
+    id: 'race_goal_100', name: 'Race Goal 100', kind: 'objective', cost: {},
+    goals: [{ icon: '🔬', measure: (G) => G.resources.science, target: 100 }],
+  },
+  // Two goals over two pools, so a test can drive one clock past the other.
+  race_goal_pair: {
+    id: 'race_goal_pair', name: 'Race Goal Pair', kind: 'objective', cost: {},
+    goals: [
+      { icon: '🔬', measure: (G) => G.resources.science, target: 10 },
+      { icon: '🪙', measure: (G) => G.resources.money, target: 10 },
+    ],
+  },
   // A work box on the goal's own pool: output in flight this turn, which the permanent projection drops.
   race_work_sci: {
     id: 'race_work_sci', name: 'Race Work Science', kind: 'work',
@@ -44,21 +57,26 @@ afterAll(() => {
 });
 
 /**
- * A state whose whole economy is `producers` copies of `test_sci` (2🔬 per staffed worker). Food is
- * deep enough that the population's own upkeep never becomes the binding loss clock, so a case that
- * doesn't set out to test survival reads `T̂loss` as the horizon.
+ * A state whose whole economy is `producers` copies of `test_sci` and `earners` copies of `test_money`
+ * (each 2 of its pool per staffed worker). Food is deep enough that the population's own upkeep never
+ * becomes the binding loss clock, so a case that doesn't set out to test survival reads `T̂loss` as the
+ * horizon — and deep enough to saturate the wealth tie-break, so a case comparing two banks is reading
+ * the race and not the tie-break.
  */
 function state(
   objectiveCardId: string,
-  { science = 0, food = 10_000, population = 0, producers = 0 } = {},
+  { science = 0, money = 0, food = 10_000, military = 0, population = 0, producers = 0, earners = 0 } = {},
 ): GameState {
   const G = blankState('race_test');
   G.round = 1;
   G.resources.science = science;
+  G.resources.money = money;
   G.resources.food = food;
-  G.resources.population = Math.max(population, producers);
+  G.resources.military = military;
+  G.resources.population = Math.max(population, producers + earners);
   seedObjective(G, objectiveCardId);
   for (let i = 0; i < producers; i++) addBuilding(G, mint(G, 'test_sci'));
+  for (let i = 0; i < earners; i++) addBuilding(G, mint(G, 'test_money'));
   return G;
 }
 
@@ -77,6 +95,16 @@ describe('scale invariance', () => {
       const scaled = raceScore(state('race_goal_scaled', { science, producers }));
       expect(scaled).toBeCloseTo(plain, 10);
     }
+  });
+
+  it('pays the same for a banked unit however large the goal is', () => {
+    // The fault proper: the old per-unit credit was `1 / target`, so the steering signal shrank as the
+    // goal grew. Two 🔬 is one round off a 2🔬-a-round economy at any target.
+    const saved = (objectiveCardId: string) =>
+      raceBreakdown(state(objectiveCardId, { producers: 1 })).tWin -
+      raceBreakdown(state(objectiveCardId, { science: 2, producers: 1 })).tWin;
+    expect(saved('race_goal')).toBeCloseTo(1);
+    expect(saved('race_goal_100')).toBeCloseTo(1);
   });
 });
 
@@ -99,6 +127,29 @@ describe('T̂win', () => {
     expect(b.goals[0].tau).toBe(2);
     expect(b.goals[0].need).toBe(7);
     expect(b.tWin).toBeCloseTo(3.5);
+  });
+
+  it('folds several goals at the bottleneck, without letting the others go free', () => {
+    // 🔬 is 5 rounds out and 🪙 is 2 — so the race is the science clock, but the money clock is still
+    // a clock. Both banks are far past the wealth cap, so every difference below is the fold's.
+    const pair = (science: number, money: number) =>
+      raceBreakdown(state('race_goal_pair', { science, money, producers: 1, earners: 1 }));
+    const base = pair(0, 6);
+    expect(base.bottleneck).toBe(0);
+    expect(base.goals.map((c) => c.t)).toEqual([5, 2]);
+
+    // A round off the bottleneck is worth more than a round off the goal that isn't binding…
+    expect(pair(2, 6).total).toBeGreaterThan(pair(0, 8).total);
+    // …but the one that isn't binding is still worth something, which is what constant 1 buys: under a
+    // pure `max` this is exactly zero and a beam may abandon the side goal for free.
+    expect(pair(0, 8).total).toBeGreaterThan(base.total);
+  });
+
+  it('reads a bespoke-`met` goal as flat', () => {
+    // The sandbox shape: satisfaction isn't a threshold, so there is no `need` to divide and nothing to
+    // steer by — the whole objective sits at the horizon however good the economy is.
+    expect(raceBreakdown(state('test_never')).tWin).toBe(200);
+    expect(raceBreakdown(state('test_never', { producers: 3 })).tWin).toBe(200);
   });
 
   it('reads a goal with no throughput as unwinnable rather than as a NaN', () => {
@@ -140,6 +191,21 @@ describe('T̂loss', () => {
     expect(a.margin).toBeCloseTo(b.margin);
     expect(a.nearDeath).toBeLessThan(b.nearDeath);
     expect(a.total).toBeLessThan(b.total);
+  });
+
+  it('sees an unplayed event\'s disaster land, without reading it as a rate', () => {
+    // `test_event` drains 2⚔️ at the boundary it is left in hand for. The permanent economy has no
+    // military drain at all, so the *only* way this is visible is the level it carries the pool to.
+    const doomed = state('race_goal', { military: 1 });
+    doomed.hand.push(mint(doomed, 'test_event'));
+    const b = raceBreakdown(doomed);
+    expect(b.tLoss).toBe(0);
+    expect(b.lossCause).toBe('military');
+
+    const survivable = state('race_goal', { military: 5 });
+    survivable.hand.push(mint(survivable, 'test_event'));
+    // A one-shot drain the pool absorbs is not a countdown: nothing recurring is emptying it.
+    expect(raceBreakdown(survivable).lossCause).toBe('horizon');
   });
 
   it('reads a pending defeat as no rounds left at all', () => {

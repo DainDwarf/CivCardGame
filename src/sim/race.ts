@@ -4,10 +4,12 @@ import {
   addResources,
   applyUpkeep,
   cloneState,
+  goalMet,
   isOperating,
   producingUnits,
   realizedGain,
   scaleResources,
+  type CardInstance,
   type CoreResources,
   type GameState,
   type Resources,
@@ -114,30 +116,39 @@ function permanentProjection(G: GameState): GameState {
 }
 
 /**
- * What this turn's staffed work boxes will pay at upkeep — output already in flight, which the
- * permanent projection deliberately drops. Read straight off the boxes rather than through a second
- * projection, so an evaluation stays one clone: the folds mirror `resolveProduction` exactly (scale per
- * staffed worker, then the copy's stickers, then the board's standing modifiers), because a rate this
- * arrived at differently would price the very play it is meant to reward at a number the board won't
- * pay. A box whose output is all closure reads as nothing in flight — the price of not projecting.
+ * What this turn's boundary will settle that the permanent projection deliberately drops: a staffed work
+ * box's one-shot production, and the `upkeep` disaster of every `event` still sitting unplayed in hand.
+ * One bag, because both are the same thing — a level this turn reaches once, not a rate.
+ *
+ * Read straight off the cards rather than through a second projection, so an evaluation stays one clone.
+ * The folds mirror the resolvers exactly (a box scales per staffed worker, then the copy's stickers, then
+ * the board's standing modifiers; an event's flat drain skips only the scaling), because an amount
+ * arrived at differently would price the very play it is meant to judge at a number the board won't pay.
+ * A card whose output is all closure reads as nothing in flight — the price of not projecting.
  */
-function pendingWorkOutput(G: GameState): Partial<Resources> {
+function inFlight(G: GameState): Partial<Resources> {
   const out: Partial<Resources> = {};
+  const settle = (base: Partial<Resources> | undefined, self: CardInstance) => {
+    const bag = realizedGain(G, effectiveGain(base, self));
+    for (const [k, v] of Object.entries(bag ?? {}) as [keyof Resources, number][]) out[k] = (out[k] ?? 0) + v;
+  };
   for (const w of G.workZone) {
-    if (!isOperating(w)) continue;
     const produces = CARDS[w.cardId]?.produces?.resources;
-    if (!produces) continue;
-    const gain = realizedGain(G, effectiveGain(scaleResources(produces, producingUnits(w)), w));
-    for (const [k, v] of Object.entries(gain ?? {}) as [keyof Resources, number][]) out[k] = (out[k] ?? 0) + v;
+    if (produces && isOperating(w)) settle(scaleResources(produces, producingUnits(w)), w);
+  }
+  for (const c of G.hand) {
+    const card = CARDS[c.cardId];
+    if (card?.kind === 'event') settle(card.upkeep?.resources, c);
   }
   return out;
 }
 
-/** `G` with the in-flight work output banked — what every *level* read (a goal's `need`, a pool's depth)
- *  measures against, so staffing a box registers the turn it happens. A shallow copy: the zones are only
- *  read from here. Returns `G` itself when nothing is in flight. */
+/** `G` with this turn's boundary settled — what every *level* read (a goal's `need`, a pool's depth)
+ *  measures against, so staffing a box registers the turn it happens and a hand event's disaster is
+ *  charged before it lands. A shallow copy: the zones are only read from here. Returns `G` itself when
+ *  nothing is in flight. */
 function bankedState(G: GameState): GameState {
-  const pending = pendingWorkOutput(G);
+  const pending = inFlight(G);
   if (Object.keys(pending).length === 0) return G;
   return { ...G, resources: addResources({ ...G.resources }, pending) };
 }
@@ -165,8 +176,8 @@ function goalClock(goal: ObjectiveGoal, G: GameState, banked: GameState, perm: G
   const need = Math.max(0, goal.target - goal.measure(banked));
   const tau = goal.measure(perm) - goal.measure(G);
   let t: number;
-  if (goal.met) t = goal.met(banked) ? 0 : horizon;
-  else if (need <= 0) t = 0;
+  if (goalMet(goal, banked)) t = 0;
+  else if (goal.met) t = horizon;
   else t = tau > 0 ? Math.min(need / tau, horizon) : horizon;
   return { icon: goal.icon, need, tau, t };
 }
@@ -174,8 +185,12 @@ function goalClock(goal: ObjectiveGoal, G: GameState, banked: GameState, perm: G
 /** Value one state as the race margin, split into the terms that composed it. */
 export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdown {
   // The drive loop cuts a run at `round > maxRounds`, so this many end-of-round boundaries remain,
-  // counting the one this state can still reach.
-  const horizon = Math.max(0, (opts.maxRounds ?? DEFAULT_MAX_ROUNDS) - G.round + 1);
+  // counting the one this state can still reach. `Infinity` is a legal cutoff there (it disables the
+  // stall check) and is caught here rather than at the call sites, since it is this module's
+  // `∞ − ∞` that would go NaN.
+  const cutoff = opts.maxRounds;
+  const bound = cutoff !== undefined && Number.isFinite(cutoff) ? cutoff : DEFAULT_MAX_ROUNDS;
+  const horizon = Math.max(0, bound - G.round + 1);
   const banked = bankedState(G);
   const perm = permanentProjection(G);
 
@@ -188,7 +203,7 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
   const tWin = goals.length > 0 ? softMax(goals.map((c) => c.t), RACE.goalSoftening) : horizon;
 
   // T̂loss — the soonest clock that ends the run: a core pool emptying under the permanent drain, or the
-  // drive cutoff. A pool already negative reads zero rounds, which is exactly the urgency it deserves.
+  // drive cutoff.
   let tLoss = horizon;
   let lossCause: LossCause = 'horizon';
   if (G.pendingDefeat) {
@@ -196,9 +211,11 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
     lossCause = 'defeat';
   } else {
     for (const k of CORE_KEYS) {
+      const level = banked.resources[k];
       const drain = G.resources[k] - perm.resources[k];
-      if (drain <= 0) continue;
-      const t = Math.max(0, banked.resources[k]) / drain;
+      // A pool this turn's boundary already carries below zero has collapsed whatever its rate — which
+      // is the only thing that makes a *one-shot* drain (an unplayed event's disaster) visible here.
+      const t = level < 0 ? 0 : drain > 0 ? level / drain : Infinity;
       if (t < tLoss) {
         tLoss = t;
         lossCause = k;
