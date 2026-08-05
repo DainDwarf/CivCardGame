@@ -350,11 +350,17 @@ export function landingClock(payment: number, delivery: number): number {
  * for* at the workforce's rate, it is *delivered* at the deck's: a run banking the whole price of five
  * copies while four of them sit unshuffled is not one play from the win.
  *
- * The supply is every copy the run still holds — deck, discard and hand alike, since the hand recycles at
- * each boundary — over those same three zones' size, so `k·h/D` is what a round's draw surfaces. A copy in
- * hand is therefore credited when it *lands*, not while it is held: that is what makes playing one a step
- * toward the win rather than a shuffle of the same copies between zones, and it is the gradient the
- * payment term structurally cannot supply.
+ * The rate belongs to the run's **circulation** — the multiset of cards future draws will keep dealing —
+ * so both counts are taken over deck, discard, hand *and* work zone alike: the boundary recycles the hand
+ * and files the work zone back to the discard, so a copy in any of the four is a copy the deck still owns,
+ * and `k·h/D` is what a round's draw surfaces. Which of the four a copy sits in this turn is therefore not
+ * a distance travelled, and cannot be one: a rate that moved when a card crossed between them would price
+ * every play by how many cards it shifted.
+ *
+ * Circulation changes when a card really enters or leaves it — exiled to `removed`, spent by a landing, or
+ * standing on the board for the rest of the run — and the clock moves with it, since the draws that remain
+ * really are that much richer in what the plan needs. What shortens a **recycling** plan's clock instead is
+ * `copies`: the box's output moved `need`, and the copies still owed fall with it.
  *
  * A copy spent by landing is one the run no longer holds, so a plan asking for more than it holds cannot
  * be dealt at all. A copy that `recycles` is dealt again, and then the cadence is the whole of the clock:
@@ -364,7 +370,7 @@ function deliveryClock(G: GameState, cardId: string, copies: number, recycles = 
   if (copies <= 0) return 0;
   let held = 0;
   let pool = 0;
-  for (const zone of [G.deck, G.discard, G.hand]) {
+  for (const zone of [G.deck, G.discard, G.hand, G.workZone]) {
     pool += zone.length;
     for (const c of zone) if (c.cardId === cardId) held++;
   }

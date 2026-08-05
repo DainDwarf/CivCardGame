@@ -67,8 +67,8 @@ over-investing in the cheapest goal.
   **Payment** — each copy priced in **worker-rounds** (the card-injection probe: declarative `cost` plus
   every pool the play `effect` drains, each component priced by what it costs to obtain), divided by the
   workforce's worker-round income; a banked 🔨 shortens it. **Delivery** — the copies still to play,
-  divided by `k·h/D`: the plan copies a round's draw surfaces, off the supply the run holds (deck,
-  discard and hand alike) and the culture-adjusted hand size it refills to. `t` folds the two as a
+  divided by `k·h/D`: the plan copies a round's draw surfaces, off the run's **circulation** (deck,
+  discard, hand and work zone alike) and the culture-adjusted hand size it refills to. `t` folds the two as a
   **softened max**, not a sum: earning the price and drawing the copies overlap, so the plan lands when
   the later one finishes — softened against the same temperature as the goal fold, because the clock a
   hard `max` masks is routinely the payment one, and that is the half carrying every earning and spending
@@ -86,8 +86,17 @@ unchanged by paying for one of those copies — identical before and after the v
 every bank level. Payment alone therefore has a slope for *earning* and none for *landing*, and a policy
 taking only strict improvements will bank forever. Delivery supplies the missing half: a run holding the
 whole price of five copies is no plays richer than one that has played them, but it is five draws
-poorer. A copy in hand is credited when it **lands**, not while it is held — the hand recycles into the
-discard at each boundary, so holding one is not a distance travelled.
+poorer. A copy in hand is credited when it **lands**, not while it is held.
+
+**Both counts are over the run's circulation** — deck, discard, hand and work zone as one multiset, since
+the boundary recycles the hand and files a work box back to the discard, so every one of the four is a
+pile future draws still reach. Which of them a copy rests in this turn is therefore not a distance
+travelled: a rate that moved when a card crossed between them would price every play by how many cards it
+shifted, and would score playing the plan's own recycling card *below* holding it, the share `k/D` falling
+by exactly the play that advances the plan. The rate moves when a card really enters or leaves
+circulation — exiled to `removed`, spent by a landing, or standing on the board for the rest of the run —
+because the draws that remain really are that much richer in what the plan needs. A recycling plan's clock
+shortens through `copies` instead: the box's output moved `need`, and the copies still owed fall with it.
 
 **A work box is a landing, not a producer.** Its `produces` fires once per play rather than once a round,
 so what it delivers is a delta to repeat rather than a rate to collect — and for a goal no standing card
@@ -192,6 +201,9 @@ four, down from ~15:
 - **Landing is progress**: on a bank that covers a plan outright, playing one of its copies scores
   strictly higher, and a run that has lost a copy it still needs reads the plan as unreachable. The
   invariant the payment term alone cannot hold.
+- **Circulation invariance**: a recycling copy moved between hand, discard and work zone leaves every
+  clock and the value bit-identical; a copy that really leaves circulation still shortens a delivery
+  clock, and landing a plan copy beats landing a card the plan doesn't read.
 - **Room is priced**: a structure plan against a full board scores strictly below the same plan with a
   slot free.
 - **Deadline honesty**: a producer that cannot repay before `T̂loss` contributes ~0.
@@ -227,6 +239,14 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   conditional on `T̂loss`: where the deck is slower than the workforce — the common shape — a hard fold
   leaves `T̂win` flat over every economic decision the run can make, and a beam with a flat objective
   idles to the cutoff. Any future candidate here must keep a gradient on the **non-binding** clock.
+- **The greedies stall where a box must be played and then staffed.** Playing a work box unstaffed
+  spends the bank and moves `need` by nothing — `inFlight` reads only an *operating* box, so the whole
+  payoff waits on a worker arriving after the play. A one-ply policy cannot pair the two, and on `wheel`,
+  whose only route to 🗺️ is Conquest and Road, it hoards instead: 351🌾 and 224🔨 banked, 78 stalls in
+  100. The staffing lookahead confirms the shape without buying the wins — `greedy2` plays Conquest 77
+  times to `greedy`'s 26 and stalls 6 runs in 30 against 21, converting 10% → 16.7%. Read a
+  `wheel · greedy` figure as a measurement of that sequence rather than of the model; `wheel · planner`
+  is 50% over 100 seeds. It is step 5's staffing rider that this belongs to, not a term here.
 - **A distinct-count goal over-counts its copies.** `growing_numbers_goal` measures *distinct*
   building ids present; the probe reads `delta = 1` off whichever is cheapest and the clock then asks
   for `need` copies of that one card, which would move a distinct count by exactly 1. The estimate is

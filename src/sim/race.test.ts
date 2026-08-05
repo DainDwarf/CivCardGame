@@ -354,9 +354,10 @@ describe('delivery', () => {
     expect(landed.total).toBeGreaterThan(banked.total);
   });
 
-  it('deals a copy from deck, discard and hand alike, and none at all from nowhere', () => {
-    // The hand recycles at every boundary, so which of the three a copy sits in is not a distance; a
-    // copy the run has lost is, and it is the whole plan that goes with it.
+  it('deals a copy from anywhere in circulation, and none at all from nowhere', () => {
+    // A copy the run still circulates is dealt whichever pile it is resting in; a copy the run has lost
+    // is dealt from nowhere, and on a plan that spends its copies by landing them the whole plan goes
+    // with it.
     const held = planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 12 });
     const shuffled = planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 12 });
     shuffled.discard.push(shuffled.deck.pop()!);
@@ -366,6 +367,18 @@ describe('delivery', () => {
     const short = valued(planned('race_goal_count', ['race_relic', 'race_relic'], { production: 12 }));
     expect(short.goals[0].route).toBe('none');
     expect(short.total).toBeLessThan(valued(held).total);
+  });
+
+  it('shortens a clock when a card genuinely leaves circulation', () => {
+    // The thinning that is real: a copy exiled from the run is one the deck will never deal again, so
+    // every remaining draw is likelier to be a plan copy. The bank covers all three relics either way,
+    // which leaves the pile the only thing between the two states.
+    const pile = (deck: string[], removed: string[]) =>
+      valued(planned('race_goal_count', deck, { production: 12, removed }));
+    const circulating = pile(['race_relic', 'race_relic', 'race_relic', 'test_prod', 'test_prod', 'test_prod'], []);
+    const thinned = pile(['race_relic', 'race_relic', 'race_relic', 'test_prod', 'test_prod'], ['test_prod']);
+    expect(thinned.goals[0].t).toBeLessThan(circulating.goals[0].t);
+    expect(thinned.total).toBeGreaterThan(circulating.total);
   });
 
   it('charges a structure plan for the land it must stand on', () => {
@@ -378,6 +391,52 @@ describe('delivery', () => {
     const room = board(2);
     expect(full.goals[0].t).toBeGreaterThan(room.goals[0].t);
     expect(room.total).toBeGreaterThan(full.total);
+  });
+});
+
+describe('circulation', () => {
+  /**
+   * The same run with one copy parked in a different zone. The population is spent on the standing
+   * producer, so a box played here staffs nobody and puts nothing in flight — which leaves *where the
+   * copy sits* as the only difference between the four states. The deck holds one card the plan doesn't
+   * read, so a copy leaving the pile would move the plan's share of it if anything did.
+   */
+  function parked(cardId: string, zone: 'deck' | 'hand' | 'discard' | 'work') {
+    const G = planned('race_goal_land', ['race_claim', 'race_claim', 'test_work'], { territory: 0 });
+    const [copy] = G.deck.splice(G.deck.findIndex((c) => c.cardId === cardId), 1);
+    if (zone === 'work') addWork(G, copy);
+    else G[zone].push(copy);
+    return valued(G);
+  }
+
+  it('is unmoved by a copy changing zones within a turn', () => {
+    // Hand, discard, deck and work zone are one pile as far as future draws go: the boundary files the
+    // work box and recycles the hand, so nothing about the deck's delivery rate has changed. A model
+    // that counted three of the four would score every play by how many cards it shifted.
+    for (const cardId of ['race_claim', 'test_work']) {
+      const base = parked(cardId, 'deck');
+      for (const zone of ['hand', 'discard', 'work'] as const) {
+        const b = parked(cardId, zone);
+        expect(b.goals, `${cardId} in ${zone}`).toEqual(base.goals);
+        expect(b.total, `${cardId} in ${zone}`).toBe(base.total);
+      }
+    }
+  });
+
+  it('prefers landing the plan\'s own copy to landing another card that recycles', () => {
+    // The inversion a three-zone count produces: playing the one card the plan runs on takes it out of
+    // the counted pile, so the plan's share of a draw *falls* by the play — and the model prices the
+    // right move below both the wrong one and doing nothing at all. Six cards the plan doesn't read are
+    // what give that share room to move.
+    const played = (cardId?: string) => {
+      const deck = [...Array<string>(6).fill('test_work'), 'race_claim', 'race_claim'];
+      const G = planned('race_goal_land', deck, { territory: 0, population: 3 });
+      if (cardId) addWork(G, G.deck.splice(G.deck.findIndex((c) => c.cardId === cardId), 1)[0]);
+      return valued(G);
+    };
+    const onPlan = played('race_claim');
+    expect(onPlan.total).toBeGreaterThan(played('test_work').total);
+    expect(onPlan.total).toBeGreaterThan(played().total);
   });
 });
 
