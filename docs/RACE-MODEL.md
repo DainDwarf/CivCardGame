@@ -89,6 +89,14 @@ whole price of five copies is no plays richer than one that has played them, but
 poorer. A copy in hand is credited when it **lands**, not while it is held — the hand recycles into the
 discard at each boundary, so holding one is not a distance travelled.
 
+**A work box is a landing, not a producer.** Its `produces` fires once per play rather than once a round,
+so what it delivers is a delta to repeat rather than a rate to collect — and for a goal no standing card
+moves (territory, taken by Conquest and Road) it is the only route there is. The delta is that output read
+at **one staffed worker**, the conservative floor; the price is the card's plus **one worker-round per
+play** — the citizen who spends the turn running it, added straight to the worker-round sum rather than
+converted, being already in that unit. A landed box files back to the discard, so the copies the run holds
+are dealt again: six units off two boxes is a cadence, not a plan the deck is short for.
+
 **Room is part of a structure's price.** A plan whose card is a structure owes one territory slot per
 copy, netted against the **free** tableau rather than the territory pool, since land is spent by standing
 on it. It is the one component exempt from the "every price component needs a `unitCost`" rule up front:
@@ -243,9 +251,9 @@ The probes moved to `src/sim/probes.ts` — `cardPrice`, `replacementCost`, `run
 injection probe generalized onto any `measure: (G) => number` — which is the line step 6 cuts anyway.
 `enablers.ts` consumes them unchanged (its suite passes unedited, which is what says nothing forked).
 `deriveRace(G)` derives one `RaceModel` at the run root; `raceBreakdown` takes it and stays at one
-clone. A **landing** plan is copies of a card the goal reads (present in a zone it counts, or granted
-by the play); a **building** plan is a durable producer's per-round output — a work box is neither,
-since its worker is the very unit every price is quoted in.
+clone. A **landing** plan is copies of a card the goal reads (present in a zone it counts, granted by the
+play, or delivered by a work box's once-per-play `produces`); a **building** plan is a durable producer's
+per-round output.
 
 ### Step 3 — the deadline probe ✅  ← merge gate
 

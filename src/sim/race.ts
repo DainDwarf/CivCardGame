@@ -149,19 +149,28 @@ export interface GoalPlan {
   building?: BuildingPlan;
 }
 
-/** Landing copies of a card the goal reads — by standing in a zone it counts, or by what the play grants.
- *  Repeatable: `need / delta` copies, each at `price`. */
+/** Landing copies of a card the goal reads — by standing in a zone it counts, by what the play grants, or
+ *  by what a work box's once-per-play `produces` delivers. Repeatable: `need / delta` copies, each at
+ *  `price`. */
 export interface LandingPlan {
   cardId: string;
   delta: number;
   /** What one play charges, per pool — a structure's slot included. Every component but `territory`
    *  carries a `unitCost`, or there is no plan; land is netted against the free tableau instead. */
   price: Partial<Record<keyof Resources, number>>;
+  /** What one play charges beyond its pools, in **worker-rounds**: the citizen a work box stands a turn
+   *  to run. It is not in `price` because `unitCost` converts a pool *into* this unit and has nothing to
+   *  say about one already in it — Conquest's real cost is 2⚔️ and a citizen's round. */
+  workerRounds?: number;
+  /** Whether a landed copy returns to the pile it was dealt from. A copy landing by presence is spent by
+   *  landing, so a plan needing more than the run holds is unreachable; a work box files back to the
+   *  discard, so two copies can deliver six units and the cadence they cycle at is the whole clock. */
+  recycles?: boolean;
 }
 
 /** Standing a durable producer whose per-round output the goal reads: pay `price` once, then collect
- *  `tau` a round. A work box is deliberately not one — it produces once per play, and its worker is
- *  already the unit `unitCost` prices everything in. */
+ *  `tau` a round. A work box is deliberately not one: its `produces` fires once per play, which makes
+ *  that output a landing's delta rather than a rate. */
 export interface BuildingPlan {
   cardId: string;
   tau: number;
@@ -294,14 +303,18 @@ function objectiveGoals(G: GameState): readonly ObjectiveGoal[] {
  *
  * Land is the one component not drawn from `resources`: a slot is spent by standing in it, so the bank a
  * structure's price draws on is the **free** tableau rather than the territory pool.
+ *
+ * `perCopyWorkerRounds` joins the sum instead of being converted or netted: it is already in the target
+ * currency, and no bank holds labour.
  */
 function outstanding(
   price: Partial<Record<keyof Resources, number>>,
   copies: number,
   banked: GameState,
   unitCost: RaceModel['unitCost'],
+  perCopyWorkerRounds = 0,
 ): { workerRounds: number; netted: Partial<Record<keyof Resources, number>> } {
-  let workerRounds = 0;
+  let workerRounds = perCopyWorkerRounds * copies;
   const netted: Partial<Record<keyof Resources, number>> = {};
   for (const [k, amt] of Object.entries(price) as [keyof Resources, number][]) {
     const total = amt * copies;
@@ -325,7 +338,11 @@ function outstanding(
  * each boundary — over those same three zones' size, so `k·h/D` is what a round's draw surfaces. A copy in
  * hand is therefore credited when it *lands*, not while it is held: that is what makes playing one a step
  * toward the win rather than a shuffle of the same copies between zones, and it is the gradient the
- * payment term structurally cannot supply. Copies the run no longer holds cannot be dealt at all.
+ * payment term structurally cannot supply.
+ *
+ * A copy spent by landing is one the run no longer holds, so a plan asking for more than it holds cannot
+ * be dealt at all. A copy that `recycles` is dealt again, and then the cadence is the whole of the clock:
+ * six units off two work boxes is the rounds it takes those two to come round four more times.
  */
 /**
  * When a plan lands, from the two clocks that must both run out: earning its price and drawing its copies
@@ -344,7 +361,7 @@ export function landingClock(payment: number, delivery: number): number {
   return softMax([payment, delivery], RACE.goalSoftening);
 }
 
-function deliveryClock(G: GameState, cardId: string, copies: number): number {
+function deliveryClock(G: GameState, cardId: string, copies: number, recycles = false): number {
   if (copies <= 0) return 0;
   let held = 0;
   let pool = 0;
@@ -352,7 +369,7 @@ function deliveryClock(G: GameState, cardId: string, copies: number): number {
     pool += zone.length;
     for (const c of zone) if (c.cardId === cardId) held++;
   }
-  if (copies > held) return Infinity;
+  if (!recycles && copies > held) return Infinity;
   const perRound = (held * effectiveHandSize(G)) / pool;
   return perRound > 0 ? copies / perRound : Infinity;
 }
@@ -403,8 +420,11 @@ function goalClock(
   if (workforce > 0 && plan?.landing) {
     const { landing } = plan;
     const copies = need / landing.delta;
-    const paid = outstanding(landing.price, copies, banked, unitCost);
-    const lands = landingClock(paid.workerRounds / workforce, deliveryClock(banked, landing.cardId, copies));
+    const paid = outstanding(landing.price, copies, banked, unitCost, landing.workerRounds);
+    const lands = landingClock(
+      paid.workerRounds / workforce,
+      deliveryClock(banked, landing.cardId, copies, landing.recycles),
+    );
     take(lands, 'landing', landing.cardId, paid.netted);
   }
   if (workforce > 0 && plan?.building) {
@@ -459,13 +479,27 @@ export function deriveRace(G: GameState): RaceModel {
       // Room is part of what a structure charges. It is folded in past the ranking above because land is
       // held rather than bought at a rate: a plan owes it only for the copies the tableau has no slot for.
       const planPrice = isStructure(card) ? { ...price, territory: (price.territory ?? 0) + 1 } : price;
-      const delta = Math.max(presenceDelta(probe, card, goal.measure), grantDelta(probe, card, goal.measure));
-      if (delta > 0 && workerRounds / delta < cheapest) {
-        cheapest = workerRounds / delta;
-        plan.landing = { cardId: card.id, delta, price: planPrice };
+      // A work box is a landing in this model's own vocabulary — pay a price, take a delta, repeat — and
+      // for a goal no standing card moves it is the only route there is. Its `produces` fires once per
+      // play, so it reads at one staffed worker as a level; the citizen who spends the turn running it is
+      // the rest of what it charges, and it recycles into the discard rather than being spent by landing.
+      const work = card.kind === 'work';
+      const staffing = work ? 1 : 0;
+      const delta = Math.max(
+        presenceDelta(probe, card, goal.measure),
+        grantDelta(probe, card, goal.measure),
+        work ? outputDelta(probe, card, goal.measure) : 0,
+      );
+      if (delta > 0 && (workerRounds + staffing) / delta < cheapest) {
+        cheapest = (workerRounds + staffing) / delta;
+        plan.landing = {
+          cardId: card.id,
+          delta,
+          price: planPrice,
+          ...(work ? { workerRounds: staffing, recycles: true } : {}),
+        };
       }
-      // Only a durable producer's `produces` is a rate; a work box pays its once per play, and the
-      // worker it pays it through is the very unit `unitCost` quotes every price in.
+      // Only a durable producer's `produces` is a rate — a work box's is the landing delta above.
       if (!isDurableProducer(card)) continue;
       const tau = outputDelta(probe, card, goal.measure);
       if (tau > fastest) {

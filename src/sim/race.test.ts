@@ -71,7 +71,14 @@ const FIXTURES: Record<string, CardDef> = {
     id: 'race_hut', name: 'Race Hut', kind: 'building', workers: 0,
     cost: { resources: { production: 4 } }, effect: { resources: { population: 2 } },
   },
-  // The one thing that gives 🗺️ a worker-round price, so a plan short of land can quote what it owes.
+  // A goal nothing standing can move: no card produces 🗺️ per round and no play grants it, so a work
+  // box's once-per-play output is the only route to it at all.
+  race_goal_land: {
+    id: 'race_goal_land', name: 'Race Goal Land', kind: 'objective', cost: {},
+    goals: [{ icon: '🗺️', measure: (G) => G.resources.territory, target: 3 }],
+  },
+  // The one thing that gives 🗺️ a worker-round price, so a plan short of land can quote what it owes —
+  // and, charging no pool at all, the plan whose whole price is the citizen who runs it.
   race_claim: {
     id: 'race_claim', name: 'Race Claim', kind: 'work', cost: {}, workers: 1,
     produces: { resources: { territory: 1 } },
@@ -360,6 +367,41 @@ describe('delivery', () => {
     const room = board(2);
     expect(full.goals[0].t).toBeGreaterThan(room.goals[0].t);
     expect(room.total).toBeGreaterThan(full.total);
+  });
+});
+
+describe('work boxes', () => {
+  it('routes a goal only a box feeds through its once-per-play output', () => {
+    // The hole a goal fed by nothing else falls into: no standing card moves 🗺️, so τ is zero and there
+    // is no producer to build — without the box's own output the clock sits at the horizon and the value
+    // is flat over every play that approaches the win. One copy against three units is finite because a
+    // box files back to the discard: it is dealt again, unlike a copy spent by landing.
+    const G = planned('race_goal_land', ['race_claim'], { territory: 0 });
+    const plan = deriveRace(G).plans[0];
+    expect(plan.building).toBeUndefined();
+    expect(plan.landing).toMatchObject({ cardId: 'race_claim', delta: 1, recycles: true });
+    const c = clockOf(G);
+    expect(c.route).toBe('landing');
+    expect(Number.isFinite(c.t)).toBe(true);
+  });
+
+  it('charges the citizen who runs the box, not only the pools it costs', () => {
+    // The box is free of every pool, so the staffing is the whole of what it charges: without it this
+    // plan is priced at nothing and its payment clock is flat over the workforce that pays it.
+    const G = planned('race_goal_land', ['race_claim'], { territory: 0 });
+    const plan = deriveRace(G).plans[0].landing!;
+    expect(plan.price).toEqual({});
+    expect(plan.workerRounds).toBeGreaterThan(0);
+    const crowd = planned('race_goal_land', ['race_claim'], { territory: 0, population: 3 });
+    expect(clockOf(crowd).t).toBeLessThan(clockOf(G).t);
+  });
+
+  it('brings a staffed box nearer the win than the copy still in the deck', () => {
+    const idle = planned('race_goal_land', ['race_claim', 'race_claim'], { territory: 0, population: 2 });
+    const played = planned('race_goal_land', ['race_claim', 'race_claim'], { territory: 0, population: 2 });
+    addWork(played, played.deck.pop()!);
+    expect(valued(played).goals[0].need).toBe(valued(idle).goals[0].need - 1);
+    expect(valued(played).total).toBeGreaterThan(valued(idle).total);
   });
 });
 
