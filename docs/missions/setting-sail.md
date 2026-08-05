@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ⬜ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
 **Branch:** Bronze — the opening node of the **naval / trade** branch (Setting Sail →
 [Sea Lanes](sea-lanes.md)). Prereq **writing**; the branch converges into **Bronze**.
 **Placement:** bronze col 9 row +1 — parallel to [Roads](roads.md) (col 9 row −1) and
@@ -193,23 +193,27 @@ play.
 
 | | greedy @100 | planner @100 | prover @10 |
 |---|---|---|---|
-| City | 5% | 19% | 4/10 proven |
-| Chiefdom | 6% | 31% | 9/10 proven |
+| City | 5% | 32% | 7/10 proven |
+| Chiefdom | 6% | 32% | 9/10 proven |
 
-Defeats are the crews in the large majority (City 93/80, Chiefdom 63/56 at the two tiers); Chiefdom
-carries the famine and bankruptcy tail the City cell doesn't. Median winning run 21 turns (City) /
-18 (Chiefdom), against the ~20–27 medians the sibling Bronze nodes measure.
+Defeats are the crews in the large majority (City 93/68, Chiefdom 63/56 at the two tiers); Chiefdom
+carries the famine and bankruptcy tail the City cell doesn't. Median winning run 19 turns (City) /
+24 (Chiefdom) at the planner tier, against the 20–32 the sibling Bronze nodes measure.
 
-**Why this is pending rather than done: the planner's numbers may not be a difficulty reading.** The
-mission's goal counts cards in `removed`, so `sim/enablers.ts`'s resource probe finds nothing
-goal-valued and population's capacity credit derives to zero; with `floor` off in the shipped term set,
-population carries **no enabler weight at all** here, while the card-cost probe correctly shapes 🪙 and
-🔨. In the traces the planner passes on affordable Houses and strands itself at 0🧍 — 50 of 84 City
-crews-defeats end at population 0 — where the prover, which runs the full model, plays House in nearly
-every winning line. So the planner/prover gap is not yet attributable between *the mission is hard* and
-*the policy can't see the population half of the price*. Paths to settle it are in
-[`../TODO.md`](../TODO.md) → *Simulator · Fidelity*; the run-loop half (a defeat on population ≤ 0)
-is filed there too.
+**The City numbers are a valuation fix, not a content change.** The goal counts cards in `removed`, so
+the resource probe finds nothing goal-valued, and the planner used to read the citizen a Voyage spends
+as worth nothing at all — it passed on affordable Houses and stranded itself at 0🧍 (42 of 100 runs).
+`sim/enablers.ts` now prices a pool the goal card takes through its `effect`, banks a pool with no
+per-round source at every copy's charge, and splits the goal step by replacement cost rather than unit
+count; City moved 19 → 32% across the three, its 0🧍 endings 42 → 28, and Houses built 31 → 51
+(`../TODO.md` → *Done / shipped*). The prover's 4/10 → 7/10 is the **same re-measurement**, not easier
+content: the full model changed too, so it is a new yardstick at a coarse n=10.
+
+What that leaves for this mission's balance: the two boards now read within a point of each other,
+where the gap used to be the City cell's blindness. The remaining planner/prover gap is not attributed —
+the capacity half of the model (a worker as a *slot that staffs a producer*) is still blind on a
+card-count goal, tracked in [`../TODO.md`](../TODO.md) → *Simulator · Fidelity*, as is the run-loop
+question of a defeat on population ≤ 0.
 
 Two constraints that fall out of the design rather than measurement, unchanged:
 

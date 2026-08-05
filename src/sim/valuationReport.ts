@@ -135,7 +135,8 @@ function cellBlock(cell: ValuationCell): string {
     for (const [k, e] of cc) {
       if (!e) continue;
       out.push(
-        `  ${pad(RESOURCE_LABEL[k], 14)}${e.marginal.toFixed(4)}/u -> ${n1(ENABLER_CONSTANTS.HOP_DISCOUNT * e.marginal * OBJECTIVE_WEIGHT)} pts/u (cap ${e.costAmt}) via ${e.cardId}`,
+        `  ${pad(RESOURCE_LABEL[k], 14)}${e.marginal.toFixed(4)}/u -> ${n1(ENABLER_CONSTANTS.HOP_DISCOUNT * e.marginal * OBJECTIVE_WEIGHT)} pts/u (cap ${e.cap}${e.restocking ? '' : ` = ${e.costAmt} x${e.copies}, no per-round source`}) via ${e.cardId}` +
+          (e.unitCost !== undefined ? `, ${e.unitCost.toFixed(2)} wr/u` : ', by unit count'),
       );
     }
     out.push('');
@@ -179,7 +180,8 @@ function cellBlock(cell: ValuationCell): string {
         cell.models.map((m) => {
           const c = m.explain.capacity[pool];
           const via = c.cardId ? `:${c.cardId}` : '';
-          return `${n1(c.throughput)}/rd${via} -> ${n1(c.weight)}${c.floorApplied ? ' (floor)' : ''}`;
+          const kept = c.weight > 0 && !c.applied ? ' out-valued' : '';
+          return `${n1(c.throughput)}/rd${via} -> ${n1(c.weight)}${c.floorApplied ? ' (floor)' : ''}${kept}`;
         }),
       ),
     );

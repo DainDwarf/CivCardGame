@@ -153,40 +153,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   more rounds the current stores survive — the same way `enablers.ts` derives its slope from
   `cost`→`produces` rather than from authored hints. Blocks trusting greedy/planner on any
   rounds-survived mission; `ice_age` and `sandbox` dodge it only because the sim doesn't drive them.
-- **A card-count goal derives no strategic capacity credit at all** `[size: M]` — `goalValuedResources`
-  probes the 8 *resource pools* against `objectiveProgress`, so on a goal that counts cards in a zone
-  (Writing, Roads, Copper, Setting Sail) every delta is zero and `goalValued` comes back empty. The
-  capacity pass reads only that map, so `bestGoalThroughput` returns 0 for territory, population **and**
-  culture; with `floor: false` in the shipped `DEFAULT_ENABLER_TERMS` their weight is then 0 outright.
-  `goalValuedCardCosts` — the card-injection probe — does fire and correctly shapes the goal card's cost
-  pools, but it is deliberately kept out of `goalValued` (crediting engine at a card-count marginal would
-  price it above the goal itself), so it can't restore the capacity half.
-  - **Live case: Setting Sail**, where the Voyage costs 5🪙 + 5🔨 **+ one idle 🧍**. Planner passes on
-    affordable Houses and strands itself at 0🧍 (50 of 84 City crews-defeats end at population 0), while
-    the prover — full model, so `floor` on — plays House in nearly every winning line. Planner 19/31%
-    vs prover 4/10 · 9/10 proven on the two committed cells, a gap **not yet attributed** between content
-    difficulty and this blindness.
-  - **A second, narrower hole under it:** `goalValuedCardCosts` attributes only over `CORE_KEYS`, so a
-    strategic cost is invisible to the probe by construction — and the Voyage's population spend rides on
-    `effect` rather than `cost.resources` anyway (that field is core-only), so even widening the key set
-    wouldn't reach it. A goal card that charges a strategic pool has no path into the model today.
-  - **(1) is done, and the mechanism is confirmed** — `npm run sim:valuation --
-    scripts/sim/baselines/setting_sail_city.json` reads it straight off: goal-valued pools **none**, the
-    capacity pass **0.0/rd on all three** strategic pools, so under the planner's terms population carries
-    no weight at all and under the full model its only weight is the blind `3.0` intrinsic floor — never a
-    derived credit, and never anything to do with the citizen a Voyage spends. The card-cost probe is
-    working correctly beside it (money and production at 5.0 pts/u, cap 5, via `voyage`), and
-    `foodPerWorker` reads `3.0 not charged` — the deck can feed a worker, but with no derived throughput
-    nothing nets it. What is *not* settled is the attribution: this says the planner is blind, not that
-    the blindness is what costs it the win rate. That is still (3)'s A/B.
-  - **Paths, cheapest first:** (1) ✅ derive `deriveEnablers` on a card-count-goal run state and read
-    `weight`/`cap` back — confirms or kills the mechanism with no sweep; (2) `deepPlanner` on seeds where
-    prover wins and planner loses, which separates *search depth* from *valuation*; (3) an A/B with
-    `floor: true`, the only term that gives population weight on such a mission — needs a registry entry,
-    since the `plannerNo*`/`plannerOnly*` ablation policies described elsewhere in this file are no longer
-    registered in `sim/batch.ts`; (4) the real fix — let a card-count goal derive capacity credit, e.g. by
-    probing what a *worker/slot/level* unlocks toward the counted card rather than toward a goal-valued
-    pool. Whatever lands must stay mechanical, never a per-mission steering term.
+- **A card-count goal derives no strategic *capacity* credit** `[size: M]` — `goalValuedResources` probes
+  the 8 *resource pools* against `objectiveProgress`, so on a goal that counts cards in a zone (Writing,
+  Roads, Copper, Setting Sail) every delta is zero and `goalValued` comes back empty. The capacity pass
+  reads only that map, so `bestGoalThroughput` returns 0 for territory, population **and** culture; with
+  `floor: false` in the shipped `DEFAULT_ENABLER_TERMS` their capacity weight is then 0 outright.
+  `goalValuedCardCosts` is deliberately kept out of `goalValued` (crediting engine at a card-count marginal
+  would price it above the goal itself), so it can't restore the capacity half.
+  - **What's left is the capacity role specifically** — a worker is a *slot that staffs a goal-producer*,
+    which is a different quantity from the citizen a Voyage spends, and the price reading below reaches
+    only the second. Territory and culture have no price reading at all on these missions, so they carry
+    nothing but the ablated-off floor.
+  - The fix must stay mechanical: probe what a *worker/slot/level* unlocks toward the **counted card**
+    rather than toward a goal-valued pool. Never a per-mission steering term.
+  - Where the credit lands then needs a rule: population would hold both a price weight (cap: the copies
+    the goal still charges) and a capacity weight (cap: `CAPACITY_CAP`), which `capacityOf` currently
+    resolves by keeping the larger *saturated* credit.
 - **The enabler model is derived once, from the root state** `[size: S]` — the planner memoizes it on
   first `replan` and never invalidates, so it reads the board as it stood at turn 1. Harmless for
   everything shipped (a deck and its stickers are fixed at launch, and the one `modifyGain` card is
@@ -251,6 +233,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Price a goal card by what its price costs to obtain** ✅ — three compounding reads, each measured on
+  its own. (a) A card's **price** is its `cost.resources` plus every pool its play `effect` takes away, so
+  the citizen a Voyage sails with is priced like its 🪙 (`cost.resources` is core-only by construction, so a
+  strategic price has nowhere else to ride). (b) A pool nothing in the run **`produces` per round** is
+  banked at every copy's charge, not one card's: the cap-at-one-card rule assumes a bank refilled between
+  plays, and a House mints citizens by being *bought*, which is spending, not income. (c) The goal step is
+  split across the price by each pool's **replacement cost in worker-rounds** (Trader 3🪙/wr → 0.33, Forge
+  2🔨/wr → 0.50, House 6🔨 for 2🧍 → 1.50), derived by relaxation since a one-shot grant's own price is in
+  priced pools; a pool with no derived price leaves its card on the unit-count split, which the report
+  names. Where a card charges one pool the rebasing is the identity, so only 4 of 30 cells moved.
+  Setting Sail City planner **19 → 20 → 26 → 32%** across the three, prover 4/10 → 7/10 (a new yardstick,
+  not easier content — the full model changed too); Writing 79 → 84%, `writing_chiefdom` 51 → 50%,
+  `setting_sail_chiefdom` 31 → 32%, oracle 10/10 unchanged. Also fixed the collision the price reading
+  exposed: `capacityOf` overwrote a card-cost weight unconditionally, and now keeps whichever credit is
+  larger **at saturation** (the caps aren't commensurable — a price saturates at what the card charges, a
+  capacity at `CAPACITY_CAP`).
 - **Spell `cloneState` out field by field** ✅ — the generic recursive walk asked *what is this value* at
   every node while seeing numbers, strings, nine array shapes and six object shapes, so its checks ran
   megamorphic; writing the `GameState` shape out (plus a `CardInstance`/`PlacedCard`/`GameEvent` helper

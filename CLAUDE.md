@@ -572,8 +572,11 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   **mechanically from card `cost`→`produces`/`effect`** — every output read through `rules/effects.ts`'s
   `realizedGain`, so a board standing a `modifyGain` card is priced at what it really pays rather than at
   the printed rate, and the identity everywhere else — (reusable by the ECONOMY-EXPLORER demand phase),
-  credits a banked consumable for the objective progress it *converts into* (including the cost of a
-  card the objective *counts*, probed by injecting run cards into the goal-measured zones), a held
+  credits a banked consumable for the objective progress it *converts into* (including the price of a
+  card the objective *counts*, probed by injecting run cards into the goal-measured zones — a price being
+  the declarative `cost` plus every pool the play `effect` takes away, split across its components by what
+  each costs to obtain in **worker-rounds** rather than by unit count, and banked at every copy's charge
+  where nothing in the run `produces` the pool per round to refill it), a held
   strategic resource (territory/population/culture) for the goal-throughput its capacity *unlocks*, and
   an owned durable producer for the output rounds past the projected turn, turning the greedies' flat
   plateau into a slope. Population's capacity credit is **net of the food its growth commits to** — the

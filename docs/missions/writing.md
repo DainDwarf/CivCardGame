@@ -41,10 +41,11 @@ own rows at the standing protocol — greedy/planner @100, oracle @10:
 | policy | win rate | turns (min/med/mean/max) | defeats |
 | --- | --- | --- | --- |
 | greedy | 36% | 8 / 24.0 / 26.1 / 67 | famine 40, dark_age 24 |
-| planner | 79% | 9 / 19.0 / 19.9 / 50 | dark_age 14, famine 7 |
+| planner | 84% | 9 / 19.0 / 20.5 / 50 | dark_age 11, famine 5 |
 | oracle | 100% (10/10) | 10 / 13.0 / 13.5 / 17 | — |
 
-The cost move (6🔨+2🌾 → 4🔨+2🔬) alone cratered the cell — planner 84% → 19%, oracle 100% → 80%, mean
+The cost move (6🔨+2🌾 → 4🔨+2🔬) alone cratered the cell — planner 84 → 19% *on the deck of the day*,
+oracle 100% → 80%, mean
 end 🔬 negative at every tier — and doubling Storytelling/Fire to ×4 recovered it to the row above.
 So the mission is now tuned *against a science-heavy deck*; the un-doubled deck is the harder cell.
 
@@ -60,9 +61,11 @@ Left open, none of them blocking:
 
   The oracle dodges *more* when the tablet can't be paid for, which is the intent; the planner has it
   backwards. The load-bearing cell is the `playable` one (80 vs 45) — holding an affordable tablet, the
-  planner burns it to Fire four times in five where the oracle records it. So part of the 21-point gap
-  is the planner's leaf valuation not crediting a held tablet for the goal step it converts into, and
-  **79% understates what the deck does in competent hands.** A `sim/` matter, not a content one.
+  planner burns it to Fire four times in five where the oracle records it. So part of the gap to the
+  oracle is the planner's leaf valuation not crediting a held tablet for the goal step it converts into,
+  and **84% understates what the deck does in competent hands.** A `sim/` matter, not a content one.
+  (The split above was measured at the 79% tier, before the goal step was attributed by replacement cost;
+  the direction is what it establishes, and the cell has since moved to 84%.)
   (`TAB=playable` means *some* tablet in hand was affordable, not necessarily the discarded one — a
   handful of 2+-tablet cases carry that slack. Direction is unaffected. Measured with a throwaway patch
   naming the sacrifice in `formatAction`, which prints only the count; not committed.)

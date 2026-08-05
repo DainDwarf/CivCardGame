@@ -417,10 +417,16 @@ describe('card-cost goal valuation', () => {
     }
   });
 
-  it('attributes the goal step proportionally: one shared per-unit marginal across the cost keys', () => {
-    const m = deriveEnablers(writingRoot());
-    const marginals = new Set(tabletCost.map(([key]) => m.weight[key]));
-    expect(marginals.size).toBe(1);
+  it('attributes the goal step by what each cost key costs to obtain, not by how many units it is', () => {
+    // A unit of one pool is not a unit of another: the tablet's 🔬 and 🔨 are equal shares of its price only
+    // if a point of each takes equal work to make. Each key's per-unit credit is therefore in the same ratio
+    // as its worker-round price — the count split is the special case where those prices are equal.
+    const e = explainEnablers(writingRoot());
+    const priced = tabletCost.map(([key]) => e.cardCosts[key]!);
+    for (const p of priced) expect(p.unitCost).toBeDefined();
+    for (const p of priced) {
+      expect(p.marginal / priced[0].marginal).toBeCloseTo(p.unitCost! / priced[0].unitCost!);
+    }
   });
 
   it('keeps a full cost bank worth strictly less than the goal step it converts into (sound shaping)', () => {
@@ -503,6 +509,63 @@ describe('card-cost goal valuation', () => {
     const m = goalValuedCardCosts(createRun(config).G);
     expect(m.military).toBeUndefined();
     expect(m.money!.costAmt).toBe(CARDS.bartering.cost.resources!.money!);
+  });
+
+  it('prices a pool the goal card charges through its play effect, at the same marginal as its cost', () => {
+    // The Voyage's crew leaves through `effect` because `CardCost.resources` is core-only, but it is as
+    // much the price of a launch as the 🪙 beside it — so the two must share one per-unit marginal, and the
+    // citizen's cap must be what one launch charges.
+    const config = simConfig({
+      deckCardIds: ['forge', 'forge', 'farm', 'farm', 'house', 'toolmaking', 'toolmaking'],
+      board: 'city',
+      missionId: 'setting_sail',
+      seed: 'enablers-card-cost',
+    });
+    const m = goalValuedCardCosts(createRun(config).G);
+    expect(m.population!.cardId).toBe('voyage');
+    expect(m.population!.marginal).toBe(m.money!.marginal);
+    expect(m.population!.costAmt).toBe(-CARDS.voyage.effect!.resources!.population!);
+  });
+
+  it('banks every copy\'s charge of a pool nothing in the run produces per round', () => {
+    // Money and production are refilled by the Trader and the Forge between launches, so one launch's
+    // charge is the useful bank. Nothing *produces* population — a House mints citizens by being bought —
+    // so the citizens every seeded Voyage will take must be banked at once.
+    const config = simConfig({
+      deckCardIds: ['forge', 'forge', 'trader', 'trader', 'farm', 'house', 'toolmaking'],
+      board: 'city',
+      missionId: 'setting_sail',
+      seed: 'enablers-card-cost',
+    });
+    const G = createRun(config).G;
+    const m = goalValuedCardCosts(G);
+    // Across the zones, not the draw pile: the run root has already dealt the opening hand.
+    const voyages = [...G.deck, ...G.hand, ...G.discard].filter((c) => c.cardId === 'voyage').length;
+    expect(voyages).toBeGreaterThan(1);
+    expect(m.money!.cap).toBe(CARDS.voyage.cost.resources!.money!);
+    expect(m.population!.cap).toBe(-CARDS.voyage.effect!.resources!.population! * voyages);
+  });
+
+  it('keeps whichever of the price and the capacity credit is worth more at saturation', () => {
+    // The one pool both passes can claim: a strategic price (cap: the single citizen a launch charges) and
+    // the capacity credit (cap: `CAPACITY_CAP`). Their per-unit rates aren't comparable, so the model keeps
+    // the larger *saturated* credit — and the loser must leave nothing behind.
+    const G = createRun(
+      simConfig({
+        deckCardIds: ['forge', 'forge', 'farm', 'farm', 'house', 'toolmaking', 'toolmaking'],
+        board: 'city',
+        missionId: 'setting_sail',
+        seed: 'enablers-card-cost',
+      }),
+    ).G;
+    for (const terms of [DEFAULT_ENABLER_TERMS, {}]) {
+      const e = explainEnablers(G, terms);
+      const price = e.cardCosts.population!;
+      const floored = e.capacity.population.weight * ENABLER_CONSTANTS.CAPACITY_CAP;
+      const priced = ENABLER_CONSTANTS.HOP_DISCOUNT * price.marginal * OBJECTIVE_WEIGHT * price.cap;
+      const kept = e.model.weight.population! * e.model.cap.population!;
+      expect(kept).toBe(Math.max(floored, priced));
+    }
   });
 
   it('registers nothing on a resource-threshold objective, so those missions\' models are untouched', () => {

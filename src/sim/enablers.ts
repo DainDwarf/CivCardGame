@@ -168,8 +168,20 @@ export interface EnablerModel {
 /** Which run card makes a core resource bankable toward a card-count goal, and at what rate. */
 export interface CardCostExplain {
   marginal: number;
+  /** What **one** play of the card charges of this pool. */
   costAmt: number;
   cardId: string;
+  /** Whether some run card pays this pool *every round* — which is what lets the cap stop at one card's
+   *  charge, the bank being refilled between plays. */
+  restocking: boolean;
+  /** Copies of the card the run holds, and so the plays the pool may have to fund out of one bank. */
+  copies: number;
+  /** The banking cap the model carries: one card's charge where the pool restocks, every copy's where it
+   *  doesn't. */
+  cap: number;
+  /** The pool's `replacementCost` in worker-rounds, when the whole price carried one and the step was
+   *  attributed by it. Absent where the card fell back to the raw unit-count split. */
+  unitCost?: number;
 }
 
 /** How one strategic pool's capacity credit composed — the pass that is silently vacuous whenever the
@@ -189,6 +201,9 @@ export interface CapacityExplain {
   goalValued: boolean;
   /** The composed `weight[pool]`; `0` where the pass set none. */
   weight: number;
+  /** Whether that weight is what the model carries, or was out-valued at saturation by a card-cost price
+   *  on the same pool — the one case where a positive `weight` here is not the pool's credit. */
+  applied: boolean;
 }
 
 /** Which conversion the consumables loop kept for one core key. */
@@ -237,7 +252,7 @@ export interface EnablerExplain {
  *  nothing for is a credit with no stated origin, which `enablers.test.ts` pins against. */
 export function weightSource(e: EnablerExplain, k: keyof Resources): string {
   const capacity = (e.capacity as Record<string, CapacityExplain | undefined>)[k];
-  if (capacity && capacity.weight > 0) return capacity.floorApplied ? 'floor' : `capacity:${capacity.cardId ?? '?'}`;
+  if (capacity?.applied) return capacity.floorApplied ? 'floor' : `capacity:${capacity.cardId ?? '?'}`;
   const conv = e.conversions[k];
   if (conv) return `conv>${conv.into}:${conv.cardId}`;
   const cc = e.cardCosts[k];
@@ -282,15 +297,37 @@ function positive(x: number | undefined): number {
   return x !== undefined && x > 0 ? x : 0;
 }
 
-/** The card-count counterpart of `goalValuedResources`: which core resources fund a card the objective
+/** What playing a card charges, over all 8 pools: its declarative `cost.resources` plus every pool its
+ *  play `effect` *takes away*. A negative play delta is semantically a price — the citizen a Voyage sails
+ *  with is as much the cost of the launch as its 🪙 — and it has nowhere else to ride: `CardCost.resources`
+ *  is core-only by construction, since a strategic pool is gated by the system that owns it rather than
+ *  spent blind. Read through `realizedGain` like every other effect here, so a board bending what a card
+ *  takes is priced at what it really takes. A card's recurring `upkeep` is not a price: it buys no play,
+ *  and `value.ts`'s `permanentDelta` already charges it. */
+function cardPrice(G: GameState, card: CardDef): Partial<Record<keyof Resources, number>> {
+  const price: Partial<Record<keyof Resources, number>> = {};
+  for (const ck of CORE_KEYS) {
+    const amt = positive(card.cost.resources?.[ck]);
+    if (amt > 0) price[ck] = amt;
+  }
+  const effect = realizedGain(G, card.effect?.resources);
+  for (const [k, delta] of Object.entries(effect ?? {}) as [keyof Resources, number][]) {
+    if (delta < 0) price[k] = (price[k] ?? 0) - delta;
+  }
+  return price;
+}
+
+/** The card-count counterpart of `goalValuedResources`: which resources fund a card the objective
  *  *counts*, probed by injecting a synthetic instance of each run card into the zones a goal can measure
  *  (`removed` for a played event, `tableau` for a building, `tradeRoutes` for an open route — the three a
  *  card *stays* in, so a goal can count it), each only for the kinds that reach it, and diffing
  *  `objectiveProgress`. A card that
- *  moves the gradient makes its `cost` bankable: paying it *is* the goal step. The per-card progress
- *  delta is attributed **proportionally** over the card's total core cost — one shared per-unit marginal,
- *  so a full multi-resource bank sums to `HOP_DISCOUNT · delta`, keeping the shaping sound (a per-key
- *  `delta/costAmt` split would let the joint bank equal the step it converts into). Probed on an unzeroed
+ *  moves the gradient makes its `cardPrice` bankable: paying it *is* the goal step. The per-card progress
+ *  delta is attributed **proportionally** over that whole price, measured in `replacementCost` — so a full
+ *  multi-resource bank sums to `HOP_DISCOUNT · delta` however the price is split, keeping the shaping sound
+ *  (a per-key `delta/costAmt` split would let the joint bank equal the step it converts into). Which *field*
+ *  carries a component never matters: a pool spent through the play `effect` is attributed exactly as one
+ *  charged declaratively. Probed on an unzeroed
  *  clone: resource terms cancel in the diff, and a goal already at target correctly reads zero. Like the
  *  resource probe this runs once at the run root, so a goal card satisfied mid-run doesn't drop out of the
  *  model until the next derive. Exported for the tests that pin a resource-threshold mission's model as
@@ -299,11 +336,21 @@ export function goalValuedCardCosts(G: GameState): Partial<Record<keyof Resource
   const probe = cloneState(G);
   const base = objectiveProgress(probe);
   const out: Partial<Record<keyof Resources, CardCostExplain>> = {};
-  for (const cardId of runCardIds(G)) {
+  const ids = runCardIds(G);
+  const wr = replacementCost(G, ids);
+  for (const cardId of ids) {
     const card = CARDS[cardId];
     if (!card) continue;
+    const price = cardPrice(G, card);
+    // Attribute the goal step across the price by what each component costs to obtain, falling back to the
+    // raw unit count when any component has no derived worker-round price — a guessed price would reshape
+    // the split silently, where the fallback is one figure the report can name. Identical to the count
+    // split wherever a card charges a single pool: the shared `wr` factor cancels.
+    const unitCost = Object.keys(price).every((k) => wr[k as keyof Resources] !== undefined) ? wr : undefined;
     let totalCost = 0;
-    for (const ck of CORE_KEYS) totalCost += positive(card.cost.resources?.[ck]);
+    for (const [k, amt] of Object.entries(price) as [keyof Resources, number][]) {
+      totalCost += amt * (unitCost?.[k] ?? 1);
+    }
     if (totalCost <= 0) continue; // a free card needs no banking, so its costs can't be enablers
     // `removed` is not filtered by kind: actions can self-exile via `resolve`, so any card may be what it
     // counts. The two standing zones are, since `run/moves.ts`'s `playCard` is their only writer and routes
@@ -326,15 +373,91 @@ export function goalValuedCardCosts(G: GameState): Partial<Record<keyof Resource
     }
     const delta = Math.max(removedDelta, tableauDelta, routeDelta);
     if (delta <= 0) continue;
-    const marginal = delta / totalCost;
-    for (const ck of CORE_KEYS) {
-      const costAmt = positive(card.cost.resources?.[ck]);
-      if (costAmt <= 0) continue;
+    const progressPerCost = delta / totalCost;
+    const copies = copiesInRun(G, cardId);
+    for (const [ck, costAmt] of Object.entries(price) as [keyof Resources, number][]) {
+      const marginal = progressPerCost * (unitCost?.[ck] ?? 1);
       const prev = out[ck];
-      if (!prev || marginal > prev.marginal) out[ck] = { marginal, costAmt, cardId };
+      if (prev && marginal <= prev.marginal) continue;
+      // A restocking pool banks one card's charge and is refilled between plays; one that isn't must carry
+      // every copy's charge at once, since the only way to top it back up is to buy more of it.
+      const restocking = isRestocking(G, ids, ck);
+      out[ck] = {
+        marginal,
+        costAmt,
+        cardId,
+        restocking,
+        copies,
+        cap: restocking ? costAmt : costAmt * copies,
+        ...(unitCost?.[ck] !== undefined ? { unitCost: unitCost[ck] } : {}),
+      };
     }
   }
   return out;
+}
+
+/** What a unit of each pool costs to *obtain*, in **worker-rounds** — the currency the game's production
+ *  actually runs on, and the one `bestFoodPerWorker` already prices population's food in.
+ *
+ *  Why it exists: the goal step a card's price buys is split across that price, and splitting it by *unit
+ *  count* asserts that a 🪙 and a 🧍 are the same size of thing. They aren't — a Trader mints 3🪙 a round for
+ *  free while a citizen exists only if a 6🔨 House is bought — so a count-based split systematically
+ *  under-prices the scarce half of a price and over-prices the cheap half.
+ *
+ *  Two sources, in order. A pool with a **staffed producer** costs `1 / its best per-worker output`: the
+ *  marginal cost of that output is the worker standing in the box, which is exactly one worker-round, and
+ *  the building's own capital cost is deliberately not amortized in (it is paid once and produces for the
+ *  rest of the run). A pool with **no per-round source** is priced through the cheapest one-shot grant that
+ *  mints it — a House's 6🔨 for 2🧍 — which is why this relaxes rather than reads once: that card's own
+ *  price is in pools this same map prices. Two passes past the seed resolve every chain in the catalogue;
+ *  the bound is what makes a cyclic pair terminate instead of diverging.
+ *
+ *  A pool neither source reaches has **no** entry, and a price naming one is left on the count split
+ *  rather than rebased against a guess. */
+function replacementCost(G: GameState, ids: Set<string>): Partial<Record<keyof Resources, number>> {
+  const wr: Partial<Record<keyof Resources, number>> = {};
+  const runCards = Object.values(CARDS).filter((c) => ids.has(c.id));
+  for (const card of runCards) {
+    if ((card.workers ?? 0) < 1) continue;
+    const produces = realizedGain(G, card.produces?.resources);
+    for (const [k, out] of Object.entries(produces ?? {}) as [keyof Resources, number][]) {
+      if (out > 0 && 1 / out < (wr[k] ?? Infinity)) wr[k] = 1 / out;
+    }
+  }
+  for (let pass = 0; pass < 3; pass++) {
+    for (const card of runCards) {
+      const grant = realizedGain(G, card.effect?.resources);
+      if (!grant) continue;
+      let priced = 0;
+      for (const [k, amt] of Object.entries(cardPrice(G, card)) as [keyof Resources, number][]) {
+        if (wr[k] === undefined) { priced = NaN; break; }
+        priced += amt * wr[k];
+      }
+      if (!(priced > 0)) continue;
+      for (const [k, out] of Object.entries(grant) as [keyof Resources, number][]) {
+        if (out > 0 && priced / out < (wr[k] ?? Infinity)) wr[k] = priced / out;
+      }
+    }
+  }
+  return wr;
+}
+
+/** Whether anything in the run pays this pool **every round** — a staffed producer's or a route's
+ *  `produces`. A one-shot placement grant is deliberately not a source: a House mints citizens by being
+ *  *bought*, so a pool fed only that way is refilled by spending, not by waiting, and a bank sized at one
+ *  card's charge would assume an income that doesn't exist. That distinction is the whole of the cap rule
+ *  below. */
+function isRestocking(G: GameState, ids: Set<string>, k: keyof Resources): boolean {
+  return Object.values(CARDS).some((c) => ids.has(c.id) && positive(realizedGain(G, c.produces?.resources)?.[k]) > 0);
+}
+
+/** Copies of a card the run holds, across every zone — how many plays one bank may have to fund. */
+function copiesInRun(G: GameState, cardId: string): number {
+  let n = 0;
+  for (const zone of [G.deck, G.hand, G.discard, G.removed, placedCards(G)]) {
+    for (const c of zone) if (c.cardId === cardId) n += 1;
+  }
+  return n;
 }
 
 /** Every card id present anywhere in the run — the conversions actually available to this deck. Scanning
@@ -485,7 +608,7 @@ function deriveExplained(G: GameState, terms: EnablerTerms): EnablerExplain {
     for (const [ck, e] of Object.entries(cardCostsFound) as [keyof Resources, CardCostExplain][]) {
       if (goalValued[ck] !== undefined) continue;
       weight[ck] = HOP_DISCOUNT * e.marginal * OBJECTIVE_WEIGHT;
-      cap[ck] = e.costAmt;
+      cap[ck] = e.cap;
     }
   }
 
@@ -520,7 +643,12 @@ function deriveExplained(G: GameState, terms: EnablerTerms): EnablerExplain {
     const derived = best.value * CAPACITY_HORIZON;
     const floorTerm = floor && !isGoalValued ? INTRINSIC_CAPACITY_CREDIT : 0;
     const w = Math.max(floorTerm, derived);
-    if (w > 0) {
+    // The card-cost pass may already price this pool — a goal card charging a strategic pool, the way a
+    // Voyage charges a citizen. The two are compared at **saturation** rather than per unit, since their
+    // caps mean different things: a price saturates at the one unit the card charges, a capacity at
+    // `CAPACITY_CAP`, so the rates alone aren't commensurable.
+    const applied = w > 0 && w * CAPACITY_CAP > (weight[pool] ?? 0) * (cap[pool] ?? 0);
+    if (applied) {
       weight[pool] = w;
       cap[pool] = CAPACITY_CAP;
     }
@@ -531,6 +659,7 @@ function deriveExplained(G: GameState, terms: EnablerTerms): EnablerExplain {
       floorApplied: floorTerm > derived,
       goalValued: isGoalValued,
       weight: w,
+      applied,
     };
   };
 
@@ -575,12 +704,12 @@ function deriveExplained(G: GameState, terms: EnablerTerms): EnablerExplain {
       if (!ids.has(card.id)) continue;
       const effect = realizedGain(G, card.effect?.resources);
       const produces = realizedGain(G, card.produces?.resources);
+      const price = cardPrice(G, card);
       for (const [vk, valuePerUnit] of Object.entries(valued) as [keyof Resources, number][]) {
         const output = positive(effect?.[vk]) + positive(produces?.[vk]);
         if (output <= 0) continue;
-        for (const ck of CORE_KEYS) {
-          const costAmt = card.cost.resources?.[ck] ?? 0;
-          if (costAmt <= 0 || goalValued[ck] !== undefined) continue;
+        for (const [ck, costAmt] of Object.entries(price) as [keyof Resources, number][]) {
+          if (goalValued[ck] !== undefined) continue;
           const w = HOP_DISCOUNT * (output / costAmt) * valuePerUnit;
           if (w > (weight[ck] ?? 0)) {
             weight[ck] = w;

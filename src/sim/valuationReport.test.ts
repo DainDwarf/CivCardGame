@@ -12,9 +12,9 @@ function explain(over: Partial<EnablerExplain> = {}): EnablerExplain {
     goalValued: {},
     cardCosts: {},
     capacity: {
-      territory: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0 },
-      population: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0 },
-      culture: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0 },
+      territory: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0, applied: false },
+      population: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0, applied: false },
+      culture: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0, applied: false },
     },
     conversions: {},
     valued: {},
@@ -45,7 +45,7 @@ function cell(): ValuationCell {
         rootPotential: 12,
         explain: explain({
           model: { weight: { production: 5 }, cap: { production: 4 }, producerCredit: { test_forge: 9 } },
-          cardCosts: { production: { marginal: 0.05, costAmt: 4, cardId: 'test_goal_card' } },
+          cardCosts: { production: { marginal: 0.05, costAmt: 4, cardId: 'test_goal_card', restocking: true, copies: 3, cap: 4 } },
         }),
       },
       {
@@ -54,9 +54,9 @@ function cell(): ValuationCell {
         explain: explain({
           model: { weight: { production: 5, population: 3 }, cap: { production: 4, population: 12 }, producerCredit: {} },
           capacity: {
-            territory: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0 },
-            population: { throughput: 0, derived: 0, floorApplied: true, goalValued: false, weight: 3 },
-            culture: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0 },
+            territory: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0, applied: false },
+            population: { throughput: 0, derived: 0, floorApplied: true, goalValued: false, weight: 3, applied: true },
+            culture: { throughput: 0, derived: 0, floorApplied: false, goalValued: false, weight: 0, applied: false },
           },
         }),
       },
