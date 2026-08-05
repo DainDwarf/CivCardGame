@@ -45,7 +45,8 @@ when it carries stickers).
 ```
 npm run sim -- --baseline <paths|dir>
 npm run sim -- --scenario <ids> --deck <file> --board <id|file>
-               [--seeds 100] [--policies random,heuristic,greedy] [--max-rounds 200] [--seed <i>] [--verbose]
+               [--seeds 100] [--policies random,heuristic,greedy] [--max-rounds 200] [--scorer classic]
+               [--seed <i>] [--verbose]
 
 npm run sim:report -- <sweep.csv | fixture.json | baselines dir> [--format text|json|csv] [--against <paths|dir>]
 npm run sim:record -- <sweep.csv> [--baseline <paths|dir>]
@@ -72,6 +73,10 @@ has no comment syntax to hide it, so `sim:report --format json` needs `--silent`
 - `--max-rounds <n>` — stall cutoff (default 200). A policy that idles past round `n` without
   winning or collapsing is recorded as a `stall` defeat rather than ground to the action wall —
   see *Reading the report*. Lower it for a faster sweep when you expect stalls.
+- `--scorer <name>` — the value function every competent policy ranks by, one setting across all of
+  them: `classic` (default, the shipping bands + enabler shaping) or `race` (the rounds-margin
+  challenger). A paired sweep under the same policy names isolates the brain. Like `--search-beam`, a
+  non-default scorer is a **diagnostic**: it is recorded in the sweep header and `sim:record` refuses it.
 - `--seed <i>` — sweep **only** that seed index, on the exact seed streams the full sweep would
   have given it (see *Replay one run*).
 - `--verbose` — add a per-turn trace on **stderr**; stdout stays pure CSV, so it composes with
@@ -90,8 +95,8 @@ collapse to a count. See *Compare a content variant*.
 And on `sim:record`: `--baseline <paths|dir>` says where the fixtures live (default
 `scripts/sim/baselines`). It replaces one `results[policy]` key per swept policy and touches
 nothing else. Every refusal reads a fact off the sweep's own header, so it holds for a file taken
-any time: a seed-filtered sweep (a replay), a non-default search beam (a diagnostic), a run count
-short of `--seeds` (interrupted), a cell no fixture answers to (renamed), or a fixture whose
+any time: a seed-filtered sweep (a replay), a non-default search beam or scorer (a diagnostic), a run
+count short of `--seeds` (interrupted), a cell no fixture answers to (renamed), or a fixture whose
 deck/board/mission no longer matches what was swept.
 
 One invocation sweeps `[missions] × {the one deck} × {the one board}`. To **compare two
@@ -112,7 +117,7 @@ npm run sim -- --scenario first_settlement,growing_numbers --deck <file> --board
 ## The sweep file
 
 Above the rows sit `#`-comment lines (which standard parsers skip): the sweep's own flags — the
-**effective** `maxRounds`/`beamWidth`, not the ones a flag happened to name — then one
+**effective** `maxRounds`/`beamWidth`/`scorer`, not the ones a flag happened to name — then one
 **manifest** line per cell naming its mission, board and deck. So a sweep file is a complete
 record of itself: a data row carries no constant-per-cell field, a deck's copy counts and
 per-copy stickers live nowhere else, and `sim:record` decides off that header alone whether the
@@ -253,21 +258,24 @@ re-run the sweep in a loop looking for a representative run.
 ## Is the mission hard, or is the policy mis-valuing it? — `npm run sim:valuation`
 
 When a competent policy underperforms, the question is always whether the content is hard or the
-policy cannot *see* what the content asks for. That is answerable without a sweep, because the thing
-the policy steers by is derived from content alone: `sim/value.ts`'s `scoreState` bands plus
-`sim/enablers.ts`'s enabler model, cut once at the run root and **seed-independent**.
+policy cannot *see* what the content asks for. That is answerable without a sweep, because whichever
+value function the policy steers by is derived from content alone and cut once at the run root, so
+both are **seed-independent**: `--scorer classic` (the default) prints `sim/value.ts`'s `scoreState`
+bands plus `sim/enablers.ts`'s enabler model, and `--scorer race` prints `sim/race.ts`'s plans and its
+`T̂loss − T̂win` margin. Read the one the sweep in question ran under.
 
 ```
 npm run sim:valuation                                        whole standing set, planner vs full
 npm run sim:valuation -- scripts/sim/baselines/masonry.json  one cell
-npm run sim:valuation -- --terms planner,full,none,no-floor  any ablation, side by side
+npm run sim:valuation -- --terms planner,full,none,no-floor  any classic ablation, side by side
+npm run sim:valuation -- --scorer race                       the rounds model instead of the bands
 npm run sim:valuation -- --format csv > valuation.csv        long/tidy, for duckdb
 ```
 
 It runs in under a second over all 30 fixtures. Read it before reaching for a sweep, and **before
 concluding a mission is too hard**.
 
-What answers a question here, none of which the finished model shows:
+What answers a question under **`classic`**, none of which the finished model shows:
 
 - **`goal-valued pools (none)`** — the objective names no resource, so every strategic pool's capacity
   credit derives to **0**. On a card-count goal (Writing, Roads, Copper, Setting Sail) that is the
@@ -282,10 +290,28 @@ What answers a question here, none of which the finished model shows:
 - **the band split** — band 3's buffer charge against band 4's objective pull is the whole "is growth
   worth it" decision, and the summed `scoreState` hides it.
 
+And under **`race`**, where the unit is rounds throughout:
+
+- **`unitCost` … `no cost`** — what a unit of each pool costs in worker-rounds, and the pools nothing in
+  the run can obtain. A price naming one of the latter yields **no plan at all**, which reads downstream
+  as a goal that simply has no route.
+- **the plan scan's losers** — every card ranked for a goal with the per-unit price it lost on. The
+  cheapest per unit wins whether or not the deck can deal it, so "the plan is undeliverable and the card
+  beside it wasn't" is a sentence only this table supports.
+- **the payment/delivery split** inside each `landingClock`, with the circulation census (`held × hand /
+  pool`) behind the delivery half — the two clocks the plan folds, and which of them binds.
+- **`ABSORBED`** — a softMax weight under the ULP of 1, so the fold came out bit-identical to a hard
+  `max`. The state has **no gradient** on that clock at all: a term marked here is one the beam cannot
+  follow, whatever it does to it.
+- **`route none (…)`** and **`HORIZON CLAMPED`** — the two ways a goal reads dead, with the reason
+  (no plan · no workforce · copies short · unpriceable pool) and the raw `t` beside the clamped one.
+
 A term set is `planner` (the shipped `DEFAULT_ENABLER_TERMS`), `full` (what oracle/prover use), `none`,
-`no-<term>…` or `only-<term>…` over `cardCosts`/`conversions`/`capacity`/`floor`/`handSize`/`producers`.
-The tool is **read-only** — it records nothing, and it changes no measurement. To make a *sweep* use a
-different term set still costs a source edit (`docs/TODO.md` → *Shaping config settable by option*).
+`no-<term>…` or `only-<term>…` over `cardCosts`/`conversions`/`capacity`/`floor`/`handSize`/`producers` —
+a classic-model ablation, so `--terms` under `--scorer race` fails fast. The tool is **read-only** — it
+records nothing, and it changes no measurement. To make a *sweep* use a different term set still costs a
+source edit (`docs/TODO.md` → *Shaping config settable by option*); its **scorer** is a flag
+(`npm run sim -- --scorer race`), and a diagnostic one.
 
 ## Reference: reading the report (when asked) — the two things that go wrong
 

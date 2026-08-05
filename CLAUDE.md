@@ -143,12 +143,22 @@ surprise, so nothing shows a locked placeholder or a total count.
   distinguish. Every figure carries its scale as **goal steps** (pts ÷ `OBJECTIVE_WEIGHT`), since a raw
   score point is a fifth of the win or a twelfth of it depending on a constant in another file.
   `--terms <spec,…>` compares term sets side by side — `planner` (the shipped `DEFAULT_ENABLER_TERMS`),
-  `full` (what the oracle/prover use), `none`, `no-<term>…`, `only-<term>…`, defaulting to `planner,full`
-  — over `--baseline <paths|dir>` (default: the whole standing set, also accepted as bare positionals) or
-  the ad-hoc `--scenario`/`--deck`/`--board` trio. `--format text|json|csv`, the CSV **long/tidy** (one
-  row per fact, since `producerCredit` is variable-width and most facts carry an argmax card) so it
-  pivots in duckdb like the sweep rows. **No simulation and no `--seed`**: the model is derived once from
-  the run root and the probes read the deck as an unordered set, so shuffle order cannot reach it — the
+  `full` (what the oracle/prover use), `none`, `no-<term>…`, `only-<term>…`, defaulting to `planner,full`.
+  `--scorer classic|race` picks *which* value function is rendered, naming the same two as `npm run sim`'s
+  flag and defaulting the same way. Under **`race`** the report is `race.ts`'s instead: each pool's
+  `unitCost` (and the pools that have none, which is what makes a plan impossible), every card the plan
+  scan ranked with the per-unit price the losers lost on, then per goal its clock — need, τ, route, the
+  raw `t` beside the horizon-clamped one — with the **payment vs delivery** split inside each
+  `landingClock` and the circulation census behind the delivery half. Both folds mark a clock they
+  **absorbed**: a softMax weight under the ULP of 1 means the fold came out bit-identical to a hard `max`,
+  so the state has no gradient on that half at all — a reading no `RaceBreakdown` carries and the one that
+  says whether a term is doing anything. `--terms` is a classic-model ablation and is refused under
+  `race`. Either scorer runs over `--baseline <paths|dir>` (default: the whole standing set, also accepted
+  as bare positionals) or the ad-hoc `--scenario`/`--deck`/`--board` trio. `--format text|json|csv`, the CSV **long/tidy** (one
+  row per fact, since `producerCredit` and the race scan's candidate list are both variable-width per deck
+  and most facts carry an argmax card) so it
+  pivots in duckdb like the sweep rows. **No simulation and no `--seed`**: either model is derived once from
+  the run root and reads every zone as an unordered multiset, so shuffle order cannot reach it — the
   standing set dumps in under a second. That is why it is its own verb rather than a flag on `npm run
   sim`, whose every flag would be inert here and whose stdout is a CSV stream `sim:report`/`sim:record`
   parse. Read-only: it records nothing.
@@ -643,7 +653,12 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   bit-identical. Re-deriving a report separately would duplicate the compositions the balance debates are
   actually about — `strategicWeight`'s `max`, the `valued` merge, the capacity-before-consumables ordering
   — and drift on the first retune. `sim/valuationReport.ts` renders; `enablers.test.ts` pins the two
-  entry points return equal models.
+  entry points return equal models. The race model holds the same rule two ways, split by how often each
+  half runs: `deriveRace` is the same one-line projection of `explainRaceModel` (root-only, so it records
+  unconditionally), while `explainRaceValue` shares `raceBreakdown`'s single pass through an **optional
+  sink** — the softMax weights and the delivery census are written by the very calls whose arguments they
+  explain, and the scoring path, being the beam's per-leaf leaf, allocates none of it. `sim/raceReport.ts`
+  renders; `race.test.ts` pins the explained pass equal to `raceBreakdown`/`raceScore` bit for bit.
 
 ## Conventions
 

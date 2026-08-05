@@ -305,6 +305,35 @@ binds rather than at the cutoff, so a clock longer than the shortest one found c
 threat with no `defeat` is skipped, and one with no tick slot at all (an absolute deadline) probes
 off a shallow copy instead of a `cloneState`, since only its round varies.
 
+### The model can show its work
+
+`npm run sim:valuation -- --scorer race` renders the derivation, pulled forward out of step 6 because five
+diagnostic passes in a row hand-rolled a throwaway dump of `deriveRace`/`raceBreakdown` and the last
+referee had to leave its causal story explicitly *inferred* for want of one. Same read-only,
+simulation-free character as the classic mode: `explainRaceModel` is the plan scan with every card it
+ranked and every one a pool with no `unitCost` kept it from ranking; `explainRaceValue` is
+`raceBreakdown`'s own pass with an optional sink, so the printed clocks are the ones a policy ranked by
+rather than a second reading of them.
+
+What it made visible immediately, at the root:
+
+- **A landing plan is chosen on price alone, and deliverability is asked afterwards.** Two cells rank a
+  cheap card the run cannot deal over a dearer one it can, and the goal then reads `'none'`:
+  `first_settlement` ⚔️ (Bow 0.667/unit, 2 copies, spent by landing — over Hunting at 1.0, a work box that
+  recycles, whose census gives a ~15-round clock) and `reading_seasons` 🔬 (Fire 0.0/unit, 1 copy — over
+  Storytelling at 1.0, likewise recycling, ~42 rounds). `min` over routes is honest; ranking *within* the
+  landing route is not, since it drops the only alternative that had a finite clock. The third `'none'`,
+  `growing_numbers` 🏛️, is **not** this: both its candidates are single copies, so the goal is
+  copies-short either way — the distinct-count artifact above meeting the copies-short rule, with no
+  deliverable runner-up to have been dropped.
+- **Absorption is a live mechanism, and its threshold is not zero.** A softMax weight underflows to a hard
+  zero only ~745 rounds behind the leader, which a 200-round horizon cannot reach — but the fold stops
+  carrying a weight at the ULP of 1, ~37 rounds behind, and *that* is reachable. Eight landing candidates
+  in the standing set are payment-absorbed at the root (all of them routes the `min` did not take, their
+  delivery clocks 55–165 rounds); two goals are fold-absorbed. No **kept** route is payment-absorbed at
+  the root — the widest gap is `pyramid_chiefdom` at 17.4 rounds, `w = 2.9e-8`, which is not absorption
+  but is not a gradient a beam can follow either.
+
 ### Step 4 — wiring + the referee ☐
 
 - **Build**: a `scorer` seam on the five competent policies (`src/sim/greedyPolicy.ts`,
@@ -334,9 +363,8 @@ mistake a slower `setting_sail` sweep in step 4 for model noise.
 ### Step 6 — cutover ☐
 
 - Flip `--scorer` default; migrate the greedies' call site; **delete** `src/sim/value.ts`'s bands
-  and the weighting half of `src/sim/enablers.ts` (probes stay); rebuild `sim:valuation` /
-  `src/sim/valuationReport.ts` on the race explain (per-goal `t_g`, the named bottleneck,
-  `T̂loss` and which clock binds — produced by the same pass that computes the value, as today);
+  and the weighting half of `src/sim/enablers.ts` (probes stay); the `sim:valuation` rebuild is already in
+  (above) — what is left of it here is dropping `--scorer` and the classic renderer with the incumbent;
   re-record the standing set; update `CLAUDE.md` (sim architecture + valuation sections) and
   `docs/DESIGN.md`; retire this document into them.
 - **Gate check**: step 3 in, standing-set dominance shown, no `--scorer` flag left (the diagnostic

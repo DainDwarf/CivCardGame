@@ -2,7 +2,18 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { addBuilding, addWork, blankState, bumpCounter, getCounter, seedObjective, setCounter, subtractResources, type GameState } from '../rules';
 import { CARDS, CREW_PATIENCE, type CardDef } from '../content/cards';
-import { deriveRace, landingClock, raceBreakdown, raceScore, type GoalRoute } from './race';
+import {
+  RACE,
+  absorbed,
+  deriveRace,
+  explainRaceModel,
+  explainRaceValue,
+  landingClock,
+  raceBreakdown,
+  raceScore,
+  routeCause,
+  type GoalRoute,
+} from './race';
 
 /** The factor the scale-invariance pair differs by. Every quantity on `race_goal_scaled` is this many
  *  times `race_goal`'s, and the measure stays *linear* in the pool — a `floor` anywhere inside it would
@@ -61,6 +72,18 @@ const FIXTURES: Record<string, CardDef> = {
   },
   race_relic: {
     id: 'race_relic', name: 'Race Relic', kind: 'action', cost: { resources: { production: 4 } },
+  },
+  // A second route to one count, dearer per unit — the runner-up a scan keeping only its winner forgets.
+  race_trinket: {
+    id: 'race_trinket', name: 'Race Trinket', kind: 'action', cost: { resources: { production: 6 } },
+  },
+  race_goal_either: {
+    id: 'race_goal_either', name: 'Race Goal Either', kind: 'objective', cost: {},
+    goals: [{
+      icon: '⛏️',
+      measure: (G) => G.removed.filter((c) => c.cardId === 'race_relic' || c.cardId === 'race_trinket').length,
+      target: 3,
+    }],
   },
   // A pool nothing `produces` per round — it exists only as what a play grants.
   race_goal_pop: {
@@ -681,6 +704,109 @@ describe('the catalogue', () => {
       expect(b.lossCause, card.id).toBe('deadline');
       expect(b.tLoss, card.id).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('the explained pass', () => {
+  /** Every shape the suite above builds, so the equality below is asserted over met goals, flat ones,
+   *  landing and building plans, absorbed folds, a deadline and a pending defeat alike. */
+  function everyShape(): GameState[] {
+    const lost = state('race_goal', { producers: 1 });
+    lost.pendingDefeat = { reason: 'starved' };
+    const ticking = state('race_goal', { producers: 1 });
+    const clock = mint(ticking, 'race_clock');
+    setCounter(clock, 'idle', 2);
+    ticking.threats.push(clock);
+    const deadline = state('race_goal', { producers: 1 });
+    deadline.threats.push(mint(deadline, 'test_deadline'));
+    return [
+      state('race_goal', { producers: 1 }),
+      state('race_goal', { science: 10, producers: 1 }),
+      state('race_goal_pair', { producers: 1, earners: 1, money: 9 }),
+      state('test_never', { producers: 1 }),
+      state('race_goal_round', { producers: 1 }),
+      planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 4 }),
+      planned('race_goal_pop', ['race_hut', 'race_hut'], { production: 8 }),
+      planned('race_goal_land', ['race_claim', 'race_claim']),
+      planned('race_goal', ['test_sci'], { population: 2 }),
+      ticking,
+      deadline,
+      lost,
+    ];
+  }
+
+  it('values a state to the last bit of what a policy ranks by', () => {
+    // The explain is the same pass with a sink attached, and this is what says so: a report that valued
+    // its own reading of the state would answer a balance question about a model nothing plays under.
+    for (const G of everyShape()) {
+      const opts = { model: deriveRace(G) };
+      expect(explainRaceValue(G, opts).breakdown).toEqual(raceBreakdown(G, opts));
+      expect(explainRaceValue(G, opts).breakdown.total).toBe(raceScore(G, opts));
+    }
+  });
+
+  it('derives the same plans it explains', () => {
+    // Tautological while `deriveRace` is the projection, and that is what it guards: the day someone gives
+    // the scan a second implementation to keep the report off the hot path, this is what refuses it.
+    for (const G of everyShape()) expect(explainRaceModel(G).model).toEqual(deriveRace(G));
+  });
+
+  it('records the fold weights the fold really used', () => {
+    // Recomputing `exp((t − max)/τ)` outside the fold is the drift the sink exists to prevent, so the
+    // check is that the recorded weights reconstruct `T̂win` rather than that they look plausible.
+    const G = state('race_goal_pair', { producers: 1, earners: 1, money: 9 });
+    const ex = explainRaceValue(G, { model: deriveRace(G) });
+    const max = Math.max(...ex.goals.map((g) => g.clock.t));
+    const sum = ex.foldWeights.reduce((n, w) => n + w, 0);
+    expect(max + RACE.goalSoftening * Math.log(sum)).toBeCloseTo(ex.breakdown.tWin, 10);
+  });
+
+  it('marks a clock the fold absorbed, and a goal it did not', () => {
+    // A goal 195 rounds behind the bottleneck weighs `exp(-195)`, which is *not* zero but is far under the
+    // ULP of the leader's 1 — so `T̂win` is the leader's clock bit for bit, and the model has no gradient
+    // on the other goal whatever it does to it. That the exponential itself stays positive is exactly why
+    // the predicate is the fold's, not the float's.
+    const G = state('race_goal_pair', { producers: 1 });
+    const ex = explainRaceValue(G, { model: deriveRace(G) });
+    expect(ex.goals.map((g) => g.clock.route)).toEqual(['throughput', 'none']);
+    expect(ex.foldWeights[0]).toBeGreaterThan(0);
+    expect(absorbed(ex.foldWeights[0])).toBe(true);
+    expect(ex.breakdown.tWin).toBe(Math.max(...ex.goals.map((g) => g.clock.t)));
+    expect(absorbed(ex.foldWeights[1])).toBe(false);
+
+    // A goal a few rounds behind still pulls, which is the whole reason the fold is soft.
+    const close = state('race_goal_pair', { producers: 1, earners: 1 });
+    const closeEx = explainRaceValue(close, { model: deriveRace(close) });
+    expect(closeEx.foldWeights.some(absorbed)).toBe(false);
+  });
+
+  it('names why a goal found no route, where the clock only says none', () => {
+    // Three answers a `GoalClock` spells one way. A plan the deck is short of copies for…
+    const short = planned('race_goal_count', ['race_relic'], { production: 4 });
+    const shortEx = explainRaceValue(short, { model: deriveRace(short) }).goals[0];
+    expect(shortEx.clock.route).toBe('none');
+    expect(routeCause(shortEx)).toBe('copies short');
+    // …a plan no citizen is left to pay for…
+    const idle = planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 4, population: 0 });
+    const idleEx = explainRaceValue(idle, { model: deriveRace(idle) }).goals[0];
+    expect(routeCause(idleEx)).toBe('no workforce');
+    // …and a goal nothing in the run touches at all.
+    const bare = planned('race_goal_count', [], { production: 4 });
+    expect(routeCause(explainRaceValue(bare, { model: deriveRace(bare) }).goals[0])).toBe('no plan');
+  });
+
+  it('keeps the runner-up a plan beat, with the rank it lost on', () => {
+    // The reading a `RaceModel` cannot give: the scan keeps the cheapest per unit and forgets the rest, so
+    // "the plan is undeliverable and the card beside it wasn't" is a sentence only the candidates support.
+    const G = planned('race_goal_either', ['race_relic', 'race_trinket', 'race_trinket', 'race_trinket']);
+    const goal = explainRaceModel(G).goals[0];
+    const byId = Object.fromEntries(goal.candidates.map((c) => [c.cardId, c]));
+    expect(byId.race_relic.landing).toBe(true);
+    expect(byId.race_trinket.landing).toBe(false);
+    expect(byId.race_relic.perUnit).toBeLessThan(byId.race_trinket.perUnit);
+    // …and the plan it won really is the one the run cannot deal, while the loser's copies sit there.
+    expect(explainRaceValue(G, { model: deriveRace(G) }).goals[0].clock.route).toBe('none');
+    expect(goal.inert).toBeGreaterThan(0);
   });
 });
 

@@ -3,26 +3,33 @@
  * whole standing baseline set.
  *
  * The competent policies (`planner`, `oracle`, `prover`) never read the objective directly. They rank a
- * state by `sim/value.ts`'s `scoreState` — five priority bands — plus `sim/enablers.ts`'s enabler
- * potential, a model derived from the objective by probing what moves it. Both were computed in memory and
- * printed nowhere, so "is this mission hard, or is the policy mis-valuing it?" could only be settled by
- * hand-deriving arithmetic out of source. This prints the whole derivation instead: every probe, every
- * intermediate, and the card that won each credit.
+ * state by whichever scorer the sweep selected, and neither one prints itself: both were computed in
+ * memory only, so "is this mission hard, or is the policy mis-valuing it?" could only be settled by
+ * hand-deriving arithmetic out of source. This prints the whole derivation instead.
  *
- * **No simulation.** The model is derived once from the run root and is seed-independent (`runCardIds`
- * unions every zone, so shuffle order cannot reach it), which is why this is its own verb rather than a
- * flag on `npm run sim`: no seed, no policy, no round cap means anything here, and `sim`'s stdout is a CSV
- * stream `sim:report`/`sim:record` parse. Runs in milliseconds, like `npm run economy`.
+ * `--scorer` picks which, mirroring `npm run sim`'s flag of the same name. **`classic`** (the default, as
+ * there) renders `sim/value.ts`'s five bands plus `sim/enablers.ts`'s enabler model: every probe, every
+ * intermediate, and the card that won each credit. **`race`** renders `sim/race.ts`'s plans and its
+ * `T̂loss − T̂win` margin: what each pool costs in worker-rounds, every card the plan scan ranked and why
+ * the losers lost, each goal's clock with the payment/delivery split inside it, and which clocks the folds
+ * **absorbed** — the reading no `RaceBreakdown` carries.
+ *
+ * **No simulation.** Both models are derived once from the run root and are seed-independent (every zone is
+ * read as an unordered multiset, so shuffle order cannot reach either), which is why this is its own verb
+ * rather than a flag on `npm run sim`: no seed, no policy, no round cap means anything here, and `sim`'s
+ * stdout is a CSV stream `sim:report`/`sim:record` parse. Runs in milliseconds, like `npm run economy`.
  *
  * Usage:
  *   npm run sim:valuation                                        whole standing set, planner vs full
  *   npm run sim:valuation -- scripts/sim/baselines/masonry.json  one fixture (positional or --baseline)
  *   npm run sim:valuation -- --terms full,no-floor,none          any ablation, side by side
+ *   npm run sim:valuation -- --scorer race                       the rounds model instead of the bands
  *   npm run sim:valuation -- --scenario masonry --deck d.json --board settlement
  *   npm run sim:valuation -- --format csv > valuation.csv        long/tidy, for duckdb
  *
  * `--terms` grammar: `planner` (the shipped `DEFAULT_ENABLER_TERMS`), `full` (every term on, what the
- * oracle and prover use), `none` (no shaping at all), `no-<term>[-<term>…]`, `only-<term>[-<term>…]`.
+ * oracle and prover use), `none` (no shaping at all), `no-<term>[-<term>…]`, `only-<term>[-<term>…]`. It
+ * names an ablation of the classic model's terms, so it is classic-only.
  *
  * Redirect through `npm run --silent`: npm's own preamble goes to stdout, and JSON has no comment syntax
  * to hide it.
@@ -30,24 +37,32 @@
 import { parseArgs } from 'node:util';
 import {
   DEFAULT_ENABLER_TERMS,
+  DEFAULT_MAX_ROUNDS,
   ENABLER_CONSTANTS,
+  RACE,
   SCORE_WEIGHTS,
   enablerPotential,
   explainEnablers,
+  explainRaceModel,
+  explainRaceValue,
+  formatRaceValuation,
   formatValuation,
   objectiveProgress,
   permanentDelta,
+  raceCsvHeaderLine,
+  raceCsvLines,
   scoreBreakdown,
   simConfig,
   valuationCsvHeaderLine,
   valuationCsvLines,
   type EnablerTerms,
+  type RaceValuationCell,
   type ValuationCell,
   type ValuationModel,
 } from '../src/sim';
 import { simFileTools, type Cell } from './simFiles';
 import { createRun } from '../src/run/engine';
-import { projectNextTurn } from '../src/rules';
+import { projectNextTurn, type GameState } from '../src/rules';
 import { MISSIONS } from '../src/content/missions';
 
 /** The committed standing set — the default input, so the bare verb dumps every measured cell. */
@@ -99,7 +114,9 @@ function parseTerms(spec: string): EnablerTerms {
   return fail(`unknown --terms spec '${spec}'. Use planner, full, none, no-<term>… or only-<term>…`);
 }
 
-let values: { baseline?: string; scenario?: string; deck?: string; board?: string; terms?: string; format?: string };
+let values: {
+  baseline?: string; scenario?: string; deck?: string; board?: string; terms?: string; format?: string; scorer?: string;
+};
 let positionals: string[];
 try {
   ({ values, positionals } = parseArgs({
@@ -110,6 +127,7 @@ try {
       board: { type: 'string' },
       terms: { type: 'string' },
       format: { type: 'string' },
+      scorer: { type: 'string' },
     },
     allowPositionals: true,
   }));
@@ -120,6 +138,14 @@ try {
 const format = values.format ?? 'text';
 if (format !== 'text' && format !== 'json' && format !== 'csv') {
   fail(`--format must be 'text', 'json' or 'csv', got '${format}'.`);
+}
+
+const scorer = values.scorer ?? 'classic';
+if (scorer !== 'classic' && scorer !== 'race') fail(`--scorer must be 'classic' or 'race', got '${scorer}'.`);
+// `--terms` ablates the classic model's own terms, so pairing it with the race model would mean silently
+// ignoring it — the same reason `--baseline` and the ad-hoc trio are exclusive.
+if (scorer === 'race' && values.terms !== undefined) {
+  fail('--terms is a classic-scorer ablation — the race model has no term set to name.');
 }
 
 // Same mutual exclusion as the sweep's: a baseline already owns its mission, deck and board, so pairing it
@@ -149,12 +175,9 @@ const cells: (Cell & { source?: string })[] = adHocFlags.length
       source: path,
     }));
 
-const termSpecs = values.terms !== undefined ? csv(values.terms) : ['planner', 'full'];
-if (termSpecs.length === 0) fail('--terms needs at least one spec.');
-const termSets = termSpecs.map((name) => ({ name, terms: parseTerms(name) }));
-
-const report: ValuationCell[] = cells.map((cell) => {
-  const { G } = createRun(
+/** One cell's run root — the state both models derive from, and the only thing either reads. */
+function rootOf(cell: Cell): GameState {
+  return createRun(
     simConfig({
       deckCardIds: cell.deck,
       board: cell.board.board,
@@ -162,12 +185,12 @@ const report: ValuationCell[] = cells.map((cell) => {
       boardStickers: cell.board.stickers,
       seed: ROOT_SEED,
     }),
-  );
+  ).G;
+}
+
+/** The config half every cell block heads with, whichever model fills the rest. */
+function heading(cell: Cell & { source?: string }) {
   const mission = MISSIONS[cell.missionId];
-  const models: ValuationModel[] = termSets.map(({ name, terms }) => {
-    const explain = explainEnablers(G, terms);
-    return { name, explain, rootPotential: enablerPotential(G, explain.model) };
-  });
   return {
     label: cell.label,
     ...(cell.source !== undefined ? { source: cell.source } : {}),
@@ -177,6 +200,50 @@ const report: ValuationCell[] = cells.map((cell) => {
     board: cell.board.board,
     boardStickers: cell.board.stickers,
     deckSize: cell.deck.length,
+  };
+}
+
+if (scorer === 'race') {
+  const report: RaceValuationCell[] = cells.map((cell) => {
+    const G = rootOf(cell);
+    // The plans the scorer would be built with (`raceScorer`), handed to the value: without them every
+    // goal the standing economy doesn't already carry reads `'none'`, and the report is an artifact of
+    // its own call rather than of the model.
+    const model = explainRaceModel(G);
+    return {
+      ...heading(cell),
+      round: G.round,
+      resources: G.resources,
+      model,
+      value: explainRaceValue(G, { model: model.model }),
+    };
+  });
+
+  if (format === 'json') {
+    // `Infinity` is what an unreachable clock *is* here, and `JSON.stringify` writes it as `null` — which
+    // reads as a missing measurement rather than an unbounded one.
+    const nonFinite = (_k: string, v: unknown) => (typeof v === 'number' && !Number.isFinite(v) ? String(v) : v);
+    console.log(JSON.stringify({ constants: RACE, maxRounds: DEFAULT_MAX_ROUNDS, cells: report }, nonFinite, 2));
+  } else if (format === 'csv') {
+    console.log([raceCsvHeaderLine(), ...report.flatMap(raceCsvLines)].join('\n'));
+  } else {
+    console.log(formatRaceValuation(report, DEFAULT_MAX_ROUNDS));
+  }
+  process.exit(0);
+}
+
+const termSpecs = values.terms !== undefined ? csv(values.terms) : ['planner', 'full'];
+if (termSpecs.length === 0) fail('--terms needs at least one spec.');
+const termSets = termSpecs.map((name) => ({ name, terms: parseTerms(name) }));
+
+const report: ValuationCell[] = cells.map((cell) => {
+  const G = rootOf(cell);
+  const models: ValuationModel[] = termSets.map(({ name, terms }) => {
+    const explain = explainEnablers(G, terms);
+    return { name, explain, rootPotential: enablerPotential(G, explain.model) };
+  });
+  return {
+    ...heading(cell),
     rootProgress: objectiveProgress(G),
     score: scoreBreakdown(G),
     permanent: permanentDelta(G),

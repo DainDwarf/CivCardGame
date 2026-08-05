@@ -1,6 +1,7 @@
 import { CARDS, type ObjectiveGoal } from '../content/cards';
 import {
   CORE_KEYS,
+  STRATEGIC_KEYS,
   addResources,
   applyUpkeep,
   cloneState,
@@ -40,8 +41,11 @@ import { DEFAULT_MAX_ROUNDS } from './simulate';
 /**
  * The tuned constants, with their units. Everything else in this module is derived from `G` and the
  * catalogue — a number that is not here is arithmetic, not a knob.
+ *
+ * Exported so a retune moves the report with the model: a rounds figure is unreadable without the
+ * temperature that folded it.
  */
-const RACE = {
+export const RACE = {
   /** Score points — a met objective ends the run, so it dwarfs any margin the horizon can express. */
   victory: 1_000_000,
   /** Rounds: the log-sum-exp temperature of the fold across a goal's goals. Tuned rather than derived
@@ -58,6 +62,8 @@ const RACE = {
   wealthRounds: 0.05,
   wealthCap: 50,
 };
+
+const ALL_POOLS: (keyof Resources)[] = [...CORE_KEYS, ...STRATEGIC_KEYS];
 
 /** What bound `T̂loss`: the core pool that runs out first, a threat's own deadline, the drive loop's
  *  round cutoff, or a defeat already pending. Naming it is the difference between "this state is 3
@@ -175,6 +181,172 @@ export interface BuildingPlan {
 }
 
 /**
+ * Everything the two derivations compute on their way to a plan and a value — the survivors plus every
+ * intermediate that doesn't reach one. Most of what either says is *absence*: a goal with no plan and a
+ * goal whose only candidate was priced in a pool nothing mints look identical in a `RaceModel`, and a
+ * clock reports the route it took but not the three it ranked out. So "why is this goal unreachable" is
+ * unanswerable from the finished objects and answerable from these.
+ *
+ * Produced by the *same* passes that build them, never a second derivation. The two differ in how, and
+ * for one reason: `deriveRace` runs once at the run root and can afford to record unconditionally, while
+ * `raceBreakdown` is the beam's per-leaf leaf — so its intermediates are written into an optional sink the
+ * scoring path never allocates, rather than returned.
+ */
+
+/** One card weighed for one goal's plans, and what became of it. Only a card that moves the measure some
+ *  way is recorded: the rest of the scan is a count. */
+export interface PlanCandidate {
+  cardId: string;
+  /** Units of the goal's measure one play lands — the landing ranking's denominator. */
+  delta: number;
+  /** Units of the measure one round of it standing yields — the building ranking, `0` unless durable. */
+  tau: number;
+  price: Partial<Record<keyof Resources, number>>;
+  /** `price` converted through `unitCost`, plus the citizen a work box stands. `Infinity` where a
+   *  component has no rate. */
+  workerRounds: number;
+  /** `(workerRounds + staffing) / delta` — what the landing scan ranks by, `Infinity` at zero delta. */
+  perUnit: number;
+  /** Price components `replacementCost` reached no figure for. Non-empty means the card was skipped before
+   *  it could rank at all — the plan it would have made is the one the model is silent about. */
+  unpriceable: (keyof Resources)[];
+  /** Whether this card is the goal's kept plan of each kind. */
+  landing: boolean;
+  building: boolean;
+}
+
+/** One goal's derivation: the scan that produced its plans. */
+export interface GoalPlanExplain {
+  icon: string;
+  /** Cards in the run — the scan universe. */
+  scanned: number;
+  /** Those that moved the measure in no way at all, so ranked for nothing. */
+  inert: number;
+  /** The rest, in the order scanned (catalogue order, which is also the tie-break). */
+  candidates: PlanCandidate[];
+  plan: GoalPlan;
+}
+
+export interface RaceModelExplain {
+  model: RaceModel;
+  /** Pools with no `unitCost` — a price naming one yields no plan. */
+  unpriceable: (keyof Resources)[];
+  goals: GoalPlanExplain[];
+  /** `runCardIds`, sorted. */
+  runCards: string[];
+}
+
+/** One plan route's two clocks, and the fold across them. Shared by both routes: a building plan runs the
+ *  same payment/delivery pair and then adds the rounds it spends collecting. */
+export interface PlanClockExplain {
+  cardId: string;
+  /** Copies the plan owes — `need / delta` for a landing, `1` for a building. */
+  copies: number;
+  /** What the copies still cost after the bank was spent on them. */
+  workerRounds: number;
+  /** How much of each pool that netting took. */
+  netted: Partial<Record<keyof Resources, number>>;
+  /** `workerRounds / workforce` — the earning clock. */
+  payment: number;
+  /** `deliveryClock` — the drawing clock, and the circulation census behind it: `held × hand / pool`. */
+  delivery: number;
+  held: number;
+  pool: number;
+  hand: number;
+  perRound: number;
+  recycles: boolean;
+  /** The softMax weights of `[payment, delivery]`, in that order (see `absorbed`). Empty where an infinite
+   *  clock made the fold a hard `max`. */
+  weights: number[];
+  /** `landingClock(payment, delivery)`. */
+  lands: number;
+  /** Rounds collecting `need` at the producer's rate once it stands; `0` for a landing. */
+  collect: number;
+  /** `lands + collect` — the clock this route offered the `min`. */
+  t: number;
+}
+
+/** One goal's clock with the routes it ranked and the clamp it met. */
+export interface GoalClockExplain {
+  clock: GoalClock;
+  /** `t` before the horizon clamp — the only place a goal past the horizon is distinguishable from one
+   *  sitting exactly on it. */
+  raw: number;
+  clamped: boolean;
+  /** The population a plan's price is paid at. Both routes are gated on it being positive, so a root with
+   *  no citizens reads `'none'` with a perfectly good plan unused. */
+  workforce: number;
+  /** `need / tau` off the standing economy — the route taken unless a plan beat it. */
+  throughput: number;
+  /** The plans this goal was offered, which is not the same as the ones it costed: a workforce of zero
+   *  gates both branches off, and a good plan then reads exactly like none at all. */
+  plan?: GoalPlan;
+  landing?: PlanClockExplain;
+  building?: PlanClockExplain;
+}
+
+/** One core pool's death clock. */
+export interface PoolClockExplain {
+  key: keyof CoreResources;
+  level: number;
+  drain: number;
+  t: number;
+}
+
+/** One threat's frozen-world deadline probe, and the bound it ran under — a probe capped at `0` learned
+ *  nothing, which is not the same as a threat with no deadline. */
+export interface ThreatClockExplain {
+  cardId: string;
+  cap: number;
+  t: number;
+}
+
+/** One state's value with every intermediate the `RaceBreakdown` drops. */
+export interface RaceValueExplain {
+  breakdown: RaceBreakdown;
+  /** Rounds of drive cutoff left, which every estimate clamps to. */
+  horizon: number;
+  goals: GoalClockExplain[];
+  /** The goal fold's softMax weights, parallel to `goals` (see `absorbed`). */
+  foldWeights: number[];
+  pools: PoolClockExplain[];
+  threats: ThreatClockExplain[];
+}
+
+/** Where the sink collects — the explain less the one field the pass returns rather than records. */
+type RaceSink = Omit<RaceValueExplain, 'breakdown'>;
+
+/**
+ * Whether a softMax weight was **absorbed**: the fold came out bit-identical to a hard `max`, so the state
+ * has no gradient on that clock whatever it does to it.
+ *
+ * The threshold is float64's own, not a tolerance. The winning clock weighs exactly `1`, so a weight below
+ * the ULP of `1` leaves the sum unchanged and `temperature·ln(sum)` is exactly `0` — which happens from a
+ * gap of about `36.7 · temperature` rounds, an ordinary distance at a 200-round horizon. Waiting for the
+ * exponential itself to underflow to zero would need a gap of 745, which no horizon this model runs under
+ * can reach: the weight would read as a live gradient long after the fold had stopped carrying it.
+ */
+export function absorbed(w: number): boolean {
+  return 1 + w === 1;
+}
+
+/** Why a goal's route is `'none'`, off the recorded facts alone. Derivation knowledge rather than
+ *  presentation: "no plan" and "a plan nothing can pay for" are the same word in a `GoalClock` and
+ *  different answers to a balance question. `''` where the route is a real one. */
+export function routeCause(g: GoalClockExplain): string {
+  if (g.clock.route !== 'none') return '';
+  if (!g.plan?.landing && !g.plan?.building) return 'no plan';
+  if (g.workforce <= 0) return 'no workforce';
+  const causes = new Set<string>();
+  for (const p of [g.landing, g.building]) {
+    if (!p || Number.isFinite(p.t)) continue;
+    if (!Number.isFinite(p.payment)) causes.add('unpriceable pool');
+    if (!Number.isFinite(p.delivery)) causes.add(!p.recycles && p.copies > p.held ? 'copies short' : 'no copies circulate');
+  }
+  return [...causes].join(' + ') || 'unreachable';
+}
+
+/**
  * The run's **permanent** economy one round on: tableau production, trade rent, threat drains, building
  * maintenance, population food, and the disaster of every `event` left unplayed in hand. This is the one
  * clone per evaluation; τ and the pool drains are both read off it.
@@ -277,10 +449,14 @@ function threatClock(G: GameState, index: number, cap: number): number {
 /** A smooth maximum — `max` plus a term that decays exponentially as a value falls behind it, shifted so
  *  the exponentials cannot overflow at horizon-scale inputs. Exact `max` for a single value, and bounded
  *  by `max + temperature·ln n`, so folding several goals cannot inflate a rounds figure without limit. */
-function softMax(values: number[], temperature: number): number {
+function softMax(values: number[], temperature: number, weightsOut?: number[]): number {
   const max = Math.max(...values);
   let sum = 0;
-  for (const v of values) sum += Math.exp((v - max) / temperature);
+  for (const v of values) {
+    const w = Math.exp((v - max) / temperature);
+    weightsOut?.push(w);
+    sum += w;
+  }
   return max + temperature * Math.log(sum);
 }
 
@@ -340,9 +516,9 @@ function outstanding(
  *
  * An infinite clock is taken hard: `exp(∞ − ∞)` is a NaN, and a NaN leaves a beam's sort order undefined.
  */
-export function landingClock(payment: number, delivery: number): number {
+export function landingClock(payment: number, delivery: number, weightsOut?: number[]): number {
   if (!Number.isFinite(payment) || !Number.isFinite(delivery)) return Math.max(payment, delivery);
-  return softMax([payment, delivery], RACE.goalSoftening);
+  return softMax([payment, delivery], RACE.goalSoftening, weightsOut);
 }
 
 /**
@@ -366,7 +542,13 @@ export function landingClock(payment: number, delivery: number): number {
  * be dealt at all. A copy that `recycles` is dealt again, and then the cadence is the whole of the clock:
  * six units off two work boxes is the rounds it takes those two to come round four more times.
  */
-function deliveryClock(G: GameState, cardId: string, copies: number, recycles = false): number {
+function deliveryClock(
+  G: GameState,
+  cardId: string,
+  copies: number,
+  recycles = false,
+  censusOut?: { held: number; pool: number; hand: number; perRound: number },
+): number {
   if (copies <= 0) return 0;
   let held = 0;
   let pool = 0;
@@ -374,8 +556,10 @@ function deliveryClock(G: GameState, cardId: string, copies: number, recycles = 
     pool += zone.length;
     for (const c of zone) if (c.cardId === cardId) held++;
   }
+  const hand = effectiveHandSize(G);
+  const perRound = (held * hand) / pool;
+  if (censusOut) Object.assign(censusOut, { held, pool, hand, perRound });
   if (!recycles && copies > held) return Infinity;
-  const perRound = (held * effectiveHandSize(G)) / pool;
   return perRound > 0 ? copies / perRound : Infinity;
 }
 
@@ -403,18 +587,35 @@ function goalClock(
   horizon: number,
   plan: GoalPlan | undefined,
   unitCost: RaceModel['unitCost'],
+  ex?: GoalClockExplain[],
 ): { clock: GoalClock; netted: Partial<Record<keyof Resources, number>> } {
   const need = Math.max(0, goal.target - goal.measure(banked));
   const tau = goal.measure(perm) - goal.measure(G);
   const bare = { icon: goal.icon, need, tau };
-  if (goalMet(goal, banked)) return { clock: { ...bare, t: 0, route: 'met' }, netted: {} };
-  if (goal.met) return { clock: { ...bare, t: horizon, route: 'flat' }, netted: {} };
+  const throughput = tau > 0 ? need / tau : Infinity;
+  const workforce = Math.max(0, banked.resources.population);
+  let landingEx: PlanClockExplain | undefined;
+  let buildingEx: PlanClockExplain | undefined;
+  const seal = (clock: GoalClock, raw: number): GoalClock => {
+    ex?.push({
+      clock,
+      raw,
+      clamped: raw > horizon,
+      workforce,
+      throughput,
+      ...(plan ? { plan } : {}),
+      ...(landingEx ? { landing: landingEx } : {}),
+      ...(buildingEx ? { building: buildingEx } : {}),
+    });
+    return clock;
+  };
+  if (goalMet(goal, banked)) return { clock: seal({ ...bare, t: 0, route: 'met' }, 0), netted: {} };
+  if (goal.met) return { clock: seal({ ...bare, t: horizon, route: 'flat' }, horizon), netted: {} };
 
-  let t = tau > 0 ? need / tau : Infinity;
+  let t = throughput;
   let route: GoalRoute = 'throughput';
   let cardId: string | undefined;
   let netted: Partial<Record<keyof Resources, number>> = {};
-  const workforce = Math.max(0, banked.resources.population);
   const take = (candidate: number, r: GoalRoute, id: string, n: Partial<Record<keyof Resources, number>>) => {
     if (!(candidate < t)) return;
     t = candidate;
@@ -422,31 +623,56 @@ function goalClock(
     cardId = id;
     netted = n;
   };
+  // Both collectors are written by the very calls whose arguments they explain, so a recorded figure is
+  // the one the clock ran on rather than a second reading of it — and both are `undefined` off the explain
+  // path, so the beam's leaf allocates nothing to be told what it already knows.
+  const blank = () => (ex ? { census: { held: 0, pool: 0, hand: 0, perRound: 0 }, weights: [] as number[] } : {});
   if (workforce > 0 && plan?.landing) {
     const { landing } = plan;
+    const { census, weights } = blank();
     const copies = need / landing.delta;
     const paid = outstanding(landing.price, copies, banked, unitCost, landing.workerRounds);
-    const lands = landingClock(
-      paid.workerRounds / workforce,
-      deliveryClock(banked, landing.cardId, copies, landing.recycles),
-    );
+    const payment = paid.workerRounds / workforce;
+    const delivery = deliveryClock(banked, landing.cardId, copies, landing.recycles, census);
+    const lands = landingClock(payment, delivery, weights);
+    if (census && weights) {
+      landingEx = {
+        cardId: landing.cardId, copies, workerRounds: paid.workerRounds, netted: paid.netted,
+        payment, delivery, ...census, recycles: landing.recycles ?? false,
+        weights, lands, collect: 0, t: lands,
+      };
+    }
     take(lands, 'landing', landing.cardId, paid.netted);
   }
   if (workforce > 0 && plan?.building) {
     const { building } = plan;
+    const { census, weights } = blank();
     const paid = outstanding(building.price, 1, banked, unitCost);
-    const stands = landingClock(paid.workerRounds / workforce, deliveryClock(banked, building.cardId, 1));
+    const payment = paid.workerRounds / workforce;
+    const delivery = deliveryClock(banked, building.cardId, 1, false, census);
+    const stands = landingClock(payment, delivery, weights);
     // Collecting from the producer *is* sequential with standing it, unlike the two halves of standing it.
-    take(stands + need / building.tau, 'building', building.cardId, paid.netted);
+    const collect = need / building.tau;
+    if (census && weights) {
+      buildingEx = {
+        cardId: building.cardId, copies: 1, workerRounds: paid.workerRounds, netted: paid.netted,
+        payment, delivery, ...census, recycles: false,
+        weights, lands: stands, collect, t: stands + collect,
+      };
+    }
+    take(stands + collect, 'building', building.cardId, paid.netted);
   }
 
   return {
-    clock: {
-      ...bare,
-      t: Math.min(t, horizon),
-      route: Number.isFinite(t) ? route : 'none',
-      ...(cardId !== undefined ? { cardId } : {}),
-    },
+    clock: seal(
+      {
+        ...bare,
+        t: Math.min(t, horizon),
+        route: Number.isFinite(t) ? route : 'none',
+        ...(cardId !== undefined ? { cardId } : {}),
+      },
+      t,
+    ),
     netted,
   };
 }
@@ -466,17 +692,44 @@ function goalClock(
  * exception, being netted against the tableau before it is ever converted.
  */
 export function deriveRace(G: GameState): RaceModel {
+  return explainRaceModel(G).model;
+}
+
+/** `deriveRace` with every card it weighed and every one it skipped. Recorded unconditionally, this being
+ *  a once-per-run derivation: the scan is the same single pass, ranking on strict `<`/`>` so a tie still
+ *  goes to the first in catalogue order. */
+export function explainRaceModel(G: GameState): RaceModelExplain {
   const ids = runCardIds(G);
   const unitCost = replacementCost(G, ids);
   const probe = cloneState(G);
   const cards = Object.values(CARDS).filter((c) => ids.has(c.id));
+  const explained: GoalPlanExplain[] = [];
   const plans = objectiveGoals(G).map((goal) => {
     const plan: GoalPlan = {};
+    const candidates: PlanCandidate[] = [];
+    let inert = 0;
     let cheapest = Infinity;
     let fastest = 0;
     for (const card of cards) {
       const price = cardPrice(G, card);
-      if (Object.keys(price).some((k) => unitCost[k as keyof Resources] === undefined)) continue;
+      const unpriceable = (Object.keys(price) as (keyof Resources)[]).filter((k) => unitCost[k] === undefined);
+      if (unpriceable.length > 0) {
+        // The skip stands; what the report adds is what was skipped. The probes are pure over `probe` and
+        // this pass runs once, so pricing the card the model refused costs the report alone.
+        const delta = Math.max(
+          presenceDelta(probe, card, goal.measure),
+          grantDelta(probe, card, goal.measure),
+          card.kind === 'work' ? outputDelta(probe, card, goal.measure) : 0,
+        );
+        const tau = isDurableProducer(card) ? outputDelta(probe, card, goal.measure) : 0;
+        if (delta > 0 || tau > 0) {
+          candidates.push({
+            cardId: card.id, delta, tau, price, workerRounds: Infinity, perUnit: Infinity,
+            unpriceable, landing: false, building: false,
+          });
+        } else inert++;
+        continue;
+      }
       const workerRounds = Object.entries(price).reduce(
         (n, [k, amt]) => n + amt * unitCost[k as keyof Resources]!,
         0,
@@ -495,8 +748,9 @@ export function deriveRace(G: GameState): RaceModel {
         grantDelta(probe, card, goal.measure),
         work ? outputDelta(probe, card, goal.measure) : 0,
       );
-      if (delta > 0 && (workerRounds + staffing) / delta < cheapest) {
-        cheapest = (workerRounds + staffing) / delta;
+      const perUnit = delta > 0 ? (workerRounds + staffing) / delta : Infinity;
+      if (delta > 0 && perUnit < cheapest) {
+        cheapest = perUnit;
         plan.landing = {
           cardId: card.id,
           delta,
@@ -505,20 +759,56 @@ export function deriveRace(G: GameState): RaceModel {
         };
       }
       // Only a durable producer's `produces` is a rate — a work box's is the landing delta above.
-      if (!isDurableProducer(card)) continue;
-      const tau = outputDelta(probe, card, goal.measure);
+      const tau = isDurableProducer(card) ? outputDelta(probe, card, goal.measure) : 0;
       if (tau > fastest) {
         fastest = tau;
         plan.building = { cardId: card.id, tau, price: planPrice };
       }
+      if (delta > 0 || tau > 0) {
+        candidates.push({
+          cardId: card.id, delta, tau, price: planPrice, workerRounds, perUnit,
+          unpriceable, landing: false, building: false,
+        });
+      } else inert++;
     }
+    // Which candidate won is a fact about the finished scan, not about the moment it was pushed: a later
+    // card displaces an earlier one, and only the ids left on the plan say who is still standing.
+    for (const c of candidates) {
+      c.landing = plan.landing?.cardId === c.cardId;
+      c.building = plan.building?.cardId === c.cardId;
+    }
+    explained.push({ icon: goal.icon, scanned: cards.length, inert, candidates, plan });
     return plan;
   });
-  return { unitCost, plans };
+  return {
+    model: { unitCost, plans },
+    unpriceable: ALL_POOLS.filter((k) => unitCost[k] === undefined),
+    goals: explained,
+    runCards: [...ids].sort(),
+  };
 }
 
 /** Value one state as the race margin, split into the terms that composed it. */
 export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdown {
+  return computeRace(G, opts);
+}
+
+/**
+ * `raceBreakdown` with the intermediates it drops — every route a goal ranked, the two clocks inside each,
+ * the fold weights, and the pool and deadline clocks `T̂loss` took the `min` of.
+ *
+ * The same pass, and the sink is why: this is the beam's per-leaf value, so the recording is a parameter
+ * the scoring path never passes rather than a wider return type it would allocate on every node. Hand it
+ * the same `opts` the policy scores under — the plans above all — or the routes read `'none'` and the
+ * report is an artifact of its own call.
+ */
+export function explainRaceValue(G: GameState, opts: RaceOptions = {}): RaceValueExplain {
+  const sink: RaceSink = { horizon: 0, goals: [], foldWeights: [], pools: [], threats: [] };
+  const breakdown = computeRace(G, opts, sink);
+  return { breakdown, ...sink };
+}
+
+function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakdown {
   // The drive loop cuts a run at `round > maxRounds`, so this many end-of-round boundaries remain,
   // counting the one this state can still reach. `Infinity` is a legal cutoff there (it disables the
   // stall check) and is caught here rather than at the call sites, since it is this module's
@@ -526,6 +816,7 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
   const cutoff = opts.maxRounds;
   const bound = cutoff !== undefined && Number.isFinite(cutoff) ? cutoff : DEFAULT_MAX_ROUNDS;
   const horizon = Math.max(0, bound - G.round + 1);
+  if (ex) ex.horizon = horizon;
   const banked = bankedState(G);
   const perm = permanentProjection(G);
 
@@ -533,7 +824,7 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
   // no clock to run down, which reads as the horizon: unwinnable, and flat.
   const unitCost = opts.model?.unitCost ?? {};
   const clocked = objectiveGoals(G).map((g, i) =>
-    goalClock(g, G, banked, perm, horizon, opts.model?.plans[i], unitCost),
+    goalClock(g, G, banked, perm, horizon, opts.model?.plans[i], unitCost, ex?.goals),
   );
   const goals = clocked.map((c) => c.clock);
   // The deepest a single goal's plan spent of each pool. `max` rather than a sum: each goal's plan is
@@ -546,7 +837,7 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
   }
   let bottleneck = -1;
   for (let i = 0; i < goals.length; i++) if (bottleneck < 0 || goals[i].t > goals[bottleneck].t) bottleneck = i;
-  const tWin = goals.length > 0 ? softMax(goals.map((c) => c.t), RACE.goalSoftening) : horizon;
+  const tWin = goals.length > 0 ? softMax(goals.map((c) => c.t), RACE.goalSoftening, ex?.foldWeights) : horizon;
 
   // T̂loss — the soonest clock that ends the run: a core pool emptying under the permanent drain, a
   // threat's own deadline running out, or the drive cutoff.
@@ -563,6 +854,7 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
       // A pool this turn's boundary already carries below zero has collapsed whatever its rate — which
       // is the only thing that makes a *one-shot* drain (an unplayed event's disaster) visible here.
       const t = level < 0 ? 0 : drain > 0 ? level / drain : Infinity;
+      ex?.pools.push({ key: k, level, drain, t });
       if (t < tLoss) {
         tLoss = t;
         lossCause = k;
@@ -572,6 +864,7 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
     // shortest one found so far changes nothing, and the search is charged per round it looks at.
     for (let i = 0; i < G.threats.length; i++) {
       const t = threatClock(G, i, tLoss);
+      ex?.threats.push({ cardId: G.threats[i].cardId, cap: tLoss, t });
       if (t < tLoss) {
         tLoss = t;
         lossCause = 'deadline';
