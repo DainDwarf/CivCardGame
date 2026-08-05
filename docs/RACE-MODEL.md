@@ -63,15 +63,36 @@ over-investing in the cheapest goal.
   `τ = per-round Δmeasure` from the permanent economy, `t = need / τ`. The bank is already inside
   `measure`; a banked unit is worth exactly the fraction of a round it saves — the derived
   replacement for `HOP_DISCOUNT`.
-- **Card-count goal**: `need` = copies still to land; each copy priced in **worker-rounds**
-  (the `enablers.ts` card-injection probe: declarative `cost` plus every pool the play `effect`
-  drains, each component priced by what it costs to obtain); `t` = remaining price ÷ the
-  workforce's worker-round income. A banked 🔨 shortens the time to the next copy.
+- **Card-count goal**: `need` = copies still to land, and the plan runs two clocks at once.
+  **Payment** — each copy priced in **worker-rounds** (the card-injection probe: declarative `cost` plus
+  every pool the play `effect` drains, each component priced by what it costs to obtain), divided by the
+  workforce's worker-round income; a banked 🔨 shortens it. **Delivery** — the copies still to play,
+  divided by `k·h/D`: the plan copies a round's draw surfaces, off the supply the run holds (deck,
+  discard and hand alike) and the culture-adjusted hand size it refills to. `t` is the **max** of the
+  two, not their sum: earning the price and drawing the copies overlap, so the plan lands when the later
+  one finishes. Both figures are read off `G`; the census below is unchanged.
 - **Zero current throughput, deck can build it**: `t = t_setup + need / τ_achievable`, where
   `t_setup` is the worker-round price of the best goal-producer chain the probes find
   (afford → build → staff). The sole surviving descendant of the capacity/producer machinery —
   same probes, output in rounds, no constants.
 - **Bespoke `met` goal**: flat, unshapeable (today's sandbox rule, unchanged).
+
+Delivery is not a refinement of payment but the thing that gives a plan a gradient over **spending**.
+Netting the bank against the price is exact, so the outstanding remainder `copies·price − bank` is
+unchanged by paying for one of those copies — identical before and after the very play it prices, at
+every bank level. Payment alone therefore has a slope for *earning* and none for *landing*, and a policy
+taking only strict improvements will bank forever. Delivery supplies the missing half: a run holding the
+whole price of five copies is no plays richer than one that has played them, but it is five draws
+poorer. A copy in hand is credited when it **lands**, not while it is held — the hand recycles into the
+discard at each boundary, so holding one is not a distance travelled.
+
+**Room is part of a structure's price.** A plan whose card is a structure owes one territory slot per
+copy, netted against the **free** tableau rather than the territory pool, since land is spent by standing
+on it. It is the one component exempt from the "every price component needs a `unitCost`" rule up front:
+the shortfall is converted through `replacementCost`'s territory figure where the run has one and reads
+unreachable where it doesn't — which is what a full board with nothing minting land is. Without it a
+board-filling plan is flat over the play that unblocks the board, because a box minting a slot only ever
+*costs* on every axis the plan does price.
 
 Every route a goal has is costed and the **soonest** taken — no test of whether the standing economy
 "needs" a plan. `min` is the honest fold over alternatives, where a gate deciding which route to price
@@ -120,9 +141,9 @@ four, down from ~15:
 2. **Near-death penalty steepness.**
 3. **Tie-break weight** — banked worker-round wealth among equal-margin states (band 5's heir,
    in-currency); sized so its maximum stays below the smallest meaningful margin step. Counted only
-   over the bank *past* what a goal's plan already spent: exact netting makes holding a card's price
-   and having played it equal, and a tie-break that counted the same resource twice would break that
-   tie toward the bank — preferring the price to the thing the price buys.
+   over the bank *past* what a goal's plan already spent: what a plan has earmarked is already priced
+   into `T̂win`, and counting it twice would break the tie toward the bank — preferring the price to the
+   thing the price buys.
 4. **`VICTORY` sentinel** (unchanged).
 
 ### Fate of every old term
@@ -133,7 +154,7 @@ four, down from ~15:
 | `collapseCliff` / `buffer` bands | replaced by `T̂loss` + near-death penalty |
 | `operating` nudge | falls out of τ |
 | `accumulate` band | tie-break term, in worker-rounds |
-| `HOP_DISCOUNT`, conversions | derived: a bank is worth exactly the rounds of production it stands in for, so holding a card's price and having played it come out *equal* — the over-credit `HOP_DISCOUNT` bounded is unexpressible, and there is nothing left to discount |
+| `HOP_DISCOUNT`, conversions | derived: a bank is worth exactly the rounds of production it stands in for, so the over-credit `HOP_DISCOUNT` bounded is unexpressible and there is nothing left to discount. Exactness leaves the payment term flat over its own plays, which is what the delivery clock answers |
 | capacity terms, both horizons, `CAPACITY_CAP`, intrinsic floor | `t_setup`, derived, no constants |
 | `producerCredit` + cap | falls out of τ / `t_setup` |
 | `handSize` credit | **deleted, unreplaced** — a diffuse effect the search should see via depth; re-added only if the step-4 paired sweeps prove the loss |
@@ -145,8 +166,13 @@ four, down from ~15:
   the same economy whose measures/targets differ only by a scale factor `k` must rank corresponding
   states identically.
 - **Conversion soundness, in time**: playing an affordable conversion is never worse than holding its
-  bank — equality by construction, so what the test pins is that the two don't come apart and that the
-  tie-break doesn't quietly prefer the bank.
+  bank — the payment halves are equal by construction, so what the test pins is that they don't come
+  apart and that the tie-break doesn't quietly prefer the bank.
+- **Landing is progress**: on a bank that covers a plan outright, playing one of its copies scores
+  strictly higher, and a run that has lost a copy it still needs reads the plan as unreachable. The
+  invariant the payment term alone cannot hold.
+- **Room is priced**: a structure plan against a full board scores strictly below the same plan with a
+  slot free.
 - **Deadline honesty**: a producer that cannot repay before `T̂loss` contributes ~0.
 - **Clock visibility** (step 3): a synthetic counter-clock threat's probe equals its authored
   countdown from any mid-run counter state.
@@ -161,16 +187,17 @@ that bet is priced by the step-4 sweeps.
 
 Two more, measured on step 2's landing plans and recorded before step 4 reads a sweep:
 
-- **The affordable end is flat.** Once the bank covers a card-count goal's whole outstanding price,
-  `T̂win` is 0 and stays 0 for every remaining finishing play — banked 12🔨 with none of three relics
-  landed values *identically* to none banked with all three landed. That is the same equality that
-  makes the bank sound, arriving where it stops being useful: the model has no notion of one play per
-  turn, so having the money is having won. A card-count cell stalling in step 4 points at **depth**,
-  not at a fifth constant.
+- **The `max` hides whichever half isn't binding.** A plan whose payment runs long against a small deck
+  sees delivery masked, and payment is the flat half — so play-vs-bank can go momentarily flat, and
+  under flatness the wealth tie-break leans toward banking. Believed convergent (the bank keeps growing,
+  so delivery ends up binding), and a step-4 crossing is the place to check it: if a referee re-run shows
+  a residual stall there, the remedy is softening the `max` with the existing `goalSoftening`, not a
+  fifth constant.
 - **A distinct-count goal over-counts its copies.** `growing_numbers_goal` measures *distinct*
   building ids present; the probe reads `delta = 1` off whichever is cheapest and the clock then asks
   for `need` copies of that one card, which would move a distinct count by exactly 1. The estimate is
-  optimistic and, being root-derived, doesn't correct as ids land. Don't misattribute a
+  optimistic and, being root-derived, doesn't correct as ids land — and delivery now turns it pessimistic
+  instead wherever the deck holds fewer copies of that card than the goal names. Don't misattribute a
   `growing_numbers` regression to the fold.
 
 ## Decisions already made

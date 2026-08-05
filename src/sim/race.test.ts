@@ -71,6 +71,11 @@ const FIXTURES: Record<string, CardDef> = {
     id: 'race_hut', name: 'Race Hut', kind: 'building', workers: 0,
     cost: { resources: { production: 4 } }, effect: { resources: { population: 2 } },
   },
+  // The one thing that gives 🗺️ a worker-round price, so a plan short of land can quote what it owes.
+  race_claim: {
+    id: 'race_claim', name: 'Race Claim', kind: 'work', cost: {}, workers: 1,
+    produces: { resources: { territory: 1 } },
+  },
   // A *pace* clock: its own tick maintains the idle streak its `defeat` reads, and progress on the thing
   // it watches (culture here) resets the streak. Neither a round count nor a drain can express it, which
   // is why the probe is a frozen-world replay of the threat's own hooks rather than a read of either.
@@ -130,13 +135,21 @@ function state(
 function planned(
   objectiveCardId: string,
   deck: string[],
-  { production = 0, population = 1, food = 20, removed = [] as string[], standing = [] as string[] } = {},
+  {
+    production = 0,
+    population = 1,
+    food = 20,
+    territory = 6,
+    removed = [] as string[],
+    standing = [] as string[],
+  } = {},
 ): GameState {
   const G = blankState('race_test');
   G.round = 1;
   G.resources.production = production;
   G.resources.food = food;
   G.resources.population = population;
+  G.resources.territory = territory;
   seedObjective(G, objectiveCardId);
   addBuilding(G, mint(G, 'test_prod'));
   for (const id of standing) addBuilding(G, mint(G, id));
@@ -261,10 +274,10 @@ describe('plans', () => {
   });
 
   it('leaves a played copy and its banked price at the same distance from the win', () => {
-    // Not "strictly beats": exact netting is the honest arithmetic, and it makes the two *equal* — the
-    // bank is worth precisely the rounds of production it stands in for. What the model owes here is
-    // that they don't come apart, and in particular that the tie-break doesn't quietly prefer the bank
-    // to the thing the bank buys.
+    // A bank far short of the plan is where payment binds, and netting there is exact: the bank is worth
+    // precisely the rounds of production it stands in for, which makes the two *equal* rather than one
+    // of them better. What the model owes is that they don't come apart, and in particular that the
+    // tie-break doesn't quietly prefer the bank to the thing the bank buys.
     const banked = valued(planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 4 }));
     const played = valued(planned('race_goal_count', ['race_relic', 'race_relic'], { removed: ['race_relic'] }));
     expect(banked.goals[0].t).toBeCloseTo(played.goals[0].t);
@@ -274,12 +287,12 @@ describe('plans', () => {
 
   it('still counts a bank past every price it could pay', () => {
     // The exclusion is of what a plan *spent*, not of the pool: 12🔨 buys all three relics, and the 4
-    // beyond that is wealth like any other.
+    // beyond that is wealth like any other. With the price covered either way, what is left of the clock
+    // is the same three copies to deal.
     const G = (production: number) => planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production });
     const exact = valued(G(12));
     const spare = valued(G(16));
-    expect(exact.goals[0].t).toBeCloseTo(0);
-    expect(spare.goals[0].t).toBeCloseTo(0);
+    expect(exact.goals[0].t).toBeCloseTo(spare.goals[0].t);
     expect(spare.wealth).toBeGreaterThan(exact.wealth);
   });
 
@@ -305,6 +318,45 @@ describe('plans', () => {
     expect(plan.landing).toMatchObject({ cardId: 'race_hut', delta: 2 });
     // 1🧍 of 3, so one hut closes it: 4🔨 is 2 worker-rounds, one person.
     expect(clockOf(G).t).toBeCloseTo(2);
+  });
+});
+
+describe('delivery', () => {
+  it('shortens a landing clock as the copies land, not merely as the bank covers them', () => {
+    // The gradient the payment term structurally cannot supply: `copies·price − bank` is unchanged by
+    // paying for one of those copies, so on a bank that covers the plan outright every finishing play
+    // reads as free — a model with no notion that a copy still has to reach a hand.
+    const banked = valued(planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 12 }));
+    const landed = valued(planned('race_goal_count', ['race_relic', 'race_relic'], { production: 8, removed: ['race_relic'] }));
+    expect(banked.goals[0].t).toBeGreaterThan(0);
+    expect(landed.goals[0].t).toBeLessThan(banked.goals[0].t);
+    expect(landed.total).toBeGreaterThan(banked.total);
+  });
+
+  it('deals a copy from deck, discard and hand alike, and none at all from nowhere', () => {
+    // The hand recycles at every boundary, so which of the three a copy sits in is not a distance; a
+    // copy the run has lost is, and it is the whole plan that goes with it.
+    const held = planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 12 });
+    const shuffled = planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 12 });
+    shuffled.discard.push(shuffled.deck.pop()!);
+    shuffled.hand.push(shuffled.deck.pop()!);
+    expect(valued(shuffled).goals[0].t).toBeCloseTo(valued(held).goals[0].t);
+
+    const short = valued(planned('race_goal_count', ['race_relic', 'race_relic'], { production: 12 }));
+    expect(short.goals[0].route).toBe('none');
+    expect(short.total).toBeLessThan(valued(held).total);
+  });
+
+  it('charges a structure plan for the land it must stand on', () => {
+    // A full board is a price like any other, and the only thing that pays it is land the run does not
+    // have yet. Without the slot in the price the clock is flat over the very play that unblocks the
+    // board — a box minting territory only ever *costs* on every axis the plan does price.
+    const board = (territory: number) =>
+      valued(planned('race_goal_pop', ['race_hut', 'race_claim'], { production: 4, territory }));
+    const full = board(1); // the one standing producer fills the board
+    const room = board(2);
+    expect(full.goals[0].t).toBeGreaterThan(room.goals[0].t);
+    expect(room.total).toBeGreaterThan(full.total);
   });
 });
 
@@ -452,9 +504,12 @@ describe('the catalogue', () => {
     // measure the probes can't hold. The universe is every card a run can *hold* — which is wider than
     // `isDeckable`, since every shipped card-count goal counts a mission-injected `event` in `removed`,
     // and a universe without those would leave exactly the goal kind these plans exist for unprobed.
+    // Several copies apiece, because a plan is dealt from the copies the run really owns: a universe
+    // holding one of everything can complete no goal counting more than one of anything, which is a fact
+    // about that universe rather than about the catalogue. Above every authored goal's threshold.
     const held = Object.values(CARDS)
       .filter((c) => c.kind !== 'threat' && c.kind !== 'objective')
-      .map((c) => c.id);
+      .flatMap((c) => Array.from({ length: 8 }, () => c.id));
     const routes = new Set<GoalRoute>();
     for (const card of Object.values(CARDS)) {
       if (card.kind !== 'objective') continue;

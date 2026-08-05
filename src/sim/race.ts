@@ -4,6 +4,8 @@ import {
   addResources,
   applyUpkeep,
   cloneState,
+  effectiveHandSize,
+  freeTerritory,
   goalMet,
   isOperating,
   producingUnits,
@@ -16,7 +18,7 @@ import {
   type Resources,
 } from '../rules';
 import { effectiveGain } from '../rules/stickers';
-import { isDurableProducer } from '../content/cards';
+import { isDurableProducer, isStructure } from '../content/cards';
 import { cardPrice, grantDelta, outputDelta, presenceDelta, replacementCost, runCardIds } from './probes';
 import { DEFAULT_MAX_ROUNDS } from './simulate';
 
@@ -127,8 +129,9 @@ export interface RaceOptions {
  * The plans are what make a lumpy goal legible. A mission counting mined veins, or one asking for
  * citizens no card *produces* per round, has a τ of exactly zero however well the run is going: nothing
  * in the permanent economy moves its measure, so the clock would sit at the horizon and the value would
- * be flat over every line that approaches the win. A plan restates the same goal as a price — what the
- * deck must pay, in worker-rounds — which the workforce then pays off at a rate.
+ * be flat over every line that approaches the win. A plan restates the same goal as two clocks the run
+ * really runs: a price in worker-rounds the workforce pays off at a rate, and a number of copies the deck
+ * deals at its own.
  */
 export interface RaceModel {
   /** Worker-rounds per unit of each pool (`replacementCost`): the rate a plan's price converts through. */
@@ -149,7 +152,8 @@ export interface GoalPlan {
 export interface LandingPlan {
   cardId: string;
   delta: number;
-  /** What one play charges, per pool. Every component of it carries a `unitCost`, or there is no plan. */
+  /** What one play charges, per pool — a structure's slot included. Every component but `territory`
+   *  carries a `unitCost`, or there is no plan; land is netted against the free tableau instead. */
   price: Partial<Record<keyof Resources, number>>;
 }
 
@@ -276,10 +280,19 @@ function objectiveGoals(G: GameState): readonly ObjectiveGoal[] {
   return (G.objective ? CARDS[G.objective.cardId]?.goals : undefined) ?? [];
 }
 
-/** What paying `price` `copies` times still costs in **worker-rounds** once the bank has been spent on
- *  it, and how much of the bank that took. Netting is exact rather than discounted: a bank is worth the
- *  rounds of production it stands in for, no more and no less — which is why holding the price of a card
- *  and having played it come out at the same distance from the win. */
+/**
+ * What paying `price` `copies` times still costs in **worker-rounds** once the bank has been spent on it,
+ * and how much of the bank that took. Netting is exact rather than discounted: a bank is worth the rounds
+ * of production it stands in for, no more and no less.
+ *
+ * Exactness has a consequence every caller carries: the remainder `copies·price − bank` is *unchanged* by
+ * paying for one of those copies, so this term is flat over the very plays it prices. A clock built on it
+ * alone would have a gradient for earning and none for spending, which is why a landing route also carries
+ * a term that isn't (`deliveryClock`).
+ *
+ * Land is the one component not drawn from `resources`: a slot is spent by standing in it, so the bank a
+ * structure's price draws on is the **free** tableau rather than the territory pool.
+ */
 function outstanding(
   price: Partial<Record<keyof Resources, number>>,
   copies: number,
@@ -290,13 +303,39 @@ function outstanding(
   const netted: Partial<Record<keyof Resources, number>> = {};
   for (const [k, amt] of Object.entries(price) as [keyof Resources, number][]) {
     const total = amt * copies;
-    const paid = Math.min(Math.max(0, banked.resources[k]), total);
+    const bank = k === 'territory' ? freeTerritory(banked) : banked.resources[k];
+    const paid = Math.min(Math.max(0, bank), total);
     if (paid > 0) netted[k] = paid;
-    // A pool with no rate makes the plan unreachable, never free. `deriveRace` emits no such plan, and
-    // this is what keeps that true of a model built anywhere else.
+    // A pool with no rate makes the plan unreachable, never free. `deriveRace` emits no such plan except
+    // in land, which it leaves to be netted here — a full board with nothing minting territory really is
+    // a structure plan the run cannot carry out.
     if (total > paid) workerRounds += (total - paid) * (unitCost[k] ?? Infinity);
   }
   return { workerRounds, netted };
+}
+
+/**
+ * Rounds until the deck has dealt `copies` more plays of `cardId` into a hand. A plan is not only *paid
+ * for* at the workforce's rate, it is *delivered* at the deck's: a run banking the whole price of five
+ * copies while four of them sit unshuffled is not one play from the win.
+ *
+ * The supply is every copy the run still holds — deck, discard and hand alike, since the hand recycles at
+ * each boundary — over those same three zones' size, so `k·h/D` is what a round's draw surfaces. A copy in
+ * hand is therefore credited when it *lands*, not while it is held: that is what makes playing one a step
+ * toward the win rather than a shuffle of the same copies between zones, and it is the gradient the
+ * payment term structurally cannot supply. Copies the run no longer holds cannot be dealt at all.
+ */
+function deliveryClock(G: GameState, cardId: string, copies: number): number {
+  if (copies <= 0) return 0;
+  let held = 0;
+  let pool = 0;
+  for (const zone of [G.deck, G.discard, G.hand]) {
+    pool += zone.length;
+    for (const c of zone) if (c.cardId === cardId) held++;
+  }
+  if (copies > held) return Infinity;
+  const perRound = (held * effectiveHandSize(G)) / pool;
+  return perRound > 0 ? copies / perRound : Infinity;
 }
 
 /**
@@ -344,13 +383,19 @@ function goalClock(
   };
   if (workforce > 0 && plan?.landing) {
     const { landing } = plan;
-    const paid = outstanding(landing.price, need / landing.delta, banked, unitCost);
-    take(paid.workerRounds / workforce, 'landing', landing.cardId, paid.netted);
+    const copies = need / landing.delta;
+    const paid = outstanding(landing.price, copies, banked, unitCost);
+    // Earning the price and drawing the copies run at once — the workforce produces while the deck
+    // cycles — so the plan lands when the later of the two finishes, not when their sum does.
+    const lands = Math.max(paid.workerRounds / workforce, deliveryClock(banked, landing.cardId, copies));
+    take(lands, 'landing', landing.cardId, paid.netted);
   }
   if (workforce > 0 && plan?.building) {
     const { building } = plan;
     const paid = outstanding(building.price, 1, banked, unitCost);
-    take(paid.workerRounds / workforce + need / building.tau, 'building', building.cardId, paid.netted);
+    const stands = Math.max(paid.workerRounds / workforce, deliveryClock(banked, building.cardId, 1));
+    // Collecting from the producer *is* sequential with standing it, unlike the two halves of standing it.
+    take(stands + need / building.tau, 'building', building.cardId, paid.netted);
   }
 
   return {
@@ -373,9 +418,10 @@ function goalClock(
  * that matters is the **fastest**, exactly as the model it replaces chose. Ties resolve to first in
  * catalogue order, so the same run derives the same plan every time.
  *
- * A price with any component `replacementCost` could not reach yields **no plan** at all. Worker-rounds
- * are the currency here, and a pool nothing in the run can obtain has no figure in it — carrying the raw
- * unit count in beside real prices would produce a number in no currency at all.
+ * A price with any *pool* component `replacementCost` could not reach yields **no plan** at all. Worker-
+ * rounds are the currency here, and a pool nothing in the run can obtain has no figure in it — carrying
+ * the raw unit count in beside real prices would produce a number in no currency at all. Land is the
+ * exception, being netted against the tableau before it is ever converted.
  */
 export function deriveRace(G: GameState): RaceModel {
   const ids = runCardIds(G);
@@ -393,10 +439,13 @@ export function deriveRace(G: GameState): RaceModel {
         (n, [k, amt]) => n + amt * unitCost[k as keyof Resources]!,
         0,
       );
+      // Room is part of what a structure charges. It is folded in past the ranking above because land is
+      // held rather than bought at a rate: a plan owes it only for the copies the tableau has no slot for.
+      const planPrice = isStructure(card) ? { ...price, territory: (price.territory ?? 0) + 1 } : price;
       const delta = Math.max(presenceDelta(probe, card, goal.measure), grantDelta(probe, card, goal.measure));
       if (delta > 0 && workerRounds / delta < cheapest) {
         cheapest = workerRounds / delta;
-        plan.landing = { cardId: card.id, delta, price };
+        plan.landing = { cardId: card.id, delta, price: planPrice };
       }
       // Only a durable producer's `produces` is a rate; a work box pays its once per play, and the
       // worker it pays it through is the very unit `unitCost` quotes every price in.
@@ -404,7 +453,7 @@ export function deriveRace(G: GameState): RaceModel {
       const tau = outputDelta(probe, card, goal.measure);
       if (tau > fastest) {
         fastest = tau;
-        plan.building = { cardId: card.id, tau, price };
+        plan.building = { cardId: card.id, tau, price: planPrice };
       }
     }
     return plan;
@@ -487,10 +536,9 @@ export function raceBreakdown(G: GameState, opts: RaceOptions = {}): RaceBreakdo
   // Among states the race cannot tell apart, prefer the deeper bank — the wealth that buys the next
   // play. Linear to its cap so it keeps discriminating over the range a bank actually spans.
   //
-  // Only the bank *past* what a goal's plan already spent counts. Exact netting makes holding a card's
-  // price and having played it the same distance from the win, so a tie-break that counted the same
-  // resource a second time would break that tie toward the bank — the model preferring the price to the
-  // thing the price buys.
+  // Only the bank *past* what a goal's plan already spent counts: what a plan has earmarked is already
+  // priced into `T̂win`, so counting it a second time here would break a tie toward the bank — the model
+  // preferring the price to the thing the price buys.
   const core = CORE_KEYS.reduce((n, k) => n + Math.max(0, banked.resources[k] - (spent[k] ?? 0)), 0);
   const wealth = (Math.min(core, RACE.wealthCap) / RACE.wealthCap) * RACE.wealthRounds;
   total += wealth;
