@@ -165,7 +165,7 @@ Status boxes are the branch's live state — tick them as steps land.
 
 `race-model` branch; this document as its first commit.
 
-### Step 1 — the currency core ☐
+### Step 1 — the currency core ✅
 
 The new module, policies untouched.
 
