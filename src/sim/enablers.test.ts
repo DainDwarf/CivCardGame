@@ -2,7 +2,15 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mint, installCards, installFixtures, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { createRun } from '../run/engine';
 import { simConfig } from './simulate';
-import { DEFAULT_ENABLER_TERMS, deriveEnablers, enablerPotential, goalValuedCardCosts } from './enablers';
+import {
+  DEFAULT_ENABLER_TERMS,
+  ENABLER_CONSTANTS,
+  deriveEnablers,
+  enablerPotential,
+  explainEnablers,
+  goalValuedCardCosts,
+  weightSource,
+} from './enablers';
 import { OBJECTIVE_WEIGHT } from './value';
 import { objectiveProgress } from './objective';
 import { CARDS, type CardDef } from '../content/cards';
@@ -728,5 +736,92 @@ describe('enabler term toggles', () => {
     const G = masonryRoot();
     addBuilding(G, mint(G, 'farm'));
     expect(enablerPotential(G, m)).toBe(0);
+  });
+});
+
+describe('explainEnablers (the derivation record sim:valuation prints)', () => {
+  // A **card-count** goal: Writing wins on tablets in `removed`, so no resource moves the gradient and the
+  // capacity pass derives nothing for any strategic pool — the case where the finished model's *absences*
+  // carry all the information. The farms are what make a food rate exist while nothing charges it.
+  function cardCountRoot(seed = 'explain-card-count'): GameState {
+    return createRun(
+      simConfig({
+        deckCardIds: ['farm', 'farm', 'toolmaking', 'storytelling', 'hut'],
+        board: 'city',
+        missionId: 'writing',
+        seed,
+      }),
+    ).G;
+  }
+
+  const ONLY_CARD_COSTS = { conversions: false, capacity: false, floor: false, handSize: false, producers: false };
+  const TERM_SETS = [{}, DEFAULT_ENABLER_TERMS, ONLY_CARD_COSTS];
+
+  it('returns exactly the model deriveEnablers returns', () => {
+    // The whole safety argument for splitting the derivation: the moment the two stop sharing a pass, a
+    // printed valuation starts describing something no policy ranks by.
+    for (const G of [masonryRoot(), cardCountRoot()]) {
+      for (const terms of TERM_SETS) {
+        expect(explainEnablers(G, terms).model).toEqual(deriveEnablers(G, terms));
+      }
+    }
+  });
+
+  it('derives the same model whatever the shuffle', () => {
+    // What `sim:valuation`'s absent `--seed` flag rests on: the probes read the deck as an unordered set,
+    // so shuffle order cannot reach the model.
+    expect(deriveEnablers(cardCountRoot('explain-seed-a'))).toEqual(deriveEnablers(cardCountRoot('explain-seed-b')));
+  });
+
+  it('names the card that set a capacity throughput, at the rate that card really pays', () => {
+    const e = explainEnablers(masonryRoot());
+    const c = e.capacity.territory;
+    expect(c.cardId).toBeDefined();
+    // Recompute off the catalogue rather than pinning a literal, so a rebalance re-targets this.
+    const card = CARDS[c.cardId!];
+    let expected = 0;
+    for (const [k, marginal] of Object.entries(e.goalValued) as [keyof Resources, number][]) {
+      if (k === 'territory') continue;
+      const output = (card.effect?.resources?.[k] ?? 0) + (card.produces?.resources?.[k] ?? 0);
+      if (output > 0) expected += output * marginal * OBJECTIVE_WEIGHT;
+    }
+    expect(c.throughput).toBeCloseTo(expected, 10);
+    expect(c.derived).toBeCloseTo(c.throughput * ENABLER_CONSTANTS.CAPACITY_HORIZON, 10);
+  });
+
+  it('attributes every weight in the model to a recorded pass', () => {
+    // A future pass that adds a weight source without recording it would leave a credit the report renders
+    // as blank — a number with no stated origin, which is the one thing this tool exists not to print.
+    for (const G of [masonryRoot(), cardCountRoot()]) {
+      for (const terms of TERM_SETS) {
+        const e = explainEnablers(G, terms);
+        for (const k of Object.keys(e.model.weight) as (keyof Resources)[]) {
+          expect(weightSource(e, k)).not.toBe('');
+        }
+      }
+    }
+  });
+
+  it('distinguishes a floored strategic weight from a derived one', () => {
+    // The fact the Setting Sail balance question turned on: on a card-count goal the capacity pass derives
+    // nothing, so population's only weight under the full model is the blind intrinsic floor — and under
+    // the planner's shipped terms it has no weight at all.
+    const G = cardCountRoot();
+    const full = explainEnablers(G, {});
+    expect(full.capacity.population.throughput).toBe(0);
+    expect(full.capacity.population.floorApplied).toBe(true);
+    expect(full.model.weight.population).toBe(ENABLER_CONSTANTS.INTRINSIC_CAPACITY_CREDIT);
+
+    const planner = explainEnablers(G, DEFAULT_ENABLER_TERMS);
+    expect(planner.capacity.population.floorApplied).toBe(false);
+    expect(planner.model.weight.population).toBeUndefined();
+  });
+
+  it('records the food rate even where the model never charges it', () => {
+    const e = explainEnablers(cardCountRoot(), {});
+    expect(e.capacity.population.throughput).toBe(0); // nothing derived ⇒ nothing to net against
+    expect(e.model.foodPerWorker).toBeUndefined();
+    expect(e.foodPerWorker.value).toBeGreaterThan(0);
+    expect(e.foodPerWorker.cardId).toBe('farm');
   });
 });

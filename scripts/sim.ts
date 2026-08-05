@@ -71,14 +71,11 @@ import {
   type Scenario,
   type SimAction,
 } from '../src/sim';
-import { simFileTools } from './simFiles';
+import { simFileTools, type Cell } from './simFiles';
 import type { RunState } from '../src/run/engine';
 import { MISSIONS } from '../src/content/missions';
 import { CARDS } from '../src/content/cards';
-import { BOARDS } from '../src/content/boards';
-import { STICKERS } from '../src/content/stickers';
-import { BOARD_STICKERS } from '../src/content/boardStickers';
-import { findStaffable, freePopulation, type DeckCard, type GameState } from '../src/rules';
+import { findStaffable, freePopulation, type GameState } from '../src/rules';
 
 /** The policies a bare `--policies`-less run sweeps. Script-local on purpose: it's the user's requested
  *  default (`random,heuristic,greedy`), *not* the same set as the exported `DEFAULT_POLICY_NAMES` (which
@@ -90,92 +87,10 @@ function fail(msg: string): never {
   process.exit(1);
 }
 
-const { readJson, expandBaselinePaths } = simFileTools(fail);
+const { expandBaselinePaths, loadDeck, resolveBoard, loadBaseline } = simFileTools(fail);
 
 function csv(s: string | undefined): string[] {
   return (s ?? '').split(',').map((x) => x.trim()).filter(Boolean);
-}
-
-/** Validate a card-entry array into a run-ready `DeckCard[]`, expanding each `{ cardId, count, stickers }`
- *  entry into `count` copies. Every cardId/sticker id is checked against the real catalogues — an unknown
- *  id fails fast (a data-coherence check, like the deck editor's own rejects). Takes the array rather than
- *  a path so a deck file's `cards` and a baseline fixture's `deck` are validated by the same code. */
-function readCards(path: string, entries: unknown[]): DeckCard[] {
-  const deck: DeckCard[] = [];
-  for (const entry of entries as any[]) {
-    const cardId = entry?.cardId;
-    const count = entry?.count ?? 1;
-    const stickers: string[] | undefined = entry?.stickers;
-    if (typeof cardId !== 'string' || !CARDS[cardId]) fail(`file '${path}': unknown cardId '${cardId}'.`);
-    if (!Number.isInteger(count) || count < 1) fail(`file '${path}': card '${cardId}' has invalid count ${count}.`);
-    if (stickers !== undefined && !Array.isArray(stickers)) fail(`file '${path}': 'stickers' on '${cardId}' must be an array.`);
-    for (const s of stickers ?? []) if (!STICKERS[s]) fail(`file '${path}': unknown sticker '${s}' on '${cardId}'.`);
-    for (let i = 0; i < count; i++) deck.push({ cardId, ...(stickers?.length ? { stickers: [...stickers] } : {}) });
-  }
-  if (deck.length === 0) fail(`file '${path}' has no cards.`);
-  return deck;
-}
-
-/** Load + validate a deck file into a run-ready `DeckCard[]`. */
-function loadDeck(path: string): DeckCard[] {
-  const raw = readJson(path);
-  if (!raw || !Array.isArray(raw.cards)) fail(`deck file '${path}' must be an object with a 'cards' array.`);
-  return readCards(path, raw.cards);
-}
-
-/** Resolve `--board` into a board id + its board-sticker ids. A bare content board id (a key of
- *  `BOARDS`) resolves directly with no stickers — a fixture file is only needed to attach some; anything
- *  that isn't a known board id is treated as a path to a board JSON file (the stickered case). */
-function resolveBoard(arg: string): { board: string; stickers: string[] } {
-  if (BOARDS[arg]) return { board: arg, stickers: [] };
-  return loadBoardFile(arg);
-}
-
-/** One swept cell: a mission + the exact deck and board it is played with. The ad-hoc trio expands into
- *  one per `--scenario` mission (all sharing the one deck/board); `--baseline` yields one per fixture, each
- *  carrying its *own* deck and board. Everything downstream reads only this, so neither input style is a
- *  special case. */
-interface Cell {
-  label: string;
-  missionId: string;
-  deck: DeckCard[];
-  board: { board: string; stickers: string[] };
-}
-
-/** Load + validate a self-contained baseline fixture. `deck` and `board` reuse the deck/board loaders
- *  wholesale, so a fixture's card list is validated exactly like a deck file's. */
-function loadBaseline(path: string): Cell {
-  const raw = readJson(path);
-  if (!raw || typeof raw.id !== 'string') fail(`baseline file '${path}' must be an object with an 'id'.`);
-  if (typeof raw.mission !== 'string' || !MISSIONS[raw.mission]) {
-    fail(`baseline file '${path}': unknown mission '${raw.mission}'. Known: ${Object.keys(MISSIONS).join(', ')}.`);
-  }
-  if (!Array.isArray(raw.deck)) fail(`baseline file '${path}' must have a 'deck' array.`);
-  if (raw.board === undefined) fail(`baseline file '${path}' must have a 'board'.`);
-  const board = typeof raw.board === 'string' ? resolveBoardId(path, raw.board) : readBoard(path, raw.board);
-  return { label: raw.id, missionId: raw.mission, deck: readCards(path, raw.deck), board };
-}
-
-/** Resolve a bare board id against the real catalogue, reporting against the file that named it. */
-function resolveBoardId(path: string, id: string): { board: string; stickers: string[] } {
-  if (!BOARDS[id]) fail(`file '${path}': unknown board '${id}'. Known: ${Object.keys(BOARDS).join(', ')}.`);
-  return { board: id, stickers: [] };
-}
-
-/** Validate a `{ board, stickers? }` object. Takes the object rather than a path so a board file and a
- *  baseline fixture's inline board are validated by the same code. */
-function readBoard(path: string, raw: any): { board: string; stickers: string[] } {
-  if (!raw || typeof raw.board !== 'string') fail(`file '${path}': board must be an object with a 'board' id.`);
-  if (!BOARDS[raw.board]) fail(`file '${path}': unknown board '${raw.board}'. Known: ${Object.keys(BOARDS).join(', ')}.`);
-  const stickers = raw.stickers ?? [];
-  if (!Array.isArray(stickers)) fail(`file '${path}': 'stickers' must be an array.`);
-  for (const s of stickers) if (!BOARD_STICKERS[s]) fail(`file '${path}': unknown board sticker '${s}'.`);
-  return { board: raw.board, stickers };
-}
-
-/** Load + validate a board file into a board id + its board-sticker ids. */
-function loadBoardFile(path: string): { board: string; stickers: string[] } {
-  return readBoard(path, readJson(path));
 }
 
 // Wrap `parseArgs` so an unknown flag or stray positional (strict mode throws a raw `TypeError`) surfaces

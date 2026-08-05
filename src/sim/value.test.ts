@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { scoreState } from './value';
+import { scoreBreakdown, scoreState } from './value';
 import { addThreat, addWork, blankState, seedObjective, type GameState } from '../rules';
 import type { CardDef } from '../content/cards';
 import { mint, installFixtures, uninstallFixtures, installCards, uninstallCards } from '../rules/testFixtures';
@@ -247,5 +247,51 @@ describe('scoreState', () => {
       G.resources.money = 50;
     });
     expect(scoreState(won)).toBeGreaterThan(scoreState(richLoss));
+  });
+});
+
+describe('scoreBreakdown', () => {
+  beforeAll(() => {
+    installFixtures();
+    installCards(LOCAL_CARDS);
+  });
+  afterAll(() => {
+    uninstallCards(LOCAL_CARDS);
+    uninstallFixtures();
+  });
+
+  it('splits into bands totalling the scalar every policy ranks by', () => {
+    // One state per band, so the equality below is non-vacuous for each: a band that is zero everywhere
+    // would agree with a `total` that had dropped it.
+    const cases = [
+      state((G) => {
+        G.resources.population = 5; // eats into the red next round ⇒ band 2
+      }),
+      state((G) => {
+        G.resources.food = 1; // under the buffer floor ⇒ band 3
+      }),
+      state((G) => {
+        seedObjective(G, 'test_culture_goal');
+        G.resources.culture = 2; // ⇒ band 4
+      }),
+      state((G) => {
+        G.resources.food = 5;
+        G.resources.population = 1;
+        addWork(G, mint(G, 'test_work_culture')); // ⇒ the operating credit
+      }),
+      state((G) => {
+        G.resources.food = 40;
+        G.resources.production = 40; // deep safe pools ⇒ band 5
+      }),
+      state((G) => {
+        G.pendingVictory = true; // ⇒ band 1
+      }),
+    ];
+    for (const G of cases) expect(scoreBreakdown(G).total).toBe(scoreState(G));
+
+    const bands = cases.map(scoreBreakdown);
+    for (const k of ['collapseCliff', 'buffer', 'objective', 'operating', 'accumulate', 'victory'] as const) {
+      expect(bands.some((b) => b[k] !== 0)).toBe(true);
+    }
   });
 });

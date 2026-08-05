@@ -128,6 +128,27 @@ surprise, so nothing shows a locked placeholder or a total count.
   sweep's `--seeds` (an interrupted sweep), a cell no fixture answers to (renamed or removed), and a
   fixture whose deck/board/mission no longer matches what was swept. All-or-nothing: every cell is
   validated before any file is written.
+- `npm run sim:valuation` — valuation tool (`scripts/valuation.ts`): prints the **goal valuation** the
+  competent policies steer by, which was computed in memory and printed nowhere — so every "is this
+  mission hard, or is the policy mis-valuing it?" question was settled by hand-deriving arithmetic out of
+  source. Two halves of one leaf: `value.ts`'s `scoreState` **split into its five bands** (band 3's charge
+  against band 4's pull is the whole "is growth worth it" question, and the summed scalar hides it) and
+  `enablers.ts`'s model with **every intermediate that doesn't survive into it** — the two probes, the
+  capacity pass per strategic pool, the conversions, and the **card that won each credit**. Most of an
+  `EnablerModel`'s meaning is absence (a goal-valued pool deliberately gets no `weight`; a pass that
+  derived nothing and one that was ablated off look identical), which is exactly what a report has to
+  distinguish. Every figure carries its scale as **goal steps** (pts ÷ `OBJECTIVE_WEIGHT`), since a raw
+  score point is a fifth of the win or a twelfth of it depending on a constant in another file.
+  `--terms <spec,…>` compares term sets side by side — `planner` (the shipped `DEFAULT_ENABLER_TERMS`),
+  `full` (what the oracle/prover use), `none`, `no-<term>…`, `only-<term>…`, defaulting to `planner,full`
+  — over `--baseline <paths|dir>` (default: the whole standing set, also accepted as bare positionals) or
+  the ad-hoc `--scenario`/`--deck`/`--board` trio. `--format text|json|csv`, the CSV **long/tidy** (one
+  row per fact, since `producerCredit` is variable-width and most facts carry an argmax card) so it
+  pivots in duckdb like the sweep rows. **No simulation and no `--seed`**: the model is derived once from
+  the run root and the probes read the deck as an unordered set, so shuffle order cannot reach it — the
+  standing set dumps in under a second. That is why it is its own verb rather than a flag on `npm run
+  sim`, whose every flag would be inert here and whose stdout is a CSV stream `sim:report`/`sim:record`
+  parse. Read-only: it records nothing.
 - `npm run sim:profile` — the same sweep under `@platformatic/flame`, which writes a **markdown**
   hotspot report (annotated call tree + per-function callers/callees) beside an HTML flamegraph, into
   the gitignored `cpu-profile-*`/`heap-profile-*` in the CWD. Markdown so the report is readable
@@ -589,12 +610,23 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   redundancy is checkable: a row naming another cell means the fixture was renamed out from under its
   measurement, and `maxRounds`/`columns` sit inside each policy entry so a partial re-record can't
   certify a sibling's stale rows.
-- **CLI** — three tools over one currency. `scripts/sim.ts` sweeps a **mission × deck × board** matrix,
+- **CLI** — three tools over one currency, and a fourth over a different one. `scripts/sim.ts` sweeps a
+  **mission × deck × board** matrix,
   three axes decoupled: `--scenario` names missions (live from `MISSIONS`), `--deck`/`--board` load
   hand-editable JSON (examples under `scripts/sim/`), swept under `--policies`/`--seeds` and written out
   as CSV. `scripts/report.ts` reads that CSV back (`parseRecordCsv`) — or a fixture's recorded rows — and
-  prints the report; `scripts/record.ts` merges the rows into their fixtures. Shared path/JSON loading
-  lives in `scripts/simFiles.ts`; each tool passes its own `fail` so a message carries its name.
+  prints the report; `scripts/record.ts` merges the rows into their fixtures. `scripts/valuation.ts` is the
+  odd one out: its currency is **content, not `RunRecord`** — it derives rather than measures, so it drives
+  no run and reads no sweep. Shared path/JSON loading (including the deck/board/fixture
+  loaders all four share) lives in `scripts/simFiles.ts`; each tool passes its own `fail` so a message
+  carries its name.
+- **The valuation is one pass, not two** — `deriveEnablers` is a one-line projection of `deriveExplained`,
+  which returns the model *and* every intermediate (`EnablerExplain`); `scoreState` is likewise
+  `scoreBreakdown(G).total`, accumulated in the same sequence as its fields so the scalar stays
+  bit-identical. Re-deriving a report separately would duplicate the compositions the balance debates are
+  actually about — `strategicWeight`'s `max`, the `valued` merge, the capacity-before-consumables ordering
+  — and drift on the first retune. `sim/valuationReport.ts` renders; `enablers.test.ts` pins the two
+  entry points return equal models.
 
 ## Conventions
 

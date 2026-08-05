@@ -1,17 +1,43 @@
 /**
- * The file-reading bits the balance tools share — `sim` sweeps baseline fixtures, `sim:record` merges
- * rows back into them and `sim:report` folds them, so all three resolve the same paths and must reject a
- * bad one identically. Each tool passes its own `fail`, which is what puts its name on the message; it
- * stays a plain function declaration in the caller so TypeScript keeps narrowing on its `never` return.
+ * The file-reading bits the balance tools share — `sim` sweeps baseline fixtures, `sim:record` merges rows
+ * back into them, `sim:report` folds them and `sim:valuation` derives off them without running any — so
+ * all four resolve the same paths and must reject a bad one identically. That extends to the deck / board
+ * / fixture *loaders*, not just the raw JSON read: an id the sweep rejects has to be rejected the same way
+ * by a tool that never sweeps. Each tool passes its own `fail`, which is what puts its name on the
+ * message; it stays a plain function declaration in the caller so TypeScript keeps narrowing on its
+ * `never` return.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { variantKey } from '../src/rules/deckBuilder';
 import type { CellManifest } from '../src/sim';
+import type { DeckCard } from '../src/rules';
+import { MISSIONS } from '../src/content/missions';
+import { CARDS } from '../src/content/cards';
+import { BOARDS } from '../src/content/boards';
+import { STICKERS } from '../src/content/stickers';
+import { BOARD_STICKERS } from '../src/content/boardStickers';
 
 /** Print a clean one-line error and exit — a bad flag/file is a user mistake, not a stack-trace-worthy
  *  crash. */
 export type Fail = (msg: string) => never;
+
+/** A board as the tools name one: a content board id plus the board stickers attached to it. */
+export interface BoardChoice {
+  board: string;
+  stickers: string[];
+}
+
+/** One cell: a mission + the exact deck and board it is played with. The ad-hoc trio expands into one per
+ *  `--scenario` mission (all sharing the one deck/board); `--baseline` yields one per fixture, each
+ *  carrying its *own* deck and board. Everything downstream reads only this, so neither input style is a
+ *  special case. */
+export interface Cell {
+  label: string;
+  missionId: string;
+  deck: DeckCard[];
+  board: BoardChoice;
+}
 
 export interface SimFileTools {
   /** Returns parsed JSON as `any`: the callers validate every field they read against the real content
@@ -21,6 +47,17 @@ export interface SimFileTools {
    *  set is named by its folder), a file yields itself. Sorted, so cell order — and therefore a report —
    *  is stable across machines. */
   expandBaselinePaths: (args: string[]) => string[];
+  /** Validate a card-entry array into a run-ready `DeckCard[]`, expanding each `{ cardId, count, stickers }`
+   *  entry into `count` copies. Takes the array rather than a path so a deck file's `cards` and a baseline
+   *  fixture's `deck` are validated by the same code. */
+  readCards: (path: string, entries: unknown[]) => DeckCard[];
+  /** Load + validate a deck file into a run-ready `DeckCard[]`. */
+  loadDeck: (path: string) => DeckCard[];
+  /** Resolve a `--board` argument: a key of `BOARDS` resolves directly with no stickers — a fixture file is
+   *  only needed to attach some — and anything else is treated as a path to a board JSON file. */
+  resolveBoard: (arg: string) => BoardChoice;
+  /** Load + validate a self-contained baseline fixture. */
+  loadBaseline: (path: string) => Cell;
 }
 
 export function simFileTools(fail: Fail): SimFileTools {
@@ -55,7 +92,65 @@ export function simFileTools(fail: Fail): SimFileTools {
     return paths;
   };
 
-  return { readJson, expandBaselinePaths };
+  // Every cardId/sticker/board/mission id is checked against the real catalogue — an unknown id fails fast,
+  // the data-coherence check the deck editor's own rejects make.
+  const readCards = (path: string, entries: unknown[]): DeckCard[] => {
+    const deck: DeckCard[] = [];
+    for (const entry of entries as any[]) {
+      const cardId = entry?.cardId;
+      const count = entry?.count ?? 1;
+      const stickers: string[] | undefined = entry?.stickers;
+      if (typeof cardId !== 'string' || !CARDS[cardId]) fail(`file '${path}': unknown cardId '${cardId}'.`);
+      if (!Number.isInteger(count) || count < 1) fail(`file '${path}': card '${cardId}' has invalid count ${count}.`);
+      if (stickers !== undefined && !Array.isArray(stickers)) fail(`file '${path}': 'stickers' on '${cardId}' must be an array.`);
+      for (const s of stickers ?? []) if (!STICKERS[s]) fail(`file '${path}': unknown sticker '${s}' on '${cardId}'.`);
+      for (let i = 0; i < count; i++) deck.push({ cardId, ...(stickers?.length ? { stickers: [...stickers] } : {}) });
+    }
+    if (deck.length === 0) fail(`file '${path}' has no cards.`);
+    return deck;
+  };
+
+  const loadDeck = (path: string): DeckCard[] => {
+    const raw = readJson(path);
+    if (!raw || !Array.isArray(raw.cards)) fail(`deck file '${path}' must be an object with a 'cards' array.`);
+    return readCards(path, raw.cards);
+  };
+
+  /** Validate a `{ board, stickers? }` object. Takes the object rather than a path so a board file and a
+   *  baseline fixture's inline board are validated by the same code. */
+  const readBoard = (path: string, raw: any): BoardChoice => {
+    if (!raw || typeof raw.board !== 'string') fail(`file '${path}': board must be an object with a 'board' id.`);
+    if (!BOARDS[raw.board]) fail(`file '${path}': unknown board '${raw.board}'. Known: ${Object.keys(BOARDS).join(', ')}.`);
+    const stickers = raw.stickers ?? [];
+    if (!Array.isArray(stickers)) fail(`file '${path}': 'stickers' must be an array.`);
+    for (const s of stickers) if (!BOARD_STICKERS[s]) fail(`file '${path}': unknown board sticker '${s}'.`);
+    return { board: raw.board, stickers };
+  };
+
+  const resolveBoard = (arg: string): BoardChoice =>
+    BOARDS[arg] ? { board: arg, stickers: [] } : readBoard(arg, readJson(arg));
+
+  /** Resolve a bare board id against the real catalogue, reporting against the file that named it. */
+  const resolveBoardId = (path: string, id: string): BoardChoice => {
+    if (!BOARDS[id]) fail(`file '${path}': unknown board '${id}'. Known: ${Object.keys(BOARDS).join(', ')}.`);
+    return { board: id, stickers: [] };
+  };
+
+  // `deck` and `board` reuse the deck/board loaders wholesale, so a fixture's card list is validated
+  // exactly like a deck file's.
+  const loadBaseline = (path: string): Cell => {
+    const raw = readJson(path);
+    if (!raw || typeof raw.id !== 'string') fail(`baseline file '${path}' must be an object with an 'id'.`);
+    if (typeof raw.mission !== 'string' || !MISSIONS[raw.mission]) {
+      fail(`baseline file '${path}': unknown mission '${raw.mission}'. Known: ${Object.keys(MISSIONS).join(', ')}.`);
+    }
+    if (!Array.isArray(raw.deck)) fail(`baseline file '${path}' must have a 'deck' array.`);
+    if (raw.board === undefined) fail(`baseline file '${path}' must have a 'board'.`);
+    const board = typeof raw.board === 'string' ? resolveBoardId(path, raw.board) : readBoard(path, raw.board);
+    return { label: raw.id, missionId: raw.mission, deck: readCards(path, raw.deck), board };
+  };
+
+  return { readJson, expandBaselinePaths, readCards, loadDeck, resolveBoard, loadBaseline };
 }
 
 // ---- Is a measurement still about this cell? ---------------------------------------------------------

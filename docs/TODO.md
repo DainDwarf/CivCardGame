@@ -170,7 +170,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     strategic cost is invisible to the probe by construction — and the Voyage's population spend rides on
     `effect` rather than `cost.resources` anyway (that field is core-only), so even widening the key set
     wouldn't reach it. A goal card that charges a strategic pool has no path into the model today.
-  - **Paths, cheapest first:** (1) derive `deriveEnablers` on a card-count-goal run state and read
+  - **(1) is done, and the mechanism is confirmed** — `npm run sim:valuation --
+    scripts/sim/baselines/setting_sail_city.json` reads it straight off: goal-valued pools **none**, the
+    capacity pass **0.0/rd on all three** strategic pools, so under the planner's terms population carries
+    no weight at all and under the full model its only weight is the blind `3.0` intrinsic floor — never a
+    derived credit, and never anything to do with the citizen a Voyage spends. The card-cost probe is
+    working correctly beside it (money and production at 5.0 pts/u, cap 5, via `voyage`), and
+    `foodPerWorker` reads `3.0 not charged` — the deck can feed a worker, but with no derived throughput
+    nothing nets it. What is *not* settled is the attribution: this says the planner is blind, not that
+    the blindness is what costs it the win rate. That is still (3)'s A/B.
+  - **Paths, cheapest first:** (1) ✅ derive `deriveEnablers` on a card-count-goal run state and read
     `weight`/`cap` back — confirms or kills the mechanism with no sweep; (2) `deepPlanner` on seeds where
     prover wins and planner loses, which separates *search depth* from *valuation*; (3) an A/B with
     `floor: true`, the only term that gives population weight on such a mission — needs a registry entry,
@@ -223,6 +232,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `DEFAULT_ENABLER_TERMS`, so an A/B costs a source edit per run, and a fixture's recorded rows cannot
   say which config produced them. Want a `npm run sim` flag *and* the terms
   declared in the fixture, so a cell carries its shaping config like its mission/deck/board. `[size: M]`
+  - **The read-only half exists**: `npm run sim:valuation -- --terms <spec,…>` derives any term set
+    (`planner`/`full`/`none`/`no-*`/`only-*`) and prints what it produces, side by side across term sets
+    and across the standing set. What is still missing is the half that changes a *measurement* — a
+    `npm run sim` flag and the terms recorded in the fixture beside the rows they produced.
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit

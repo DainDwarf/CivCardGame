@@ -45,6 +45,11 @@ const W = {
  *  magic-number drift. */
 export const OBJECTIVE_WEIGHT = W.objective;
 
+/** The band weights themselves, read-only, for a report that has to print the scale a band's figure is
+ *  read against (`sim/valuationReport.ts`). `OBJECTIVE_WEIGHT` stays its own export: it is a *value* another
+ *  module computes in, where this is a diagnostic view. Both project the one `W`, so neither can drift. */
+export const SCORE_WEIGHTS: Readonly<typeof W> = W;
+
 /**
  * Net per-turn change from the run's **permanent** economy only — tableau production, threat drains,
  * building maintenance, and population food — with the *transient* contributors dropped: the work zone (a
@@ -53,8 +58,11 @@ export const OBJECTIVE_WEIGHT = W.objective;
  * deliberately distinct from the full next-turn projection (band 2's *actual* next turn, work + events
  * included): excluding work/events is the correct pessimistic bias for a survival guard, since work income
  * depends on future draws. Reuses the real upkeep math via a stripped clone rather than re-deriving it.
+ *
+ * Exported as a **pure read**: band 3's figure is a shortfall, unreadable without the drain it falls
+ * short against, so `sim/valuationReport.ts` prints the two together.
  */
-function permanentDelta(G: GameState): Resources {
+export function permanentDelta(G: GameState): Resources {
   const clone = cloneState(G);
   // Drop both transient zones before running upkeep: this-turn-only work-box production, and the hand,
   // whose unplayed events would otherwise fire their drain inside `applyUpkeep` and read as permanent.
@@ -62,6 +70,27 @@ function permanentDelta(G: GameState): Resources {
   clone.hand = [];
   applyUpkeep(clone); // tableau production − threat drains − building maintenance − population food
   return subtractResources(clone.resources, G.resources); // settleEndOfTurn skipped: nothing left to recycle
+}
+
+/** One state's score, split into the bands that composed it — the shape the whole scalar hides. Which
+ *  band dominates is the actual answer to "why did the policy rank this state here": a growth play that
+ *  band 4 rewards and band 3 charges for reads as a wash in the total and as a decision in the split.
+ *  `total` is accumulated in the same sequence as the fields, never re-summed from them, so it is the
+ *  bit-identical number the policies always ranked by. */
+export interface ScoreBreakdown {
+  /** Band 2, ≤ 0. */
+  collapseCliff: number;
+  /** Band 3, ≤ 0. */
+  buffer: number;
+  /** Band 4, ≥ 0. */
+  objective: number;
+  /** The staffing credit, ≥ 0 — a nudge alongside the bands, not one of them. */
+  operating: number;
+  /** Band 5, ≥ 0. */
+  accumulate: number;
+  /** Band 1 — `W.victory` or 0. */
+  victory: number;
+  total: number;
 }
 
 /**
@@ -85,15 +114,21 @@ function permanentDelta(G: GameState): Resources {
  * per-operating-box credit sits alongside for the one producer no band sees (a strategic pool the objective
  * doesn't reward).
  */
-export function scoreState(G: GameState): number {
+export function scoreBreakdown(G: GameState): ScoreBreakdown {
   const r = G.resources;
   const projected = projectNextTurn(G);
   const pr = projected.resources;
   let s = 0;
+  let collapseCliff = 0;
+  let buffer = 0;
 
   // Band 2 — immediate survival. Any core pool projected negative next round is a collapse.
   for (const k of CORE_KEYS) {
-    if (pr[k] < 0) s += pr[k] * W.collapseCliff;
+    if (pr[k] < 0) {
+      const d = pr[k] * W.collapseCliff;
+      collapseCliff += d;
+      s += d;
+    }
   }
 
   // Band 3 — mid-term safety. Buffer each *draining* core pool to `bufferTurns` of permanent drain plus a
@@ -104,20 +139,32 @@ export function scoreState(G: GameState): number {
   for (const k of CORE_KEYS) {
     const drain = Math.max(0, -perm[k]);
     const target = W.bufferFloor + W.bufferTurns * drain;
-    s -= Math.max(0, target - r[k]) * W.bufferWeight;
+    const d = Math.max(0, target - r[k]) * W.bufferWeight;
+    buffer -= d;
+    s -= d;
   }
 
   // Band 4 — objective pull, on the *projected* state (so delayed production toward the goal counts).
-  s += objectiveProgress(projected) * W.objective;
+  const objective = objectiveProgress(projected) * W.objective;
+  s += objective;
 
   // Staffing incentive — a flat credit per operating box, for a strategic producer no band sees (its pool
   // isn't in `CORE_KEYS` and the objective doesn't reward it).
-  s += [...G.tableau, ...G.workZone].filter(isOperating).length * W.operating;
+  const operating = [...G.tableau, ...G.workZone].filter(isOperating).length * W.operating;
+  s += operating;
 
   // Band 5 — accumulation, bounded, projected core. Only decides among safe, equal states.
   const core = CORE_KEYS.reduce((n, k) => n + Math.max(0, pr[k]), 0);
-  s += Math.min(core, W.accumulateCap) * W.accumulateWeight;
+  const accumulate = Math.min(core, W.accumulateCap) * W.accumulateWeight;
+  s += accumulate;
 
-  if (G.pendingVictory) s += W.victory; // band 1, applied last so it's unconditional
-  return s;
+  const victory = G.pendingVictory ? W.victory : 0; // band 1, applied last so it's unconditional
+  s += victory;
+
+  return { collapseCliff, buffer, objective, operating, accumulate, victory, total: s };
+}
+
+/** The scalar every policy ranks by. */
+export function scoreState(G: GameState): number {
+  return scoreBreakdown(G).total;
 }

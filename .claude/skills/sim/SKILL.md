@@ -250,6 +250,43 @@ policy chose is readable; the hand line is where a card it **passed over** shows
 outcome you want (`famine`, `stall`, `noWinFound:deadEnd`, `win`) and read the `seed` column. Never
 re-run the sweep in a loop looking for a representative run.
 
+## Is the mission hard, or is the policy mis-valuing it? — `npm run sim:valuation`
+
+When a competent policy underperforms, the question is always whether the content is hard or the
+policy cannot *see* what the content asks for. That is answerable without a sweep, because the thing
+the policy steers by is derived from content alone: `sim/value.ts`'s `scoreState` bands plus
+`sim/enablers.ts`'s enabler model, cut once at the run root and **seed-independent**.
+
+```
+npm run sim:valuation                                        whole standing set, planner vs full
+npm run sim:valuation -- scripts/sim/baselines/masonry.json  one cell
+npm run sim:valuation -- --terms planner,full,none,no-floor  any ablation, side by side
+npm run sim:valuation -- --format csv > valuation.csv        long/tidy, for duckdb
+```
+
+It runs in under a second over all 30 fixtures. Read it before reaching for a sweep, and **before
+concluding a mission is too hard**.
+
+What answers a question here, none of which the finished model shows:
+
+- **`goal-valued pools (none)`** — the objective names no resource, so every strategic pool's capacity
+  credit derives to **0**. On a card-count goal (Writing, Roads, Copper, Setting Sail) that is the
+  normal case, and it means the planner has no reason to build population or territory at all.
+- **`capacity pass … -> 3.0 (floor)`** vs a derived figure — whether a strategic weight came from the
+  objective or from the blind intrinsic floor. A floored weight is not the model understanding the
+  mission.
+- **the argmax card on every credit** (`cardCost:voyage`, `conv>territory:conquest`) — a number with no
+  named source is a number nobody can check.
+- **`food per worker … not charged`** — the deck can feed a worker, but no derived population
+  throughput means nothing nets that food off.
+- **the band split** — band 3's buffer charge against band 4's objective pull is the whole "is growth
+  worth it" decision, and the summed `scoreState` hides it.
+
+A term set is `planner` (the shipped `DEFAULT_ENABLER_TERMS`), `full` (what oracle/prover use), `none`,
+`no-<term>…` or `only-<term>…` over `cardCosts`/`conversions`/`capacity`/`floor`/`handSize`/`producers`.
+The tool is **read-only** — it records nothing, and it changes no measurement. To make a *sweep* use a
+different term set still costs a source edit (`docs/TODO.md` → *Shaping config settable by option*).
+
 ## Reference: reading the report (when asked) — the two things that go wrong
 
 **1. Policies are a bracket, not one number.** Each cell is swept under paired seeds across policies:
