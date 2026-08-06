@@ -13,6 +13,7 @@ import {
   realizedGain,
   resolveEndTurn,
   scaleResources,
+  type CardInstance,
   type CoreResources,
   type GameState,
   type Resources,
@@ -323,6 +324,21 @@ export interface PoolClockExplain {
   t: number;
 }
 
+/** The recurring `event` pressure folded into those drains, with the circulation it was folded over: a
+ *  drain of two thirds of a coin is a number to take on faith without the census that scaled it. */
+export interface EventDrainExplain {
+  /** `event` copies in circulation. */
+  copies: number;
+  /** Cards in circulation, over all four zones. */
+  pool: number;
+  /** The hand the run refills to. */
+  hand: number;
+  /** `min(1, hand / pool)` — the share of boundaries a circulating copy is in hand for. */
+  share: number;
+  /** What one boundary with every copy in hand takes, per pool — the amount `share` scales. */
+  full: Partial<Record<keyof Resources, number>>;
+}
+
 /** One threat's frozen-world deadline probe, and the bound it ran under — a probe capped at `0` learned
  *  nothing, which is not the same as a threat with no deadline. */
 export interface ThreatClockExplain {
@@ -340,6 +356,8 @@ export interface RaceValueExplain {
   /** The goal fold's softMax weights, parallel to `goals` (see `absorbed`). */
   foldWeights: number[];
   pools: PoolClockExplain[];
+  /** Absent where the run circulates no `event` at all. */
+  events?: EventDrainExplain;
   threats: ThreatClockExplain[];
 }
 
@@ -389,33 +407,77 @@ export function routeCause(g: GoalClockExplain): string {
   return [...causes].join(' + ') || 'unreachable';
 }
 
+/** The four piles future draws keep dealing from — the run's circulation. A delivery clock and a recurring
+ *  event's rate are both shares of it, and have to be shares of the same one. */
+function circulationZones(G: GameState): CardInstance[][] {
+  return [G.deck, G.discard, G.hand, G.workZone];
+}
+
+/** How much of the run's circulation is `event`, and how much of a boundary a copy of it spends in hand. */
+function eventCensus(G: GameState): Omit<EventDrainExplain, 'full'> {
+  let copies = 0;
+  let pool = 0;
+  for (const zone of circulationZones(G)) {
+    pool += zone.length;
+    for (const c of zone) if (CARDS[c.cardId]?.kind === 'event') copies++;
+  }
+  const hand = effectiveHandSize(G);
+  return { copies, pool, hand, share: pool > 0 ? Math.min(1, hand / pool) : 0 };
+}
+
+/** One end-of-turn boundary settled on a clone, its hand replaced by `withEvents`' worth of one: nothing,
+ *  or every `event` copy the run circulates. The work zone is dropped either way — its output is a level
+ *  this turn reaches rather than a rate, which `inFlight` reads instead. */
+function boundary(G: GameState, withEvents: boolean): GameState {
+  const clone = cloneState(G);
+  const events = withEvents
+    ? circulationZones(clone).flatMap((zone) => zone.filter((c) => CARDS[c.cardId]?.kind === 'event'))
+    : [];
+  clone.workZone = [];
+  clone.hand = events;
+  applyUpkeep(clone);
+  return clone;
+}
+
 /**
  * The run's **permanent** economy one round on: tableau production, trade rent, threat drains, building
- * maintenance, population food, and the disaster of every `event` left unplayed in hand. This is the one
- * clone per evaluation; τ and the pool drains are both read off it.
+ * maintenance, population food, and the recurring disaster of every `event` the run still circulates. τ
+ * and the pool drains are both read off it.
  *
- * The hand keeps its events and drops everything else. Holding this copy is contingent, but *being held*
- * is not: an unplayed event fires at the boundary and files to the discard, from which the deck deals it
- * back, so a mission whose pressure is a recurring event drains for as long as the run owes the copies.
- * Reading that as a rate is the same pessimism `threatClock` takes — the run pictured doing nothing about
- * it — and it is the only term a death clock has, this being the one projection an evaluation can afford.
- * `applyUpkeep` settles them at the slot the engine does (its own `resolveHandEvents`), which is what
- * reaches an amount a card computes in a `resolve` closure: an escalating drain reading a counter it
- * bumps has no declarative bag to read off. Every other hand card drains nothing and files itself away at
- * the same boundary, so carrying it would buy the walk nothing.
+ * The hand is dropped whole, events included, and the events are charged back at their **circulation
+ * rate**. An unplayed event fires at the boundary and files to the discard, from which the deck deals it
+ * back, so what a mission's recurring pressure costs is that disaster once a shuffle cycle — `hand / pool`
+ * of a boundary per copy, the same census `deliveryClock` measures a plan's delivery over. Charging it
+ * instead by whether a copy happens to sit in hand right now makes a death clock flicker between the whole
+ * drain and none at all as the deck turns over, so on the majority of turns the pool it empties reads as
+ * unreachable. Which pile a copy rests in is no more a distance travelled here than it is there; a copy in
+ * `removed` is out of circulation and charges nothing, which is what playing an event to defuse it buys.
+ *
+ * The amount is measured, never read: the second boundary settles every circulating copy through the same
+ * `applyUpkeep` at the slot the engine does (its own `resolveHandEvents`), so an escalating drain computing
+ * itself off a counter it bumps is charged what it really takes. That is a second clone, paid only by a run
+ * that circulates an event at all.
  *
  * The counter advances **after** the boundary, which is what makes "one round on" true of the whole
  * state rather than of the pools alone: a drain keyed to the round is charged at the round it is
  * charged for, while a goal measured in rounds derives its τ of 1 from the same subtraction every other
  * goal uses.
  */
-function permanentProjection(G: GameState): GameState {
-  const clone = cloneState(G);
-  clone.workZone = [];
-  clone.hand = clone.hand.filter((c) => CARDS[c.cardId]?.kind === 'event');
-  applyUpkeep(clone);
-  clone.round = G.round + 1;
-  return clone;
+function permanentProjection(G: GameState, ex?: RaceSink): GameState {
+  const perm = boundary(G, false);
+  const census = eventCensus(G);
+  if (census.copies > 0) {
+    const charged = boundary(G, true);
+    const full: Partial<Record<keyof Resources, number>> = {};
+    for (const k of ALL_POOLS) {
+      const taken = perm.resources[k] - charged.resources[k];
+      if (taken !== 0) full[k] = taken;
+      perm.resources[k] -= census.share * taken;
+    }
+    if (ex) ex.events = { ...census, full };
+  }
+  perm.round = G.round + 1;
+  return perm;
 }
 
 /**
@@ -423,7 +485,7 @@ function permanentProjection(G: GameState): GameState {
  * box's one-shot production — a level this turn reaches once, not a rate, which is why the projection
  * empties the work zone and this reads it instead.
  *
- * Read straight off the cards rather than through a second projection, so an evaluation stays one clone.
+ * Read straight off the cards rather than through a projection of its own, which costs an evaluation nothing.
  * The fold mirrors the resolver exactly (per staffed worker, then the copy's stickers, then the board's
  * standing modifiers), because an amount arrived at differently would price the very play it is meant to
  * judge at a number the board won't pay. A box whose output is all closure reads as nothing in flight —
@@ -609,7 +671,7 @@ function deliveryClock(
   if (copies <= 0) return 0;
   let held = 0;
   let pool = 0;
-  for (const zone of [G.deck, G.discard, G.hand, G.workZone]) {
+  for (const zone of circulationZones(G)) {
     pool += zone.length;
     for (const c of zone) if (c.cardId === cardId) held++;
   }
@@ -929,7 +991,7 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
   const horizon = Math.max(0, bound - G.round + 1);
   if (ex) ex.horizon = horizon;
   const banked = bankedState(G);
-  const perm = permanentProjection(G);
+  const perm = permanentProjection(G, ex);
 
   // T̂win — the bottleneck goal, softened so the others still pull. With no objective seeded there is
   // no clock to run down, which reads as the horizon: unwinnable, and flat.
@@ -962,8 +1024,7 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
     for (const k of CORE_KEYS) {
       const level = banked.resources[k];
       const drain = G.resources[k] - perm.resources[k];
-      // A pool this turn's boundary already carries below zero has collapsed whatever its rate — which
-      // is the only thing that makes a *one-shot* drain (an unplayed event's disaster) visible here.
+      // A pool this turn's boundary already carries below zero has collapsed whatever its rate.
       const t = level < 0 ? 0 : drain > 0 ? level / drain : Infinity;
       ex?.pools.push({ key: k, level, drain, t });
       if (t < tLoss) {

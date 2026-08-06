@@ -144,23 +144,34 @@ All `t` clamp at the remaining drive cutoff; a goal past the horizon reads dead,
 work box this turn) must still be visible pre-`endTurn` so staffing registers immediately — read it
 directly off `workZone` card data (`producingUnits` arithmetic, no clone) instead of the old
 second full projection. Net: one clone per leaf instead of two; the saving is earmarked for search
-depth, not pocketed.
+depth, not pocketed. A run that circulates an `event` spends the saving again on the second boundary
+below — as with the deadline probe's own extra clone, read a slower `raiding_*` sweep as that and not as
+model noise.
 
-**The hand keeps its events.** The work zone is the only transient the projection drops. An `event` left
-unplayed is not an incident but a **rate**: it fires its `upkeep` at the boundary, files to the discard,
-and the deck deals it back, so a mission whose whole pressure is a recurring event drains for as long as
-the run holds the copies. `applyUpkeep` settles them at the slot the engine does (its own
-`resolveHandEvents`), which is what reaches an amount a card computes in a `resolve` closure — an
-escalating drain reading a counter it bumps has no declarative bag to read, and clearing the hand before
-the projection hid it twice over. Every non-event hand card drains nothing and files itself away at the
-same boundary, so it is still dropped.
+**A recurring event is charged at its circulation rate.** The hand is dropped whole, events included, and
+they are charged back as a rate. An `event` left unplayed is not an incident: it fires its `upkeep` at the
+boundary, files to the discard, and the deck deals it back, so a mission whose whole pressure is a
+recurring event drains for as long as the run circulates the copies. The share of boundaries a copy spends
+in hand is `hand / pool` over the **same circulation** a delivery clock counts — deck, discard, hand and
+work zone as one multiset, capped at 1 where the hand is the whole pile — so the rate is the per-boundary
+disaster scaled by it, summed over the copies in circulation. Charging it instead by whether a copy sits in
+hand *right now* prices a duty cycle of 100% against one of 0%, and the death clock then flickers between
+the whole drain and `∞` as the deck turns over. A copy in `removed` is out of circulation and charges
+nothing, which is exactly what playing an event to defuse it buys.
+
+The amount is measured, never read: a second boundary settles every circulating copy through the same
+`applyUpkeep` at the slot the engine does (its own `resolveHandEvents`), and the two projections differ by
+the events and by nothing else. That is what reaches an amount a card computes in a `resolve` closure — an
+escalating drain reading a counter it bumps has no declarative bag to read. Every non-event hand card
+drains nothing and files itself away at the same boundary, so dropping it costs the walk nothing.
 
 ### T̂loss — rounds to death
 
 `min` of:
 
 - **(a)** each draining core pool's `pool / drain`, off the same stripped projection — which is where a
-  recurring unplayed event's disaster enters, at whatever its own resolver really takes;
+  recurring event's disaster enters, at whatever its own resolver really takes, scaled by the share of
+  boundaries the deck deals a copy into hand for;
 - **(b)** the drive cutoff, `maxRounds − round` (threaded via `searchBoundsFor`, as for the oracle);
 - **(c)** each threat's **frozen-world probe** (step 3): clone `G`, repeatedly run *that threat's
   own* `resolveEndTurn` (its whole per-round broadcast, not the `upkeep` slot alone — a threat
@@ -220,7 +231,10 @@ four, down from ~15:
   invariant the payment term alone cannot hold.
 - **Circulation invariance**: a recycling copy moved between hand, discard and work zone leaves every
   clock and the value bit-identical; a copy that really leaves circulation still shortens a delivery
-  clock, and landing a plan copy beats landing a card the plan doesn't read.
+  clock, and landing a plan copy beats landing a card the plan doesn't read. The same holds of a
+  **recurring event's** death clock: finite from the discard, unmoved by the pile the copy rests in,
+  doubled by a second copy, nothing at all once a copy is exiled, and never past the drain one boundary
+  really takes.
 - **Room is priced**: a structure plan against a full board scores strictly below the same plan with a
   slot free.
 - **Deliverability outranks price**: a goal whose cheapest-per-unit card the deck cannot deal plans
@@ -285,6 +299,17 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   optimistic and, being root-derived, doesn't correct as ids land — and delivery now turns it pessimistic
   instead wherever the deck holds fewer copies of that card than the goal names. Don't misattribute a
   `growing_numbers` regression to the fold.
+- **A recurring event charged by presence made the death clock flicker — measured, and closed pending the
+  referee.** Traced over `raiding_city · planner` (classic 87%, race 67%, bankruptcy 12 → 33), whose whole
+  money pressure is four seeded Strongholds cycling through the deck: the money clock was finite **iff a
+  copy sat in hand**, a duty cycle of 26–42% across seeds 0/2/9/13, so on 58–74% of turns bankruptcy read
+  as impossible and `T̂loss` jumped 199 → 6 → 194 → 2 turn to turn. Seed 0 died bankrupt at round 21
+  holding 59🌾, having never valued the drain at all. The circulation rate above closes the flicker: that
+  root now reads money at 0.84/rd against 2.00 (the one copy that happened to be in hand), and seed 0
+  replays to bankruptcy at round **188** with 33 Trader plays against 0 — a reading, not a verdict, which
+  is step 4's. What it does **not** address: an escalating event is measured at each copy's *current*
+  counter and then charged as a flat rate, so `pool / drain` still overstates the runway of a drain that
+  deepens. A separate item, not a hybrid to fold in here.
 
 ## Decisions already made
 

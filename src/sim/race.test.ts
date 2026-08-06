@@ -581,6 +581,77 @@ describe('T̂loss', () => {
   });
 });
 
+describe('recurring events', () => {
+  /** A run whose circulation is `filler` cards no goal reads plus `events` copies of `test_event` resting
+   *  in `zone`, and `defused` more the run has played away. Nothing else drains ⚔️, so the event's rate
+   *  is the whole death clock. */
+  function circulating({
+    zone = 'deck' as 'deck' | 'hand' | 'discard',
+    events = 1,
+    filler = 0,
+    defused = 0,
+  } = {}) {
+    const G = state('race_goal', { military: 5 });
+    for (let i = 0; i < filler; i++) G.deck.push(mint(G, 'race_relic'));
+    for (let i = 0; i < events; i++) G[zone].push(mint(G, 'test_event'));
+    for (let i = 0; i < defused; i++) G.removed.push(mint(G, 'test_event'));
+    return G;
+  }
+
+  /** One pool's death-clock rate, beside the census the events reaching it were charged over. */
+  function drains(G: GameState) {
+    const ex = explainRaceValue(G, { model: deriveRace(G) });
+    return { drain: ex.pools.find((p) => p.key === 'military')!.drain, census: ex.events! };
+  }
+
+  it('charges a copy the deck still circulates, wherever it is resting', () => {
+    // The reading a presence test cannot give: the copy is in the discard, so it takes nothing at *this*
+    // boundary and the pool it empties would read as unreachable — right up to the turn it is redealt.
+    const G = circulating({ zone: 'discard', filler: 9 });
+    const { drain, census } = drains(G);
+    expect(census).toMatchObject({ copies: 1, pool: 10 });
+    expect(drain).toBeCloseTo(census.share * 2);
+    const b = raceBreakdown(G);
+    expect(b.lossCause).toBe('military');
+    expect(Number.isFinite(b.tLoss)).toBe(true);
+  });
+
+  it('reads the same clock wherever in circulation the copy sits', () => {
+    // Hand, discard and deck are one pile as far as future boundaries go, exactly as they are for a
+    // delivery clock. A rate that moved with the shuffle would flicker between the drain and none at all.
+    const base = raceBreakdown(circulating({ zone: 'deck', filler: 9 }));
+    for (const zone of ['hand', 'discard'] as const) {
+      expect(raceBreakdown(circulating({ zone, filler: 9 })).tLoss, zone).toBeCloseTo(base.tLoss, 12);
+    }
+  });
+
+  it('charges nothing for a copy the run has played away', () => {
+    const held = raceBreakdown(circulating({ filler: 9 }));
+    const defused = raceBreakdown(circulating({ events: 0, filler: 9, defused: 1 }));
+    expect(held.lossCause).toBe('military');
+    expect(defused.lossCause).toBe('horizon');
+  });
+
+  it('drains twice as fast for a second copy in the same pile', () => {
+    // The filler makes up the difference, so both runs circulate the same number of cards and a copy is
+    // dealt at the same share either way — leaving how many of them there are as the only difference.
+    const one = drains(circulating({ filler: 10 }));
+    const two = drains(circulating({ events: 2, filler: 9 }));
+    expect(two.census.share).toBe(one.census.share);
+    expect(two.drain).toBeCloseTo(2 * one.drain);
+  });
+
+  it('never charges past what the boundary really takes', () => {
+    // A pile no deeper than the hand deals every copy every turn, so the rate is the whole drain and no
+    // more. The equality is also what says the two projections differ by the events and by nothing else.
+    const G = circulating({ events: 2 });
+    const { drain, census } = drains(G);
+    expect(census.share).toBe(1);
+    expect(drain).toBeCloseTo(2 * 2);
+    expect(raceBreakdown(G).tLoss).toBeCloseTo(5 / 4);
+  });
+});
+
 describe('the deadline probe', () => {
   /** A state whose only pressure is `threatCardId`, minted so a case can set its counters first. */
   function threatened(threatCardId: string, counters: Record<string, number> = {}) {
@@ -721,6 +792,9 @@ describe('the explained pass', () => {
     ticking.threats.push(clock);
     const deadline = state('race_goal', { producers: 1 });
     deadline.threats.push(mint(deadline, 'test_deadline'));
+    const recurring = state('race_goal', { military: 5, producers: 1 });
+    for (let i = 0; i < 3; i++) recurring.deck.push(mint(recurring, 'race_relic'));
+    recurring.discard.push(mint(recurring, 'test_event'));
     return [
       state('race_goal', { producers: 1 }),
       state('race_goal', { science: 10, producers: 1 }),
@@ -733,6 +807,7 @@ describe('the explained pass', () => {
       planned('race_goal', ['test_sci'], { population: 2 }),
       ticking,
       deadline,
+      recurring,
       lost,
     ];
   }

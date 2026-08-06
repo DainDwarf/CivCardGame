@@ -176,6 +176,14 @@ function cellBlock(cell: RaceValuationCell): string {
   for (const t of value.threats) {
     out.push(`    threat ${pad(t.cardId, 22)}${padLeft(n(t.t), 9)}  (probed under cap ${n(t.cap)})`);
   }
+  // The drains above carry a recurring event at a fraction of what one boundary of it takes, which no
+  // per-pool figure can be reconstructed from.
+  if (value.events) {
+    const e = value.events;
+    out.push(
+      `    events ${e.copies} of ${e.pool} in circulation · ${n(e.hand, 1)} hand / ${e.pool} pool = ${n(e.share, 3)} of a boundary each · full rate ${bag(e.full)}`,
+    );
+  }
   out.push('');
 
   out.push(
@@ -328,6 +336,20 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
   for (const t of value.threats) {
     rows.push({ goal: NO_GOAL, section: 'threatClock', key: 'rounds', cardId: t.cardId, value: t.t, unit: 'rounds' });
     rows.push({ goal: NO_GOAL, section: 'threatClock', key: 'cap', cardId: t.cardId, value: t.cap, unit: 'rounds' });
+  }
+  if (value.events) {
+    const e = value.events;
+    for (const [key, v, unit] of [
+      ['copies', e.copies, 'cards'],
+      ['pool', e.pool, 'cards'],
+      ['hand', e.hand, 'cards'],
+      ['share', e.share, ''],
+    ] as [string, number, string][]) {
+      rows.push({ goal: NO_GOAL, section: 'eventDrain', key, value: v, unit });
+    }
+    for (const [k, v] of Object.entries(e.full) as [keyof Resources, number][]) {
+      rows.push({ goal: NO_GOAL, section: 'eventFullDrain', key: k, value: v, unit: 'units/boundary' });
+    }
   }
 
   rows.push({ goal: NO_GOAL, section: 'value', key: 'tWin', value: b.tWin, unit: 'rounds' });
