@@ -132,8 +132,8 @@ export interface RaceOptions {
 /**
  * How this run's deck can reach each goal that its standing economy will not. Derived **once at the run
  * root**, because every figure in it is a probe over the catalogue rather than a read of the moment —
- * and because an evaluation must stay at one clone (`permanentProjection`) for the search to afford any
- * depth at all.
+ * and because an evaluation must stay at the one projection (`permanentProjection`) for the search to
+ * afford any depth at all.
  *
  * The plans are what make a lumpy goal legible. A mission counting mined veins, or one asking for
  * citizens no card *produces* per round, has a τ of exactly zero however well the run is going: nothing
@@ -316,11 +316,14 @@ export interface GoalClockExplain {
   buildings: PlanClockExplain[];
 }
 
-/** One core pool's death clock. */
+/** One core pool's death clock: the positive root of `level = drain·t + accel·t²`. */
 export interface PoolClockExplain {
   key: keyof CoreResources;
   level: number;
   drain: number;
+  /** Half the per-round² deepening of `drain`, absent where nothing escalates — which is also where `t`
+   *  is the plain `level / drain` it has always been. */
+  accel?: number;
   t: number;
 }
 
@@ -337,6 +340,9 @@ export interface EventDrainExplain {
   share: number;
   /** What one boundary with every copy in hand takes, per pool — the amount `share` scales. */
   full: Partial<Record<keyof Resources, number>>;
+  /** How much deeper the *second* such boundary goes, per pool — the escalation the death clock is solved
+   *  against. Absent where nothing deepens, which is every flat drain and every eased one. */
+  escalation?: Partial<Record<keyof Resources, number>>;
 }
 
 /** One threat's frozen-world deadline probe, and the bound it ran under — a probe capped at `0` learned
@@ -414,7 +420,7 @@ function circulationZones(G: GameState): CardInstance[][] {
 }
 
 /** How much of the run's circulation is `event`, and how much of a boundary a copy of it spends in hand. */
-function eventCensus(G: GameState): Omit<EventDrainExplain, 'full'> {
+function eventCensus(G: GameState): Omit<EventDrainExplain, 'full' | 'escalation'> {
   let copies = 0;
   let pool = 0;
   for (const zone of circulationZones(G)) {
@@ -425,24 +431,26 @@ function eventCensus(G: GameState): Omit<EventDrainExplain, 'full'> {
   return { copies, pool, hand, share: pool > 0 ? Math.min(1, hand / pool) : 0 };
 }
 
-/** One end-of-turn boundary settled on a clone, its hand replaced by `withEvents`' worth of one: nothing,
- *  or every `event` copy the run circulates. The work zone is dropped either way — its output is a level
- *  this turn reaches rather than a rate, which `inFlight` reads instead. */
-function boundary(G: GameState, withEvents: boolean): GameState {
-  const clone = cloneState(G);
-  const events = withEvents
-    ? circulationZones(clone).flatMap((zone) => zone.filter((c) => CARDS[c.cardId]?.kind === 'event'))
-    : [];
-  clone.workZone = [];
-  clone.hand = events;
-  applyUpkeep(clone);
-  return clone;
+/** Every `event` copy the run's circulation holds — the hand a boundary probe stands a world's worth of
+ *  recurring pressure up as. */
+function eventCopies(G: GameState): CardInstance[] {
+  return circulationZones(G).flatMap((zone) => zone.filter((c) => CARDS[c.cardId]?.kind === 'event'));
+}
+
+/** One end-of-turn boundary settled in place, the world's hand replaced by `events`: nothing, or the copies
+ *  handed in. The work zone is dropped either way — its output is a level this turn reaches rather than a
+ *  rate, which `inFlight` reads instead. */
+function settle(world: GameState, events: CardInstance[]): void {
+  world.workZone = [];
+  world.hand = events;
+  applyUpkeep(world);
 }
 
 /**
  * The run's **permanent** economy one round on: tableau production, trade rent, threat drains, building
  * maintenance, population food, and the recurring disaster of every `event` the run still circulates. τ
- * and the pool drains are both read off it.
+ * and the pool drains are both read off it, with `accel` carrying the one thing a projected state cannot
+ * hold — a drain that is not the same next round as it is this one.
  *
  * The hand is dropped whole, events included, and the events are charged back at their **circulation
  * rate**. An unplayed event fires at the boundary and files to the discard, from which the deck deals it
@@ -453,31 +461,79 @@ function boundary(G: GameState, withEvents: boolean): GameState {
  * unreachable. Which pile a copy rests in is no more a distance travelled here than it is there; a copy in
  * `removed` is out of circulation and charges nothing, which is what playing an event to defuse it buys.
  *
- * The amount is measured, never read: the second boundary settles every circulating copy through the same
- * `applyUpkeep` at the slot the engine does (its own `resolveHandEvents`), so an escalating drain computing
- * itself off a counter it bumps is charged what it really takes. That is a second clone, paid only by a run
- * that circulates an event at all.
+ * The amount is measured, never read: each boundary settles every circulating copy through the same
+ * `applyUpkeep` at the slot the engine does (its own `resolveHandEvents`), so a drain computing itself off
+ * a counter it bumps is charged what it really takes.
+ *
+ * **Two** boundaries, because what such a drain really takes is not one number. A copy that deepens every
+ * time it comes round is charged today's level flat by a single reading, and `level / drain` then promises
+ * rounds that will not exist. So each boundary is run in both worlds and the events' own marginal is the
+ * difference — a diff of the two diffs, which cancels whatever the rest of the board did between them
+ * (a threat escalating on its own clock included). The rise from the first to the second is what one
+ * resolution deepens by; the clock above turns it into a rate that climbs. Three clones and four
+ * boundaries, and only for a run that circulates an event at all.
  *
  * The counter advances **after** the boundary, which is what makes "one round on" true of the whole
  * state rather than of the pools alone: a drain keyed to the round is charged at the round it is
  * charged for, while a goal measured in rounds derives its τ of 1 from the same subtraction every other
- * goal uses.
+ * goal uses. Both worlds advance together for the second boundary, so a round-keyed drain cancels there
+ * as the rest does.
  */
-function permanentProjection(G: GameState, ex?: RaceSink): GameState {
-  const perm = boundary(G, false);
+function permanentProjection(
+  G: GameState,
+  ex?: RaceSink,
+): { perm: GameState; accel: Partial<Record<keyof Resources, number>> } {
+  const perm = cloneState(G);
+  settle(perm, []);
   const census = eventCensus(G);
+  const accel: Partial<Record<keyof Resources, number>> = {};
   if (census.copies > 0) {
-    const charged = boundary(G, true);
+    const charged = cloneState(G);
+    const copies = eventCopies(charged);
+    settle(charged, copies);
+    const first = { ...charged.resources };
+    const next = cloneState(perm);
+    next.round = G.round + 1;
+    charged.round = G.round + 1;
+    settle(next, []);
+    settle(charged, copies);
+
     const full: Partial<Record<keyof Resources, number>> = {};
+    const escalation: Partial<Record<keyof Resources, number>> = {};
     for (const k of ALL_POOLS) {
-      const taken = perm.resources[k] - charged.resources[k];
-      if (taken !== 0) full[k] = taken;
-      perm.resources[k] -= census.share * taken;
+      const d1 = perm.resources[k] - first[k];
+      const d2 = next.resources[k] - perm.resources[k] - (charged.resources[k] - first[k]);
+      if (d1 !== 0) full[k] = d1;
+      perm.resources[k] -= census.share * d1;
+      // A drain that *eases* is left flat at what it takes now rather than projected toward zero and a
+      // clock toward `∞`: the model may read a pressure short, never read one away.
+      const step = d2 - d1;
+      if (step > 0) {
+        escalation[k] = step;
+        // A copy resolves `share` times a round, so after `t` rounds the drain has deepened by
+        // `share·t` steps and the cumulative take is `share·d1·t + share²·step·t²/2`.
+        accel[k] = (census.share * census.share * step) / 2;
+      }
     }
-    if (ex) ex.events = { ...census, full };
+    if (ex) ex.events = { ...census, full, ...(Object.keys(escalation).length > 0 ? { escalation } : {}) };
   }
   perm.round = G.round + 1;
-  return perm;
+  return { perm, accel };
+}
+
+/**
+ * Rounds until a pool of `level` empties under a drain of `drain` a round that deepens by `2·accel` a round
+ * squared — the positive root of `level = drain·t + accel·t²`.
+ *
+ * At an `accel` of zero it is the same division a flat drain has always been, evaluated by the same
+ * expression, so a run whose pressure does not escalate reads a clock bit-identical to one that never knew
+ * escalation existed. A drain of zero that escalates still empties the pool, which is what a disaster
+ * starting from nothing is; a negative drain that escalates empties it later, once the deepening has
+ * outrun the refill.
+ */
+function drainClock(level: number, drain: number, accel: number): number {
+  if (accel > 0) return (Math.sqrt(drain * drain + 4 * accel * level) - drain) / (2 * accel);
+  return drain > 0 ? level / drain : Infinity;
 }
 
 /**
@@ -991,7 +1047,7 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
   const horizon = Math.max(0, bound - G.round + 1);
   if (ex) ex.horizon = horizon;
   const banked = bankedState(G);
-  const perm = permanentProjection(G, ex);
+  const { perm, accel } = permanentProjection(G, ex);
 
   // T̂win — the bottleneck goal, softened so the others still pull. With no objective seeded there is
   // no clock to run down, which reads as the horizon: unwinnable, and flat.
@@ -1024,9 +1080,10 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
     for (const k of CORE_KEYS) {
       const level = banked.resources[k];
       const drain = G.resources[k] - perm.resources[k];
+      const rise = accel[k] ?? 0;
       // A pool this turn's boundary already carries below zero has collapsed whatever its rate.
-      const t = level < 0 ? 0 : drain > 0 ? level / drain : Infinity;
-      ex?.pools.push({ key: k, level, drain, t });
+      const t = level < 0 ? 0 : drainClock(level, drain, rise);
+      ex?.pools.push({ key: k, level, drain, ...(rise > 0 ? { accel: rise } : {}), t });
       if (t < tLoss) {
         tLoss = t;
         lossCause = k;

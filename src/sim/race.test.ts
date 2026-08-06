@@ -117,6 +117,28 @@ const FIXTURES: Record<string, CardDef> = {
       },
     },
   },
+  // The same shape starting from nothing: the first boundary takes zero, so a model reading one boundary
+  // sees a run in perfect health and a pool that can never empty.
+  race_creep: {
+    id: 'race_creep', name: 'Race Creep', kind: 'event', cost: {},
+    upkeep: {
+      resolve: ({ G, self }) => {
+        subtractResources(G.resources, { science: getCounter(self, 'level') });
+        bumpCounter(self, 'level');
+      },
+    },
+  },
+  // A drain going the other way: 3, then 2, then 1. Projecting the slope forward would run the clock to
+  // infinity through a pool that is emptying right now.
+  race_relief: {
+    id: 'race_relief', name: 'Race Relief', kind: 'event', cost: {},
+    upkeep: {
+      resolve: ({ G, self }) => {
+        subtractResources(G.resources, { science: 3 - getCounter(self, 'level') });
+        bumpCounter(self, 'level');
+      },
+    },
+  },
   // A *pace* clock: its own tick maintains the idle streak its `defeat` reads, and progress on the thing
   // it watches (culture here) resets the streak. Neither a round count nor a drain can express it, which
   // is why the probe is a frozen-world replay of the threat's own hooks rather than a read of either.
@@ -556,18 +578,21 @@ describe('T̂loss', () => {
     const clear = state('race_goal', { science: 12 });
     expect(raceBreakdown(clear).lossCause).toBe('horizon');
 
+    // 12🔬 against a drain of 1 deepening by 1 a resolution, at a share of 1: the clock is not 12 rounds
+    // but the root of `12 = t + t²/2`, which is 4 — the runway a flat reading of today's level promises
+    // and the run will not get.
     const blighted = state('race_goal', { science: 12 });
     blighted.hand.push(mint(blighted, 'race_blight'));
     const fresh = raceBreakdown(blighted);
     expect(fresh.lossCause).toBe('science');
-    expect(fresh.tLoss).toBeCloseTo(12);
+    expect(fresh.tLoss).toBeCloseTo(4);
 
-    // A copy that has already come round three times takes four times as much, and the clock says so.
+    // A copy that has already come round three times starts at 4 and deepens from there.
     const worn = state('race_goal', { science: 12 });
     const copy = mint(worn, 'race_blight');
     setCounter(copy, 'level', 3);
     worn.hand.push(copy);
-    expect(raceBreakdown(worn).tLoss).toBeCloseTo(3);
+    expect(raceBreakdown(worn).tLoss).toBeCloseTo(Math.sqrt(40) - 4);
     // …and the projection that read it left the counter where it found it.
     expect(getCounter(copy, 'level')).toBe(3);
   });
@@ -649,6 +674,78 @@ describe('recurring events', () => {
     expect(census.share).toBe(1);
     expect(drain).toBeCloseTo(2 * 2);
     expect(raceBreakdown(G).tLoss).toBeCloseTo(5 / 4);
+  });
+});
+
+describe('escalating events', () => {
+  /** A run whose circulation is one copy of `cardId` plus `filler` cards nothing reads, against a bank of
+   *  12🔬. At a hand of 4 a pile of eight deals the copy half the boundaries, which is what makes the two
+   *  places the share enters — once on the level, twice on the deepening — tell each other apart. */
+  function escalating(cardId: string, { filler = 7, science = 12 } = {}) {
+    const G = state('race_goal', { science });
+    for (let i = 0; i < filler; i++) G.deck.push(mint(G, 'race_relic'));
+    G.deck.push(mint(G, cardId));
+    return explainRaceValue(G, { model: deriveRace(G) });
+  }
+
+  it('runs the clock down at the rate the drain will deepen to, not the one it stands at', () => {
+    // Half a boundary a round of a drain that starts at 1 and rises by 1 a resolution: 12🔬 lasts the root
+    // of `12 = 0.5·t + 0.125·t²`, which is 8 rounds — against the 24 a flat reading of today's level
+    // promises. Overstating that runway is what lets a run bank through a collapse it was told was distant.
+    const ex = escalating('race_blight');
+    const pool = ex.pools.find((p) => p.key === 'science')!;
+    expect(ex.events!.share).toBe(0.5);
+    expect(ex.events!.escalation).toEqual({ science: 1 });
+    expect(pool.drain).toBeCloseTo(0.5);
+    expect(pool.accel).toBeCloseTo(0.125);
+    expect(pool.t).toBeCloseTo(8);
+    expect(pool.t).toBeLessThan(pool.level / pool.drain);
+  });
+
+  it('reads a drain that starts at nothing as a clock all the same', () => {
+    // The shape a single boundary cannot see at all: the first resolution takes zero, so the pool has no
+    // drain, no rate, and — before the second reading — no clock either.
+    const ex = escalating('race_creep');
+    const pool = ex.pools.find((p) => p.key === 'science')!;
+    expect(pool.drain).toBe(0);
+    expect(Number.isFinite(pool.t)).toBe(true);
+    expect(pool.t).toBeGreaterThan(0);
+    expect(ex.breakdown.lossCause).toBe('science');
+  });
+
+  it('reads an empty pool as the cliff edge, whatever the first resolution takes', () => {
+    // Where the continuous form and the discrete truth part. Nothing is taken until a copy comes round a
+    // second time, so the pool really sits still for `2 / share` rounds — but a cumulative take with no
+    // first-order term has its root at the origin the moment the level is zero, and the model has always
+    // read an empty pool under a live drain that way. Both shipped Clay Tablet cells start here, so the
+    // one unit that lifts the clock off the floor is worth the whole of the runway below.
+    const at = (science: number) => escalating('race_creep', { science }).pools.find((p) => p.key === 'science')!;
+    expect(at(0).t).toBe(0);
+    expect(at(1).t).toBeCloseTo(Math.sqrt(1 / 0.125));
+  });
+
+  it('holds a drain that eases at what it takes now', () => {
+    // The guard on the other side: projecting the slope forward would have this pool refilling and the
+    // clock running to infinity, through a bank that is emptying as the projection is read.
+    const ex = escalating('race_relief');
+    const pool = ex.pools.find((p) => p.key === 'science')!;
+    expect(ex.events!.escalation).toBeUndefined();
+    expect(pool.accel).toBeUndefined();
+    expect(pool.t).toBe(pool.level / pool.drain);
+  });
+
+  it('leaves a flat drain exactly where a division would put it', () => {
+    // The reduction that makes the escalation safe to add: `test_event` takes the same 2⚔️ every time it
+    // comes round, so the second boundary reads what the first did and the clock is the plain quotient —
+    // not close to it, the same expression.
+    const G = state('race_goal', { military: 5 });
+    for (let i = 0; i < 9; i++) G.deck.push(mint(G, 'race_relic'));
+    G.deck.push(mint(G, 'test_event'));
+    const ex = explainRaceValue(G, { model: deriveRace(G) });
+    const pool = ex.pools.find((p) => p.key === 'military')!;
+    expect(ex.events!.escalation).toBeUndefined();
+    expect(pool.accel).toBeUndefined();
+    expect(pool.t).toBe(pool.level / pool.drain);
   });
 });
 
@@ -795,6 +892,9 @@ describe('the explained pass', () => {
     const recurring = state('race_goal', { military: 5, producers: 1 });
     for (let i = 0; i < 3; i++) recurring.deck.push(mint(recurring, 'race_relic'));
     recurring.discard.push(mint(recurring, 'test_event'));
+    const deepening = state('race_goal', { science: 12, producers: 1 });
+    for (let i = 0; i < 3; i++) deepening.deck.push(mint(deepening, 'race_relic'));
+    deepening.discard.push(mint(deepening, 'race_blight'));
     return [
       state('race_goal', { producers: 1 }),
       state('race_goal', { science: 10, producers: 1 }),
@@ -808,6 +908,7 @@ describe('the explained pass', () => {
       ticking,
       deadline,
       recurring,
+      deepening,
       lost,
     ];
   }

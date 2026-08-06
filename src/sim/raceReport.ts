@@ -171,7 +171,13 @@ function cellBlock(cell: RaceValuationCell): string {
   out.push(`T̂loss ${n(b.tLoss)} — ${b.lossCause}${b.lossCardId ? `:${b.lossCardId}` : ''}`);
   out.push(`    ${pad('pool', 12)}${padLeft('level', 8)}${padLeft('drain/rd', 10)}${padLeft('t', 9)}`);
   for (const p of value.pools) {
-    out.push(`    ${pad(p.key, 12)}${padLeft(n(p.level, 1), 8)}${padLeft(n(p.drain, 2), 10)}${padLeft(n(p.t), 9)}`);
+    // The escalation rides as a suffix rather than a column: it is empty on all but the few cells whose
+    // pressure deepens, and `t` is the plain `level / drain` wherever it is absent.
+    out.push(
+      `    ${pad(p.key, 12)}${padLeft(n(p.level, 1), 8)}${padLeft(n(p.drain, 2), 10)}${padLeft(n(p.t), 9)}${
+        p.accel ? `   escalating: t solves ${n(p.level, 1)} = ${n(p.drain, 2)}·t + ${n(p.accel, 4)}·t²` : ''
+      }`,
+    );
   }
   for (const t of value.threats) {
     out.push(`    threat ${pad(t.cardId, 22)}${padLeft(n(t.t), 9)}  (probed under cap ${n(t.cap)})`);
@@ -181,7 +187,9 @@ function cellBlock(cell: RaceValuationCell): string {
   if (value.events) {
     const e = value.events;
     out.push(
-      `    events ${e.copies} of ${e.pool} in circulation · ${n(e.hand, 1)} hand / ${e.pool} pool = ${n(e.share, 3)} of a boundary each · full rate ${bag(e.full)}`,
+      `    events ${e.copies} of ${e.pool} in circulation · ${n(e.hand, 1)} hand / ${e.pool} pool = ${n(e.share, 3)} of a boundary each · full rate ${bag(e.full)}${
+        e.escalation ? ` · deepening ${bag(e.escalation)} per resolution` : ''
+      }`,
     );
   }
   out.push('');
@@ -332,6 +340,9 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
     rows.push({ goal: NO_GOAL, section: 'poolClock', key: p.key, value: p.t, unit: 'rounds' });
     rows.push({ goal: NO_GOAL, section: 'poolLevel', key: p.key, value: p.level });
     rows.push({ goal: NO_GOAL, section: 'poolDrain', key: p.key, value: p.drain, unit: 'units/rd' });
+    // Absent rather than zero-filled: a pool whose drain does not deepen has no such fact, and a row
+    // saying so would put a `0` beside every flat clock in the standing set.
+    if (p.accel) rows.push({ goal: NO_GOAL, section: 'poolAccel', key: p.key, value: p.accel, unit: 'units/rd²' });
   }
   for (const t of value.threats) {
     rows.push({ goal: NO_GOAL, section: 'threatClock', key: 'rounds', cardId: t.cardId, value: t.t, unit: 'rounds' });
@@ -349,6 +360,9 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
     }
     for (const [k, v] of Object.entries(e.full) as [keyof Resources, number][]) {
       rows.push({ goal: NO_GOAL, section: 'eventFullDrain', key: k, value: v, unit: 'units/boundary' });
+    }
+    for (const [k, v] of Object.entries(e.escalation ?? {}) as [keyof Resources, number][]) {
+      rows.push({ goal: NO_GOAL, section: 'eventEscalation', key: k, value: v, unit: 'units/resolution' });
     }
   }
 

@@ -144,9 +144,9 @@ All `t` clamp at the remaining drive cutoff; a goal past the horizon reads dead,
 work box this turn) must still be visible pre-`endTurn` so staffing registers immediately — read it
 directly off `workZone` card data (`producingUnits` arithmetic, no clone) instead of the old
 second full projection. Net: one clone per leaf instead of two; the saving is earmarked for search
-depth, not pocketed. A run that circulates an `event` spends the saving again on the second boundary
-below — as with the deadline probe's own extra clone, read a slower `raiding_*` sweep as that and not as
-model noise.
+depth, not pocketed. A run that circulates an `event` spends the saving again on the boundaries below —
+four of them across three clones — as with the deadline probe's own extra clone, read a slower `raiding_*`
+or `writing_*` sweep as that and not as model noise.
 
 **A recurring event is charged at its circulation rate.** The hand is dropped whole, events included, and
 they are charged back as a rate. An `event` left unplayed is not an incident: it fires its `upkeep` at the
@@ -159,19 +159,34 @@ hand *right now* prices a duty cycle of 100% against one of 0%, and the death cl
 the whole drain and `∞` as the deck turns over. A copy in `removed` is out of circulation and charges
 nothing, which is exactly what playing an event to defuse it buys.
 
-The amount is measured, never read: a second boundary settles every circulating copy through the same
-`applyUpkeep` at the slot the engine does (its own `resolveHandEvents`), and the two projections differ by
-the events and by nothing else. That is what reaches an amount a card computes in a `resolve` closure — an
-escalating drain reading a counter it bumps has no declarative bag to read. Every non-event hand card
-drains nothing and files itself away at the same boundary, so dropping it costs the walk nothing.
+The amount is measured, never read: each boundary settles every circulating copy through the same
+`applyUpkeep` at the slot the engine does (its own `resolveHandEvents`), and the two worlds it is settled
+in differ by the events and by nothing else. That is what reaches an amount a card computes in a `resolve`
+closure — an escalating drain reading a counter it bumps has no declarative bag to read. Every non-event
+hand card drains nothing and files itself away at the same boundary, so dropping it costs the walk nothing.
+
+**And it is charged at the rate it will deepen to, not the one it stands at.** A single reading is one
+number, and a drain that rises every time its copy comes round is not one number: Stronghold takes
+2🪙 then 4 then 6, and `pool / drain` at today's level promises rounds the run will not get. So **two**
+consecutive boundaries are settled in each world, and the events' own marginal at each is the difference
+between them — a diff of the two diffs, which cancels whatever the rest of the board did in between (a
+threat escalating on its own clock included). Their rise `Δ` is what one resolution deepens by. At a
+circulation share `s` a copy resolves `s` times a round, so `t` rounds of pressure take
+`s·d₁·t + s²·Δ·t²/2`, and the death clock is that quadratic's positive root — **exactly** the flat
+`level / (s·d₁)` where `Δ` is zero, which is what leaves every non-escalating clock in the standing set
+bit-identical. A drain that *eases* is held flat at what it takes now rather than projected toward zero and
+a clock toward `∞`: the model may read a pressure short, never read one away. A drain starting from
+nothing (Clay Tablet's first resolution takes 0🔬) is the shape one boundary cannot see at all — no drain,
+no rate, no clock — and the quadratic still has a root.
 
 ### T̂loss — rounds to death
 
 `min` of:
 
-- **(a)** each draining core pool's `pool / drain`, off the same stripped projection — which is where a
-  recurring event's disaster enters, at whatever its own resolver really takes, scaled by the share of
-  boundaries the deck deals a copy into hand for;
+- **(a)** each draining core pool's runway off the same stripped projection — `pool / drain`, or the
+  quadratic root above where the drain deepens. This is where a recurring event's disaster enters, at
+  whatever its own resolver really takes, scaled by the share of boundaries the deck deals a copy into
+  hand for;
 - **(b)** the drive cutoff, `maxRounds − round` (threaded via `searchBoundsFor`, as for the oracle);
 - **(c)** each threat's **frozen-world probe** (step 3): clone `G`, repeatedly run *that threat's
   own* `resolveEndTurn` (its whole per-round broadcast, not the `upkeep` slot alone — a threat
@@ -234,7 +249,9 @@ four, down from ~15:
   clock, and landing a plan copy beats landing a card the plan doesn't read. The same holds of a
   **recurring event's** death clock: finite from the discard, unmoved by the pile the copy rests in,
   doubled by a second copy, nothing at all once a copy is exiled, and never past the drain one boundary
-  really takes.
+  really takes. **Escalation honesty**: a deepening drain's clock is shorter than the flat read at its
+  current counter and matches the closed form on a hand-computable fixture; a flat one is the plain
+  quotient rather than a number close to it; one starting from nothing is finite; one that eases holds.
 - **Room is priced**: a structure plan against a full board scores strictly below the same plan with a
   slot free.
 - **Deliverability outranks price**: a goal whose cheapest-per-unit card the deck cannot deal plans
@@ -307,9 +324,30 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   holding 59🌾, having never valued the drain at all. The circulation rate above closes the flicker: that
   root now reads money at 0.84/rd against 2.00 (the one copy that happened to be in hand), and seed 0
   replays to bankruptcy at round **188** with 33 Trader plays against 0 — a reading, not a verdict, which
-  is step 4's. What it does **not** address: an escalating event is measured at each copy's *current*
-  counter and then charged as a flat rate, so `pool / drain` still overstates the runway of a drain that
-  deepens. A separate item, not a hybrid to fold in here.
+  is step 4's.
+- **The rate it was charged at was still today's, and an escalation made that a promise — measured, and
+  closed.** Charging the circulation rate off a *single* boundary reads a deepening drain at each copy's
+  current counter, so `pool / drain` overstated the runway of exactly the missions whose whole pressure
+  escalates. The referee found all four `raiding_*` cells worse for the circulation fix alone
+  (`raiding_city · planner` 67% → 49%, bankruptcy 33 → 42; `· greedy` 53% → 43%): the presence charge it
+  replaced had been *compensating* for the blindness by over-charging a held copy. The second boundary
+  above measures the rise instead of assuming it away. At the root it moves four cells and no others:
+  `raiding_city` money 14.25 → **9.50** rounds (Δ 8🪙 a resolution over four Strongholds) and
+  `raiding_chiefdom` 11.88 → 8.27, both becoming the binding clock over food; `writing` and
+  `writing_chiefdom` read a science clock at all for the first time, five Clay Tablets deepening 5🔬 a
+  resolution off a first boundary that takes nothing. Their science sits at **0** at the root, and a
+  cumulative take with no first-order term has its root at the origin, so those two read `T̂loss` 0 — where
+  the discrete truth is that nothing is taken until a copy comes round a *second* time, some `2 / share`
+  rounds out. A continuous cumulative form cannot express "the first resolution takes nothing"; the reading
+  it gives is the one this model has always given an empty pool under a live drain, and the level-0 case is
+  pinned in the suite rather than papered over. Whether that steepness helps a mission whose defeat *is* a
+  science collapse is a referee question: `writing · planner` replays 10 seeds to the same 9 wins and the
+  same defeat, so it is not the disease it looks like. Seed 0 of `raiding_city · planner` now replays to a
+  stall at the cutoff with 3 of 4 Strongholds played rather than to bankruptcy — again a reading, not a
+  verdict.
+  What this does **not** reach: τ still carries the events at the flat first-boundary rate, since the goal
+  clock is `need / τ` and linear throughout. No shipped goal measures a pool an escalating event drains —
+  Writing and Raiding both count copies in `removed` — so the two do not meet today.
 
 ## Decisions already made
 
