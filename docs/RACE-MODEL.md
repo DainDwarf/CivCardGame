@@ -39,7 +39,7 @@ score points.
 A run is a race between the win and death. The value of a state is its margin:
 
 ```
-h(G) = T̂loss(G) − T̂win(G)      (+ tie-break; victory/defeat sentinels unchanged)
+h(G) = min(T̂loss(G), slackCap) − T̂win(G)      (+ tie-break; victory/defeat sentinels unchanged)
 ```
 
 Both estimates are in rounds. Targets enter only as `need / throughput`, both sides in raw resource
@@ -52,6 +52,54 @@ properties fall out that the old model bought with tuned constants:
   winning in 4 is good. The old lexicographic bands could never chase a win into a survivable dip.
 - **Engine value without potential terms.** Staffing a producer raises τ in `T̂win`'s denominator;
   the slope the `operating` nudge and capacity credits approximated becomes the actual derivative.
+
+### Runway past the cap is not worth having
+
+The margin counts `T̂loss` only up to `slackCap` rounds. Below it the value is the subtraction it always
+was, bit for bit — every near-death reading, every fire-fight the model already got right, is untouched,
+and so is the whole derivation above it: the horizon clamp and the deadline probes (which take the running
+`T̂loss` as their search budget) all run first, and the cap is taken on the way into the margin. What it
+gives up is telling two *losing* states apart when both deaths are further off than the cap, which is
+accepted: near death is where losing states differ.
+
+What it buys is a **win gradient of −1 everywhere**. An unsaturated margin is linear in runway a run can
+never spend, and that is a term with no ceiling racing one bounded by the mission:
+
+- **A win 3.5 rounds away lost to 163 rounds of food.** At `first_trades · greedy` seed 1 the whole action
+  space scored `+0.000` for 163 consecutive turns, while the two actions that *win in three* priced at
+  `+0.000` and **−129.0** — the second being a worker freed off a Farm whose food no goal reads. Four
+  traced plateaus, all the same shape (−129 / −138.8 / −163.3 / −202.1), and ~490 stall defeats across the
+  standing set under `greedy`.
+- **The stall is an attractor, not an accident.** The moment the model can see the drain a plan's own
+  completion creates — measured on the drain-ramp probe cut for the `wheel` family — the same arithmetic
+  prefers never completing it: `masonry · planner` 100% → **0%** (30/30 stalls), ending on 162–230🌾 banked
+  rather than the last huts bought, at a food clock re-derivation confirms is substantively right (3.9
+  rounds by hand against the probe's 3.38, both well under a `T̂win` of 6.90). A margin that pays for
+  runway pays most for the runway of a plan never carried out.
+- **The cells that do win are dawdling.** Six of the standing cells take far longer over it than the
+  classic scorer — `finding_copper · planner` 102.7 turns against 40.1, `finding_copper_chiefdom · planner`
+  173.2 against 77.8 — which is the same preference read at a cell that survives it: the margin is flat
+  over finishing, and the tie-break is then what breaks it.
+- **Search does not reach it.** The prover's beam is scorer-ranked, and widening it 64 → 128 → 256 lifts
+  the classic scorer (6 → 8, 2 → 5 of 10) while race stays flat and non-monotone; a 4× planner budget makes
+  `accounting` strictly *worse* (4/20 → 1/20). That is the signature of a value whose optimum is not the
+  win — deeper search optimizes the proxy harder — and it is what says the shape of the value is the thing
+  to change.
+
+**The scale is absolute, in rounds, and it has to be.** A cap relative to the state's own win clock —
+`min(T̂loss, c·T̂win)` — is self-defeating: in the capped region the entire value is `(c−1)·T̂win`, which
+*rises* with the win clock, so the model would pay to lengthen its own race. It fails the shipped
+"prices a banked unit at the fraction of a round it saves" fixture at every `c` in {1.25, 1.5, 2, 3} and
+under every knee shape, and the failure is structural rather than a tuning miss: a plateau that is
+homogeneous in the clocks is `a·T̂win` for some `a ≥ 0`, so it is either perverse (`a > 0`) or flat
+(`a = 0`), and flat removes the only term steering toward the win at all. The scale therefore has to come
+from **outside the state being valued**.
+
+Which is not the mistake `goalSoftening`'s re-unitization corrected, though it looks like its twin. A
+temperature scales the *gap between two clocks*, and a gap means nothing except against the race that
+folds it — three rounds behind four is not three behind forty. A cap names *how much runway is worth
+having at all*, which is a fact about the horizon a run is played on and not about either clock. The two
+are absolute and relative for the same reason: each is denominated in what its own question is asked in.
 
 ### T̂win — rounds to the win
 
@@ -83,7 +131,7 @@ fold, since a gap can never be wider than the leader: the weakest weight any sta
   the later one finishes — softened against the same temperature as the goal fold, because the clock a
   hard `max` masks is routinely the payment one, and that is the half carrying every earning and spending
   decision the run makes. Both figures are read off `G`; the census below is unchanged, the softening
-  reusing constant 1 rather than adding a fifth.
+  reusing constant 1 rather than adding a constant of its own.
 - **Zero current throughput, deck can build it**: `t = t_setup + need / τ_achievable`, where
   `t_setup` is the worker-round price of the best goal-producer chain the probes find
   (afford → build → staff). The sole surviving descendant of the capacity/producer machinery —
@@ -115,7 +163,7 @@ that replacement rate. Dividing the entire debt by the population instead values
 *could* be doing, which is flat over every act that puts them to doing it: a plan's priced pools are by
 construction the ones no goal measures, so the producer feeding one reaches `T̂win` through no other term,
 and staffing it is worth exactly nothing. The `1 +` on the redeployment branch is the boundary the
-projection already measures rather than a fifth constant — the two branches meet at it, and without it they
+projection already measures rather than a new constant — the two branches meet at it, and without it they
 part by a whole round at the crossover, which is a state the beam could score two ways.
 
 **A run with no income in a priced pool is one that has yet to deploy its people, not one with no plan.**
@@ -147,7 +195,7 @@ the boundary files a box back to the discard and strips its staffing, so a citiz
 is one the next play has, and counting them as committed would charge the wait to the very play that staffs
 a box. One boundary rather than one per copy, for the same reason: the citizen freed for the first play is
 the one every play after it runs on. The `1` is the boundary the projection already measures, exactly as
-`paymentClock`'s is — a redeployment is the same event in both — and not a fifth constant; a citizen in the
+`paymentClock`'s is — a redeployment is the same event in both — and not a new constant; a citizen in the
 wrong box is one move and a turn from the right one, never unreachable, which is the reading that would
 derive the goal out of existence. Without it a goal only a box can reach reads a short finite clock on a
 state where nothing can land at all, and the citizen who would unblock it is priced as pure liability: the
@@ -258,7 +306,7 @@ projection.
 ### The complete constant inventory
 
 Discipline: **every constant states its units and why it is tuned rather than derived.** Census —
-four, down from ~15:
+five, down from ~15:
 
 1. **Bottleneck softening** — how much non-bottleneck goals still pull (pure `max` has zero
    gradient on them and would let the beam abandon side goals). Dimensionless: a fraction of the
@@ -270,6 +318,10 @@ four, down from ~15:
    into `T̂win`, and counting it twice would break the tie toward the bank — preferring the price to the
    thing the price buys.
 4. **`VICTORY` sentinel** (unchanged).
+5. **Slack cap** — rounds of runway worth having, past which the margin stops counting `T̂loss` (above).
+   Absolute rather than a fraction of anything in the state, which is the one thing this constant cannot
+   be: a scale read off `T̂win` makes the capped region reward a longer race. Tuned because it prices how
+   far ahead a run bothers to look, which is nowhere in `G`.
 
 ### Fate of every old term
 
@@ -343,7 +395,7 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   `writing` from 93.3%) while fixing `masonry · greedy`; softening it against the existing
   `goalSoftening` carries `masonry` at 100% under both policies and lifts `writing · greedy` to the
   classic scorer's own rate. The soft fold is the shipped form. What remains open is `writing · planner`,
-  still below its classic 84% — a step-4 question, not a fifth constant.
+  still below its classic 84% — a step-4 question, not a new constant.
 
   **Re-tested against a live `T̂loss`, and it still holds.** The obvious next attempt is that the hard
   fold only failed because the death clock was blind — give the margin a real `T̂loss` (the hand-event
@@ -474,6 +526,25 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   all 54 costed routes read a wait of 0. What this does **not** reach is a *building* route, which also needs
   a citizen to produce and is charged no wait; nor mechanism 1, which is what `wheel · planner`'s remaining
   13 stalls are.
+- **The slack cap's own number, picked off a five-way sweep — measured, and closed pending the referee.**
+  `slackCap` ∈ {∞, 15, 25, 35, 50} rounds over twelve fixtures × both policies × 30 paired seeds. The
+  control is the constant at `∞`, which is the uncapped model *by construction* (`min(t, ∞) = t`), so every
+  candidate is paired against the incumbent on the same seed streams rather than against a remembered
+  figure. At **25** the plateau cells collapse at held win rates — `masonry · greedy` 124.8 → **32.2** mean
+  turns, `masonry_chiefdom · greedy` 149.5 → **34.2**, `masonry_chiefdom · planner` 105.6 → **28.0**,
+  `finding_copper · planner` 103.4 → **50.6**, `raiders_at_border · greedy` 36.9 → **20.7** — against three
+  single-seed losses (`first_trades · greedy`, `masonry · greedy`, `wheel · greedy`, −3.3 pts apiece) and
+  one single-seed gain (`accounting · planner`). 15 closes more and costs `wheel · greedy` 36.7% → 20.0%;
+  35 costs twice as much as 25 for less closure; 50 barely bites at all (`masonry · greedy` back at 86.8
+  turns). Turns fall as the cap tightens on every cell that moves, monotonically — the opposite of what a
+  boundary the search oscillates across would look like, which is why the fold is the plain `min` and not a
+  knee.
+  The **identity below the cap is a measurement now** rather than the structural argument it was:
+  `harsh_winter` replays **byte-identical** under both policies, as do `growing_numbers`,
+  `accounting · greedy` and `finding_copper · greedy` — the survival cell whose 89% the loss half bought is
+  untouched because its whole race is fought inside the cap. So is the **root** valuation of the standing
+  set, every root reading `T̂loss` ≤ 12: the cap bites where the disease is, on a run that has already
+  built the economy that puts death past the horizon.
 
 ## Decisions already made
 

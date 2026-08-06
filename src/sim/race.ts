@@ -57,6 +57,18 @@ export const RACE = {
    *  because what a gap means is relative: three rounds behind a four-round bottleneck is a different state
    *  from three behind forty, and an absolute tolerance reads them the same. */
   goalSoftening: 0.4,
+  /** Rounds of runway worth having: `T̂loss` enters the margin capped at this, so slack a run can never
+   *  spend stops outranking a state racing for the win. Tuned because it prices how far ahead a run
+   *  bothers to look, which is nowhere in `G`.
+   *
+   *  Absolute where `goalSoftening` is deliberately relative, and the two answer different questions: a
+   *  temperature scales the *gap between two clocks*, which means nothing except against the race that
+   *  folds it, while this names how much runway is worth having at all — a fact about the horizon rather
+   *  than about either clock. A scale relative to `T̂win` is not merely unneeded here but inverted: the
+   *  capped region's value would be `(c−1)·T̂win`, which *rises* with the win clock, paying the model to
+   *  lengthen its own race. Below the cap nothing here is expressible at all, which is what leaves every
+   *  near-death reading exactly where it was. */
+  slackCap: 25,
   /** Dimensionless multiplier on a losing margin, decaying with `T̂loss`. Tuned because it prices the
    *  *noise* in the two estimates rather than anything the state contains: both are projections, and a
    *  beam must not surf one round from famine on the strength of one. */
@@ -107,7 +119,10 @@ export interface RaceBreakdown {
   lossCause: LossCause;
   /** The threat whose deadline bound `T̂loss`; absent unless `lossCause` is `'deadline'`. */
   lossCardId?: string;
-  /** `T̂loss − T̂win` — the race margin, the value proper. */
+  /** `T̂loss` as the margin counts it — `min(tLoss, RACE.slackCap)`. Equal to `tLoss` below the cap, which
+   *  is where every near-death reading lives. */
+  slack: number;
+  /** `slack − T̂win` — the race margin, the value proper. */
   margin: number;
   /** The near-death steepening, ≤ 0. */
   nearDeath: number;
@@ -1289,12 +1304,22 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
     }
   }
 
-  const margin = tLoss - tWin;
+  // Runway past the cap is slack the run has no way to spend, and a margin linear in it outranks the win
+  // it is racing for: a state 163 rounds from famine and 3.5 from the win refuses to free the citizen that
+  // wins, because freeing one dents the runway by more than the whole race is worth. Capping leaves the
+  // win clock's gradient at exactly −1 everywhere, so two states that both have more runway than they can
+  // spend are told apart by their win alone. It sits here, after every clock that reads `tLoss` — the
+  // deadline probes take it as their search budget, and a probe capped at the slack would report a
+  // threat's real clock as no clock at all.
+  const slack = Math.min(tLoss, RACE.slackCap);
+  const margin = slack - tWin;
   let total = margin;
 
   // Both estimates are projections, and the closer death is the less a losing margin can be trusted to
-  // be recoverable — so steepen the same deficit as `T̂loss` shrinks. The `1 +` is the unit round, not a
-  // second knob: it is what keeps a zero-round `T̂loss` finite.
+  // be recoverable — so steepen the same deficit as `T̂loss` shrinks. Off the **bare** clock rather than
+  // the capped slack: a run three rounds from famine is three rounds from famine whatever the margin
+  // makes of runway it will never reach. The `1 +` is the unit round, not a second knob: it is what keeps
+  // a zero-round `T̂loss` finite.
   const nearDeath = -RACE.nearDeathSteepness * Math.max(0, tWin - tLoss) / (1 + tLoss);
   total += nearDeath;
 
@@ -1318,6 +1343,7 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
     tLoss,
     lossCause,
     ...(lossCardId !== undefined ? { lossCardId } : {}),
+    slack,
     margin,
     nearDeath,
     wealth,

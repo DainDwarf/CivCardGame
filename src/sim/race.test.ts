@@ -844,6 +844,57 @@ describe('T̂loss', () => {
   });
 });
 
+describe('the slack cap', () => {
+  /** A race with a chosen death clock: `test_threat` takes 2🌾 a round and a population of one eats
+   *  nothing, so the food bank stands for the rounds. The money saturates the wealth tie-break at every
+   *  one of them, so two states below differ in the race and in nothing else. */
+  const dying = (rounds: number, objectiveCardId = 'race_goal') => {
+    const G = state(objectiveCardId, { producers: 1, food: 2 * rounds, money: 2 * RACE.wealthCap });
+    G.threats.push(mint(G, 'test_threat'));
+    return raceBreakdown(G);
+  };
+
+  it('leaves a death clock nearer than the cap exactly where it was', () => {
+    // Below the cap the term is inert, which is what keeps every fire-fighting reading the model already
+    // had: the margin is the subtraction it always was, to the bit.
+    const b = dying(RACE.slackCap - 5);
+    expect(b.tLoss).toBeCloseTo(RACE.slackCap - 5);
+    expect(b.slack).toBe(b.tLoss);
+    expect(b.margin).toBe(b.tLoss - b.tWin);
+  });
+
+  it('stops paying for runway the run cannot spend', () => {
+    const on = dying(RACE.slackCap);
+    expect(dying(RACE.slackCap + 1).total).toBe(on.total);
+    expect(dying(RACE.slackCap * 3).total).toBe(on.total);
+  });
+
+  it('meets the cap without a step', () => {
+    // One kink and no jump: the last round of runway under the cap is worth exactly the round it is.
+    expect(dying(RACE.slackCap).total - dying(RACE.slackCap - 1).total).toBeCloseTo(1, 10);
+  });
+
+  it('keeps a whole round of pull on the win clock past the cap', () => {
+    // Which is the whole point of capping at a number of rounds rather than at a multiple of the win: in
+    // the flat region the only thing left to tell two states apart is the race they are running, and a
+    // round off it is worth a round.
+    const empty = raceBreakdown(state('race_goal', { producers: 1 }));
+    const banked = raceBreakdown(state('race_goal', { science: 2, producers: 1 }));
+    expect(empty.tLoss).toBeGreaterThan(RACE.slackCap);
+    expect(banked.slack).toBe(empty.slack);
+    expect(banked.total - empty.total).toBeCloseTo(empty.tWin - banked.tWin, 10);
+  });
+
+  it('reads the bare death clock for the near-death cliff', () => {
+    // A cap on what runway is *worth* is not a claim about where death is: the cliff steepens off the
+    // clock the run really has, past the cap as under it.
+    const b = dying(RACE.slackCap + 5, 'race_goal_100');
+    expect(b.tWin).toBeGreaterThan(b.tLoss);
+    expect(b.tLoss).toBeGreaterThan(b.slack);
+    expect(b.nearDeath).toBeCloseTo((-RACE.nearDeathSteepness * (b.tWin - b.tLoss)) / (1 + b.tLoss), 10);
+  });
+});
+
 describe('recurring events', () => {
   /** A run whose circulation is `filler` cards no goal reads plus `events` copies of `test_event` resting
    *  in `zone`, and `defused` more the run has played away. Nothing else drains ⚔️, so the event's rate

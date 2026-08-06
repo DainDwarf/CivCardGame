@@ -80,6 +80,7 @@ function cell(): RaceValuationCell {
         tWin: 2,
         tLoss: 10,
         lossCause: 'food',
+        slack: 10,
         margin: 8,
         nearDeath: 0,
         wealth: 0.01,
