@@ -1,4 +1,4 @@
-import { CORE_KEYS, placedCards, type GameState, type Resources } from '../rules';
+import { CORE_KEYS, currentCost, placedCards, type CardInstance, type GameState, type Resources } from '../rules';
 import { realizedGain } from '../rules/effects';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
 
@@ -33,16 +33,27 @@ export function runCardIds(G: GameState): Set<string> {
   return ids;
 }
 
-/** What playing a card charges, over all 8 pools: its declarative `cost.resources` plus every pool its
- *  play `effect` *takes away*. A negative play delta is semantically a price — the citizen a Voyage sails
- *  with is as much the cost of the launch as its 🪙 — and it has nowhere else to ride: `CardCost.resources`
- *  is core-only by construction, since a strategic pool is gated by the system that owns it rather than
- *  spent blind. A card's recurring `upkeep` is not a price: it buys no play, and the permanent-economy
- *  projection each model runs already charges it. */
-export function cardPrice(G: GameState, card: CardDef): Partial<Record<keyof Resources, number>> {
+/** What playing a card charges, over all 8 pools: what its `cost` names plus every pool its play `effect`
+ *  *takes away*. A negative play delta is semantically a price — the citizen a Voyage sails with is as much
+ *  the cost of the launch as its 🪙 — and it has nowhere else to ride: `CardCost.resources` is core-only by
+ *  construction, since a strategic pool is gated by the system that owns it rather than spent blind. A
+ *  card's recurring `upkeep` is not a price: it buys no play, and the permanent-economy projection each
+ *  model runs already charges it.
+ *
+ *  Handed the copy a play would really be made with, the price is *that copy's*, read through
+ *  `rules/cost.ts`'s `currentCost` — the one seam a price may be read through, so the copy's stickers and
+ *  the card's own escalation both land, and a caller cannot quote a number the gate wouldn't charge. With
+ *  no copy there is no instance to price against and the declarative base is the only number there is, so a
+ *  scaling card reads at its floor (the static-derivation carve-out `sim/enablers.ts` lives on). */
+export function cardPrice(
+  G: GameState,
+  card: CardDef,
+  self?: CardInstance,
+): Partial<Record<keyof Resources, number>> {
   const price: Partial<Record<keyof Resources, number>> = {};
+  const cost = self ? currentCost(card, { G, self }).resources : card.cost.resources;
   for (const ck of CORE_KEYS) {
-    const amt = positive(card.cost.resources?.[ck]);
+    const amt = positive(cost?.[ck]);
     if (amt > 0) price[ck] = amt;
   }
   const effect = realizedGain(G, card.effect?.resources);

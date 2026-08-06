@@ -72,7 +72,8 @@ fold, since a gap can never be wider than the leader: the weakest weight any sta
   `measure`; a banked unit is worth exactly the fraction of a round it saves — the derived
   replacement for `HOP_DISCOUNT`.
 - **Card-count goal**: `need` = copies still to land, and the plan runs two clocks at once.
-  **Payment** — each copy priced in **worker-rounds** (the card-injection probe: declarative `cost` plus
+  **Payment** — each copy priced in **worker-rounds** (the card-injection probe: what the copy's own `cost`
+  really charges *at the state being valued* plus
   every pool the play `effect` drains, each component priced by what it costs to obtain), netted against
   the bank and then run down at the rate the run really earns it (below); a banked 🔨 shortens it, and so
   does staffing the box that mints one. **Delivery** — the copies still to play,
@@ -145,6 +146,19 @@ the shortfall is converted through `replacementCost`'s territory figure where th
 unreachable where it doesn't — which is what a full board with nothing minting land is. Without it a
 board-filling plan is flat over the play that unblocks the board, because a box minting a slot only ever
 *costs* on every axis the plan does price.
+
+**A price belongs to the copy that pays it, so it is read at the leaf.** A cost is not a property of a card:
+a price that doubles per play and a sticker bought onto one copy both make the same route two different
+prices over one run. So a plan carries no price at all — every clock reads what the *next* play would
+really charge, through `rules/cost.ts`'s `currentCost` (the one seam a price may be read through, sticker
+fold then the card's own curve), off the **cheapest copy the run still circulates**. Cheapest because that
+is the copy the run spends next, which also keeps the quote monotone over the plan's own progress; over the
+circulation for the reason the delivery clock counts it there, since a price read off the hand alone would
+flicker with the deal. The root's scan runs the same function at the root's own state, so the ranking that
+keeps a route and the clock that takes it can never disagree about what it costs. Without it a plan goes on
+calling a route cheap long after the run has priced itself out of it — six 🗺️ through a Conquest that
+doubles per copy read as 10 worker-rounds against a real 15.3, and the crossover against Road's flat price,
+at the third play of a copy, was invisible.
 
 Every route a goal has is costed and the **soonest** taken — no test of whether the standing economy
 "needs" a plan. `min` is the honest fold over alternatives, where a gate deciding which route to price
@@ -282,6 +296,11 @@ four, down from ~15:
   at the leaf that staffed it rather than at the root's standing economy.
 - **Room is priced**: a structure plan against a full board scores strictly below the same plan with a
   slot free.
+- **The price is the state's**: a route whose card escalates is quoted at what the run's cheapest remaining
+  copy charges *now* rather than at its printed floor, and at the copy a play would really be made with —
+  while a card whose cost does not scale reads exactly as it did, so a counter no price consults moves no
+  clock. The root ranks its routes at the same reading, and which pile the priced copy rests in changes
+  nothing.
 - **Deliverability outranks price**: a goal whose cheapest-per-unit card the deck cannot deal plans
   through the dearer one it can, and reads that card's clock.
 - **The choice is the leaf's**: two kept routes whose clocks invert between two states are each taken at
@@ -393,6 +412,24 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   What this does **not** reach: τ still carries the events at the flat first-boundary rate, since the goal
   clock is `need / τ` and linear throughout. No shipped goal measures a pool an escalating event drains —
   Writing and Raiding both count copies in `removed` — so the two do not meet today.
+- **A plan quoted the printed price forever — measured, and closed pending the referee.** Traced over the
+  `wheel` family, whose only routes to 🗺️ are a Conquest that doubles per copy and a flat Road: the plan read
+  Conquest at 2⚔️ on 133 of 133 traced turns while the run's copies stood at 4⚔️ and 8⚔️, and re-deriving the
+  model at the plateau reproduced the stale figure bit for bit — so step 5's per-replan re-derive does not
+  reach it either. Reading the price at the leaf closes it (above), and the cell it moves is not the one it
+  was traced on: over 30 paired seeds `raiding_city · planner` goes **60% → 93.3%** (stalls 6 → 0,
+  bankruptcy 6 → 2, mean turns 75.5 → 40.0) and `· greedy` 70% → 73.3%, the escalating Stronghold being both
+  the money pressure *and* the card the goal counts, so the plan was quoting 8⚔️ for copies that had hardened
+  to 11 and 14. `wheel` itself barely moves — `· planner` 46.7% → 43.3% (3 win→loss against 2 loss→win,
+  which is noise at 30 seeds) and `· greedy` unmoved — because mechanisms 1 and 2 of that trace are
+  **still open**: the plan does not price the drain its own completion creates, and a landing clock has no
+  term for the citizen that runs the box. Read the wheel figures as confirmation that this was one of three
+  and the smallest, not as a verdict on the fix.
+  The **root** valuation of the whole standing set is unmoved, and that is the probe's blindness rather than
+  the fix's: every counter is zero at a root, so `currentCost` there *is* the declarative price. The two
+  shipped scaling cards are Conquest and Stronghold; the one other thing the seam newly reads — a cost
+  sticker on a plan's card — reaches no standing cell, the stickered Farms sitting in decks whose missions
+  never plan through a Farm.
 
 ## Decisions already made
 

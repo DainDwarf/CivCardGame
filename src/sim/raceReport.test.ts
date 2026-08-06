@@ -9,6 +9,7 @@ function plan(over: Partial<PlanClockExplain> = {}): PlanClockExplain {
   return {
     cardId: 'test_relic',
     copies: 3,
+    price: { production: 4 },
     workerRounds: 12,
     netted: { production: 4 },
     realized: 0,
@@ -33,8 +34,8 @@ function plan(over: Partial<PlanClockExplain> = {}): PlanClockExplain {
  *  for — the shape a renderer has to read as a set rather than as a winner. */
 const KEPT: GoalPlan = {
   landings: [
-    { cardId: 'test_relic', delta: 1, price: { production: 4 } },
-    { cardId: 'test_trinket', delta: 1, price: { production: 6 } },
+    { cardId: 'test_relic', delta: 1 },
+    { cardId: 'test_trinket', delta: 1 },
   ],
   buildings: [],
   dropped: ['copies short', 'unpriceable pool'],
@@ -93,7 +94,10 @@ function cell(): RaceValuationCell {
           workforce: 1,
           throughput: Infinity,
           plan: KEPT,
-          landings: [plan(), plan({ cardId: 'test_trinket', payment: 60, delivery: 9, lands: 9, t: 9 })],
+          landings: [
+            plan(),
+            plan({ cardId: 'test_trinket', price: { production: 6 }, payment: 60, delivery: 9, lands: 9, t: 9 }),
+          ],
           buildings: [],
         },
       ],
@@ -113,8 +117,9 @@ describe('formatRaceValuation', () => {
     // Every kept route is costed at the leaf, and which of them the clock took has to be sayable.
     expect(text).toContain('kept 2 landing, 0 building');
     expect(text).toContain('landing ✗ copies short');
-    expect(text).toMatch(/landing\s+test_relic × 3\.00\s+← taken/);
-    expect(text).toMatch(/landing\s+test_trinket × 3\.00(?!.*taken)/);
+    // The price is the leaf's own reading, beside the root's in the scan table above it.
+    expect(text).toMatch(/landing\s+test_relic × 3\.00 · price production 4\.0\s+← taken/);
+    expect(text).toMatch(/landing\s+test_trinket × 3\.00 · price production 6\.0(?!.*taken)/);
     // The payment/delivery split, and the census that makes a delivery clock checkable.
     expect(text).toMatch(/payment\s+40\.00 rd\s+12\.00 wr outstanding at 0\.00 wr\/rd standing income/);
     expect(text).toMatch(/2 held × 4\.0 hand \/ 12 pool/);

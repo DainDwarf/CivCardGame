@@ -587,7 +587,9 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   **fair** worlds — the deck as an unordered multiset (never the real order; v1 shuffles the whole deck,
   as `revealCount` isn't yet a reliable known-prefix length), from the policy's own seed stream — and the
   planner averages a shallow beam over them (Perfect-Information Monte Carlo), re-planning per turn.
-  `probes.ts` is the derivation front end under all of that — what a card charges (`cardPrice`), what a
+  `probes.ts` is the derivation front end under all of that — what a card charges (`cardPrice`, which
+  prices the *copy* it is handed through `rules/cost.ts`'s `currentCost` and falls back to the declarative
+  base only when there is no copy to price against), what a
   unit of each pool costs to obtain in **worker-rounds** (`replacementCost`), and what one more play or
   one more round of a card moves a `(G) => number` by (the injection/grant/output probes). It is the half
   with no currency of its own: a probe reports what moved, and the model above it decides what that is
@@ -673,7 +675,9 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   the declarative fields) — never `CardDef.cost.resources` directly from a move, a gate, or a component,
   or a scaling card's price silently reverts to its base. (The sim's static derivations over `CARDS` —
   `enablers.ts`, `heuristicPolicy.ts` — are the deliberate exception: with no instance to price against,
-  the declarative base is the only number there is, so a scaling card reads there at its floor.)
+  the declarative base is the only number there is, so a scaling card reads there at its floor. The
+  carve-out is having no copy, not being in `sim/`: `race.ts`'s plan prices pick one and read it through
+  `currentCost` like everything else.)
   A sticker likewise carries its behaviour on its
   `StickerDef` (`appliesTo`/`applyGain`/`applyCost`), dispatched generically by `rules/stickers.ts` — no
   sticker-specific branches at call sites. A standing card's claim on *other* cards' output rides the

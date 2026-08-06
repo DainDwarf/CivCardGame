@@ -19,7 +19,7 @@ import {
   type Resources,
 } from '../rules';
 import { effectiveGain } from '../rules/stickers';
-import { isDurableProducer, isStructure } from '../content/cards';
+import { isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import { cardPrice, grantDelta, outputDelta, presenceDelta, replacementCost, runCardIds } from './probes';
 import { DEFAULT_MAX_ROUNDS } from './simulate';
 
@@ -177,16 +177,13 @@ export interface GoalPlan {
 
 /** Landing copies of a card the goal reads — by standing in a zone it counts, by what the play grants, or
  *  by what a work box's once-per-play `produces` delivers. Repeatable: `need / delta` copies, each at
- *  `price`. */
+ *  whatever a play charges *there* (`routePrice`), which is why no price rides here. */
 export interface LandingPlan {
   cardId: string;
   delta: number;
-  /** What one play charges, per pool — a structure's slot included. Every component but `territory`
-   *  carries a `unitCost`, or there is no plan; land is netted against the free tableau instead. */
-  price: Partial<Record<keyof Resources, number>>;
   /** What one play charges beyond its pools, in **worker-rounds**: the citizen a work box stands a turn
-   *  to run. It is not in `price` because `unitCost` converts a pool *into* this unit and has nothing to
-   *  say about one already in it — Conquest's real cost is 2⚔️ and a citizen's round. */
+   *  to run. It is a plan field rather than a price because `unitCost` converts a pool *into* this unit and
+   *  has nothing to say about one already in it — Conquest's real cost is 2⚔️ and a citizen's round. */
   workerRounds?: number;
   /** Whether a landed copy returns to the pile it was dealt from. A copy landing by presence is spent by
    *  landing, so a plan needing more than the run holds is unreachable; a work box files back to the
@@ -194,13 +191,12 @@ export interface LandingPlan {
   recycles?: boolean;
 }
 
-/** Standing a durable producer whose per-round output the goal reads: pay `price` once, then collect
- *  `tau` a round. A work box is deliberately not one: its `produces` fires once per play, which makes
- *  that output a landing's delta rather than a rate. */
+/** Standing a durable producer whose per-round output the goal reads: pay for it once, then collect `tau`
+ *  a round. A work box is deliberately not one: its `produces` fires once per play, which makes that
+ *  output a landing's delta rather than a rate. */
 export interface BuildingPlan {
   cardId: string;
   tau: number;
-  price: Partial<Record<keyof Resources, number>>;
 }
 
 /**
@@ -237,6 +233,8 @@ export interface PlanCandidate {
   delta: number;
   /** Units of the measure one round of it standing yields — `0` unless durable. */
   tau: number;
+  /** What one play charged at the **root**, per pool — a structure's slot included. A card whose price
+   *  climbs with its own use reads a different number at every leaf (`PlanClockExplain.price`). */
   price: Partial<Record<keyof Resources, number>>;
   /** `price` converted through `unitCost`, plus the citizen a work box stands. `Infinity` where a
    *  component has no rate. */
@@ -282,6 +280,9 @@ export interface PlanClockExplain {
   cardId: string;
   /** Copies the plan owes — `need / delta` for a landing, `1` for a building. */
   copies: number;
+  /** What one play charges *here*, per pool — a structure's slot included. Read at this state rather than
+   *  taken off the plan, so a card whose price escalates is quoted at what the next play of it really costs. */
+  price: Partial<Record<keyof Resources, number>>;
   /** What the copies still cost after the bank was spent on them. */
   workerRounds: number;
   /** How much of each pool that netting took. */
@@ -666,6 +667,70 @@ function objectiveGoals(G: GameState): readonly ObjectiveGoal[] {
   return (G.objective ? CARDS[G.objective.cardId]?.goals : undefined) ?? [];
 }
 
+/** A price converted into **worker-rounds**, `Infinity` where a component has no rate — the one scale the
+ *  root's ranking and the leaf's copy-picking can both compare a bag of pools on. */
+function priceWorkerRounds(
+  price: Partial<Record<keyof Resources, number>>,
+  unitCost: RaceModel['unitCost'],
+): number {
+  let wr = 0;
+  for (const [k, amt] of Object.entries(price) as [keyof Resources, number][]) wr += amt * (unitCost[k] ?? Infinity);
+  return wr;
+}
+
+/**
+ * The copy the next play of this card would really be made with: the cheapest one the run still
+ * **circulates**.
+ *
+ * Cheapest because that is the play the run has. A card whose price climbs with its own use leaves its
+ * least-played copy for the next play, so any other copy quotes a price nobody would pay; it also keeps the
+ * quote monotone over the plan's own progress, since landing the cheapest copy raises the minimum or leaves
+ * it where it was and can never lower it.
+ *
+ * Over the circulation for the same reason `deliveryClock` counts it there: which of the four piles a copy
+ * rests in this turn is not a distance travelled, and a price read off the hand alone would flicker with the
+ * deal. Ties break on the instance id, which no zone move touches either. `undefined` where the run
+ * circulates no copy at all — a route with no copy to deal is dead on delivery, and the declarative base is
+ * the only price left to report it at.
+ */
+function pricingCopy(G: GameState, card: CardDef, unitCost: RaceModel['unitCost']): CardInstance | undefined {
+  let best: CardInstance | undefined;
+  let bestWr = Infinity;
+  for (const zone of circulationZones(G)) {
+    for (const c of zone) {
+      if (c.cardId !== card.id) continue;
+      const wr = priceWorkerRounds(cardPrice(G, card, c), unitCost);
+      if (best === undefined || wr < bestWr || (wr === bestWr && c.id < best.id)) {
+        best = c;
+        bestWr = wr;
+      }
+    }
+  }
+  return best;
+}
+
+/** Room is part of what a structure charges: one tableau slot per copy. Folded in past the pool price
+ *  because land is held rather than bought at a rate — `outstanding` nets it against the free tableau
+ *  instead of converting it, and it is the one component exempt from needing a `unitCost` up front. */
+function withRoom(
+  card: CardDef,
+  price: Partial<Record<keyof Resources, number>>,
+): Partial<Record<keyof Resources, number>> {
+  return isStructure(card) ? { ...price, territory: (price.territory ?? 0) + 1 } : price;
+}
+
+/** What one play of this card charges at this state, per pool — the figure every clock on the route is run
+ *  down from, and a read of the moment rather than of the catalogue: the copy a play would use, priced
+ *  through `currentCost`, so a plan cannot go on believing a route is cheap after the run has made it
+ *  expensive. */
+function routePrice(
+  G: GameState,
+  card: CardDef,
+  unitCost: RaceModel['unitCost'],
+): Partial<Record<keyof Resources, number>> {
+  return withRoom(card, cardPrice(G, card, pricingCopy(G, card, unitCost)));
+}
+
 /**
  * What paying `price` `copies` times still costs in **worker-rounds** once the bank has been spent on it,
  * and how much of the bank that took. Netting is exact rather than discounted: a bank is worth the rounds
@@ -823,17 +888,22 @@ function routeSink(): RouteSink {
  * by the root scan, which keeps a route on whether both halves are finite, and by the leaf, which takes the
  * soonest of the kept ones — so a route is never kept on one reading and taken on another.
  *
+ * The price is read here rather than carried on the plan, which is what makes the two readings the same
+ * function at two states: a plan that quoted the root's price would keep charging it long after the run had
+ * paid the cheap copies off.
+ *
  * A building route is the same pair for a single copy; the rounds it then spends collecting are the caller's,
  * being the one part that really is sequential with standing it.
  */
 function routeClock(
-  plan: { cardId: string; price: Partial<Record<keyof Resources, number>>; workerRounds?: number; recycles?: boolean },
+  plan: { cardId: string; workerRounds?: number; recycles?: boolean },
   copies: number,
   banked: GameState,
   workforce: number,
   rates: PriceRates,
   sink?: RouteSink,
 ): {
+  price: Partial<Record<keyof Resources, number>>;
   workerRounds: number;
   netted: Partial<Record<keyof Resources, number>>;
   realized: number;
@@ -841,11 +911,12 @@ function routeClock(
   delivery: number;
   t: number;
 } {
-  const paid = outstanding(plan.price, copies, banked, rates.unitCost, plan.workerRounds);
-  const realized = realizedIncome(plan.price, rates.income, rates.unitCost);
+  const price = routePrice(banked, CARDS[plan.cardId], rates.unitCost);
+  const paid = outstanding(price, copies, banked, rates.unitCost, plan.workerRounds);
+  const realized = realizedIncome(price, rates.income, rates.unitCost);
   const payment = paymentClock(paid.workerRounds, realized, workforce);
   const delivery = deliveryClock(banked, plan.cardId, copies, plan.recycles, sink?.census);
-  return { ...paid, realized, payment, delivery, t: landingClock(payment, delivery, sink?.weights) };
+  return { price, ...paid, realized, payment, delivery, t: landingClock(payment, delivery, sink?.weights) };
 }
 
 /**
@@ -917,9 +988,9 @@ function goalClock(
       const copies = need / landing.delta;
       const r = routeClock(landing, copies, banked, workforce, rates, sink);
       landings?.push({
-        cardId: landing.cardId, copies, workerRounds: r.workerRounds, netted: r.netted, realized: r.realized,
-        payment: r.payment, delivery: r.delivery, ...sink!.census, recycles: landing.recycles ?? false,
-        weights: sink!.weights, lands: r.t, collect: 0, t: r.t,
+        cardId: landing.cardId, copies, price: r.price, workerRounds: r.workerRounds, netted: r.netted,
+        realized: r.realized, payment: r.payment, delivery: r.delivery, ...sink!.census,
+        recycles: landing.recycles ?? false, weights: sink!.weights, lands: r.t, collect: 0, t: r.t,
       });
       take(r.t, 'landing', landing.cardId, r.netted);
     }
@@ -929,8 +1000,8 @@ function goalClock(
       // Collecting from the producer *is* sequential with standing it, unlike the two halves of standing it.
       const collect = need / building.tau;
       buildings?.push({
-        cardId: building.cardId, copies: 1, workerRounds: r.workerRounds, netted: r.netted, realized: r.realized,
-        payment: r.payment, delivery: r.delivery, ...sink!.census, recycles: false,
+        cardId: building.cardId, copies: 1, price: r.price, workerRounds: r.workerRounds, netted: r.netted,
+        realized: r.realized, payment: r.payment, delivery: r.delivery, ...sink!.census, recycles: false,
         weights: sink!.weights, lands: r.t, collect, t: r.t + collect,
       });
       take(r.t + collect, 'building', building.cardId, r.netted);
@@ -955,7 +1026,7 @@ function goalClock(
  *  it is `Infinity` on a citizenless root with nothing standing; `kept` deliberately reads neither, being
  *  about the route rather than the moment. */
 function probeRoute(
-  plan: { cardId: string; price: Partial<Record<keyof Resources, number>>; workerRounds?: number; recycles?: boolean },
+  plan: { cardId: string; workerRounds?: number; recycles?: boolean },
   copies: number,
   banked: GameState,
   workforce: number,
@@ -1020,7 +1091,9 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
     const buildings: { plan: BuildingPlan; rank: number }[] = [];
     let inert = 0;
     for (const card of cards) {
-      const price = cardPrice(G, card);
+      // The root's own copies at the root's own state, through the same pricing every leaf uses — so the
+      // ranking below is decided on what a play really costs here rather than on a printed floor.
+      const price = cardPrice(G, card, pricingCopy(G, card, unitCost));
       const unpriceable = (Object.keys(price) as (keyof Resources)[]).filter((k) => unitCost[k] === undefined);
       const work = card.kind === 'work';
       const delta = Math.max(
@@ -1046,13 +1119,7 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
         });
         continue;
       }
-      const workerRounds = Object.entries(price).reduce(
-        (n, [k, amt]) => n + amt * unitCost[k as keyof Resources]!,
-        0,
-      );
-      // Room is part of what a structure charges. It is folded in past the conversion above because land is
-      // held rather than bought at a rate: a plan owes it only for the copies the tableau has no slot for.
-      const planPrice = isStructure(card) ? { ...price, territory: (price.territory ?? 0) + 1 } : price;
+      const workerRounds = priceWorkerRounds(price, unitCost);
       // A work box is a landing in this model's own vocabulary — pay a price, take a delta, repeat — and
       // for a goal no standing card moves it is the only route there is. Its `produces` fires once per
       // play, so it reads at one staffed worker as a level; the citizen who spends the turn running it is
@@ -1060,13 +1127,12 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
       const staffing = work ? 1 : 0;
       const perUnit = delta > 0 ? (workerRounds + staffing) / delta : Infinity;
       const candidate: PlanCandidate = {
-        cardId: card.id, delta, tau, price: planPrice, workerRounds, perUnit, unpriceable,
+        cardId: card.id, delta, tau, price: withRoom(card, price), workerRounds, perUnit, unpriceable,
       };
       if (delta > 0) {
         const plan: LandingPlan = {
           cardId: card.id,
           delta,
-          price: planPrice,
           ...(work ? { workerRounds: staffing, recycles: true } : {}),
         };
         candidate.landing = probeRoute(plan, need / delta, banked, workforce, rates);
@@ -1074,7 +1140,7 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
         else dropped.add(candidate.landing.reject);
       }
       if (tau > 0) {
-        const plan: BuildingPlan = { cardId: card.id, tau, price: planPrice };
+        const plan: BuildingPlan = { cardId: card.id, tau };
         candidate.building = probeRoute(plan, 1, banked, workforce, rates);
         if (candidate.building.kept) buildings.push({ plan, rank: -tau });
         else dropped.add(candidate.building.reject);

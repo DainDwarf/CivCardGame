@@ -79,11 +79,13 @@ function verdict(c: PlanCandidate): string {
 
 /** The payment/delivery split inside one `landingClock`, three lines: each clock with the weight it folded
  *  at, then the fold. The census is spelled as the arithmetic it is (`held × hand / pool`) because a
- *  delivery clock nobody can reconstruct is a number to take on faith. */
+ *  delivery clock nobody can reconstruct is a number to take on faith; the price is the leaf's own, which
+ *  the scan table above quotes at the root's — a card whose price climbs with its own use is two different
+ *  numbers, and the pair is the only place that reads. */
 function planLines(tag: string, p: PlanClockExplain, taken: boolean): string[] {
   const [wPay, wDel] = p.weights;
   const out = [
-    `      ${pad(tag, 9)} ${p.cardId} × ${n(p.copies)}${p.recycles ? ' (recycles)' : ''}${taken ? '   ← taken' : ''}`,
+    `      ${pad(tag, 9)} ${p.cardId} × ${n(p.copies)}${p.recycles ? ' (recycles)' : ''} · price ${bag(p.price)}${taken ? '   ← taken' : ''}`,
     `        payment  ${padLeft(n(p.payment), 8)} rd   ${n(p.workerRounds)} wr outstanding at ${n(p.realized)} wr/rd standing income, netted ${bag(p.netted)}   ${weight(wPay)}`,
     `        delivery ${padLeft(n(p.delivery), 8)} rd   ${p.held} held × ${n(p.hand, 1)} hand / ${p.pool} pool = ${n(p.perRound, 3)}/rd   ${weight(wDel)}`,
   ];
@@ -333,6 +335,11 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
         ['absorbedDelivery', absorbed(p.weights[1] ?? 1) ? 1 : 0, ''],
       ] as [string, number, string][]) {
         rows.push({ goal, section: tag, key, cardId: p.cardId, value: v, unit });
+      }
+      // The leaf's own price, pool by pool: the candidate table's `price` is the root's, and on a card whose
+      // cost climbs with its use the two are the reading and its floor.
+      for (const [k, v] of Object.entries(p.price) as [keyof Resources, number][]) {
+        rows.push({ goal, section: tag, key: `price.${k}`, cardId: p.cardId, value: v, unit: 'units' });
       }
     }
   });

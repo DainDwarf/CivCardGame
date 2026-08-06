@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
-import { addBuilding, addWork, blankState, bumpCounter, getCounter, seedObjective, setCounter, subtractResources, type GameState } from '../rules';
+import { addBuilding, addWork, blankState, bumpCounter, getCounter, scaleResources, seedObjective, setCounter, subtractResources, type GameState } from '../rules';
 import { CARDS, CREW_PATIENCE, type CardDef } from '../content/cards';
 import {
   RACE,
@@ -83,6 +83,26 @@ const FIXTURES: Record<string, CardDef> = {
       icon: '⛏️',
       measure: (G) => G.removed.filter((c) => c.cardId === 'race_relic' || c.cardId === 'race_trinket').length,
       target: 3,
+    }],
+  },
+  // A price that doubles with the copy's own play count — the shape a plan reading a printed cost keeps
+  // calling cheap however many times the run has already paid it.
+  race_toll: {
+    id: 'race_toll', name: 'Race Toll', kind: 'action',
+    cost: {
+      resources: { production: 4 },
+      resolve: ({ self }, base) => ({
+        ...base,
+        resources: scaleResources(base.resources ?? {}, 2 ** getCounter(self, 'plays')),
+      }),
+    },
+  },
+  race_goal_toll: {
+    id: 'race_goal_toll', name: 'Race Goal Toll', kind: 'objective', cost: {},
+    goals: [{
+      icon: '⛏️',
+      measure: (G) => G.removed.filter((c) => c.cardId === 'race_toll' || c.cardId === 'race_trinket').length,
+      target: 2,
     }],
   },
   // A pool nothing `produces` per round — it exists only as what a play grants.
@@ -514,6 +534,90 @@ describe('payment', () => {
   });
 });
 
+describe('price', () => {
+  /** The one route the goal's plan has, at the state handed in. */
+  function route(G: GameState) {
+    return explainRaceValue(G, { model: deriveRace(G) }).goals[0].landings[0];
+  }
+
+  /** One toll copy per entry, each already played that many times. */
+  function tolled(plays: number[], { production = 0 } = {}) {
+    const G = planned('race_goal_toll', plays.map(() => 'race_toll'), { production });
+    G.deck.forEach((c, i) => setCounter(c, 'plays', plays[i]));
+    return G;
+  }
+
+  it('quotes a route at what a play costs now, not at the price it was printed with', () => {
+    // A card whose cost climbs with its own use is a different price every time the run pays it, and a plan
+    // reading the catalogue keeps calling the route cheap long after the run has made it expensive.
+    const fresh = tolled([0, 0, 0]);
+    const used = tolled([1, 1, 1]);
+    expect(route(fresh).price).toEqual({ production: 4 });
+    expect(route(used).price).toEqual({ production: 8 });
+    expect(route(used).payment).toBeGreaterThan(route(fresh).payment);
+    expect(valued(used).total).toBeLessThan(valued(fresh).total);
+  });
+
+  it('prices the copy a play would really be made with', () => {
+    // The run spends its least-played copy next, so a copy it has already run three times charges nobody —
+    // and the quote climbs only once every copy has been used, which is also what keeps it monotone over the
+    // plan's own progress.
+    expect(route(tolled([0, 3, 3])).price).toEqual({ production: 4 });
+    expect(route(tolled([2, 3, 3])).price).toEqual({ production: 16 });
+  });
+
+  it('leaves a card whose price does not scale exactly where it was', () => {
+    // The other half of the same reading: a cost with nothing to resolve is its declarative self, so a
+    // counter no price consults must not move a single clock.
+    const deck = ['race_relic', 'race_relic', 'race_relic'];
+    const plain = planned('race_goal_count', deck, { production: 4 });
+    const bumped = planned('race_goal_count', deck, { production: 4 });
+    setCounter(bumped.deck[1], 'plays', 5);
+    expect(route(bumped).price).toEqual({ production: 4 });
+    expect(valued(bumped)).toEqual(valued(plain));
+  });
+
+  it('folds the copy\'s own stickers into what its route charges', () => {
+    // `currentCost`'s other half, and the reason the price is read through it rather than off the card: a
+    // sticker moves the price of the copy carrying it, so a plan quoting the catalogue charges a discount
+    // the run bought or misses a surcharge it is paying.
+    const G = planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 4 });
+    G.deck[0].stickers = ['test_costcut'];
+    expect(route(G).price).toEqual({ production: 3 });
+  });
+
+  it('ranks the root\'s routes at the prices the root really pays', () => {
+    // The toll is the cheaper card as printed (4🔨 against the trinket's 6) and the dearer one once every
+    // copy has been played once. A root ranking off the catalogue plans the goal through the route the run
+    // has already priced itself out of.
+    const deck = [...Array<string>(3).fill('race_toll'), ...Array<string>(3).fill('race_trinket')];
+    const fresh = planned('race_goal_toll', deck);
+    expect(deriveRace(fresh).plans[0].landings.map((p) => p.cardId)).toEqual(['race_toll', 'race_trinket']);
+
+    const used = planned('race_goal_toll', deck);
+    for (const c of used.deck) if (c.cardId === 'race_toll') setCounter(c, 'plays', 1);
+    expect(deriveRace(used).plans[0].landings.map((p) => p.cardId)).toEqual(['race_trinket', 'race_toll']);
+    const toll = explainRaceModel(used).goals[0].candidates.find((c) => c.cardId === 'race_toll');
+    expect(toll?.price).toEqual({ production: 8 });
+  });
+
+  it('is unmoved by which pile the copy it prices against is resting in', () => {
+    // The price is the cheapest copy the run *circulates*, and circulation is one pile — so a model reading
+    // the hand instead would quote two prices for the same run as the deck turns over, exactly the flicker a
+    // delivery clock counted over three zones would have.
+    const parked = (zone: 'deck' | 'hand' | 'discard') => {
+      const G = tolled([3, 0, 3], { production: 20 });
+      G[zone].push(G.deck.splice(G.deck.findIndex((c) => getCounter(c, 'plays') === 0), 1)[0]);
+      return valued(G);
+    };
+    const base = parked('deck');
+    for (const zone of ['hand', 'discard'] as const) expect(parked(zone), zone).toEqual(base);
+    // …and the copy really is what the plan is priced at: with it played out too, the route costs eight
+    // times as much.
+    expect(base.goals[0].t).toBeLessThan(valued(tolled([3, 3, 3], { production: 20 })).goals[0].t);
+  });
+});
+
 describe('circulation', () => {
   /**
    * The same run with one copy parked in a different zone. The population is spent on the standing
@@ -581,7 +685,7 @@ describe('work boxes', () => {
     // plan is priced at nothing and its payment clock is flat over the workforce that pays it.
     const G = planned('race_goal_land', ['race_claim'], { territory: 0 });
     const plan = deriveRace(G).plans[0].landings[0];
-    expect(plan.price).toEqual({});
+    expect(explainRaceValue(G, { model: deriveRace(G) }).goals[0].landings[0].price).toEqual({});
     expect(plan.workerRounds).toBeGreaterThan(0);
     const crowd = planned('race_goal_land', ['race_claim'], { territory: 0, population: 3 });
     expect(clockOf(crowd).t).toBeLessThan(clockOf(G).t);
