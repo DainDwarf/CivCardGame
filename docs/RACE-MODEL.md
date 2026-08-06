@@ -73,8 +73,9 @@ fold, since a gap can never be wider than the leader: the weakest weight any sta
   replacement for `HOP_DISCOUNT`.
 - **Card-count goal**: `need` = copies still to land, and the plan runs two clocks at once.
   **Payment** — each copy priced in **worker-rounds** (the card-injection probe: declarative `cost` plus
-  every pool the play `effect` drains, each component priced by what it costs to obtain), divided by the
-  workforce's worker-round income; a banked 🔨 shortens it. **Delivery** — the copies still to play,
+  every pool the play `effect` drains, each component priced by what it costs to obtain), netted against
+  the bank and then run down at the rate the run really earns it (below); a banked 🔨 shortens it, and so
+  does staffing the box that mints one. **Delivery** — the copies still to play,
   divided by `k·h/D`: the plan copies a round's draw surfaces, off the run's **circulation** (deck,
   discard, hand and work zone alike) and the culture-adjusted hand size it refills to. `t` folds the two as a
   **softened max**, not a sum: earning the price and drawing the copies overlap, so the plan lands when
@@ -106,6 +107,29 @@ circulation — exiled to `removed`, spent by a landing, or standing on the boar
 because the draws that remain really are that much richer in what the plan needs. A recycling plan's clock
 shortens through `copies` instead: the box's output moved `need`, and the copies still owed fall with it.
 
+**A price is paid at what the board yields, not at what its people could yield.** The coming boundary pays
+the plan whatever the permanent projection says it will — the standing income in the pools the price names,
+converted through the same `unitCost` the debt was — and from the boundary after, the whole workforce at
+that replacement rate. Dividing the entire debt by the population instead values a run by what its people
+*could* be doing, which is flat over every act that puts them to doing it: a plan's priced pools are by
+construction the ones no goal measures, so the producer feeding one reaches `T̂win` through no other term,
+and staffing it is worth exactly nothing. The `1 +` on the redeployment branch is the boundary the
+projection already measures rather than a fifth constant — the two branches meet at it, and without it they
+part by a whole round at the crossover, which is a state the beam could score two ways.
+
+**A run with no income in a priced pool is one that has yet to deploy its people, not one with no plan.**
+So the zero-income case falls back to the whole workforce a boundary later — today's clock, plus the round
+the redeployment takes — rather than to `∞`. The sharper alternative, counting only the *idle* citizens as
+redeployable, prices the fiction better and breaks on the common shape: every citizen staffed on something
+the plan doesn't price sends payment to `∞`, the goal then reads `'none'`, and staffing a food producer on a
+mission whose goal isn't food becomes catastrophic in a value function that should be paying for the runway.
+(The root's keep test is not what forces this: it is decided on a price having a rate to convert through and
+the deck having the copies, and reads no payment clock at all, so an infinite one could never have derived a
+plan out of existence — it would have flattened the leaf.) Within a plan's priced pools the income sums as
+one worker-round rate, the same fungibility `outstanding` already assumes summing a bag of pools into one
+debt; income in a pool the price does *not* name is never counted, which is the discrimination that matters
+— a Farm's food pays nothing toward a price quoted in coins.
+
 **A work box is a landing, not a producer.** Its `produces` fires once per play rather than once a round,
 so what it delivers is a delta to repeat rather than a rate to collect — and for a goal no standing card
 moves (territory, taken by Conquest and Road) it is the only route there is. The delta is that output read
@@ -130,12 +154,12 @@ and copies the deck can deal — rather than the one that ranked cheapest per un
 soonest of what it kept. Price and deliverability are independent questions, so an argmin over the first
 alone plans a goal through a card the run cannot circulate and drops the dearer one it can. The kept set
 is a handful — one or two per goal across the standing set — so the leaf pays a clock apiece for the
-reading that decides it. What the root filter may **not** fold in is the workforce the payment clock
-divides by: that is a fact about the moment, gated at the leaf, and a root with no citizens must not
-derive itself out of every plan it has. The workforce a plan's price is paid at is the **population**,
-not the workers currently in boxes: a pool's worker-round price is the output of a worker standing in
-the best box for it, so a denominator counting only staffed workers would disagree with its own
-numerator about the same person.
+reading that decides it. What the root filter may **not** fold in are the rates the payment clock runs at —
+the run's income and its workforce: those are facts about the moment, gated at the leaf, and a root with no
+citizens must not derive itself out of every plan it has. The workforce the redeployment branch is paid at
+is the **population**, not the workers currently in boxes: a pool's worker-round price is the output of a
+worker standing in the best box for it, so a denominator counting only staffed workers would disagree with
+its own numerator about the same person.
 
 All `t` clamp at the remaining drive cutoff; a goal past the horizon reads dead, tamely.
 
@@ -252,6 +276,10 @@ four, down from ~15:
   really takes. **Escalation honesty**: a deepening drain's clock is shorter than the flat read at its
   current counter and matches the closed form on a hand-computable fixture; a flat one is the plain
   quotient rather than a number close to it; one starting from nothing is finite; one that eases holds.
+- **Income is what pays**: a producer of a priced pool standing and staffed shortens the payment clock, and
+  staffing one already on the board strictly improves the value; a run with no income in that pool keeps its
+  plan at a finite clock; and the rate is the leaf's own, so a producer staffed long after the root is read
+  at the leaf that staffed it rather than at the root's standing economy.
 - **Room is priced**: a structure plan against a full board scores strictly below the same plan with a
   slot free.
 - **Deliverability outranks price**: a goal whose cheapest-per-unit card the deck cannot deal plans
@@ -302,6 +330,23 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   one of them (`growing_numbers · planner` 62.6 → ~20 turns), while 0.15 is sharp enough to reproduce the
   hard fold's own failure on `masonry · greedy` (100% → 23%). Whether the disease is *closed* is a
   **referee** question, not a diagnostic one: the sweep that decides it is step 4's.
+- **A payment clock divided by the raw workforce had no derivative at all — measured, and closed pending the
+  referee.** Traced over `first_trades · greedy` seed 1, which stalls from turn 38 to the cutoff holding
+  Bartering, one coin short, with a Bead Workshop standing unstaffed and a citizen free: forcing
+  `assignWorker → Bead Workshop` wins at round 41, and the model scored it **+0.000** — as it scored every
+  other action in the space, the tie-break's `wealthRounds` having been the only live gradient for the
+  sixteen turns before that. The mechanism is the one above and it is set-wide: ~490 stall defeats across the
+  standing set under `greedy`. Cross-checked at `rites_rituals · greedy` seed 3, whose plateau sits at a core
+  bank of 17 — well under `wealthCap`, so the cap is a last straw and not the disease. Charging the price at
+  the board's own income breaks all four traced plateaus: over the first ten seeds `first_trades · greedy`
+  goes 6 → **10** wins, `rites_rituals · greedy` 7 → **10**, `roads · greedy` 2 → **4** (and its two standing
+  wins land at 106 and 91 turns against 175 and 180), while `harsh_winter · greedy` is unmoved seed for seed
+  — the survival cell whose 89% the loss half bought. At the root it moves 26 of the 30 standing cells'
+  `T̂win` by **+0.02 to +0.97** rounds and no route or reachability at all: a root has nothing staffed, so it
+  pays the redeployment boundary in full. What it does **not** reach is a box that must be played *before* it
+  can be staffed — `inFlight` gates on `isOperating`, so an unstaffed box still produces nothing and a plan
+  priced in no pool at all has no income to read. `horse_taming · greedy` is unmoved at 0 of 10, which is
+  that shape and the next bullet's.
 - **The greedies stall where a box must be played and then staffed.** Playing a work box unstaffed
   spends the bank and moves `need` by nothing — `inFlight` reads only an *operating* box, so the whole
   payoff waits on a worker arriving after the play. A one-ply policy cannot pair the two, and on `wheel`,

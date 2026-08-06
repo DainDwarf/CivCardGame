@@ -139,14 +139,24 @@ export interface RaceOptions {
  * citizens no card *produces* per round, has a τ of exactly zero however well the run is going: nothing
  * in the permanent economy moves its measure, so the clock would sit at the horizon and the value would
  * be flat over every line that approaches the win. A plan restates the same goal as two clocks the run
- * really runs: a price in worker-rounds the workforce pays off at a rate, and a number of copies the deck
- * deals at its own.
+ * really runs: a price in worker-rounds the run's income and workforce pay off at a rate, and a number of
+ * copies the deck deals at its own.
  */
 export interface RaceModel {
   /** Worker-rounds per unit of each pool (`replacementCost`): the rate a plan's price converts through. */
   unitCost: Partial<Record<keyof Resources, number>>;
   /** One per goal, in the objective card's own order. */
   plans: GoalPlan[];
+}
+
+/** The two rates a plan's price converts through. `unitCost` is root-derived and rides on the `RaceModel`;
+ *  `income` is read off the leaf's own projection, so a producer staffed mid-run shortens the payment clock
+ *  the turn it is staffed rather than at whatever the root happened to be standing. */
+interface PriceRates {
+  unitCost: RaceModel['unitCost'];
+  /** Per-round gain of each pool from the permanent economy — the positive half of the same reading the
+   *  pool drains take, so nothing is both an income and a drain. */
+  income: Partial<Record<keyof Resources, number>>;
 }
 
 /** The two shapes a deck can move a goal in, each holding **every** route the run really has of that kind
@@ -255,9 +265,9 @@ export interface GoalPlanExplain {
 
 export interface RaceModelExplain {
   model: RaceModel;
-  /** The population every `CandidateRoute.t` below was divided by. At zero they all read `Infinity` while
-   *  the routes are kept anyway, so the figure has to travel with them or the scan reads as keeping the
-   *  unreachable. */
+  /** The population the redeployment half of every `CandidateRoute.t` below was charged to. At zero they
+   *  read `Infinity` past whatever the root's standing income covers, while the routes are kept anyway — so
+   *  the figure has to travel with them or the scan reads as keeping the unreachable. */
   workforce: number;
   /** Pools with no `unitCost` — a price naming one yields no plan. */
   unpriceable: (keyof Resources)[];
@@ -276,7 +286,10 @@ export interface PlanClockExplain {
   workerRounds: number;
   /** How much of each pool that netting took. */
   netted: Partial<Record<keyof Resources, number>>;
-  /** `workerRounds / workforce` — the earning clock. */
+  /** Worker-rounds of that debt the coming boundary already settles, off the board's standing income in
+   *  the priced pools — the half of `payment` that is measured rather than assumed. */
+  realized: number;
+  /** `paymentClock` — the earning clock. */
   payment: number;
   /** `deliveryClock` — the drawing clock, and the circulation census behind it: `held × hand / pool`. */
   delivery: number;
@@ -386,8 +399,8 @@ export function absorbed(w: number): boolean {
 
 /** Which half of a route's clock ran to infinity, in one vocabulary for the root scan's rejections and the
  *  leaf's dead routes alike. `payable` is passed rather than read because the two ask it of different
- *  figures: the root of the price itself, the leaf of the price divided by a workforce it has already
- *  reported separately. `''` where the route is a live one. */
+ *  figures: the root of the price itself, the leaf of the clock that price runs down at, whose rates it has
+ *  already reported separately. `''` where the route is a live one. */
 function unreachableCause(payable: boolean, delivery: number, copies: number, held: number, recycles: boolean): string {
   if (!payable) return 'unpriceable pool';
   if (!Number.isFinite(delivery)) return !recycles && copies > held ? 'copies short' : 'no copies circulate';
@@ -519,6 +532,18 @@ function permanentProjection(
   }
   perm.round = G.round + 1;
   return { perm, accel };
+}
+
+/** What the permanent economy *adds* to each pool a round — the same subtraction the pool drains read, kept
+ *  the other way up. A pool the board feeds net-negatively yields nothing here rather than a negative rate:
+ *  it is not paying for anything. */
+function incomeRates(G: GameState, perm: GameState): Partial<Record<keyof Resources, number>> {
+  const income: Partial<Record<keyof Resources, number>> = {};
+  for (const k of ALL_POOLS) {
+    const gain = perm.resources[k] - G.resources[k];
+    if (gain > 0) income[k] = gain;
+  }
+  return income;
 }
 
 /**
@@ -680,6 +705,53 @@ function outstanding(
 }
 
 /**
+ * Worker-rounds of a plan's outstanding price that **this** boundary settles on its own: the board's
+ * standing income in the pools the price names, converted through the same `unitCost` the debt was.
+ *
+ * Restricted to the priced pools, which is the whole discrimination: a Farm's food pays nothing toward a
+ * price quoted in coins, however many citizens the Farm is running. Within those pools the sum is fungible,
+ * as `outstanding`'s own sum across a bag of pools already is.
+ *
+ * The work zone is deliberately not in it: a box's output is a level this turn reaches, which `bankedState`
+ * has already taken off the debt, and counting it again as a rate would pay for the plan twice.
+ */
+function realizedIncome(
+  price: Partial<Record<keyof Resources, number>>,
+  income: Partial<Record<keyof Resources, number>>,
+  unitCost: RaceModel['unitCost'],
+): number {
+  let wr = 0;
+  for (const k of Object.keys(price) as (keyof Resources)[]) wr += (income[k] ?? 0) * (unitCost[k] ?? 0);
+  return wr;
+}
+
+/**
+ * Rounds to earn what a plan still owes, from the income the board **really** has and the workforce it
+ * could redeploy behind it.
+ *
+ * The coming boundary yields what the projection measured — `realized`, and nothing else, because a
+ * citizen standing idle or standing in the wrong box produces nothing at it. From the boundary after, the
+ * whole workforce can be on the job at the replacement rate `unitCost` already prices a pool at. So a plan
+ * whose pools the board is already feeding is paid at that feed, and one whose pools nothing feeds is paid
+ * a round later at the rate this model has always charged.
+ *
+ * That asymmetry is the point. Dividing the whole debt by the workforce instead values a run by what its
+ * people *could* be doing, which is flat over every act that puts them to doing it — and a plan's priced
+ * pools are by construction the ones no goal measures, so a producer feeding one reaches `T̂win` through no
+ * other term and staffing it would be worth nothing anywhere. Here it shortens the clock by exactly what it
+ * produces.
+ *
+ * The `1 +` is the boundary `permanentProjection` measures, not a knob: it is what makes the two branches
+ * meet — without it they part by a whole round at `realized = workerRounds`, and a discontinuity there is
+ * a state the beam can score two ways.
+ */
+function paymentClock(workerRounds: number, realized: number, workforce: number): number {
+  if (workerRounds <= 0) return 0;
+  if (realized >= workerRounds) return workerRounds / realized;
+  return workforce > 0 ? 1 + (workerRounds - realized) / workforce : Infinity;
+}
+
+/**
  * When a plan lands, from the two clocks that must both run out: earning its price and drawing its copies
  * overlap, so it is the later of the two rather than their sum.
  *
@@ -759,13 +831,21 @@ function routeClock(
   copies: number,
   banked: GameState,
   workforce: number,
-  unitCost: RaceModel['unitCost'],
+  rates: PriceRates,
   sink?: RouteSink,
-): { workerRounds: number; netted: Partial<Record<keyof Resources, number>>; payment: number; delivery: number; t: number } {
-  const paid = outstanding(plan.price, copies, banked, unitCost, plan.workerRounds);
-  const payment = workforce > 0 ? paid.workerRounds / workforce : Infinity;
+): {
+  workerRounds: number;
+  netted: Partial<Record<keyof Resources, number>>;
+  realized: number;
+  payment: number;
+  delivery: number;
+  t: number;
+} {
+  const paid = outstanding(plan.price, copies, banked, rates.unitCost, plan.workerRounds);
+  const realized = realizedIncome(plan.price, rates.income, rates.unitCost);
+  const payment = paymentClock(paid.workerRounds, realized, workforce);
   const delivery = deliveryClock(banked, plan.cardId, copies, plan.recycles, sink?.census);
-  return { ...paid, payment, delivery, t: landingClock(payment, delivery, sink?.weights) };
+  return { ...paid, realized, payment, delivery, t: landingClock(payment, delivery, sink?.weights) };
 }
 
 /**
@@ -779,10 +859,10 @@ function routeClock(
  *
  * The routes are all costed and the **soonest** taken, with no test of whether the standing economy
  * "needs" a plan: `min` is the honest fold over alternatives, and a gate deciding which route to price
- * is a branch that can fire the wrong way. A plan's price is paid at the **workforce**'s rate — the
- * population, not the workers currently in boxes, because `unitCost` prices a pool at the output of a
- * worker standing in the best box for it, and a denominator counting only staffed workers would then
- * disagree with its own numerator about the same person.
+ * is a branch that can fire the wrong way. The workforce `paymentClock` redeploys is the **population**,
+ * not the workers currently in boxes: `unitCost` prices a pool at the output of a worker standing in the
+ * best box for it, so a denominator counting only staffed workers would disagree with its own numerator
+ * about the same person.
  */
 function goalClock(
   goal: ObjectiveGoal,
@@ -791,7 +871,7 @@ function goalClock(
   perm: GameState,
   horizon: number,
   plan: GoalPlan | undefined,
-  unitCost: RaceModel['unitCost'],
+  rates: PriceRates,
   ex?: GoalClockExplain[],
 ): { clock: GoalClock; netted: Partial<Record<keyof Resources, number>> } {
   const need = Math.max(0, goal.target - goal.measure(banked));
@@ -835,9 +915,9 @@ function goalClock(
     for (const landing of plan.landings) {
       const sink = landings ? routeSink() : undefined;
       const copies = need / landing.delta;
-      const r = routeClock(landing, copies, banked, workforce, unitCost, sink);
+      const r = routeClock(landing, copies, banked, workforce, rates, sink);
       landings?.push({
-        cardId: landing.cardId, copies, workerRounds: r.workerRounds, netted: r.netted,
+        cardId: landing.cardId, copies, workerRounds: r.workerRounds, netted: r.netted, realized: r.realized,
         payment: r.payment, delivery: r.delivery, ...sink!.census, recycles: landing.recycles ?? false,
         weights: sink!.weights, lands: r.t, collect: 0, t: r.t,
       });
@@ -845,11 +925,11 @@ function goalClock(
     }
     for (const building of plan.buildings) {
       const sink = buildings ? routeSink() : undefined;
-      const r = routeClock(building, 1, banked, workforce, unitCost, sink);
+      const r = routeClock(building, 1, banked, workforce, rates, sink);
       // Collecting from the producer *is* sequential with standing it, unlike the two halves of standing it.
       const collect = need / building.tau;
       buildings?.push({
-        cardId: building.cardId, copies: 1, workerRounds: r.workerRounds, netted: r.netted,
+        cardId: building.cardId, copies: 1, workerRounds: r.workerRounds, netted: r.netted, realized: r.realized,
         payment: r.payment, delivery: r.delivery, ...sink!.census, recycles: false,
         weights: sink!.weights, lands: r.t, collect, t: r.t + collect,
       });
@@ -871,18 +951,18 @@ function goalClock(
   };
 }
 
-/** One route's verdict at the run root. `t` divides by the workforce the root happens to have, so it is
- *  `Infinity` on a citizenless root; `kept` deliberately does not, being about the route rather than the
- *  moment. */
+/** One route's verdict at the run root. `t` is read at the income and workforce the root happens to have, so
+ *  it is `Infinity` on a citizenless root with nothing standing; `kept` deliberately reads neither, being
+ *  about the route rather than the moment. */
 function probeRoute(
   plan: { cardId: string; price: Partial<Record<keyof Resources, number>>; workerRounds?: number; recycles?: boolean },
   copies: number,
   banked: GameState,
   workforce: number,
-  unitCost: RaceModel['unitCost'],
+  rates: PriceRates,
 ): CandidateRoute {
   const sink = routeSink();
-  const r = routeClock(plan, copies, banked, workforce, unitCost, sink);
+  const r = routeClock(plan, copies, banked, workforce, rates, sink);
   const reject = unreachableCause(
     Number.isFinite(r.workerRounds),
     r.delivery,
@@ -904,9 +984,9 @@ function probeRoute(
  * within equal rank, so the same run derives the same plans every time.
  *
  * Deliverable is measured on the route's own two halves — a price with a rate to convert through and copies
- * the deck can deal — and not on the clock they fold to, whose divisor is the workforce. A workforce is a
- * fact about the moment and is gated at the leaf; folding it in here would leave a root with no citizens
- * carrying no plans for the rest of the run.
+ * the deck can deal — and not on the clock they fold to, whose rates are the run's income and workforce.
+ * Both are facts about the moment and are gated at the leaf; folding them in here would leave a root with
+ * no citizens carrying no plans for the rest of the run.
  *
  * A price with any *pool* component `replacementCost` could not reach yields **no route** at all. Worker-
  * rounds are the currency here, and a pool nothing in the run can obtain has no figure in it — carrying
@@ -925,6 +1005,9 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
   const probe = cloneState(G);
   const banked = bankedState(G);
   const workforce = Math.max(0, banked.resources.population);
+  // The root's own income, so a reported root clock is the reading a leaf at that state would take. It
+  // decides nothing — a route is kept on its price and its copies, neither of which this touches.
+  const rates: PriceRates = { unitCost, income: incomeRates(G, permanentProjection(G).perm) };
   const cards = Object.values(CARDS).filter((c) => ids.has(c.id));
   const explained: GoalPlanExplain[] = [];
   const plans = objectiveGoals(G).map((goal) => {
@@ -986,13 +1069,13 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
           price: planPrice,
           ...(work ? { workerRounds: staffing, recycles: true } : {}),
         };
-        candidate.landing = probeRoute(plan, need / delta, banked, workforce, unitCost);
+        candidate.landing = probeRoute(plan, need / delta, banked, workforce, rates);
         if (candidate.landing.kept) landings.push({ plan, rank: perUnit });
         else dropped.add(candidate.landing.reject);
       }
       if (tau > 0) {
         const plan: BuildingPlan = { cardId: card.id, tau, price: planPrice };
-        candidate.building = probeRoute(plan, 1, banked, workforce, unitCost);
+        candidate.building = probeRoute(plan, 1, banked, workforce, rates);
         if (candidate.building.kept) buildings.push({ plan, rank: -tau });
         else dropped.add(candidate.building.reject);
       }
@@ -1051,9 +1134,9 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
 
   // T̂win — the bottleneck goal, softened so the others still pull. With no objective seeded there is
   // no clock to run down, which reads as the horizon: unwinnable, and flat.
-  const unitCost = opts.model?.unitCost ?? {};
+  const rates: PriceRates = { unitCost: opts.model?.unitCost ?? {}, income: incomeRates(G, perm) };
   const clocked = objectiveGoals(G).map((g, i) =>
-    goalClock(g, G, banked, perm, horizon, opts.model?.plans[i], unitCost, ex?.goals),
+    goalClock(g, G, banked, perm, horizon, opts.model?.plans[i], rates, ex?.goals),
   );
   const goals = clocked.map((c) => c.clock);
   // The deepest a single goal's plan spent of each pool. `max` rather than a sum: each goal's plan is

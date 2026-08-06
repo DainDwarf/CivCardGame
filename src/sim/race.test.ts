@@ -361,13 +361,14 @@ describe('plans', () => {
   });
 
   it('prices a goal with no producer standing as building one, then running it', () => {
-    // 3🔨 for the science building is 1.5 worker-rounds over two people, and its one copy is a quarter of
-    // a round's draw away — standing it is the two at once. Then 10🔬 at 2🔬 a round, which is not: the
+    // 3🔨 for the science building is 1.5 worker-rounds, of which the standing 🔨 producer really settles
+    // 1 at the coming boundary and the two people earn the rest the round after; its one copy is a quarter
+    // of a round's draw away — standing it is the two at once. Then 10🔬 at 2🔬 a round, which is not: the
     // producer has to be standing before it pays.
     const c = clockOf(planned('race_goal', ['test_sci'], { population: 2 }));
     expect(c.route).toBe('building');
     expect(c.cardId).toBe('test_sci');
-    expect(c.t).toBeCloseTo(landingClock(0.75, 0.25) + 5);
+    expect(c.t).toBeCloseTo(landingClock(1.25, 0.25) + 5);
 
     // Once it stands, the setup is paid and the permanent economy carries the goal on its own.
     const standing = clockOf(planned('race_goal', ['test_sci'], { population: 2, standing: ['test_sci'] }));
@@ -437,6 +438,79 @@ describe('delivery', () => {
     const room = board(2);
     expect(full.goals[0].t).toBeGreaterThan(room.goals[0].t);
     expect(room.total).toBeGreaterThan(full.total);
+  });
+});
+
+describe('payment', () => {
+  /**
+   * A run whose plan is three 4🔨 relics and whose only 🔨 income is the `standing` copies of `test_prod`
+   * in its tableau. A copy of the producer rides in the deck either way, so the pool has a worker-round
+   * price and the circulation is the same multiset whether one stands or not — which leaves the income
+   * as the only difference between two of these.
+   */
+  function earning({ standing = 0, staffed = true, population = 2 } = {}) {
+    const G = blankState('race_test');
+    G.round = 1;
+    G.resources.food = 10_000;
+    G.resources.population = population;
+    G.resources.territory = 6;
+    seedObjective(G, 'race_goal_count');
+    G.deck.push(mint(G, 'test_prod'));
+    for (let i = 0; i < 3; i++) G.deck.push(mint(G, 'race_relic'));
+    for (let i = 0; i < standing; i++) {
+      const placed = addBuilding(G, mint(G, 'test_prod'));
+      if (!staffed) placed.workers = 0;
+    }
+    return G;
+  }
+
+  /** The one route this plan has, with the two clocks inside it. */
+  function route(G: GameState) {
+    return explainRaceValue(G, { model: deriveRace(G) }).goals[0].landings[0];
+  }
+
+  it('pays a price out of the income the board really has', () => {
+    // 12🔨 at half a worker-round each is 6 wr owed. A staffed producer settles 1 of them at the coming
+    // boundary and the two citizens earn the rest from the boundary after; with nothing standing, every
+    // one of the 6 waits on that redeployment. The pool is one no goal measures, so this clock is the
+    // only place the producer can register at all.
+    const idle = route(earning());
+    const producing = route(earning({ standing: 1 }));
+    expect(idle.realized).toBe(0);
+    expect(idle.payment).toBeCloseTo(1 + 6 / 2);
+    expect(producing.realized).toBeCloseTo(1);
+    expect(producing.payment).toBeCloseTo(1 + 5 / 2);
+  });
+
+  it('improves the race by staffing a producer that is already standing', () => {
+    // The anchor, synthetically: the box stands, a citizen is free, and the goal reads nothing the box
+    // makes. Under a clock divided by the raw workforce the two states are worth exactly the same, so a
+    // policy taking strict improvements never puts the citizen to work.
+    const unstaffed = earning({ standing: 1, staffed: false });
+    const staffed = earning({ standing: 1 });
+    expect(route(staffed).payment).toBeLessThan(route(unstaffed).payment);
+    expect(valued(staffed).goals[0].t).toBeLessThan(valued(unstaffed).goals[0].t);
+    expect(valued(staffed).total).toBeGreaterThan(valued(unstaffed).total);
+  });
+
+  it('keeps a plan the run has no income for, at a clock it can still read', () => {
+    // The other half of the same decision: a run whose board feeds none of a plan's pools is a run that
+    // has yet to deploy its people, not one with no plan. Charging it the workforce a boundary later is
+    // what keeps the clock finite there — an infinite one would read every such goal as unreachable and
+    // leave the value flat over the whole line that fixes it.
+    const G = earning();
+    expect(deriveRace(G).plans[0].landings.map((p) => p.cardId)).toEqual(['race_relic']);
+    expect(clockOf(G).route).toBe('landing');
+    expect(Number.isFinite(route(G).payment)).toBe(true);
+  });
+
+  it('reads the income of the state it is valuing, not of the root it was derived at', () => {
+    // The plans are root-derived and the income is not: a producer staffed twenty rounds in has to shorten
+    // the clock of the leaf that staffed it, or the search is ranking states by a rate none of them has.
+    const root = earning();
+    const model = deriveRace(root);
+    const later = earning({ standing: 1 });
+    expect(raceBreakdown(later, { model }).goals[0].t).toBeLessThan(raceBreakdown(root, { model }).goals[0].t);
   });
 });
 

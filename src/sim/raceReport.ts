@@ -84,7 +84,7 @@ function planLines(tag: string, p: PlanClockExplain, taken: boolean): string[] {
   const [wPay, wDel] = p.weights;
   const out = [
     `      ${pad(tag, 9)} ${p.cardId} × ${n(p.copies)}${p.recycles ? ' (recycles)' : ''}${taken ? '   ← taken' : ''}`,
-    `        payment  ${padLeft(n(p.payment), 8)} rd   ${n(p.workerRounds)} wr outstanding, netted ${bag(p.netted)}   ${weight(wPay)}`,
+    `        payment  ${padLeft(n(p.payment), 8)} rd   ${n(p.workerRounds)} wr outstanding at ${n(p.realized)} wr/rd standing income, netted ${bag(p.netted)}   ${weight(wPay)}`,
     `        delivery ${padLeft(n(p.delivery), 8)} rd   ${p.held} held × ${n(p.hand, 1)} hand / ${p.pool} pool = ${n(p.perRound, 3)}/rd   ${weight(wDel)}`,
   ];
   out.push(
@@ -122,8 +122,8 @@ function cellBlock(cell: RaceValuationCell): string {
   out.push('plans — every card the scan ranked; every route deliverable at the root is kept, and each leaf');
   out.push('        takes the soonest of them, so a cheap card the deck cannot deal shadows nothing');
   if (model.workforce <= 0) {
-    out.push('        root workforce 0, so every root clock below divides by nothing and reads ∞ — a route is');
-    out.push('        kept on its price and its copies, which is why these are kept all the same');
+    out.push('        root workforce 0, so every root clock below reads ∞ past what its standing income pays');
+    out.push('        — a route is kept on its price and its copies, which is why these are kept all the same');
   }
   model.goals.forEach((g, i) => {
     const p = g.plan;
@@ -317,6 +317,7 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
         ['copies', p.copies, 'copies'],
         ['recycles', p.recycles ? 1 : 0, ''],
         ['workerRounds', p.workerRounds, 'wr'],
+        ['realized', p.realized, 'wr/rd'],
         ['payment', p.payment, 'rounds'],
         ['delivery', p.delivery, 'rounds'],
         ['held', p.held, 'cards'],

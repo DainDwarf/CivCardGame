@@ -11,6 +11,7 @@ function plan(over: Partial<PlanClockExplain> = {}): PlanClockExplain {
     copies: 3,
     workerRounds: 12,
     netted: { production: 4 },
+    realized: 0,
     payment: 40,
     delivery: 2,
     held: 2,
@@ -115,7 +116,7 @@ describe('formatRaceValuation', () => {
     expect(text).toMatch(/landing\s+test_relic × 3\.00\s+← taken/);
     expect(text).toMatch(/landing\s+test_trinket × 3\.00(?!.*taken)/);
     // The payment/delivery split, and the census that makes a delivery clock checkable.
-    expect(text).toMatch(/payment\s+40\.00 rd/);
+    expect(text).toMatch(/payment\s+40\.00 rd\s+12\.00 wr outstanding at 0\.00 wr\/rd standing income/);
     expect(text).toMatch(/2 held × 4\.0 hand \/ 12 pool/);
     expect(text).toContain('T̂loss 10.00 — food');
     expect(text).toContain('threat test_deadline');
