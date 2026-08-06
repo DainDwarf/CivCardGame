@@ -246,6 +246,11 @@
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*
 > Steps 5–7, simulator-informed, not as a one-shot.
+>
+> **Cross-cutting (not a step):** the sim scorer's knobs (`RACE` in `src/sim/race.ts`, e.g. the
+> softMax fraction) were tuned against the standing baseline set of their day. After each age arc
+> completes, its full rebalancing pass must also re-verify those knobs still measure well over the
+> grown set — a scorer tuned to one age's content can quietly mis-rate the next's.
 
 ## Cards & content ideas — Phase 4 idea pool (unslotted)
 
