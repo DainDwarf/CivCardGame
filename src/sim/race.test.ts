@@ -760,26 +760,50 @@ describe('the explained pass', () => {
     const ex = explainRaceValue(G, { model: deriveRace(G) });
     const max = Math.max(...ex.goals.map((g) => g.clock.t));
     const sum = ex.foldWeights.reduce((n, w) => n + w, 0);
-    expect(max + RACE.goalSoftening * Math.log(sum)).toBeCloseTo(ex.breakdown.tWin, 10);
+    expect(max + RACE.goalSoftening * max * Math.log(sum)).toBeCloseTo(ex.breakdown.tWin, 10);
   });
 
-  it('marks a clock the fold absorbed, and a goal it did not', () => {
-    // A goal 195 rounds behind the bottleneck weighs `exp(-195)`, which is *not* zero but is far under the
-    // ULP of the leader's 1 — so `T̂win` is the leader's clock bit for bit, and the model has no gradient
-    // on the other goal whatever it does to it. That the exponential itself stays positive is exactly why
-    // the predicate is the fold's, not the float's.
+  it('keeps a weight on the clock furthest behind, however far behind it is', () => {
+    // The floor a temperature measured against the leader puts under the fold: a gap cannot be wider than
+    // the leading clock itself, so the weakest weight any state can produce is `exp(-1/goalSoftening)` —
+    // and a goal 195 rounds behind a 200-round bottleneck is exactly that state. Under an absolute
+    // temperature the same pair weighed `exp(-195)`, which is positive and yet far under the ULP of the
+    // leader's 1: `T̂win` came out the leader's clock bit for bit, with no gradient on the other goal at all.
     const G = state('race_goal_pair', { producers: 1 });
     const ex = explainRaceValue(G, { model: deriveRace(G) });
     expect(ex.goals.map((g) => g.clock.route)).toEqual(['throughput', 'none']);
-    expect(ex.foldWeights[0]).toBeGreaterThan(0);
-    expect(absorbed(ex.foldWeights[0])).toBe(true);
-    expect(ex.breakdown.tWin).toBe(Math.max(...ex.goals.map((g) => g.clock.t)));
-    expect(absorbed(ex.foldWeights[1])).toBe(false);
+    expect(ex.foldWeights[0]).toBeGreaterThanOrEqual(Math.exp(-1 / RACE.goalSoftening));
+    expect(ex.breakdown.tWin).toBeGreaterThan(Math.max(...ex.goals.map((g) => g.clock.t)));
+    expect(ex.foldWeights.some(absorbed)).toBe(false);
 
-    // A goal a few rounds behind still pulls, which is the whole reason the fold is soft.
+    // A goal a few rounds behind pulls harder still, which is the whole reason the fold is soft.
     const close = state('race_goal_pair', { producers: 1, earners: 1 });
     const closeEx = explainRaceValue(close, { model: deriveRace(close) });
-    expect(closeEx.foldWeights.some(absorbed)).toBe(false);
+    expect(closeEx.foldWeights[1]).toBeGreaterThan(ex.foldWeights[0]);
+  });
+
+  it('weighs a gap by its size against the bottleneck, not by its size in rounds', () => {
+    // The re-unitization proper, read off the one fold that takes its arguments directly. Two clocks three
+    // times as long are the same race, so the fold scales with them and its weights do not move at all…
+    const base: number[] = [];
+    const scaled: number[] = [];
+    expect(landingClock(6, 15, scaled) / 3).toBeCloseTo(landingClock(2, 5, base), 10);
+    expect(scaled).toEqual(base);
+
+    // …while the same gap in rounds against a shorter bottleneck is a wider gap, and weighs less.
+    const near: number[] = [];
+    const far: number[] = [];
+    landingClock(2, 5, near);
+    landingClock(37, 40, far);
+    expect(near[0]).toBeLessThan(far[0]);
+  });
+
+  it('folds a pair of met clocks to nothing rather than to a NaN', () => {
+    // Nothing left to divide: with the temperature taken off the leader, a leader of zero leaves `exp(-0/0)`
+    // where the weights were — and a NaN clock leaves a beam's sort order undefined.
+    const met: number[] = [];
+    expect(landingClock(0, 0, met)).toBe(0);
+    expect(met).toEqual([1, 1]);
   });
 
   it('names why a goal found no route, where the clock only says none', () => {

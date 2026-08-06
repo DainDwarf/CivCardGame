@@ -150,10 +150,10 @@ surprise, so nothing shows a locked placeholder or a total count.
   scan weighed with the root clock of each route it offered and the cause the dropped ones were dropped
   for, then per goal its clock — need, τ, route, the raw `t` beside the horizon-clamped one — over **every
   route it kept**, with the **payment vs delivery** split inside each `landingClock`, the circulation
-  census behind the delivery half, and the one route the leaf took marked. Both folds mark a clock they
-  **absorbed**: a softMax weight under the ULP of 1 means the fold came out bit-identical to a hard `max`,
-  so the state has no gradient on that half at all — a reading no `RaceBreakdown` carries and the one that
-  says whether a term is doing anything. `--terms` is a classic-model ablation and is refused under
+  census behind the delivery half, and the one route the leaf took marked. Both folds print the softMax
+  **weight** each clock folded at — a reading no `RaceBreakdown` carries, and the one that says how much of
+  a gradient a term is really carrying (its temperature being a fraction of the leading clock, the weight
+  has a floor and the `ABSORBED` annotation is out of reach). `--terms` is a classic-model ablation and is refused under
   `race`. Either scorer runs over `--baseline <paths|dir>` (default: the whole standing set, also accepted
   as bare positionals) or the ad-hoc `--scenario`/`--deck`/`--board` trio. `--format text|json|csv`, the CSV **long/tidy** (one
   row per fact, since `producerCredit` and the race scan's candidate list are both variable-width per deck

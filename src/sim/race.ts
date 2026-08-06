@@ -48,10 +48,13 @@ import { DEFAULT_MAX_ROUNDS } from './simulate';
 export const RACE = {
   /** Score points — a met objective ends the run, so it dwarfs any margin the horizon can express. */
   victory: 1_000_000,
-  /** Rounds: the log-sum-exp temperature of the fold across a goal's goals. Tuned rather than derived
-   *  because it prices a preference, not a quantity: how much the goal that *isn't* binding still pulls.
-   *  A pure `max` has zero gradient on it, which lets a beam abandon a side goal for free. */
-  goalSoftening: 1,
+  /** Dimensionless: the log-sum-exp temperature of every softened fold, as a **fraction of the clock
+   *  leading it**. Tuned rather than derived because it prices a preference, not a quantity: how much the
+   *  clock that *isn't* binding still pulls. A pure `max` has zero gradient on it, which lets a beam abandon
+   *  a side goal — or a plan's whole earning half — for free. A fraction rather than a number of rounds
+   *  because what a gap means is relative: three rounds behind a four-round bottleneck is a different state
+   *  from three behind forty, and an absolute tolerance reads them the same. */
+  goalSoftening: 0.4,
   /** Dimensionless multiplier on a losing margin, decaying with `T̂loss`. Tuned because it prices the
    *  *noise* in the two estimates rather than anything the state contains: both are projections, and a
    *  beam must not surf one round from famine on the strength of one. */
@@ -348,10 +351,10 @@ type RaceSink = Omit<RaceValueExplain, 'breakdown'>;
  * has no gradient on that clock whatever it does to it.
  *
  * The threshold is float64's own, not a tolerance. The winning clock weighs exactly `1`, so a weight below
- * the ULP of `1` leaves the sum unchanged and `temperature·ln(sum)` is exactly `0` — which happens from a
- * gap of about `36.7 · temperature` rounds, an ordinary distance at a 200-round horizon. Waiting for the
- * exponential itself to underflow to zero would need a gap of 745, which no horizon this model runs under
- * can reach: the weight would read as a live gradient long after the fold had stopped carrying it.
+ * the ULP of `1` leaves the sum unchanged and `temperature·ln(sum)` is exactly `0` — which takes a gap of
+ * about `36.7 · goalSoftening` times the leading clock. The temperature being a fraction of that leader, a
+ * gap cannot exceed it: above a softening of ~0.027 the predicate is unreachable, and reading a weight is
+ * reading how much of a gradient the fold carries rather than whether it carries one.
  */
 export function absorbed(w: number): boolean {
   return 1 + w === 1;
@@ -486,11 +489,25 @@ function threatClock(G: GameState, index: number, cap: number): number {
   return Infinity;
 }
 
-/** A smooth maximum — `max` plus a term that decays exponentially as a value falls behind it, shifted so
- *  the exponentials cannot overflow at horizon-scale inputs. Exact `max` for a single value, and bounded
- *  by `max + temperature·ln n`, so folding several goals cannot inflate a rounds figure without limit. */
-function softMax(values: number[], temperature: number, weightsOut?: number[]): number {
+/**
+ * A smooth maximum — `max` plus a term that decays exponentially as a value falls behind it, shifted so
+ * the exponentials cannot overflow at horizon-scale inputs. Exact `max` for a single value, and bounded by
+ * `max · (1 + softening·ln n)`, so folding several clocks cannot inflate a rounds figure without limit.
+ *
+ * The temperature is `softening · max` rather than a fixed number of rounds, which makes a weight a function
+ * of the **relative** gap: scaling every clock in a fold leaves all of them unchanged, and the tolerance
+ * narrows with the bottleneck as the win comes into reach. A gap can never exceed the leader, so the weakest
+ * weight a fold of non-negative clocks can reach is `exp(-1 / softening)` — a floor rather than a vanishing.
+ */
+function softMax(values: number[], softening: number, weightsOut?: number[]): number {
   const max = Math.max(...values);
+  // Every clock met: no gaps, and no temperature to divide them by — `exp(-0/0)` would be a NaN, and a NaN
+  // leaves a beam's sort order undefined.
+  if (max <= 0) {
+    for (let i = 0; i < values.length; i++) weightsOut?.push(1);
+    return max;
+  }
+  const temperature = softening * max;
   let sum = 0;
   for (const v of values) {
     const w = Math.exp((v - max) / temperature);
@@ -552,7 +569,7 @@ function outstanding(
  * gradient on whichever clock isn't binding, and here the masked one is routinely the *payment* — the
  * half that carries every earning and spending decision the run makes. A beam that can see only the
  * binding clock stops building the economy the other one is waiting on. The softening costs at most
- * `temperature·ln 2` rounds where the two meet and decays to exact `max` as they part.
+ * `goalSoftening·ln 2` of the later clock where the two meet, and decays toward exact `max` as they part.
  *
  * An infinite clock is taken hard: `exp(∞ − ∞)` is a NaN, and a NaN leaves a beam's sort order undefined.
  */

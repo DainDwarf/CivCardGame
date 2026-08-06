@@ -18,7 +18,8 @@ function plan(over: Partial<PlanClockExplain> = {}): PlanClockExplain {
     hand: 4,
     perRound: 0.667,
     recycles: false,
-    // 38 rounds apart, which is past the ULP of the leader's 1 — the dawdle sub-case, printed as such.
+    // Under the ULP of the leader's 1, so the renderer has to say so rather than print a small float. The
+    // shipped softening floors a real weight far above this; what is pinned is the annotation, not its reach.
     weights: [Math.exp(-38), 1],
     lands: 2,
     collect: 0,

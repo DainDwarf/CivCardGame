@@ -191,9 +191,10 @@ export function formatRaceValuation(cells: RaceValuationCell[], maxRounds: numbe
     'scale: everything is rounds, except worker-rounds (wr) and the dimensionless softMax weights',
     `derived at the run root from content alone — seed-independent (every zone read as a multiset), so no run is simulated`,
     `horizon: maxRounds ${maxRounds}, the drive-loop cutoff every estimate clamps to`,
-    `constants: victory ${RACE.victory} · goalSoftening ${RACE.goalSoftening} rd · nearDeathSteepness ${RACE.nearDeathSteepness} · wealthRounds ${RACE.wealthRounds} rd at wealthCap ${RACE.wealthCap}`,
-    `ABSORBED marks a softMax weight under the ULP of 1 (a gap over ~${(RACE.goalSoftening * Math.log(2 / Number.EPSILON)).toFixed(0)} rounds): the fold came`,
-    'out bit-identical to a hard max, so the state has no gradient on that clock at all',
+    `constants: victory ${RACE.victory} · goalSoftening ${RACE.goalSoftening} × the leading clock · nearDeathSteepness ${RACE.nearDeathSteepness} · wealthRounds ${RACE.wealthRounds} rd at wealthCap ${RACE.wealthCap}`,
+    'ABSORBED marks a softMax weight under the ULP of 1: the fold came out bit-identical to a hard max, so',
+    'the state has no gradient on that clock at all. A temperature that is a fraction of the leading clock',
+    `floors every weight at exp(-1/${RACE.goalSoftening}) = ${Math.exp(-1 / RACE.goalSoftening).toExponential(1)}, so nothing is absorbed at this softening`,
   ];
   return [...head, ...cells.map(cellBlock)].join('\n');
 }

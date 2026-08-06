@@ -59,6 +59,14 @@ Per goal `g`, a completion estimate `t_g`, folded across goals as the **bottlene
 softened — constant 1). This replaces `objectiveProgress`'s average, which paid the search for
 over-investing in the cheapest goal.
 
+**The softening is relative, not absolute.** Both softened folds — across goals, and across a landing
+plan's payment/delivery pair — take their temperature as `constant 1 × the leading clock`, so a weight
+is a function of the *relative* gap `Δ / max`. That is scale-free, which is the property the whole model
+exists for: doubling every clock leaves every weight exactly where it was. It is also self-sharpening —
+the tolerance narrows with the bottleneck as the win comes into reach — and it puts a floor under the
+fold, since a gap can never be wider than the leader: the weakest weight any state can produce is
+`exp(−1 / constant 1)`, the same on every mission.
+
 - **Resource-threshold goal** (`measure` is a pool): `need = target − measure`,
   `τ = per-round Δmeasure` from the permanent economy, `t = need / τ`. The bank is already inside
   `measure`; a banked unit is worth exactly the fraction of a round it saves — the derived
@@ -175,7 +183,8 @@ Discipline: **every constant states its units and why it is tuned rather than de
 four, down from ~15:
 
 1. **Bottleneck softening** — how much non-bottleneck goals still pull (pure `max` has zero
-   gradient on them and would let the beam abandon side goals).
+   gradient on them and would let the beam abandon side goals). Dimensionless: a fraction of the
+   leading clock, not a number of rounds, so the gap it tolerates scales with the race it folds.
 2. **Near-death penalty steepness.**
 3. **Tie-break weight** — banked worker-round wealth among equal-margin states (band 5's heir,
    in-currency); sized so its maximum stays below the smallest meaningful margin step. Counted only
@@ -251,6 +260,17 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   conditional on `T̂loss`: where the deck is slower than the workforce — the common shape — a hard fold
   leaves `T̂win` flat over every economic decision the run can make, and a beam with a flat objective
   idles to the cutoff. Any future candidate here must keep a gradient on the **non-binding** clock.
+
+  **A soft fold at an absolute temperature kept one only nominally, and the relative temperature is the
+  attempt at a real one.** A weight of 1e-6 is a gradient in name and not in arithmetic, which is what
+  the standing set showed at constant 1 = 1 round: `wheel` banked 352🌾 while its payment half weighed
+  4.8e-6, `first_temple`'s population goal weighed 9e-14, and `growing_numbers · planner` won every seed
+  in 57.7 mean turns against the classic scorer's 14.6 — nothing rewarded finishing a goal already at
+  100%. Both fingerprints are the hard fold's shape, one step weaker. A 30-seed diagnostic over the two
+  shapes plus three controls picked the fraction from 0.15 / 0.25 / 0.4 / 0.6 — the dawdle closes at every
+  one of them (`growing_numbers · planner` 62.6 → ~20 turns), while 0.15 is sharp enough to reproduce the
+  hard fold's own failure on `masonry · greedy` (100% → 23%). Whether the disease is *closed* is a
+  **referee** question, not a diagnostic one: the sweep that decides it is step 4's.
 - **The greedies stall where a box must be played and then staffed.** Playing a work box unstaffed
   spends the bank and moves `need` by nothing — `inFlight` reads only an *operating* box, so the whole
   payoff waits on a worker arriving after the play. A one-ply policy cannot pair the two, and on `wheel`,
@@ -339,13 +359,14 @@ What it made visible immediately, at the root:
   standing set moved at all. The third `'none'`, `growing_numbers` 🏛️, is **not** this and is unchanged:
   both its candidates are single copies, so the goal is copies-short either way — the distinct-count
   artifact above meeting the copies-short rule, with no deliverable runner-up to have been dropped.
-- **Absorption is a live mechanism, and its threshold is not zero.** A softMax weight underflows to a hard
-  zero only ~745 rounds behind the leader, which a 200-round horizon cannot reach — but the fold stops
-  carrying a weight at the ULP of 1, ~37 rounds behind, and *that* is reachable. Eight landing candidates
-  in the standing set are payment-absorbed at the root (all of them routes the `min` did not take, their
-  delivery clocks 55–165 rounds); two goals are fold-absorbed. No **kept** route is payment-absorbed at
-  the root — the widest gap is `pyramid_chiefdom` at 17.4 rounds, `w = 2.9e-8`, which is not absorption
-  but is not a gradient a beam can follow either.
+- **Absorption was a live mechanism, and re-unitizing the temperature retires it.** Under an absolute
+  temperature the fold stopped carrying a weight ~37 rounds behind the leader — reachable at a 200-round
+  horizon, and reached: eight landing candidates in the standing set were payment-absorbed at the root,
+  two goals fold-absorbed, and the widest gap among the **kept** routes (`pyramid_chiefdom`, 17.4 rounds,
+  `w = 2.9e-8`) was a gradient no beam could follow either. Against a temperature that is a fraction of
+  the leader the gap that would absorb one is `36.7 × constant 1` times the leading clock, and a gap
+  cannot exceed the leader at all — so above a softening of ~0.027 nothing is absorbed and `absorbed()`
+  reads how much of a gradient the fold carries rather than whether it carries one.
 
 ### Step 4 — wiring + the referee ☐
 
