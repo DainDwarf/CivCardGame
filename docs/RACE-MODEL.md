@@ -139,6 +139,20 @@ play** — the citizen who spends the turn running it, added straight to the wor
 converted, being already in that unit. A landed box files back to the discard, so the copies the run holds
 are dealt again: six units off two boxes is a cadence, not a plan the deck is short for.
 
+**And that citizen has to be free.** A box produces nothing unstaffed, so the delivery half of its landing
+is the deck's rate *plus* the wait for somebody available: nothing where a citizen is idle, one boundary
+where the whole workforce is standing in the tableau, and unreachable only where the run has no people at
+all. Availability is read off the **tableau** alone, the way the permanent projection reads the economy —
+the boundary files a box back to the discard and strips its staffing, so a citizen running a box this turn
+is one the next play has, and counting them as committed would charge the wait to the very play that staffs
+a box. One boundary rather than one per copy, for the same reason: the citizen freed for the first play is
+the one every play after it runs on. The `1` is the boundary the projection already measures, exactly as
+`paymentClock`'s is — a redeployment is the same event in both — and not a fifth constant; a citizen in the
+wrong box is one move and a turn from the right one, never unreachable, which is the reading that would
+derive the goal out of existence. Without it a goal only a box can reach reads a short finite clock on a
+state where nothing can land at all, and the citizen who would unblock it is priced as pure liability: the
+food a new one eats reaches `T̂loss` while its enabling of the only route there is reaches nothing.
+
 **Room is part of a structure's price.** A plan whose card is a structure owes one territory slot per
 copy, netted against the **free** tableau rather than the territory pool, since land is spent by standing
 on it. It is the one component exempt from the "every price component needs a `unitCost`" rule up front:
@@ -290,6 +304,10 @@ four, down from ~15:
   really takes. **Escalation honesty**: a deepening drain's clock is shorter than the flat read at its
   current counter and matches the closed form on a hand-computable fixture; a flat one is the plain
   quotient rather than a number close to it; one starting from nothing is finite; one that eases holds.
+- **A box needs somebody to run it**: with a citizen free the landing clock is the deck's own rate bit for
+  bit; with the whole workforce standing in the tableau it is a boundary longer and still finite; a landing
+  that stands nobody is unmoved either way; and freeing a citizen — the same person, out of the tableau —
+  strictly improves the value at an unchanged payment clock.
 - **Income is what pays**: a producer of a priced pool standing and staffed shortens the payment clock, and
   staffing one already on the board strictly improves the value; a run with no income in that pool keeps its
   plan at a finite clock; and the rate is the leaf's own, so a producer staffed long after the root is read
@@ -421,15 +439,41 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   bankruptcy 6 → 2, mean turns 75.5 → 40.0) and `· greedy` 70% → 73.3%, the escalating Stronghold being both
   the money pressure *and* the card the goal counts, so the plan was quoting 8⚔️ for copies that had hardened
   to 11 and 14. `wheel` itself barely moves — `· planner` 46.7% → 43.3% (3 win→loss against 2 loss→win,
-  which is noise at 30 seeds) and `· greedy` unmoved — because mechanisms 1 and 2 of that trace are
-  **still open**: the plan does not price the drain its own completion creates, and a landing clock has no
-  term for the citizen that runs the box. Read the wheel figures as confirmation that this was one of three
-  and the smallest, not as a verdict on the fix.
+  which is noise at 30 seeds) and `· greedy` unmoved — because mechanisms 1 and 2 of that trace were both
+  open here: the plan does not price the drain its own completion creates, and a landing clock had no term
+  for the citizen that runs the box. Read the wheel figures as confirmation that this was one of three and
+  the smallest, not as a verdict on the fix. Mechanism 2 is closed in the bullet below; **mechanism 1 is
+  still open**, and it is where the wheel family's remaining stalls sit.
   The **root** valuation of the whole standing set is unmoved, and that is the probe's blindness rather than
   the fix's: every counter is zero at a root, so `currentCost` there *is* the declarative price. The two
   shipped scaling cards are Conquest and Stronghold; the one other thing the seam newly reads — a cost
   sticker on a plan's card — reaches no standing cell, the stickered Farms sitting in decks whose missions
   never plan through a Farm.
+- **A landing clock had no term for the citizen that runs the box — measured, and closed pending the
+  referee.** The wheel trace's mechanism 2: `deliveryClock` is pure draw rate, so on a state whose every
+  citizen was standing in the tableau the goal read 9–15 rounds while nothing could land at all, and the
+  citizen who would unblock it was priced as pure liability — its food against `T̂loss`, its enabling of the
+  only route against nothing (`play House` at **−160**, `unassignWorker` at **+0.000**, a granted citizen at
+  **+2.474** on the state the model scored flat). The staffing wait above closes it, and the reading is the
+  arithmetic: at `wheel · planner` seed 1 round 8 (Farm and Forge each holding a citizen, none idle)
+  `unassignWorker forge` is now the **top-ranked action at +1.011** — exactly
+  `landingClock(5.167, 14.125) − landingClock(5.167, 13.125)` — while `unassignWorker farm` stays at −172,
+  which is the discrimination the term is for: the model frees the citizen whose box pays nothing toward the
+  race and keeps the one feeding the food clock. It reaches a line whose every *taken* state has a citizen
+  free, too, since a candidate is charged what it commits: playing a building that takes the last idle
+  citizen is a route a boundary slower, which is a cost the model had no way to see.
+  Over 30 paired seeds `wheel · greedy` goes **3.3% → 36.7%**
+  (10 loss→win against no win→loss) and the hoarding signature the trace named goes with it
+  (mean end bank 220🌾/283🔨 → 52/20) — but the defeats trade rather than vanish, **stalls 21 → 2 against
+  ruin 6 → 17**: the run now spends where it hoarded, and what punishes spending here is the toll its own
+  expansion creates, which is mechanism 1. `wheel · planner` **43.3% → 53.3%** (7 loss→win against 4
+  win→loss, stalls 16 → 13); `wheel_chiefdom · planner` holds at 50%. The controls are untouched: `raiding_city ·
+  planner` (93.3%) and `harsh_winter · greedy` (86.7%) replay **byte-identical**, and `first_trades · greedy`
+  stays at 100% (mean turns 15.2 → 15.8). The **root** valuation of the whole standing set is likewise
+  unmoved — a board's prebuilt structures take no workers, so every root has its full population free and
+  all 54 costed routes read a wait of 0. What this does **not** reach is a *building* route, which also needs
+  a citizen to produce and is charged no wait; nor mechanism 1, which is what `wheel · planner`'s remaining
+  13 stalls are.
 
 ## Decisions already made
 

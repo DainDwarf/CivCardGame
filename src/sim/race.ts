@@ -4,6 +4,7 @@ import {
   STRATEGIC_KEYS,
   addResources,
   applyUpkeep,
+  assignedWorkers,
   cloneState,
   effectiveHandSize,
   freeTerritory,
@@ -298,6 +299,9 @@ export interface PlanClockExplain {
   pool: number;
   hand: number;
   perRound: number;
+  /** `staffingWait` — rounds the delivery half additionally spends on a citizen to run the box, `0` on a
+   *  route that stands nobody and wherever one is free. The clock that folds is `delivery + staffing`. */
+  staffing: number;
   recycles: boolean;
   /** The softMax weights of `[payment, delivery]`, in that order (see `absorbed`). Empty where an infinite
    *  clock made the fold a hard `max`. */
@@ -875,6 +879,31 @@ function deliveryClock(
   return perRound > 0 ? copies / perRound : Infinity;
 }
 
+/**
+ * Rounds a work box's landing waits on a citizen to run it. A box produces nothing unstaffed, so a plan
+ * whose people are all committed elsewhere does not land at the rate the deck deals it — it lands when
+ * somebody is free. Without this the draw rate is the whole of the delivery half, and a goal reachable
+ * only through a box reads a short finite clock on a state where nothing can reach it at all.
+ *
+ * Availability is read off the **tableau** alone, the way `permanentProjection` reads the economy: the
+ * boundary files a work box back to the discard and strips its staffing, so a citizen running a box this
+ * turn is one the next play has. Counting them as committed would charge this wait to the play that staffs
+ * a box, which is the play it exists to make worth making.
+ *
+ * One boundary rather than one per copy, for the same reason — the citizen freed for the first play is the
+ * one every play after it runs on. The `1` is the boundary the projection already measures, exactly as
+ * `paymentClock`'s is: a redeployment is the same event in both, and a citizen standing in the wrong box is
+ * one move and a turn from the right one, never unreachable. Nobody at all is the one reading here that is
+ * not a delay.
+ */
+function staffingWait(banked: GameState, plan: { workerRounds?: number }, copies: number): number {
+  // A plan charging worker-rounds a play is one standing a citizen to run a box: nothing else in this model
+  // is priced in labour a play spends rather than in pools it costs.
+  if (!(plan.workerRounds && plan.workerRounds > 0) || copies <= 0) return 0;
+  if (banked.resources.population - assignedWorkers(banked.tableau) >= 1) return 0;
+  return banked.resources.population > 0 ? 1 : Infinity;
+}
+
 /** What the census and the fold weights are collected into when someone is recording; `undefined` on the
  *  beam's own path, where nothing is. */
 type RouteSink = { census: { held: number; pool: number; hand: number; perRound: number }; weights: number[] };
@@ -909,14 +938,22 @@ function routeClock(
   realized: number;
   payment: number;
   delivery: number;
+  staffing: number;
   t: number;
 } {
   const price = routePrice(banked, CARDS[plan.cardId], rates.unitCost);
   const paid = outstanding(price, copies, banked, rates.unitCost, plan.workerRounds);
   const realized = realizedIncome(price, rates.income, rates.unitCost);
   const payment = paymentClock(paid.workerRounds, realized, workforce);
+  // The two halves of one clock: the deck deals the copy and somebody has to be free to run it, so what the
+  // fold takes is their sum. `delivery` is kept the draw rate it measures — the census reconstructs it, and
+  // the root's keep is decided on it, which is what holds the wait to the leaf that knows the staffing.
   const delivery = deliveryClock(banked, plan.cardId, copies, plan.recycles, sink?.census);
-  return { price, ...paid, realized, payment, delivery, t: landingClock(payment, delivery, sink?.weights) };
+  const staffing = staffingWait(banked, plan, copies);
+  return {
+    price, ...paid, realized, payment, delivery, staffing,
+    t: landingClock(payment, delivery + staffing, sink?.weights),
+  };
 }
 
 /**
@@ -990,7 +1027,8 @@ function goalClock(
       landings?.push({
         cardId: landing.cardId, copies, price: r.price, workerRounds: r.workerRounds, netted: r.netted,
         realized: r.realized, payment: r.payment, delivery: r.delivery, ...sink!.census,
-        recycles: landing.recycles ?? false, weights: sink!.weights, lands: r.t, collect: 0, t: r.t,
+        staffing: r.staffing, recycles: landing.recycles ?? false, weights: sink!.weights,
+        lands: r.t, collect: 0, t: r.t,
       });
       take(r.t, 'landing', landing.cardId, r.netted);
     }
@@ -1001,8 +1039,8 @@ function goalClock(
       const collect = need / building.tau;
       buildings?.push({
         cardId: building.cardId, copies: 1, price: r.price, workerRounds: r.workerRounds, netted: r.netted,
-        realized: r.realized, payment: r.payment, delivery: r.delivery, ...sink!.census, recycles: false,
-        weights: sink!.weights, lands: r.t, collect, t: r.t + collect,
+        realized: r.realized, payment: r.payment, delivery: r.delivery, ...sink!.census,
+        staffing: r.staffing, recycles: false, weights: sink!.weights, lands: r.t, collect, t: r.t + collect,
       });
       take(r.t + collect, 'building', building.cardId, r.netted);
     }

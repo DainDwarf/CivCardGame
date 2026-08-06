@@ -691,6 +691,66 @@ describe('work boxes', () => {
     expect(clockOf(crowd).t).toBeLessThan(clockOf(G).t);
   });
 
+  /** A run whose only route to 🗺️ is a work box, beside one producer in the tableau — so `population`
+   *  decides whether anybody is left over to run the box. Food is deep enough that nothing here is a
+   *  survival reading. */
+  function boxRoute(population: number) {
+    return planned('race_goal_land', ['race_claim', 'race_claim', 'race_claim'], {
+      territory: 0, population, food: 10_000,
+    });
+  }
+
+  /** The one route the goal's plan has, at the state handed in. */
+  function route(G: GameState) {
+    return explainRaceValue(G, { model: deriveRace(G) }).goals[0].landings[0];
+  }
+
+  it('lands at the deck\'s own rate while a citizen is free', () => {
+    // The state with slack is the one the wait must not touch: the fold is the draw clock and the price,
+    // the same expression as on a route that stands nobody at all.
+    const free = route(boxRoute(2));
+    expect(free.staffing).toBe(0);
+    expect(free.lands).toBe(landingClock(free.payment, free.delivery));
+
+    // And a landing that stands nobody waits for nobody, however committed the run's people are: the hut's
+    // citizens arrive with the purchase, so there is no box for anyone to run.
+    const grant = route(planned('race_goal_pop', ['race_hut', 'race_hut'], { production: 8, food: 10_000 }));
+    expect(grant.staffing).toBe(0);
+    expect(grant.lands).toBe(landingClock(grant.payment, grant.delivery));
+  });
+
+  it('waits a redeployment boundary when every citizen is committed', () => {
+    // A box produces nothing unstaffed, so a run whose whole workforce is standing in the tableau does not
+    // land at the rate the deck deals it. The wait is a boundary and not a verdict: the citizen is one move
+    // and a turn from the box, and an infinite clock would derive the goal out of existence.
+    const busy = route(boxRoute(1));
+    expect(busy.staffing).toBe(1);
+    expect(busy.lands).toBe(landingClock(busy.payment, busy.delivery + 1));
+    expect(busy.lands).toBeGreaterThan(landingClock(busy.payment, busy.delivery));
+    expect(Number.isFinite(busy.lands)).toBe(true);
+
+    // With nobody to redeploy there is no route at all — which the workforce gate already answers, the
+    // wait never surfacing as a clock a leaf reads.
+    const empty = explainRaceValue(boxRoute(0), { model: deriveRace(boxRoute(0)) }).goals[0];
+    expect(empty.clock.route).toBe('none');
+    expect(routeCause(empty)).toBe('no workforce');
+  });
+
+  it('is worth freeing a citizen for', () => {
+    // The mirror, and the anchor action: the same person, in the tableau or idle. The box charges no pool,
+    // so the producer's output pays nothing toward the plan and the payment halves are identical — every
+    // bit of the difference is the wait, which is what makes a citizen an asset to the goal rather than
+    // only the food it eats.
+    const committed = boxRoute(1);
+    const idle = boxRoute(1);
+    idle.tableau[0].workers = 0;
+    expect(route(committed).staffing).toBe(1);
+    expect(route(idle).staffing).toBe(0);
+    expect(route(idle).payment).toBe(route(committed).payment);
+    expect(valued(idle).goals[0].t).toBeLessThan(valued(committed).goals[0].t);
+    expect(valued(idle).total).toBeGreaterThan(valued(committed).total);
+  });
+
   it('brings a staffed box nearer the win than the copy still in the deck', () => {
     const idle = planned('race_goal_land', ['race_claim', 'race_claim'], { territory: 0, population: 2 });
     const played = planned('race_goal_land', ['race_claim', 'race_claim'], { territory: 0, population: 2 });

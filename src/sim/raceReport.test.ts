@@ -19,6 +19,7 @@ function plan(over: Partial<PlanClockExplain> = {}): PlanClockExplain {
     pool: 12,
     hand: 4,
     perRound: 0.667,
+    staffing: 0,
     recycles: false,
     // Under the ULP of the leader's 1, so the renderer has to say so rather than print a small float. The
     // shipped softening floors a real weight far above this; what is pinned is the annotation, not its reach.
@@ -125,6 +126,16 @@ describe('formatRaceValuation', () => {
     expect(text).toMatch(/2 held × 4\.0 hand \/ 12 pool/);
     expect(text).toContain('T̂loss 10.00 — food');
     expect(text).toContain('threat test_deadline');
+  });
+
+  it('shows a delivery clock as the draw rate and the citizen it waits on', () => {
+    // The figure the fold takes is the sum, so printing the census alone would be a clock that doesn't add
+    // up — and the wait is the whole difference between a box a run can land and one it merely holds.
+    const c = cell();
+    c.value.goals[0].landings = [plan({ staffing: 1, lands: 3, t: 3 })];
+    expect(formatRaceValuation([c], 200)).toMatch(
+      /delivery\s+3\.00 rd\s+2 held × 4\.0 hand \/ 12 pool = 0\.667\/rd \+ 1\.00 rd waiting on a free citizen/,
+    );
   });
 
   it('says why a citizenless root shows every route kept at an infinite clock', () => {

@@ -78,8 +78,10 @@ function verdict(c: PlanCandidate): string {
 }
 
 /** The payment/delivery split inside one `landingClock`, three lines: each clock with the weight it folded
- *  at, then the fold. The census is spelled as the arithmetic it is (`held × hand / pool`) because a
- *  delivery clock nobody can reconstruct is a number to take on faith; the price is the leaf's own, which
+ *  at, then the fold. The delivery figure is the whole of that half, so its two summands are spelled out
+ *  beside it — the census as the arithmetic it is (`held × hand / pool`), then the citizen a box waits on
+ *  where it waits at all — because a clock nobody can reconstruct is a number to take on faith; the price
+ *  is the leaf's own, which
  *  the scan table above quotes at the root's — a card whose price climbs with its own use is two different
  *  numbers, and the pair is the only place that reads. */
 function planLines(tag: string, p: PlanClockExplain, taken: boolean): string[] {
@@ -87,7 +89,9 @@ function planLines(tag: string, p: PlanClockExplain, taken: boolean): string[] {
   const out = [
     `      ${pad(tag, 9)} ${p.cardId} × ${n(p.copies)}${p.recycles ? ' (recycles)' : ''} · price ${bag(p.price)}${taken ? '   ← taken' : ''}`,
     `        payment  ${padLeft(n(p.payment), 8)} rd   ${n(p.workerRounds)} wr outstanding at ${n(p.realized)} wr/rd standing income, netted ${bag(p.netted)}   ${weight(wPay)}`,
-    `        delivery ${padLeft(n(p.delivery), 8)} rd   ${p.held} held × ${n(p.hand, 1)} hand / ${p.pool} pool = ${n(p.perRound, 3)}/rd   ${weight(wDel)}`,
+    `        delivery ${padLeft(n(p.delivery + p.staffing), 8)} rd   ${p.held} held × ${n(p.hand, 1)} hand / ${p.pool} pool = ${n(p.perRound, 3)}/rd${
+      p.staffing > 0 ? ` + ${n(p.staffing)} rd waiting on a free citizen` : ''
+    }   ${weight(wDel)}`,
   ];
   out.push(
     p.collect > 0
@@ -322,6 +326,7 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
         ['realized', p.realized, 'wr/rd'],
         ['payment', p.payment, 'rounds'],
         ['delivery', p.delivery, 'rounds'],
+        ['staffing', p.staffing, 'rounds'],
         ['held', p.held, 'cards'],
         ['pool', p.pool, 'cards'],
         ['hand', p.hand, 'cards'],
