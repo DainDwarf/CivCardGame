@@ -295,11 +295,13 @@ And under **`race`**, where the unit is rounds throughout:
 - **`unitCost` … `no cost`** — what a unit of each pool costs in worker-rounds, and the pools nothing in
   the run can obtain. A price naming one of the latter yields **no plan at all**, which reads downstream
   as a goal that simply has no route.
-- **the plan scan's losers** — every card ranked for a goal with the per-unit price it lost on. The
-  cheapest per unit wins whether or not the deck can deal it, so "the plan is undeliverable and the card
-  beside it wasn't" is a sentence only this table supports.
+- **the plan scan's verdicts** — every card weighed for a goal, the root clock of each route it offered,
+  and the cause each dropped route was dropped for. A route is kept on being deliverable rather than on
+  price, so "the goal has three routes and only one of them circulates" is a sentence only this table
+  supports.
 - **the payment/delivery split** inside each `landingClock`, with the circulation census (`held × hand /
-  pool`) behind the delivery half — the two clocks the plan folds, and which of them binds.
+  pool`) behind the delivery half — the two clocks a route folds, and which of them binds. One block per
+  kept route, with `← taken` on the one the leaf's `min` chose.
 - **`ABSORBED`** — a softMax weight under the ULP of 1, so the fold came out bit-identical to a hard
   `max`. The state has **no gradient** on that clock at all: a term marked here is one the beam cannot
   follow, whatever it does to it.

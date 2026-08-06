@@ -147,9 +147,10 @@ surprise, so nothing shows a locked placeholder or a total count.
   `--scorer classic|race` picks *which* value function is rendered, naming the same two as `npm run sim`'s
   flag and defaulting the same way. Under **`race`** the report is `race.ts`'s instead: each pool's
   `unitCost` (and the pools that have none, which is what makes a plan impossible), every card the plan
-  scan ranked with the per-unit price the losers lost on, then per goal its clock — need, τ, route, the
-  raw `t` beside the horizon-clamped one — with the **payment vs delivery** split inside each
-  `landingClock` and the circulation census behind the delivery half. Both folds mark a clock they
+  scan weighed with the root clock of each route it offered and the cause the dropped ones were dropped
+  for, then per goal its clock — need, τ, route, the raw `t` beside the horizon-clamped one — over **every
+  route it kept**, with the **payment vs delivery** split inside each `landingClock`, the circulation
+  census behind the delivery half, and the one route the leaf took marked. Both folds mark a clock they
   **absorbed**: a softMax weight under the ULP of 1 means the fold came out bit-identical to a hard `max`,
   so the state has no gradient on that half at all — a reading no `RaceBreakdown` carries and the one that
   says whether a term is doing anything. `--terms` is a classic-model ablation and is refused under

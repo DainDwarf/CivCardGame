@@ -358,8 +358,9 @@ describe('plans', () => {
     // τ would have the goal finish itself while the run stands still.
     const G = planned('race_goal_pop', ['race_hut']);
     const plan = deriveRace(G).plans[0];
-    expect(plan.building).toBeUndefined();
-    expect(plan.landing).toMatchObject({ cardId: 'race_hut', delta: 2 });
+    expect(plan.buildings).toEqual([]);
+    expect(plan.landings).toHaveLength(1);
+    expect(plan.landings[0]).toMatchObject({ cardId: 'race_hut', delta: 2 });
     // 1🧍 of 3, so one hut closes it: 4🔨 is 2 worker-rounds over one person, against a quarter-round draw.
     expect(clockOf(G).t).toBeCloseTo(landingClock(2, 0.25));
   });
@@ -471,8 +472,9 @@ describe('work boxes', () => {
     // box files back to the discard: it is dealt again, unlike a copy spent by landing.
     const G = planned('race_goal_land', ['race_claim'], { territory: 0 });
     const plan = deriveRace(G).plans[0];
-    expect(plan.building).toBeUndefined();
-    expect(plan.landing).toMatchObject({ cardId: 'race_claim', delta: 1, recycles: true });
+    expect(plan.buildings).toEqual([]);
+    expect(plan.landings).toHaveLength(1);
+    expect(plan.landings[0]).toMatchObject({ cardId: 'race_claim', delta: 1, recycles: true });
     const c = clockOf(G);
     expect(c.route).toBe('landing');
     expect(Number.isFinite(c.t)).toBe(true);
@@ -482,7 +484,7 @@ describe('work boxes', () => {
     // The box is free of every pool, so the staffing is the whole of what it charges: without it this
     // plan is priced at nothing and its payment clock is flat over the workforce that pays it.
     const G = planned('race_goal_land', ['race_claim'], { territory: 0 });
-    const plan = deriveRace(G).plans[0].landing!;
+    const plan = deriveRace(G).plans[0].landings[0];
     expect(plan.price).toEqual({});
     expect(plan.workerRounds).toBeGreaterThan(0);
     const crowd = planned('race_goal_land', ['race_claim'], { territory: 0, population: 3 });
@@ -795,18 +797,67 @@ describe('the explained pass', () => {
     expect(routeCause(explainRaceValue(bare, { model: deriveRace(bare) }).goals[0])).toBe('no plan');
   });
 
-  it('keeps the runner-up a plan beat, with the rank it lost on', () => {
-    // The reading a `RaceModel` cannot give: the scan keeps the cheapest per unit and forgets the rest, so
-    // "the plan is undeliverable and the card beside it wasn't" is a sentence only the candidates support.
+  it('keeps every route the deck can deal, with the reason it dropped the rest', () => {
+    // The reading a `RaceModel` cannot give: which cards were weighed, and what became of each.
     const G = planned('race_goal_either', ['race_relic', 'race_trinket', 'race_trinket', 'race_trinket']);
     const goal = explainRaceModel(G).goals[0];
     const byId = Object.fromEntries(goal.candidates.map((c) => [c.cardId, c]));
-    expect(byId.race_relic.landing).toBe(true);
-    expect(byId.race_trinket.landing).toBe(false);
     expect(byId.race_relic.perUnit).toBeLessThan(byId.race_trinket.perUnit);
-    // …and the plan it won really is the one the run cannot deal, while the loser's copies sit there.
-    expect(explainRaceValue(G, { model: deriveRace(G) }).goals[0].clock.route).toBe('none');
+    expect(byId.race_relic.landing).toMatchObject({ kept: false, reject: 'copies short' });
+    expect(byId.race_trinket.landing).toMatchObject({ kept: true, reject: '' });
     expect(goal.inert).toBeGreaterThan(0);
+  });
+});
+
+describe('ranking', () => {
+  it('never lets a cheaper card the deck cannot deal shadow one it can', () => {
+    // The relic is cheaper per unit and the run holds one copy of it against a goal wanting three, so its
+    // clock is infinite; the trinket costs half as much again and circulates. A scan ranking on price alone
+    // plans through the relic and the goal then reads as unreachable with three trinkets sitting in the deck.
+    const G = planned('race_goal_either', ['race_relic', 'race_trinket', 'race_trinket', 'race_trinket']);
+    const model = deriveRace(G);
+    expect(model.plans[0].landings.map((p) => p.cardId)).toEqual(['race_trinket']);
+    expect(model.plans[0].dropped).toEqual(['copies short']);
+
+    const goal = explainRaceValue(G, { model }).goals[0];
+    expect(goal.clock.route).toBe('landing');
+    expect(goal.clock.cardId).toBe('race_trinket');
+    expect(goal.clock.t).toBeCloseTo(goal.landings[0].t);
+  });
+
+  it('takes the soonest route at each leaf, not the one that ranked best at the root', () => {
+    // Two kept routes whose order inverts with the bank: unpaid, the relic's cheaper price wins; once the
+    // bank covers both prices outright, only delivery is left and the six trinkets are dealt twice as often
+    // as the three relics. A plan pre-committed at the root reads one of these two states wrong.
+    const deck = [...Array<string>(3).fill('race_relic'), ...Array<string>(6).fill('race_trinket')];
+    const at = (production: number) => {
+      const G = planned('race_goal_either', deck, { production });
+      const ex = explainRaceValue(G, { model: deriveRace(G) }).goals[0];
+      expect(ex.landings.map((p) => p.cardId)).toEqual(['race_relic', 'race_trinket']);
+      return ex;
+    };
+    const poor = at(0);
+    const rich = at(30);
+    expect(poor.clock.cardId).toBe('race_relic');
+    expect(rich.clock.cardId).toBe('race_trinket');
+    // Each state's clock is the `min` over the routes it costed, which is the whole of the claim.
+    for (const ex of [poor, rich]) expect(ex.clock.t).toBeCloseTo(Math.min(...ex.landings.map((p) => p.t)));
+    expect(poor.landings[0].t).toBeLessThan(poor.landings[1].t);
+    expect(rich.landings[1].t).toBeLessThan(rich.landings[0].t);
+  });
+
+  it('spends the bank of the route it took, not of the last one it costed', () => {
+    // The tie-break counts the bank *past* what the goal's plan spent, and with several routes costed the
+    // netting that reaches it has to be the winner's. The loser here draws deeper on the same pool, so a
+    // fold carrying the last reading instead would prefer the price to the thing the price buys — and no
+    // clock would move to say so.
+    const deck = [...Array<string>(3).fill('race_relic'), ...Array<string>(6).fill('race_trinket')];
+    const G = planned('race_goal_either', deck, { production: 13.5, food: 0 });
+    const model = deriveRace(G);
+    const ex = explainRaceValue(G, { model }).goals[0];
+    expect(ex.clock.cardId).toBe('race_relic');
+    expect(ex.landings.map((p) => p.netted)).toEqual([{ production: 12 }, { production: 13.5 }]);
+    expect(raceBreakdown(G, { model }).wealth).toBeCloseTo(((13.5 - 12) / RACE.wealthCap) * RACE.wealthRounds, 12);
   });
 });
 

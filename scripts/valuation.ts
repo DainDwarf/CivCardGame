@@ -10,8 +10,9 @@
  * `--scorer` picks which, mirroring `npm run sim`'s flag of the same name. **`classic`** (the default, as
  * there) renders `sim/value.ts`'s five bands plus `sim/enablers.ts`'s enabler model: every probe, every
  * intermediate, and the card that won each credit. **`race`** renders `sim/race.ts`'s plans and its
- * `T̂loss − T̂win` margin: what each pool costs in worker-rounds, every card the plan scan ranked and why
- * the losers lost, each goal's clock with the payment/delivery split inside it, and which clocks the folds
+ * `T̂loss − T̂win` margin: what each pool costs in worker-rounds, every card the plan scan weighed with the
+ * root clock of each route it offered and the cause the dropped ones were dropped for, each goal's clock
+ * over the routes it kept with the payment/delivery split inside each, and which clocks the folds
  * **absorbed** — the reading no `RaceBreakdown` carries.
  *
  * **No simulation.** Both models are derived once from the run root and are seed-independent (every zone is

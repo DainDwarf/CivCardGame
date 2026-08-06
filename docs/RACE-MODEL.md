@@ -116,7 +116,15 @@ board-filling plan is flat over the play that unblocks the board, because a box 
 
 Every route a goal has is costed and the **soonest** taken — no test of whether the standing economy
 "needs" a plan. `min` is the honest fold over alternatives, where a gate deciding which route to price
-is a branch that can fire the wrong way. The workforce a plan's price is paid at is the **population**,
+is a branch that can fire the wrong way. That holds *within* a kind of route as much as across the kinds:
+the root keeps every card whose route is **deliverable there** — a price with a rate to convert through
+and copies the deck can deal — rather than the one that ranked cheapest per unit, and each leaf takes the
+soonest of what it kept. Price and deliverability are independent questions, so an argmin over the first
+alone plans a goal through a card the run cannot circulate and drops the dearer one it can. The kept set
+is a handful — one or two per goal across the standing set — so the leaf pays a clock apiece for the
+reading that decides it. What the root filter may **not** fold in is the workforce the payment clock
+divides by: that is a fact about the moment, gated at the leaf, and a root with no citizens must not
+derive itself out of every plan it has. The workforce a plan's price is paid at is the **population**,
 not the workers currently in boxes: a pool's worker-round price is the output of a worker standing in
 the best box for it, so a denominator counting only staffed workers would disagree with its own
 numerator about the same person.
@@ -206,6 +214,10 @@ four, down from ~15:
   clock, and landing a plan copy beats landing a card the plan doesn't read.
 - **Room is priced**: a structure plan against a full board scores strictly below the same plan with a
   slot free.
+- **Deliverability outranks price**: a goal whose cheapest-per-unit card the deck cannot deal plans
+  through the dearer one it can, and reads that card's clock.
+- **The choice is the leaf's**: two kept routes whose clocks invert between two states are each taken at
+  the state where they win — the pin that the root ranked nothing.
 - **Deadline honesty**: a producer that cannot repay before `T̂loss` contributes ~0.
 - **Clock visibility** (step 3): a synthetic counter-clock threat's probe equals its authored
   countdown from any mid-run counter state.
@@ -317,15 +329,16 @@ rather than a second reading of them.
 
 What it made visible immediately, at the root:
 
-- **A landing plan is chosen on price alone, and deliverability is asked afterwards.** Two cells rank a
-  cheap card the run cannot deal over a dearer one it can, and the goal then reads `'none'`:
-  `first_settlement` ⚔️ (Bow 0.667/unit, 2 copies, spent by landing — over Hunting at 1.0, a work box that
-  recycles, whose census gives a ~15-round clock) and `reading_seasons` 🔬 (Fire 0.0/unit, 1 copy — over
-  Storytelling at 1.0, likewise recycling, ~42 rounds). `min` over routes is honest; ranking *within* the
-  landing route is not, since it drops the only alternative that had a finite clock. The third `'none'`,
-  `growing_numbers` 🏛️, is **not** this: both its candidates are single copies, so the goal is
-  copies-short either way — the distinct-count artifact above meeting the copies-short rule, with no
-  deliverable runner-up to have been dropped.
+- **Ranking within a route kind was blind to deliverability — measured, and closed.** Two cells ranked a
+  cheap card the run cannot deal over a dearer one it can, and the goal then read `'none'`:
+  `first_settlement` ⚔️ (Bow 0.667/unit, spent by landing — over Hunting at 1.0, a work box that recycles)
+  and `reading_seasons` 🔬 (Fire 0.0/unit, 1 copy — over Storytelling at 1.0, likewise recycling). `min`
+  over routes was honest; the argmin *within* the landing route was not, since it dropped the only
+  alternative that had a finite clock. With every deliverable route kept and the leaf taking the soonest,
+  the two read `landing:dogs` at 15.0 rounds and `landing:storytelling` at 42.5, and no other goal in the
+  standing set moved at all. The third `'none'`, `growing_numbers` 🏛️, is **not** this and is unchanged:
+  both its candidates are single copies, so the goal is copies-short either way — the distinct-count
+  artifact above meeting the copies-short rule, with no deliverable runner-up to have been dropped.
 - **Absorption is a live mechanism, and its threshold is not zero.** A softMax weight underflows to a hard
   zero only ~745 rounds behind the leader, which a 200-round horizon cannot reach — but the fold stops
   carrying a weight at the ULP of 1, ~37 rounds behind, and *that* is reachable. Eight landing candidates

@@ -145,11 +145,20 @@ export interface RaceModel {
   plans: GoalPlan[];
 }
 
-/** The two shapes a deck can move a goal in. Both may be absent: a goal no card in the run touches has
- *  no plan, which is the model reporting that rather than guessing at one. */
+/** The two shapes a deck can move a goal in, each holding **every** route the run really has of that kind
+ *  rather than the one that ranked best on price. A route's price and its delivery are different questions,
+ *  and only the second knows whether the deck can deal the copies at all — so the choice belongs at the leaf
+ *  that has both, where `goalClock` takes the soonest. The root keeps what is deliverable there, which in
+ *  practice is a handful; both lists may be empty, which is the model reporting no route rather than
+ *  guessing at one. */
 export interface GoalPlan {
-  landing?: LandingPlan;
-  building?: BuildingPlan;
+  /** Cheapest per unit first — the order ties resolve in, since `goalClock` takes a strict improvement. */
+  landings: LandingPlan[];
+  /** Fastest first, for the same reason. */
+  buildings: BuildingPlan[];
+  /** The causes the root scan dropped routes for, deduplicated. Read only when both lists are empty: a goal
+   *  no card touches and one whose every route is undeliverable are otherwise the same silence. */
+  dropped?: string[];
 }
 
 /** Landing copies of a card the goal reads — by standing in a zone it counts, by what the play grants, or
@@ -193,26 +202,39 @@ export interface BuildingPlan {
  * scoring path never allocates, rather than returned.
  */
 
+/** What became of one card's route of one kind at the root scan. */
+export interface CandidateRoute {
+  /** Whether the goal's plan carries this route. */
+  kept: boolean;
+  /** Rounds the route reads at the run root — the deliverability the keep was decided on. */
+  t: number;
+  /** The two halves of `t`, absent where the scan refused the route before costing it. */
+  payment?: number;
+  delivery?: number;
+  /** Why the scan dropped it; `''` where it was kept. */
+  reject: string;
+}
+
 /** One card weighed for one goal's plans, and what became of it. Only a card that moves the measure some
  *  way is recorded: the rest of the scan is a count. */
 export interface PlanCandidate {
   cardId: string;
-  /** Units of the goal's measure one play lands — the landing ranking's denominator. */
+  /** Units of the goal's measure one play lands — the landing route's denominator. */
   delta: number;
-  /** Units of the measure one round of it standing yields — the building ranking, `0` unless durable. */
+  /** Units of the measure one round of it standing yields — `0` unless durable. */
   tau: number;
   price: Partial<Record<keyof Resources, number>>;
   /** `price` converted through `unitCost`, plus the citizen a work box stands. `Infinity` where a
    *  component has no rate. */
   workerRounds: number;
-  /** `(workerRounds + staffing) / delta` — what the landing scan ranks by, `Infinity` at zero delta. */
+  /** `(workerRounds + staffing) / delta` — what orders the landing list, `Infinity` at zero delta. */
   perUnit: number;
-  /** Price components `replacementCost` reached no figure for. Non-empty means the card was skipped before
-   *  it could rank at all — the plan it would have made is the one the model is silent about. */
+  /** Price components `replacementCost` reached no figure for. Non-empty means the card was refused before
+   *  it could be costed at all — the plan it would have made is the one the model is silent about. */
   unpriceable: (keyof Resources)[];
-  /** Whether this card is the goal's kept plan of each kind. */
-  landing: boolean;
-  building: boolean;
+  /** The route of each kind this card offers; absent where it moves the measure no such way. */
+  landing?: CandidateRoute;
+  building?: CandidateRoute;
 }
 
 /** One goal's derivation: the scan that produced its plans. */
@@ -229,6 +251,10 @@ export interface GoalPlanExplain {
 
 export interface RaceModelExplain {
   model: RaceModel;
+  /** The population every `CandidateRoute.t` below was divided by. At zero they all read `Infinity` while
+   *  the routes are kept anyway, so the figure has to travel with them or the scan reads as keeping the
+   *  unreachable. */
+  workforce: number;
   /** Pools with no `unitCost` — a price naming one yields no plan. */
   unpriceable: (keyof Resources)[];
   goals: GoalPlanExplain[];
@@ -281,8 +307,9 @@ export interface GoalClockExplain {
   /** The plans this goal was offered, which is not the same as the ones it costed: a workforce of zero
    *  gates both branches off, and a good plan then reads exactly like none at all. */
   plan?: GoalPlan;
-  landing?: PlanClockExplain;
-  building?: PlanClockExplain;
+  /** Every route costed here, in the plan's own order — the `min` this clock is. */
+  landings: PlanClockExplain[];
+  buildings: PlanClockExplain[];
 }
 
 /** One core pool's death clock. */
@@ -330,18 +357,31 @@ export function absorbed(w: number): boolean {
   return 1 + w === 1;
 }
 
+/** Which half of a route's clock ran to infinity, in one vocabulary for the root scan's rejections and the
+ *  leaf's dead routes alike. `payable` is passed rather than read because the two ask it of different
+ *  figures: the root of the price itself, the leaf of the price divided by a workforce it has already
+ *  reported separately. `''` where the route is a live one. */
+function unreachableCause(payable: boolean, delivery: number, copies: number, held: number, recycles: boolean): string {
+  if (!payable) return 'unpriceable pool';
+  if (!Number.isFinite(delivery)) return !recycles && copies > held ? 'copies short' : 'no copies circulate';
+  return '';
+}
+
 /** Why a goal's route is `'none'`, off the recorded facts alone. Derivation knowledge rather than
  *  presentation: "no plan" and "a plan nothing can pay for" are the same word in a `GoalClock` and
  *  different answers to a balance question. `''` where the route is a real one. */
 export function routeCause(g: GoalClockExplain): string {
   if (g.clock.route !== 'none') return '';
-  if (!g.plan?.landing && !g.plan?.building) return 'no plan';
+  const plan = g.plan;
+  if (!plan || (plan.landings.length === 0 && plan.buildings.length === 0)) {
+    return plan?.dropped?.length ? plan.dropped.join(' + ') : 'no plan';
+  }
   if (g.workforce <= 0) return 'no workforce';
   const causes = new Set<string>();
-  for (const p of [g.landing, g.building]) {
-    if (!p || Number.isFinite(p.t)) continue;
-    if (!Number.isFinite(p.payment)) causes.add('unpriceable pool');
-    if (!Number.isFinite(p.delivery)) causes.add(!p.recycles && p.copies > p.held ? 'copies short' : 'no copies circulate');
+  for (const p of [...g.landings, ...g.buildings]) {
+    if (Number.isFinite(p.t)) continue;
+    const cause = unreachableCause(Number.isFinite(p.payment), p.delivery, p.copies, p.held, p.recycles);
+    if (cause) causes.add(cause);
   }
   return [...causes].join(' + ') || 'unreachable';
 }
@@ -563,6 +603,36 @@ function deliveryClock(
   return perRound > 0 ? copies / perRound : Infinity;
 }
 
+/** What the census and the fold weights are collected into when someone is recording; `undefined` on the
+ *  beam's own path, where nothing is. */
+type RouteSink = { census: { held: number; pool: number; hand: number; perRound: number }; weights: number[] };
+
+function routeSink(): RouteSink {
+  return { census: { held: 0, pool: 0, hand: 0, perRound: 0 }, weights: [] };
+}
+
+/**
+ * One route's clock: the softened fold of earning `copies` of its price and drawing that many copies. Shared
+ * by the root scan, which keeps a route on whether both halves are finite, and by the leaf, which takes the
+ * soonest of the kept ones — so a route is never kept on one reading and taken on another.
+ *
+ * A building route is the same pair for a single copy; the rounds it then spends collecting are the caller's,
+ * being the one part that really is sequential with standing it.
+ */
+function routeClock(
+  plan: { cardId: string; price: Partial<Record<keyof Resources, number>>; workerRounds?: number; recycles?: boolean },
+  copies: number,
+  banked: GameState,
+  workforce: number,
+  unitCost: RaceModel['unitCost'],
+  sink?: RouteSink,
+): { workerRounds: number; netted: Partial<Record<keyof Resources, number>>; payment: number; delivery: number; t: number } {
+  const paid = outstanding(plan.price, copies, banked, unitCost, plan.workerRounds);
+  const payment = workforce > 0 ? paid.workerRounds / workforce : Infinity;
+  const delivery = deliveryClock(banked, plan.cardId, copies, plan.recycles, sink?.census);
+  return { ...paid, payment, delivery, t: landingClock(payment, delivery, sink?.weights) };
+}
+
 /**
  * One goal's rounds-to-completion, over every route the run has to it. `need` reads the **banked** state
  * and τ the **permanent** one, which is what counts each contribution exactly once: a tableau producer's
@@ -594,8 +664,11 @@ function goalClock(
   const bare = { icon: goal.icon, need, tau };
   const throughput = tau > 0 ? need / tau : Infinity;
   const workforce = Math.max(0, banked.resources.population);
-  let landingEx: PlanClockExplain | undefined;
-  let buildingEx: PlanClockExplain | undefined;
+  // Written by the very calls whose arguments they explain, so a recorded figure is the one the clock ran on
+  // rather than a second reading of it — and left unallocated off the explain path, so the beam's leaf
+  // spends nothing to be told what it already knows.
+  const landings = ex ? ([] as PlanClockExplain[]) : undefined;
+  const buildings = ex ? ([] as PlanClockExplain[]) : undefined;
   const seal = (clock: GoalClock, raw: number): GoalClock => {
     ex?.push({
       clock,
@@ -604,8 +677,8 @@ function goalClock(
       workforce,
       throughput,
       ...(plan ? { plan } : {}),
-      ...(landingEx ? { landing: landingEx } : {}),
-      ...(buildingEx ? { building: buildingEx } : {}),
+      landings: landings ?? [],
+      buildings: buildings ?? [],
     });
     return clock;
   };
@@ -623,44 +696,30 @@ function goalClock(
     cardId = id;
     netted = n;
   };
-  // Both collectors are written by the very calls whose arguments they explain, so a recorded figure is
-  // the one the clock ran on rather than a second reading of it — and both are `undefined` off the explain
-  // path, so the beam's leaf allocates nothing to be told what it already knows.
-  const blank = () => (ex ? { census: { held: 0, pool: 0, hand: 0, perRound: 0 }, weights: [] as number[] } : {});
-  if (workforce > 0 && plan?.landing) {
-    const { landing } = plan;
-    const { census, weights } = blank();
-    const copies = need / landing.delta;
-    const paid = outstanding(landing.price, copies, banked, unitCost, landing.workerRounds);
-    const payment = paid.workerRounds / workforce;
-    const delivery = deliveryClock(banked, landing.cardId, copies, landing.recycles, census);
-    const lands = landingClock(payment, delivery, weights);
-    if (census && weights) {
-      landingEx = {
-        cardId: landing.cardId, copies, workerRounds: paid.workerRounds, netted: paid.netted,
-        payment, delivery, ...census, recycles: landing.recycles ?? false,
-        weights, lands, collect: 0, t: lands,
-      };
+  if (workforce > 0 && plan) {
+    for (const landing of plan.landings) {
+      const sink = landings ? routeSink() : undefined;
+      const copies = need / landing.delta;
+      const r = routeClock(landing, copies, banked, workforce, unitCost, sink);
+      landings?.push({
+        cardId: landing.cardId, copies, workerRounds: r.workerRounds, netted: r.netted,
+        payment: r.payment, delivery: r.delivery, ...sink!.census, recycles: landing.recycles ?? false,
+        weights: sink!.weights, lands: r.t, collect: 0, t: r.t,
+      });
+      take(r.t, 'landing', landing.cardId, r.netted);
     }
-    take(lands, 'landing', landing.cardId, paid.netted);
-  }
-  if (workforce > 0 && plan?.building) {
-    const { building } = plan;
-    const { census, weights } = blank();
-    const paid = outstanding(building.price, 1, banked, unitCost);
-    const payment = paid.workerRounds / workforce;
-    const delivery = deliveryClock(banked, building.cardId, 1, false, census);
-    const stands = landingClock(payment, delivery, weights);
-    // Collecting from the producer *is* sequential with standing it, unlike the two halves of standing it.
-    const collect = need / building.tau;
-    if (census && weights) {
-      buildingEx = {
-        cardId: building.cardId, copies: 1, workerRounds: paid.workerRounds, netted: paid.netted,
-        payment, delivery, ...census, recycles: false,
-        weights, lands: stands, collect, t: stands + collect,
-      };
+    for (const building of plan.buildings) {
+      const sink = buildings ? routeSink() : undefined;
+      const r = routeClock(building, 1, banked, workforce, unitCost, sink);
+      // Collecting from the producer *is* sequential with standing it, unlike the two halves of standing it.
+      const collect = need / building.tau;
+      buildings?.push({
+        cardId: building.cardId, copies: 1, workerRounds: r.workerRounds, netted: r.netted,
+        payment: r.payment, delivery: r.delivery, ...sink!.census, recycles: false,
+        weights: sink!.weights, lands: r.t, collect, t: r.t + collect,
+      });
+      take(r.t + collect, 'building', building.cardId, r.netted);
     }
-    take(stands + collect, 'building', building.cardId, paid.netted);
   }
 
   return {
@@ -677,16 +736,44 @@ function goalClock(
   };
 }
 
+/** One route's verdict at the run root. `t` divides by the workforce the root happens to have, so it is
+ *  `Infinity` on a citizenless root; `kept` deliberately does not, being about the route rather than the
+ *  moment. */
+function probeRoute(
+  plan: { cardId: string; price: Partial<Record<keyof Resources, number>>; workerRounds?: number; recycles?: boolean },
+  copies: number,
+  banked: GameState,
+  workforce: number,
+  unitCost: RaceModel['unitCost'],
+): CandidateRoute {
+  const sink = routeSink();
+  const r = routeClock(plan, copies, banked, workforce, unitCost, sink);
+  const reject = unreachableCause(
+    Number.isFinite(r.workerRounds),
+    r.delivery,
+    copies,
+    sink.census.held,
+    plan.recycles ?? false,
+  );
+  return { kept: reject === '', t: r.t, payment: r.payment, delivery: r.delivery, reject };
+}
+
 /**
  * Derive the run's plans — once, at the root. Every card the run holds is probed against every goal for
- * the three ways it can move a measure, and the best of each kind is kept.
+ * the three ways it can move a measure, and every route that is **deliverable here** is kept.
  *
- * "Best" is not the same question for the two plans. A landing is repeatable, so the one that matters is
- * the **cheapest per unit of measure**; a producer is bought once and then collected forever, so the one
- * that matters is the **fastest**, exactly as the model it replaces chose. Ties resolve to first in
- * catalogue order, so the same run derives the same plan every time.
+ * Kept, not ranked: what a route costs per unit of measure and whether the deck can deal its copies are
+ * independent questions, so an argmin over the first alone will hand a goal a cheap card the run cannot
+ * circulate and drop the dearer one it can. The order is still cheapest-per-unit (fastest for a producer),
+ * because `goalClock` takes a strict improvement and that is where ties resolve — first in catalogue order
+ * within equal rank, so the same run derives the same plans every time.
  *
- * A price with any *pool* component `replacementCost` could not reach yields **no plan** at all. Worker-
+ * Deliverable is measured on the route's own two halves — a price with a rate to convert through and copies
+ * the deck can deal — and not on the clock they fold to, whose divisor is the workforce. A workforce is a
+ * fact about the moment and is gated at the leaf; folding it in here would leave a root with no citizens
+ * carrying no plans for the rest of the run.
+ *
+ * A price with any *pool* component `replacementCost` could not reach yields **no route** at all. Worker-
  * rounds are the currency here, and a pool nothing in the run can obtain has no figure in it — carrying
  * the raw unit count in beside real prices would produce a number in no currency at all. Land is the
  * exception, being netted against the tableau before it is ever converted.
@@ -695,93 +782,100 @@ export function deriveRace(G: GameState): RaceModel {
   return explainRaceModel(G).model;
 }
 
-/** `deriveRace` with every card it weighed and every one it skipped. Recorded unconditionally, this being
- *  a once-per-run derivation: the scan is the same single pass, ranking on strict `<`/`>` so a tie still
- *  goes to the first in catalogue order. */
+/** `deriveRace` with every card it weighed, every route it dropped and why. Recorded unconditionally, this
+ *  being a once-per-run derivation. */
 export function explainRaceModel(G: GameState): RaceModelExplain {
   const ids = runCardIds(G);
   const unitCost = replacementCost(G, ids);
   const probe = cloneState(G);
+  const banked = bankedState(G);
+  const workforce = Math.max(0, banked.resources.population);
   const cards = Object.values(CARDS).filter((c) => ids.has(c.id));
   const explained: GoalPlanExplain[] = [];
   const plans = objectiveGoals(G).map((goal) => {
-    const plan: GoalPlan = {};
+    const need = Math.max(0, goal.target - goal.measure(banked));
     const candidates: PlanCandidate[] = [];
+    const dropped = new Set<string>();
+    // Ranked as they are found and sorted once the scan is over: `Array.sort` is stable, so an equal rank
+    // keeps catalogue order and the same run derives the same list in the same order every time.
+    const landings: { plan: LandingPlan; rank: number }[] = [];
+    const buildings: { plan: BuildingPlan; rank: number }[] = [];
     let inert = 0;
-    let cheapest = Infinity;
-    let fastest = 0;
     for (const card of cards) {
       const price = cardPrice(G, card);
       const unpriceable = (Object.keys(price) as (keyof Resources)[]).filter((k) => unitCost[k] === undefined);
+      const work = card.kind === 'work';
+      const delta = Math.max(
+        presenceDelta(probe, card, goal.measure),
+        grantDelta(probe, card, goal.measure),
+        work ? outputDelta(probe, card, goal.measure) : 0,
+      );
+      // Only a durable producer's `produces` is a rate — a work box's is the landing delta above.
+      const tau = isDurableProducer(card) ? outputDelta(probe, card, goal.measure) : 0;
+      if (delta <= 0 && tau <= 0) {
+        inert++;
+        continue;
+      }
       if (unpriceable.length > 0) {
-        // The skip stands; what the report adds is what was skipped. The probes are pure over `probe` and
-        // this pass runs once, so pricing the card the model refused costs the report alone.
-        const delta = Math.max(
-          presenceDelta(probe, card, goal.measure),
-          grantDelta(probe, card, goal.measure),
-          card.kind === 'work' ? outputDelta(probe, card, goal.measure) : 0,
-        );
-        const tau = isDurableProducer(card) ? outputDelta(probe, card, goal.measure) : 0;
-        if (delta > 0 || tau > 0) {
-          candidates.push({
-            cardId: card.id, delta, tau, price, workerRounds: Infinity, perUnit: Infinity,
-            unpriceable, landing: false, building: false,
-          });
-        } else inert++;
+        // The refusal stands; what the report adds is what was refused. The probes are pure over `probe` and
+        // this pass runs once, so recording the card the model would not price costs the report alone.
+        const dead = (): CandidateRoute => ({ kept: false, t: Infinity, reject: 'unpriceable pool' });
+        dropped.add('unpriceable pool');
+        candidates.push({
+          cardId: card.id, delta, tau, price, workerRounds: Infinity, perUnit: Infinity, unpriceable,
+          ...(delta > 0 ? { landing: dead() } : {}),
+          ...(tau > 0 ? { building: dead() } : {}),
+        });
         continue;
       }
       const workerRounds = Object.entries(price).reduce(
         (n, [k, amt]) => n + amt * unitCost[k as keyof Resources]!,
         0,
       );
-      // Room is part of what a structure charges. It is folded in past the ranking above because land is
+      // Room is part of what a structure charges. It is folded in past the conversion above because land is
       // held rather than bought at a rate: a plan owes it only for the copies the tableau has no slot for.
       const planPrice = isStructure(card) ? { ...price, territory: (price.territory ?? 0) + 1 } : price;
       // A work box is a landing in this model's own vocabulary — pay a price, take a delta, repeat — and
       // for a goal no standing card moves it is the only route there is. Its `produces` fires once per
       // play, so it reads at one staffed worker as a level; the citizen who spends the turn running it is
       // the rest of what it charges, and it recycles into the discard rather than being spent by landing.
-      const work = card.kind === 'work';
       const staffing = work ? 1 : 0;
-      const delta = Math.max(
-        presenceDelta(probe, card, goal.measure),
-        grantDelta(probe, card, goal.measure),
-        work ? outputDelta(probe, card, goal.measure) : 0,
-      );
       const perUnit = delta > 0 ? (workerRounds + staffing) / delta : Infinity;
-      if (delta > 0 && perUnit < cheapest) {
-        cheapest = perUnit;
-        plan.landing = {
+      const candidate: PlanCandidate = {
+        cardId: card.id, delta, tau, price: planPrice, workerRounds, perUnit, unpriceable,
+      };
+      if (delta > 0) {
+        const plan: LandingPlan = {
           cardId: card.id,
           delta,
           price: planPrice,
           ...(work ? { workerRounds: staffing, recycles: true } : {}),
         };
+        candidate.landing = probeRoute(plan, need / delta, banked, workforce, unitCost);
+        if (candidate.landing.kept) landings.push({ plan, rank: perUnit });
+        else dropped.add(candidate.landing.reject);
       }
-      // Only a durable producer's `produces` is a rate — a work box's is the landing delta above.
-      const tau = isDurableProducer(card) ? outputDelta(probe, card, goal.measure) : 0;
-      if (tau > fastest) {
-        fastest = tau;
-        plan.building = { cardId: card.id, tau, price: planPrice };
+      if (tau > 0) {
+        const plan: BuildingPlan = { cardId: card.id, tau, price: planPrice };
+        candidate.building = probeRoute(plan, 1, banked, workforce, unitCost);
+        if (candidate.building.kept) buildings.push({ plan, rank: -tau });
+        else dropped.add(candidate.building.reject);
       }
-      if (delta > 0 || tau > 0) {
-        candidates.push({
-          cardId: card.id, delta, tau, price: planPrice, workerRounds, perUnit,
-          unpriceable, landing: false, building: false,
-        });
-      } else inert++;
+      candidates.push(candidate);
     }
-    // Which candidate won is a fact about the finished scan, not about the moment it was pushed: a later
-    // card displaces an earlier one, and only the ids left on the plan say who is still standing.
-    for (const c of candidates) {
-      c.landing = plan.landing?.cardId === c.cardId;
-      c.building = plan.building?.cardId === c.cardId;
-    }
+    landings.sort((a, b) => a.rank - b.rank);
+    buildings.sort((a, b) => a.rank - b.rank);
+    const plan: GoalPlan = {
+      landings: landings.map((x) => x.plan),
+      buildings: buildings.map((x) => x.plan),
+      ...(dropped.size > 0 ? { dropped: [...dropped].sort() } : {}),
+    };
     explained.push({ icon: goal.icon, scanned: cards.length, inert, candidates, plan });
     return plan;
   });
   return {
     model: { unitCost, plans },
+    workforce,
     unpriceable: ALL_POOLS.filter((k) => unitCost[k] === undefined),
     goals: explained,
     runCards: [...ids].sort(),

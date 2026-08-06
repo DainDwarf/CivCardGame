@@ -3,6 +3,7 @@ import {
   RACE,
   absorbed,
   routeCause,
+  type PlanCandidate,
   type PlanClockExplain,
   type RaceModelExplain,
   type RaceValueExplain,
@@ -65,13 +66,24 @@ function padLeft(s: string, w: number): string {
   return s.length >= w ? s : ' '.repeat(w - s.length) + s;
 }
 
+/** What became of one card in the scan: the routes it offered, kept or with the reason it was dropped. The
+ *  refusal to price a card at all pre-empts both, so it is reported once rather than twice. */
+function verdict(c: PlanCandidate): string {
+  if (c.unpriceable.length) return `skipped: ${c.unpriceable.join('/')}`;
+  const parts: string[] = [];
+  for (const [tag, r] of [['landing', c.landing], ['building', c.building]] as const) {
+    if (r) parts.push(r.kept ? tag : `${tag} ✗ ${r.reject}`);
+  }
+  return parts.join(' · ') || '—';
+}
+
 /** The payment/delivery split inside one `landingClock`, three lines: each clock with the weight it folded
  *  at, then the fold. The census is spelled as the arithmetic it is (`held × hand / pool`) because a
  *  delivery clock nobody can reconstruct is a number to take on faith. */
-function planLines(tag: string, p: PlanClockExplain): string[] {
+function planLines(tag: string, p: PlanClockExplain, taken: boolean): string[] {
   const [wPay, wDel] = p.weights;
   const out = [
-    `      ${pad(tag, 9)} ${p.cardId} × ${n(p.copies)}${p.recycles ? ' (recycles)' : ''}`,
+    `      ${pad(tag, 9)} ${p.cardId} × ${n(p.copies)}${p.recycles ? ' (recycles)' : ''}${taken ? '   ← taken' : ''}`,
     `        payment  ${padLeft(n(p.payment), 8)} rd   ${n(p.workerRounds)} wr outstanding, netted ${bag(p.netted)}   ${weight(wPay)}`,
     `        delivery ${padLeft(n(p.delivery), 8)} rd   ${p.held} held × ${n(p.hand, 1)} hand / ${p.pool} pool = ${n(p.perRound, 3)}/rd   ${weight(wDel)}`,
   ];
@@ -107,19 +119,30 @@ function cellBlock(cell: RaceValuationCell): string {
   out.push(`  no cost     ${model.unpriceable.length ? model.unpriceable.join(' · ') : '(every pool priced)'}`);
   out.push('');
 
-  out.push('plans — every card the scan ranked, cheapest-per-unit landing and fastest building kept');
+  out.push('plans — every card the scan ranked; every route deliverable at the root is kept, and each leaf');
+  out.push('        takes the soonest of them, so a cheap card the deck cannot deal shadows nothing');
+  if (model.workforce <= 0) {
+    out.push('        root workforce 0, so every root clock below divides by nothing and reads ∞ — a route is');
+    out.push('        kept on its price and its copies, which is why these are kept all the same');
+  }
   model.goals.forEach((g, i) => {
-    out.push(`  goal ${i} ${g.icon}  scanned ${g.scanned} · ${g.inert} moved nothing`);
+    const p = g.plan;
+    out.push(
+      `  goal ${i} ${g.icon}  scanned ${g.scanned} · ${g.inert} moved nothing · kept ${p.landings.length} landing, ${p.buildings.length} building${
+        p.dropped?.length ? ` · dropped for ${p.dropped.join(' + ')}` : ''
+      }`,
+    );
     if (g.candidates.length === 0) {
       out.push('    (no card in the run moves this measure — the model reports no plan)');
       return;
     }
-    out.push(`    ${pad('card', 24)}${padLeft('delta', 8)}${padLeft('tau', 8)}${padLeft('wr', 9)}${padLeft('per unit', 10)}  ${pad('kept', 22)}price`);
+    out.push(
+      `    ${pad('card', 24)}${padLeft('delta', 8)}${padLeft('tau', 8)}${padLeft('wr', 9)}${padLeft('per unit', 10)}${padLeft('land t', 9)}${padLeft('build t', 9)}  ${pad('verdict', 30)}price`,
+    );
     for (const c of g.candidates) {
-      const kept = [c.landing ? 'landing' : '', c.building ? 'building' : ''].filter(Boolean).join('+');
-      const why = c.unpriceable.length ? `skipped: ${c.unpriceable.join('/')}` : kept || '—';
       out.push(
-        `    ${pad(c.cardId, 24)}${padLeft(n(c.delta), 8)}${padLeft(n(c.tau), 8)}${padLeft(n(c.workerRounds), 9)}${padLeft(n(c.perUnit, 3), 10)}  ${pad(why, 22)}${bag(c.price)}`,
+        `    ${pad(c.cardId, 24)}${padLeft(n(c.delta), 8)}${padLeft(n(c.tau), 8)}${padLeft(n(c.workerRounds), 9)}${padLeft(n(c.perUnit, 3), 10)}${
+          padLeft(c.landing ? n(c.landing.t) : '—', 9)}${padLeft(c.building ? n(c.building.t) : '—', 9)}  ${pad(verdict(c), 30)}${bag(c.price)}`,
       );
     }
   });
@@ -140,8 +163,8 @@ function cellBlock(cell: RaceValuationCell): string {
         g.workforce > 0 ? '' : '   — workforce 0, so both plan routes are gated off'
       }`,
     );
-    if (g.landing) out.push(...planLines('landing', g.landing));
-    if (g.building) out.push(...planLines('building', g.building));
+    for (const p of g.landings) out.push(...planLines('landing', p, c.route === 'landing' && c.cardId === p.cardId));
+    for (const p of g.buildings) out.push(...planLines('building', p, c.route === 'building' && c.cardId === p.cardId));
   });
   out.push('');
 
@@ -210,6 +233,7 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
   for (const [k, v] of Object.entries(cell.resources) as [keyof Resources, number][]) {
     rows.push({ goal: NO_GOAL, section: 'resource', key: k, value: v });
   }
+  rows.push({ goal: NO_GOAL, section: 'meta', key: 'rootWorkforce', value: model.workforce });
   for (const [k, v] of Object.entries(model.model.unitCost) as [keyof Resources, number][]) {
     rows.push({ goal: NO_GOAL, section: 'unitCost', key: k, value: v, unit: 'wr/unit' });
   }
@@ -226,10 +250,30 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
       rows.push({ goal, section: 'candidate', key: 'tau', cardId: c.cardId, value: c.tau, unit: 'units/rd' });
       rows.push({ goal, section: 'candidate', key: 'workerRounds', cardId: c.cardId, value: c.workerRounds, unit: 'wr' });
       rows.push({ goal, section: 'candidate', key: 'perUnit', cardId: c.cardId, value: c.perUnit, unit: 'wr/unit' });
-      rows.push({ goal, section: 'candidate', key: 'kept', cardId: c.cardId, value: (c.landing ? 1 : 0) + (c.building ? 2 : 0) });
+      rows.push({
+        goal, section: 'candidate', key: 'kept', cardId: c.cardId,
+        value: (c.landing?.kept ? 1 : 0) + (c.building?.kept ? 2 : 0),
+      });
+      for (const [tag, r] of [['landing', c.landing], ['building', c.building]] as const) {
+        if (!r) continue;
+        rows.push({ goal, section: 'candidateRoute', key: `${tag}.t`, cardId: c.cardId, value: r.t, unit: 'rounds' });
+        rows.push({ goal, section: 'candidateRoute', key: `${tag}.kept`, cardId: c.cardId, value: r.kept ? 1 : 0 });
+        // The two halves are absent where the route was refused before costing, and a row saying so would be
+        // a measurement of a probe that never ran.
+        if (r.payment !== undefined) {
+          rows.push({ goal, section: 'candidateRoute', key: `${tag}.payment`, cardId: c.cardId, value: r.payment, unit: 'rounds' });
+        }
+        if (r.delivery !== undefined) {
+          rows.push({ goal, section: 'candidateRoute', key: `${tag}.delivery`, cardId: c.cardId, value: r.delivery, unit: 'rounds' });
+        }
+        if (r.reject) rows.push({ goal, section: 'candidateReject', key: `${tag}: ${r.reject}`, cardId: c.cardId, value: 1 });
+      }
       for (const k of c.unpriceable) {
         rows.push({ goal, section: 'candidateUnpriceable', key: k, cardId: c.cardId, value: 1 });
       }
+    }
+    for (const cause of g.plan.dropped ?? []) {
+      rows.push({ goal, section: 'dropped', key: cause, value: 1 });
     }
   });
 
@@ -248,8 +292,10 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
     rows.push({ goal, section: 'foldWeight', key: 'weight', value: fold });
     // The predicate as a column of its own: `1 + w = 1` is not a comparison a SQL reader can spell.
     rows.push({ goal, section: 'foldWeight', key: 'absorbed', value: absorbed(fold) ? 1 : 0 });
-    for (const [tag, p] of [['landing', g.landing], ['building', g.building]] as const) {
-      if (!p) continue;
+    for (const [tag, p] of [
+      ...g.landings.map((p) => ['landing', p] as const),
+      ...g.buildings.map((p) => ['building', p] as const),
+    ]) {
       for (const [key, v, unit] of [
         ['copies', p.copies, 'copies'],
         ['recycles', p.recycles ? 1 : 0, ''],
