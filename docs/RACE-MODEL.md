@@ -834,6 +834,24 @@ mistake a slower `setting_sail` sweep in step 4 for model noise.
   default one — provenance is the filename until a knob rides the header — and if a depth tier is ever
   wanted it is a *diagnostic* for the wheel-family cells, not a default.
 
+- **The deep tier's recovery is a three-way interaction — attributed; no defaults change ships.** The
+  0/20 → 9/20 reproduces exactly and its scorer is **race** (classic 5/20; step 4's "0% under both
+  scorers" is exact for classic, race's stock being 1/20). No depth-1 configuration carries any of it:
+  `det 8` / `tcl 16` / both give `accounting_chiefdom` 1 / 0 / 2 of 30 under race (classic 2 / 0 / 4),
+  every one inside stock's noise — the recovery needs all three knobs at once, which is structurally where
+  the beam goes live (at depth 1 the extra worlds and lines have no second ply to rank; depth 2 opens
+  `beamWidth: 4` and the tree goes 8×4×8 → 16×4×16 — inference, not measured). So the accounting cells
+  need the **deep tier**: `deepPlanner` runs ~500× a stock re-plan, a per-seed diagnostic and never a
+  sweep default (`det 8 + tcl 16` alone costs 18.7–23.2× stock, 3–4× the price depth 2 was already
+  reverted at). The `accounting`-worsens signature now carries a **paired negative control**: every config
+  that moves that cell moves it down under race (5 → 3 and 5 → **1** of 30, defeats trading toward ruin
+  10 → 18) and up-or-flat under classic (13 → 13 / 15 / 15) on identical seeds — a third instance after
+  the 4× budget and depth 2, and the first where classic *improving* under the same search pins the
+  reading on the shape of race's value rather than on the search. It hardens step 4's disposition:
+  `accounting`'s fix is the leaf (the declined savings gradient), not the shell. One countervailing fact,
+  kept for whoever owns that design: the deep tier is the single place on the branch where more search
+  helps race more than classic (45% against 25% on `accounting_chiefdom`).
+
 Two measured facts to start from: `--search-beam` never reaches the planner (it feeds only the
 oracle/prover), and the planner's own beam is **width-invariant at depth 1** by construction — so
 the live rider is depth/determinizations, not width. First target evidence: `deepPlanner` takes
