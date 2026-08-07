@@ -394,8 +394,8 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   live. On paired 30-seed sweeps a hard fold sent both planner cells to **0%** (`masonry` from 96.7%,
   `writing` from 93.3%) while fixing `masonry · greedy`; softening it against the existing
   `goalSoftening` carries `masonry` at 100% under both policies and lifts `writing · greedy` to the
-  classic scorer's own rate. The soft fold is the shipped form. What remains open is `writing · planner`,
-  still below its classic 84% — a step-4 question, not a new constant.
+  classic scorer's own rate. The soft fold is the shipped form. `writing · planner` — open here for a
+  while at 59 vs classic's 84 — closed when the recurring-drain rate charge landed, and stands at 93.
 
   **Re-tested against a live `T̂loss`, and it still holds.** The obvious next attempt is that the hard
   fold only failed because the death clock was blind — give the margin a real `T̂loss` (the hand-event
@@ -417,8 +417,8 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   100%. Both fingerprints are the hard fold's shape, one step weaker. A 30-seed diagnostic over the two
   shapes plus three controls picked the fraction from 0.15 / 0.25 / 0.4 / 0.6 — the dawdle closes at every
   one of them (`growing_numbers · planner` 62.6 → ~20 turns), while 0.15 is sharp enough to reproduce the
-  hard fold's own failure on `masonry · greedy` (100% → 23%). Whether the disease is *closed* is a
-  **referee** question, not a diagnostic one: the sweep that decides it is step 4's.
+  hard fold's own failure on `masonry · greedy` (100% → 23%). The referee confirmed the closure at
+  100 seeds: the `growing_numbers` dawdle fell 57.7 → 20.9 mean turns at held 100%, controls unmoved.
 - **A payment clock divided by the raw workforce had no derivative at all — measured, and closed pending the
   referee.** Traced over `first_trades · greedy` seed 1, which stalls from turn 38 to the cutoff holding
   Bartering, one coin short, with a Bead Workshop standing unstaffed and a citizen free: forcing
@@ -546,6 +546,14 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   set, every root reading `T̂loss` ≤ 12: the cap bites where the disease is, on a run that has already
   built the economy that puts death past the horizon.
 
+- **A many-goal fold can inflate `T̂win` past a deadline it would actually beat — open.** The
+  relative-temperature fold's value sits above its bottleneck by up to `max·f·ln n`, and a traced
+  `pyramid · planner` root read `T̂win` 43.9 off a 35.7 bottleneck against a 40-round deadline — a
+  winnable race read as lost, the likelier home of that cell's small regression under the fraction
+  change. Related probe quirk, same trace: `threatClock` caps its search at the running bare `T̂loss`,
+  so a deadline sitting past a nearer pool clock returns ∞ at the root and the fold never sees it.
+  Both unowned; `pyramid · planner` is 2pp below classic, so neither is load-bearing today.
+
 ## Decisions already made
 
 - The old model stays the shipping default until the new one **dominates the standing set** in
@@ -628,7 +636,7 @@ What it made visible immediately, at the root:
   cannot exceed the leader at all — so above a softening of ~0.027 nothing is absorbed and `absorbed()`
   reads how much of a gradient the fold carries rather than whether it carries one.
 
-### Step 4 — wiring + the referee ☐
+### Step 4 — wiring + the referee ☑
 
 - **Build**: a `scorer` seam on the five competent policies (`src/sim/greedyPolicy.ts`,
   `greedy2Policy.ts`, `plannerPolicy.ts`, `oracle.ts` — the `Heuristic` type in
@@ -636,10 +644,55 @@ What it made visible immediately, at the root:
   `scripts/sim.ts` → `src/sim/batch.ts` (`POLICY_FACTORIES`), recorded in the `#sweep` header,
   refused by `scripts/record.ts` while non-default.
 - **Measure**: paired-seed sweeps over `scripts/sim/baselines/` under both scorers, read with
-  `npm run --silent sim:report -- --against`. This is the first verdict on the whole bet — expect
-  iteration here, against the watch items above.
-- **Done when**: both scorers sweep cleanly under the same policy names; the comparison is written
-  up (chat/dossier-style, not committed history) and any model fixes it forced are in.
+  `npm run --silent sim:report -- --against` — one full sweep per model commit, the previous race
+  sweep and the committed classic rows both held as references, classic byte-identical through
+  every one.
+
+**The verdict** (HEAD `400585e`, 100 seeds × 30 fixtures × greedy+planner). Race **56.4%** greedy
+against classic's 43.2, **70.8%** planner against 65.6; per cell **39 above / 14 below / 7 equal**,
+the below-deficit at 237pp; mean winning tempo **33.1 turns against classic's 30.1** (44.9 when the
+referee first read a sweep — the slack cap closed ~80% of the gap). **Standing-set dominance is not
+shown**; step 6's gate stays shut. The 14 below-cells are dispositioned, not mysterious:
+
+- `accounting_chiefdom · greedy` 57pp, `accounting · greedy` 20pp — **search-shell, not scorer**:
+  the chiefdom cell is 0% under *both* scorers at the shipped planner and recovers to 9/20 under
+  `deepPlanner`; step 5's column.
+- `accounting · planner` 32pp — **measurement, verdict unspent**: the prover, on identical search
+  machinery and seeds, proves winnable 6/10 under classic's ranking against 0–1/10 under race's,
+  every race failure a `deadEnd`. The savings-gradient design (a bank's progress toward a big-step
+  purchase priced as progress) was declined this pass; the verdict stands for whoever tries next.
+- `wheel · planner` 23pp, `wheel_chiefdom · planner` 29pp, `· greedy` 1pp — the plan-ramp's
+  territory, twice falsified in composition (parked below).
+- `writing_chiefdom · planner` 31pp (famine-shaped), `setting_sail` ×3 19pp (deadline-shaped) —
+  reachable by neither parked design on the evidence; unowned.
+- `first_temple · greedy` 13pp, `horse_taming · greedy` 9pp — trace-proven one-ply valleys (the
+  winning first move is a multi-step sequence greedy structurally declines); their planner
+  counterparts sit **above** classic (99 vs 98, 93 vs 37). A `greedy2` column would say whether
+  depth alone clears them.
+- `first_trades · greedy` 1pp, `pyramid · planner` 2pp — single-seed scale.
+
+The dawdle ledger the cap was cut for is closed except one: `finding_copper_chiefdom · planner`
+(176t vs classic's 87.4 at 99% win) did not move under the cap at all — its slowness is not
+survival-slack-driven, cause unknown.
+
+**Parked, with autopsies** — three falsified value-shape designs, each preserved with its evidence:
+
+- **Survival routes v1** (branch `race-survival-routes`): crediting `T̂loss` for a *credible* rescue
+  is self-undermining — the more believable the rescue, the less reason to perform it (Farm plays
+  78 → 27 while famine 22 → 73; `harsh_winter` 80% → 0%). Constraint learned: **no credit without
+  execution**.
+- **The plan-ramp** (branch `race-plan-ramp`): the toll a plan's own completion creates, probed at
+  the root and charged as `accel` — honest, and transformative on wheel (90/100/30/63 across the
+  family) — but fatal to masonry **twice**: alone, the stall attractor (refusing the mission read
+  +140); on the cap, the knee (the ramped food clock hugs `slackCap`, where runway keeps its whole
+  gradient while `T̂win` reads flat across every action — Foraging ×154, the sixth slot never
+  bought). Constraint learned: **give the win clock a gradient where the ramp bites; don't make
+  runway matter less**.
+- **The relative slack cap** (`slack-saturation-findings.md`, never implemented): the plateau of
+  `min(T̂loss, c·T̂win)` is `(c−1)·T̂win` — it pays the model to lengthen its own win. With it came a
+  small impossibility result: losing-region identity, saturation, no absolute scale, and
+  faster-win-always-better are jointly unsatisfiable; the shipped absolute cap sacrifices the
+  third.
 
 ### Step 5 — search-shell riders, one at a time ☐
 
@@ -650,6 +703,12 @@ Each measured separately (attributable deltas): beam **diversity** in the oracle
 is inert: a threat carrying an `upkeep` (Setting Sail's crews) costs a **second** clone plus its own
 tick per probe round, so read a depth verdict per cell rather than once for the branch, and don't
 mistake a slower `setting_sail` sweep in step 4 for model noise.
+
+Two measured facts to start from: `--search-beam` never reaches the planner (it feeds only the
+oracle/prover), and the planner's own beam is **width-invariant at depth 1** by construction — so
+the live rider is depth/determinizations, not width. First target evidence: `deepPlanner` takes
+`accounting_chiefdom · planner` from 0/20 to 9/20 on identical seeds (a cell that is 0% under
+*both* scorers at the shipped defaults), and was recovering `masonry_chiefdom` when its run was cut.
 
 - **Done when**: each rider's paired sweep is separately recorded in the step-4 style, kept or
   reverted on its own numbers.
