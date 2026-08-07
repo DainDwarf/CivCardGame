@@ -663,8 +663,21 @@ shown**; step 6's gate stays shut. The 14 below-cells are dispositioned, not mys
   purchase priced as progress) was declined this pass; the verdict stands for whoever tries next.
 - `wheel · planner` 23pp, `wheel_chiefdom · planner` 29pp, `· greedy` 1pp — the plan-ramp's
   territory, twice falsified in composition (parked below).
-- `writing_chiefdom · planner` 31pp (famine-shaped), `setting_sail` ×3 19pp (deadline-shaped) —
-  reachable by neither parked design on the evidence; unowned.
+- `writing_chiefdom · planner` 31pp (famine-shaped) — reachable by neither parked design on the
+  evidence; unowned.
+- `setting_sail` ×3 19pp — **diagnosed, and its cheap fix falsified** (the workforce floor, parked
+  below). Three leaf mispricings of the same act — refusing the launch — traced at 100 paired seeds,
+  where the family's fingerprint is the launch histogram, not the win rate (classic fills the
+  2-of-3-launches bucket, race leaves it empty): `T̂loss` counts the bank a plan has earmarked as
+  survival runway (the netting the tie-break already does and the pool clocks don't — the chiefdom
+  cells, a launch pricing up to 28 rounds below a Toolmaking box), `paymentClock` reads a zero
+  workforce as `∞` on a state one Hut and a bank away from a citizen (the city cells, the launch at
+  −280), and a non-recycling plan holding exactly the copies it needs has a delivery clock invariant
+  to its own progress (`copies == held` reduces it to `pool / hand`), so landing moves `T̂win` by
+  ~0.25 rounds against punishments two orders larger. The prover proves 8–9/10 winnable under race's
+  own ranking against classic's 7–9 — the leaf, not the search. One positive finding rode along: the
+  step-3 deadline probe binds `T̂loss` on 69% of scored states on the city cell, emphatically
+  reaching the mission it was cut for.
 - `first_temple · greedy` 13pp, `horse_taming · greedy` 9pp — trace-proven one-ply valleys (the
   winning first move is a multi-step sequence greedy structurally declines); their planner
   counterparts sit **above** classic (99 vs 98, 93 vs 37). A `greedy2` column would say whether
@@ -675,7 +688,7 @@ The dawdle ledger the cap was cut for is closed except one: `finding_copper_chie
 (176t vs classic's 87.4 at 99% win) did not move under the cap at all — its slowness is not
 survival-slack-driven, cause unknown.
 
-**Parked, with autopsies** — three falsified value-shape designs, each preserved with its evidence:
+**Parked, with autopsies** — four falsified value-shape designs, each preserved with its evidence:
 
 - **Survival routes v1** (branch `race-survival-routes`): crediting `T̂loss` for a *credible* rescue
   is self-undermining — the more believable the rescue, the less reason to perform it (Farm plays
@@ -693,6 +706,21 @@ survival-slack-driven, cause unknown.
   small impossibility result: losing-region identity, saturation, no absolute scale, and
   faster-win-always-better are jointly unsatisfiable; the shipped absolute cap sacrifices the
   third.
+- **The workforce floor** (branch `race-workforce-floor`): zero population priced as hire-then-pay —
+  one boundary plus the citizen's own `replacementCost` joined to the debt, the staffing-wait
+  reading extended to the workforce itself, `∞` only where nothing mints population. Surgical (the
+  standing set's root dump, `harsh_winter` and `wheel` all byte-identical) and still wrong: the
+  2-launch bucket fills 5 → 71 exactly as designed and `setting_sail_city · planner` falls
+  25% → **6%**, the runs launching their last citizen and stalling to the pace clock (crew defeats
+  69 → 86). The false wall was doing protective work over two terms the trace then named:
+  population *is* the food drain, so emptying the workforce is paid on both halves of the margin at
+  once — the food clock reads `∞` while the launch resets the pace clock, a `T̂loss` swing of up to
+  +12 against an honest win-clock charge of ~3 — and rebuilding re-creates the drain, so stagnating
+  outscores the House in hand (plays 0.66 → 0.25 per run at *longer* mean turns). Survival-routes
+  v1's lineage: the model paid for a state it enters rather than the play that redeems it.
+  Constraint learned: **the wall is load-bearing until `T̂loss` stops paying for emptiness — fix
+  both halves in one pass or neither**. The branch's four synthetic invariants pin the intended
+  hire-then-pay rule correctly and are reusable as-is by that pass.
 
 ### Step 5 — search-shell riders, one at a time ☐
 
