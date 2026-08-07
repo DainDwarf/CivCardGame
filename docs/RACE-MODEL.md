@@ -299,9 +299,9 @@ no rate, no clock — and the quadratic still has a root.
   shrunken window. The null-play assumption is the correct pessimism: acting on a clock is the
   search's job; seeing it is the value's.
 
-Near-death softening (constant 2): when `T̂loss` is small and `T̂win > T̂loss`, steepen the cliff —
-the estimates are noisy, and the beam must not surf one round from famine on the strength of a
-projection.
+Near-death softening (constant 2): where `T̂win > T̂loss`, steepen the cliff — decaying with `T̂loss`
+rather than gated on its smallness — since the estimates are noisy and the beam must not surf one
+round from famine on the strength of a projection.
 
 ### The complete constant inventory
 
@@ -311,7 +311,10 @@ five, down from ~15:
 1. **Bottleneck softening** — how much non-bottleneck goals still pull (pure `max` has zero
    gradient on them and would let the beam abandon side goals). Dimensionless: a fraction of the
    leading clock, not a number of rounds, so the gap it tolerates scales with the race it folds.
-2. **Near-death penalty steepness.**
+2. **Near-death penalty steepness** — dimensionless, a multiplier on a losing margin decaying with
+   `T̂loss`. Tuned because it prices the *noise* in two projections rather than anything the state
+   holds: a beam must not surf one round from famine on the strength of one. Held at 4 against a
+   five-way sweep (below).
 3. **Tie-break weight** — banked worker-round wealth among equal-margin states (band 5's heir,
    in-currency); sized so its maximum stays below the smallest meaningful margin step. Counted only
    over the bank *past* what a goal's plan already spent: what a plan has earmarked is already priced
@@ -545,6 +548,31 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   untouched because its whole race is fought inside the cap. So is the **root** valuation of the standing
   set, every root reading `T̂loss` ≤ 12: the cap bites where the disease is, on a run that has already
   built the economy that puts death past the horizon.
+- **The near-death steepness held against a five-way sweep — measured, and 4 stood.**
+  `nearDeathSteepness` ∈ {0, 2, 4, 8, 16} over twelve fixtures × both policies × 30 paired seeds: the
+  survival-pressured cells the term exists for (`harsh_winter`, both `raiding_*`, `raiders_at_border`,
+  `masonry`, `writing`) against the tempo-sensitive ones it could dawdle (`growing_numbers`,
+  `finding_copper`, `first_trades`, `wheel`). The control is the constant at **0** — the term ablated —
+  so what the penalty buys at all is one of the five readings rather than an argument. It buys about two
+  runs: set-wide wins go **608 / 610 / 611 / 610 / 612** of 720 across the ladder, and the ablation's
+  only loss past a single seed is `raiding_city · greedy` 73.3% → **66.7%** (bankruptcy 7 → 9), with
+  `writing · greedy` 76.7 → 73.3 (famine 7 → 8) beside it against one seed handed back on
+  `writing_chiefdom · planner`. Below 4 the sign is coherent and the trade is the term's own — a beam
+  surfing nearer famine and bankruptcy than a projection can carry it.
+  **Above 4 there is no slope left to follow.** Five cells move a win rate anywhere on the ladder and the
+  other nineteen hold at every value; 8 costs `raiding_city · planner` a seed and 16 gives it back, its
+  own only gain a seed on `wheel · planner` — oscillation where the slack cap's turns fell monotonically,
+  which is the difference between a constant sitting on a gradient and one sitting in a flat region past
+  its knee. The 100-seed confirmation of the one non-negative candidate reads the same: 16 against 4 over
+  the five moving fixtures is **661 wins against 659** of 1000, both gained seeds on `wheel · planner`
+  (stalls 43 → 41), which is mechanism 1's territory and not this constant's.
+  **Fourteen of the twenty-four cells are byte-identical at every steepness**, the ablation included, and
+  that is the term's shape rather than a thin sweep: `max(0, T̂win − T̂loss)` is identically zero wherever
+  the model projects a win, so a cell moves only where the penalty changes which action ranks first.
+  `harsh_winter` is among the fourteen under both policies — the survival cell whose 89% the loss half
+  bought decides nothing on the steepness at any value, the ablation included; what the loss half buys it,
+  it buys through the margin proper. So are `masonry`, `masonry_chiefdom`, `finding_copper`,
+  `first_trades`, `raiders_at_border` and `wheel · greedy`.
 
 - **A many-goal fold can inflate `T̂win` past a deadline it would actually beat — open.** The
   relative-temperature fold's value sits above its bottleneck by up to `max·f·ln n`, and a traced
