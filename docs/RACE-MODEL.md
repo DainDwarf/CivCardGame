@@ -811,6 +811,29 @@ mistake a slower `setting_sail` sweep in step 4 for model noise.
   result on step 4's below-cells (`accounting_chiefdom` is among the unmoved): it closes a class of
   staleness, and the win-rate hunt stays with the depth bet below.
 
+- **Depth 2 — measured, and reverted on its own numbers; the motivating evidence was mis-attributed.**
+  `DEFAULTS.depth` 1 → 2 alone (the oracle fallback and `deepPlanner` pin their own depth and are
+  byte-unchanged), 30 fixtures × 30 paired seeds × both scorers against the rider-1 reference. Race buys
+  **+12 of 900** set-wide and the gate metric moves the wrong way: the planner-@30 head-to-head goes
+  14 above / 6 below to 15 / **9**, deficit 36 → 39 seeds. The rider's own target does not recover —
+  `accounting_chiefdom` 1 → 2 of 30 under race, 0 → 0 under classic — so `deepPlanner`'s 0/20 → 9/20 is
+  carried by its *other* two knobs (`determinizations: 8`, `turnConfigLimit: 16`), not by depth; and
+  `accounting` collapses 16.7% → 3.3% in the same direction the slack-cap section's 4× budget experiment
+  already recorded, a second search-shell knob optimizing the proxy harder. What depth 2 *does* buy race is
+  precisely the cells step 4 dispositioned as search-shaped: the wheel family +9 seeds (`wheel` 53.3 →
+  66.7%, `wheel_chiefdom` 46.7 → 63.3%, ruin 10 → 3), `horse_taming` 90 → 100%, `raiding_city` 93.3 → 100%,
+  `writing_chiefdom` 30 → 36.7% — evidence those below-cells are reachable by search, kept for whatever
+  shape ships it. The budget warning above is **settled negatively**: a 400k `nodeBudget` diagnostic over
+  the many-goal + probe+settle fixtures is byte-identical at depth 2, so the budget never binds there — the
+  failure is value-and-beam (`beamWidth: 4` goes live at depth 2 and prunes by the scorer's own
+  mis-ranking, amplifying exactly the leaf faults step 4 traced). Classic gains +30 of 900, 20 of them on
+  the many-goal and probe+settle families where race's leaf costs 1.8–2.9× — depth pays the model step 6
+  deletes, where race cannot collect — and a keep would owe a full 30-fixture planner @100 re-record plus
+  **5.7–6.6× on every future sweep** (45 min a race sweep on the reference box). Two riders on the sweep
+  record: the `#sweep` header names no planner knobs, so a depth-edited sweep is indistinguishable from a
+  default one — provenance is the filename until a knob rides the header — and if a depth tier is ever
+  wanted it is a *diagnostic* for the wheel-family cells, not a default.
+
 Two measured facts to start from: `--search-beam` never reaches the planner (it feeds only the
 oracle/prover), and the planner's own beam is **width-invariant at depth 1** by construction — so
 the live rider is depth/determinizations, not width. First target evidence: `deepPlanner` takes
