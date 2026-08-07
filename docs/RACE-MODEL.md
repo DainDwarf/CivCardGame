@@ -783,7 +783,7 @@ survival-slack-driven, cause unknown.
   both halves in one pass or neither**. The branch's four synthetic invariants pin the intended
   hire-then-pay rule correctly and are reusable as-is by that pass.
 
-### Step 5 — search-shell riders, one at a time ☐
+### Step 5 — search-shell riders, one at a time ✅
 
 Each measured separately (attributable deltas): beam **diversity** in the oracle's level beam
 (`src/sim/oracle.ts` — stratify the kept set by a coarse signature, or k-per-parent);
@@ -851,6 +851,24 @@ mistake a slower `setting_sail` sweep in step 4 for model noise.
   `accounting`'s fix is the leaf (the declined savings gradient), not the shell. One countervailing fact,
   kept for whoever owns that design: the deep tier is the single place on the branch where more search
   helps race more than classic (45% against 25% on `accounting_chiefdom`).
+
+- **Beam diversity — measured, and reverted; the premise is false at the parent granularity.**
+  k-per-parent (k = 4) over the level cut in `searchWinningLine`, rank-preserving with backfill so the
+  kept set never shrinks, and membership-only — the kept level re-sorted by rank so `budget`/`seen`
+  mutation order can't ride along with the selection change. A trace over the levels that exceed the
+  width says why it couldn't work: the pure-rank top-64 already spans **16–59 distinct parents**
+  (per-parent max 2–9), so the cap bound on 2 of 58 traced levels — the near-duplicates width buys come
+  from *different* parents, siblings that diverged a round earlier and reconverged in strategy but not
+  in state hash, which is exactly what a parent cap cannot see. A signature variant would have to
+  collide states across parents to beat that reading; not attempted, being its own design. Prover @10
+  over the eight open-winnability cells: race 57 → 58 of 80, classic 61 → 63, every moved cell churning
+  seeds both ways, and the k-ladder non-monotone (53 / 58 / 57 of 80 at k = 2/4/8, k = 2 actively
+  harmful) — noise, not a lever. The motivating symptom is also **stale**: the width curve on the
+  accounting cells is already monotone at HEAD under race (0/1/2 and 2/3/4 of 10 at beam 64/128/256) —
+  step 4's "flat and non-monotone" reading predates the leaf-read prices, the staffing wait and the
+  slack cap. And the bill for any beam-membership change is now priced: **28 of 30 fixtures** move at
+  the recorded protocol (three win rates, all upward; the rest tempo and seed churn), so a future beam
+  rider pays a near-full re-record even when it wins.
 
 Two measured facts to start from: `--search-beam` never reaches the planner (it feeds only the
 oracle/prover), and the planner's own beam is **width-invariant at depth 1** by construction — so
