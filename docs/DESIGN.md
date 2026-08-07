@@ -501,13 +501,17 @@ searches directly for a *winning line of play* rather than rolling out. Four str
 tractable: it collapses each turn into one search edge, a transposition table keys an ordered `deck` (it
 *is* the future draw sequence) against every other zone as an unordered **multiset** (`sim/oracleKey.ts`,
 resting on the order-independence guarantees above), a deadline + territory cap bounds depth/branching,
-and a `scoreState` beam keeps the top-*W* states per round-depth. Every line it returns is real actions
+and a beam ranked by the shipping value function keeps the top-*W* states per round-depth. Every line it
+returns is real actions
 replayed through the real engine to an observed `victory` — so a found line is a **sound proof** of
 winnability, and a looser multiset key can only ever *miss* wins (incompleteness), never manufacture a
 false one. That headroom is what lets the searches index by a 53-bit **fingerprint** of the key
 (`hashOf`) rather than the key itself: a collision merges two genuinely distinct states, which is one
-more way to miss a line and no way at all to fake one. `searchWinningLine`/`proveWinnable` are the search APIs; `createOraclePolicy` wraps a found
-line as a scripted policy (greedy2 fallback when none is found, so oracle-wins ⊇ greedy2-wins).
+more way to miss a line and no way at all to fake one. `searchWinningLine`/`proveWinnable` are the search
+APIs, wrapped two ways that differ only when no line is found: `createOraclePolicy` falls back to a
+deep-search planner (so its wins are the best-achievable ceiling), while `createProverPolicy` declines the
+seed — a prover win rate is therefore a search-proven **lower bound on winnability**, and it is the
+ceiling column the baseline fixtures record.
 
 **The `planner` is the fair competent policy — the oracle's search made honest and shallow.** The
 one-ply greedies plateau on a mission whose win needs a multi-turn *conversion chain* (bank a resource
@@ -518,12 +522,34 @@ player knows — the current hand, and the deck as an unordered **multiset**, ne
 plays *determinized expectimax* — sample fair worlds (`sim/determinize.ts` reshuffles the hidden deck
 from the policy's own seed stream), search each as the oracle does (reusing the within-turn skeleton
 `sim/turnSearch.ts` and the multiset key), and **average** across worlds (Perfect-Information Monte
-Carlo), re-planning per turn. What keeps the horizon shallow enough to stay cheap is the **enabler
-potential** (`sim/enablers.ts`): a leaf-value term, derived mechanically from card `cost`→`produces`
-data (no per-mission table), that credits a banked consumable for the objective progress it *converts
-into*, a held strategic resource for the production capacity it *unlocks*, and an owned building for the
-rounds of output that fall past the horizon — turning the greedies' flat plateau into a climbable slope. It is tuned for *good*, not perfect,
-play: an occasional winnable seed is lost to sampling optimism, recoverable by raising the world count.
+Carlo), re-planning per turn. What keeps the horizon shallow enough to stay cheap is the strength of the
+leaf value (next paragraph): a leaf that already prices the future is what spares the beam from walking
+it. The policy is tuned for *good*, not perfect, play: an occasional winnable seed is lost to sampling
+optimism, recoverable by raising the world count.
+
+**The value every competent policy ranks by is a race, denominated in rounds.** A state is worth its
+margin `min(T̂loss, slackCap) − T̂win` (`sim/race.ts`): rounds-to-win against rounds-to-death, both read
+off one stripped projection of the standing economy plus per-goal completion clocks — a resource goal is
+`need / throughput`; a card-count goal is a **landing plan**, the copies' worker-round price run down at
+the run's real income, folded softly against the rounds the deck needs to deal them. The currency is the
+design decision: a score-point value needs every mission-directed term normalized by the goal's target
+size, so its steering signal shrinks as missions grow and each retune fixes one mission while silently
+moving the rest — with both sides of every clock in raw units and rounds, that normalization has nowhere
+to appear. Rounds also make engine value fall out instead of being shaped in (a producer is worth the
+rounds it shaves off `T̂win`, zero once it cannot repay before `T̂loss`) and let the model trade survival
+for tempo continuously (collapsing in six rounds while winning in four is a good state). The discipline
+that survives from the tuning eras: the model carries exactly **five tuned constants**, each stating its
+units and why it is tuned rather than derived, on the constant itself; everything else derives from card
+`cost`→`produces`/`effect` data through shared probes (`sim/probes.ts`), never from a per-mission table.
+
+**The band scorer stays on as a frozen second opinion.** The pre-race value function — `scoreState`'s
+survival-first score bands plus the **enabler potential** (`sim/enablers.ts`), the leaf term that credits
+a banked consumable for the objective progress it converts into, a held strategic resource for the
+capacity it unlocks, and a standing producer for the output rounds past the horizon — remains selectable
+as `--scorer band`. It shares no arithmetic with the race margin, so a cell the two disagree on is a
+reading about the value function rather than the search under it. Frozen means never re-tuned: its
+constants were cut against today's content, and the day one would need adjusting to stay useful is the
+day the scorer is deleted instead.
 
 ## Build roadmap 🔧
 

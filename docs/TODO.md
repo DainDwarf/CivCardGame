@@ -136,66 +136,46 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ### Fidelity — where a policy mis-measures
 
-- **The simulator can't steer a survival objective** `[size: M]` — a mission that wins on *rounds
-  survived* names no resource in its goals, so `sim/objective.ts`'s `objectiveProgress` is a flat
-  function of `G.round`: it rises by ending the turn and is identical across every within-turn action
-  sequence. `sim/enablers.ts` then builds an **empty** model, since it derives everything by probing that
-  same function — no goal-valued resource, no producer credit, no capacity credit. The competent
-  policies are given no reason to bank the resource the drain is eating or to build the producer that
-  makes it. **Measured on `harsh_winter`** (the first such mission): temporarily blending a synthetic
-  "stockpile 20🌾" term into the gradient moved greedy **3 → 37%** and planner **25 → 73%** on one cell
-  with no content change, redirecting labour off Toolmaking and onto Foraging. So those cells' numbers
-  are a floor, not a difficulty reading, and only the oracle (which searches the real shuffle rather than
-  steering) reads true.
-  The fix must be **general and mechanical**, never a per-mission steering term (see CLAUDE.md →
-  *sim/-is-a-consumer*): a survival goal's real currency is the **runway** against the drain that bounds
-  it, so the gradient likely wants a term derived from the seeded threats' projected upkeep — how many
-  more rounds the current stores survive — the same way `enablers.ts` derives its slope from
-  `cost`→`produces` rather than from authored hints. Blocks trusting greedy/planner on any
-  rounds-survived mission; `ice_age` and `sandbox` dodge it only because the sim doesn't drive them.
-- **A card-count goal derives no strategic *capacity* credit** `[size: M]` — `goalValuedResources` probes
-  the 8 *resource pools* against `objectiveProgress`, so on a goal that counts cards in a zone (Writing,
-  Roads, Copper, Setting Sail) every delta is zero and `goalValued` comes back empty. The capacity pass
-  reads only that map, so `bestGoalThroughput` returns 0 for territory, population **and** culture; with
-  `floor: false` in the shipped `DEFAULT_ENABLER_TERMS` their capacity weight is then 0 outright.
-  `goalValuedCardCosts` is deliberately kept out of `goalValued` (crediting engine at a card-count marginal
-  would price it above the goal itself), so it can't restore the capacity half.
-  - **What's left is the capacity role specifically** — a worker is a *slot that staffs a goal-producer*,
-    which is a different quantity from the citizen a Voyage spends, and the price reading below reaches
-    only the second. Territory and culture have no price reading at all on these missions, so they carry
-    nothing but the ablated-off floor.
-  - The fix must stay mechanical: probe what a *worker/slot/level* unlocks toward the **counted card**
-    rather than toward a goal-valued pool. Never a per-mission steering term.
-  - Where the credit lands then needs a rule: population would hold both a price weight (cap: the copies
-    the goal still charges) and a capacity weight (cap: `CAPACITY_CAP`), which `capacityOf` currently
-    resolves by keeping the larger *saturated* credit.
-- **The enabler model is derived once, from the root state** `[size: S]` — the planner memoizes it on
-  first `replan` and never invalidates, so it reads the board as it stood at turn 1. Harmless for
-  everything shipped (a deck and its stickers are fixed at launch, and the one `modifyGain` card is
-  pre-built, so it is standing when the model is cut) — but a modifier card the player could *play*
-  would be priced as absent for the whole run, silently. Either re-derive when the standing modifier
-  set changes, or keep `modifyGain` to pre-built cards deliberately rather than by accident.
-- **`scoreState` credits a goal resource whose own accumulation is the threat** — the objective gradient
-  reads `pool / target` while bands 2/3/5 see one turn, so when *holding* the goal resource is the danger
-  the upside is scored and the liability is not. Accounting is the live case (`envious_population` mints a
-  Thief per 10🪙 on `on.reshuffle`, an event no band models): beam width alone moves proven winnability
-  46 → 70%. Generic to any goal whose pool feeds a threat's `on.*`. Fix stays sim-local. `[size: M]`
-- **Population's food net counts only worker-sourced food** `[size: S]` — `bestFoodPerWorker` requires
-  `workers >= 1`, so a trade route's flat yield (Bartering's 2🌾/round) contributes nothing to the
-  denominator and a route-fed deck is charged as if every mouth had to be foraged for. Defensible under the
-  worker-rounds framing — a route costs no worker, so it offsets no worker — but it *does* offset the food,
-  which is what the charge is actually about.
-- **The two sides of population's net are derived by different methods** `[size: S]` — `bestFoodPerWorker`
-  reads the run's *instances* through `effectiveGain` while `bestGoalThroughput` stays a static scan over
-  `CARDS`, so a stickered **food** producer is priced at what it really yields and a stickered **goal**
-  producer at its printed base. The asymmetry was deliberate — widening the goal side moves the credit on
-  every mission at once, which would have made the population-net sweep unattributable — but it leaves an
-  Elegant Sun Stone under-crediting the worker that staffs it. Wants its own measured pass.
-- **`PRODUCER_CREDIT_CAP` is whole-tableau, so a structure's marginal credit is zero once reached** — on
-  Pyramid five structures sum ~41 against a cap of 15, leaving a wonder worth ~27 adding nothing at the
-  leaf. Raising it 0.05 → 0.25 was tried and **reverted**: it cost `accounting` 18 points by making the
-  second Bead Workshop attractive over City Walls and Farms, and enabling `conversions` supersedes the
-  whole gain. Wants the shaping-config knob first. `[size: M]`
+> The race scorer's known weak cells, each with the constraint a fix must respect. The prover column in
+> the fixtures says which of these hide winnable seeds.
+
+- **`accounting` — the race value has no savings gradient** `[size: L] [?]` — a bank's progress toward a
+  big-step purchase prices as nothing until the purchase is affordable, and every search-shell experiment
+  (wider beam, deeper planner, 4× budget) made the cell strictly *worse* under race while the same search
+  improved the band scorer on identical seeds — the value's optimum is not the win there. The prover
+  proves ~6/10 winnable under band's ranking, so the seeds exist. The fix is the leaf, not the search;
+  `accounting_chiefdom` recovers only under the deep planner tier (a three-way knob interaction), so read
+  its near-zero columns as "needs the diagnostic tier", not "unwinnable".
+- **`wheel` family — a plan does not price the drain its own completion creates** `[size: M] [?]` —
+  Conquest/Road race a territory goal whose expansion raises upkeep, so the margin sees the win clock move
+  but not the death the landing brings, and the planner hoards or stalls. A completion-ramp charged at the
+  root was tried and reverted twice: a candidate must keep a win-clock gradient where the ramp bites and
+  must not make runway matter less.
+- **`setting_sail` — refusing the launch is priced three ways** `[size: M] [?]` — `T̂loss` counts the bank
+  a plan has earmarked as survival runway; a zero-workforce state reads payment `∞` one Hut away from a
+  citizen; and a non-recycling plan holding exactly its copies has a delivery clock invariant to its own
+  progress (landing a copy is worth a constant `1/handSize`, however much of the win it completes). The
+  one-sided fix was measured and reverted: `T̂loss` paying for emptiness and the payment `∞` must be fixed
+  in one pass or neither.
+- **`finding_copper_chiefdom` — the slack cap is in rounds, hoarding pays in units** `[size: M] [?]` — at
+  pop 3 the food drain is 2🌾/rd, so the run sits under the cap on ~89% of turns and a food play outbids
+  an affordable goal play ~2:1 (the goal's marginal being the `1/handSize` constant above). Race wins the
+  cell 99% but at ~174 turns against the oracle's 34-turn ceiling, seeds landing at rounds 181–190 of a
+  200-round cutoff — don't cut a chiefdom-board balance verdict from race turn counts here until closed.
+  A fix may not assume the goal's marginal reward exceeds `1/handSize`, and must leave the sub-cap margin
+  bit-identical (`harsh_winter` pays for a violation).
+- **`pyramid` — the many-goal fold inflates `T̂win` past a beatable deadline** `[size: M] [?]` — the
+  softened bottleneck sits above its max by up to `max·f·ln n`; a traced root read 43.9 rounds against a
+  40-round deadline off a 35.7 bottleneck. Shrinking the temperature un-inflates it and makes the cell
+  *worse* (the same constant sets how hard side goals pull), so the fix is a term that drops the inflation
+  while keeping the pull — not a retune.
+- **A distinct-count goal is priced as copies of one card** `[size: S]` — the plan scan reads `delta = 1`
+  off the cheapest building and asks for `need` copies of *it*: optimistic where the ids must differ,
+  pessimistic where the deck is short of that one card. Harmless today (`growing_numbers` wins at 100%).
+- **Retire the band scorer** `[size: S] [blocked]` — delete `--scorer band` (the `value.ts` bands and
+  `enablers.ts`'s weighting half; the probes stay) the first time it would need a retune to stay useful,
+  or after the first Bronze-age balance pass if its second opinion never changed a decision. Until then it
+  is frozen — a band tuning item is by definition out of scope, which is why none appear above.
 - **Sim policies answer interactions blindly** `[size: S]` — `greedyPolicy`/`greedy2Policy` pick a
   random `pendingInteraction` option and `heuristicPolicy` always answers `0`, each justified by a comment
   ("options aren't scored — recovering a card to hand rarely moves `scoreState`") that stops being true the
@@ -210,14 +190,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ### Tooling
 
-- **Shaping config settable by option and by baseline file** — `EnablerTerms` is only reachable by editing
-  `DEFAULT_ENABLER_TERMS`, so an A/B costs a source edit per run, and a fixture's recorded rows cannot
-  say which config produced them. Want a `npm run sim` flag *and* the terms
-  declared in the fixture, so a cell carries its shaping config like its mission/deck/board. `[size: M]`
-  - **The read-only half exists**: `npm run sim:valuation -- --terms <spec,…>` derives any term set
-    (`planner`/`full`/`none`/`no-*`/`only-*`) and prints what it produces, side by side across term sets
-    and across the standing set. What is still missing is the half that changes a *measurement* — a
-    `npm run sim` flag and the terms recorded in the fixture beside the rows they produced.
+- **The `#sweep` header names no planner knobs** `[size: S]` — a sweep taken at an edited
+  depth/determinizations/`turnConfigLimit` (or an experimental beam rule) is indistinguishable from a
+  default one by its own record; the filename is the only provenance. Bitten twice during the search-shell
+  riders. Want the effective planner config in the header the way `maxRounds`/`beamWidth` already are,
+  with `sim:record` refusing a non-default one — the same contract the scorer field has.
 - **Simulator: full move-surface fuzz test over synthetic fixtures** — a fuzz pass exercising the
   building/`discardCost` move surface (the paths the current random-policy smoke test doesn't
   hit yet), built on synthetic fixtures. Deferred until real content exists in Step 6, or an explicit
@@ -233,6 +210,19 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The run value function is the race margin** ✅ — every competent policy now ranks by
+  `min(T̂loss, slackCap) − T̂win` in rounds (`sim/race.ts`), replacing the score-band leaf as the default;
+  the band scorer stays selectable as a frozen `--scorer band` second opinion (see DESIGN.md → *Code
+  architecture*). The standing set is re-recorded under the new default at `greedy`/`planner` @100 +
+  `prover` @10 — the oracle column retired, prover's no-fallback rate being the cleaner ceiling. At the
+  cutover verdict: greedy 43.2 → 56.4% set-wide, planner 65.6 → 70.8% (39 cells above / 14 below /
+  7 equal), the survival cells the old model could not steer now reading true (`harsh_winter · greedy`
+  0 → 89%); the cells still below carry Fidelity items above. Resolves three items from this section —
+  the survival-objective steering gap (`T̂loss` is the runway term it asked for), the card-count capacity
+  gap (landing plans price the counted copies), and the stale root-derived model (every scorer now
+  re-derives per re-plan) — and retires the band-tuning items (goal-pool-feeds-threat, route food in the
+  population net, the static goal-side scan, `PRODUCER_CREDIT_CAP`) with the freeze: the model they would
+  tune is no longer the referee.
 - **Price a goal card by what its price costs to obtain** ✅ — three compounding reads, each measured on
   its own. (a) A card's **price** is its `cost.resources` plus every pool its play `effect` takes away, so
   the citizen a Voyage sails with is priced like its 🪙 (`cost.resources` is core-only by construction, so a

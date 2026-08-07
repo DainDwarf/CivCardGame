@@ -91,14 +91,14 @@ surprise, so nothing shows a locked placeholder or a total count.
   board; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
   Influence can be ground before `ice_age` unlocks — a mission needing the shop there would be a
   softlock. A fixture carries its **own** measured rows in a `results` key, one entry per policy
-  (`greedy`/`planner` @100, `oracle` @10 is the standing protocol — a cell whose open question is
-  *winnability* rather than the play ceiling records `prover` @10 in its place), whose commit *is* their content-SHA
+  (`greedy`/`planner` @100 + `prover` @10 is the standing protocol — the prover column is the
+  search-proven winnability lower bound, so a low one flags a hard cell, not a broken one), whose commit *is* their content-SHA
   record — so a policy with no entry is simply unmeasured, not measured-and-absent, and a re-cut fixture
   can no longer strand rows in a file nobody edits. Every row is swept at the **default search beam** and
   the **default scorer**, so a `--search-beam` or `--scorer` sweep is a diagnostic, never a baseline. Both styles take
   `--seeds`/`--policies`; `--scorer <name>` picks the value function every competent policy ranks by
-  (`classic`, today's bands + enabler shaping, or `race`, the rounds-margin challenger) — one setting
-  across all of them, so a paired sweep under the same policy names isolates the brain;
+  (`race`, the shipping rounds-margin model, or `band`, the frozen score-band second opinion) — one
+  setting across all of them, so a paired sweep under the same policy names isolates the brain;
   `--seed <i>` is a **filter** (sweep only that index, on the seed streams the
   full sweep would have given it — so a row that lost replays verbatim) and `--verbose` adds a per-turn
   trace on **stderr**, stdout staying pure CSV. See *Balance tooling*.
@@ -134,27 +134,28 @@ surprise, so nothing shows a locked placeholder or a total count.
 - `npm run sim:valuation` — valuation tool (`scripts/valuation.ts`): prints the **goal valuation** the
   competent policies steer by, which was computed in memory and printed nowhere — so every "is this
   mission hard, or is the policy mis-valuing it?" question was settled by hand-deriving arithmetic out of
-  source. Two halves of one leaf: `value.ts`'s `scoreState` **split into its five bands** (band 3's charge
-  against band 4's pull is the whole "is growth worth it" question, and the summed scalar hides it) and
-  `enablers.ts`'s model with **every intermediate that doesn't survive into it** — the two probes, the
-  capacity pass per strategic pool, the conversions, and the **card that won each credit**. Most of an
-  `EnablerModel`'s meaning is absence (a goal-valued pool deliberately gets no `weight`; a pass that
-  derived nothing and one that was ablated off look identical), which is exactly what a report has to
-  distinguish. Every figure carries its scale as **goal steps** (pts ÷ `OBJECTIVE_WEIGHT`), since a raw
-  score point is a fifth of the win or a twelfth of it depending on a constant in another file.
-  `--terms <spec,…>` compares term sets side by side — `planner` (the shipped `DEFAULT_ENABLER_TERMS`),
-  `full` (what the oracle/prover use), `none`, `no-<term>…`, `only-<term>…`, defaulting to `planner,full`.
-  `--scorer classic|race` picks *which* value function is rendered, naming the same two as `npm run sim`'s
-  flag and defaulting the same way. Under **`race`** the report is `race.ts`'s instead: each pool's
-  `unitCost` (and the pools that have none, which is what makes a plan impossible), every card the plan
-  scan weighed with the root clock of each route it offered and the cause the dropped ones were dropped
-  for, then per goal its clock — need, τ, route, the raw `t` beside the horizon-clamped one — over **every
-  route it kept**, with the **payment vs delivery** split inside each `landingClock`, the circulation
-  census behind the delivery half, and the one route the leaf took marked. Both folds print the softMax
-  **weight** each clock folded at — a reading no `RaceBreakdown` carries, and the one that says how much of
-  a gradient a term is really carrying (its temperature being a fraction of the leading clock, the weight
-  has a floor and the `ABSORBED` annotation is out of reach). `--terms` is a classic-model ablation and is refused under
-  `race`. Either scorer runs over `--baseline <paths|dir>` (default: the whole standing set, also accepted
+  source. `--scorer race|band` picks *which* value function is rendered, naming the same two as `npm run
+  sim`'s flag and defaulting the same way. Under the default **`race`** the report is `race.ts`'s
+  derivation: each pool's `unitCost` (and the pools that have none, which is what makes a plan
+  impossible), every card the plan scan weighed with the root clock of each route it offered and the
+  cause the dropped ones were dropped for, then per goal its clock — need, τ, route, the raw `t` beside
+  the horizon-clamped one — over **every route it kept**, with the **payment vs delivery** split inside
+  each `landingClock`, the circulation census behind the delivery half, and the one route the leaf took
+  marked. Both of its folds print the softMax **weight** each clock folded at — a reading no
+  `RaceBreakdown` carries, and the one that says how much of a gradient a term is really carrying (its
+  temperature being a fraction of the leading clock, the weight has a floor and the `ABSORBED` annotation
+  is out of reach). Under **`band`** the report is that leaf's two halves instead: `value.ts`'s
+  `scoreState` **split into its five bands** (band 3's charge against band 4's pull is the whole "is
+  growth worth it" question, and the summed scalar hides it) and `enablers.ts`'s model with **every
+  intermediate that doesn't survive into it** — the two probes, the capacity pass per strategic pool, the
+  conversions, and the **card that won each credit**. Most of an `EnablerModel`'s meaning is absence (a
+  goal-valued pool deliberately gets no `weight`; a pass that derived nothing and one that was ablated
+  off look identical), which is exactly what a report has to distinguish, and every band figure carries
+  its scale as **goal steps** (pts ÷ `OBJECTIVE_WEIGHT`), since a raw score point is a fifth of the win
+  or a twelfth of it depending on a constant in another file. `--terms <spec,…>` compares band term sets
+  side by side — `planner` (the shipped `DEFAULT_ENABLER_TERMS`), `full`, `none`, `no-<term>…`,
+  `only-<term>…`, defaulting to `planner,full` — a band-model ablation, refused under `race`. Either
+  scorer runs over `--baseline <paths|dir>` (default: the whole standing set, also accepted
   as bare positionals) or the ad-hoc `--scenario`/`--deck`/`--board` trio. `--format text|json|csv`, the CSV **long/tidy** (one
   row per fact, since `producerCredit` and the race scan's candidate list are both variable-width per deck
   and most facts carry an argmax card) so it
@@ -557,10 +558,24 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   throwing with both seeds as the repro key.
 - **`scorer.ts`** — the **scorer seam**: which value function the five competent policies rank by, selected
   once for all of them (`--scorer`, `BatchOptions.scorer`). A `Scorer` is a **factory**, not a
-  `(G) => number`, because each candidate derives something no leaf can afford to redo — `classic` its
+  `(G) => number`, because each candidate derives something no leaf can afford to redo — `band` its
   enabler model, `race` its goal plans; the refresh cadence is the policy's call (the greedies and the
-  oracle derive once from the run root, the planner re-derives at each re-plan). `classic` (`value.ts` + `enablers.ts`) is the shipping
-  default; `race` (`race.ts`) is the rounds-margin challenger under measurement (`docs/RACE-MODEL.md`).
+  oracle derive once from the run root, the planner re-derives at each re-plan). `race` (`race.ts`), the
+  rounds-margin model, is the shipping default; `band` (`value.ts` + `enablers.ts`) is the **frozen
+  second opinion** — kept because it shares no arithmetic with the default, so a cell the two disagree on
+  is a reading about the value function rather than the search. Frozen means never re-tuned: the day a
+  band constant would need adjusting to stay useful is the day the scorer is deleted instead.
+- **`race.ts`** — the shipping value function: a run is a race between the win and death, and a state is
+  worth its margin, `min(T̂loss, slackCap) − T̂win`, both estimates in **rounds** — targets enter only as
+  `need / throughput`, so no term needs normalizing by how big a mission's goal happens to be. `T̂win`
+  folds per-goal completion clocks as a softened bottleneck (temperature a fraction of the leading clock,
+  so the fold is scale-free): a resource goal reads `need / τ` off one stripped projection; a card-count
+  goal runs a **landing plan** — payment in worker-rounds against the run's real income, delivery off the
+  deck's circulation, softened together — with every deliverable route kept and each leaf taking the
+  soonest, prices read at the leaf through `currentCost` off the cheapest circulating copy. `T̂loss` is
+  the shortest pool runway (a deepening drain enters as a quadratic root; a recurring `event` charges at
+  its circulation share), each threat's frozen-world deadline probe, and the drive cutoff. Five tuned
+  constants, each stating its units and why it is tuned rather than derived, on the constant itself.
 - **Policies** — `randomPolicy` (random legal move), `greedyPolicy` (a two-phase one-ply optimizer over
   the `Scorer`'s value, splitting off the `endTurn` decision), `heuristicPolicy` (a
   cheaper hand-written priority ladder), `greedy2Policy` (greedy + a bounded 2-ply staffing lookahead —
@@ -596,7 +611,8 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   with no currency of its own: a probe reports what moved, and the model above it decides what that is
   worth, so two models pricing the same card share one derivation instead of drifting apart at the first
   retune.
-  `enablers.ts` is the leaf accelerator that keeps the beam shallow: `enablerPotential`, derived
+  `enablers.ts` is the **band scorer's** leaf accelerator, folded only under `--scorer band`:
+  `enablerPotential`, derived
   **mechanically from card `cost`→`produces`/`effect`** — every output read through `rules/effects.ts`'s
   `realizedGain`, so a board standing a `modifyGain` card is priced at what it really pays rather than at
   the printed rate, and the identity everywhere else — (reusable by the ECONOMY-EXPLORER demand phase),
@@ -610,10 +626,10 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   plateau into a slope. Population's capacity credit is **net of the food its growth commits to** — the
   one capacity carrying a standing cost — charged in worker-rounds (`foodPerNextPop / foodPerWorker`,
   the latter read off the run's *instances* so a stickered producer feeds what it really yields) rather
-  than in score, so the netting can't turn on how large a number the mission's goal happens to ask for. Each mechanism is a separately-ablatable `EnablerTerms` toggle: the planner
-  ships the measured lean subset (`DEFAULT_ENABLER_TERMS` — capacity/producers/cardCosts), the oracle
-  the full all-on model (it proves winnability, and the full model finds strictly more wins — the
-  decision is recorded on `DEFAULT_ENABLER_TERMS` in `sim/enablers.ts`). `turnSearch.ts` is the
+  than in score, so the netting can't turn on how large a number the mission's goal happens to ask for.
+  Each mechanism is a separately-ablatable `EnablerTerms` toggle (`ScorerContext.enablers`, read only by
+  the band scorer): under it the planner ships the measured lean subset (`DEFAULT_ENABLER_TERMS`), the
+  oracle the full all-on model. `turnSearch.ts` is the
   within-turn search skeleton (`expandTurn`) the planner
   and oracle share, parameterized by the ranking heuristic — which it hands the node's transposition key
   alongside `G`, a memo hint the planner caches its (expensive, projection-based) leaf value on.
