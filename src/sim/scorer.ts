@@ -10,9 +10,10 @@ import { scoreState } from './value';
  * the same policy names differs in exactly one thing — which is what makes `sim:report --against` a
  * measurement of the value function rather than of two differently-configured tools.
  *
- * A scorer is a *factory* over the run root, not a plain `(G) => number`, because both candidates derive
- * something once per run that no leaf can afford to redo — the classic one its enabler model, the race one
- * its goal plans. Deriving at the root is also what keeps them comparable: neither re-reads the moment.
+ * A scorer is a *factory*, not a plain `(G) => number`, because both candidates derive something no leaf
+ * can afford to redo — the classic one its enabler model, the race one its goal plans. How often that
+ * derivation is refreshed is the *policy's* call, not the scorer's: the greedies and the oracle build one
+ * off the run root and hold it, the planner rebuilds at each re-plan.
  */
 
 /** What a policy tells a scorer about the run it is scoring. Both fields are advisory: a scorer that has no
@@ -26,8 +27,8 @@ export interface ScorerContext {
   enablers?: boolean | EnablerTerms;
 }
 
-/** Build the leaf value a policy ranks by, from the run root. */
-export type Scorer = (root: GameState, ctx?: ScorerContext) => Heuristic;
+/** Build the leaf value a policy ranks by, from the state the policy derives at. */
+export type Scorer = (from: GameState, ctx?: ScorerContext) => Heuristic;
 
 /** The incumbent: `value.ts`'s survival-first bands, optionally shaped by the enabler potential. */
 export const classicScorer: Scorer = (root, ctx = {}) => {

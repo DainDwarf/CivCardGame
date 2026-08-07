@@ -793,6 +793,24 @@ is inert: a threat carrying an `upkeep` (Setting Sail's crews) costs a **second*
 tick per probe round, so read a depth verdict per cell rather than once for the branch, and don't
 mistake a slower `setting_sail` sweep in step 4 for model noise.
 
+- **Per-replan re-derive — landed, kept: a staleness fix that buys tempo, not the win-rate lever.** The
+  planner built its scorer once, at its first re-plan, and held it for the run, so the race model's kept
+  routes and unit costs were frozen at turn 0; it now derives at every re-plan, the leaf caches scoped to
+  the re-plan with it (a cached value carries the model that produced it). Measured planner-only — the one
+  policy that re-plans — over the standing set × 30 paired seeds under both scorers: race is byte-identical
+  on 28 of 30 cells with no seed crossing the win/defeat line anywhere, and the two that move are tempo
+  gains at held 100% — `growing_numbers · planner` 20.3 → **17.5** mean turns, exactly the staleness the
+  distinct-count bullet above names, and `first_settlement · planner` 30.3 → 28.7. Classic is near-inert
+  (28 of 30 unchanged; `growing_numbers` 15.2 → 15.0 turns, `roads` a 0.1🪙 end-pool drift), its enabler
+  model deriving off facts a run barely moves — those two cells' planner rows are re-recorded at the
+  100-seed protocol, where the drift is 14.6 → 14.5 turns at unmoved win rates. The cost is unmeasurable:
+  paired A/B over seven fixtures spanning all four cost families disappears into the machine's ±16%, one
+  derivation per re-plan against a beam of leaf evaluations. One premise corrected in passing: the oracle
+  *does* inherit this — its no-line fallback is `createPlannerPolicy(DEEP_PLANNER_OPTIONS)` — and every
+  oracle-recording fixture re-verifies **byte-identical** at the recorded @10. Read the rider as a null
+  result on step 4's below-cells (`accounting_chiefdom` is among the unmoved): it closes a class of
+  staleness, and the win-rate hunt stays with the depth bet below.
+
 Two measured facts to start from: `--search-beam` never reaches the planner (it feeds only the
 oracle/prover), and the planner's own beam is **width-invariant at depth 1** by construction — so
 the live rider is depth/determinizations, not width. First target evidence: `deepPlanner` takes

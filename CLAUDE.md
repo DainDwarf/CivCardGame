@@ -556,9 +556,10 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   negative pool), run after every action. The random policy doubles as a crash/illegal-state fuzzer,
   throwing with both seeds as the repro key.
 - **`scorer.ts`** — the **scorer seam**: which value function the five competent policies rank by, selected
-  once for all of them (`--scorer`, `BatchOptions.scorer`). A `Scorer` is a factory over the **run root**,
-  not a `(G) => number`, because each candidate derives something once per run no leaf can afford to redo —
-  `classic` its enabler model, `race` its goal plans. `classic` (`value.ts` + `enablers.ts`) is the shipping
+  once for all of them (`--scorer`, `BatchOptions.scorer`). A `Scorer` is a **factory**, not a
+  `(G) => number`, because each candidate derives something no leaf can afford to redo — `classic` its
+  enabler model, `race` its goal plans; the refresh cadence is the policy's call (the greedies and the
+  oracle derive once from the run root, the planner re-derives at each re-plan). `classic` (`value.ts` + `enablers.ts`) is the shipping
   default; `race` (`race.ts`) is the rounds-margin challenger under measurement (`docs/RACE-MODEL.md`).
 - **Policies** — `randomPolicy` (random legal move), `greedyPolicy` (a two-phase one-ply optimizer over
   the `Scorer`'s value, splitting off the `endTurn` decision), `heuristicPolicy` (a

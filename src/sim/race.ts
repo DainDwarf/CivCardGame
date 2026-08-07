@@ -1098,8 +1098,8 @@ function probeRoute(
 }
 
 /**
- * Derive the run's plans — once, at the root. Every card the run holds is probed against every goal for
- * the three ways it can move a measure, and every route that is **deliverable here** is kept.
+ * Derive the run's plans from the state the policy plans at. Every card the run holds is probed against
+ * every goal for the three ways it can move a measure, and every route that is **deliverable here** is kept.
  *
  * Kept, not ranked: what a route costs per unit of measure and whether the deck can deal its copies are
  * independent questions, so an argmin over the first alone will hand a goal a cheap card the run cannot
@@ -1121,8 +1121,8 @@ export function deriveRace(G: GameState): RaceModel {
   return explainRaceModel(G).model;
 }
 
-/** `deriveRace` with every card it weighed, every route it dropped and why. Recorded unconditionally, this
- *  being a once-per-run derivation. */
+/** `deriveRace` with every card it weighed, every route it dropped and why. Recorded unconditionally — a
+ *  derivation runs per plan root, never per leaf, so the explain allocation stays off the hot path. */
 export function explainRaceModel(G: GameState): RaceModelExplain {
   const ids = runCardIds(G);
   const unitCost = replacementCost(G, ids);

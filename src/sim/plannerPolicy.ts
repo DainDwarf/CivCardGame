@@ -21,7 +21,7 @@ import { seededRng, type GameState } from '../rules';
  * (`determinize` — sampled deck, real hand), evaluates every candidate line in each, and **averages** the
  * value across worlds (Perfect-Information Monte Carlo). Within a world the game is deterministic, so each
  * world is a plain shallow beam over the shared turn-search skeleton (`sim/turnSearch.ts`), with leaves
- * scored by the `Scorer` (`sim/scorer.ts`), derived once from the run root — a leaf value strong enough to
+ * scored by the `Scorer` (`sim/scorer.ts`), re-derived at each re-plan — a leaf value strong enough to
  * let the horizon stay shallow (and thus cheap) is what the shallow beam rests on. Reuses the engine seams
  * verbatim; lives strictly in `sim/`.
  *
@@ -59,7 +59,7 @@ export interface PlannerOptions {
    *  isolates the bare `scoreState` planner, and an `EnablerTerms` object ablates individual mechanisms
    *  (per-term attribution). Read only by the scorers that have enabler shaping to fold. */
   enablers?: boolean | EnablerTerms;
-  /** The value function the leaves are ranked by (`sim/scorer.ts`), derived once from the run root. */
+  /** The value function the leaves are ranked by (`sim/scorer.ts`), re-derived at each re-plan. */
   scorer?: Scorer;
   /** The drive loop's round cutoff, forwarded to the scorer. Not a search bound of its own — the planner
    *  looks `depth` turns ahead wherever the run stands, and re-plans every turn. */
@@ -177,22 +177,23 @@ function commitPrefix(cfg: SearchNode): SimAction[] {
 
 export function createPlannerPolicy(policySeed: string, options: PlannerOptions = {}): Policy {
   const opts: PlannerConfig = { ...DEFAULTS, ...options };
-  let scored: Heuristic | null = null;
   let rngState = seededRng(policySeed).getState();
   const buffer: SimAction[] = [];
 
-  /** Leaf values already computed this run, keyed by the transposition fingerprint — split across two maps
-   *  by the one field the value reads that the fingerprint drops (`pendingVictory` — derived, so it *would*
-   *  follow from the key, but splitting on it removes the argument). `objective`/`missionId`, also dropped,
-   *  are constant within a run and this cache never outlives one. Worth it because the beam and the sampled
-   *  worlds re-score ~25% of states, and every scorer's leaf projects at least one upkeep — far more than a
-   *  lookup. */
-  const leafCache = new Map<number, number>();
-  const leafCacheVictory = new Map<number, number>();
-
   const replan = (state: RunState): void => {
-    // The first re-plan is at the run root, which is where a scorer derives its per-run model.
-    const score = (scored ??= opts.scorer(state.G, { maxRounds: opts.maxRounds, enablers: opts.enablers }));
+    // A scorer's model reads the state it derives from — a goal's routes, a pool's unit cost — and the run
+    // moves both, so it is re-derived per re-plan rather than carried from the root.
+    const score = opts.scorer(state.G, { maxRounds: opts.maxRounds, enablers: opts.enablers });
+
+    /** Leaf values already computed under `score`, keyed by the transposition fingerprint — split across two
+     *  maps by the one field the value reads that the fingerprint drops (`pendingVictory` — derived, so it
+     *  *would* follow from the key, but splitting on it removes the argument). `objective`/`missionId`, also
+     *  dropped, are constant within a run. Scoped to the re-plan because a cached value carries the model
+     *  that produced it. Worth it because the beam and the sampled worlds re-score ~25% of states, and every
+     *  scorer's leaf projects at least one upkeep — far more than a lookup. */
+    const leafCache = new Map<number, number>();
+    const leafCacheVictory = new Map<number, number>();
+
     const h: Heuristic = (G: GameState, key?: number) => {
       if (key === undefined) return score(G);
       const cache = G.pendingVictory ? leafCacheVictory : leafCache;

@@ -143,7 +143,7 @@ export function enablerTermsOf(enablers: boolean | EnablerTerms): EnablerTerms |
  *  strictly more wins there (12×10/10). */
 export const DEFAULT_ENABLER_TERMS: EnablerTerms = { conversions: false, floor: false, handSize: false };
 
-/** A per-run enabler model, derived once from the seeded objective and reused at every leaf. */
+/** An enabler model derived from the seeded objective, reused at every leaf of the search it steers. */
 export interface EnablerModel {
   /** Per-unit score credit for holding an enabler resource — a consumable banked toward a conversion, or
    *  a strategic pool held as production capacity. */
