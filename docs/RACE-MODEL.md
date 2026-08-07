@@ -799,6 +799,92 @@ the live rider is depth/determinizations, not width. First target evidence: `dee
 `accounting_chiefdom · planner` from 0/20 to 9/20 on identical seeds (a cell that is 0% under
 *both* scorers at the shipped defaults), and was recovering `masonry_chiefdom` when its run was cut.
 
+**A third: the saving is one clone, and the leaf is not one clone — measured.** The depth premise was
+priced in clones, and clones are the half of the leaf race really does save. Eleven fixtures × both
+policies × 30 paired seeds, timed on the prebuilt bundle with the process's own ~70 ms subtracted and
+normalized to **ms per action** — the two scorers end runs at different lengths, so raw wall time reads
+a run count rather than a leaf — put race at parity on a cell that neither probes a deadline nor
+circulates an event, and half again to twice as dear everywhere else:
+
+| family | fixtures | ms/action, race ÷ classic — greedy · planner |
+|---|---|---|
+| plain — no probe, no settle | masonry, growing_numbers, first_trades, harsh_winter, wheel | 0.96–1.76 · **0.98–1.28** |
+| many-goal | pyramid | 2.77 · 1.20 |
+| event settle | finding_copper, writing, raiding_city | 1.73–1.84 · **1.53–2.14** |
+| probe + settle | setting_sail_city, setting_sail_chiefdom | 1.90–1.98 · **1.40–1.64** |
+
+(`first_trades · greedy`'s 1.76 is the metric working, not a cost: race wins there in 1 310 actions
+against classic's 3 740 to the cutoff, so its raw wall time is *shorter* at a dearer leaf. `pyramid`
+disagrees with itself across the two policies more than any other row; the profile below is the arbiter
+for that cell, and lands between them.)
+
+**Which cells pay which cost is narrower and wider than *Projection cost* has it, and both ways were
+counted over the whole catalogue rather than the sweep's own eleven.** The probe is **narrower**:
+`threatClock` skips a threat carrying no `defeat`, and of the eight `threat` cards only `pharaohs_reign`
+and `impatient_crews` carry one at all — so every other threat in the game costs a leaf nothing, and
+only Setting Sail's crews, the one of the two with a tick slot, buy the second clone. `pyramid`'s
+deadline has no tick slot, takes the shallow-copy branch, and never appears in its own profile. The
+settle is **wider**: seven standard missions seed `events` — Raiders at the Border, Finding Copper,
+Writing, Horse Taming, Raiding, Roads and Setting Sail — and Accounting breeds thieves into the deck
+mid-run, so a run circulating an event is the common case rather than the `raiding_*`/`writing_*` pair
+that paragraph names. Setting Sail pays **both**, where it is read as paying one.
+
+Four `planner` captures under `@platformatic/flame` (46–173 s, 835–1 977 samples) put the cost where
+the timing cannot. The **share** below is measured — the leaf's cumulative time as a fraction of its own
+`expandTurn` subtree, which no run length touches. The **ratio** is what those shares imply *if* the
+non-leaf work per expanded node costs the same under both scorers; that is the same engine either way,
+but race walks bigger boards on the cells where the ratio is largest, so read the direction and not the
+second decimal:
+
+| cell | leaf share, classic | leaf share, race | implied leaf cost, race ÷ classic |
+|---|---|---|---|
+| `masonry` — plain | 47% | 48% | **1.06** |
+| `pyramid` — three goals | 51% | 65% | **1.82** |
+| `raiding_city` — settle | 41% | 60% | **2.10** |
+| `setting_sail_city` — both | 36% | 62% | **2.92** |
+
+A second reading — each scorer's aggregate cumulative share against the unprofiled ms/action above —
+orders the four the same way and runs higher at the top (1.15 / 1.71 / 4.09 / 4.15); it is the softer of
+the two, since `scoreBreakdown`'s own frame is ~0.8% self and so falls off a table ranked by self time
+on two of the cells, leaving those two aggregates scaled rather than read.
+
+The clone budget itself behaves exactly as claimed and is handed straight back where a settle lands:
+`cloneState` costs **0.80×** and **0.76×** classic's per action on the two cells that settle nothing,
+and **1.31×** / **1.24×** on the two that do, three clones and four boundaries against classic's two of
+each. Where the leaf's time goes, per family:
+
+- **Plain** (`masonry`): `permanentProjection` is 40% of the leaf, `bankedState` 9%, the margin's own
+  arithmetic 19%, and the plan's clocks 32% — against classic's two projections at 65% and 29% of its
+  own. The one clone is real; what fills the second one's place is the model thinking.
+- **Event settle** (`raiding_city`): `permanentProjection` alone is **74%** of the leaf and 36.1% of
+  the entire sweep, `eventCopies` and `eventCensus` walking the circulation twice more inside it. This
+  is the largest single cost anywhere in the comparison.
+- **Probe** (`setting_sail_city`): real, and small — `threatClock` is **~9%** of the leaf against the
+  settle's **62%** in the same capture. *Projection cost* sets the two side by side as the two places
+  the saving goes; they are not comparable, and the settle is the one to read a slow sweep as.
+- **Many goals** (`pyramid`): neither. `threatClock` never appears at all; `goalClock`/`routeClock` is
+  34.7% cumulative, `routeClock` is the sweep's hottest frame at **15.4% self**, `pricingCopy` 7.4% and
+  `cardPrice` 4.1%. Three goals × every kept route × two full circulation walks apiece — `pricingCopy`
+  for the leaf-read price, `deliveryClock` for the draw census — is a per-leaf cost that landed after
+  that paragraph was written and appears nowhere in it. The many-goal fold is dear as well as inflated.
+
+**So depth 2 is not one bet.** Doubling the leaf evaluations buys its search at 1.06× classic's leaf on
+a plain cell — the premise as written — at ~1.8–2.1× on a many-goal or event-circulating one, and at
+~2.9× where a probe and a settle meet. Read a depth verdict per family, and read a depth-2 *failure* on
+any of the seven event-circulating missions, on `accounting` once its thieves are bred, or on a
+many-goal cell as a budget reading before a value one: those are paying two to three leaves for each one
+the premise costed, and the node budget is what runs out first. The cells where the bet stands as
+written are the ones with a single-goal objective and no event in the deck.
+
+Three costs are attributable and none is a few lines, so none was taken here. `pricingCopy` re-reads
+every circulating copy's `currentCost` per route per goal per leaf, and a memo would have to be keyed on
+the state — the price being a read of the moment is the whole point of reading it there.
+`permanentProjection`'s second boundary pair exists only to measure escalation, and skipping it where
+no circulating event can deepen needs a declarative "this escalates" fact no card contract states.
+`threatClock`'s cap is the running bare `T̂loss`, so an inert probe on a run with no draining pool loops
+the whole horizon in `defeat()` reads — its cost is a fact about the state, not the cell — and
+binary-searching it assumes a monotone `defeat` that nothing states either.
+
 - **Done when**: each rider's paired sweep is separately recorded in the step-4 style, kept or
   reverted on its own numbers.
 
