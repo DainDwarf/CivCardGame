@@ -310,7 +310,8 @@ five, down from ~15:
 
 1. **Bottleneck softening** — how much non-bottleneck goals still pull (pure `max` has zero
    gradient on them and would let the beam abandon side goals). Dimensionless: a fraction of the
-   leading clock, not a number of rounds, so the gap it tolerates scales with the race it folds.
+   leading clock, not a number of rounds, so the gap it tolerates scales with the race it folds. Held at
+   0.4 against a four-way sweep, re-run at the final shape (below).
 2. **Near-death penalty steepness** — dimensionless, a multiplier on a losing margin decaying with
    `T̂loss`. Tuned because it prices the *noise* in two projections rather than anything the state
    holds: a beam must not surf one round from famine on the strength of one. Held at 4 against a
@@ -422,6 +423,27 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   one of them (`growing_numbers · planner` 62.6 → ~20 turns), while 0.15 is sharp enough to reproduce the
   hard fold's own failure on `masonry · greedy` (100% → 23%). The referee confirmed the closure at
   100 seeds: the `growing_numbers` dawdle fell 57.7 → 20.9 mean turns at held 100%, controls unmoved.
+
+  **Re-verified at the final shape, and 0.4 stood.** That pick predates six shape fixes — the circulation
+  rate, escalation, board-yield payment, leaf-read prices, the staffing wait and the slack cap — so the
+  fraction was re-swept over {0.15, 0.25, **0.4**, 0.6} × twelve fixtures × both policies × 30 paired
+  seeds, the incumbent carried as the control. Set-wide wins peak at it: **541 / 550 / 565 / 561** of 720
+  across the ladder — a 4× range of the constant spanning 24 runs. That set-wide flatness is not per-cell
+  flatness, and the difference is the whole verdict: the deciding cell below steps 40pp between 0.25 and
+  0.4, so the incumbent is the first grid point *above* a cliff rather than the middle of a plateau, and
+  the interval between the two is unprobed. The dawdle it was cut for stays closed at every value (`growing_numbers · planner` 20–24 mean
+  turns against the 57.7 the re-unitization cut), and the sharp end no longer bites: `masonry · greedy`
+  reads 96.7% → **93.3%** at 0.15, two seeds against one handed back, where the hard fold's own
+  fingerprint on that cell was 100% → 23%. What decides the ladder instead is a cell this constant was
+  never argued on — `raiding_city · greedy` **73.3% → 36.7%** at 0.15 (12 clean win→loss against 1 back,
+  bankruptcy 7 → 17) and 33.3% at 0.25, a sharper fold racing the goal on a money drain it then cannot
+  outrun; 0.6 costs `first_temple · planner` its perfect column instead (100% → 90%). So the fraction is
+  bounded on both sides by survival rather than by the dawdle that first cut it.
+  **`harsh_winter` is byte-identical at all four values under both policies**, which is the sweep's
+  control and not a finding: a single goal on a `throughput` route folds nothing and prices no landing, so
+  the constant cannot reach it at all. Eight of the twelve fixtures are single-goal and see the constant
+  only through `landingClock`, which is why a fixture set chosen for this constant has to carry the
+  many-goal cells deliberately.
 - **A payment clock divided by the raw workforce had no derivative at all — measured, and closed pending the
   referee.** Traced over `first_trades · greedy` seed 1, which stalls from turn 38 to the cutoff holding
   Bartering, one coin short, with a Bead Workshop standing unstaffed and a citizen free: forcing
@@ -581,6 +603,17 @@ Two more, measured on step 2's landing plans and recorded before step 4 reads a 
   change. Related probe quirk, same trace: `threatClock` caps its search at the running bare `T̂loss`,
   so a deadline sitting past a nearer pool clock returns ∞ at the root and the fold never sees it.
   Both unowned; `pyramid · planner` is 2pp below classic, so neither is load-bearing today.
+
+  **The inflation is real, and the cell moves against it — measured.** Constant 1's re-verification sweep
+  re-read that root at every candidate: `pyramid`'s `T̂win` is **36.2 / 38.6 / 43.9 / 52.5** rounds at
+  f = 0.15 / 0.25 / 0.4 / 0.6 off a 35.7 bottleneck, so the two smaller fractions do put the race back
+  under the 40-round deadline — and the cell gets *worse* as they do, monotonically in the direction that
+  inflates it: `· greedy` **0 / 3.3 / 6.7 / 10%** and `· planner` **3.3 / 6.7 / 10 / 10%** over 30 seeds,
+  with 0.15's deadline deaths at 30 of 30 against the incumbent's 28. Shrinking `T̂win` uniformly reorders
+  nothing — the fraction that shrinks it is the same one setting how hard the beam neglects the goals it
+  is *not* racing, and this objective needs all three, so the inflation and the side-goal pull cannot be
+  traded apart by tuning. Read the inflation as a reporting fault rather than as this cell's regression:
+  whoever owns the item needs a term that drops it while keeping the pull, not a smaller fraction.
 
 ## Decisions already made
 
