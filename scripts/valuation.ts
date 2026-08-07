@@ -7,13 +7,13 @@
  * memory only, so "is this mission hard, or is the policy mis-valuing it?" could only be settled by
  * hand-deriving arithmetic out of source. This prints the whole derivation instead.
  *
- * `--scorer` picks which, mirroring `npm run sim`'s flag of the same name. **`classic`** (the default, as
- * there) renders `sim/value.ts`'s five bands plus `sim/enablers.ts`'s enabler model: every probe, every
- * intermediate, and the card that won each credit. **`race`** renders `sim/race.ts`'s plans and its
- * `T̂loss − T̂win` margin: what each pool costs in worker-rounds, every card the plan scan weighed with the
- * root clock of each route it offered and the cause the dropped ones were dropped for, each goal's clock
- * over the routes it kept with the payment/delivery split inside each, and which clocks the folds
- * **absorbed** — the reading no `RaceBreakdown` carries.
+ * `--scorer` picks which, mirroring `npm run sim`'s flag of the same name. **`race`** (the default, as
+ * there) renders `sim/race.ts`'s plans and its `T̂loss − T̂win` margin: what each pool costs in
+ * worker-rounds, every card the plan scan weighed with the root clock of each route it offered and the
+ * cause the dropped ones were dropped for, each goal's clock over the routes it kept with the
+ * payment/delivery split inside each, and which clocks the folds **absorbed** — the reading no
+ * `RaceBreakdown` carries. **`band`** renders `sim/value.ts`'s five bands plus `sim/enablers.ts`'s enabler
+ * model: every probe, every intermediate, and the card that won each credit.
  *
  * **No simulation.** Both models are derived once from the run root and are seed-independent (every zone is
  * read as an unordered multiset, so shuffle order cannot reach either), which is why this is its own verb
@@ -21,16 +21,16 @@
  * stdout is a CSV stream `sim:report`/`sim:record` parse. Runs in milliseconds, like `npm run economy`.
  *
  * Usage:
- *   npm run sim:valuation                                        whole standing set, planner vs full
+ *   npm run sim:valuation                                        whole standing set, the rounds model
  *   npm run sim:valuation -- scripts/sim/baselines/masonry.json  one fixture (positional or --baseline)
- *   npm run sim:valuation -- --terms full,no-floor,none          any ablation, side by side
- *   npm run sim:valuation -- --scorer race                       the rounds model instead of the bands
+ *   npm run sim:valuation -- --scorer band                       the bands instead, planner vs full
+ *   npm run sim:valuation -- --scorer band --terms full,none     any ablation, side by side
  *   npm run sim:valuation -- --scenario masonry --deck d.json --board settlement
  *   npm run sim:valuation -- --format csv > valuation.csv        long/tidy, for duckdb
  *
  * `--terms` grammar: `planner` (the shipped `DEFAULT_ENABLER_TERMS`), `full` (every term on, what the
  * oracle and prover use), `none` (no shaping at all), `no-<term>[-<term>…]`, `only-<term>[-<term>…]`. It
- * names an ablation of the classic model's terms, so it is classic-only.
+ * names an ablation of the band model's terms, so it is band-only.
  *
  * Redirect through `npm run --silent`: npm's own preamble goes to stdout, and JSON has no comment syntax
  * to hide it.
@@ -39,6 +39,7 @@ import { parseArgs } from 'node:util';
 import {
   DEFAULT_ENABLER_TERMS,
   DEFAULT_MAX_ROUNDS,
+  DEFAULT_SCORER_NAME,
   ENABLER_CONSTANTS,
   RACE,
   SCORE_WEIGHTS,
@@ -141,12 +142,14 @@ if (format !== 'text' && format !== 'json' && format !== 'csv') {
   fail(`--format must be 'text', 'json' or 'csv', got '${format}'.`);
 }
 
-const scorer = values.scorer ?? 'classic';
-if (scorer !== 'classic' && scorer !== 'race') fail(`--scorer must be 'classic' or 'race', got '${scorer}'.`);
-// `--terms` ablates the classic model's own terms, so pairing it with the race model would mean silently
+// Validated against the two names spelled out rather than against `SCORERS`, because this file renders
+// each with its own hand-written report: a scorer the seam gained would parse here and print nothing.
+const scorer = values.scorer ?? DEFAULT_SCORER_NAME;
+if (scorer !== 'band' && scorer !== 'race') fail(`--scorer must be 'band' or 'race', got '${scorer}'.`);
+// `--terms` ablates the band model's own terms, so pairing it with the race model would mean silently
 // ignoring it — the same reason `--baseline` and the ad-hoc trio are exclusive.
 if (scorer === 'race' && values.terms !== undefined) {
-  fail('--terms is a classic-scorer ablation — the race model has no term set to name.');
+  fail('--terms is a band-scorer ablation — the race model has no term set to name.');
 }
 
 // Same mutual exclusion as the sweep's: a baseline already owns its mission, deck and board, so pairing it

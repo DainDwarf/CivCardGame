@@ -11,7 +11,7 @@ import { scoreState } from './value';
  * measurement of the value function rather than of two differently-configured tools.
  *
  * A scorer is a *factory*, not a plain `(G) => number`, because both candidates derive something no leaf
- * can afford to redo — the classic one its enabler model, the race one its goal plans. How often that
+ * can afford to redo — the band one its enabler model, the race one its goal plans. How often that
  * derivation is refreshed is the *policy's* call, not the scorer's: the greedies and the oracle build one
  * off the run root and hold it, the planner rebuilds at each re-plan.
  */
@@ -22,7 +22,7 @@ export interface ScorerContext {
   /** The drive loop's round cutoff (`SimOptions.maxRounds`). A rounds-denominated value clamps every
    *  estimate to what remains of it; a band scorer has no horizon to clamp and ignores it. */
   maxRounds?: number;
-  /** Classic only — which enabler mechanisms the shaping folds in (the planner ships a lean subset, the
+  /** Band only — which enabler mechanisms the shaping folds in (the planner ships a lean subset, the
    *  oracle the full model, the greedies none). Absent means no enabler model at all. */
   enablers?: boolean | EnablerTerms;
 }
@@ -30,27 +30,29 @@ export interface ScorerContext {
 /** Build the leaf value a policy ranks by, from the state the policy derives at. */
 export type Scorer = (from: GameState, ctx?: ScorerContext) => Heuristic;
 
-/** The incumbent: `value.ts`'s survival-first bands, optionally shaped by the enabler potential. */
-export const classicScorer: Scorer = (root, ctx = {}) => {
+/** `value.ts`'s survival-first bands, optionally shaped by the enabler potential. The standing second
+ *  opinion: it shares no arithmetic with the default, so a cell the two disagree on is a reading about the
+ *  value function rather than about the search under it. */
+export const bandScorer: Scorer = (root, ctx = {}) => {
   const terms = enablerTermsOf(ctx.enablers ?? false);
   if (!terms) return scoreState;
   const model = deriveEnablers(root, terms);
   return (G) => scoreState(G) + enablerPotential(G, model);
 };
 
-/** The challenger: `race.ts`'s margin, `T̂loss − T̂win`, denominated in rounds. */
+/** `race.ts`'s margin, `T̂loss − T̂win`, denominated in rounds. */
 export const raceScorer: Scorer = (root, ctx = {}) => {
   const opts = { maxRounds: ctx.maxRounds, model: deriveRace(root) };
   return (G) => raceScore(G, opts);
 };
 
 export const SCORERS: Record<string, Scorer> = {
-  classic: classicScorer,
+  band: bandScorer,
   race: raceScorer,
 };
 
 /** The scorer a sweep takes when `--scorer` names none. Like the search beam, a sweep at any other one is a
  *  **diagnostic**: its rows are not comparable to the standing set's, and `sim:record` refuses them. */
-export const DEFAULT_SCORER_NAME = 'classic';
+export const DEFAULT_SCORER_NAME = 'race';
 
 export const DEFAULT_SCORER: Scorer = SCORERS[DEFAULT_SCORER_NAME];

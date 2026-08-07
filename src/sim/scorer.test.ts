@@ -3,7 +3,7 @@ import { TEST_BOARD_ID, installFixtures, uninstallFixtures } from '../rules/test
 import { createRun, type RunState } from '../run/engine';
 import type { GameState } from '../rules';
 import { POLICY_FACTORIES } from './batch';
-import { classicScorer, DEFAULT_SCORER, DEFAULT_SCORER_NAME, SCORERS, type Scorer } from './scorer';
+import { bandScorer, DEFAULT_SCORER, DEFAULT_SCORER_NAME, SCORERS, type Scorer } from './scorer';
 import { simConfig } from './simulate';
 import { scoreState } from './value';
 
@@ -45,10 +45,13 @@ describe('the scorer seam', () => {
   beforeAll(installFixtures);
   afterAll(uninstallFixtures);
 
-  it('defaults to the incumbent, unshaped', () => {
-    const { G } = newRun();
+  it('resolves its default through the name a sweep would pass', () => {
     expect(DEFAULT_SCORER).toBe(SCORERS[DEFAULT_SCORER_NAME]);
-    expect(classicScorer(G)(G)).toBe(scoreState(G));
+  });
+
+  it('ranks by the bare band value when the band scorer folds no enablers', () => {
+    const { G } = newRun();
+    expect(bandScorer(G)(G)).toBe(scoreState(G));
   });
 
   // The regression this whole step risks: a policy keeping a hard-wired `scoreState` call, which would

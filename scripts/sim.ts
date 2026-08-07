@@ -45,7 +45,7 @@
  * **Costs superlinearly** — a wider beam keeps more states alive and so searches deeper, not just wider,
  * and rows swept at a non-default width are not comparable to a fixture's recorded ones, so
  * `sim:record` refuses them), `--scorer <name>` (which value
- * function the competent policies rank by — `classic` (default) or `race`; one setting across every policy,
+ * function the competent policies rank by — `race` (default) or `band`; one setting across every policy,
  * so a paired sweep under the same policy names isolates the brain. Like `--search-beam`, a non-default
  * scorer's rows are a diagnostic and `sim:record` refuses them), `--seed <i>` (a
  * **filter** — sweep only that seed index, keeping its seed streams identical to the full sweep's, so a

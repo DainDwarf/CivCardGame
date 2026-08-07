@@ -249,7 +249,7 @@ interface Row {
   unit?: string;
 }
 
-/** One row per fact — long/tidy for the same reason the classic valuation's is: the candidate table is
+/** One row per fact — long/tidy for the same reason the band valuation's is: the candidate table is
  *  variable-width per deck and most facts carry a card, neither of which a fixed column set holds. Pivots
  *  in duckdb like the sweep rows, so "which cells derive a goal at route none" is one
  *  `WHERE section='route' AND key='none'` over the standing set. */

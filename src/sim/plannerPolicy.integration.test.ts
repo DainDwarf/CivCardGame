@@ -6,8 +6,8 @@ import { simConfig, simulateRun } from './simulate';
 import { createPlannerPolicy } from './plannerPolicy';
 import type { DeckCard } from '../rules/deckBuilder';
 
-// The hand-authored Masonry deck (`scripts/sim/baselines/masonry.json`) that a human wins easily but the
-// one-ply greedies plateau on — the exact case this planner exists to close.
+// Kept byte-identical to `scripts/sim/baselines/masonry.json`, so this case and the standing fixture
+// measure the same cell and a sweep of it reads on this test directly.
 const MASONRY_DECK: (string | DeckCard)[] = [
   'bead_workshop',
   { cardId: 'farm', stickers: ['irrigation', 'irrigation'] },
@@ -31,21 +31,17 @@ function runSeed(seed: number) {
 }
 
 describe('planner clears Masonry', () => {
-  // The core claim: competent play clears Masonry, where the one-ply greedies win 0% (they plateau until
-  // the 10k-action backstop). A margin below 6/6, not a hard sweep: the planner is tuned for *good*, not
-  // perfect, play, so an occasional winnable seed is lost to determinization optimism (it banks military
-  // on a scarce-food draw, over-trusting a sampled future that draws into the payoff, and starves — the
-  // oracle proves such seeds winnable; raising `determinizations` recovers them, at a runtime cost).
-  // ⚠️ It currently passes at exactly the threshold — 4/6, no margin — so a change costing a single seed
-  // turns it red. These six are a cold slice of their stream: the same fixture measures 86/100 over the
-  // full sweep. If it does go red, widening the sample is the honest first move, not lowering the bar.
-  it('wins on the standing deck across most seeds', () => {
+  // The core claim: competent play clears Masonry end-to-end. Pinned as a clean sweep because that is what
+  // it measures — these six are a cold slice of a stream the fixture wins 30 of 30 of — so a single lost
+  // seed is a real regression rather than the sample thinning, and widening the sample is then the honest
+  // first move, not lowering the bar.
+  it('wins on the standing deck across every seed', () => {
     const seeds = 6;
     let wins = 0;
     for (let s = 0; s < seeds; s++) {
       if (runSeed(s).result.outcome === 'victory') wins++;
     }
-    expect(wins).toBeGreaterThanOrEqual(4);
+    expect(wins).toBe(seeds);
   }, 120_000);
 
   it('is deterministic — same seed pair yields the same outcome', () => {
