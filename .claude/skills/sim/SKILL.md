@@ -45,7 +45,7 @@ when it carries stickers).
 ```
 npm run sim -- --baseline <paths|dir>
 npm run sim -- --scenario <ids> --deck <file> --board <id|file>
-               [--seeds 100] [--policies random,heuristic,greedy] [--max-rounds 200] [--scorer classic]
+               [--seeds 100] [--policies random,heuristic,greedy] [--max-rounds 200] [--scorer race]
                [--seed <i>] [--verbose]
 
 npm run sim:report -- <sweep.csv | fixture.json | baselines dir> [--format text|json|csv] [--against <paths|dir>]
@@ -69,13 +69,15 @@ has no comment syntax to hide it, so `sim:report --format json` needs `--silent`
   live under `scripts/sim/boards/*.json`.
 - `--seeds` — runs per cell (default 100).
 - `--policies` — comma-separated policy names (default `random,heuristic,greedy`). Also
-  available: `greedy2`, `planner`, `deepPlanner`, and `oracle` (the last three slow — see below).
+  available: `greedy2`, `planner`, `deepPlanner`, `prover` and `oracle` (the last four slow — see below).
 - `--max-rounds <n>` — stall cutoff (default 200). A policy that idles past round `n` without
   winning or collapsing is recorded as a `stall` defeat rather than ground to the action wall —
   see *Reading the report*. Lower it for a faster sweep when you expect stalls.
 - `--scorer <name>` — the value function every competent policy ranks by, one setting across all of
-  them: `classic` (default, the shipping bands + enabler shaping) or `race` (the rounds-margin
-  challenger). A paired sweep under the same policy names isolates the brain. Like `--search-beam`, a
+  them: `race` (default, the rounds-margin model) or `band` (the frozen score-band second opinion,
+  which shares no arithmetic with the default — so a cell the two disagree on is a reading about the
+  value function rather than the search). A paired sweep under the same policy names isolates the
+  brain. Like `--search-beam`, a
   non-default scorer is a **diagnostic**: it is recorded in the sweep header and `sim:record` refuses it.
 - `--seed <i>` — sweep **only** that seed index, on the exact seed streams the full sweep would
   have given it (see *Replay one run*).
@@ -203,7 +205,7 @@ Baseline — a whole cell in one file:
 }
 ```
 A fixture holds its **own** measurement, one entry per policy — so the seed counts of the
-standing protocol (greedy/planner @100, oracle @10) live in one file, and re-measuring one
+standing protocol (greedy/planner @100, prover @10) live in one file, and re-measuring one
 policy replaces one key. The rows are raw, not the folded report: the fold is cheap and
 re-runnable, the sweep is not, so keeping them means "which seeds flipped?" is answerable
 without re-measuring, and a rebalance reads as a per-seed `git diff`.
@@ -260,22 +262,42 @@ re-run the sweep in a loop looking for a representative run.
 When a competent policy underperforms, the question is always whether the content is hard or the
 policy cannot *see* what the content asks for. That is answerable without a sweep, because whichever
 value function the policy steers by is derived from content alone and cut once at the run root, so
-both are **seed-independent**: `--scorer classic` (the default) prints `sim/value.ts`'s `scoreState`
-bands plus `sim/enablers.ts`'s enabler model, and `--scorer race` prints `sim/race.ts`'s plans and its
-`T̂loss − T̂win` margin. Read the one the sweep in question ran under.
+both are **seed-independent**: `--scorer race` (the default) prints `sim/race.ts`'s plans and its
+`T̂loss − T̂win` margin, and `--scorer band` prints `sim/value.ts`'s `scoreState` bands plus
+`sim/enablers.ts`'s enabler model. Read the one the sweep in question ran under.
 
 ```
-npm run sim:valuation                                        whole standing set, planner vs full
+npm run sim:valuation                                        whole standing set, the rounds model
 npm run sim:valuation -- scripts/sim/baselines/masonry.json  one cell
-npm run sim:valuation -- --terms planner,full,none,no-floor  any classic ablation, side by side
-npm run sim:valuation -- --scorer race                       the rounds model instead of the bands
+npm run sim:valuation -- --scorer band                       the bands instead of the rounds model
+npm run sim:valuation -- --scorer band --terms planner,none  any band ablation, side by side
 npm run sim:valuation -- --format csv > valuation.csv        long/tidy, for duckdb
 ```
 
 It runs in under a second over all 30 fixtures. Read it before reaching for a sweep, and **before
 concluding a mission is too hard**.
 
-What answers a question under **`classic`**, none of which the finished model shows:
+What answers a question under **`race`**, where the unit is rounds throughout:
+
+- **`unitCost` … `no cost`** — what a unit of each pool costs in worker-rounds, and the pools nothing in
+  the run can obtain. A price naming one of the latter yields **no plan at all**, which reads downstream
+  as a goal that simply has no route.
+- **the plan scan's verdicts** — every card weighed for a goal, the root clock of each route it offered,
+  and the cause each dropped route was dropped for. A route is kept on being deliverable rather than on
+  price, so "the goal has three routes and only one of them circulates" is a sentence only this table
+  supports.
+- **the payment/delivery split** inside each `landingClock`, with the circulation census (`held × hand /
+  pool`) behind the delivery half — the two clocks a route folds, and which of them binds. One block per
+  kept route, with `← taken` on the one the leaf's `min` chose.
+- **a `cover` block** — the members, their shares and the one summed bill, on a goal whose measure counts
+  the *distinct* cards standing, where each route caps at one card's worth and only a set finishes it.
+- **`ABSORBED`** — a softMax weight under the ULP of 1, so the fold came out bit-identical to a hard
+  `max`. The state has **no gradient** on that clock at all: a term marked here is one the beam cannot
+  follow, whatever it does to it.
+- **`route none (…)`** and **`HORIZON CLAMPED`** — the two ways a goal reads dead, with the reason
+  (no plan · no workforce · copies short · unpriceable pool) and the raw `t` beside the clamped one.
+
+And under **`band`**, none of which the finished model shows:
 
 - **`goal-valued pools (none)`** — the objective names no resource, so every strategic pool's capacity
   credit derives to **0**. On a card-count goal (Writing, Roads, Copper, Setting Sail) that is the
@@ -290,30 +312,12 @@ What answers a question under **`classic`**, none of which the finished model sh
 - **the band split** — band 3's buffer charge against band 4's objective pull is the whole "is growth
   worth it" decision, and the summed `scoreState` hides it.
 
-And under **`race`**, where the unit is rounds throughout:
-
-- **`unitCost` … `no cost`** — what a unit of each pool costs in worker-rounds, and the pools nothing in
-  the run can obtain. A price naming one of the latter yields **no plan at all**, which reads downstream
-  as a goal that simply has no route.
-- **the plan scan's verdicts** — every card weighed for a goal, the root clock of each route it offered,
-  and the cause each dropped route was dropped for. A route is kept on being deliverable rather than on
-  price, so "the goal has three routes and only one of them circulates" is a sentence only this table
-  supports.
-- **the payment/delivery split** inside each `landingClock`, with the circulation census (`held × hand /
-  pool`) behind the delivery half — the two clocks a route folds, and which of them binds. One block per
-  kept route, with `← taken` on the one the leaf's `min` chose.
-- **`ABSORBED`** — a softMax weight under the ULP of 1, so the fold came out bit-identical to a hard
-  `max`. The state has **no gradient** on that clock at all: a term marked here is one the beam cannot
-  follow, whatever it does to it.
-- **`route none (…)`** and **`HORIZON CLAMPED`** — the two ways a goal reads dead, with the reason
-  (no plan · no workforce · copies short · unpriceable pool) and the raw `t` beside the clamped one.
-
-A term set is `planner` (the shipped `DEFAULT_ENABLER_TERMS`), `full` (what oracle/prover use), `none`,
+A term set is `planner` (the shipped `DEFAULT_ENABLER_TERMS`), `full` (what the oracle uses), `none`,
 `no-<term>…` or `only-<term>…` over `cardCosts`/`conversions`/`capacity`/`floor`/`handSize`/`producers` —
-a classic-model ablation, so `--terms` under `--scorer race` fails fast. The tool is **read-only** — it
+a band-model ablation, so `--terms` under `--scorer race` fails fast. The tool is **read-only** — it
 records nothing, and it changes no measurement. To make a *sweep* use a different term set still costs a
 source edit (`docs/TODO.md` → *Shaping config settable by option*); its **scorer** is a flag
-(`npm run sim -- --scorer race`), and a diagnostic one.
+(`npm run sim -- --scorer band`), and a diagnostic one.
 
 ## Reference: reading the report (when asked) — the two things that go wrong
 
@@ -339,14 +343,20 @@ source edit (`docs/TODO.md` → *Shaping config settable by option*); its **scor
   deep knobs (more sampled worlds, a wider within-turn search, a 2-turn lookahead). It recovers seeds the
   default `planner` drops, but each re-plan is far heavier: budget **~30–60s per run**, so it's for a
   handful of selected seeds (or a `--seed` replay), never a full sweep.
-- `oracle` = a bounded perfect-information search for a *winning* line — the true ceiling /
-  winnability prover. Unlike `planner` it reads the real shuffle, so it *proves* winnability rather
-  than playing fairly. It runs a whole search per seed, so keep the seed count small.
+- `oracle` and `prover` = one bounded perfect-information search for a *winning* line, wrapped two ways.
+  Unlike `planner` both read the real shuffle, so they answer winnability rather than playing fairly.
+  They differ only where no line is found, and that difference is what each measures: `oracle` falls back
+  to the strongest play tier, making its win rate the **best achievable**, while `prover` declines the
+  seed as a `noWinFound:<bound>` defeat, making its win rate the **search-proven winnability** rate.
+  Read an oracle number as a ceiling on play and a prover number as a lower bound on winnability — never
+  the first as the second. The suffix names what stopped the search (`budget` / `depth` / `deadEnd`),
+  which is the knob to turn. `prover` is the one in the standing protocol. Both run a whole search per
+  seed, so keep the seed count small.
 
 **2. `unplayed cards` means different things per policy.** Under **random** it's authoritative:
-the card is genuinely unplayable. Under **greedy/heuristic** it means "a card `sim/value.ts`'s
-`scoreState` doesn't appreciate" — a payoff the value function is blind to (e.g. a discard→hand
-recovery, since hand contents aren't scored) shows as unplayed though it's perfectly playable.
+the card is genuinely unplayable. Under **greedy/heuristic** it means "a card the scorer the sweep ran
+under doesn't appreciate" — a payoff that value function is blind to (e.g. a discard→hand
+recovery, since hand contents reach neither model) shows as unplayed though it's perfectly playable.
 Trust random for *playability*; read a competent policy's unplayed list as a *value-function gap*.
 
 The report's list is the cell-wide one (never played in *any* run); the CSV's zero-filled
@@ -359,9 +369,9 @@ the histogram is the authoritative recorded cause, not re-derived from resources
 
 **`stall` in the defeat histogram is a policy signal, not a balance one.** A `stall: N` bucket means a
 policy idled `N` runs' rounds upward without ever winning or collapsing — a one-ply greedy stuck on a
-multi-turn conversion chain it can't cross (classic on Masonry, where greedy/greedy2/heuristic all
-stall). It's recorded as a loss and counts against that policy's win rate; it does **not** mean the
-mission is unwinnable — reach for `planner`/`oracle` to see the real ceiling. The cutoff is
+multi-turn conversion chain it can't cross (Masonry is the standing example, where greedy/greedy2/
+heuristic all stall). It's recorded as a loss and counts against that policy's win rate; it does **not**
+mean the mission is unwinnable — reach for `planner`/`oracle` to see the real ceiling. The cutoff is
 `--max-rounds` (default 200, well above any real game's length); lower it for a faster sweep when you
 expect stalls, raise it if a legitimately long mission is being cut short.
 
@@ -385,7 +395,7 @@ Two kinds of variable:
 
   1. Pick the cells and the `--policies`/`--seeds`. On a baseline-fixture cell **match what the
      fixture already holds** (`results[policy].rows` length *is* its seed count, the standing protocol
-     being greedy/planner @100, oracle @10) — the recorded rows are the baseline half, so there is no
+     being greedy/planner @100, prover @10) — the recorded rows are the baseline half, so there is no
      baseline run. Use a policy that actually reaches the mechanic (`greedy`/`heuristic` past the early
      game; `random` barely survives).
   2. **Edit** the content value (the `Edit` tool on the real `src/content/*.ts`).
