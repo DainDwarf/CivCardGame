@@ -3,6 +3,7 @@ import {
   RACE,
   absorbed,
   routeCause,
+  type CoverClockExplain,
   type PlanCandidate,
   type PlanClockExplain,
   type RaceModelExplain,
@@ -101,6 +102,26 @@ function planLines(tag: string, p: PlanClockExplain, taken: boolean): string[] {
   return out;
 }
 
+/** The same split for a cover, with the members between the two halves they compose into: one bill for the
+ *  payment, the latest arrival for the delivery. Each member's own clock rides beside it because the cover
+ *  exists precisely where none of those numbers finished the goal. */
+function coverLines(p: CoverClockExplain, taken: boolean): string[] {
+  const [wPay, wDel] = p.weights;
+  const out = [
+    `      ${pad('cover', 9)} ${p.cardIds.join(' + ')} · bill ${bag(p.bill)}${taken ? '   ← taken' : ''}`,
+  ];
+  for (const m of p.members) {
+    out.push(
+      `        member   ${pad(m.cardId, 20)} × ${n(m.copies)} · price ${pad(bag(m.price), 22)} ${m.held} held × ${
+        n(m.hand, 1)} hand / ${m.pool} pool = ${n(m.perRound, 3)}/rd → ${n(m.delivery + m.staffing)} rd (alone ${n(m.t)} rd)`,
+    );
+  }
+  out.push(`        payment  ${padLeft(n(p.payment), 8)} rd   one bill, netted ${bag(p.netted)}   ${weight(wPay)}`);
+  out.push(`        delivery ${padLeft(n(p.delivery), 8)} rd   the latest member   ${weight(wDel)}`);
+  out.push(`        landingClock = ${n(p.t)} rd`);
+  return out;
+}
+
 function cellBlock(cell: RaceValuationCell): string {
   const out: string[] = [];
   const { model, value } = cell;
@@ -170,6 +191,7 @@ function cellBlock(cell: RaceValuationCell): string {
       }`,
     );
     for (const p of g.landings) out.push(...planLines('landing', p, c.route === 'landing' && c.cardId === p.cardId));
+    for (const p of g.covers) out.push(...coverLines(p, c.route === 'cover'));
     for (const p of g.buildings) out.push(...planLines('building', p, c.route === 'building' && c.cardId === p.cardId));
   });
   out.push('');
@@ -353,6 +375,36 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
       // cost climbs with its use the two are the reading and its floor.
       for (const [k, v] of Object.entries(p.price) as [keyof Resources, number][]) {
         rows.push({ goal, section: tag, key: `price.${k}`, cardId: p.cardId, value: v, unit: 'units' });
+      }
+    }
+    // A cover's own facts carry no `cardId` — it is the set that has them — while its members carry theirs,
+    // so the two nest in one long table the way a landing's price rows already do under their route.
+    for (const p of g.covers) {
+      for (const [key, v, unit] of [
+        ['payment', p.payment, 'rounds'],
+        ['delivery', p.delivery, 'rounds'],
+        ['t', p.t, 'rounds'],
+        ['weightPayment', p.weights[0] ?? 1, ''],
+        ['weightDelivery', p.weights[1] ?? 1, ''],
+      ] as [string, number, string][]) {
+        rows.push({ goal, section: 'cover', key, value: v, unit });
+      }
+      for (const [k, v] of Object.entries(p.bill) as [keyof Resources, number][]) {
+        rows.push({ goal, section: 'cover', key: `bill.${k}`, value: v, unit: 'units' });
+      }
+      for (const m of p.members) {
+        for (const [key, v, unit] of [
+          ['copies', m.copies, 'copies'],
+          ['delivery', m.delivery, 'rounds'],
+          ['staffing', m.staffing, 'rounds'],
+          ['held', m.held, 'cards'],
+          ['pool', m.pool, 'cards'],
+          ['hand', m.hand, 'cards'],
+          ['perRound', m.perRound, 'copies/rd'],
+          ['t', m.t, 'rounds'],
+        ] as [string, number, string][]) {
+          rows.push({ goal, section: 'coverMember', key, cardId: m.cardId, value: v, unit });
+        }
       }
     }
   });

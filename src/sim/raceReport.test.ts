@@ -101,6 +101,7 @@ function cell(): RaceValuationCell {
             plan({ cardId: 'test_trinket', price: { production: 6 }, payment: 60, delivery: 9, lands: 9, t: 9 }),
           ],
           buildings: [],
+          covers: [],
         },
       ],
       foldWeights: [1],

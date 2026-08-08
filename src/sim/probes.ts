@@ -1,5 +1,8 @@
-import { CORE_KEYS, currentCost, placedCards, type CardInstance, type GameState, type Resources } from '../rules';
-import { realizedGain } from '../rules/effects';
+import {
+  CORE_KEYS, cloneState, currentCost, placedCards,
+  type CardInstance, type GameState, type Resources,
+} from '../rules';
+import { realizedGain, resolveCard } from '../rules/effects';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
 
 /**
@@ -116,27 +119,47 @@ export function replacementCost(G: GameState, ids: Set<string>): Partial<Record<
  * quantity two ways is the caller's decision. Each leaves `probe` exactly as found.
  */
 
-/** By **standing in a zone**: a synthetic copy injected into each zone the card *stays* in, so a measure
- *  that counts cards registers it. `removed` is not filtered by kind, since any card may self-exile
- *  through its `resolve`; the two standing zones are, because `run/moves.ts`'s `playCard` is their only
- *  writer and routes by kind — probing a card into a zone it can never reach would credit a step that has
- *  no path to happen. */
-export function presenceDelta(probe: GameState, card: CardDef, measure: (G: GameState) => number): number {
+/** By **standing in a zone**: `copies` synthetic copies injected into each zone the card *stays* in, so a
+ *  measure that counts cards registers them. `removed` is not filtered by kind, since any card may
+ *  self-exile through its `resolve`; the two standing zones are, because `run/moves.ts`'s `playCard` is
+ *  their only writer and routes by kind — probing a card into a zone it can never reach would credit a step
+ *  that has no path to happen.
+ *
+ *  `copies` is what tells a caller whether the contribution is a **rate or a ceiling**: a measure counting
+ *  the distinct ids present reads the same at one copy and at two, so the second copy buys nothing and no
+ *  number of them completes a goal one card cannot. Reading that off the measure is the only way there is —
+ *  a goal states what it counts as a closure, never how it saturates. */
+export function presenceDelta(
+  probe: GameState,
+  card: CardDef,
+  measure: (G: GameState) => number,
+  copies = 1,
+): number {
   const base = measure(probe);
-  probe.removed.push({ id: -1, cardId: card.id });
-  let best = measure(probe) - base;
-  probe.removed.pop();
-  if (isStructure(card)) {
-    probe.tableau.push({ id: -2, cardId: card.id, workers: 0 });
-    best = Math.max(best, measure(probe) - base);
-    probe.tableau.pop();
-  }
-  if (card.kind === 'trade') {
-    probe.tradeRoutes.push({ id: -3, cardId: card.id, workers: 0 });
-    best = Math.max(best, measure(probe) - base);
-    probe.tradeRoutes.pop();
-  }
+  const inject = (zone: { id: number; cardId: string; workers?: number }[], id: number): number => {
+    for (let i = 0; i < copies; i++) zone.push({ id: id - i, cardId: card.id, workers: 0 });
+    const delta = measure(probe) - base;
+    zone.length -= copies;
+    return delta;
+  };
+  let best = inject(probe.removed, -1);
+  if (isStructure(card)) best = Math.max(best, inject(probe.tableau, -1 - copies));
+  if (card.kind === 'trade') best = Math.max(best, inject(probe.tradeRoutes, -1 - 2 * copies));
   return best;
+}
+
+/** Whether playing a card files its own copy to `removed` rather than back into circulation — the one thing
+ *  `CardKind` does not settle, since `run/moves.ts`'s action→discard filing is skipped for a copy whose own
+ *  `resolve` already exiled it. Run rather than read: a closure states its filing by doing it.
+ *
+ *  The clone absorbs everything the effect does; a resolver that suspends into a `pendingInteraction` parks
+ *  it there and is answered by nobody, which is exactly the read wanted — an unanswered effect files
+ *  nothing. */
+export function selfExiles(G: GameState, card: CardDef): boolean {
+  if (!card.effect?.resolve) return false;
+  const probe = cloneState(G);
+  resolveCard({ G: probe, self: { id: -1, cardId: card.id } });
+  return probe.removed.some((c) => c.id === -1);
 }
 
 /** By **what its play adds**: the positive half of the play `effect`, so a measure over resources

@@ -140,7 +140,8 @@ surprise, so nothing shows a locked placeholder or a total count.
   impossible), every card the plan scan weighed with the root clock of each route it offered and the
   cause the dropped ones were dropped for, then per goal its clock — need, τ, route, the raw `t` beside
   the horizon-clamped one — over **every route it kept**, with the **payment vs delivery** split inside
-  each `landingClock`, the circulation census behind the delivery half, and the one route the leaf took
+  each `landingClock`, the circulation census behind the delivery half, the members and summed bill inside
+  a **cover**, and the one route the leaf took
   marked. Both of its folds print the softMax **weight** each clock folded at — a reading no
   `RaceBreakdown` carries, and the one that says how much of a gradient a term is really carrying (its
   temperature being a fraction of the leading clock, the weight has a floor and the `ABSORBED` annotation
@@ -572,7 +573,11 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   so the fold is scale-free): a resource goal reads `need / τ` off one stripped projection; a card-count
   goal runs a **landing plan** — payment in worker-rounds against the run's real income, delivery off the
   deck's circulation, softened together — with every deliverable route kept and each leaf taking the
-  soonest, prices read at the leaf through `currentCost` off the cheapest circulating copy. `T̂loss` is
+  soonest, prices read at the leaf through `currentCost` off the cheapest circulating copy. A route whose
+  card **caps** (a measure counting the distinct cards standing reads the same at one copy and two) can't
+  finish a goal past that ceiling alone, so the leaf also composes the capped routes cheapest-first into a
+  **cover** — one summed bill netted against the bank once, folded against the latest member's delivery.
+  `T̂loss` is
   the shortest pool runway (a deepening drain enters as a quadratic root; a recurring `event` charges at
   its circulation share), each threat's frozen-world deadline probe, and the drive cutoff. Five tuned
   constants, each stating its units and why it is tuned rather than derived, on the constant itself.

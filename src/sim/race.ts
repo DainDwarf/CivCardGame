@@ -21,7 +21,9 @@ import {
 } from '../rules';
 import { effectiveGain } from '../rules/stickers';
 import { isDurableProducer, isStructure, type CardDef } from '../content/cards';
-import { cardPrice, grantDelta, outputDelta, presenceDelta, replacementCost, runCardIds } from './probes';
+import {
+  cardPrice, grantDelta, outputDelta, presenceDelta, replacementCost, runCardIds, selfExiles,
+} from './probes';
 import { DEFAULT_MAX_ROUNDS } from './simulate';
 
 /**
@@ -89,9 +91,10 @@ export type LossCause = keyof CoreResources | 'horizon' | 'deadline' | 'defeat';
 
 /** Which route the goal's clock was read off: it is already satisfied (`met`), its satisfaction is a
  *  bespoke predicate with no threshold to divide (`flat`), the standing economy carries it
- *  (`throughput`), the deck lands copies of a card it reads (`landing`) or stands a producer it reads
- *  (`building`), or nothing the run holds reaches it at all (`none`). */
-export type GoalRoute = 'met' | 'flat' | 'throughput' | 'landing' | 'building' | 'none';
+ *  (`throughput`), the deck lands copies of a card it reads (`landing`) or several cards no one of which
+ *  reaches the target alone (`cover`) or stands a producer it reads (`building`), or nothing the run holds
+ *  reaches it at all (`none`). */
+export type GoalRoute = 'met' | 'flat' | 'throughput' | 'landing' | 'cover' | 'building' | 'none';
 
 /** One goal's clock. `need` and `tau` are in the goal's own measure units; `t` is in rounds. */
 export interface GoalClock {
@@ -202,9 +205,15 @@ export interface LandingPlan {
    *  has nothing to say about one already in it — Conquest's real cost is 2⚔️ and a citizen's round. */
   workerRounds?: number;
   /** Whether a landed copy returns to the pile it was dealt from. A copy landing by presence is spent by
-   *  landing, so a plan needing more than the run holds is unreachable; a work box files back to the
-   *  discard, so two copies can deliver six units and the cadence they cycle at is the whole clock. */
+   *  landing, so a plan needing more than the run holds is unreachable; a played copy that files back to
+   *  the discard is dealt again, so two copies can deliver six units and the cadence they cycle at is the
+   *  whole clock. */
   recycles?: boolean;
+  /** The most units of the measure this card can ever supply, however many copies land — absent where the
+   *  route is a rate and `need / delta` copies of it really do finish the goal. A measure counting the
+   *  *distinct* cards present caps every route at one card's worth, which is what makes a goal asking for
+   *  two of them reachable only by two different cards: hence `cover`. */
+  cap?: number;
 }
 
 /** Standing a durable producer whose per-round output the goal reads: pay for it once, then collect `tau`
@@ -329,6 +338,35 @@ export interface PlanClockExplain {
   t: number;
 }
 
+/** One cover's clock: the members it composed, and the two things no member carries — the summed bill the
+ *  bank was netted against once, and the fold across the members' own clocks. */
+export interface CoverClockExplain {
+  cardIds: string[];
+  /** Each member's share, and the delivery half it contributed to the `max`. Its payment is deliberately
+   *  absent: a member has no payment of its own, the cover having one bill. */
+  members: {
+    cardId: string;
+    copies: number;
+    price: Partial<Record<keyof Resources, number>>;
+    delivery: number;
+    staffing: number;
+    held: number;
+    pool: number;
+    hand: number;
+    perRound: number;
+    /** What this member would have read alone — the number the cover exists because none of them finished. */
+    t: number;
+  }[];
+  /** `Σ member price × copies`, the bag `outstanding` netted the bank against. */
+  bill: Partial<Record<keyof Resources, number>>;
+  netted: Partial<Record<keyof Resources, number>>;
+  payment: number;
+  /** The latest member's `delivery + staffing`. */
+  delivery: number;
+  weights: number[];
+  t: number;
+}
+
 /** One goal's clock with the routes it ranked and the clamp it met. */
 export interface GoalClockExplain {
   clock: GoalClock;
@@ -347,6 +385,8 @@ export interface GoalClockExplain {
   /** Every route costed here, in the plan's own order — the `min` this clock is. */
   landings: PlanClockExplain[];
   buildings: PlanClockExplain[];
+  /** At most one, and empty wherever the capped routes never needed composing. */
+  covers: CoverClockExplain[];
 }
 
 /** One core pool's death clock: the positive root of `level = drain·t + accel·t²`. */
@@ -927,6 +967,19 @@ function routeSink(): RouteSink {
   return { census: { held: 0, pool: 0, hand: 0, perRound: 0 }, weights: [] };
 }
 
+/** The same for a cover, whose members each need one of the above and whose own fold has weights and a
+ *  summed bill no member carries. */
+type CoverSink = {
+  members: RouteSink[];
+  clocks: { price: Partial<Record<keyof Resources, number>>; delivery: number; staffing: number; t: number }[];
+  bill: Partial<Record<keyof Resources, number>>;
+  weights: number[];
+};
+
+function coverSink(size: number): CoverSink {
+  return { members: Array.from({ length: size }, routeSink), clocks: [], bill: {}, weights: [] };
+}
+
 /**
  * One route's clock: the softened fold of earning `copies` of its price and drawing that many copies. Shared
  * by the root scan, which keeps a route on whether both halves are finite, and by the leaf, which takes the
@@ -972,6 +1025,70 @@ function routeClock(
 }
 
 /**
+ * The set of routes a cover runs, or nothing where the run's routes cannot together reach the goal.
+ *
+ * Cheapest-per-unit first, which is the order `deriveRace` already left the list in. Greedy over that rank
+ * is exactly optimal while the caps are equal — every measure counting the distinct cards standing caps
+ * each route at one — and an approximation past that, since the rank is a rate and the spend is a
+ * cap-sized chunk. A search over subsets would be the exact answer to a question no shipped goal asks.
+ * Each member is asked for the share left after the ones before it, so a route with room to spare finishes
+ * the goal rather than overbuying its own ceiling.
+ */
+function coverMembers(landings: LandingPlan[], need: number): { plan: LandingPlan; copies: number }[] {
+  const members: { plan: LandingPlan; copies: number }[] = [];
+  let remaining = need;
+  for (const landing of landings) {
+    const share = Math.min(landing.cap ?? remaining, remaining);
+    if (share <= 0) break;
+    members.push({ plan: landing, copies: share / landing.delta });
+    remaining -= share;
+  }
+  // Divided shares accumulate rounding, and a goal is short by a rounding error in no meaningful sense.
+  return remaining > 1e-9 ? [] : members;
+}
+
+/**
+ * When several routes finish a goal that no one of them can, the clock of pursuing them together. A goal
+ * counting the *distinct* cards standing caps each route at one card's worth (`LandingPlan.cap`), so its
+ * only completion is a set — and a `min` over the members reports the soonest of several routes that each
+ * fall short, which is a clock for reaching part of a goal.
+ *
+ * The two halves compose differently because the run does them differently. The bill is **one bill**: the
+ * members' prices are summed and the bank netted against the total once, since a coin spent on the first
+ * card is not there for the second — netting each member against the whole bank separately would let the
+ * same food buy both. Delivery is the **latest** member's: the deck deals them in parallel, and the set is
+ * complete when the last one arrives.
+ *
+ * Which makes the one-member case exactly `routeClock` — `outstanding` multiplies price by copies, so a
+ * bill already scaled and paid once is the same arithmetic — and that is the point: a cover is not a second
+ * model of a landing, it is the same landing over a set the goal forced.
+ */
+function coverClock(
+  members: { plan: LandingPlan; copies: number }[],
+  banked: GameState,
+  workforce: number,
+  rates: PriceRates,
+  sink?: CoverSink,
+): { netted: Partial<Record<keyof Resources, number>>; payment: number; delivery: number; t: number } {
+  const bill: Partial<Record<keyof Resources, number>> = {};
+  let labour = 0;
+  let delivery = 0;
+  members.forEach((m, i) => {
+    const r = routeClock(m.plan, m.copies, banked, workforce, rates, sink?.members[i]);
+    for (const [k, amt] of Object.entries(r.price) as [keyof Resources, number][]) {
+      bill[k] = (bill[k] ?? 0) + amt * m.copies;
+    }
+    labour += (m.plan.workerRounds ?? 0) * m.copies;
+    delivery = Math.max(delivery, r.delivery + r.staffing);
+    sink?.clocks.push(r);
+  });
+  const paid = outstanding(bill, 1, banked, rates.unitCost, labour);
+  const payment = paymentClock(paid.workerRounds, realizedIncome(bill, rates.income, rates.unitCost), workforce);
+  if (sink) sink.bill = bill;
+  return { netted: paid.netted, payment, delivery, t: landingClock(payment, delivery, sink?.weights) };
+}
+
+/**
  * One goal's rounds-to-completion, over every route the run has to it. `need` reads the **banked** state
  * and τ the **permanent** one, which is what counts each contribution exactly once: a tableau producer's
  * output is throughput (τ) and a staffed work box's is a level already reached (`need`).
@@ -1007,6 +1124,7 @@ function goalClock(
   // spends nothing to be told what it already knows.
   const landings = ex ? ([] as PlanClockExplain[]) : undefined;
   const buildings = ex ? ([] as PlanClockExplain[]) : undefined;
+  const covers = ex ? ([] as CoverClockExplain[]) : undefined;
   const seal = (clock: GoalClock, raw: number): GoalClock => {
     ex?.push({
       clock,
@@ -1017,6 +1135,7 @@ function goalClock(
       ...(plan ? { plan } : {}),
       landings: landings ?? [],
       buildings: buildings ?? [],
+      covers: covers ?? [],
     });
     return clock;
   };
@@ -1037,7 +1156,10 @@ function goalClock(
   if (workforce > 0 && plan) {
     for (const landing of plan.landings) {
       const sink = landings ? routeSink() : undefined;
-      const copies = need / landing.delta;
+      // A capped route buys its own ceiling and no more, so that is what it is costed for. Whether the
+      // goal is then finished is the `take` below: only a route whose share *is* the need completes alone.
+      const share = Math.min(landing.cap ?? need, need);
+      const copies = share / landing.delta;
       const r = routeClock(landing, copies, banked, workforce, rates, sink);
       landings?.push({
         cardId: landing.cardId, copies, price: r.price, workerRounds: r.workerRounds, netted: r.netted,
@@ -1045,7 +1167,23 @@ function goalClock(
         staffing: r.staffing, recycles: landing.recycles ?? false, weights: sink!.weights,
         lands: r.t, collect: 0, t: r.t,
       });
-      take(r.t, 'landing', landing.cardId, r.netted);
+      if (share >= need) take(r.t, 'landing', landing.cardId, r.netted);
+    }
+    const cover = coverMembers(plan.landings, need);
+    if (cover.length > 1) {
+      const sink = landings ? coverSink(cover.length) : undefined;
+      const r = coverClock(cover, banked, workforce, rates, sink);
+      covers?.push({
+        cardIds: cover.map((m) => m.plan.cardId),
+        members: cover.map((m, i) => ({
+          cardId: m.plan.cardId, copies: m.copies, price: sink!.clocks[i].price,
+          delivery: sink!.clocks[i].delivery, staffing: sink!.clocks[i].staffing,
+          ...sink!.members[i].census, t: sink!.clocks[i].t,
+        })),
+        bill: sink!.bill, netted: r.netted, payment: r.payment, delivery: r.delivery,
+        weights: sink!.weights, t: r.t,
+      });
+      take(r.t, 'cover', cover.map((m) => m.plan.cardId).join('+'), r.netted);
     }
     for (const building of plan.buildings) {
       const sink = buildings ? routeSink() : undefined;
@@ -1133,6 +1271,9 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
   // decides nothing — a route is kept on its price and its copies, neither of which this touches.
   const rates: PriceRates = { unitCost, income: incomeRates(G, permanentProjection(G).perm) };
   const cards = Object.values(CARDS).filter((c) => ids.has(c.id));
+  // A fact about the card, not about any goal, so it is read once rather than per goal below — and only
+  // where it can be false at all: a kind with no discard filing recycles nothing whatever its effect does.
+  const exiles = new Set(cards.filter((c) => c.kind === 'action' && selfExiles(G, c)).map((c) => c.id));
   const explained: GoalPlanExplain[] = [];
   const plans = objectiveGoals(G).map((goal) => {
     const need = Math.max(0, goal.target - goal.measure(banked));
@@ -1149,11 +1290,15 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
       const price = cardPrice(G, card, pricingCopy(G, card, unitCost));
       const unpriceable = (Object.keys(price) as (keyof Resources)[]).filter((k) => unitCost[k] === undefined);
       const work = card.kind === 'work';
-      const delta = Math.max(
-        presenceDelta(probe, card, goal.measure),
+      // The two ways a copy can move a measure, kept apart because they differ in what a *second* copy
+      // buys. What a play adds is a resource and resources sum, so that half is a rate by construction;
+      // standing somewhere counted may or may not be, which is what the two-copy probe below reads.
+      const standing = presenceDelta(probe, card, goal.measure);
+      const played = Math.max(
         grantDelta(probe, card, goal.measure),
         work ? outputDelta(probe, card, goal.measure) : 0,
       );
+      const delta = Math.max(standing, played);
       // Only a durable producer's `produces` is a rate — a work box's is the landing delta above.
       const tau = isDurableProducer(card) ? outputDelta(probe, card, goal.measure) : 0;
       if (delta <= 0 && tau <= 0) {
@@ -1176,19 +1321,30 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
       // A work box is a landing in this model's own vocabulary — pay a price, take a delta, repeat — and
       // for a goal no standing card moves it is the only route there is. Its `produces` fires once per
       // play, so it reads at one staffed worker as a level; the citizen who spends the turn running it is
-      // the rest of what it charges, and it recycles into the discard rather than being spent by landing.
+      // the rest of what it charges.
       const staffing = work ? 1 : 0;
       const perUnit = delta > 0 ? (workerRounds + staffing) / delta : Infinity;
       const candidate: PlanCandidate = {
         cardId: card.id, delta, tau, price: withRoom(card, price), workerRounds, perUnit, unpriceable,
       };
       if (delta > 0) {
+        // Where the delta is what the play *added*, the copy files where its kind sends it and the two that
+        // file to the discard are dealt again — bar an action whose own effect exiled it first. Where the
+        // delta is the copy *standing* somewhere counted, it is spent standing there whatever its kind.
+        const recycles = played >= standing && (work || (card.kind === 'action' && !exiles.has(card.id)));
+        // A second copy that buys nothing is a ceiling rather than a rate, and a goal past it is reachable
+        // only alongside another card. Probed only on the standing half, the played one summing by construction.
+        const cap = played >= standing || presenceDelta(probe, card, goal.measure, 2) >= 2 * standing
+          ? undefined
+          : standing;
         const plan: LandingPlan = {
           cardId: card.id,
           delta,
-          ...(work ? { workerRounds: staffing, recycles: true } : {}),
+          ...(work ? { workerRounds: staffing } : {}),
+          ...(recycles ? { recycles } : {}),
+          ...(cap !== undefined ? { cap } : {}),
         };
-        candidate.landing = probeRoute(plan, need / delta, banked, workforce, rates);
+        candidate.landing = probeRoute(plan, Math.min(cap ?? need, need) / delta, banked, workforce, rates);
         if (candidate.landing.kept) landings.push({ plan, rank: perUnit });
         else dropped.add(candidate.landing.reject);
       }

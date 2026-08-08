@@ -531,7 +531,9 @@ optimism, recoverable by raising the world count.
 margin `min(T̂loss, slackCap) − T̂win` (`sim/race.ts`): rounds-to-win against rounds-to-death, both read
 off one stripped projection of the standing economy plus per-goal completion clocks — a resource goal is
 `need / throughput`; a card-count goal is a **landing plan**, the copies' worker-round price run down at
-the run's real income, folded softly against the rounds the deck needs to deal them. The currency is the
+the run's real income, folded softly against the rounds the deck needs to deal them — and where the
+measure counts the *distinct* cards standing, a second copy of one buys nothing, so the plan is a **set**
+of them against one summed bill and the latest arrival. The currency is the
 design decision: a score-point value needs every mission-directed term normalized by the goal's target
 size, so its steering signal shrinks as missions grow and each retune fixes one mission while silently
 moving the rest — with both sides of every clock in raw units and rounds, that normalization has nowhere

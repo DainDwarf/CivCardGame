@@ -105,6 +105,31 @@ const FIXTURES: Record<string, CardDef> = {
       target: 2,
     }],
   },
+  // A measure that counts the *distinct* cards standing, so a second copy of one of them buys nothing and
+  // the only completion is a set — the shape a plan asking for `need / delta` copies of one card cannot
+  // express at all.
+  race_goal_distinct: {
+    id: 'race_goal_distinct', name: 'Race Goal Distinct', kind: 'objective', cost: {},
+    goals: [{
+      icon: '🏛️',
+      measure: (G) => ['race_shrine', 'race_kiln'].filter((id) => G.tableau.some((b) => b.cardId === id)).length,
+      target: 2,
+    }],
+  },
+  race_shrine: {
+    id: 'race_shrine', name: 'Race Shrine', kind: 'building', workers: 0, cost: { resources: { production: 2 } },
+  },
+  race_kiln: {
+    id: 'race_kiln', name: 'Race Kiln', kind: 'building', workers: 0, cost: { resources: { production: 4 } },
+  },
+  // The pair that differ only in where a played copy files: one back into circulation, one out of the run.
+  race_spark: {
+    id: 'race_spark', name: 'Race Spark', kind: 'action', cost: {}, effect: { resources: { science: 1 } },
+  },
+  race_flare: {
+    id: 'race_flare', name: 'Race Flare', kind: 'action', cost: {},
+    effect: { resources: { science: 1 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
+  },
   // A pool nothing `produces` per round — it exists only as what a play grants.
   race_goal_pop: {
     id: 'race_goal_pop', name: 'Race Goal Pop', kind: 'objective', cost: {},
@@ -409,7 +434,57 @@ describe('plans', () => {
   });
 });
 
+describe('cover', () => {
+  /** The one cover the goal's plan composes, at the state handed in. */
+  function cover(G: GameState) {
+    return explainRaceValue(G, { model: deriveRace(G) }).goals[0].covers[0];
+  }
+
+  it('composes the routes a goal no single card finishes needs together', () => {
+    const G = planned('race_goal_distinct', ['race_shrine', 'race_kiln'], { production: 6 });
+    // Each card caps at the one distinct id it is, so neither route completes the goal and both are
+    // deliverable — a scan asking each for two copies of itself drops both and reports no route at all.
+    const plan = deriveRace(G).plans[0];
+    expect(plan.landings).toHaveLength(2);
+    expect(plan.landings.map((l) => l.cap)).toEqual([1, 1]);
+
+    const c = clockOf(G);
+    expect(c.route).toBe('cover');
+    expect(c.cardId).toBe('race_shrine+race_kiln');
+    expect(Number.isFinite(c.t)).toBe(true);
+  });
+
+  it('nets the bank against the members\' summed bill rather than against each of them', () => {
+    // The half a `min` over routes cannot express: the 🔨 spent on the shrine is not there for the kiln,
+    // so a bank covering either alone still leaves the pair to earn.
+    const both = cover(planned('race_goal_distinct', ['race_shrine', 'race_kiln'], { production: 6 }));
+    const half = cover(planned('race_goal_distinct', ['race_shrine', 'race_kiln'], { production: 4 }));
+    // Both prices, plus the slot each structure stands in.
+    expect(half.bill).toEqual({ production: 6, territory: 2 });
+    expect(half.payment).toBeGreaterThan(both.payment);
+  });
+
+  it('reports no route where the run\'s caps cannot reach the target between them', () => {
+    // Two copies of one card are still one distinct id. The goal really is unreachable here, and saying so
+    // is the correct answer — what it may not do is say it because it costed the wrong plan.
+    const G = planned('race_goal_distinct', ['race_shrine', 'race_shrine'], { production: 6 });
+    expect(clockOf(G).route).toBe('none');
+  });
+});
+
 describe('delivery', () => {
+  it('deals a played copy again where it files back to circulation, and never where it exiles itself', () => {
+    // Both grant the goal's pool one unit a play and the run holds one of each, so the whole difference is
+    // where `run/moves.ts` files the copy afterwards — which no `CardKind` states and only the play tells.
+    const recycled = planned('race_goal', ['race_spark'], { production: 0 });
+    const spent = planned('race_goal', ['race_flare'], { production: 0 });
+    expect(deriveRace(recycled).plans[0].landings[0]).toMatchObject({ cardId: 'race_spark', recycles: true });
+    expect(Number.isFinite(clockOf(recycled).t)).toBe(true);
+
+    expect(deriveRace(spent).plans[0].landings).toEqual([]);
+    expect(clockOf(spent).route).toBe('none');
+  });
+
   it('shortens a landing clock as the copies land, not merely as the bank covers them', () => {
     // The gradient the payment term structurally cannot supply: `copies·price − bank` is unchanged by
     // paying for one of those copies, so on a bank that covers the plan outright every finishing play
@@ -1193,6 +1268,7 @@ describe('the explained pass', () => {
       planned('race_goal_count', ['race_relic', 'race_relic', 'race_relic'], { production: 4 }),
       planned('race_goal_pop', ['race_hut', 'race_hut'], { production: 8 }),
       planned('race_goal_land', ['race_claim', 'race_claim']),
+      planned('race_goal_distinct', ['race_shrine', 'race_kiln'], { production: 6 }),
       planned('race_goal', ['test_sci'], { population: 2 }),
       ticking,
       deadline,
