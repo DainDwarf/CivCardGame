@@ -17,6 +17,12 @@
 > **no new mechanics** — they are content expansion, and their flavor is not yet decided
 > (only the historical period is fixed). Steps are loosely independent; hard dependencies are
 > noted inline.
+>
+> **This board tracks progress against [`DESIGN.md`](DESIGN.md) → *Demo scope*** — the first public
+> build, which is Phase 4 complete plus five items the campaign alone doesn't cover. The ordering
+> stated there (Bronze → culture → endless → Iron → meta → tutorial) constrains the otherwise loose
+> step sequence below — Step 9's tutorial layer runs last because authoring a later age keeps
+> reworking the shipped ones, and the tutorial is what those reworks are most expensive to hit.
 
 - **Steps 1–6 — SHIPPED** ✅ (v0.0.4) — content reset, the Paleolithic start, the headless
   simulator, the ages-map infrastructure, and the **full Stone Age arc** (missions 6.1–6.7, the

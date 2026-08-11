@@ -578,6 +578,68 @@ day the scorer is deleted instead.
   only, no new mechanics (their flavor is undecided beyond the historical period). No new
   resources this phase. See BACKLOG.md for the step breakdown.
 
+## Demo scope 🔧
+
+The first public build. It is a **slice, not a milestone** — [`IDEAS.md`](IDEAS.md) frames ten ages
+through the Space Age, and the demo is the first three, so shipping it settles nothing about how far
+the game eventually goes. The point of drawing the line at all is that a scope with no stated edge
+can never get closer, and the work behind this one runs months.
+
+**In scope** — Phase 4 complete (Stone ✅ · Bronze · Iron), plus the five things the campaign alone
+doesn't cover:
+
+- **Culture reworked** — the gauge stands on the weakest leg of the eight resources.
+- **The endless missions reworked** — `ice_age`/`sandbox` are the Influence faucet, and the
+  anti-tedium valve for farming it. They want a rework rather than a re-measure (BACKLOG Step 10),
+  which is the same design slot procedurally-generated arcs would occupy at a fraction of the cost;
+  the generator stays a post-demo question.
+- **Meta economy retuned** — shop tiers + sticker prices, tightened over the finished catalogue.
+  **Rarity limits** land here: they are a price on breadth, so they are decided with the prices.
+- **Tutorial** — Step 9's scripted layer over the Stone Age.
+- **Community + publish** — outbound links (Discord / GitHub / contact), the feedback funnel, the
+  itch page.
+
+**Out of scope** — every age from Empire onward, procedurally-generated mission arcs, and the
+**civilization identity** that gates combos, which is dropped rather than deferred.
+
+**The demo is where pre-alpha ends.** Shipping it as **0.1** closes the "an unrecognized store shape
+resets to `emptyStore()`" rule: from 0.1 on, a save shape that changes owes a migration. So the demo
+is the *last* build free to reset saves, and the first that may not — which makes save handling a
+boundary the demo marks rather than an item it carries.
+
+**Order.** Each position is load-bearing, not a preference:
+
+1. **Finish Bronze** — the six unbuilt nodes except the one below, plus Setting Sail's open balance
+   pass.
+2. **Culture rework.** Early because it is a *foundation*, and because the tutorial's culture lesson
+   (BACKLOG 9.6b) would otherwise teach a mechanic already scheduled for replacement.
+   **Hammurabi's Code** is the exception carved out of step 1 and is held for this step: it is the
+   age's law/culture leaf, so it is the natural vehicle for the rework rather than a node authored
+   against a gauge about to change.
+3. **Endless rework.** Before Iron because the endless missions *are* the Influence faucet, and Iron
+   is balanced against Influence availability — moving the faucet afterwards invalidates that balance.
+4. **Iron Age.**
+5. **Meta retune.** After Iron for the mirror of the same reason: prices can only be finally tuned
+   against a catalogue that has stopped growing. The faucet must be stable *before* the content it
+   funds; the prices can only settle *after* it.
+6. **Tutorial.** Last of the build work, against a foundation that has stopped moving. Authoring a
+   later age destabilizes the shipped ones: Bronze development restructured the Stone Age arc once
+   and surfaced the culture rework three-quarters of the way in. Neither is a new *mechanic* — the
+   no-new-mechanics intent holds — but the tutorial couples to every mechanic *and* to the arc's
+   shape, so it is the artifact those reworks are most expensive to hit, and the last that should be
+   exposed to them.
+7. **Community + publish.**
+
+**Polish is continuous, not a step.** It appears in no position above because it belongs in all of
+them: card text, art and lore are the entire surface a stranger judges, and the work is cheap,
+visible, and independent of whatever else is in flight — so it is the designated low-motivation
+reservoir rather than a phase to schedule.
+
+**Publishing.** Pages already serves `Latest` off the tail of CI, so hosting is solved and **itch.io
+is bought for discovery and a comment thread** rather than for hosting — which makes the community
+item a feedback funnel first and a set of badges second. One constraint is stated on the page rather
+than absorbed by the build: the UI is mouse-only by design, so the demo is desktop-only.
+
 ## Deferred decisions
 
 Resolved: theme framing (run = one civilization's rise) and the mission map (a
@@ -590,5 +652,6 @@ Still open, deferred until the phase that needs them:
   provisional 20) and a **default hand limit** lowered 5→4, both enforced at the deck writer
   (`rules/deckBuilder.ts` + `App.saveDeck`, the `MAX_DECKS` precedent — a core rule, not a UI
   gate). The **per-card copy cap = copies owned** shipped alongside the shop (see
-  *Economy & progression*). Still open ❓: **rarity limits** and a **"civilization" identity** that
-  gates combos — deferred past the initial content pass.
+  *Economy & progression*). The two that were open past it are now placed: **rarity limits** ❓ are
+  decided with the shop prices in the demo's meta retune (see *Demo scope*), being a price on breadth;
+  the **"civilization" identity** that gates combos is **dropped** ✅.
