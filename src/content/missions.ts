@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -534,6 +534,35 @@ export const MISSIONS: Record<string, MissionDef> = {
     // provisional.
     reward: { influence: 12, unlockCardIds: ['coastal_route'], unlockBoardIds: ['port'] },
     map: { col: 9, row: 1 },
+    age: 'bronze',
+  },
+  sea_lanes: {
+    id: 'sea_lanes',
+    name: 'Sea Lanes',
+    lore:
+      'The coast is yours as far as a single hull can carry, and a single hull is not enough. The tin ' +
+      'lies out past the last headland your crews can name, on islands that deal with whoever is ' +
+      'moored there when the season turns — and being there means a lane held open all year, not a ' +
+      'voyage remembered. Lay them down one after another and keep them running. Every lane you open ' +
+      'is another stretch of water somebody else would rather own, and your tin will only cross the ' +
+      'water your spears have crossed first.',
+    prereqs: ['setting_sail'],
+    threats: ['unguarded_lanes'],
+    objectiveCardId: 'sea_lanes_goal',
+    victoryHint: `Hold ${SEA_LANE_ROUTES} trade routes open at once — nothing ever closes one.`,
+    failureHint:
+      'Every lane you open has to be patrolled for the rest of the run: each one drains 1 ⚔️ at the end ' +
+      'of every round, and running the escorts into the ground ends it.',
+    kind: 'standard',
+    // Closes the naval branch: the Tin Route is the branch's deliverable to the Bronze convergence
+    // (standing access, no yield), the Merchant Ship is the engine the goal itself feeds, and Convoy
+    // answers the mission's own ⚔️ pressure one node downstream. Influence amount provisional.
+    reward: {
+      influence: 12,
+      unlockCardIds: ['tin_route', 'merchant_ship'],
+      unlockStickerIds: ['convoy'],
+    },
+    map: { col: 10, row: 1 },
     age: 'bronze',
   },
   ice_age: {

@@ -95,7 +95,7 @@ export const BOARDS: Record<BoardId, BoardDef> = {
     // room and the treasury to open sea lanes with, and the Wharf standing in one of its three slots
     // turning each of those into 🎭. Where Chiefdom is fed by taking land, this one is paid by opening
     // water — which needs nobody.
-    resources: { food: 10, production: 0, science: 0, military: 0, money: 6, population: 1, territory: 3, culture: 0 },
+    resources: { food: 10, production: 5, science: 0, military: 0, money: 6, population: 1, territory: 3, culture: 0 },
     prebuilt: ['wharf'],
   },
   city: {

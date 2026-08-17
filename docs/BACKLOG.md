@@ -11,18 +11,16 @@
 > are done. Narrative/age framing candidates live in [`IDEAS.md`](IDEAS.md).
 
 > Phase 4 is content expansion + balance tuning with the headless simulator (see
-> [`DESIGN.md`](DESIGN.md) *Build roadmap*). The content target is the **first three ages —
-> Stone Age, Bronze Age, Iron Age**. **Stone Age is the whole tutorial age** and introduces
-> *all* core gameplay (buildings, territory, conquest, culture); Bronze Age + Iron Age add
-> **no new mechanics** — they are content expansion, and their flavor is not yet decided
-> (only the historical period is fixed). Steps are loosely independent; hard dependencies are
-> noted inline.
+> [`DESIGN.md`](DESIGN.md) *Build roadmap*). The content target is the **first two ages — Stone Age
+> and Bronze Age** (Iron was cut with the 0.1 scope). **Stone Age is the whole tutorial age** and
+> introduces *all* core gameplay (buildings, territory, conquest, culture); the Bronze Age adds
+> **no new mechanics** — it is content expansion. Steps are loosely independent; hard dependencies
+> are noted inline.
 >
-> **This board tracks progress against [`DESIGN.md`](DESIGN.md) → *Demo scope*** — the first public
-> build, which is Phase 4 complete plus five items the campaign alone doesn't cover. The ordering
-> stated there (Bronze → culture → endless → Iron → meta → tutorial) constrains the otherwise loose
-> step sequence below — Step 9's tutorial layer runs last because authoring a later age keeps
-> reworking the shipped ones, and the tutorial is what those reworks are most expensive to hit.
+> **This board tracks progress against [`DESIGN.md`](DESIGN.md) → *Demo scope*** — the 0.1 public
+> build, the project's final planned scope; the execution plan for reaching it is
+> [`PUBLISH.md`](PUBLISH.md). The ordering stated there (Bronze time-boxed → transversal fixes →
+> polish → publish) constrains the otherwise loose step sequence below.
 
 - **Steps 1–6 — SHIPPED** ✅ (v0.0.4) — content reset, the Paleolithic start, the headless
   simulator, the ages-map infrastructure, and the **full Stone Age arc** (missions 6.1–6.7, the
@@ -59,8 +57,8 @@
                    ┌─→ Copper ──┐                        ┌─→ Wheel+roads (×2) ─┐
   Göbekli Tepe ────┤            ├─→ Accounting ─→ Writing ┼─→ Horse (×2) ───────┼─→ Bronze ─→ Sword & chariot ─→ The Sea Peoples
    (Stone anchor)  └─→ Masonry ─┘                    │    └─→ Naval (×2) ───────┘                                   (capstone)
-                        │                            │                                                                   │
-                   (leaf) Pyramid            (leaf) Hammurabi's Code                                  unlocks infinite → Fall of the Bronze Age
+                        │                                                                                                │
+                   (leaf) Pyramid                                                                     unlocks infinite → Fall of the Bronze Age
   ```
 
   **Status board** — the index; each mission's *detail* lives in its dossier
@@ -75,13 +73,12 @@
   | Pyramid *(leaf)* | ✅ | ✅ | ✅ | ⬜ | [pyramid](missions/pyramid.md) |
   | Accounting | ✅ | ✅ | ✅ | ⬜ | [accounting](missions/accounting.md) |
   | Writing | ✅ | ✅ | ✅ | ⬜ | [writing](missions/writing.md) |
-  | Hammurabi's Code *(leaf)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Roads | ✅ | ✅ | ✅ | ⬜ | [roads](missions/roads.md) |
   | Wheel | ✅ | ✅ | ✅ | ⬜ | [wheel](missions/wheel.md) |
   | Horse taming | ✅ | ✅ | ✅ | ⬜ | [horse-taming](missions/horse-taming.md) |
   | Raiding | ✅ | ✅ | ✅ | ⬜ | [raiding](missions/raiding.md) |
-  | Setting Sail | ✅ | ✅ | 🟡 | ⬜ | [setting-sail](missions/setting-sail.md) |
-  | Sea Lanes | 🟡 | ⬜ | ⬜ | ⬜ | [sea-lanes](missions/sea-lanes.md) |
+  | Setting Sail | ✅ | ✅ | ✅ | ⬜ | [setting-sail](missions/setting-sail.md) |
+  | Sea Lanes | ✅ | ✅ | 🟡 | ⬜ | [sea-lanes](missions/sea-lanes.md) |
   | Bronze *(convergence)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Sword & chariot | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | The Sea Peoples *(capstone)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
@@ -96,7 +93,7 @@
     infinite** survival mission (*Fall of the Bronze Age*, named apart so the two don't both read as
     "the collapse"). Bridges to the Iron Age ("societies emerge *after* a collapse").
 
-  **Scale — stated plainly, not trimmed:** ≈13 critical nodes + 2 leaves + 1 infinite ≈ **16 missions**,
+  **Scale — stated plainly, not trimmed:** ≈13 critical nodes + 1 leaf + 1 infinite ≈ **15 missions**,
   more than double the 7-mission Stone Age, all remixing existing mechanics. So author it in **order**,
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see [`missions/copper.md`](missions/copper.md)).
@@ -105,15 +102,16 @@
      `planner` row is a simulator floor rather than a difficulty reading).
   3. **Accounting** — DONE, balance included (see [`missions/accounting.md`](missions/accounting.md)). **Writing** — DONE,
      balance included (see [`missions/writing.md`](missions/writing.md)). The optional **Hammurabi's Code** leaf off Writing
-     remains — the last piece of the literacy half.
+     is **cut**: it was held back as the culture rework's vehicle, and the rework is cancelled with
+     the 0.1 scope (see [`DESIGN.md`](DESIGN.md) → *Demo scope*).
   4. **Wheel+roads (×2)** first (now the **expansion/territory** branch — repositioned from the money
      identity; see the reward proposal below). **Roads** — DONE, balance included (see
      [`missions/roads.md`](missions/roads.md)). **Wheel** — DONE, balance included (see [`missions/wheel.md`](missions/wheel.md)).
   5. **Horse (×2)** — **Horse taming** DONE, balance included (see
      [`missions/horse-taming.md`](missions/horse-taming.md)); **Raiding** DONE, balance included (see
-     [`missions/raiding.md`](missions/raiding.md)). Then **Naval (×2)** — in design (see
-     [`missions/setting-sail.md`](missions/setting-sail.md) and
-     [`missions/sea-lanes.md`](missions/sea-lanes.md)).
+     [`missions/raiding.md`](missions/raiding.md)). Then **Naval (×2)** — **Setting Sail** DONE,
+     balance included (see [`missions/setting-sail.md`](missions/setting-sail.md)); **Sea Lanes**
+     implemented, balance pending (see [`missions/sea-lanes.md`](missions/sea-lanes.md)).
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
 
   **Mechanical identity `[?]`:** IDEAS frames the age as "trade-dependent palace civilizations" → the
@@ -124,11 +122,8 @@
   **Per-node reward proposals** — unbuilt nodes only; shipped nodes live in the status board +
   their dossiers. All `[?]` unless decided:
 
-  - **Hammurabi's Code** (optional leaf off Writing) → law/culture: a sticker or stability card, not a
-    wonder. Still to author.
-  - **Naval (×2)** → in design; detail in [setting-sail](missions/setting-sail.md) /
-    [sea-lanes](missions/sea-lanes.md). It grants a third **board** line, so the Bronze proposals below
-    are the last that can assume two.
+  - The Naval branch grants a third **board** line (Setting Sail's Port board, shipped), so the Bronze
+    proposals below are the last that can assume two.
   - **Bronze** (convergence) → **Bronzeworking** building (consumes 🪙 → 🔨) + **Bronze tools** sticker
     (+1🔨 for production buildings *and* work cards).
   - **Sword & chariot** → Sword (military, needs bronze) + Chariot (spoked wheel + horse + bronze).
@@ -169,20 +164,21 @@
     (Stone-Age floating things — sails are the Bronze part); **Ziggurat** (if ever wanted, a mudbrick
     temple-economy wonder off Writing/Accounting, not Masonry).
 
-- **Step 8 — Iron Age arc** (content expansion; flavor TBD) — same shape as Step 7, Iron Age
-  period; flavor/content **undecided**, placeholder until designed. Balance via simulator.
-  Sequenced **after Step 10**, so it is authored against rebalanced rates rather than inheriting them.
-  `[size: L]` `[?]`
-  - Iron Age mission arcs — structure as 2–3 parallel quest lines (branching DAG paths, echoing how the Stone Age forks Raiders at the Border / Reading the Seasons after Growing Numbers), themed around distinct early civilizations:
+- **Step 8 — Iron Age arc** — **CUT** with the 0.1 scope (see [`DESIGN.md`](DESIGN.md) → *Demo
+  scope*): the campaign ends at the Bronze collapse. Kept below only as reference for the successor
+  project. Was: content expansion, same shape as Step 7, Iron Age period; flavor/content undecided,
+  themed around distinct early civilizations:
+  - Iron Age mission arcs — structure as 2–3 parallel quest lines (branching DAG paths, echoing how the Stone Age forks Raiders at the Border / Reading the Seasons after Growing Numbers):
     - Roman Empire — a military/expansion-leaning line
     - China — a distinct cultural/technological line
     - Central Arabia (maybe) — a trade/desert line, tentative third branch
 
-- **Step 9 — Tutorial onboarding UI** — the scripted popups/indicators layer over the
+- **Step 9 — Tutorial onboarding UI** — **CUT** with the 0.1 scope (see [`DESIGN.md`](DESIGN.md) →
+  *Demo scope*): onboarding is the Codex plus a how-to-play blurb on the itch page. Kept below only
+  as reference for the successor project. Was: the scripted popups/indicators layer over the
   **Stone Age** arc (the sole tutorial age), so new mechanics aren't dumped on the player at
-  once. "Tutorial seen" state belongs in device-local `Settings` (`meta/settings.ts`), **not**
-  `PlayerStore` (not game progress). Mild tension with the anti-surprise unlock convention
-  (tutorials reveal; unlocks surprise). `[size: L]` `[?]`
+  once; "tutorial seen" state would live in device-local `Settings` (`meta/settings.ts`), **not**
+  `PlayerStore` (not game progress).
 
   **Per-mission tutorial substeps** — one scripted lesson per Stone Age mission, covering the
   gameplay elements that mission introduces and (post-clear) what its reward hands the player.

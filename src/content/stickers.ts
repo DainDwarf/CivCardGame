@@ -101,6 +101,31 @@ export const STICKERS: Record<string, StickerDef> = {
     // you climb, so an early copy sits idle until the run's first level lands.
     applyCost: (cost) => ({ ...cost, cultureLevelReq: Math.max(1, cost.cultureLevelReq ?? 0) }),
   },
+  convoy: {
+    id: 'convoy',
+    name: 'Convoy',
+    description: '+1 ⚔️ each round, +2 🔨 to open',
+    icon: '🛡️',
+    cost: 5,
+    // `producerOf`'s rule on the one kind it can't be spelled with — a route's yield is flat rather
+    // than per-worker, so the shared helper's staffable check would reject every trade card.
+    appliesTo: (c) =>
+      c.kind === 'trade' && Object.values(c.produces?.resources ?? {}).some((v) => (v ?? 0) > 0),
+    // `gainResources` folds stickers over *every* slot a card gains through, and a route's rent is an
+    // all-negative `upkeep` bag — so keying on a positive entry is what keeps the escort landing on the
+    // yield alone, once a round. Without it `effectiveCard`, which rebuilds `produces` but not
+    // `upkeep`, could not quote what the run really pays.
+    applyGain: (base) =>
+      base && Object.values(base).some((v) => (v ?? 0) > 0)
+        ? { ...base, military: (base.military ?? 0) + 1 }
+        : base,
+    // A surcharge, like Irrigation's: it materializes 🔨 on a route that pays only 🪙, so outfitting the
+    // escort is charged in the currency the sea trade never touches.
+    applyCost: (cost) => ({
+      ...cost,
+      resources: { ...cost.resources, production: (cost.resources?.production ?? 0) + 2 },
+    }),
+  },
   wheel: {
     id: 'wheel',
     name: 'Wheel',

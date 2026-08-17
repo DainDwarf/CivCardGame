@@ -285,6 +285,10 @@ function voyagesLaunched(G: GameState): number {
   return G.removed.filter((c) => c.cardId === 'voyage').length;
 }
 
+/** How many trade routes "Sea Lanes" wants open at once — shared by the `sea_lanes_goal` win threshold
+ *  and the mission's hints. Provisional (balance pending a sim sweep). */
+export const SEA_LANE_ROUTES = 4;
+
 /** Territory the player must *gain* over the board's starting size to win "The Wheel" — shared by the
  *  `wheel_goal` win threshold, its progress readout, and the mission's `victoryHint`
  *  (`content/missions.ts`). Measured against `startResources` so it reads the same on a board that
@@ -324,6 +328,18 @@ export const CARDS: Record<string, CardDef> = {
   beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 1 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 1 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
   war_horse: { id: 'war_horse', name: 'War Horse', kind: 'work', cost: {}, workers: 1, display: { art: '🏇' }, produces: { resources: { military: 3 } } },
+  // Pays off the trade zone rather than at a flat rate, so it is worth nothing on an empty sea and more
+  //   than the Trader on a busy one. On `produces.resolve` for the Wharf's reason: the amount comes off
+  //   `G.tradeRoutes.length`, which `resolveProduction`'s per-worker scaling can't express.
+  merchant_ship: {
+    id: 'merchant_ship', name: 'Merchant Ship', kind: 'work', cost: {}, workers: 1,
+    display: {
+      art: '🛳️',
+      description: 'Each open 🚢 route:\n+1🪙',
+      dynamicText: (G) => `+${G.tradeRoutes.length}🪙`,
+    },
+    produces: { resolve: (ctx) => gainResources(ctx, { money: ctx.G.tradeRoutes.length }) },
+  },
 
   // — Buildings —
   farm: { id: 'farm', name: 'Farm', kind: 'building', cost: { resources: { production: 2 } }, produces: { resources: { food: 1 } }, workers: 1, display: { art: '🌱' } },
@@ -431,6 +447,13 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🚢' },
     produces: { resources: { production: 3 } },
     upkeep: { resources: { money: -2 } },
+  },
+  // Deliberately yieldless: what it buys is standing access, so the rent is the whole of its balance
+  //   sheet until the cards that gate on a standing tin route exist. Numbers provisional.
+  tin_route: {
+    id: 'tin_route', name: 'Tin Route', kind: 'trade', cost: { resources: { money: 2 } },
+    display: { art: '🏝️', description: 'Standing access.\nNo yield.' },
+    upkeep: { resources: { money: -1 } },
   },
   dogs: { id: 'dogs', name: 'Hunting', kind: 'work', cost: {}, workers: 1, display: { art: '🐕' }, produces: { resources: { military: 1 } } },
   raiding: {
@@ -873,6 +896,14 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // Nothing ever closes a route, so the count only climbs: the goal latches the moment the last lane
+  //   opens rather than having to be held for any length of time.
+  sea_lanes_goal: {
+    id: 'sea_lanes_goal', name: 'Sea Lanes', kind: 'objective', cost: {},
+    goals: [{ icon: '🚢', measure: (G) => G.tradeRoutes.length, target: SEA_LANE_ROUTES }],
+    display: { description: `Hold ${SEA_LANE_ROUTES} 🚢 trade routes open at once` },
+  },
+
   // Measures territory *gained* since setup (`resources − startResources`), not the absolute realm
   //   size: occupying a slot doesn't lower the resource, and Road/Conquest raise it, so the difference
   //   is pure expansion — and reads the same win on every board regardless of its starting territory.
@@ -1042,6 +1073,23 @@ export const CARDS: Record<string, CardDef> = {
     },
     defeat: (_G, self) =>
       getCounter(self, 'idle') >= CREW_PATIENCE && 'the crews took berths in another port',
+  },
+  // Sea Lanes' squeeze: the goal is its own pressure — a lane opened is patrolled for the rest of the
+  //   run, so the last one is taken on under the heaviest drain. No `defeat` hook by design: ⚔️ going
+  //   negative is the universal collapse, which `run/engine.ts`'s `checkEndIf` reads *after* victory,
+  //   so opening the last lane on the round the escorts run out still wins.
+  unguarded_lanes: {
+    id: 'unguarded_lanes', name: 'Unguarded Lanes', kind: 'threat', cost: {},
+    display: {
+      art: '🌊',
+      description: '−1⚔️ per open trade route',
+      dynamicText: (G) => `−${G.tradeRoutes.length}⚔️ next round`,
+    },
+    upkeep: {
+      resolve: ({ G }) => {
+        subtractResources(G.resources, { military: G.tradeRoutes.length });
+      },
+    },
   },
   // Accounting's engine: envy breeds thieves in proportion to the untracked hoard. Each reshuffle mints
   //   `floor(money / THIEVES_PER_GOLD)` `thief` events into the deck (via `spawnIntoDeck`, so the mint
