@@ -40,6 +40,19 @@ const LOCAL: Record<string, CardDef> = {
     display: { description: 'Survive past round 3.' },
     goals: [{ icon: '⏳', measure: (G) => G.round, target: 4 }],
   },
+  // Spends a citizen on play and exiles itself to `removed` (the played-event path) — the one shape
+  // that can empty the population pool and complete a goal on the same play.
+  test_launch: {
+    id: 'test_launch', name: 'Launch', kind: 'event', cost: {},
+    effect: { resources: { population: -1 } },
+  },
+  // Counts the launches that landed: seeded at target 2 by both extinction cases below, so the two
+  // differ in nothing but how many are already banked when the last citizen goes.
+  test_launch_obj: {
+    id: 'test_launch_obj', name: 'Launch Two', kind: 'objective', cost: {},
+    display: { description: 'Launch 2.' },
+    goals: [{ icon: '⛵', measure: (G) => G.removed.filter((c) => c.cardId === 'test_launch').length, target: 2 }],
+  },
 };
 
 beforeAll(() => {
@@ -172,6 +185,30 @@ describe('event resolution', () => {
   });
 });
 
+describe('extinction: the population pool emptying ends the run at that boundary', () => {
+  // Same card, same play, same 1🧍 → 0🧍, same objective: the only difference is whether the play that
+  // spends the last citizen is also the one that finishes the goal.
+  it('spending the last citizen short of the goal is a defeat at that move, not at end of turn', () => {
+    let state = run();
+    seedObjective(state.G, 'test_launch_obj');
+    state.G.resources.population = 1;
+    state.G.hand = instancesFromCardIds(['test_launch'], 100);
+    state = applyMove(state, playCard, 0);
+    expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'extinction' });
+    expect(state.G.round).toBe(1); // the move's own flush, not a later boundary
+  });
+
+  it('spending the last citizen on the play that completes the goal still wins', () => {
+    let state = run();
+    seedObjective(state.G, 'test_launch_obj');
+    state.G.removed = instancesFromCardIds(['test_launch']); // one already launched
+    state.G.resources.population = 1;
+    state.G.hand = instancesFromCardIds(['test_launch'], 100);
+    state = applyMove(state, playCard, 0);
+    expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });
+  });
+});
+
 describe('objective win timing through the real turn loop', () => {
   // The subtlest case: a round-based win (`round > 3`). Round increments in `beginTurn`, so the win
   // must register there — off the `flushEvents` that follows the refill draw, even though beginTurn
@@ -181,7 +218,7 @@ describe('objective win timing through the real turn loop', () => {
     let state = run();
     seedObjective(state.G, 'test_round_obj');
     state.G.resources.food = 500;
-    state.G.resources.population = 0; // no population food upkeep
+    state.G.resources.population = 1; // floor(1²/4) = 0, so no food upkeep — and no extinction either
     // Drive the real loop; round starts at 1 and advances one per endTurn via beginTurn.
     for (let i = 0; i < 20 && !state.gameover; i++) state = endTurn(state);
     expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });

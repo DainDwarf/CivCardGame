@@ -46,8 +46,7 @@ the infinite is the casualty, The Sea Peoples' reward simply drops the unlock.)
 
 ### 2 — Transversal fixes
 
-- **Defeat on population ≤ 0** (TODO → *Run loop*) — a frozen dead run reads as a bug to a new
-  player; the trigger-shape decision noted on the ticket gets made here.
+- ~~**Defeat on population ≤ 0**~~ ✅ — 0🧍 is the `extinction` collapse, checked beside the core pools.
 - **Endless small polish** — a look at `ice_age`/`sandbox` with 0.1 eyes: rough edges only, no
   redesign.
 

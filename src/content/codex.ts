@@ -41,9 +41,9 @@ export interface StrategicEntry {
   role: string;
 }
 
-/** The 3 strategic gauges — never spent; they define the shape of your civilization. */
+/** The 3 strategic gauges — the shape of your civilization rather than a per-round budget. */
 export const CODEX_STRATEGIC: StrategicEntry[] = [
-  { key: 'population', name: 'Population', role: 'You need population to work the land and power your buildings. But a bigger population needs more food, so be wary of overextending!' },
+  { key: 'population', name: 'Population', role: 'You need population to work the land and power your buildings. But a bigger population needs more food, so be wary of overextending! And a civilization with nobody left in it is finished: if your population ever reaches zero, the run ends.' },
   { key: 'territory', name: 'Territory', role: 'The land you control, and how much you can build on it. Every building and wonder takes one slot for the rest of the run. Work cards and trade routes take none. Expand it to make room for more.' },
   { key: 'culture', name: 'Culture', role: 'How much your civilization shines. Each culture level raises your hand size, and some cards require a minimum culture level to play.' },
 ];

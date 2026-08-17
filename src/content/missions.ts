@@ -6,9 +6,9 @@ import { CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_N
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
  * mission-specific lose condition (failure) as predicates over the run state, plus
- * optional per-turn effects. Core resource floors (any of the 5 resources going
- * negative) are a *universal* failure enforced by the run loop via `coreCollapse`,
- * not by individual missions. Objective/failure are pure functions so they are
+ * optional per-turn effects. Core resource floors (any of the 5 going negative) and an
+ * emptied population are *universal* failures enforced by the run loop
+ * (`rules/collapse.ts`), not by individual missions. Objective/failure are pure functions so they are
  * unit-testable and reusable by the headless simulator.
  */
 export interface MissionDef {

@@ -166,10 +166,11 @@ streak its `defeat` reads; the `coastal_route` trade card and the `port` board w
 - **Nothing else in the game lowers population** (checked across `content/`: only Hut +1 and House +2
   touch the pool, and no sticker or board sticker does), so that gate is the only guard the
   `freePopulation >= 0` run invariant needs.
-- **Population can legally reach 0** — the gate passes at one *free* citizen, so a pop-1 civilization may
-  launch its last one. `foodUpkeep(0)` is 0 and population is not a collapse pool, so the run doesn't
-  end there; it ends `K` rounds later when the crews leave, which is the right answer for a
-  civilization that has put everyone to sea.
+- **Population can legally reach 0, and that ends the run** — the gate passes at one *free* citizen, so
+  a pop-1 civilization may launch its last one, and **0🧍 is the universal `extinction` collapse**
+  (`rules/collapse.ts`, checked in `checkEndIf` beside the core pools). `checkEndIf` reads victory
+  first, so launching the last citizen on the voyage that *completes* the goal still wins; short of it,
+  the run ends on that play rather than freezing until the crews leave.
 - The **Wharf** pays through `produces.resolve` rather than a declarative bundle: the amount comes off
   `G.tradeRoutes.length`, which `resolveProduction`'s per-worker scaling can't express, and the box holds
   no workers to scale by.
@@ -194,24 +195,23 @@ play.
 
 | | greedy @100 | planner @100 | prover @10 |
 |---|---|---|---|
-| City | 12% | 25% | 8/10 proven |
+| City | 12% | 24% | 8/10 proven |
 | Chiefdom | 4% | 22% | 9/10 proven |
 
-Defeats are the crews in the large majority (City 82/69 at the two tiers, Chiefdom 73/66); Chiefdom
+Defeats are the crews in the large majority (City 82/70 at the two tiers, Chiefdom 73/66); Chiefdom
 adds a famine tail the City cell doesn't, and both leak a little bankruptcy. Median winning run 18
 turns (City) / 24 (Chiefdom) at the planner tier, against the 20–32 the sibling Bronze nodes measure.
 
 **Read the planner column as a scorer floor, not the mission's difficulty.** The prover proves 8–9 of
 10 seeds winnable, and the gap is attributed: the race value prices *refusing* a launch three separate
 ways, this mission's own entry in [`../TODO.md`](../TODO.md) → *Simulator · Fidelity* (its one-sided
-fix was measured and reverted there). The run-loop question of a defeat on population ≤ 0 is likewise
-TODO's. The two boards read within a few points of each other; the wide City/Chiefdom gap earlier
-measurements showed was valuation blindness (the citizen a Voyage spends priced at zero — the planner
+fix was measured and reverted there). The two boards read within a few points of each other; the wide
+City/Chiefdom gap earlier measurements showed was valuation blindness (the citizen a Voyage spends priced at zero — the planner
 passed on affordable Houses and stranded itself at 0🧍), closed by the enabler pricing pass and
 superseded by the race-scorer cutover the table is recorded under (both in `../TODO.md` → *Done /
 shipped*).
 
-**Calendar found its first real job, as designed**: the planner plays it in most runs (70/100 City,
+**Calendar found its first real job, as designed**: the planner plays it in most runs (71/100 City,
 64/100 Chiefdom) against zero in every earlier standard cell. The Writing card did not — ≤2 planner
 plays per 100 on either board, alive only in prover lines — so the digging pressure is real but
 Calendar answers it alone.

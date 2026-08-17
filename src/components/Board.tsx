@@ -16,7 +16,7 @@ import {
   workerCapOf,
   unplayableReason,
 } from '../rules';
-import type { CollapseReason } from '../rules';
+import type { CoreCollapseReason } from '../rules';
 import { CARDS, isStaffable, isStructure, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
 import { BOARD_STICKERS } from '../content/boardStickers';
@@ -1590,11 +1590,13 @@ export function Board({
     bankruptcy: 'bankruptcy struck — your treasury ran dry.',
     dark_age:   'a dark age descended — knowledge was lost.',
     revolt:     'revolt erupted — your people rose against you.',
+    extinction: 'extinction came — the last of your people are gone.',
   };
 
   // The short, present-tense name of each collapse, for the pre-collapse End Round confirm (the
   // past-tense COLLAPSE_MESSAGES above are the gameover epitaph — wrong tense/length for the panel).
-  const COLLAPSE_NOUN: Record<CollapseReason, string> = {
+  // Core-only: the confirm reads the projected *upkeep*, which no card's population grant reaches.
+  const COLLAPSE_NOUN: Record<CoreCollapseReason, string> = {
     famine: 'Famine', ruin: 'Ruin', bankruptcy: 'Bankruptcy', dark_age: 'Dark age', revolt: 'Revolt',
   };
 

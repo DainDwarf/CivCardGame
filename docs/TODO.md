@@ -74,12 +74,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     removal exists, a play-time `gate.check` leaks: `gate` is evaluated at play and `upkeep` fires at the
     `endTurn` boundary, so play-route → play-building → close-route-before-ending-turn pays zero 🪙 and
     keeps the building forever. Continuous gating also gives the Sea Peoples capstone its teeth.
-- **Defeat on population ≤ 0** `[size: S]` `[?]` — a civilization at 0🧍 produces nothing and can only
-  regrow through a card that costs 🔨 it can no longer make, so the run is over but keeps playing. Measured
-  on Setting Sail: **50 of 84** planner crews-defeats on City end at population 0, some frozen for 11+
-  rounds with both pools unchanged. Wants the same pull-not-push shape as the other defeats (re-derived
-  each flush), and a decision on whether the trigger is `population <= 0` outright or that plus no
-  reachable regrowth.
 - **Escalating route rent** `[size: S]` `[?]` — routes ship with a **flat** rent. The treasury is the
   zone's *only* cap again, so the case for this is back at full strength. The originally-planned
   auto-cap is a rent that scales with the number of parallel
@@ -220,6 +214,21 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Defeat on population ≤ 0** ✅ — a civilization at 0🧍 staffs nothing and can only regrow through a card
+  priced in a pool it can no longer make, so the run was over but kept playing. `rules/collapse.ts`'s new
+  `populationCollapse` is the **`extinction`** defeat, read in `checkEndIf` beside `coreCollapse` off the same
+  post-flush `G.resources` — so it fires on the play that empties the board, not at end of turn. The
+  threshold is `<= 0` outright, no reachable-regrowth clause; **victory still checks first**, so spending the
+  last citizen on the play that completes the objective wins (pinned by a synthetic pair: one card, one play,
+  1🧍 → 0🧍, differing only in whether the goal lands with it). Setting Sail's Voyage is the only card that
+  spends population, so only its two cells could move — and the ticket's motivating measurement no longer
+  reproduces: across both fixtures **no recorded defeat ends at 0🧍** (the ten that do are all *wins*, on
+  Chiefdom), the 50-of-84 reading predating the N=3/K=12 rebalance and the race-scorer cutover. What moved is
+  the **planner's lookahead**, which drives the real `endTurn`: a determinized line that empties the
+  population now terminates as a defeat instead of playing on, re-ranking six `setting_sail_city` planner
+  rows (**25 → 24%**, one seed win→loss; crews 69 → 70). Chiefdom, both greedy columns and both prover
+  columns are byte-identical. `T̂loss` (`sim/race.ts`) still carries no extinction term — the scorer models
+  core-pool runway and threat deadlines only, so it cannot see this death coming.
 - **A landing route reaches only as far as the copies the run holds** ✅ — the race scorer asked every
   landing to deliver a goal's whole target alone, so a goal counting a zone's *length* (Sea Lanes' four
   trade routes, the first of its kind) dropped both its routes for `copies short` and read flat at the

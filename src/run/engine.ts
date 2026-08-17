@@ -1,5 +1,5 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, cloneState, coreCollapse, drawUpTo, flushEvents, settleEndOfTurn, snapshot, type CollapseReason, type GameState } from '../rules';
+import { applyUpkeep, cloneState, coreCollapse, drawUpTo, flushEvents, populationCollapse, settleEndOfTurn, snapshot, type CollapseReason, type GameState } from '../rules';
 import type { RunConfig, RunResult } from '../contract';
 
 export type Gameover = { outcome: 'victory' | 'defeat'; reason?: CollapseReason | string; missionId: string };
@@ -14,11 +14,12 @@ function checkEndIf(state: RunState): RunState {
   // Win/lose reads bus-written flags — never re-evaluates card logic here. The objective card's win
   // is re-derived into `G.pendingVictory` at every `flushEvents` boundary (`rules/objective.ts`'s
   // `evaluateObjective`); a threat's own `defeat` predicate is re-derived into `G.pendingDefeat` the
-  // same way (`rules/threats.ts`'s `evaluateDefeat`). Core-resource collapse stays a universal defeat
-  // between the two. Precedence is load-bearing: victory wins over `pendingDefeat`, so a player who
-  // hits the goal on the same upkeep a deadline threat fires still wins.
+  // same way (`rules/threats.ts`'s `evaluateDefeat`). The two universal collapses — a negative core
+  // pool, an empty population — sit between them, read straight off `G.resources`. Precedence is
+  // load-bearing: victory wins over both, so a player who hits the goal on the same boundary a deadline
+  // threat fires — or on the play that spends their last citizen — still wins.
   if (G.pendingVictory) return { ...state, gameover: { outcome: 'victory', missionId: G.missionId } };
-  const collapse = coreCollapse(G.resources);
+  const collapse = coreCollapse(G.resources) ?? populationCollapse(G.resources);
   if (collapse) return { ...state, gameover: { outcome: 'defeat', reason: collapse, missionId: G.missionId } };
   if (G.pendingDefeat) return { ...state, gameover: { outcome: 'defeat', reason: G.pendingDefeat.reason, missionId: G.missionId } };
   return state;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { coreCollapse } from './collapse';
+import { coreCollapse, populationCollapse } from './collapse';
 import { emptyResources } from './resources';
 
 describe('coreCollapse', () => {
@@ -36,5 +36,20 @@ describe('coreCollapse', () => {
   it('food takes priority over other negative resources (checked first)', () => {
     const r = { food: -1, production: -1, science: -1, military: -1, money: -1 };
     expect(coreCollapse(r)).toBe('famine');
+  });
+});
+
+describe('populationCollapse', () => {
+  it('returns null while a citizen remains', () => {
+    expect(populationCollapse({ ...emptyResources(), population: 1 })).toBeNull();
+  });
+
+  // The threshold that differs from the core pools': *at* zero, not below it.
+  it('detects extinction at zero population', () => {
+    expect(populationCollapse({ ...emptyResources(), population: 0 })).toBe('extinction');
+  });
+
+  it('detects extinction below zero too', () => {
+    expect(populationCollapse({ ...emptyResources(), population: -1 })).toBe('extinction');
   });
 });
