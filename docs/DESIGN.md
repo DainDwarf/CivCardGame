@@ -286,9 +286,8 @@ the meta loop to the mission they pick.
   Every deck is player-editable — there's no separate "premade" tier; a fresh
   profile just starts with a few seeded decks (`content/decks.ts`'s `DEFAULT_DECKS`)
   the player can edit or delete like any other. A **minimum deck size** and the per-card
-  **copy cap = copies owned** now bite; **rarity limits** and a possible **civilization
-  identity** remain open (see *Deferred decisions*). *The core puzzle*, still open on the
-  deeper-constraints side.
+  **copy cap = copies owned** now bite; **rarity limits** and the possible **civilization
+  identity** are both dropped (see *Deferred decisions*). *The core puzzle.*
 - **Government boards** — the civilization's starting configuration, chosen alongside
   the deck: it sets the run's opening resources and reskins the run loop, and is
   unlocked/upgraded through mission rewards. See *Government boards* below.
@@ -317,7 +316,7 @@ per attempt — that's the only performance-scaled source. Influence is spent on
 first copy; the **shop** raises that along a bounded ×1 / ×2 / ×4 / ×8 ladder (no infinite
 tier — every owned count is a finite, instantiable number). The deck editor caps each card
 at the number you own — the first deck-construction constraint to bite
-(a minimum deck size now joins it; rarity limits stay open).
+(a minimum deck size now joins it; rarity limits are dropped).
 
 **Two non-overlapping channels.** *Missions = breadth* (a new card type, board, or wonder).
 *Shop = depth* (more copies of owned cards; permanent **stickers**). There are **no rating
@@ -580,55 +579,38 @@ day the scorer is deleted instead.
 
 ## Demo scope 🔧
 
-The first public build. It is a **slice, not a milestone** — [`IDEAS.md`](IDEAS.md) frames ten ages
-through the Space Age, and the demo is the first three, so shipping it settles nothing about how far
-the game eventually goes. The point of drawing the line at all is that a scope with no stated edge
-can never get closer, and the work behind this one runs months.
+The first public build — and the project's **final planned scope** (decided 2026-08): what 0.1
+teaches moves into a successor game designed from scratch, not into further ages here.
+[`IDEAS.md`](IDEAS.md) frames ten ages through the Space Age; 0.1 ships two. The point of drawing
+the line this tight is that a scope with no stated edge can never close — and this one must.
 
-**In scope** — Phase 4 complete (Stone ✅ · Bronze · Iron), plus the five things the campaign alone
-doesn't cover:
+**In scope** — the Stone Age ✅ and the **Bronze Age** (its remaining nodes authored trunk-first
+under a time-box, so the arc ends coherently wherever the box closes), plus:
 
-- **Culture reworked** — the gauge stands on the weakest leg of the eight resources.
-- **The endless missions reworked** — `ice_age`/`sandbox` are the Influence faucet, and the
-  anti-tedium valve for farming it. They want a rework rather than a re-measure (BACKLOG Step 10),
-  which is the same design slot procedurally-generated arcs would occupy at a fraction of the cost;
-  the generator stays a post-demo question.
-- **Meta economy retuned** — shop tiers + sticker prices, tightened over the finished catalogue.
-  **Rarity limits** land here: they are a price on breadth, so they are decided with the prices.
-- **Tutorial** — Step 9's scripted layer over the Stone Age.
+- **Culture as it stands** — the gauge is the weakest leg of the eight resources and ships anyway;
+  the rework is cancelled, jank accepted. **Hammurabi's Code**, held back as that rework's vehicle,
+  is cut with it.
+- **The endless missions as they stand** — `ice_age`/`sandbox` keep their current shape with a
+  light polish pass; the mini-arc rework is cancelled.
+- **Polish** — the victory/gameover → meta hand-back flow, and each mission's card text / art /
+  lore.
 - **Community + publish** — outbound links (Discord / GitHub / contact), the feedback funnel, the
-  itch page.
+  itch page — which also carries the onboarding (a how-to-play blurb, pointing at the in-game
+  Codex), since the tutorial layer is cut.
 
-**Out of scope** — every age from Empire onward, procedurally-generated mission arcs, and the
+**Out of scope** — the **Iron Age**, the **tutorial layer**, the **culture rework**, the **endless
+rework**, the **meta-economy retune** (shop tiers + sticker prices stay as tuned today, minus a
+sanity glance), every age from Empire onward, procedurally-generated mission arcs, and the
 **civilization identity** that gates combos, which is dropped rather than deferred.
 
 **The demo is where pre-alpha ends.** Shipping it as **0.1** closes the "an unrecognized store shape
 resets to `emptyStore()`" rule: from 0.1 on, a save shape that changes owes a migration. So the demo
 is the *last* build free to reset saves, and the first that may not — which makes save handling a
-boundary the demo marks rather than an item it carries.
+boundary the demo marks rather than an item it carries. This being the last planned version, the
+obligation likely never fires, but the boundary is future-proof either way.
 
-**Order.** Each position is load-bearing, not a preference:
-
-1. **Finish Bronze** — the six unbuilt nodes except the one below, plus Setting Sail's open balance
-   pass.
-2. **Culture rework.** Early because it is a *foundation*, and because the tutorial's culture lesson
-   (BACKLOG 9.6b) would otherwise teach a mechanic already scheduled for replacement.
-   **Hammurabi's Code** is the exception carved out of step 1 and is held for this step: it is the
-   age's law/culture leaf, so it is the natural vehicle for the rework rather than a node authored
-   against a gauge about to change.
-3. **Endless rework.** Before Iron because the endless missions *are* the Influence faucet, and Iron
-   is balanced against Influence availability — moving the faucet afterwards invalidates that balance.
-4. **Iron Age.**
-5. **Meta retune.** After Iron for the mirror of the same reason: prices can only be finally tuned
-   against a catalogue that has stopped growing. The faucet must be stable *before* the content it
-   funds; the prices can only settle *after* it.
-6. **Tutorial.** Last of the build work, against a foundation that has stopped moving. Authoring a
-   later age destabilizes the shipped ones: Bronze development restructured the Stone Age arc once
-   and surfaced the culture rework three-quarters of the way in. Neither is a new *mechanic* — the
-   no-new-mechanics intent holds — but the tutorial couples to every mechanic *and* to the arc's
-   shape, so it is the artifact those reworks are most expensive to hit, and the last that should be
-   exposed to them.
-7. **Community + publish.**
+**Order.** Finish Bronze first (time-boxed), then the transversal fixes (defeat on population ≤ 0;
+the endless polish), then the closing polish pass, then the publish surface.
 
 **Polish is continuous, not a step.** It appears in no position above because it belongs in all of
 them: card text, art and lore are the entire surface a stranger judges, and the work is cheap,
@@ -652,6 +634,6 @@ Still open, deferred until the phase that needs them:
   provisional 20) and a **default hand limit** lowered 5→4, both enforced at the deck writer
   (`rules/deckBuilder.ts` + `App.saveDeck`, the `MAX_DECKS` precedent — a core rule, not a UI
   gate). The **per-card copy cap = copies owned** shipped alongside the shop (see
-  *Economy & progression*). The two that were open past it are now placed: **rarity limits** ❓ are
-  decided with the shop prices in the demo's meta retune (see *Demo scope*), being a price on breadth;
+  *Economy & progression*). The two that were open past it are now closed: **rarity limits** are
+  **dropped** with the meta retune they were to be decided in (see *Demo scope*);
   the **"civilization" identity** that gates combos is **dropped** ✅.

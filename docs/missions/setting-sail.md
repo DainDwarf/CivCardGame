@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
 **Branch:** Bronze — the opening node of the **naval / trade** branch (Setting Sail →
 [Sea Lanes](sea-lanes.md)). Prereq **writing**; the branch converges into **Bronze**.
 **Placement:** bronze col 9 row +1 — parallel to [Roads](roads.md) (col 9 row −1) and
@@ -96,7 +96,8 @@ faucet, and above all **Writing** (return a chosen card from discard to hand) be
 tools, and Writing is the *prereq node's own reward*: the tool is handed over exactly one node
 upstream. This is the first mission in the game whose pressure is met by card manipulation, and the
 first plausible job for Calendar, which [Writing](writing.md) records as near-dead in every sweep —
-a hope for Balance to confirm, not a claim.
+confirmed at Balance: Calendar's first live cell, though the Writing card itself stayed a
+prover-only tool (see *Balance*).
 
 ### Why not a drain
 
@@ -139,7 +140,7 @@ faucet the Ship already is.
 The board and this mission read as one thought — the port that learned to work few hands is won by the
 civilization that spent its people on the sea.
 
-**Numbers (provisional):** 10🌾 · 6🪙 · 1🧍 · 3🗺️, the Wharf standing in one of the three slots.
+**Numbers (provisional):** 10🌾 · 5🔨 · 6🪙 · 1🧍 · 3🗺️, the Wharf standing in one of the three slots.
 
 **Its balance pass belongs to [Sea Lanes](sea-lanes.md)**, the first mission it can be played on: no
 fixture here can reach it (it *is* this mission's reward), and its short workforce meets that mission's
@@ -179,45 +180,45 @@ streak its `defeat` reads; the `coastal_route` trade card and the `port` board w
 
 Names provisional: **Voyage** (`event`), **Impatient Crews** (`threat`).
 
-## Balance 🟡
+## Balance ✅
 
-**Current numbers: N=3 · K=12 · 5🪙+5🔨 + 1 idle 🧍 per voyage**, from N=4 · K=6 · 4/4. The stockpile
+**Shipped numbers: N=3 · K=12 · 5🪙+5🔨 + 1 idle 🧍 per voyage**, from N=4 · K=6 · 4/4. The stockpile
 the win asks for is near-unchanged (16🪙+16🔨 → 15🪙+15🔨); what moved is the pace clock, which at K=6
 ended the median run on the *first* deadline before a single voyage launched.
 
 Fixtures: `setting_sail_city` / `setting_sail_chiefdom` — one 26-card Bronze deck (bought copies and a
 double-Irrigated Farm, fair from Finding Copper on) on both boards, since the campaign reaches this node
 from either. Recorded at the standing protocol, with **`prover` in place of `oracle`**: the open question
-here is winnability, and a `prover` rate is a lower bound on it where an `oracle` rate is a ceiling on
+here was winnability, and a `prover` rate is a lower bound on it where an `oracle` rate is a ceiling on
 play.
 
 | | greedy @100 | planner @100 | prover @10 |
 |---|---|---|---|
-| City | 5% | 32% | 7/10 proven |
-| Chiefdom | 6% | 32% | 9/10 proven |
+| City | 12% | 25% | 8/10 proven |
+| Chiefdom | 4% | 22% | 9/10 proven |
 
-Defeats are the crews in the large majority (City 93/68, Chiefdom 63/56 at the two tiers); Chiefdom
-carries the famine and bankruptcy tail the City cell doesn't. Median winning run 19 turns (City) /
-24 (Chiefdom) at the planner tier, against the 20–32 the sibling Bronze nodes measure.
+Defeats are the crews in the large majority (City 82/69 at the two tiers, Chiefdom 73/66); Chiefdom
+adds a famine tail the City cell doesn't, and both leak a little bankruptcy. Median winning run 18
+turns (City) / 24 (Chiefdom) at the planner tier, against the 20–32 the sibling Bronze nodes measure.
 
-**The City numbers are a valuation fix, not a content change.** The goal counts cards in `removed`, so
-the resource probe finds nothing goal-valued, and the planner used to read the citizen a Voyage spends
-as worth nothing at all — it passed on affordable Houses and stranded itself at 0🧍 (42 of 100 runs).
-`sim/enablers.ts` now prices a pool the goal card takes through its `effect`, banks a pool with no
-per-round source at every copy's charge, and splits the goal step by replacement cost rather than unit
-count; City moved 19 → 32% across the three, its 0🧍 endings 42 → 28, and Houses built 31 → 51
-(`../TODO.md` → *Done / shipped*). The prover's 4/10 → 7/10 is the **same re-measurement**, not easier
-content: the full model changed too, so it is a new yardstick at a coarse n=10.
+**Read the planner column as a scorer floor, not the mission's difficulty.** The prover proves 8–9 of
+10 seeds winnable, and the gap is attributed: the race value prices *refusing* a launch three separate
+ways, this mission's own entry in [`../TODO.md`](../TODO.md) → *Simulator · Fidelity* (its one-sided
+fix was measured and reverted there). The run-loop question of a defeat on population ≤ 0 is likewise
+TODO's. The two boards read within a few points of each other; the wide City/Chiefdom gap earlier
+measurements showed was valuation blindness (the citizen a Voyage spends priced at zero — the planner
+passed on affordable Houses and stranded itself at 0🧍), closed by the enabler pricing pass and
+superseded by the race-scorer cutover the table is recorded under (both in `../TODO.md` → *Done /
+shipped*).
 
-What that leaves for this mission's balance: the two boards now read within a point of each other,
-where the gap used to be the City cell's blindness. The remaining planner/prover gap is not attributed —
-the capacity half of the model (a worker as a *slot that staffs a producer*) is still blind on a
-card-count goal, tracked in [`../TODO.md`](../TODO.md) → *Simulator · Fidelity*, as is the run-loop
-question of a defeat on population ≤ 0.
+**Calendar found its first real job, as designed**: the planner plays it in most runs (70/100 City,
+64/100 Chiefdom) against zero in every earlier standard cell. The Writing card did not — ≤2 planner
+plays per 100 on either board, alive only in prover lines — so the digging pressure is real but
+Calendar answers it alone.
 
-Two constraints that fall out of the design rather than measurement, unchanged:
+Two constraints that fell out of the design rather than measurement:
 
-- **The run's hard ceiling is N×K rounds** (now 36), so the pair is chosen against those sibling medians.
+- **The run's hard ceiling is N×K rounds** (36), so the pair is chosen against those sibling medians.
 - **K is also the deadline for the *first* launch**, which must be affordable out of a board's starting
   pools plus K rounds of income. Anchors for the price: Roadwork's 8🔨 and Trader's 3🪙 per worker-round.
 
