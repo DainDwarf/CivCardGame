@@ -377,6 +377,10 @@ export interface GoalClockExplain {
   /** The population a plan's price is paid at. Both routes are gated on it being positive, so a root with
    *  no citizens reads `'none'` with a perfectly good plan unused. */
   workforce: number;
+  /** Units of the measure the goal's landing routes can together still supply (`landingReach` summed),
+   *  `Infinity` where one of them recycles. Under `need` the goal cannot be finished by landing however live
+   *  each route reads on its own — the one figure that says so, and the reason the cover came up short. */
+  reach: number;
   /** `need / tau` off the standing economy — the route taken unless a plan beat it. */
   throughput: number;
   /** The plans this goal was offered, which is not the same as the ones it costed: a workforce of zero
@@ -460,10 +464,14 @@ export function absorbed(w: number): boolean {
 /** Which half of a route's clock ran to infinity, in one vocabulary for the root scan's rejections and the
  *  leaf's dead routes alike. `payable` is passed rather than read because the two ask it of different
  *  figures: the root of the price itself, the leaf of the clock that price runs down at, whose rates it has
- *  already reported separately. `''` where the route is a live one. */
-function unreachableCause(payable: boolean, delivery: number, copies: number, held: number, recycles: boolean): string {
+ *  already reported separately. `''` where the route is a live one.
+ *
+ *  Being short of copies is deliberately not among them: a route is asked for what it can deal
+ *  (`landingReach`) and never for more, so falling short is a fact about the *goal* — `routeCause` reads it
+ *  off the reach the routes together muster. */
+function unreachableCause(payable: boolean, delivery: number): string {
   if (!payable) return 'unpriceable pool';
-  if (!Number.isFinite(delivery)) return !recycles && copies > held ? 'copies short' : 'no copies circulate';
+  if (!Number.isFinite(delivery)) return 'no copies circulate';
   return '';
 }
 
@@ -478,9 +486,12 @@ export function routeCause(g: GoalClockExplain): string {
   }
   if (g.workforce <= 0) return 'no workforce';
   const causes = new Set<string>();
+  // The shortfall no route reports, because no route has it: each one is live at what it can deliver, and
+  // what the goal is short of is the sum of them.
+  if (plan.landings.length > 0 && g.reach < g.clock.need) causes.add('copies short');
   for (const p of [...g.landings, ...g.buildings]) {
     if (Number.isFinite(p.t)) continue;
-    const cause = unreachableCause(Number.isFinite(p.payment), p.delivery, p.copies, p.held, p.recycles);
+    const cause = unreachableCause(Number.isFinite(p.payment), p.delivery);
     if (cause) causes.add(cause);
   }
   return [...causes].join(' + ') || 'unreachable';
@@ -1024,23 +1035,58 @@ function routeClock(
   };
 }
 
+/** Copies of a card the run still circulates — the one count `landingReach` is a ceiling by. */
+function heldCopies(G: GameState, cardId: string): number {
+  let held = 0;
+  for (const zone of circulationZones(G)) {
+    for (const c of zone) if (c.cardId === cardId) held++;
+  }
+  return held;
+}
+
+/**
+ * The most units of the measure this route can still supply **from here**.
+ *
+ * Where `LandingPlan.cap` is what the *measure* saturates at — a fact about the goal, derived once — this is
+ * what the *run* can still deal, and it is a read of the moment for the same reason `deliveryClock`'s census
+ * is: a copy that does not recycle is spent by landing, so the copies in circulation are the ceiling on
+ * everything that route will ever deliver. Two of a card a goal counts one apiece supply two of a need of
+ * four, and the rest of that goal is another card's — which is what `coverMembers` composes.
+ *
+ * Asking a route for more than that is what makes it read as no route at all: an unreachable delivery clock
+ * on the one card the run really has, rather than a partial contribution the cover can build on.
+ */
+function landingReach(banked: GameState, landing: LandingPlan): number {
+  if (landing.cap !== undefined) return landing.cap;
+  if (landing.recycles) return Infinity;
+  return heldCopies(banked, landing.cardId) * landing.delta;
+}
+
 /**
  * The set of routes a cover runs, or nothing where the run's routes cannot together reach the goal.
  *
  * Cheapest-per-unit first, which is the order `deriveRace` already left the list in. Greedy over that rank
- * is exactly optimal while the caps are equal — every measure counting the distinct cards standing caps
+ * is exactly optimal while the ceilings are equal — every measure counting the distinct cards standing caps
  * each route at one — and an approximation past that, since the rank is a rate and the spend is a
- * cap-sized chunk. A search over subsets would be the exact answer to a question no shipped goal asks.
+ * ceiling-sized chunk. A search over subsets would be the exact answer to a question no shipped goal asks.
  * Each member is asked for the share left after the ones before it, so a route with room to spare finishes
  * the goal rather than overbuying its own ceiling.
+ *
+ * A route with nothing left to deal is passed over rather than ending the composition: a ceiling reaches
+ * zero as a plan's copies land, and the members after it are exactly what the goal is then finished by.
  */
-function coverMembers(landings: LandingPlan[], need: number): { plan: LandingPlan; copies: number }[] {
+function coverMembers(
+  landings: LandingPlan[],
+  reaches: number[],
+  need: number,
+): { plan: LandingPlan; copies: number }[] {
   const members: { plan: LandingPlan; copies: number }[] = [];
   let remaining = need;
-  for (const landing of landings) {
-    const share = Math.min(landing.cap ?? remaining, remaining);
-    if (share <= 0) break;
-    members.push({ plan: landing, copies: share / landing.delta });
+  for (let i = 0; i < landings.length; i++) {
+    if (remaining <= 0) break;
+    const share = Math.min(reaches[i], remaining);
+    if (share <= 0) continue;
+    members.push({ plan: landings[i], copies: share / landings[i].delta });
     remaining -= share;
   }
   // Divided shares accumulate rounding, and a goal is short by a rounding error in no meaningful sense.
@@ -1125,12 +1171,14 @@ function goalClock(
   const landings = ex ? ([] as PlanClockExplain[]) : undefined;
   const buildings = ex ? ([] as PlanClockExplain[]) : undefined;
   const covers = ex ? ([] as CoverClockExplain[]) : undefined;
+  let reach = 0;
   const seal = (clock: GoalClock, raw: number): GoalClock => {
     ex?.push({
       clock,
       raw,
       clamped: raw > horizon,
       workforce,
+      reach,
       throughput,
       ...(plan ? { plan } : {}),
       landings: landings ?? [],
@@ -1154,11 +1202,18 @@ function goalClock(
     netted = n;
   };
   if (workforce > 0 && plan) {
-    for (const landing of plan.landings) {
+    // Read once: the share each route is costed for below and the composition the cover runs over are the
+    // same ceilings spent two ways.
+    const reaches = plan.landings.map((l) => landingReach(banked, l));
+    if (ex) reach = reaches.reduce((n, r) => n + r, 0);
+    plan.landings.forEach((landing, i) => {
+      // Nothing left to deal is not a clock of no rounds: a route asked for zero copies is delivered
+      // instantly, which would hand the goal a route that supplies none of it.
+      if (reaches[i] <= 0) return;
       const sink = landings ? routeSink() : undefined;
-      // A capped route buys its own ceiling and no more, so that is what it is costed for. Whether the
-      // goal is then finished is the `take` below: only a route whose share *is* the need completes alone.
-      const share = Math.min(landing.cap ?? need, need);
+      // A route buys its own ceiling and no more, so that is what it is costed for. Whether the goal is
+      // then finished is the `take` below: only a route whose share *is* the need completes alone.
+      const share = Math.min(reaches[i], need);
       const copies = share / landing.delta;
       const r = routeClock(landing, copies, banked, workforce, rates, sink);
       landings?.push({
@@ -1168,8 +1223,8 @@ function goalClock(
         lands: r.t, collect: 0, t: r.t,
       });
       if (share >= need) take(r.t, 'landing', landing.cardId, r.netted);
-    }
-    const cover = coverMembers(plan.landings, need);
+    });
+    const cover = coverMembers(plan.landings, reaches, need);
     if (cover.length > 1) {
       const sink = landings ? coverSink(cover.length) : undefined;
       const r = coverClock(cover, banked, workforce, rates, sink);
@@ -1223,15 +1278,8 @@ function probeRoute(
   workforce: number,
   rates: PriceRates,
 ): CandidateRoute {
-  const sink = routeSink();
-  const r = routeClock(plan, copies, banked, workforce, rates, sink);
-  const reject = unreachableCause(
-    Number.isFinite(r.workerRounds),
-    r.delivery,
-    copies,
-    sink.census.held,
-    plan.recycles ?? false,
-  );
+  const r = routeClock(plan, copies, banked, workforce, rates);
+  const reject = unreachableCause(Number.isFinite(r.workerRounds), r.delivery);
   return { kept: reject === '', t: r.t, payment: r.payment, delivery: r.delivery, reject };
 }
 
@@ -1344,7 +1392,14 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
           ...(recycles ? { recycles } : {}),
           ...(cap !== undefined ? { cap } : {}),
         };
-        candidate.landing = probeRoute(plan, Math.min(cap ?? need, need) / delta, banked, workforce, rates);
+        // A route with nothing left to deal is dead rather than instant — `deliveryClock` reads no copies
+        // asked for as no rounds waited. Tested on the reach and never on the share, which a goal already
+        // satisfied at the root drives to zero for every route alike: what the run can deliver is what makes
+        // a plan worth carrying, and a met goal is one a later leaf may want a plan for again.
+        const reach = landingReach(banked, plan);
+        candidate.landing = reach > 0
+          ? probeRoute(plan, Math.min(reach, need) / delta, banked, workforce, rates)
+          : { kept: false, t: Infinity, reject: 'no copies circulate' };
         if (candidate.landing.kept) landings.push({ plan, rank: perUnit });
         else dropped.add(candidate.landing.reject);
       }

@@ -573,10 +573,11 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   so the fold is scale-free): a resource goal reads `need / τ` off one stripped projection; a card-count
   goal runs a **landing plan** — payment in worker-rounds against the run's real income, delivery off the
   deck's circulation, softened together — with every deliverable route kept and each leaf taking the
-  soonest, prices read at the leaf through `currentCost` off the cheapest circulating copy. A route whose
-  card **caps** (a measure counting the distinct cards standing reads the same at one copy and two) can't
-  finish a goal past that ceiling alone, so the leaf also composes the capped routes cheapest-first into a
-  **cover** — one summed bill netted against the bank once, folded against the latest member's delivery.
+  soonest, prices read at the leaf through `currentCost` off the cheapest circulating copy. A route
+  delivers at most its **reach** — the catalogue `cap` where the measure counts distinct standing cards
+  (reading the same at one copy and two), else the copies the run circulates — so a route short of the
+  whole goal isn't dropped: the leaf composes the ceilinged routes cheapest-first into a **cover** — one
+  summed bill netted against the bank once, folded against the latest member's delivery.
   `T̂loss` is
   the shortest pool runway (a deepening drain enters as a quadratic root; a recurring `event` charges at
   its circulation share), each threat's frozen-world deadline probe, and the drive cutoff. Five tuned

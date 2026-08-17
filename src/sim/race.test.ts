@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
-import { addBuilding, addWork, blankState, bumpCounter, getCounter, scaleResources, seedObjective, setCounter, subtractResources, type GameState } from '../rules';
+import { addBuilding, addWork, blankState, bumpCounter, getCounter, openTradeRoute, scaleResources, seedObjective, setCounter, subtractResources, type GameState } from '../rules';
 import { CARDS, CREW_PATIENCE, type CardDef } from '../content/cards';
 import {
   RACE,
@@ -121,6 +121,18 @@ const FIXTURES: Record<string, CardDef> = {
   },
   race_kiln: {
     id: 'race_kiln', name: 'Race Kiln', kind: 'building', workers: 0, cost: { resources: { production: 4 } },
+  },
+  // A measure that counts a zone's plain *length*, so every copy that lands advances it by one and nothing
+  // saturates — the shape whose only ceiling is how many copies the run holds.
+  race_goal_fleet: {
+    id: 'race_goal_fleet', name: 'Race Goal Fleet', kind: 'objective', cost: {},
+    goals: [{ icon: '🚢', measure: (G) => G.tradeRoutes.length, target: 4 }],
+  },
+  race_ferry: {
+    id: 'race_ferry', name: 'Race Ferry', kind: 'trade', cost: { resources: { production: 2 } },
+  },
+  race_barge: {
+    id: 'race_barge', name: 'Race Barge', kind: 'trade', cost: { resources: { production: 3 } },
   },
   // The pair that differ only in where a played copy files: one back into circulation, one out of the run.
   race_spark: {
@@ -470,6 +482,51 @@ describe('cover', () => {
     const G = planned('race_goal_distinct', ['race_shrine', 'race_shrine'], { production: 6 });
     expect(clockOf(G).route).toBe('none');
   });
+
+  /** Two ferries and two barges against a goal wanting four routes: no card of which caps, and no card the
+   *  run holds four of — so the copies in circulation are the whole of each route's ceiling. */
+  function fleet(deck = ['race_ferry', 'race_ferry', 'race_barge', 'race_barge']) {
+    return planned('race_goal_fleet', deck, { production: 20 });
+  }
+
+  it('makes the copies a route is spent by its ceiling, where the measure caps nothing', () => {
+    // A goal counting a zone's length reads a second copy of a card as a second unit, so nothing about the
+    // *measure* bounds either route — and asking each for all four is what leaves a run holding four copies
+    // of the two cards with no route to a goal of four.
+    const G = fleet();
+    const plan = deriveRace(G).plans[0];
+    expect(plan.landings.map((l) => l.cardId)).toEqual(['race_ferry', 'race_barge']);
+    expect(plan.landings.map((l) => l.cap)).toEqual([undefined, undefined]);
+
+    const goal = explainRaceValue(G, { model: deriveRace(G) }).goals[0];
+    expect(goal.reach).toBe(4);
+    expect(goal.landings.map((p) => p.copies)).toEqual([2, 2]);
+    expect(goal.clock.route).toBe('cover');
+    expect(goal.clock.cardId).toBe('race_ferry+race_barge');
+    expect(Number.isFinite(goal.clock.t)).toBe(true);
+  });
+
+  it('brings an opened route nearer the win than the copy still in the deck', () => {
+    // The gradient the whole ceiling exists for: with each route asked for the full four the goal is flat at
+    // the horizon, and a beam has no reason to open the first one.
+    const held = fleet();
+    const opened = fleet();
+    openTradeRoute(opened, opened.deck.pop()!);
+    expect(valued(opened).goals[0].need).toBe(valued(held).goals[0].need - 1);
+    expect(valued(opened).goals[0].t).toBeLessThan(valued(held).goals[0].t);
+    expect(valued(opened).total).toBeGreaterThan(valued(held).total);
+  });
+
+  it('reports a goal the run holds too few copies for as short, not as one it has no route to', () => {
+    // Two routes, four wanted: both cards are live at what they can deal and the goal is unreachable all
+    // the same — a fact about the set, which is why no route carries it.
+    const G = fleet(['race_ferry', 'race_barge']);
+    const goal = explainRaceValue(G, { model: deriveRace(G) }).goals[0];
+    expect(goal.reach).toBe(2);
+    expect(goal.landings.every((p) => Number.isFinite(p.t))).toBe(true);
+    expect(goal.clock.route).toBe('none');
+    expect(routeCause(goal)).toBe('copies short');
+  });
 });
 
 describe('delivery', () => {
@@ -481,8 +538,14 @@ describe('delivery', () => {
     expect(deriveRace(recycled).plans[0].landings[0]).toMatchObject({ cardId: 'race_spark', recycles: true });
     expect(Number.isFinite(clockOf(recycled).t)).toBe(true);
 
-    expect(deriveRace(spent).plans[0].landings).toEqual([]);
-    expect(clockOf(spent).route).toBe('none');
+    // The copy that exiles itself is one unit of the ten and can never be a second, so the route is a real
+    // one and the goal is short of nine — where the recycling copy is dealt as often as the clock needs it.
+    expect(deriveRace(spent).plans[0].landings[0]).toMatchObject({ cardId: 'race_flare', delta: 1 });
+    expect(deriveRace(spent).plans[0].landings[0].recycles).toBeUndefined();
+    const spentEx = explainRaceValue(spent, { model: deriveRace(spent) }).goals[0];
+    expect(spentEx.reach).toBe(1);
+    expect(spentEx.clock.route).toBe('none');
+    expect(routeCause(spentEx)).toBe('copies short');
   });
 
   it('shortens a landing clock as the copies land, not merely as the bank covers them', () => {
@@ -1363,31 +1426,37 @@ describe('the explained pass', () => {
   });
 
   it('keeps every route the deck can deal, with the reason it dropped the rest', () => {
-    // The reading a `RaceModel` cannot give: which cards were weighed, and what became of each.
-    const G = planned('race_goal_either', ['race_relic', 'race_trinket', 'race_trinket', 'race_trinket']);
+    // The reading a `RaceModel` cannot give: which cards were weighed, and what became of each. The relic is
+    // the cheaper card per unit and the run has already spent its only copy, so the deck deals it never
+    // again — the one thing that still drops a route the run genuinely holds a card for.
+    const G = planned('race_goal_either', ['race_trinket', 'race_trinket', 'race_trinket'], { removed: ['race_relic'] });
     const goal = explainRaceModel(G).goals[0];
     const byId = Object.fromEntries(goal.candidates.map((c) => [c.cardId, c]));
     expect(byId.race_relic.perUnit).toBeLessThan(byId.race_trinket.perUnit);
-    expect(byId.race_relic.landing).toMatchObject({ kept: false, reject: 'copies short' });
+    expect(byId.race_relic.landing).toMatchObject({ kept: false, reject: 'no copies circulate' });
     expect(byId.race_trinket.landing).toMatchObject({ kept: true, reject: '' });
     expect(goal.inert).toBeGreaterThan(0);
   });
 });
 
 describe('ranking', () => {
-  it('never lets a cheaper card the deck cannot deal shadow one it can', () => {
-    // The relic is cheaper per unit and the run holds one copy of it against a goal wanting three, so its
-    // clock is infinite; the trinket costs half as much again and circulates. A scan ranking on price alone
-    // plans through the relic and the goal then reads as unreachable with three trinkets sitting in the deck.
+  it('spends a cheaper card the deck is short of on the share it can deal, without letting it shadow one it can', () => {
+    // The relic is cheaper per unit and the run holds one copy against a goal wanting three, so it finishes
+    // nothing alone; the trinket costs half as much again and circulates three. Dropping the short route
+    // plans three trinkets and never sees that the relic is a cheaper third of the same goal — and taking it
+    // as if it *could* finish leaves the goal reading unreachable with the trinkets sitting in the deck.
     const G = planned('race_goal_either', ['race_relic', 'race_trinket', 'race_trinket', 'race_trinket']);
     const model = deriveRace(G);
-    expect(model.plans[0].landings.map((p) => p.cardId)).toEqual(['race_trinket']);
-    expect(model.plans[0].dropped).toEqual(['copies short']);
+    expect(model.plans[0].landings.map((p) => p.cardId)).toEqual(['race_relic', 'race_trinket']);
+    expect(model.plans[0].dropped).toBeUndefined();
 
     const goal = explainRaceValue(G, { model }).goals[0];
-    expect(goal.clock.route).toBe('landing');
-    expect(goal.clock.cardId).toBe('race_trinket');
-    expect(goal.clock.t).toBeCloseTo(goal.landings[0].t);
+    expect(goal.landings.map((p) => p.copies)).toEqual([1, 3]);
+    expect(goal.covers[0].members.map((m) => m.copies)).toEqual([1, 2]);
+    // The relic alone reaches a third of the goal, so only the trinket and the cover are ever taken — and
+    // the cover is what the `min` finds, being the same three units at the cheaper bill.
+    expect(goal.clock.route).toBe('cover');
+    expect(goal.clock.t).toBeLessThan(goal.landings[1].t);
   });
 
   it('takes the soonest route at each leaf, not the one that ranked best at the root', () => {

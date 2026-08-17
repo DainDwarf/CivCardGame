@@ -39,7 +39,7 @@ const KEPT: GoalPlan = {
     { cardId: 'test_trinket', delta: 1 },
   ],
   buildings: [],
-  dropped: ['copies short', 'unpriceable pool'],
+  dropped: ['no copies circulate', 'unpriceable pool'],
 };
 
 function cell(): RaceValuationCell {
@@ -67,7 +67,7 @@ function cell(): RaceValuationCell {
           candidates: [
             { cardId: 'test_relic', delta: 1, tau: 0, price: { production: 4 }, workerRounds: 2, perUnit: 2, unpriceable: [], landing: { kept: true, t: 2, payment: 40, delivery: 2, reject: '' } },
             { cardId: 'test_trinket', delta: 1, tau: 0, price: { production: 6 }, workerRounds: 3, perUnit: 3, unpriceable: [], landing: { kept: true, t: 9, payment: 60, delivery: 9, reject: '' } },
-            { cardId: 'test_hoard', delta: 1, tau: 0, price: { production: 2 }, workerRounds: 1, perUnit: 1, unpriceable: [], landing: { kept: false, t: Infinity, payment: 20, delivery: Infinity, reject: 'copies short' } },
+            { cardId: 'test_hoard', delta: 1, tau: 0, price: { production: 2 }, workerRounds: 1, perUnit: 1, unpriceable: [], landing: { kept: false, t: Infinity, payment: 20, delivery: Infinity, reject: 'no copies circulate' } },
             { cardId: 'test_claim', delta: 2, tau: 0, price: {}, workerRounds: Infinity, perUnit: Infinity, unpriceable: ['territory'], landing: { kept: false, t: Infinity, reject: 'unpriceable pool' } },
           ],
         },
@@ -94,6 +94,7 @@ function cell(): RaceValuationCell {
           raw: 2,
           clamped: false,
           workforce: 1,
+          reach: 3,
           throughput: Infinity,
           plan: KEPT,
           landings: [
@@ -119,7 +120,7 @@ describe('formatRaceValuation', () => {
     expect(text).toContain('skipped: territory');
     // Every kept route is costed at the leaf, and which of them the clock took has to be sayable.
     expect(text).toContain('kept 2 landing, 0 building');
-    expect(text).toContain('landing ✗ copies short');
+    expect(text).toContain('landing ✗ no copies circulate');
     // The price is the leaf's own reading, beside the root's in the scan table above it.
     expect(text).toMatch(/landing\s+test_relic × 3\.00 · price production 4\.0\s+← taken/);
     expect(text).toMatch(/landing\s+test_trinket × 3\.00 · price production 6\.0(?!.*taken)/);
@@ -164,9 +165,22 @@ describe('formatRaceValuation', () => {
     c.value.goals[0].landings = [plan({ delivery: Infinity, weights: [], lands: Infinity, t: Infinity })];
     const text = formatRaceValuation([c], 200);
     expect(text).toContain('HORIZON CLAMPED');
-    expect(text).toContain('route none (copies short)');
+    expect(text).toContain('route none (no copies circulate)');
     expect(text).toContain('no cost     territory');
     expect(text).toMatch(/delivery\s+∞ rd/);
+  });
+
+  it('spells a goal its routes fall short of, where every one of them is live', () => {
+    // The shortfall the per-route lines cannot carry: each route below reads a perfectly finite clock for
+    // the share it can deal, and the goal is unreachable all the same.
+    const c = cell();
+    c.value.goals[0].clock = { icon: '⛏️', need: 3, tau: 0, t: 200, route: 'none' };
+    c.value.goals[0].reach = 2;
+    const text = formatRaceValuation([c], 200);
+    expect(text).toContain('route none (copies short)');
+    expect(text).toMatch(/reach\s+2\.00 of 3\.00 units/);
+    // …and a goal its routes do reach says nothing at all.
+    expect(formatRaceValuation([cell()], 200)).not.toContain('reach');
   });
 });
 

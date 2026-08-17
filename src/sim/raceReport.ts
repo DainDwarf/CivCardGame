@@ -190,6 +190,13 @@ function cellBlock(cell: RaceValuationCell): string {
         g.workforce > 0 ? '' : '   — workforce 0, so both plan routes are gated off'
       }`,
     );
+    // Only where it binds: a set of routes that reaches the goal is short of nothing, and the shortfall is
+    // the one fact none of the per-route lines below can carry — each is live at what it can deliver.
+    if ((g.plan?.landings.length ?? 0) > 0 && g.reach < c.need) {
+      out.push(
+        `      ${pad('reach', 9)} ${padLeft(n(g.reach), 8)} of ${n(c.need)} units   the landing routes cannot together close this goal`,
+      );
+    }
     for (const p of g.landings) out.push(...planLines('landing', p, c.route === 'landing' && c.cardId === p.cardId));
     for (const p of g.covers) out.push(...coverLines(p, c.route === 'cover'));
     for (const p of g.buildings) out.push(...planLines('building', p, c.route === 'building' && c.cardId === p.cardId));
@@ -339,6 +346,7 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
     rows.push({ goal, section: 'clock', key: 'raw', value: g.raw, unit: 'rounds' });
     rows.push({ goal, section: 'clock', key: 'clamped', value: g.clamped ? 1 : 0 });
     rows.push({ goal, section: 'clock', key: 'workforce', value: g.workforce });
+    rows.push({ goal, section: 'clock', key: 'reach', value: g.reach, unit: 'units' });
     rows.push({ goal, section: 'clock', key: 'throughput', value: g.throughput, unit: 'rounds' });
     rows.push({ goal, section: 'route', key: c.route, cardId: c.cardId ?? routeCause(g), value: c.t, unit: 'rounds' });
     const fold = value.foldWeights[i] ?? 1;

@@ -210,6 +210,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **A landing route reaches only as far as the copies the run holds** ✅ — the race scorer asked every
+  landing to deliver a goal's whole target alone, so a goal counting a zone's *length* (Sea Lanes' four
+  trade routes, the first of its kind) dropped both its routes for `copies short` and read flat at the
+  horizon: no gradient toward opening a route at all. A non-recycling route is now ceilinged at what it
+  circulates (`sim/race.ts`'s `landingReach`) and the existing cover composes the shares into one bill,
+  while being short of copies moved from the route to the **goal**, the only place it is true
+  (`GoalClockExplain.reach`). Sea Lanes' 🚢 clock reads 9.4 rounds by a Bartering + Coastal Route cover
+  and its three cells are re-recorded: planner 1 → 17/18/2%, prover 0/1/1 → 3/3/2 of 10 proven. Across the
+  standing set exactly one other cell moves — `first_settlement`, whose ⚔️ goal gains a Bow + Dogs cover
+  (16.2 → 7.2 rounds); its win rate is unchanged at 100% under all three policies but its rows **owe a
+  re-record**.
 - **The run value function is the race margin** ✅ — every competent policy now ranks by
   `min(T̂loss, slackCap) − T̂win` in rounds (`sim/race.ts`), replacing the score-band leaf as the default;
   the band scorer stays selectable as a frozen `--scorer band` second opinion (see DESIGN.md → *Code
