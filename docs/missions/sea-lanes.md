@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
 **Branch:** Bronze — the closing node of the **naval / trade** branch
 ([Setting Sail](setting-sail.md) → Sea Lanes). Prereq **setting_sail**; the branch converges into
 **Bronze**.
@@ -145,18 +145,14 @@ spine.
 Names provisional: **Unguarded Lanes** (`threat`) above all — it names the absence rather than the navy
 the pressure is actually about. **Tin Route**, **Merchant Ship** and **Convoy** are the design's own.
 
-## Balance 🟡
+## Balance ✅
 
-**Fixtures cut and recorded; the rating is still open.** `sea_lanes_city` / `sea_lanes_chiefdom` /
+**Shipped as authored — 4 routes · −1⚔️ per route · Tin Route 2🪙/−1🪙 · Merchant Ship +1🪙 per route —
+the pass closed by attribution, not retune.** Fixtures `sea_lanes_city` / `sea_lanes_chiefdom` /
 `sea_lanes_port` — one 36-card deck on all three boards (hand-piloted to a Port win before any sweep),
-at the standing protocol with `prover` for the winnability bound. One deck caveat the pass inherits:
-`road` rides the *sibling* Wheel+roads branch, attainable by detour but not guaranteed at this node
-(0 plays on City/Port in the first sweep).
-
-Recording this mission is what exposed the race scorer's zone-length blindness — the game's first
-routes-counted goal read flat, every cell measured ~1%, and the prover declined seeds at the root —
-fixed at the scorer ([`../TODO.md`](../TODO.md) → *Done / shipped*: `landingReach`), and the cells
-re-recorded under the fix:
+at the standing protocol with `prover` for the winnability bound. Recording them is what exposed the
+race scorer's zone-length blindness (fixed: `landingReach`, [`../TODO.md`](../TODO.md) → *Done /
+shipped*), and the cells are recorded under that fix:
 
 | | greedy @100 | planner @100 | prover @10 |
 |---|---|---|---|
@@ -164,13 +160,20 @@ re-recorded under the fix:
 | Chiefdom | 0% | 2% | 2/10 proven |
 | Port | 0% | 17% | 3/10 proven |
 
-Early readings, not verdicts: greedy's 0% is the one-ply plateau on a four-route commitment chain, and
-Chiefdom dies to revolt/famine ahead of the goal. **The Port board's own balance pass lands here** (it
-is this mission's prereq's reward, so no earlier fixture can hold it) and its first measurement reads
-viable — the fastest board on its winning lines, its stalls never resource-starved — at
-10🌾 · 5🔨 · 6🪙 · **1🧍** · 3🗺️ with the prebuilt Wharf. Left to judge: whether the planner/prover
-rates are the mission or the deck, and the Port numbers settling with that judgement. `house` took 0
-plays in 600 runs across every board — one to watch, not yet a verdict.
+**Read this table as a fidelity artifact, not the mission's difficulty.** The race value prices a
+route's landing at the flat `1/handSize` while charging its full standing bill, so competent play under
+it hoards — this cell is the closed-form witness on the `setting_sail` fidelity ticket
+([`../TODO.md`](../TODO.md) → *Simulator · Fidelity*), deliberately deferred past 0.1. The evidence
+that closed the pass instead: a diagnostic 4× beam proves **6/10 seeds at 20–44 turns on Port at
+pop 1**, the frozen band scorer proves 3–5/10 on the same seeds, and the hand win. Whenever the ticket
+lands, these three cells owe a re-record.
+
+**The Port board is rated viable and ships at 10🌾 · 5🔨 · 6🪙 · 1🧍 · 3🗺️** with the prebuilt Wharf —
+the fastest board on its winning lines, never resource-starved in defeat. Two design facts recorded for
+later ages rather than acted on: the binding pool at the refusal point is **🪙**, not the ⚔️ the design
+centred (Trader and Hunting compete for the Port's one citizen), and **population is the speed gate**
+(pop-3+ wins run 47–81 turns, pop-1 wins 103–197 — hoard-then-burst). Deck notes, not mission changes:
+`road` is a sibling-branch grant not guaranteed at this node, and `house` took 0 plays in 600 runs.
 
 ## Polish ⬜
 

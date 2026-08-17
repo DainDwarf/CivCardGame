@@ -156,7 +156,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   citizen; and a non-recycling plan holding exactly its copies has a delivery clock invariant to its own
   progress (landing a copy is worth a constant `1/handSize`, however much of the win it completes). The
   one-sided fix was measured and reverted: `T̂loss` paying for emptiness and the payment `∞` must be fixed
-  in one pass or neither.
+  in one pass or neither. **`sea_lanes` (all three boards) is the third leg's closed-form witness**, which
+  raises this item rather than forking it: the deck holds exactly the goal's copies, so `copies == held`
+  is an identity and delivery is exactly `pool/hand` — a landing completing 25% of the goal prices at
+  0.25 rd against a 9.44 rd win clock, while the same landing caps `T̂loss` at `bank/drain` (0 rd on Port,
+  whose ⚔️ starts at 0). The planner refuses with a trade card in hand on 86/201 turns (190 idle; wins are
+  hoard-then-burst at 109–133 median), and the width-64 beam fills with hoarders and declines `depth` —
+  a 4× diagnostic beam converts that into 20–44 turn wins (3/10 → 6/10 proven). Extra route supply does
+  not reach it (`coverMembers` asks the cheapest member for `min(reach, need)`, preserving the identity),
+  and the cell also instantiates the `wheel` item's shape — the plan not pricing the drain its own
+  completion creates — so the two may share a fix. Until this lands, `sea_lanes`' recorded ~0/18/17% rates
+  are a fidelity artifact, not a rating.
 - **`finding_copper_chiefdom` — the slack cap is in rounds, hoarding pays in units** `[size: M] [?]` — at
   pop 3 the food drain is 2🌾/rd, so the run sits under the cap on ~89% of turns and a food play outbids
   an affordable goal play ~2:1 (the goal's marginal being the `1/handSize` constant above). Race wins the

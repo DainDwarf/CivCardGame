@@ -78,7 +78,7 @@
   | Horse taming | ✅ | ✅ | ✅ | ⬜ | [horse-taming](missions/horse-taming.md) |
   | Raiding | ✅ | ✅ | ✅ | ⬜ | [raiding](missions/raiding.md) |
   | Setting Sail | ✅ | ✅ | ✅ | ⬜ | [setting-sail](missions/setting-sail.md) |
-  | Sea Lanes | ✅ | ✅ | 🟡 | ⬜ | [sea-lanes](missions/sea-lanes.md) |
+  | Sea Lanes | ✅ | ✅ | ✅ | ⬜ | [sea-lanes](missions/sea-lanes.md) |
   | Bronze *(convergence)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Sword & chariot | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | The Sea Peoples *(capstone)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
@@ -110,8 +110,8 @@
   5. **Horse (×2)** — **Horse taming** DONE, balance included (see
      [`missions/horse-taming.md`](missions/horse-taming.md)); **Raiding** DONE, balance included (see
      [`missions/raiding.md`](missions/raiding.md)). Then **Naval (×2)** — **Setting Sail** DONE,
-     balance included (see [`missions/setting-sail.md`](missions/setting-sail.md)); **Sea Lanes**
-     implemented, balance pending (see [`missions/sea-lanes.md`](missions/sea-lanes.md)).
+     balance included (see [`missions/setting-sail.md`](missions/setting-sail.md)); **Sea Lanes** DONE,
+     balance included (see [`missions/sea-lanes.md`](missions/sea-lanes.md)).
   6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
 
   **Mechanical identity `[?]`:** IDEAS frames the age as "trade-dependent palace civilizations" → the
