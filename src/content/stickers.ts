@@ -1,6 +1,6 @@
 import type { Resources } from '../rules/resources';
 import type { CardCost } from '../rules/cost';
-import type { CardDef } from './cards';
+import { needsTinRoute, type CardDef } from './cards';
 
 /**
  * Card stickers (docs/DESIGN.md, "Economy & progression"): permanent,
@@ -70,7 +70,7 @@ export interface StickerDef {
  *  raises an output the card has rather than granting one it doesn't. Buildings *and* work boxes —
  *  the two kinds whose `produces` scales per staffed worker — and never a wonder, which
  *  `stickerAppliesTo` excludes globally. */
-const producerOf = (key: 'food' | 'culture') => (c: CardDef) =>
+const producerOf = (key: 'food' | 'culture' | 'production') => (c: CardDef) =>
   (c.kind === 'building' || c.kind === 'work') && (c.produces?.resources?.[key] ?? 0) > 0;
 
 export const STICKERS: Record<string, StickerDef> = {
@@ -125,6 +125,20 @@ export const STICKERS: Record<string, StickerDef> = {
       ...cost,
       resources: { ...cost.resources, production: (cost.resources?.production ?? 0) + 2 },
     }),
+  },
+  bronze_tools: {
+    id: 'bronze_tools',
+    name: 'Bronze Tools',
+    description: '+1 🔨, needs a 🏝️ route',
+    icon: '🛠️',
+    cost: 5,
+    appliesTo: producerOf('production'),
+    applyGain: (base) => (base ? { ...base, production: (base.production ?? 0) + 1 } : base),
+    // A surcharge in the one currency `applyCost`'s resource fields can't name: the stickered copy is
+    // tin-shod, so it only works while the route that supplies the metal stands. Setting the gate rather
+    // than composing with an existing one is what keeps two attached copies commutative — the catalogue
+    // has one such gate, so there is nothing to compose with.
+    applyCost: (cost) => ({ ...cost, check: needsTinRoute }),
   },
   wheel: {
     id: 'wheel',

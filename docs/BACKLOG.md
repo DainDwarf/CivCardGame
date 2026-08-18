@@ -79,7 +79,7 @@
   | Raiding | ✅ | ✅ | ✅ | ⬜ | [raiding](missions/raiding.md) |
   | Setting Sail | ✅ | ✅ | ✅ | ⬜ | [setting-sail](missions/setting-sail.md) |
   | Sea Lanes | ✅ | ✅ | ✅ | ⬜ | [sea-lanes](missions/sea-lanes.md) |
-  | Bronze *(convergence)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
+  | Bronze *(convergence)* | ✅ | ✅ | ⬜ | ⬜ | [bronze](missions/bronze.md) |
   | Sword & chariot | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | The Sea Peoples *(capstone)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Fall of the Bronze Age *(infinite)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
@@ -124,8 +124,8 @@
 
   - The Naval branch grants a third **board** line (Setting Sail's Port board, shipped), so the Bronze
     proposals below are the last that can assume two.
-  - **Bronze** (convergence) → **Bronzeworking** building (consumes 🪙 → 🔨) + **Bronze tools** sticker
-    (+1🔨 for production buildings *and* work cards).
+  - **Bronze** (convergence) — decided, see [missions/bronze.md](missions/bronze.md): the Marketplace
+    building + the tin-gated Bronze Tools sticker.
   - **Sword & chariot** → Sword (military, needs bronze) + Chariot (spoked wheel + horse + bronze).
   - **The Sea Peoples** (capstone, standard) → systems-collapse mission; reward **unlocks the infinite**
     below (City board already granted at Masonry).

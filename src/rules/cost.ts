@@ -16,7 +16,10 @@ export type UnplayableReason =
   | { kind: 'territory' }
   | { kind: 'emptyDrawPile' }
   | { kind: 'discardEmpty' }
-  | { kind: 'noIdlePopulation' };
+  | { kind: 'noIdlePopulation' }
+  /** A standing trade route of a *named* card is missing — the route's identity is the payload, since
+   *  what such a gate buys is access to that one thing rather than trade in general. */
+  | { kind: 'missingRoute'; cardId: string };
 
 /** What a cost closure may read: the live state and the exact copy being priced. Mirrors
  *  `effects.ts`'s `EffectContext`. */

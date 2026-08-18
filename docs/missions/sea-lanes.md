@@ -98,10 +98,9 @@ its reach by discipline, not by name.
 ## Seam to Bronze
 
 This node is what the convergence's lore turns on — the tin routes exist because the trade branches
-built them. [`../BACKLOG.md`](../BACKLOG.md) still proposes Bronzeworking as a building converting
-🪙 → 🔨, which was written when the tin route was expected to *pay* the metal. It doesn't: it pays
-nothing and gates instead, so the conversion is Bronzeworking's whole job and the two no longer
-overlap — worth re-reading that proposal when Bronze is authored rather than inheriting it.
+built them. The gate's consumers are [bronze](bronze.md)'s trials and rewards: no 🪙 → 🔨 building
+ever shipped (a tin-gated producer is outbid by a Forge wearing the Bronze Tools sticker), so the
+route's rent *is* the money cost of bronze, and the gate-not-pay reading settled there holds.
 
 ## Implement ✅ (shipped)
 

@@ -1,7 +1,7 @@
 import { scaleResources, subtractResources } from '../rules/resources';
 import { bumpCounter, getCounter, setCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { gainResources, type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
-import type { CardCost } from '../rules/cost';
+import type { CardCost, CostContext, UnplayableReason } from '../rules/cost';
 import { drawInstance, peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
 import { assignedWorkers, freePopulation } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
@@ -317,6 +317,25 @@ export const PHARAOH_DEADLINE = 40;
  *  Provisional (balance pending a sim sweep). */
 export const THIEVES_PER_GOLD = 10;
 
+/** How many casting trials "Bronze" seeds — shared by the mission's injected event list
+ *  (`content/missions.ts`), the `bronze_goal` win threshold, and its progress readout. */
+export const BRONZE_TRIALS = 4;
+
+/** Trials already mastered: a casting trial reaches `removed` only by being played (paying its 🔨+🔬
+ *  over a standing tin route), so the count there *is* the tally. Shared by the win threshold, its
+ *  readout and the `tin_hunger` drain, so the mastery the threat prices can't drift from the one the
+ *  goal counts. */
+function trialsMastered(G: GameState): number {
+  return G.removed.filter((c) => c.cardId === 'casting_trial').length;
+}
+
+/** The Bronze cards' standing-access gate: playable only while a Tin Route stands in the trade zone.
+ *  Keyed on the route's own id rather than on the zone being non-empty — what the gate buys is tin,
+ *  not trade. Exported because `content/stickers.ts` folds it onto a stickered copy's cost as the
+ *  Bronze Tools charge-back. */
+export const needsTinRoute = ({ G }: CostContext): UnplayableReason | null =>
+  G.tradeRoutes.some((r) => r.cardId === 'tin_route') ? null : { kind: 'missingRoute', cardId: 'tin_route' };
+
 /**
  * The card catalogue. Numbers are a first pass. Tests install synthetic `test_*` cards on top via
  * `rules/testFixtures.ts`.
@@ -406,6 +425,13 @@ export const CARDS: Record<string, CardDef> = {
       dynamicText: (G) => `+${G.tradeRoutes.length}🎭 / round`,
     },
     produces: { resolve: (ctx) => gainResources(ctx, { culture: ctx.G.tradeRoutes.length }) },
+  },
+
+  marketplace: {
+    id: 'marketplace', name: 'Marketplace', kind: 'building',
+    cost: { resources: { production: 4 }, check: needsTinRoute }, workers: 1,
+    produces: { resources: { money: 3 } },
+    display: { art: '🏪', note: 'needs a 🏝️ route' },
   },
 
   // — Wonders —
@@ -654,6 +680,16 @@ export const CARDS: Record<string, CardDef> = {
     },
     display: { art: '⛵', description: 'Sails with 1 idle 🧍, for good' },
     effect: { resources: { population: -1 } },
+  },
+  // Casting Trial: pouring the alloy *is* playing it — the play choke exiles it to `removed`, which
+  //   `bronze_goal` counts. Its `check` is the mission teaching the tin gate one node before the
+  //   tin-gated rewards land: a trial drawn before any route opens is unplayable by rule, so its 🔨
+  //   bleed is partly unavoidable.
+  casting_trial: {
+    id: 'casting_trial', name: 'Casting Trial', kind: 'event',
+    cost: { resources: { production: 4, science: 6 }, check: needsTinRoute },
+    display: { art: '🫗', description: '−2 🔨 at end of round while unpoured', note: 'needs a 🏝️ route' },
+    upkeep: { resources: { production: -2 } },
   },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
@@ -917,6 +953,16 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // A trial reaches `removed` only by being played, so counting them there counts mastered pours.
+  bronze_goal: {
+    id: 'bronze_goal', name: 'Bronze', kind: 'objective', cost: {},
+    goals: [{ icon: '🫗', measure: trialsMastered, target: BRONZE_TRIALS }],
+    display: {
+      description: `Master all ${BRONZE_TRIALS} casting trials`,
+      dynamicText: (G) => `🫗 ${Math.min(trialsMastered(G), BRONZE_TRIALS)}/${BRONZE_TRIALS} mastered`,
+    },
+  },
+
   // Sandbox is an endless no-stakes mission: the objective never wins by design (a single bespoke
   //   goal whose `met` is always false), and nothing bounds the run — it lasts until the player quits
   //   or a core resource collapses.
@@ -1088,6 +1134,23 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: {
       resolve: ({ G }) => {
         subtractResources(G.resources, { military: G.tradeRoutes.length });
+      },
+    },
+  },
+  // Bronze's squeeze, and the one in the arc that taxes *completion*: every trial mastered is another
+  //   furnace the islands can count, so the price of tin climbs with the mastery the goal measures and
+  //   the last pour is made under the heaviest bill. Reads the removed pile through `trialsMastered`, the
+  //   same tally the goal counts. No `defeat` hook — an unpayable bill is the universal 🪙 collapse.
+  tin_hunger: {
+    id: 'tin_hunger', name: 'Tin Hunger', kind: 'threat', cost: {},
+    display: {
+      art: '📈',
+      description: '−1🪙 per casting trial mastered',
+      dynamicText: (G) => `−${trialsMastered(G)}🪙 next round`,
+    },
+    upkeep: {
+      resolve: ({ G }) => {
+        subtractResources(G.resources, { money: trialsMastered(G) });
       },
     },
   },

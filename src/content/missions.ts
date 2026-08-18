@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { BRONZE_TRIALS, CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -563,6 +563,40 @@ export const MISSIONS: Record<string, MissionDef> = {
       unlockStickerIds: ['convoy'],
     },
     map: { col: 10, row: 1 },
+    age: 'bronze',
+  },
+  bronze: {
+    id: 'bronze',
+    name: 'Bronze',
+    lore:
+      'Copper is soft, and every hand that works it knows so — the axe that cut the timber for your ' +
+      'carts turns on the second oak. What hardens it was never in your hills: it comes up the roads ' +
+      'your carts cut, over the passes your riders hold, and off the islands your lanes reach, in grey ' +
+      'ingots nobody in the valley yet knows what to do with. Set the smiths to the crucible and let ' +
+      'them ruin as many pours as it takes — wrong heat, wrong measure, wrong mould — until the metal ' +
+      'comes out of the sand hard enough to hold an edge. And know that every pour that works is heard ' +
+      'of: the islands count your furnaces, and the price of tin has never once come down.',
+    // The convergence of the three middle branches — the carts, the riders and the hulls that between
+    // them reach the tin.
+    prereqs: ['wheel', 'raiding', 'sea_lanes'],
+    threats: ['tin_hunger'],
+    // One `casting_trial` per pour, tied to the objective's threshold by the shared BRONZE_TRIALS const
+    // so the mission can't seed a different count than the win asks for.
+    events: Array.from({ length: BRONZE_TRIALS }, () => 'casting_trial'),
+    objectiveCardId: 'bronze_goal',
+    victoryHint: `Master all ${BRONZE_TRIALS} casting trials — pay 4 🔨 and 6 🔬 for each, over a standing 🏝️ tin route.`,
+    failureHint:
+      'A trial you cannot pour bleeds 2 🔨 at the end of each round, and every one you do master raises ' +
+      'the price of tin by 1 🪙 every round after — bleed the treasury dry and the run ends.',
+    kind: 'standard',
+    // Both grants read the same tin gate this mission enforces by hand — the sticker charges it in place
+    // of a price — so each is worth only what the trade branches keep open. Influence amount provisional.
+    reward: {
+      influence: 12,
+      unlockCardIds: ['marketplace'],
+      unlockStickerIds: ['bronze_tools'],
+    },
+    map: { col: 11, row: 0 },
     age: 'bronze',
   },
   ice_age: {
