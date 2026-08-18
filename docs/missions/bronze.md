@@ -58,8 +58,8 @@ Fixtures `bronze_city` / `bronze_port` — one 32-card deck on both boards, at t
 
 | | greedy @100 | planner @100 | prover @10 |
 |---|---|---|---|
-| City | 0% | 2% | 4/10 proven |
-| Port | 0% | 0% | 0/10 proven |
+| City | 0% | 1% | 3/10 proven |
+| Port | 0% | 0% | 1/10 proven |
 
 **No Warband fixture.** The board's single territory is already spent on its prebuilt War Camp, so a
 building deck has nowhere to build: median 4-turn runs under both policies, a degenerate cell rather
@@ -76,15 +76,21 @@ per 100 City-planner runs once they are gone). The `prover` read the same split 
 boards with the extra routes against 3/10 without. A deck that pays rent it doesn't need cannot afford
 the rent it does.
 
-**Read the table as a fidelity artifact, not the mission's difficulty.** The tin gate is the first
-`check` satisfiable only by *playing another card* (a route), and `race.ts` already prices a route's
-landing at the flat `1/handSize` while charging its full standing bill
-([sea-lanes.md](sea-lanes.md) → *Balance* is the closed-form witness) — so the value the competent
-policies steer by both under-buys the route and over-fears its rent, and the gate compounds it. The
-`prover`'s own refusals say so: every one is `depth` or `deadEnd`, never `budget`, and its proven City
-lines run **98–200 turns**, one of them landing on the horizon itself. Port's 0/10 is the seed sample
-rather than a verdict — the ad-hoc sweep above proved 3/10 on that very board. Both cells owe a
-re-record when the fidelity fix lands.
+**The table is measured under the `missingRoute` prerequisite fix** — the tin gate was the first
+`check` satisfiable only by *playing another card*, invisible to `race.ts` until its plan scan learned
+to run the named route's landing clock serially in front of a gated card's own (the term vanishes once
+the route stands, which is the gradient). The fix is what makes these cells *engaged* rather than
+refused: Port's pre-fix `prover` baseline was ten runs of **zero actions** — the search declined at
+the root — where it now plays real lines and proves 1/10. What remains under-read is the deferred
+`1/handSize` delivery ticket ([sea-lanes.md](sea-lanes.md) → *Balance* holds the witness): the gate's
+clock is almost pure delivery — one Tin Route copy in a 36-card circulation ≈ 9 rounds — so the cells
+owe one more re-record when that ticket lands.
+
+**What the engagement exposed is content, not scorer.** Two readings for the open pass: the Tin
+Route's rent is lethal to a short-run economy that obeys the model and opens it early (City greedy
+bankruptcies 3 → 15 across the fix), and the trial plan is now *visible and still unaffordable* —
+runs pursue 16🔨+24🔬 of trials under Tin Hunger and starve doing it (City planner famine 24 → 51,
+mean turns down a third on every policy).
 
 **Open.** The trial's −2🔨 unplayed upkeep is un-adjudicated — keep it as pressure or cut it as a tax
 on a hand the player couldn't have played. And this deck stocks none of the rebalance's measurement

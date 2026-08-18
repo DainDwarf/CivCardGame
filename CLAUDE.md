@@ -141,7 +141,8 @@ surprise, so nothing shows a locked placeholder or a total count.
   cause the dropped ones were dropped for, then per goal its clock — need, τ, route, the raw `t` beside
   the horizon-clamped one — over **every route it kept**, with the **payment vs delivery** split inside
   each `landingClock`, the circulation census behind the delivery half, the members and summed bill inside
-  a **cover**, and the one route the leaf took
+  a **cover**, the **gate** in front of a route whose cost refuses the play until a named card stands, and
+  the one route the leaf took
   marked. Both of its folds print the softMax **weight** each clock folded at — a reading no
   `RaceBreakdown` carries, and the one that says how much of a gradient a term is really carrying (its
   temperature being a fraction of the leading clock, the weight has a floor and the `ABSORBED` annotation
@@ -577,7 +578,10 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   delivers at most its **reach** — the catalogue `cap` where the measure counts distinct standing cards
   (reading the same at one copy and two), else the copies the run circulates — so a route short of the
   whole goal isn't dropped: the leaf composes the ceilinged routes cheapest-first into a **cover** — one
-  summed bill netted against the bank once, folded against the latest member's delivery.
+  summed bill netted against the bank once, folded against the latest member's delivery. A route whose
+  `cost.check` refuses the play until a named card stands (`UnplayableReason`'s `missingRoute`) carries
+  that card as a **prerequisite**, and the leaf runs its landing clock **serially in front** — zero once it
+  stands, which is the whole gradient for landing a card the goal itself measures nowhere.
   `T̂loss` is
   the shortest pool runway (a deepening drain enters as a quadratic root; a recurring `event` charges at
   its circulation share), each threat's frozen-world deadline probe, and the drive cutoff. Five tuned

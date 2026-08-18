@@ -75,6 +75,7 @@ function verdict(c: PlanCandidate): string {
   for (const [tag, r] of [['landing', c.landing], ['building', c.building]] as const) {
     if (r) parts.push(r.kept ? tag : `${tag} ✗ ${r.reject}`);
   }
+  if (c.requires) parts.push(`gated on ${c.requires}`);
   return parts.join(' · ') || '—';
 }
 
@@ -94,9 +95,33 @@ function planLines(tag: string, p: PlanClockExplain, taken: boolean): string[] {
       p.staffing > 0 ? ` + ${n(p.staffing)} rd waiting on a free citizen` : ''
     }   ${weight(wDel)}`,
   ];
+  if (p.prereq) {
+    const q = p.prereq;
+    out.push(
+      `        gate     ${padLeft(n(q.t), 8)} rd   ${
+        q.satisfied ? `${q.cardId} stands — the play is no longer refused` : `${q.cardId} must stand first`
+      }`,
+    );
+    // The gate's own two halves, one line rather than the three a route gets: it is a single copy of a
+    // single card, and what the reader is after is why the term is the size it is.
+    if (q.route) {
+      out.push(
+        `          × 1 · price ${bag(q.route.price)} · payment ${n(q.route.payment)} rd · delivery ${
+          n(q.route.delivery + q.route.staffing)} rd (${q.route.held} held × ${n(q.route.hand, 1)} hand / ${
+          q.route.pool} pool)`,
+      );
+    }
+  }
+  // Only where the clock is a sum of parts: a plain landing is its own whole, and naming its one term
+  // would print `lands N = N`.
+  const terms = [
+    ...(p.prereq ? [`gate ${n(p.prereq.t)}`] : []),
+    `lands ${n(p.lands)}`,
+    ...(p.collect > 0 ? [`collect ${n(p.collect)}`] : []),
+  ];
   out.push(
-    p.collect > 0
-      ? `        lands ${n(p.lands)} + collect ${n(p.collect)} = ${n(p.t)} rd`
+    terms.length > 1
+      ? `        ${terms.join(' + ')} = ${n(p.t)} rd`
       : `        landingClock = ${n(p.t)} rd`,
   );
   return out;
@@ -331,6 +356,7 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
       for (const k of c.unpriceable) {
         rows.push({ goal, section: 'candidateUnpriceable', key: k, cardId: c.cardId, value: 1 });
       }
+      if (c.requires) rows.push({ goal, section: 'candidateGate', key: c.requires, cardId: c.cardId, value: 1 });
     }
     for (const cause of g.plan.dropped ?? []) {
       rows.push({ goal, section: 'dropped', key: cause, value: 1 });
@@ -383,6 +409,12 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
       // cost climbs with its use the two are the reading and its floor.
       for (const [k, v] of Object.entries(p.price) as [keyof Resources, number][]) {
         rows.push({ goal, section: tag, key: `price.${k}`, cardId: p.cardId, value: v, unit: 'units' });
+      }
+      // The gate rides on the route it gates, keyed by the card it names — so "which cells still owe a
+      // prerequisite" pivots without joining back to the candidate table.
+      if (p.prereq) {
+        rows.push({ goal, section: tag, key: `gate.${p.prereq.cardId}`, cardId: p.cardId, value: p.prereq.t, unit: 'rounds' });
+        rows.push({ goal, section: tag, key: 'gate.satisfied', cardId: p.cardId, value: p.prereq.satisfied ? 1 : 0 });
       }
     }
     // A cover's own facts carry no `cardId` — it is the set that has them — while its members carry theirs,

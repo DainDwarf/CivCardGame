@@ -6,6 +6,7 @@ import {
   applyUpkeep,
   assignedWorkers,
   cloneState,
+  currentCost,
   effectiveHandSize,
   freeTerritory,
   goalMet,
@@ -214,6 +215,9 @@ export interface LandingPlan {
    *  *distinct* cards present caps every route at one card's worth, which is what makes a goal asking for
    *  two of them reachable only by two different cards: hence `cover`. */
   cap?: number;
+  /** A card whose standing this route's own `cost.check` refuses the play without — the prerequisite
+   *  `gateOf` lands in front of the route. */
+  requires?: string;
 }
 
 /** Standing a durable producer whose per-round output the goal reads: pay for it once, then collect `tau`
@@ -222,6 +226,8 @@ export interface LandingPlan {
 export interface BuildingPlan {
   cardId: string;
   tau: number;
+  /** As `LandingPlan.requires`. */
+  requires?: string;
 }
 
 /**
@@ -272,6 +278,9 @@ export interface PlanCandidate {
   /** The route of each kind this card offers; absent where it moves the measure no such way. */
   landing?: CandidateRoute;
   building?: CandidateRoute;
+  /** The card the scan found this one's cost refusing the play without. Neither route is dropped for it —
+   *  a gate is a clock the leaf runs, not a reason to have no plan. */
+  requires?: string;
 }
 
 /** One goal's derivation: the scan that produced its plans. */
@@ -297,6 +306,19 @@ export interface RaceModelExplain {
   goals: GoalPlanExplain[];
   /** `runCardIds`, sorted. */
   runCards: string[];
+}
+
+/** The gate one route waits behind: the card its cost names, whether that card already stands, and — where
+ *  it does not — the route that lands it. Recorded on every gated route, satisfied or not, because a gate
+ *  that has been opened and one that was never there are the same silence otherwise, and the first is what
+ *  the run just paid for. */
+export interface PrereqClockExplain {
+  cardId: string;
+  satisfied: boolean;
+  /** Rounds this gate adds in front of the route it gates — the route's `t`, or `0` once satisfied. */
+  t: number;
+  /** The clock of landing one copy; absent once the card stands, there being nothing left to land. */
+  route?: PlanClockExplain;
 }
 
 /** One plan route's two clocks, and the fold across them. Shared by both routes: a building plan runs the
@@ -334,7 +356,9 @@ export interface PlanClockExplain {
   lands: number;
   /** Rounds collecting `need` at the producer's rate once it stands; `0` for a landing. */
   collect: number;
-  /** `lands + collect` — the clock this route offered the `min`. */
+  /** The gate in front of all of it; absent where the route's cost names none. */
+  prereq?: PrereqClockExplain;
+  /** `prereq + lands + collect` — the clock this route offered the `min`. */
   t: number;
 }
 
@@ -491,6 +515,12 @@ export function routeCause(g: GoalClockExplain): string {
   if (plan.landings.length > 0 && g.reach < g.clock.need) causes.add('copies short');
   for (const p of [...g.landings, ...g.buildings]) {
     if (Number.isFinite(p.t)) continue;
+    // A gate nothing can open ends the route before its own two halves are read: both are finite here, and
+    // reporting them would name a route that is live in everything except being playable.
+    if (p.prereq && !Number.isFinite(p.prereq.t)) {
+      causes.add(`gate ${p.prereq.cardId} unreachable`);
+      continue;
+    }
     const cause = unreachableCause(Number.isFinite(p.payment), p.delivery);
     if (cause) causes.add(cause);
   }
@@ -1035,6 +1065,68 @@ function routeClock(
   };
 }
 
+/**
+ * The gate a route waits behind, in the same rounds everything else here is measured in: nothing once the
+ * named card stands, else the clock of landing one copy of it.
+ *
+ * Serial with the route it gates, rather than folded beside it, because the gate is not a second clock on
+ * the same play — the play is *refused* until the named card stands, so no amount of banking or drawing
+ * moves the goal until it does. Which is also what makes the term a gradient: it vanishes the round the
+ * card lands, and the difference is the whole reason to land it, a prerequisite carrying no measure of its
+ * own and so registering nowhere else in this model.
+ *
+ * Satisfaction is read off the zone the refusal names rather than by re-running the cost closure: the
+ * `missingRoute` payload *is* that predicate, and re-running it at a leaf would need a copy to price
+ * against that this has no reason to go looking for.
+ *
+ * One level deep. A prerequisite that is itself gated is planned as though it were not, which is the bound
+ * that keeps this from recursing through a chain no catalogue has.
+ */
+function gateOf(
+  plan: { requires?: string },
+  banked: GameState,
+  workforce: number,
+  rates: PriceRates,
+  recording: boolean,
+): { t: number; netted: Partial<Record<keyof Resources, number>>; explain?: PrereqClockExplain } | undefined {
+  const cardId = plan.requires;
+  if (cardId === undefined) return undefined;
+  if (banked.tradeRoutes.some((r) => r.cardId === cardId)) {
+    return { t: 0, netted: {}, ...(recording ? { explain: { cardId, satisfied: true, t: 0 } } : {}) };
+  }
+  const sink = recording ? routeSink() : undefined;
+  const r = routeClock({ cardId }, 1, banked, workforce, rates, sink);
+  return {
+    t: r.t,
+    netted: r.netted,
+    ...(recording
+      ? {
+        explain: {
+          cardId,
+          satisfied: false,
+          t: r.t,
+          route: {
+            cardId, copies: 1, price: r.price, workerRounds: r.workerRounds, netted: r.netted,
+            realized: r.realized, payment: r.payment, delivery: r.delivery, ...sink!.census,
+            staffing: r.staffing, recycles: false, weights: sink!.weights, lands: r.t, collect: 0, t: r.t,
+          },
+        },
+      }
+      : {}),
+  };
+}
+
+/** Two earmarks against one bank, folded per pool the way `computeRace` folds two goals' — `max`, each
+ *  having been priced as though the whole bank were its own. */
+function mergeNetted(
+  a: Partial<Record<keyof Resources, number>>,
+  b: Partial<Record<keyof Resources, number>>,
+): Partial<Record<keyof Resources, number>> {
+  const out = { ...a };
+  for (const [k, v] of Object.entries(b) as [keyof Resources, number][]) out[k] = Math.max(out[k] ?? 0, v);
+  return out;
+}
+
 /** Copies of a card the run still circulates — the one count `landingReach` is a ceiling by. */
 function heldCopies(G: GameState, cardId: string): number {
   let held = 0;
@@ -1216,13 +1308,18 @@ function goalClock(
       const share = Math.min(reaches[i], need);
       const copies = share / landing.delta;
       const r = routeClock(landing, copies, banked, workforce, rates, sink);
+      const gate = gateOf(landing, banked, workforce, rates, landings !== undefined);
+      const t = gate === undefined ? r.t : gate.t + r.t;
       landings?.push({
         cardId: landing.cardId, copies, price: r.price, workerRounds: r.workerRounds, netted: r.netted,
         realized: r.realized, payment: r.payment, delivery: r.delivery, ...sink!.census,
         staffing: r.staffing, recycles: landing.recycles ?? false, weights: sink!.weights,
-        lands: r.t, collect: 0, t: r.t,
+        ...(gate?.explain ? { prereq: gate.explain } : {}),
+        lands: r.t, collect: 0, t,
       });
-      if (share >= need) take(r.t, 'landing', landing.cardId, r.netted);
+      if (share >= need) {
+        take(t, 'landing', landing.cardId, gate ? mergeNetted(r.netted, gate.netted) : r.netted);
+      }
     });
     const cover = coverMembers(plan.landings, reaches, need);
     if (cover.length > 1) {
@@ -1243,14 +1340,18 @@ function goalClock(
     for (const building of plan.buildings) {
       const sink = buildings ? routeSink() : undefined;
       const r = routeClock(building, 1, banked, workforce, rates, sink);
+      const gate = gateOf(building, banked, workforce, rates, buildings !== undefined);
       // Collecting from the producer *is* sequential with standing it, unlike the two halves of standing it.
       const collect = need / building.tau;
+      const t = gate === undefined ? r.t + collect : gate.t + r.t + collect;
       buildings?.push({
         cardId: building.cardId, copies: 1, price: r.price, workerRounds: r.workerRounds, netted: r.netted,
         realized: r.realized, payment: r.payment, delivery: r.delivery, ...sink!.census,
-        staffing: r.staffing, recycles: false, weights: sink!.weights, lands: r.t, collect, t: r.t + collect,
+        staffing: r.staffing, recycles: false, weights: sink!.weights,
+        ...(gate?.explain ? { prereq: gate.explain } : {}),
+        lands: r.t, collect, t,
       });
-      take(r.t + collect, 'building', building.cardId, r.netted);
+      take(t, 'building', building.cardId, gate ? mergeNetted(r.netted, gate.netted) : r.netted);
     }
   }
 
@@ -1266,6 +1367,22 @@ function goalClock(
     ),
     netted,
   };
+}
+
+/**
+ * The card this copy's cost refuses the play without, read through the one seam a price may be read
+ * through, so a check a sticker materialized lands here too.
+ *
+ * Only `missingRoute` names one. It is the single refusal whose payload identifies a card the run can go and
+ * land — the rest say the moment is wrong (an empty pile, a committed citizen), which the clocks around it
+ * already measure and no plan can shorten by adding a card. Unknown to the catalogue is no prerequisite
+ * either: the leaf would price a card that does not exist.
+ */
+function gatedOn(G: GameState, card: CardDef, self: CardInstance | undefined): string | undefined {
+  if (!self) return undefined;
+  const reason = currentCost(card, { G, self }).check?.({ G, self });
+  if (reason?.kind !== 'missingRoute') return undefined;
+  return CARDS[reason.cardId] ? reason.cardId : undefined;
 }
 
 /** One route's verdict at the run root. `t` is read at the income and workforce the root happens to have, so
@@ -1335,7 +1452,8 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
     for (const card of cards) {
       // The root's own copies at the root's own state, through the same pricing every leaf uses — so the
       // ranking below is decided on what a play really costs here rather than on a printed floor.
-      const price = cardPrice(G, card, pricingCopy(G, card, unitCost));
+      const copy = pricingCopy(G, card, unitCost);
+      const price = cardPrice(G, card, copy);
       const unpriceable = (Object.keys(price) as (keyof Resources)[]).filter((k) => unitCost[k] === undefined);
       const work = card.kind === 'work';
       // The two ways a copy can move a measure, kept apart because they differ in what a *second* copy
@@ -1372,8 +1490,11 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
       // the rest of what it charges.
       const staffing = work ? 1 : 0;
       const perUnit = delta > 0 ? (workerRounds + staffing) / delta : Infinity;
+      const requires = gatedOn(G, card, copy);
+      const gated = requires !== undefined ? { requires } : {};
       const candidate: PlanCandidate = {
         cardId: card.id, delta, tau, price: withRoom(card, price), workerRounds, perUnit, unpriceable,
+        ...gated,
       };
       if (delta > 0) {
         // Where the delta is what the play *added*, the copy files where its kind sends it and the two that
@@ -1391,6 +1512,7 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
           ...(work ? { workerRounds: staffing } : {}),
           ...(recycles ? { recycles } : {}),
           ...(cap !== undefined ? { cap } : {}),
+          ...gated,
         };
         // A route with nothing left to deal is dead rather than instant — `deliveryClock` reads no copies
         // asked for as no rounds waited. Tested on the reach and never on the share, which a goal already
@@ -1404,7 +1526,7 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
         else dropped.add(candidate.landing.reject);
       }
       if (tau > 0) {
-        const plan: BuildingPlan = { cardId: card.id, tau };
+        const plan: BuildingPlan = { cardId: card.id, tau, ...gated };
         candidate.building = probeRoute(plan, 1, banked, workforce, rates);
         if (candidate.building.kept) buildings.push({ plan, rank: -tau });
         else dropped.add(candidate.building.reject);

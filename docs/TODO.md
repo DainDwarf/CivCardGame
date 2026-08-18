@@ -214,7 +214,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
-- **Defeat on population ≤ 0** ✅ — a civilization at 0🧍 staffs nothing and can only regrow through a card
+- **The race plan runs a `missingRoute` gate's prerequisite** ✅ — a `cost.check` refusing until a named
+  card stands (`UnplayableReason.missingRoute` — the tin gate) was invisible to `race.ts`: the gated goal's
+  clock read reachable while `enumerateActions` refused every play, and opening the route bought nothing but
+  its rent, so the search never did (`bronze_port`'s `prover` baseline was ten runs of zero actions). The
+  plan scan now reads each candidate's `check` through `currentCost` and carries the named card as a
+  **prerequisite**; the leaf runs its one-copy landing clock serially in front, zero once it stands — the
+  vanishing term is the gradient. Bit-identical by construction on any state with no `missingRoute` refusal
+  (CI's baseline gate is the verifier); the `bronze_*` fixtures are re-recorded under it, and their residual
+  under-read is the open `setting_sail` delivery item above, not the gate.
   priced in a pool it can no longer make, so the run was over but kept playing. `rules/collapse.ts`'s new
   `populationCollapse` is the **`extinction`** defeat, read in `checkEndIf` beside `coreCollapse` off the same
   post-flush `G.resources` — so it fires on the play that empties the board, not at end of turn. The

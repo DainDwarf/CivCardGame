@@ -142,6 +142,28 @@ const FIXTURES: Record<string, CardDef> = {
     id: 'race_flare', name: 'Race Flare', kind: 'action', cost: {},
     effect: { resources: { science: 1 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
   },
+  // A card the gate refuses outright: no price and no delivery clock moves while the named route is absent,
+  // so the only thing that makes the goal reachable is landing a card the goal does not measure.
+  race_gate_route: {
+    id: 'race_gate_route', name: 'Race Gate Route', kind: 'trade', cost: { resources: { production: 1 } },
+  },
+  race_gated_relic: {
+    id: 'race_gated_relic', name: 'Race Gated Relic', kind: 'action',
+    cost: {
+      resources: { production: 4 },
+      check: ({ G }) => (G.tradeRoutes.some((r) => r.cardId === 'race_gate_route')
+        ? null
+        : { kind: 'missingRoute', cardId: 'race_gate_route' }),
+    },
+  },
+  race_goal_gated: {
+    id: 'race_goal_gated', name: 'Race Goal Gated', kind: 'objective', cost: {},
+    goals: [{
+      icon: '⛏️',
+      measure: (G) => G.removed.filter((c) => c.cardId === 'race_gated_relic').length,
+      target: 2,
+    }],
+  },
   // A pool nothing `produces` per round — it exists only as what a play grants.
   race_goal_pop: {
     id: 'race_goal_pop', name: 'Race Goal Pop', kind: 'objective', cost: {},
@@ -526,6 +548,58 @@ describe('cover', () => {
     expect(goal.landings.every((p) => Number.isFinite(p.t))).toBe(true);
     expect(goal.clock.route).toBe('none');
     expect(routeCause(goal)).toBe('copies short');
+  });
+});
+
+describe('a prerequisite the cost refuses without', () => {
+  /** Two relics behind the gate, and — unless `withoutKey` — the one copy of the route that opens it. */
+  function gated({ open = false, withoutKey = false } = {}) {
+    const deck = ['race_gated_relic', 'race_gated_relic', ...(withoutKey ? [] : ['race_gate_route'])];
+    const G = planned('race_goal_gated', deck, { production: 12 });
+    if (open) openTradeRoute(G, G.deck.pop()!);
+    return G;
+  }
+
+  it('plans the card the refusal names, and charges nothing for it once that card stands', () => {
+    const closed = gated();
+    const model = deriveRace(closed);
+    // Kept, not dropped: the gate is a clock the leaf runs, so the route survives the scan carrying it.
+    expect(model.plans[0].landings[0]).toMatchObject({
+      cardId: 'race_gated_relic', requires: 'race_gate_route',
+    });
+
+    const shut = explainRaceValue(closed, { model }).goals[0].landings[0];
+    expect(shut.prereq).toMatchObject({ cardId: 'race_gate_route', satisfied: false });
+    expect(shut.prereq!.t).toBeGreaterThan(0);
+    // Serial, not folded: the play is refused until the route stands, so the two clocks add.
+    expect(shut.t).toBeCloseTo(shut.prereq!.t + shut.lands, 10);
+
+    // Valued at the *same* model, which is how every consumer reads it — the plans are derived at the run
+    // root, where nothing stands yet, and the leaf is what learns the gate has since been opened.
+    const opened = explainRaceValue(gated({ open: true }), { model }).goals[0].landings[0];
+    expect(opened.prereq).toMatchObject({ satisfied: true, t: 0 });
+    expect(opened.t).toBe(opened.lands);
+  });
+
+  it('brings the state that opened the gate nearer the win than the one still holding the key', () => {
+    // The gradient the whole term exists for: the route moves no goal measure and its rent only shortens
+    // `T̂loss`, so without this a beam is paid never to open it.
+    const model = deriveRace(gated());
+    const shut = raceBreakdown(gated(), { model });
+    const open = raceBreakdown(gated({ open: true }), { model });
+    expect(open.goals[0].t).toBeLessThan(shut.goals[0].t);
+    expect(open.total).toBeGreaterThan(shut.total);
+  });
+
+  it('reports a goal whose gate the run cannot open as unreachable, naming the gate', () => {
+    // Both halves of the gated route are perfectly finite here — it is live in everything except being
+    // playable, which is exactly the reading `routeCause` would otherwise have no word for.
+    const G = gated({ withoutKey: true });
+    const goal = explainRaceValue(G, { model: deriveRace(G) }).goals[0];
+    expect(Number.isFinite(goal.landings[0].payment)).toBe(true);
+    expect(Number.isFinite(goal.landings[0].delivery)).toBe(true);
+    expect(goal.clock.route).toBe('none');
+    expect(routeCause(goal)).toBe('gate race_gate_route unreachable');
   });
 });
 
@@ -1332,6 +1406,7 @@ describe('the explained pass', () => {
       planned('race_goal_pop', ['race_hut', 'race_hut'], { production: 8 }),
       planned('race_goal_land', ['race_claim', 'race_claim']),
       planned('race_goal_distinct', ['race_shrine', 'race_kiln'], { production: 6 }),
+      planned('race_goal_gated', ['race_gated_relic', 'race_gated_relic', 'race_gate_route'], { production: 12 }),
       planned('race_goal', ['test_sci'], { population: 2 }),
       ticking,
       deadline,
