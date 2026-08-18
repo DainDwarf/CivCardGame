@@ -51,16 +51,45 @@ sticker folds the same check onto a stickered copy via `applyCost`. The threat's
 read one `trialsMastered` tally off `removed`, so the price the threat charges can't drift from the
 mastery the win counts.
 
-## Balance ⬜ (not started)
+## Balance ⬜ (fixtures cut, pass open)
 
-First cell that can stock the rebalance's measurement debt: both **Caravans** (the 🪙→🌾/🔨 rate,
-unmeasured anywhere), the **Wheel** sticker, the **Warband** board, **Merchant Ship**, **Convoy**, and
-the **Tin Route**'s real rating (its Sea Lanes numbers were implement-stage — this is the first
-mission where its gate is load-bearing).
+Fixtures `bronze_city` / `bronze_port` — one 32-card deck on both boards, at the standing protocol
+(`greedy`/`planner` @100, `prover` @10, default beam and scorer).
 
-Sweep-reading caveat: the tin gate is the first `check` satisfiable only by *playing another card*
-(a route), which `race.ts`'s landing plan may not model as a prerequisite purchase — a low `prover`
-row here could be the scorer failing to plan the route, not the cell being unwinnable. Attribute
-before concluding.
+| | greedy @100 | planner @100 | prover @10 |
+|---|---|---|---|
+| City | 0% | 2% | 4/10 proven |
+| Port | 0% | 0% | 0/10 proven |
+
+**No Warband fixture.** The board's single territory is already spent on its prebuilt War Camp, so a
+building deck has nowhere to build: median 4-turn runs under both policies, a degenerate cell rather
+than a hard one. Chiefdom is unmeasured.
+
+**The deck carries the Tin Route and no other trade card**, and that is a measurement, not a taste.
+The A/B behind it was swept on an ad-hoc cell label with paired seeds — internally comparable, but a
+different seed stream from the table above, so its rates read against each other and not against the
+fixtures. Against the same deck also stocking Bartering and Coastal Route, **standing rent is the
+deck's entire money pressure** — 0 bankruptcies in the 243 of its runs that never opened a route,
+against 23% / 42% / 45% at a standing rent of 1 / 2 / 3 — and the extra routes crowd the
+mission-critical one out of the zone: the Tin Route opens two to three times less often (28 → 76 plays
+per 100 City-planner runs once they are gone). The `prover` read the same split there, 0/10 on both
+boards with the extra routes against 3/10 without. A deck that pays rent it doesn't need cannot afford
+the rent it does.
+
+**Read the table as a fidelity artifact, not the mission's difficulty.** The tin gate is the first
+`check` satisfiable only by *playing another card* (a route), and `race.ts` already prices a route's
+landing at the flat `1/handSize` while charging its full standing bill
+([sea-lanes.md](sea-lanes.md) → *Balance* is the closed-form witness) — so the value the competent
+policies steer by both under-buys the route and over-fears its rent, and the gate compounds it. The
+`prover`'s own refusals say so: every one is `depth` or `deadEnd`, never `budget`, and its proven City
+lines run **98–200 turns**, one of them landing on the horizon itself. Port's 0/10 is the seed sample
+rather than a verdict — the ad-hoc sweep above proved 3/10 on that very board. Both cells owe a
+re-record when the fidelity fix lands.
+
+**Open.** The trial's −2🔨 unplayed upkeep is un-adjudicated — keep it as pressure or cut it as a tax
+on a hand the player couldn't have played. And this deck stocks none of the rebalance's measurement
+debt — no **Caravans** (the 🪙→🌾/🔨 rate, still unmeasured anywhere), no **Wheel** sticker, no
+**Warband** board, no **Merchant Ship**, no **Convoy** — so the debt stands, and with it the **Tin
+Route**'s own rating in the first cell where its gate is load-bearing.
 
 ## Polish ⬜ (not started)
