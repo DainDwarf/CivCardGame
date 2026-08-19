@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
 import { addBuilding, addWork, blankState, bumpCounter, getCounter, openTradeRoute, scaleResources, seedObjective, setCounter, subtractResources, type GameState } from '../rules';
+import { effectiveGain } from '../rules/stickers';
 import { CARDS, CREW_PATIENCE, type CardDef } from '../content/cards';
 import {
   RACE,
@@ -1220,6 +1221,96 @@ describe('the rescue-pending charge', () => {
     const model = deriveRace(G);
     expect(model.rescues.military?.map((r) => [r.kind, r.cardId])).toEqual([['defusal', 'test_event']]);
     expect(raceBreakdown(G, { model }).rescue).toBeLessThan(0);
+  });
+});
+
+describe('a rescue route weighed on one copy', () => {
+  /** The food scan's `test_food` reading at a run circulating exactly the copies named — one entry per
+   *  copy, holding the stickers it carries. A staffed `test_prod` gives 🔨 its worker-round rate, which is
+   *  what lets the scan price anything at all. */
+  const weighed = (...copies: (string[] | undefined)[]) => {
+    const G = blankState('race_test');
+    G.round = 1;
+    G.resources.food = 10;
+    G.resources.population = 2;
+    G.resources.territory = 6;
+    seedObjective(G, 'race_goal');
+    addBuilding(G, mint(G, 'test_prod'));
+    for (const stickers of copies) G.deck.push(mint(G, 'test_food', stickers));
+    return explainRaceModel(G)
+      .rescues.find((r) => r.key === 'food')!
+      .candidates.find((c) => c.cardId === 'test_food')!;
+  };
+
+  // Read through a call rather than a const: the shared fixtures are spliced into `CARDS` by the suite's
+  // `beforeAll`, which runs after a describe body.
+  const printed = () => CARDS.test_food.produces!.resources!;
+  const printedPrice = () => CARDS.test_food.cost.resources!.production!;
+
+  it('rates a stickered copy at what that copy really yields', () => {
+    const c = weighed(['test_restricted']);
+    expect(c.delta).toBe(effectiveGain(printed(), { stickers: ['test_restricted'] })!.food);
+    expect(c.delta).toBeGreaterThan(printed().food!);
+  });
+
+  it('takes the rate and the price off the same copy', () => {
+    // The incoherence this pins: the scan picks the copy a play would really be made with, and a deck
+    // holding a cheaper bare copy beside a dearer stickered one must not quote the first's price against
+    // the second's output. Whichever copy wins the pricing, both readings are that copy's.
+    const c = weighed(['test_restricted'], ['test_costcut']);
+    expect(c.price.production).toBe(printedPrice() - 1);
+    expect(c.delta).toBe(printed().food);
+  });
+
+  it('falls back to the printed bag where the run circulates no copy', () => {
+    // A copy standing on the board is not a copy the run can deal, so there is no instance to fold
+    // against and the catalogue rate is the only one there is.
+    const G = blankState('race_test');
+    G.round = 1;
+    G.resources.food = 10;
+    G.resources.population = 2;
+    G.resources.territory = 6;
+    seedObjective(G, 'race_goal');
+    addBuilding(G, mint(G, 'test_prod'));
+    addBuilding(G, mint(G, 'test_food', ['test_restricted']));
+    const c = explainRaceModel(G)
+      .rescues.find((r) => r.key === 'food')!
+      .candidates.find((x) => x.cardId === 'test_food')!;
+    expect(c.delta).toBe(printed().food);
+  });
+});
+
+describe('a goal route weighed on one copy', () => {
+  /** The `race_goal` scan's candidate for `cardId`, at a run circulating exactly the copies named. A
+   *  staffed `test_prod` gives 🔨 its worker-round rate, which is what lets the scan price anything. */
+  const weighed = (cardId: string, ...copies: (string[] | undefined)[]) => {
+    const G = blankState('race_test');
+    G.round = 1;
+    G.resources.food = 10;
+    G.resources.population = 2;
+    G.resources.territory = 6;
+    seedObjective(G, 'race_goal');
+    addBuilding(G, mint(G, 'test_prod'));
+    for (const stickers of copies) G.deck.push(mint(G, cardId, stickers));
+    return explainRaceModel(G).goals[0].candidates.find((c) => c.cardId === cardId)!;
+  };
+
+  /** What the goal's own pool reads at, off the same fold a play would take. */
+  const science = (cardId: string, field: 'produces' | 'effect', stickers?: string[]) => {
+    const base = CARDS[cardId][field]!.resources!;
+    return (stickers ? effectiveGain(base, { stickers })! : base).science;
+  };
+
+  it('reads a producer route off the stickered copy', () => {
+    expect(weighed('test_sci', ['test_addgain']).tau).toBe(science('test_sci', 'produces', ['test_addgain']));
+    expect(weighed('test_sci', undefined).tau).toBe(science('test_sci', 'produces'));
+  });
+
+  it('reads a landing route off the stickered copy, whichever field carries it', () => {
+    expect(weighed('race_work_sci', ['test_addgain']).delta).toBe(
+      science('race_work_sci', 'produces', ['test_addgain']),
+    );
+    expect(weighed('test_action', ['test_addgain']).delta).toBe(science('test_action', 'effect', ['test_addgain']));
   });
 });
 

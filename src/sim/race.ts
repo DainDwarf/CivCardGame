@@ -12,7 +12,6 @@ import {
   goalMet,
   isOperating,
   producingUnits,
-  realizedGain,
   resolveEndTurn,
   scaleResources,
   type CardInstance,
@@ -20,10 +19,10 @@ import {
   type GameState,
   type Resources,
 } from '../rules';
-import { effectiveGain } from '../rules/stickers';
 import { isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import {
-  cardPrice, grantDelta, outputDelta, positive, presenceDelta, replacementCost, runCardIds, selfExiles,
+  cardPrice, foldedGain, grantDelta, outputDelta, positive, presenceDelta, replacementCost, runCardIds,
+  selfExiles,
 } from './probes';
 import { DEFAULT_MAX_ROUNDS } from './simulate';
 
@@ -812,7 +811,7 @@ function inFlight(G: GameState): Partial<Resources> {
   for (const w of G.workZone) {
     const produces = CARDS[w.cardId]?.produces?.resources;
     if (!produces || !isOperating(w)) continue;
-    const bag = realizedGain(G, effectiveGain(scaleResources(produces, producingUnits(w)), w));
+    const bag = foldedGain(G, scaleResources(produces, producingUnits(w)), w);
     for (const [k, v] of Object.entries(bag ?? {}) as [keyof Resources, number][]) out[k] = (out[k] ?? 0) + v;
   }
   return out;
@@ -1545,8 +1544,8 @@ function probeRoute(
  *
  * Two shapes, which are the two ways a card really moves a drain:
  *
- * - a **producer** whose standing output feeds the pool, read through `realizedGain` like every other output
- *   here, priced as a building plan is (its slot included) plus the citizen it stands to run;
+ * - a **producer** whose standing output feeds the pool, read off the very copy the route would be played
+ *   with, priced as a building plan is (its slot included) plus the citizen it stands to run;
  * - a **defusal** — playing a circulating `event` exiles the copy to `removed`, and the recurring disaster
  *   the pool drains charge it for goes with it.
  *
@@ -1562,6 +1561,10 @@ function deriveRescues(
   rates: PriceRates,
 ): RescuePoolExplain[] {
   const defused = defusedPools(G);
+  // One copy per card, picked before any pool is scanned: what the route yields and what it charges are
+  // two readings of the *same* instance, so a deck holding a stickered copy beside a bare one cannot quote
+  // the bonus of the one against the price of the other. Independent of the pool, hence hoisted out of it.
+  const copies = new Map(cards.map((c) => [c.id, pricingCopy(G, c, rates.unitCost)] as const));
   const out: RescuePoolExplain[] = [];
   for (const key of CORE_KEYS) {
     const candidates: RescueCandidate[] = [];
@@ -1570,7 +1573,7 @@ function deriveRescues(
     const weigh = (card: CardDef, delta: number, route: RescueRoute): void => {
       // Land is exempt for the same reason `outstanding` exempts it: a slot is netted against the free
       // tableau rather than converted, so a route needing one is refused by the board, not by the rates.
-      const price = withRoom(card, cardPrice(G, card, pricingCopy(G, card, rates.unitCost)));
+      const price = withRoom(card, cardPrice(G, card, copies.get(card.id)));
       const unpriceable = (Object.keys(price) as (keyof Resources)[]).filter(
         (k) => k !== 'territory' && rates.unitCost[k] === undefined,
       );
@@ -1586,7 +1589,7 @@ function deriveRescues(
     };
     for (const card of cards) {
       if (isDurableProducer(card)) {
-        const rate = positive(realizedGain(G, card.produces?.resources)?.[key]);
+        const rate = positive(foldedGain(G, card.produces?.resources, copies.get(card.id))?.[key]);
         if (rate > 0) {
           weigh(card, rate, {
             kind: 'producer',
@@ -1654,8 +1657,8 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
     const buildings: { plan: BuildingPlan; rank: number }[] = [];
     let inert = 0;
     for (const card of cards) {
-      // The root's own copies at the root's own state, through the same pricing every leaf uses — so the
-      // ranking below is decided on what a play really costs here rather than on a printed floor.
+      // The root's own copies at the root's own state, through the same pricing every leaf uses — so what
+      // a play lands and what it charges are both read off the one instance rather than off a printed floor.
       const copy = pricingCopy(G, card, unitCost);
       const price = cardPrice(G, card, copy);
       const unpriceable = (Object.keys(price) as (keyof Resources)[]).filter((k) => unitCost[k] === undefined);
@@ -1665,12 +1668,12 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
       // standing somewhere counted may or may not be, which is what the two-copy probe below reads.
       const standing = presenceDelta(probe, card, goal.measure);
       const played = Math.max(
-        grantDelta(probe, card, goal.measure),
-        work ? outputDelta(probe, card, goal.measure) : 0,
+        grantDelta(probe, card, goal.measure, copy),
+        work ? outputDelta(probe, card, goal.measure, copy) : 0,
       );
       const delta = Math.max(standing, played);
       // Only a durable producer's `produces` is a rate — a work box's is the landing delta above.
-      const tau = isDurableProducer(card) ? outputDelta(probe, card, goal.measure) : 0;
+      const tau = isDurableProducer(card) ? outputDelta(probe, card, goal.measure, copy) : 0;
       if (delta <= 0 && tau <= 0) {
         inert++;
         continue;

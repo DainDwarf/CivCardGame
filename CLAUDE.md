@@ -282,7 +282,7 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   yield for as long as it stands (`population.ts`'s `standingCards` is the set). Order is load-bearing:
   a sticker sets the copy's rate, a standing modifier bends the result. An **empty** bag returns
   untouched — a modifier bends a gain, it may not conjure one — which also keeps the board walk off the
-  sim's hot path. `realizedGain` is exported because it is a **pure read**: `sim/enablers.ts` projects a
+  sim's hot path. `realizedGain` is exported because it is a **pure read**: `sim/probes.ts` projects a
   card's printed output forward and must not price it at a rate the board wouldn't pay, so the
   projection and the payment share one function. `content/cards.test.ts` pins the catalogue's hooks
   commute and none deepens a drain.
@@ -626,16 +626,21 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   `probes.ts` is the derivation front end under all of that — what a card charges (`cardPrice`, which
   prices the *copy* it is handed through `rules/cost.ts`'s `currentCost` and falls back to the declarative
   base only when there is no copy to price against), what a
-  unit of each pool costs to obtain in **worker-rounds** (`replacementCost`), and what one more play or
-  one more round of a card moves a `(G) => number` by (the injection/grant/output probes). It is the half
+  unit of each pool costs to obtain in **worker-rounds** (`replacementCost`, which weighs each copy the
+  run holds as its own route, so a stickered producer sets the rate it really pays), and what one more
+  play or one more round of a card moves a `(G) => number` by (the injection/grant/output probes — the
+  grant and output halves read the copy handed to them, the injection half counting cards and so reading
+  none). Every rate comes off `foldedGain`, the copy's stickers then the board's standing modifiers, in
+  the order `gainResources` folds a real gain. It is the half
   with no currency of its own: a probe reports what moved, and the model above it decides what that is
   worth, so two models pricing the same card share one derivation instead of drifting apart at the first
   retune.
   `enablers.ts` is the **band scorer's** leaf accelerator, folded only under `--scorer band`:
   `enablerPotential`, derived
-  **mechanically from card `cost`→`produces`/`effect`** — every output read through `rules/effects.ts`'s
-  `realizedGain`, so a board standing a `modifyGain` card is priced at what it really pays rather than at
-  the printed rate, and the identity everywhere else — (reusable by the ECONOMY-EXPLORER demand phase),
+  **mechanically from card `cost`→`produces`/`effect`** — walked one **copy** at a time, output through
+  `foldedGain` and price off that same instance, so a stickered copy is credited what it really yields for
+  what it really charges and a board bending either is read at what it really pays — (reusable by the
+  ECONOMY-EXPLORER demand phase),
   credits a banked consumable for the objective progress it *converts into* (including the price of a
   card the objective *counts*, probed by injecting run cards into the goal-measured zones — a price being
   the declarative `cost` plus every pool the play `effect` takes away, split across its components by what
@@ -710,11 +715,11 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   never read or scale `CardDef.effect` from a move, upkeep, threat tick, or component. Its *price* is the
   mirror of that: read only through `rules/cost.ts`'s `currentCost` (its `CardCost.resolve` closure, else
   the declarative fields) — never `CardDef.cost.resources` directly from a move, a gate, or a component,
-  or a scaling card's price silently reverts to its base. (The sim's static derivations over `CARDS` —
-  `enablers.ts`, `heuristicPolicy.ts` — are the deliberate exception: with no instance to price against,
-  the declarative base is the only number there is, so a scaling card reads there at its floor. The
-  carve-out is having no copy, not being in `sim/`: `race.ts`'s plan prices pick one and read it through
-  `currentCost` like everything else.)
+  or a scaling card's price silently reverts to its base. (`heuristicPolicy.ts`'s static ladder over
+  `CARDS` is the deliberate exception: with no instance to price against, the declarative base is the only
+  number there is, so a scaling card reads there at its floor. The carve-out is having no copy, not being
+  in `sim/`: `probes.ts` walks the run's own copies and `race.ts`'s plan prices pick one, and both read
+  through `currentCost` like everything else.)
   A sticker likewise carries its behaviour on its
   `StickerDef` (`appliesTo`/`applyGain`/`applyCost`), dispatched generically by `rules/stickers.ts` — no
   sticker-specific branches at call sites. A standing card's claim on *other* cards' output rides the

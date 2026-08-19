@@ -1,9 +1,7 @@
-import { STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, foodPerNextPop, placedCards, type GameState, type Resources } from '../rules';
-import { effectiveGain } from '../rules/stickers';
-import { realizedGain } from '../rules/effects';
+import { STRATEGIC_KEYS, cloneState, cultureLevel, emptyResources, foodPerNextPop, placedCards, type CardInstance, type GameState, type Resources } from '../rules';
 import { CARDS, isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import { objectiveProgress } from './objective';
-import { cardPrice, positive, presenceDelta, replacementCost, runCardIds } from './probes';
+import { cardPrice, foldedGain, positive, presenceDelta, replacementCost, runCardIds, runInstances } from './probes';
 import { OBJECTIVE_WEIGHT } from './value';
 
 /**
@@ -294,6 +292,26 @@ function goalValuedResources(G: GameState): Partial<Record<keyof Resources, numb
   return out;
 }
 
+/** One card and one copy of it the run holds. */
+type RunPair = { card: CardDef; self?: CardInstance };
+
+/** Every (card, copy) pair the run holds, in catalogue order — the walk every rate and price read below
+ *  goes through. A copy is the unit because a rate is a copy's: a run holding an irrigated Farm beside a
+ *  bare one has two of them, and quoting either card-wide would credit one copy's bonus to the other or
+ *  charge one's price against the other's yield. A card the run holds no copy of pairs with `undefined`,
+ *  where the printed bag is the only reading there is. */
+function runPairs(G: GameState, ids: Set<string>): RunPair[] {
+  const copies = runInstances(G, ids);
+  return Object.values(CARDS)
+    .filter((c) => ids.has(c.id))
+    .flatMap((card) => copies.get(card.id)!.map((self) => ({ card, self })));
+}
+
+/** The copies of one card id out of a `runPairs` walk. */
+function instancesOf(pairs: RunPair[], cardId: string): (CardInstance | undefined)[] {
+  return pairs.filter((p) => p.card.id === cardId).map((p) => p.self);
+}
+
 /** The card-count counterpart of `goalValuedResources`: which resources fund a card the objective
  *  *counts*, probed by injecting a synthetic instance of each run card into the zones a goal can measure
  *  (`removed` for a played event, `tableau` for a building, `tradeRoutes` for an open route — the three a
@@ -317,40 +335,45 @@ export function goalValuedCardCosts(G: GameState): Partial<Record<keyof Resource
   const out: Partial<Record<keyof Resources, CardCostExplain>> = {};
   const ids = runCardIds(G);
   const wr = replacementCost(G, ids);
+  const pairs = runPairs(G, ids);
   for (const cardId of ids) {
     const card = CARDS[cardId];
     if (!card) continue;
-    const price = cardPrice(G, card);
-    // Attribute the goal step across the price by what each component costs to obtain, falling back to the
-    // raw unit count when any component has no derived worker-round price — a guessed price would reshape
-    // the split silently, where the fallback is one figure the report can name. Identical to the count
-    // split wherever a card charges a single pool: the shared `wr` factor cancels.
-    const unitCost = Object.keys(price).every((k) => wr[k as keyof Resources] !== undefined) ? wr : undefined;
-    let totalCost = 0;
-    for (const [k, amt] of Object.entries(price) as [keyof Resources, number][]) {
-      totalCost += amt * (unitCost?.[k] ?? 1);
-    }
-    if (totalCost <= 0) continue; // a free card needs no banking, so its costs can't be enablers
+    // A fact about the card rather than about any one copy — what *standing* one somewhere counted moves —
+    // so it is probed once and read against every copy's own price below.
     const delta = presenceDelta(probe, card, objectiveProgress);
     if (delta <= 0) continue;
-    const progressPerCost = delta / totalCost;
     const copies = copiesInRun(G, cardId);
-    for (const [ck, costAmt] of Object.entries(price) as [keyof Resources, number][]) {
-      const marginal = progressPerCost * (unitCost?.[ck] ?? 1);
-      const prev = out[ck];
-      if (prev && marginal <= prev.marginal) continue;
-      // A restocking pool banks one card's charge and is refilled between plays; one that isn't must carry
-      // every copy's charge at once, since the only way to top it back up is to buy more of it.
-      const restocking = isRestocking(G, ids, ck);
-      out[ck] = {
-        marginal,
-        costAmt,
-        cardId,
-        restocking,
-        copies,
-        cap: restocking ? costAmt : costAmt * copies,
-        ...(unitCost?.[ck] !== undefined ? { unitCost: unitCost[ck] } : {}),
-      };
+    for (const self of instancesOf(pairs, cardId)) {
+      const price = cardPrice(G, card, self);
+      // Attribute the goal step across the price by what each component costs to obtain, falling back to the
+      // raw unit count when any component has no derived worker-round price — a guessed price would reshape
+      // the split silently, where the fallback is one figure the report can name. Identical to the count
+      // split wherever a card charges a single pool: the shared `wr` factor cancels.
+      const unitCost = Object.keys(price).every((k) => wr[k as keyof Resources] !== undefined) ? wr : undefined;
+      let totalCost = 0;
+      for (const [k, amt] of Object.entries(price) as [keyof Resources, number][]) {
+        totalCost += amt * (unitCost?.[k] ?? 1);
+      }
+      if (totalCost <= 0) continue; // a free card needs no banking, so its costs can't be enablers
+      const progressPerCost = delta / totalCost;
+      for (const [ck, costAmt] of Object.entries(price) as [keyof Resources, number][]) {
+        const marginal = progressPerCost * (unitCost?.[ck] ?? 1);
+        const prev = out[ck];
+        if (prev && marginal <= prev.marginal) continue;
+        // A restocking pool banks one card's charge and is refilled between plays; one that isn't must carry
+        // every copy's charge at once, since the only way to top it back up is to buy more of it.
+        const restocking = isRestocking(G, pairs, ck);
+        out[ck] = {
+          marginal,
+          costAmt,
+          cardId,
+          restocking,
+          copies,
+          cap: restocking ? costAmt : costAmt * copies,
+          ...(unitCost?.[ck] !== undefined ? { unitCost: unitCost[ck] } : {}),
+        };
+      }
     }
   }
   return out;
@@ -361,8 +384,8 @@ export function goalValuedCardCosts(G: GameState): Partial<Record<keyof Resource
  *  *bought*, so a pool fed only that way is refilled by spending, not by waiting, and a bank sized at one
  *  card's charge would assume an income that doesn't exist. That distinction is the whole of the cap rule
  *  below. */
-function isRestocking(G: GameState, ids: Set<string>, k: keyof Resources): boolean {
-  return Object.values(CARDS).some((c) => ids.has(c.id) && positive(realizedGain(G, c.produces?.resources)?.[k]) > 0);
+function isRestocking(G: GameState, pairs: RunPair[], k: keyof Resources): boolean {
+  return pairs.some(({ card, self }) => positive(foldedGain(G, card.produces?.resources, self)?.[k]) > 0);
 }
 
 /** Copies of a card the run holds, across every zone — how many plays one bank may have to fund. */
@@ -374,9 +397,10 @@ function copiesInRun(G: GameState, cardId: string): number {
   return n;
 }
 
-/** The best single-card goal throughput this run can unlock under a capacity role: the highest
- *  `Σ output × marginal × OBJECTIVE_WEIGHT` over the deck's own cards that `accept`s — a staffable producer
- *  for population, any structure for territory, a gated producer for culture. `scanEffect` includes a
+/** The best single-copy goal throughput this run can unlock under a capacity role: the highest
+ *  `Σ output × marginal × OBJECTIVE_WEIGHT` over the copies the run holds of a card that `accept`s — a
+ *  staffable producer for population, any structure for territory, a gated producer for culture.
+ *  `scanEffect` includes a
  *  card's one-shot placement `effect` (Hut/House grant population there, not in `produces`) alongside its
  *  per-round `produces`; population passes `false`, since it's the *staffing* of `produces` that yields
  *  output, not the play effect.
@@ -386,30 +410,30 @@ function copiesInRun(G: GameState, cardId: string): number {
  *  and not merely its largest. Maxing both (a slot holds one card) would rank a single-output Forge above
  *  such a wonder. `producerCredit` already sums this way; these two must agree on what a card produces.
  *
- *  `self` — the pool being credited — is excluded from the scan: crediting a pool for unlocking a producer
+ *  `pool` — the one being credited — is excluded from the scan: crediting a pool for unlocking a producer
  *  of *itself* re-states the objective's own slope on that pool, and on a gated producer of its own gate
- *  (culture ungating a culture producer) it is circular. Vacuous unless `self` is goal-valued.
+ *  (culture ungating a culture producer) it is circular. Vacuous unless `pool` is goal-valued.
  *
  *  Returns the winning card alongside the figure. A strict `>` keeps `value` bit-identical to the `Math.max`
  *  it replaces and fixes the tie-break at **first in catalogue order**, so equal winners resolve the same
  *  way every run — the report names one of them, and which one is arbitrary but stable. */
 function bestGoalThroughput(
   G: GameState,
-  ids: Set<string>,
+  pairs: RunPair[],
   goalValued: Partial<Record<keyof Resources, number>>,
   accept: (card: CardDef) => boolean,
   scanEffect: boolean,
-  self: keyof Resources,
+  pool: keyof Resources,
 ): { value: number; cardId?: string } {
   let best = 0;
   let bestId: string | undefined;
-  for (const card of Object.values(CARDS)) {
-    if (!ids.has(card.id) || !accept(card)) continue;
-    const effect = scanEffect ? realizedGain(G, card.effect?.resources) : undefined;
-    const produces = realizedGain(G, card.produces?.resources);
+  for (const { card, self } of pairs) {
+    if (!accept(card)) continue;
+    const effect = scanEffect ? foldedGain(G, card.effect?.resources, self) : undefined;
+    const produces = foldedGain(G, card.produces?.resources, self);
     let perCard = 0;
     for (const [gk, marginal] of Object.entries(goalValued) as [keyof Resources, number][]) {
-      if (gk === self) continue;
+      if (gk === pool) continue;
       const output = positive(effect?.[gk]) + positive(produces?.[gk]);
       if (output > 0) perCard += output * (marginal * OBJECTIVE_WEIGHT);
     }
@@ -424,40 +448,31 @@ function bestGoalThroughput(
 /** The best per-worker 🌾 a staffed worker in this run can produce — the rate at which a person's own
  *  upkeep is paid, and so the denominator of population's net (see `enablerPotential`).
  *
- *  Walks the run's **instances** rather than `CARDS`, reading each through the same
- *  `effectiveGain`→`realizedGain` pair a real gain takes: a stickered copy really does yield its bonus,
- *  and pricing an Irrigated Farm at its base rate would charge a person several times what feeding them
- *  costs. The *sticker* half is deliberately not symmetrized onto `bestGoalThroughput`, which stays a
- *  static scan — widening that would move the credit on every mission at once and make a sweep delta
- *  unattributable. The board-modifier half is symmetrized, precisely because it doesn't have that
- *  problem: it is the identity on every board standing no modifier, so it moves one board's cells and
- *  leaves the rest byte-identical. */
-function bestFoodPerWorker(G: GameState): { value: number; cardId?: string } {
+ *  `workers` is read off the card: it is the copy's staffing *capacity*, where a placed copy's own
+ *  `workers` is the count currently assigned to it — an unstaffed producer feeds nobody today and is still
+ *  the rate a citizen would be fed at. */
+function bestFoodPerWorker(G: GameState, pairs: RunPair[]): { value: number; cardId?: string } {
   let best = 0;
   let bestId: string | undefined;
-  for (const zone of [G.deck, G.hand, G.discard, G.removed, placedCards(G)]) {
-    for (const inst of zone) {
-      const card = CARDS[inst.cardId];
-      if (!card || (card.workers ?? 0) < 1) continue;
-      const food = positive(realizedGain(G, effectiveGain(card.produces?.resources, inst))?.food);
-      if (food > best) {
-        best = food;
-        bestId = card.id;
-      }
+  for (const { card, self } of pairs) {
+    if ((card.workers ?? 0) < 1) continue;
+    const food = positive(foldedGain(G, card.produces?.resources, self)?.food);
+    if (food > best) {
+      best = food;
+      bestId = card.id;
     }
   }
   return { value: best, ...(bestId !== undefined ? { cardId: bestId } : {}) };
 }
 
-/** Whether the run holds any card that outputs culture — the precondition for crediting culture's
+/** Whether the run holds any copy that outputs culture — the precondition for crediting culture's
  *  hand-size throughput (with no way to raise culture, the level never moves and the credit can't steer). */
-function canGrowCulture(G: GameState, ids: Set<string>): boolean {
-  return Object.values(CARDS).some(
-    (c) =>
-      ids.has(c.id) &&
-      positive(realizedGain(G, c.effect?.resources)?.culture) +
-        positive(realizedGain(G, c.produces?.resources)?.culture) >
-        0,
+function canGrowCulture(G: GameState, pairs: RunPair[]): boolean {
+  return pairs.some(
+    ({ card, self }) =>
+      positive(foldedGain(G, card.effect?.resources, self)?.culture) +
+        positive(foldedGain(G, card.produces?.resources, self)?.culture) >
+      0,
   );
 }
 
@@ -494,6 +509,7 @@ function deriveExplained(G: GameState, terms: EnablerTerms): EnablerExplain {
     terms;
   const goalValued = goalValuedResources(G);
   const ids = runCardIds(G);
+  const pairs = runPairs(G, ids);
   const weight: EnablerModel['weight'] = {};
   const cap: EnablerModel['cap'] = {};
   const cardCostsFound = goalValuedCardCosts(G);
@@ -541,7 +557,7 @@ function deriveExplained(G: GameState, terms: EnablerTerms): EnablerExplain {
     scanEffect: boolean,
   ): CapacityExplain => {
     const best: { value: number; cardId?: string } = capacity
-      ? bestGoalThroughput(G, ids, goalValued, accept, scanEffect, pool)
+      ? bestGoalThroughput(G, pairs, goalValued, accept, scanEffect, pool)
       : { value: 0 };
     const isGoalValued = goalValued[pool] !== undefined;
     const derived = best.value * CAPACITY_HORIZON;
@@ -604,11 +620,12 @@ function deriveExplained(G: GameState, terms: EnablerTerms): EnablerExplain {
   }
 
   if (conversions) {
-    for (const card of Object.values(CARDS)) {
-      if (!ids.has(card.id)) continue;
-      const effect = realizedGain(G, card.effect?.resources);
-      const produces = realizedGain(G, card.produces?.resources);
-      const price = cardPrice(G, card);
+    // Output and price both off the one copy: a conversion rate is `output / costAmt`, so reading the two
+    // from different instances would quote a stickered yield against a bare charge.
+    for (const { card, self } of pairs) {
+      const effect = foldedGain(G, card.effect?.resources, self);
+      const produces = foldedGain(G, card.produces?.resources, self);
+      const price = cardPrice(G, card, self);
       for (const [vk, valuePerUnit] of Object.entries(valued) as [keyof Resources, number][]) {
         const output = positive(effect?.[vk]) + positive(produces?.[vk]);
         if (output <= 0) continue;
@@ -643,24 +660,27 @@ function deriveExplained(G: GameState, terms: EnablerTerms): EnablerExplain {
       const v = Math.max(valued[k] ?? 0, weight[k] ?? 0);
       if (v > 0) unitValue[k] = v;
     }
-    for (const card of Object.values(CARDS)) {
-      if (!ids.has(card.id) || !isDurableProducer(card) || !card.produces) continue;
-      const produces = realizedGain(G, card.produces.resources);
+    for (const { card, self } of pairs) {
+      if (!isDurableProducer(card) || !card.produces) continue;
+      const produces = foldedGain(G, card.produces.resources, self);
       let perRound = 0;
       for (const [k, v] of Object.entries(unitValue) as [keyof Resources, number][]) {
         perRound += positive(produces?.[k]) * v;
       }
       // A one-shot placement grant (Hut's population, on `effect`) is not durable income and earns nothing
       // here; it lands once in the resource pool, where the strategic weights already credit it.
-      if (perRound > 0) producerCredit[card.id] = perRound * PRODUCER_TAIL_HORIZON;
+      // Keyed per card id, so the credit for owning one is its **best** copy's: the model asks what
+      // standing this card is worth, and the run stands whichever copy it likes.
+      const credit = perRound * PRODUCER_TAIL_HORIZON;
+      if (credit > (producerCredit[card.id] ?? 0)) producerCredit[card.id] = credit;
     }
   }
 
   // Both computed unconditionally, then applied under their own conditions: the model records only what it
   // uses, while the explain has to distinguish "the deck can feed nobody" from "the credit was never
   // charged", which the model's one absent field cannot.
-  const growable = canGrowCulture(G, ids);
-  const food = bestFoodPerWorker(G);
+  const growable = canGrowCulture(G, pairs);
+  const food = bestFoodPerWorker(G, pairs);
 
   const model: EnablerModel = { weight, cap, producerCredit };
   if (handSize && growable) model.handsizePerLevel = HANDSIZE_LEVEL_CREDIT;

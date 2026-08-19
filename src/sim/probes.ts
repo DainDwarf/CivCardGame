@@ -3,6 +3,7 @@ import {
   type CardInstance, type GameState, type Resources,
 } from '../rules';
 import { realizedGain, resolveCard } from '../rules/effects';
+import { effectiveGain } from '../rules/stickers';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
 
 /**
@@ -17,8 +18,9 @@ import { CARDS, isStructure, type CardDef } from '../content/cards';
  * them.
  *
  * Everything here is **mechanical over card data**: no per-mission table, no hook on any
- * card/mission/rule (per [[sim-logic-stays-in-sim]]). Output is read through `rules/effects.ts`'s
- * `realizedGain`, so a board bending what a card yields or takes is priced at what it really does.
+ * card/mission/rule (per [[sim-logic-stays-in-sim]]). Output is read through `foldedGain` off the copy a
+ * play would really be made with, so a stickered copy and a board bending what a card yields are both
+ * priced at what they really do.
  */
 
 /** A number that counts only when it is a gain — the shape `Partial<Resources>` reads are full of. */
@@ -30,10 +32,49 @@ export function positive(x: number | undefined): number {
  *  of `CARDS` would credit a play the deck can't make (an unlocked-but-undecked card). */
 export function runCardIds(G: GameState): Set<string> {
   const ids = new Set<string>();
-  for (const zone of [G.deck, G.hand, G.discard, G.removed, placedCards(G)]) {
+  for (const zone of runZones(G)) {
     for (const c of zone) ids.add(c.cardId);
   }
   return ids;
+}
+
+/** Every zone a run's copies live in — one list, so an id and the copies behind it are read off the same
+ *  walk and can never disagree about what the run holds. */
+function runZones(G: GameState): CardInstance[][] {
+  return [G.deck, G.hand, G.discard, G.removed, placedCards(G)];
+}
+
+/** Every copy the run holds of each id in `ids`, sorted by instance id. A per-instance read needs the
+ *  copies rather than the id, since a deck holding a stickered copy beside a bare one has two different
+ *  real rates and one of them is not the other's. An id with no copy maps to a lone `undefined`: there is
+ *  no instance to fold against, and the printed bag is the only reading there is.
+ *
+ *  Sorted because a zone is an unordered heap (`state.ts`'s `contentKey` canonicalizes on that), so a
+ *  relaxation walking these in deal order would let two states the transposition key calls equal derive
+ *  different rates. */
+export function runInstances(G: GameState, ids: Set<string>): Map<string, (CardInstance | undefined)[]> {
+  const out = new Map<string, CardInstance[]>();
+  for (const id of ids) out.set(id, []);
+  for (const zone of runZones(G)) {
+    for (const c of zone) out.get(c.cardId)?.push(c);
+  }
+  const found = new Map<string, (CardInstance | undefined)[]>();
+  for (const [id, copies] of out) {
+    found.set(id, copies.length > 0 ? [...copies].sort((a, b) => a.id - b.id) : [undefined]);
+  }
+  return found;
+}
+
+/** A card's printed bag as one copy really yields it: the copy's own stickers, then every standing
+ *  `modifyGain` — folded in the order `rules/effects.ts`'s `gainResources` folds a real gain, so a
+ *  projection and the payment it projects can't part. With no copy the printed bag is the only reading
+ *  there is (the carve-out is having no instance, never being in `sim/`). */
+export function foldedGain(
+  G: GameState,
+  bag: Partial<Resources> | undefined,
+  self?: CardInstance,
+): Partial<Resources> | undefined {
+  return realizedGain(G, self ? effectiveGain(bag, self) : bag);
 }
 
 /** What playing a card charges, over all 8 pools: what its `cost` names plus every pool its play `effect`
@@ -47,7 +88,7 @@ export function runCardIds(G: GameState): Set<string> {
  *  `rules/cost.ts`'s `currentCost` — the one seam a price may be read through, so the copy's stickers and
  *  the card's own escalation both land, and a caller cannot quote a number the gate wouldn't charge. With
  *  no copy there is no instance to price against and the declarative base is the only number there is, so a
- *  scaling card reads at its floor (the static-derivation carve-out `sim/enablers.ts` lives on). */
+ *  scaling card reads at its floor. */
 export function cardPrice(
   G: GameState,
   card: CardDef,
@@ -59,7 +100,7 @@ export function cardPrice(
     const amt = positive(cost?.[ck]);
     if (amt > 0) price[ck] = amt;
   }
-  const effect = realizedGain(G, card.effect?.resources);
+  const effect = foldedGain(G, card.effect?.resources, self);
   for (const [k, delta] of Object.entries(effect ?? {}) as [keyof Resources, number][]) {
     if (delta < 0) price[k] = (price[k] ?? 0) - delta;
   }
@@ -83,28 +124,46 @@ export function cardPrice(
  *  price is in pools this same map prices. Two passes past the seed resolve every chain in the catalogue;
  *  the bound is what makes a cyclic pair terminate instead of diverging.
  *
- *  A pool neither source reaches has **no** entry — a gap each caller answers in its own currency. */
+ *  A pool neither source reaches has **no** entry — a gap each caller answers in its own currency.
+ *
+ *  Both sources read the **copy**, not the card: a route is one instance's, so what it yields and what it
+ *  charges are two readings of the same one and a run holding an Irrigated Farm beside a bare one offers
+ *  two routes rather than an averaged one. They compose as they always did — the cheapest wins — so the
+ *  aggregation over copies is the same `min` the aggregation over cards is. */
 export function replacementCost(G: GameState, ids: Set<string>): Partial<Record<keyof Resources, number>> {
   const wr: Partial<Record<keyof Resources, number>> = {};
-  const runCards = Object.values(CARDS).filter((c) => ids.has(c.id));
-  for (const card of runCards) {
-    if ((card.workers ?? 0) < 1) continue;
-    const produces = realizedGain(G, card.produces?.resources);
-    for (const [k, out] of Object.entries(produces ?? {}) as [keyof Resources, number][]) {
+  const copies = runInstances(G, ids);
+  // Read once, ahead of the relaxation: none of the three depends on `wr`, and pricing a copy through
+  // `currentCost` once per pass would triple the cost of a derivation the planner re-runs every re-plan.
+  const routes = Object.values(CARDS)
+    .filter((c) => ids.has(c.id))
+    .flatMap((card) => {
+      // Staffing *capacity*, which lives on the card — a placed copy's own `workers` is the count assigned
+      // to it, a different number that would read an unstaffed producer as needing nobody.
+      const staffable = (card.workers ?? 0) >= 1;
+      return copies.get(card.id)!.map((self) => ({
+        staffable,
+        produces: foldedGain(G, card.produces?.resources, self),
+        grant: foldedGain(G, card.effect?.resources, self),
+        price: cardPrice(G, card, self),
+      }));
+    });
+  for (const route of routes) {
+    if (!route.staffable) continue;
+    for (const [k, out] of Object.entries(route.produces ?? {}) as [keyof Resources, number][]) {
       if (out > 0 && 1 / out < (wr[k] ?? Infinity)) wr[k] = 1 / out;
     }
   }
   for (let pass = 0; pass < 3; pass++) {
-    for (const card of runCards) {
-      const grant = realizedGain(G, card.effect?.resources);
-      if (!grant) continue;
+    for (const route of routes) {
+      if (!route.grant) continue;
       let priced = 0;
-      for (const [k, amt] of Object.entries(cardPrice(G, card)) as [keyof Resources, number][]) {
+      for (const [k, amt] of Object.entries(route.price) as [keyof Resources, number][]) {
         if (wr[k] === undefined) { priced = NaN; break; }
         priced += amt * wr[k];
       }
       if (!(priced > 0)) continue;
-      for (const [k, out] of Object.entries(grant) as [keyof Resources, number][]) {
+      for (const [k, out] of Object.entries(route.grant) as [keyof Resources, number][]) {
         if (out > 0 && priced / out < (wr[k] ?? Infinity)) wr[k] = priced / out;
       }
     }
@@ -124,6 +183,10 @@ export function replacementCost(G: GameState, ids: Set<string>): Partial<Record<
  *  self-exile through its `resolve`; the two standing zones are, because `run/moves.ts`'s `playCard` is
  *  their only writer and routes by kind — probing a card into a zone it can never reach would credit a step
  *  that has no path to happen.
+ *
+ *  The one probe that reads no copy: it diffs a *count* of cards present, so there is no rate for a
+ *  sticker to fold over — and at two copies the run may well hold two differently stickered ones, which a
+ *  single representative would misreport as a pair.
  *
  *  `copies` is what tells a caller whether the contribution is a **rate or a ceiling**: a measure counting
  *  the distinct ids present reads the same at one copy and at two, so the second copy buys nothing and no
@@ -164,16 +227,29 @@ export function selfExiles(G: GameState, card: CardDef): boolean {
 
 /** By **what its play adds**: the positive half of the play `effect`, so a measure over resources
  *  registers a card whose whole contribution is one-shot (a Hut's citizens). The negative half is not
- *  netted off — that is the card's price, and `cardPrice` charges it there. */
-export function grantDelta(probe: GameState, card: CardDef, measure: (G: GameState) => number): number {
-  return withGain(probe, realizedGain(probe, card.effect?.resources), measure);
+ *  netted off — that is the card's price, and `cardPrice` charges it there.
+ *
+ *  Handed the copy a play would really be made with, the gain is *that copy's* (`foldedGain`) — the same
+ *  instance the price is quoted off, so a route cannot promise a stickered output against a bare price. */
+export function grantDelta(
+  probe: GameState,
+  card: CardDef,
+  measure: (G: GameState) => number,
+  self?: CardInstance,
+): number {
+  return withGain(probe, foldedGain(probe, card.effect?.resources, self), measure);
 }
 
 /** By **standing and producing**, at **one worker** — `produces` is per-worker for a staffable and already
  *  flat for a route, and reading it at capacity would price the population that staffs it into the card.
- *  The only one of the three that is a rate rather than a level. */
-export function outputDelta(probe: GameState, card: CardDef, measure: (G: GameState) => number): number {
-  return withGain(probe, realizedGain(probe, card.produces?.resources), measure);
+ *  The only one of the three that is a rate rather than a level. Reads its copy as `grantDelta` does. */
+export function outputDelta(
+  probe: GameState,
+  card: CardDef,
+  measure: (G: GameState) => number,
+  self?: CardInstance,
+): number {
+  return withGain(probe, foldedGain(probe, card.produces?.resources, self), measure);
 }
 
 function withGain(
