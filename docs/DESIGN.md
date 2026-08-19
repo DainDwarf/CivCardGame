@@ -545,20 +545,15 @@ units and why it is tuned rather than derived, on the constant itself; everythin
 
 **A rescue is charged for while it is pending, never credited before it is made.** `T̂loss` is a hard `min`
 over the pools, so the purchase that permanently ends a famine is worth nothing until the turn it is made —
-and its price shortens some *other* pool's clock the whole way there, which is how a run walks past the Farm
-in its hand for nine turns and starves. The fix is a **rescue-pending charge** on the margin, not an
-extension of `T̂loss`: each threatened pool derives its routes at the run root (a producer whose standing
-output feeds it, or the defusal of a circulating `event` that drains it), the leaf costs them all through the
-same payment ⊕ delivery fold a goal route uses, and the margin pays the soonest one's landing clock weighted
-by how little runway the pool has left — zero at `slackCap`, so a run not in trouble is scored as before.
-The term vanishes by *executing* the rescue (the projection flips and the pool leaves the death list through
-the ordinary drain reading) and shrinks by approaching one, which is the whole design. The symmetric-looking
-alternative — extending the pool's clock for a rescue it could reach — was built and **measured, and it
-collapsed the cells it was built for**: `harsh_winter` greedy 80%→0% and planner 90%→20%, `accounting` famine
-22→73 with Farm plays 78→27, while an ablation deriving the routes and extending nothing reproduced every
-prior number exactly. Crediting a *reachable* rescue removes the pressure that would perform it — the
-asymmetry a symmetry argument misses, since a win plan's clock only shortens by being executed while a
-loss-side extension is near-invariant to execution. Alongside it, the near-death steepening reads the
+and its price shortens some *other* pool's clock the whole way there. So each threatened pool derives its
+**rescue routes** at the run root (a producer whose standing output feeds it, or the defusal of a circulating
+`event` that drains it), the leaf costs them through the same payment ⊕ delivery fold a goal route uses, and
+the margin is charged the soonest one's landing clock weighted by how little runway the pool has left — zero
+at `slackCap`, so a run not in trouble is scored as before. The charge is deliberately **not** an extension
+of `T̂loss`: crediting a *reachable* rescue removes the pressure that would perform it — a win plan's clock
+shortens only by being executed, while a loss-side extension is near-invariant to execution — so the term
+instead vanishes by *executing* the rescue (the projection flips and the pool leaves the death list through
+the ordinary drain reading) and shrinks by approaching one. Alongside it, the near-death steepening reads the
 **shortfall the coming boundary opens** wherever a pool's clock has reached zero: `level / drain` stops
 discriminating at an empty pool, so without it the play that quadruples the burn at zero food reads as free.
 
