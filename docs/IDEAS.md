@@ -62,8 +62,8 @@ Per-consumer tin gating (post-0.1 candidate): each tin-gated consumer needs its 
 Route (`count(routes) > count(standing gated cards)`) instead of any-route-satisfies-all. Expressible
 in the existing `CardCost.check` seam, no engine work — the cost is design surface: allocation
 semantics (does a mastered trial keep its route? a stickered Forge? two transient plays in one turn?),
-a "need a *free* route" UI, balance ripple (stacked rents vs Tin Hunger), and a harder plan for the
-sim's prover. Deferred at Bronze: scaling consumption is already priced in 🪙 by Tin Hunger.
+a "need a *free* route" UI, balance ripple (stacked rents vs Charcoal Fuel), and a harder plan for the
+sim's prover. Deferred at Bronze: scaling consumption is already priced in 🔨 by Charcoal Fuel.
 
 ## Iron Age
 

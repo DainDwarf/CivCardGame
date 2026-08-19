@@ -321,9 +321,9 @@ export const THIEVES_PER_GOLD = 10;
  *  (`content/missions.ts`), the `bronze_goal` win threshold, and its progress readout. */
 export const BRONZE_TRIALS = 4;
 
-/** Trials already mastered: a casting trial reaches `removed` only by being played (paying its 🔨+🔬
+/** Trials already mastered: a casting trial reaches `removed` only by being played (paying its 🪙+🔬
  *  over a standing tin route), so the count there *is* the tally. Shared by the win threshold, its
- *  readout and the `tin_hunger` drain, so the mastery the threat prices can't drift from the one the
+ *  readout and the `charcoal_fuel` drain, so the mastery the threat prices can't drift from the one the
  *  goal counts. */
 function trialsMastered(G: GameState): number {
   return G.removed.filter((c) => c.cardId === 'casting_trial').length;
@@ -687,7 +687,7 @@ export const CARDS: Record<string, CardDef> = {
   //   bleed is partly unavoidable.
   casting_trial: {
     id: 'casting_trial', name: 'Casting Trial', kind: 'event',
-    cost: { resources: { production: 4, science: 6 }, check: needsTinRoute },
+    cost: { resources: { money: 4, science: 6 }, check: needsTinRoute },
     display: { art: '🫗', description: '−2 🔨 at end of round while unpoured', note: 'needs a 🏝️ route' },
     upkeep: { resources: { production: -2 } },
   },
@@ -1137,20 +1137,20 @@ export const CARDS: Record<string, CardDef> = {
       },
     },
   },
-  // Bronze's squeeze, and the one in the arc that taxes *completion*: every trial mastered is another
-  //   furnace the islands can count, so the price of tin climbs with the mastery the goal measures and
-  //   the last pour is made under the heaviest bill. Reads the removed pile through `trialsMastered`, the
-  //   same tally the goal counts. No `defeat` hook — an unpayable bill is the universal 🪙 collapse.
-  tin_hunger: {
-    id: 'tin_hunger', name: 'Tin Hunger', kind: 'threat', cost: {},
+  // Bronze's squeeze, and the one in the arc that taxes *completion*: every mastered pour is a furnace
+  //   kept lit and fed in timber every round, so the fuel bill climbs with the mastery the goal measures
+  //   and the last pour is made under the heaviest one. Reads the removed pile through `trialsMastered`,
+  //   the same tally the goal counts. No `defeat` hook — an unpayable bill is the universal 🔨 collapse.
+  charcoal_fuel: {
+    id: 'charcoal_fuel', name: 'Charcoal Fuel', kind: 'threat', cost: {},
     display: {
-      art: '📈',
-      description: '−1🪙 per casting trial mastered',
-      dynamicText: (G) => `−${trialsMastered(G)}🪙 next round`,
+      art: '🔥',
+      description: '−1🔨 per casting trial mastered',
+      dynamicText: (G) => `−${trialsMastered(G)}🔨 next round`,
     },
     upkeep: {
       resolve: ({ G }) => {
-        subtractResources(G.resources, { money: trialsMastered(G) });
+        subtractResources(G.resources, { production: trialsMastered(G) });
       },
     },
   },
