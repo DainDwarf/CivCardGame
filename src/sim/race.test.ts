@@ -1047,6 +1047,29 @@ describe('T̂loss', () => {
     expect(getCounter(copy, 'level')).toBe(3);
   });
 
+  it('tells a shallow collapse from a deep one at an empty pool', () => {
+    // `level / drain` is zero at an empty pool whatever the drain, so the clock alone reads a boundary
+    // about to take four exactly as it reads one about to take one — and the play that quadruples the
+    // burn costs nothing. What separates them is the depth of the boundary, which is not a time.
+    const shallow = state('race_goal_12', { food: 0, population: 2, producers: 1 }); // 2🧍 eat 1🌾
+    const deep = state('race_goal_12', { food: 0, population: 4, producers: 1 }); // 4🧍 eat 4🌾
+    expect(raceBreakdown(shallow).tLoss).toBe(0);
+    expect(raceBreakdown(deep).tLoss).toBe(0);
+    expect(raceBreakdown(deep).nearDeath).toBeLessThan(raceBreakdown(shallow).nearDeath);
+  });
+
+  it('says nothing about a pool that survives the coming boundary', () => {
+    // The term is confined to the states it exists for: a pool with a round of runway is short of
+    // nothing, so every reading a round or more from collapse is exactly what it always was.
+    const G = state('race_goal_12', { food: 4, population: 2, producers: 1 });
+    const ex = explainRaceValue(G, { model: deriveRace(G) });
+    expect(ex.pools.every((p) => p.shortfall === undefined)).toBe(true);
+    expect(ex.breakdown.nearDeath).toBeCloseTo(
+      (-RACE.nearDeathSteepness * Math.max(0, ex.breakdown.tWin - ex.breakdown.tLoss)) / (1 + ex.breakdown.tLoss),
+      12,
+    );
+  });
+
   it('reads a pending defeat as no rounds left at all', () => {
     const G = state('race_goal', { producers: 1 });
     G.pendingDefeat = { reason: 'test' };
@@ -1104,6 +1127,99 @@ describe('the slack cap', () => {
     expect(b.tWin).toBeGreaterThan(b.tLoss);
     expect(b.tLoss).toBeGreaterThan(b.slack);
     expect(b.nearDeath).toBeCloseTo((-RACE.nearDeathSteepness * (b.tWin - b.tLoss)) / (1 + b.tLoss), 10);
+  });
+});
+
+describe('the rescue-pending charge', () => {
+  /** A run whose food is the pool under pressure: two citizens eat one a round, so the clock is the bank,
+   *  and only what the deck holds can end it. One staffed `test_prod` gives 🔨 a worker-round price and
+   *  leaves a citizen idle, so nothing here waits on staffing. The goal is over 🔬, which nothing in the
+   *  state moves — every reading below is about the loss side alone. */
+  const starving = (
+    deck: string[],
+    { food = 10, production = 0, territory = 6, standing = [] as string[] } = {},
+  ): GameState => {
+    const G = blankState('race_test');
+    G.round = 1;
+    G.resources.food = food;
+    G.resources.production = production;
+    G.resources.population = 2;
+    G.resources.territory = territory;
+    seedObjective(G, 'race_goal');
+    addBuilding(G, mint(G, 'test_prod'));
+    for (const id of standing) addBuilding(G, mint(G, id));
+    for (const id of deck) G.deck.push(mint(G, id));
+    return G;
+  };
+
+  const foodPool = (G: GameState) => explainRaceValue(G, { model: deriveRace(G) }).pools.find((p) => p.key === 'food')!;
+
+  it('charges a threatened pool for a rescue the run has not made', () => {
+    // The blind spot proper: a run one purchase from ending its famine ranked every action it had at the
+    // same number, because a runway is a rate and a rate says nothing about the purchase that changes it.
+    expect(valued(starving(['test_food'])).rescue).toBeLessThan(0);
+    expect(valued(starving(['race_relic'])).rescue).toBe(0);
+  });
+
+  it('takes nothing off the clock it charges for', () => {
+    // The whole difference from crediting a reachable rescue: the pool's runway is what it always was, so
+    // the pressure that performs the rescue is still there to perform it.
+    expect(foodPool(starving(['test_food'])).t).toBe(foodPool(starving(['race_relic'])).t);
+  });
+
+  it('vanishes once the rescue is standing and fed', () => {
+    // Executing it flips the projection through the ordinary drain reading, which takes the pool out of
+    // the charge's reach entirely — and holding the same card is strictly worse than having played it.
+    const held = starving(['test_food']);
+    const stood = starving([], { standing: ['test_food'] });
+    expect(foodPool(stood).t).toBe(Infinity);
+    expect(valued(stood).rescue).toBe(0);
+    expect(valued(held).rescue).toBeLessThan(valued(stood).rescue);
+  });
+
+  it('falls as the run banks toward the price', () => {
+    // The gradient that was missing below the unit that made the purchase legal: a bank part-way to the
+    // route shortens its payment clock, so saving for a rescue is worth something before it is affordable.
+    const poor = valued(starving(['test_food'])).rescue;
+    const rich = valued(starving(['test_food'], { production: 2 })).rescue;
+    expect(rich).toBeGreaterThan(poor);
+    expect(rich).toBeLessThan(0);
+  });
+
+  it('counts the slot a structural rescue needs as part of its price', () => {
+    // Slot economics with no term of their own: a full board leaves the route owing land, which
+    // `outstanding` converts through territory's own rate — so the play that opens a slot registers here.
+    const deck = ['test_food', 'race_claim'];
+    const full = valued(starving(deck, { territory: 1, production: 2 })).rescue;
+    const room = valued(starving(deck, { territory: 2, production: 2 })).rescue;
+    expect(room).toBeGreaterThan(full);
+  });
+
+  it('says nothing about a pool with more runway than the margin can express', () => {
+    // Urgency reaches zero at the same cap the margin stops paying for runway, which is also what keeps
+    // the routes off the beam's leaf on every state that is not in trouble.
+    expect(valued(starving(['test_food'], { food: RACE.slackCap })).rescue).toBe(0);
+    expect(valued(starving(['test_food'], { food: RACE.slackCap - 1 })).rescue).toBeLessThan(0);
+  });
+
+  it('stops charging for a rescue too far off to be one', () => {
+    // A ceiling rather than an unbounded distance: a route the deck deals once a dozen rounds is no more
+    // actionable than one it never deals, and an uncapped charge would swamp the race it rides on.
+    const diluted = starving(['test_food', ...Array<string>(80).fill('race_relic')], { production: 2 });
+    const rescue = foodPool(diluted).rescue!;
+    expect(rescue.lands).toBeGreaterThan(RACE.rescueRounds);
+    expect(rescue.penalty).toBeCloseTo(rescue.urgency * RACE.rescueRounds, 12);
+  });
+
+  it('reaches a pool through the event that drains it', () => {
+    // The defusal half: nothing *produces* ⚔️ here, so the only way off the drain is exiling the copy that
+    // deals it — a route the producer scan alone would report as no route at all.
+    const G = state('race_goal', { military: 4, producers: 1 });
+    G.hand.push(mint(G, 'test_event'));
+    for (let i = 0; i < 4; i++) G.deck.push(mint(G, 'race_relic'));
+    const model = deriveRace(G);
+    expect(model.rescues.military?.map((r) => [r.kind, r.cardId])).toEqual([['defusal', 'test_event']]);
+    expect(raceBreakdown(G, { model }).rescue).toBeLessThan(0);
   });
 });
 
@@ -1408,6 +1524,7 @@ describe('the explained pass', () => {
       planned('race_goal_distinct', ['race_shrine', 'race_kiln'], { production: 6 }),
       planned('race_goal_gated', ['race_gated_relic', 'race_gated_relic', 'race_gate_route'], { production: 12 }),
       planned('race_goal', ['test_sci'], { population: 2 }),
+      planned('race_goal', ['test_food'], { population: 2, food: 10, production: 2 }),
       ticking,
       deadline,
       recurring,

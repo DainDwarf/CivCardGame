@@ -159,13 +159,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   a 4× diagnostic beam converts that into 20–44 turn wins (3/10 → 6/10 proven). Extra route supply does
   not reach it (`coverMembers` asks the cheapest member for `min(reach, need)`, preserving the identity),
   and the cell also instantiates the `wheel` item's shape — the plan not pricing the drain its own
-  completion creates — so the two may share a fix. Until this lands, `sea_lanes`' recorded ~0/18/17% rates
+  completion creates — so the two may share a fix. Until this lands, `sea_lanes`' recorded ~0/13/11% rates
   are a fidelity artifact, not a rating.
 - **`finding_copper_chiefdom` — the slack cap is in rounds, hoarding pays in units** `[size: M] [?]` — at
   pop 3 the food drain is 2🌾/rd, so the run sits under the cap on ~89% of turns and a food play outbids
   an affordable goal play ~2:1 (the goal's marginal being the `1/handSize` constant above). Race wins the
-  cell 99% but at ~174 turns against the oracle's 34-turn ceiling, seeds landing at rounds 181–190 of a
-  200-round cutoff — don't cut a chiefdom-board balance verdict from race turn counts here until closed.
+  cell 93% but at ~172 turns against the oracle's 34-turn ceiling, half its wins landing past round 182 of
+  a 200-round cutoff — don't cut a chiefdom-board balance verdict from race turn counts here until closed.
   A fix may not assume the goal's marginal reward exceeds `1/handSize`, and must leave the sub-cap margin
   bit-identical (`harsh_winter` pays for a violation).
 - **`pyramid` — the many-goal fold inflates `T̂win` past a beatable deadline** `[size: M] [?]` — the
@@ -214,6 +214,26 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **A threatened pool is charged for the rescue the run has not made** ✅ — `T̂loss` is a hard `min` over the
+  pools, so the purchase that permanently ends a famine was worth nothing until the turn it was made, while
+  the price it charges shortened some *other* pool's clock the whole way there: a run walked past the Farm in
+  its hand for nine turns and starved. Each threatened core pool now derives its **rescue routes** at the root
+  beside the goal plans (a producer whose standing output feeds it, or the defusal of a circulating `event`
+  that drains it), the leaf costs them through the same payment ⊕ delivery fold a goal route uses, and the
+  **margin** pays the soonest one's landing clock weighted by how little runway is left — zero at `slackCap`,
+  vanishing by *executing* the rescue. Nothing lengthens a clock: crediting a merely *reachable* rescue was
+  built and measured, and it collapsed the cells it was built for
+  ([`DESIGN.md`](DESIGN.md) → *Code architecture* holds that reading). Alongside it the near-death
+  steepening reads the **shortfall** the coming boundary opens wherever a clock has run to zero, since
+  `level / drain` stops discriminating at an empty pool and the play that quadruples the burn there read as
+  free. Re-recorded across the whole standing set — 34 of 35 fixtures move, `first_settlement` alone
+  byte-identical; set-wide greedy **48.3 → 48.0%**, planner **61.7 → 62.0%**, prover **76.0 → 72.3%**. What
+  rises is the famine half: `writing_chiefdom` planner **19 → 36%** (famine 72 → 57), `writing` planner
+  93 → 100%, `finding_copper_chiefdom` greedy 91 → 98%, `accounting` greedy 11 → 17% (famine 26 → 16, into
+  bankruptcy 0 → 24) and its prover 0 → 1/10. What falls is the hoarding half the `setting_sail` delivery item
+  above already owns: `setting_sail_city` planner 24 → 15% and prover 8 → 6/10, `sea_lanes` planner
+  18/2/17 → 13/5/11%, `wheel` prover 8 → 3/10, and `bronze_port`'s prover back to ten root refusals at zero
+  actions. `harsh_winter` holds at 85/89% under the two drive-loop tiers.
 - **The race plan runs a `missingRoute` gate's prerequisite** ✅ — a `cost.check` refusing until a named
   card stands (`UnplayableReason.missingRoute` — the tin gate) was invisible to `race.ts`: the gated goal's
   clock read reachable while `enumerateActions` refused every play, and opening the route bought nothing but
@@ -223,6 +243,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   vanishing term is the gradient. Bit-identical by construction on any state with no `missingRoute` refusal
   (CI's baseline gate is the verifier); the `bronze_*` fixtures are re-recorded under it, and their residual
   under-read is the open `setting_sail` delivery item above, not the gate.
+- **Defeat on population ≤ 0** ✅ — a civilization at 0🧍 staffs nothing and can only regrow through a card
   priced in a pool it can no longer make, so the run was over but kept playing. `rules/collapse.ts`'s new
   `populationCollapse` is the **`extinction`** defeat, read in `checkEndIf` beside `coreCollapse` off the same
   post-flush `G.resources` — so it fires on the play that empties the board, not at end of turn. The

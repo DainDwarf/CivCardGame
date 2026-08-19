@@ -143,7 +143,9 @@ surprise, so nothing shows a locked placeholder or a total count.
   each `landingClock`, the circulation census behind the delivery half, the members and summed bill inside
   a **cover**, the **gate** in front of a route whose cost refuses the play until a named card stands, and
   the one route the leaf took
-  marked. Both of its folds print the softMax **weight** each clock folded at — a reading no
+  marked — then the loss side: each pool's **rescue** scan (what feeds or defuses it, and what the scan
+  dropped) with, under every threatened pool's clock, the routes costed there, the urgency and the charge
+  they multiply to. Both of its folds print the softMax **weight** each clock folded at — a reading no
   `RaceBreakdown` carries, and the one that says how much of a gradient a term is really carrying (its
   temperature being a fraction of the leading clock, the weight has a floor and the `ABSORBED` annotation
   is out of reach). Under **`band`** the report is that leaf's two halves instead: `value.ts`'s
@@ -584,7 +586,15 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   stands, which is the whole gradient for landing a card the goal itself measures nowhere.
   `T̂loss` is
   the shortest pool runway (a deepening drain enters as a quadratic root; a recurring `event` charges at
-  its circulation share), each threat's frozen-world deadline probe, and the drive cutoff. Five tuned
+  its circulation share), each threat's frozen-world deadline probe, and the drive cutoff — a hard `min`,
+  so a pool the run *rescues* leaves it and no unmade rescue lengthens it. What the margin then carries is
+  the **rescue-pending charge**: each threatened pool's soonest **rescue route** (a producer feeding it, or
+  the defusal of an `event` draining it — derived at the root beside the goal plans, costed at the leaf
+  through the same payment ⊕ delivery fold) charges its landing clock, weighted by how little runway is
+  left and zero at `slackCap`. It vanishes by *executing* the rescue and shrinks by approaching one, which
+  is the whole of it: crediting a merely reachable rescue instead removes the pressure that would perform
+  it (measured — see DESIGN.md). Where a pool's clock has run to zero the near-death steepening reads the
+  **shortfall** the coming boundary opens rather than the clock, which no longer discriminates. Six tuned
   constants, each stating its units and why it is tuned rather than derived, on the constant itself.
 - **Policies** — `randomPolicy` (random legal move), `greedyPolicy` (a two-phase one-ply optimizer over
   the `Scorer`'s value, splitting off the `endTurn` decision), `heuristicPolicy` (a

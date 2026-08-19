@@ -151,13 +151,13 @@ the pass closed by attribution, not retune.** Fixtures `sea_lanes_city` / `sea_l
 `sea_lanes_port` — one 36-card deck on all three boards (hand-piloted to a Port win before any sweep),
 at the standing protocol with `prover` for the winnability bound. Recording them is what exposed the
 race scorer's zone-length blindness (fixed: `landingReach`, [`../TODO.md`](../TODO.md) → *Done /
-shipped*), and the cells are recorded under that fix:
+shipped*), and the cells are recorded under that fix and the rescue-pending charge:
 
 | | greedy @100 | planner @100 | prover @10 |
 |---|---|---|---|
-| City | 0% | 18% | 3/10 proven |
-| Chiefdom | 0% | 2% | 2/10 proven |
-| Port | 0% | 17% | 3/10 proven |
+| City | 0% | 13% | 2/10 proven |
+| Chiefdom | 0% | 5% | 1/10 proven |
+| Port | 0% | 11% | 2/10 proven |
 
 **Read this table as a fidelity artifact, not the mission's difficulty.** The race value prices a
 route's landing at the flat `1/handSize` while charging its full standing bill, so competent play under
@@ -168,11 +168,12 @@ pop 1**, the frozen band scorer proves 3–5/10 on the same seeds, and the hand 
 lands, these three cells owe a re-record.
 
 **The Port board is rated viable and ships at 10🌾 · 5🔨 · 6🪙 · 1🧍 · 3🗺️** with the prebuilt Wharf —
-the fastest board on its winning lines, never resource-starved in defeat. Two design facts recorded for
-later ages rather than acted on: the binding pool at the refusal point is **🪙**, not the ⚔️ the design
-centred (Trader and Hunting compete for the Port's one citizen), and **population is the speed gate**
-(pop-3+ wins run 47–81 turns, pop-1 wins 103–197 — hoard-then-burst). Deck notes, not mission changes:
-`road` is a sibling-branch grant not guaranteed at this node, and `house` took 0 plays in 600 runs.
+never starved in defeat, its losses being the round cutoff (greedy 100/100, planner 80/100) with a
+little bankruptcy behind it. Two design facts recorded for later ages rather than acted on: the binding
+pool at the refusal point is **🪙**, not the ⚔️ the design centred (Trader and Hunting compete for the
+Port's one citizen), and its winning lines span 47–162 turns at every population they end at, so what
+sets the board's pace is when the fourth route lands rather than how many citizens carry it. Deck note,
+not a mission change: `road` is a sibling-branch grant not guaranteed at this node.
 
 ## Polish ⬜
 

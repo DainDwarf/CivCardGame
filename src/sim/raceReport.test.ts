@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { emptyResources } from '../rules';
 import { formatRaceValuation, raceCsvHeaderLine, raceCsvLines, type RaceValuationCell } from './raceReport';
-import type { GoalPlan, PlanClockExplain } from './race';
+import { RACE, type GoalPlan, type PlanClockExplain, type RescueRoute } from './race';
 
 /** A hand-built explain, so the renderer is tested without an engine: what it must do with a derivation is
  *  independent of which derivation produced one. */
@@ -42,6 +42,10 @@ const KEPT: GoalPlan = {
   dropped: ['no copies circulate', 'unpriceable pool'],
 };
 
+/** The one rescue route the pool below keeps — a producer that stands a citizen, so the renderer has both
+ *  halves of a route to place beside the pool's own clock. */
+const RESCUE: RescueRoute = { kind: 'producer', cardId: 'test_croft', workerRounds: 1 };
+
 function cell(): RaceValuationCell {
   return {
     label: 'test_cell',
@@ -54,9 +58,20 @@ function cell(): RaceValuationCell {
     round: 1,
     resources: emptyResources(),
     model: {
-      model: { unitCost: { production: 0.5 }, plans: [KEPT] },
+      model: { unitCost: { production: 0.5 }, plans: [KEPT], rescues: { food: [RESCUE] } },
       workforce: 1,
       unpriceable: ['territory'],
+      rescues: [
+        {
+          key: 'food',
+          routes: [RESCUE],
+          dropped: ['no copies circulate'],
+          candidates: [
+            { kind: 'producer', cardId: 'test_croft', delta: 2, price: { production: 3 }, workerRounds: 1, unpriceable: [], route: { kept: true, t: 3, payment: 1, delivery: 3, reject: '' } },
+            { kind: 'defusal', cardId: 'test_blight', delta: 1, price: { money: 2 }, workerRounds: 0, unpriceable: [], route: { kept: false, t: Infinity, payment: 1, delivery: Infinity, reject: 'no copies circulate' } },
+          ],
+        },
+      ],
       runCards: ['test_relic', 'test_trinket'],
       goals: [
         {
@@ -83,9 +98,10 @@ function cell(): RaceValuationCell {
         slack: 10,
         margin: 8,
         nearDeath: 0,
+        rescue: -1.8,
         wealth: 0.01,
         victory: 0,
-        total: 8.01,
+        total: 6.21,
       },
       horizon: 200,
       goals: [
@@ -106,7 +122,23 @@ function cell(): RaceValuationCell {
         },
       ],
       foldWeights: [1],
-      pools: [{ key: 'food', level: 10, drain: 1, t: 10 }],
+      pools: [
+        {
+          key: 'food',
+          level: 10,
+          drain: 1,
+          t: 10,
+          rescue: {
+            urgency: 0.6,
+            lands: 3,
+            cardId: 'test_croft',
+            penalty: 1.8,
+            routes: [
+              { kind: 'producer', route: plan({ cardId: 'test_croft', copies: 1, payment: 1, delivery: 2, staffing: 1, lands: 3, t: 3 }) },
+            ],
+          },
+        },
+      ],
       threats: [{ cardId: 'test_deadline', cap: 10, t: 4 }],
     },
   };
@@ -168,6 +200,25 @@ describe('formatRaceValuation', () => {
     expect(text).toContain('route none (no copies circulate)');
     expect(text).toContain('no cost     territory');
     expect(text).toMatch(/delivery\s+∞ rd/);
+  });
+
+  it('puts a pool\'s rescue under the clock it charges for, untouched', () => {
+    // The two halves that have to sit together: a runway the charge did not lengthen, and the distance to
+    // the route that would. Printed apart, the report reads as a clock somebody extended.
+    const text = formatRaceValuation([cell()], 200);
+    expect(text).toMatch(/food\s+10\.0\s+1\.00\s+10\.00/);
+    expect(text).toMatch(/rescue\s+producer\s+test_croft .* → lands 3\.00 rd\s+← soonest/);
+    expect(text).toMatch(/charge\s+urgency 0\.600 × 3\.00 rd = −1\.800 rd off the margin/);
+    // …and the scan behind it, including the route it refused, which is what says a pool has no rescue.
+    expect(text).toContain('pool food');
+    expect(text).toContain('✗ no copies circulate');
+  });
+
+  it('names the ceiling when a rescue is too far off to charge its whole distance', () => {
+    const c = cell();
+    const lands = RACE.rescueRounds * 4;
+    c.value.pools[0].rescue = { ...c.value.pools[0].rescue!, lands, penalty: 6 };
+    expect(formatRaceValuation([c], 200)).toContain(`(lands ${lands.toFixed(2)}, ceiling ${RACE.rescueRounds})`);
   });
 
   it('spells a goal its routes fall short of, where every one of them is live', () => {

@@ -23,7 +23,7 @@ import {
 import { effectiveGain } from '../rules/stickers';
 import { isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import {
-  cardPrice, grantDelta, outputDelta, presenceDelta, replacementCost, runCardIds, selfExiles,
+  cardPrice, grantDelta, outputDelta, positive, presenceDelta, replacementCost, runCardIds, selfExiles,
 } from './probes';
 import { DEFAULT_MAX_ROUNDS } from './simulate';
 
@@ -76,6 +76,14 @@ export const RACE = {
    *  *noise* in the two estimates rather than anything the state contains: both are projections, and a
    *  beam must not surf one round from famine on the strength of one. */
   nearDeathSteepness: 4,
+  /** Rounds — the ceiling on what one threatened pool's **unmade** rescue charges the margin, reached where
+   *  the route that would save it is that many rounds away or unreachable. Tuned because it prices a
+   *  *distance*, not a quantity: the charge's gradient is already fixed at one round per round of the
+   *  landing clock, which is the same rate the margin pays for a round off `T̂win`, and what has to be
+   *  chosen is only how far out the distance stops mattering. Sized above the landing clocks the standing
+   *  set really reads (3–5 rounds), so the ceiling bounds an unreachable rescue rather than flattening a
+   *  live one — a ceiling that binds on a real route turns the whole charge into a constant. */
+  rescueRounds: 10,
   /** Rounds — the tie-break's ceiling, reached at `wealthCap` banked core resources (the two together
    *  are one constant: a weight with no cap is unbounded, and cannot then be held under a margin step).
    *  Sized so a full bank never outweighs a real difference in the race. */
@@ -130,6 +138,8 @@ export interface RaceBreakdown {
   margin: number;
   /** The near-death steepening, ≤ 0. */
   nearDeath: number;
+  /** The rescue-pending charge, ≤ 0 — summed over the threatened pools whose rescue the run has not made. */
+  rescue: number;
   /** The banked-wealth tie-break, ≥ 0. */
   wealth: number;
   /** `RACE.victory` or 0. */
@@ -167,6 +177,29 @@ export interface RaceModel {
   unitCost: Partial<Record<keyof Resources, number>>;
   /** One per goal, in the objective card's own order. */
   plans: GoalPlan[];
+  /** How the deck could take a core pool off the death list — the loss-side counterpart of `plans`. A pool
+   *  with no entry has no route the run can carry out, and nothing steers toward one. */
+  rescues: Partial<Record<keyof CoreResources, RescueRoute[]>>;
+}
+
+/** The two ways a card takes a drain off a pool: standing a producer whose output feeds it, or playing a
+ *  circulating `event` to exile the copy and the recurring disaster it keeps dealing. */
+export type RescueKind = 'producer' | 'defusal';
+
+/**
+ * One route from where the run stands to a pool that no longer kills it. Priced, netted and delivered
+ * through the same `routeClock` a goal route is, and read at the leaf for one thing only: **how far off it
+ * still is**. Nothing here lengthens a pool's clock — that happens when the route is executed and the
+ * projection genuinely flips, through the ordinary drain reading and no term of this one's.
+ *
+ * One copy, never repeated: a pool is rescued once, and a second producer is a second route costed on its own.
+ */
+export interface RescueRoute {
+  kind: RescueKind;
+  cardId: string;
+  /** The citizen a staffable producer stands to run it, in **worker-rounds** — a Farm nobody is free to work
+   *  rescues nothing. The work box's own charge reused, so it is a shape rather than a constant. */
+  workerRounds?: number;
 }
 
 /** The two rates a plan's price converts through. `unitCost` is root-derived and rides on the `RaceModel`;
@@ -295,6 +328,30 @@ export interface GoalPlanExplain {
   plan: GoalPlan;
 }
 
+/** One card weighed as one pool's rescue, and what became of it. */
+export interface RescueCandidate {
+  kind: RescueKind;
+  cardId: string;
+  /** What the root read the route as taking off the drain: a producer's per-round output, or what one
+   *  boundary of the event copy takes before circulation scales it. */
+  delta: number;
+  price: Partial<Record<keyof Resources, number>>;
+  /** The citizen a staffable producer stands, `0` where it needs none. */
+  workerRounds: number;
+  /** Price components `replacementCost` reached no figure for — a non-empty list is the whole rejection. */
+  unpriceable: (keyof Resources)[];
+  route: CandidateRoute;
+}
+
+/** One pool's rescue scan: the cards weighed, and the routes kept. */
+export interface RescuePoolExplain {
+  key: keyof CoreResources;
+  candidates: RescueCandidate[];
+  routes: RescueRoute[];
+  /** The causes the scan dropped routes for, deduplicated. */
+  dropped?: string[];
+}
+
 export interface RaceModelExplain {
   model: RaceModel;
   /** The population the redeployment half of every `CandidateRoute.t` below was charged to. At zero they
@@ -304,6 +361,9 @@ export interface RaceModelExplain {
   /** Pools with no `unitCost` — a price naming one yields no plan. */
   unpriceable: (keyof Resources)[];
   goals: GoalPlanExplain[];
+  /** Only the pools some card in the run touches — a pool nothing feeds and nothing drains is scanned and
+   *  reported as the silence it is. */
+  rescues: RescuePoolExplain[];
   /** `runCardIds`, sorted. */
   runCards: string[];
 }
@@ -426,6 +486,28 @@ export interface PoolClockExplain {
    *  is the plain `level / drain` it has always been. */
   accel?: number;
   t: number;
+  /** Units of the pool the coming boundary takes it below zero by; absent wherever it survives that
+   *  boundary, which is every clock of a round or more. */
+  shortfall?: number;
+  /** The charge for not having rescued it yet; absent where the pool's runway leaves no urgency, or where
+   *  the run has no route to it. */
+  rescue?: RescueClockExplain;
+}
+
+/** One threatened pool's rescue reading at a leaf: every route costed, the soonest of them, and the charge
+ *  that leaves on the margin. The pool's own `t` above is untouched by all of it — this measures the
+ *  distance to a rescue, never credits one. */
+export interface RescueClockExplain {
+  /** `max(0, 1 − t / slackCap)` — how much of the charge the pool's own runway lets through. */
+  urgency: number;
+  /** Every route costed here, in the model's own order. */
+  routes: { kind: RescueKind; route: PlanClockExplain }[];
+  /** The soonest route's clock, before the ceiling. */
+  lands: number;
+  /** The card that route runs on; absent where no route lands at all. */
+  cardId?: string;
+  /** `urgency × min(lands, RACE.rescueRounds)` — the rounds this pool takes off the margin. */
+  penalty: number;
 }
 
 /** The recurring `event` pressure folded into those drains, with the circulation it was folded over: a
@@ -551,6 +633,73 @@ function eventCopies(G: GameState): CardInstance[] {
   return circulationZones(G).flatMap((zone) => zone.filter((c) => CARDS[c.cardId]?.kind === 'event'));
 }
 
+/**
+ * What holding `pick`'s copies through a boundary takes beyond holding none, and how much deeper the next
+ * such boundary goes — a diff of two diffs, which cancels whatever the rest of the board did between them
+ * (a threat escalating on its own clock included).
+ *
+ * The charged world is settled twice **without being cloned in between**: the copies are the same instances,
+ * so a drain computing itself off a counter it bumps deepens exactly as it would in the run. `clean` and
+ * `cleanNext` are the empty-handed pair, passed in because a caller weighing several event ids settles that
+ * world once for all of them.
+ */
+function eventMarginal(
+  G: GameState,
+  clean: Resources,
+  cleanNext: Resources,
+  pick: (all: CardInstance[]) => CardInstance[],
+): { drain: Partial<Record<keyof Resources, number>>; step: Partial<Record<keyof Resources, number>> } {
+  const charged = cloneState(G);
+  const copies = pick(eventCopies(charged));
+  settle(charged, copies);
+  const first = { ...charged.resources };
+  charged.round = G.round + 1;
+  settle(charged, copies);
+  const drain: Partial<Record<keyof Resources, number>> = {};
+  const step: Partial<Record<keyof Resources, number>> = {};
+  for (const k of ALL_POOLS) {
+    const d1 = clean[k] - first[k];
+    const d2 = cleanNext[k] - clean[k] - (charged.resources[k] - first[k]);
+    if (d1 !== 0) drain[k] = d1;
+    // A drain that *eases* is left flat at what it takes now rather than projected toward zero and a clock
+    // toward `∞`: the model may read a pressure short, never read one away.
+    if (d2 - d1 > 0) step[k] = d2 - d1;
+  }
+  return { drain, step };
+}
+
+/**
+ * Which core pools **one** circulating copy of each `event` id the run holds takes from — the existence half
+ * of a defusal route, and deliberately nothing more. How much a copy takes is a fact about the circulation a
+ * leaf stands in, which the pool drains already measure; what the root has to settle is only whether playing
+ * the copy would remove a pressure at all.
+ *
+ * Two boundaries apiece, because a drain that starts from nothing takes nothing at the first one and is a
+ * drain all the same.
+ */
+function defusedPools(G: GameState): Map<string, Set<keyof CoreResources>> {
+  const out = new Map<string, Set<keyof CoreResources>>();
+  const ids = new Set(eventCopies(G).map((c) => c.cardId));
+  if (ids.size === 0) return out;
+  const clean = cloneState(G);
+  settle(clean, []);
+  const cleanNext = cloneState(clean);
+  cleanNext.round = G.round + 1;
+  settle(cleanNext, []);
+  for (const id of ids) {
+    const { drain, step } = eventMarginal(G, clean.resources, cleanNext.resources, (all) => {
+      const copy = all.find((c) => c.cardId === id);
+      return copy ? [copy] : [];
+    });
+    const pools = new Set<keyof CoreResources>();
+    for (const k of CORE_KEYS) {
+      if ((drain[k] ?? 0) > 0 || (step[k] ?? 0) > 0) pools.add(k);
+    }
+    if (pools.size > 0) out.set(id, pools);
+  }
+  return out;
+}
+
 /** One end-of-turn boundary settled in place, the world's hand replaced by `events`: nothing, or the copies
  *  handed in. The work zone is dropped either way — its output is a level this turn reaches rather than a
  *  rate, which `inFlight` reads instead. */
@@ -602,32 +751,17 @@ function permanentProjection(
   const census = eventCensus(G);
   const accel: Partial<Record<keyof Resources, number>> = {};
   if (census.copies > 0) {
-    const charged = cloneState(G);
-    const copies = eventCopies(charged);
-    settle(charged, copies);
-    const first = { ...charged.resources };
     const next = cloneState(perm);
     next.round = G.round + 1;
-    charged.round = G.round + 1;
     settle(next, []);
-    settle(charged, copies);
-
-    const full: Partial<Record<keyof Resources, number>> = {};
-    const escalation: Partial<Record<keyof Resources, number>> = {};
+    const clean = { ...perm.resources };
+    const { drain: full, step: escalation } = eventMarginal(G, clean, next.resources, (all) => all);
     for (const k of ALL_POOLS) {
-      const d1 = perm.resources[k] - first[k];
-      const d2 = next.resources[k] - perm.resources[k] - (charged.resources[k] - first[k]);
-      if (d1 !== 0) full[k] = d1;
-      perm.resources[k] -= census.share * d1;
-      // A drain that *eases* is left flat at what it takes now rather than projected toward zero and a
-      // clock toward `∞`: the model may read a pressure short, never read one away.
-      const step = d2 - d1;
-      if (step > 0) {
-        escalation[k] = step;
-        // A copy resolves `share` times a round, so after `t` rounds the drain has deepened by
-        // `share·t` steps and the cumulative take is `share·d1·t + share²·step·t²/2`.
-        accel[k] = (census.share * census.share * step) / 2;
-      }
+      perm.resources[k] -= census.share * (full[k] ?? 0);
+      const step = escalation[k];
+      // A copy resolves `share` times a round, so after `t` rounds the drain has deepened by
+      // `share·t` steps and the cumulative take is `share·d1·t + share²·step·t²/2`.
+      if (step !== undefined) accel[k] = (census.share * census.share * step) / 2;
     }
     if (ex) ex.events = { ...census, full, ...(Object.keys(escalation).length > 0 ? { escalation } : {}) };
   }
@@ -1401,6 +1535,76 @@ function probeRoute(
 }
 
 /**
+ * How this run's deck could take each core pool off the death list — derived at the same root as the goal
+ * plans, kept on the same test, and costed at the leaf through the same `routeClock`.
+ *
+ * It exists because the pool fold restates nothing. A goal is a price the run earns down and copies the deck
+ * deals, so a banked unit is worth the fraction of a round it saves; a pool's runway is a rate alone, and the
+ * purchase that ends a famine is worth exactly nothing until the turn it is made — while the price it charges
+ * shortens some other pool's clock the whole way there.
+ *
+ * Two shapes, which are the two ways a card really moves a drain:
+ *
+ * - a **producer** whose standing output feeds the pool, read through `realizedGain` like every other output
+ *   here, priced as a building plan is (its slot included) plus the citizen it stands to run;
+ * - a **defusal** — playing a circulating `event` exiles the copy to `removed`, and the recurring disaster
+ *   the pool drains charge it for goes with it.
+ *
+ * The second is what reaches a pool through a currency nothing drains: a defusal's price is quoted in a pool
+ * of its own, so the run's income there shortens the route's payment clock exactly as it does a goal's — and
+ * a producer of *that* pool buys survival two hops away, through no term written for it.
+ */
+function deriveRescues(
+  G: GameState,
+  cards: CardDef[],
+  banked: GameState,
+  workforce: number,
+  rates: PriceRates,
+): RescuePoolExplain[] {
+  const defused = defusedPools(G);
+  const out: RescuePoolExplain[] = [];
+  for (const key of CORE_KEYS) {
+    const candidates: RescueCandidate[] = [];
+    const routes: RescueRoute[] = [];
+    const dropped = new Set<string>();
+    const weigh = (card: CardDef, delta: number, route: RescueRoute): void => {
+      // Land is exempt for the same reason `outstanding` exempts it: a slot is netted against the free
+      // tableau rather than converted, so a route needing one is refused by the board, not by the rates.
+      const price = withRoom(card, cardPrice(G, card, pricingCopy(G, card, rates.unitCost)));
+      const unpriceable = (Object.keys(price) as (keyof Resources)[]).filter(
+        (k) => k !== 'territory' && rates.unitCost[k] === undefined,
+      );
+      const probe = unpriceable.length > 0
+        ? ({ kept: false, t: Infinity, reject: 'unpriceable pool' } as CandidateRoute)
+        : probeRoute(route, 1, banked, workforce, rates);
+      candidates.push({
+        kind: route.kind, cardId: card.id, delta, price,
+        workerRounds: route.workerRounds ?? 0, unpriceable, route: probe,
+      });
+      if (probe.kept) routes.push(route);
+      else dropped.add(probe.reject);
+    };
+    for (const card of cards) {
+      if (isDurableProducer(card)) {
+        const rate = positive(realizedGain(G, card.produces?.resources)?.[key]);
+        if (rate > 0) {
+          weigh(card, rate, {
+            kind: 'producer',
+            cardId: card.id,
+            ...((card.workers ?? 0) >= 1 ? { workerRounds: 1 } : {}),
+          });
+        }
+      }
+      if (defused.get(card.id)?.has(key)) weigh(card, 1, { kind: 'defusal', cardId: card.id });
+    }
+    if (candidates.length > 0) {
+      out.push({ key, candidates, routes, ...(dropped.size > 0 ? { dropped: [...dropped].sort() } : {}) });
+    }
+  }
+  return out;
+}
+
+/**
  * Derive the run's plans from the state the policy plans at. Every card the run holds is probed against
  * every goal for the three ways it can move a measure, and every route that is **deliverable here** is kept.
  *
@@ -1543,12 +1747,78 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
     explained.push({ icon: goal.icon, scanned: cards.length, inert, candidates, plan });
     return plan;
   });
+  const rescues = deriveRescues(G, cards, banked, workforce, rates);
   return {
-    model: { unitCost, plans },
+    model: {
+      unitCost,
+      plans,
+      rescues: Object.fromEntries(rescues.filter((r) => r.routes.length > 0).map((r) => [r.key, r.routes])),
+    },
     workforce,
     unpriceable: ALL_POOLS.filter((k) => unitCost[k] === undefined),
     goals: explained,
+    rescues,
     runCards: [...ids].sort(),
+  };
+}
+
+/**
+ * What one core pool charges the margin for a rescue the run has **not made yet** — its landing clock,
+ * weighted by how little runway the pool has left.
+ *
+ * Three properties are the whole design, and each is a thing the term deliberately does not do:
+ *
+ * - the pool's own clock is untouched. A rescue only lengthens a runway by being *executed*, at which point
+ *   the projection flips and `drainClock` reports `∞` through the path it always did. Crediting a *reachable*
+ *   one instead removes the very pressure that would perform it, since such a credit barely moves when it is;
+ * - the charge falls as the rescue is approached — banked toward, drawn toward, a slot cleared for — and to
+ *   nothing once the pool stops threatening at all. It is the same vanishing shape a route's prerequisite
+ *   gate has: a term whose only value is the difference between owing it and not;
+ * - a pool with no route charges nothing. There is nowhere to steer, and the runway itself already carries
+ *   whatever pressure the state is under.
+ *
+ * Urgency is linear in the runway the margin can express, so a pool with `slackCap` rounds left charges
+ * exactly zero — which is also what keeps the routes off the beam's hot path on every state that is not in
+ * trouble.
+ */
+function rescueCharge(
+  key: keyof CoreResources,
+  t: number,
+  banked: GameState,
+  workforce: number,
+  rates: PriceRates,
+  model: RaceModel | undefined,
+  recording: boolean,
+): RescueClockExplain | undefined {
+  const urgency = Math.max(0, 1 - t / RACE.slackCap);
+  if (urgency <= 0) return undefined;
+  const routes = model?.rescues?.[key];
+  if (!routes || routes.length === 0) return undefined;
+  const costed = recording ? ([] as { kind: RescueKind; route: PlanClockExplain }[]) : undefined;
+  let lands = Infinity;
+  let cardId: string | undefined;
+  for (const route of routes) {
+    const sink = costed ? routeSink() : undefined;
+    const r = routeClock(route, 1, banked, workforce, rates, sink);
+    if (r.t < lands) {
+      lands = r.t;
+      cardId = route.cardId;
+    }
+    costed?.push({
+      kind: route.kind,
+      route: {
+        cardId: route.cardId, copies: 1, price: r.price, workerRounds: r.workerRounds, netted: r.netted,
+        realized: r.realized, payment: r.payment, delivery: r.delivery, ...sink!.census,
+        staffing: r.staffing, recycles: false, weights: sink!.weights, lands: r.t, collect: 0, t: r.t,
+      },
+    });
+  }
+  return {
+    urgency,
+    routes: costed ?? [],
+    lands,
+    ...(cardId !== undefined ? { cardId } : {}),
+    penalty: urgency * Math.min(lands, RACE.rescueRounds),
   };
 }
 
@@ -1608,17 +1878,31 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
   let tLoss = horizon;
   let lossCause: LossCause = 'horizon';
   let lossCardId: string | undefined;
+  let rescue = 0;
+  let shortfall = 0;
   if (G.pendingDefeat) {
     tLoss = 0;
     lossCause = 'defeat';
   } else {
+    const workforce = Math.max(0, banked.resources.population);
     for (const k of CORE_KEYS) {
       const level = banked.resources[k];
       const drain = G.resources[k] - perm.resources[k];
       const rise = accel[k] ?? 0;
       // A pool this turn's boundary already carries below zero has collapsed whatever its rate.
       const t = level < 0 ? 0 : drainClock(level, drain, rise);
-      ex?.pools.push({ key: k, level, drain, ...(rise > 0 ? { accel: rise } : {}), t });
+      // What the coming boundary takes the pool below zero by — in the pool's own units, the one level
+      // this model reads rather than a clock, and only where there is no clock left to read: it is zero
+      // wherever the pool survives the boundary, which is every state with a round of runway.
+      const short = Math.max(0, drain - level);
+      if (short > shortfall) shortfall = short;
+      const charged = rescueCharge(k, t, banked, workforce, rates, opts.model, ex !== undefined);
+      rescue -= charged?.penalty ?? 0;
+      ex?.pools.push({
+        key: k, level, drain, ...(rise > 0 ? { accel: rise } : {}), t,
+        ...(short > 0 ? { shortfall: short } : {}),
+        ...(charged ? { rescue: charged } : {}),
+      });
       if (t < tLoss) {
         tLoss = t;
         lossCause = k;
@@ -1652,9 +1936,14 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
   // be recoverable — so steepen the same deficit as `T̂loss` shrinks. Off the **bare** clock rather than
   // the capped slack: a run three rounds from famine is three rounds from famine whatever the margin
   // makes of runway it will never reach. The `1 +` is the unit round, not a second knob: it is what keeps
-  // a zero-round `T̂loss` finite.
-  const nearDeath = -RACE.nearDeathSteepness * Math.max(0, tWin - tLoss) / (1 + tLoss);
+  // a zero-round `T̂loss` finite. `shortfall` is what carries the term where the clock has stopped
+  // discriminating: `level / drain` is zero at an empty pool whatever the drain, so a boundary about to
+  // take four reads exactly like one about to take one, and the play that quadruples the burn is free.
+  // What separates them is the depth of the coming boundary, which is not a time.
+  const nearDeath = -RACE.nearDeathSteepness * (Math.max(0, tWin - tLoss) + shortfall) / (1 + tLoss);
   total += nearDeath;
+
+  total += rescue;
 
   // Among states the race cannot tell apart, prefer the deeper bank — the wealth that buys the next
   // play. Linear to its cap so it keeps discriminating over the range a bank actually spans.
@@ -1679,6 +1968,7 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
     slack,
     margin,
     nearDeath,
+    rescue,
     wealth,
     victory,
     total,

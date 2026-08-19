@@ -8,6 +8,7 @@ import {
   type PlanClockExplain,
   type RaceModelExplain,
   type RaceValueExplain,
+  type RescueClockExplain,
 } from './race';
 
 /**
@@ -147,6 +148,27 @@ function coverLines(p: CoverClockExplain, taken: boolean): string[] {
   return out;
 }
 
+/** One threatened pool's rescue, under the pool it charges for: each route with the two clocks that fold to
+ *  its landing, then the urgency and the product. The pool's `t` above is deliberately unchanged by any of
+ *  it — printing the charge beside the untouched clock is what makes that visible. */
+function rescueLines(r: RescueClockExplain): string[] {
+  const out: string[] = [];
+  for (const { kind, route } of r.routes) {
+    out.push(
+      `      rescue   ${pad(kind, 9)} ${pad(route.cardId, 20)} · price ${pad(bag(route.price), 24)} payment ${
+        n(route.payment)} rd · delivery ${n(route.delivery + route.staffing)} rd → lands ${n(route.t)} rd${
+        route.cardId === r.cardId ? '   ← soonest' : ''
+      }`,
+    );
+  }
+  out.push(
+    `      charge   urgency ${n(r.urgency, 3)} × ${n(Math.min(r.lands, RACE.rescueRounds))} rd${
+      r.lands > RACE.rescueRounds ? ` (lands ${n(r.lands)}, ceiling ${RACE.rescueRounds})` : ''
+    } = −${n(r.penalty, 3)} rd off the margin`,
+  );
+  return out;
+}
+
 function cellBlock(cell: RaceValuationCell): string {
   const out: string[] = [];
   const { model, value } = cell;
@@ -200,6 +222,31 @@ function cellBlock(cell: RaceValuationCell): string {
   });
   out.push('');
 
+  // The loss-side scan, printed even when it kept nothing: a pool with no rescue is what says a run in
+  // trouble there has nowhere to steer, which no clock below can report.
+  out.push('rescues — how the deck could take a core pool off the death list. Nothing here lengthens a clock:');
+  out.push('          a leaf reads the soonest route only for how far off it still is');
+  if (model.rescues.length === 0) {
+    out.push('  (no card in the run feeds or defuses a core pool)');
+  }
+  for (const r of model.rescues) {
+    out.push(
+      `  pool ${pad(r.key, 12)} kept ${r.routes.length} of ${r.candidates.length}${
+        r.dropped?.length ? ` · dropped for ${r.dropped.join(' + ')}` : ''
+      }`,
+    );
+    out.push(
+      `    ${pad('card', 24)}${pad('kind', 10)}${padLeft('delta', 8)}${padLeft('staffs', 9)}${padLeft('root t', 9)}  ${pad('verdict', 26)}price`,
+    );
+    for (const c of r.candidates) {
+      out.push(
+        `    ${pad(c.cardId, 24)}${pad(c.kind, 10)}${padLeft(n(c.delta), 8)}${padLeft(n(c.workerRounds), 6)} wr${
+          padLeft(n(c.route.t), 9)}  ${pad(c.unpriceable.length ? `skipped: ${c.unpriceable.join('/')}` : c.route.kept ? 'kept' : `✗ ${c.route.reject}`, 26)}${bag(c.price)}`,
+      );
+    }
+  }
+  out.push('');
+
   out.push(`clocks @root — T̂win ${n(b.tWin)} · bottleneck goal ${b.bottleneck}`);
   value.goals.forEach((g, i) => {
     const c = g.clock;
@@ -236,8 +283,9 @@ function cellBlock(cell: RaceValuationCell): string {
     out.push(
       `    ${pad(p.key, 12)}${padLeft(n(p.level, 1), 8)}${padLeft(n(p.drain, 2), 10)}${padLeft(n(p.t), 9)}${
         p.accel ? `   escalating: t solves ${n(p.level, 1)} = ${n(p.drain, 2)}·t + ${n(p.accel, 4)}·t²` : ''
-      }`,
+      }${p.shortfall ? `   the coming boundary takes it ${n(p.shortfall, 1)} below zero` : ''}`,
     );
+    if (p.rescue) out.push(...rescueLines(p.rescue));
   }
   for (const t of value.threats) {
     out.push(`    threat ${pad(t.cardId, 22)}${padLeft(n(t.t), 9)}  (probed under cap ${n(t.cap)})`);
@@ -263,7 +311,7 @@ function cellBlock(cell: RaceValuationCell): string {
   out.push('');
 
   out.push(
-    `value  margin ${n(b.margin, 3)} · nearDeath ${n(b.nearDeath, 3)} · wealth ${n(b.wealth, 3)} · victory ${b.victory} · total ${n(b.total, 3)}`,
+    `value  margin ${n(b.margin, 3)} · nearDeath ${n(b.nearDeath, 3)} · rescue ${n(b.rescue, 3)} · wealth ${n(b.wealth, 3)} · victory ${b.victory} · total ${n(b.total, 3)}`,
   );
   return out.join('\n');
 }
@@ -275,7 +323,7 @@ export function formatRaceValuation(cells: RaceValuationCell[], maxRounds: numbe
     'scale: everything is rounds, except worker-rounds (wr) and the dimensionless softMax weights',
     `derived at the run root from content alone — seed-independent (every zone read as a multiset), so no run is simulated`,
     `horizon: maxRounds ${maxRounds}, the drive-loop cutoff every estimate clamps to`,
-    `constants: victory ${RACE.victory} · goalSoftening ${RACE.goalSoftening} × the leading clock · slackCap ${RACE.slackCap} rd · nearDeathSteepness ${RACE.nearDeathSteepness} · wealthRounds ${RACE.wealthRounds} rd at wealthCap ${RACE.wealthCap}`,
+    `constants: victory ${RACE.victory} · goalSoftening ${RACE.goalSoftening} × the leading clock · slackCap ${RACE.slackCap} rd · nearDeathSteepness ${RACE.nearDeathSteepness} · rescueRounds ${RACE.rescueRounds} rd · wealthRounds ${RACE.wealthRounds} rd at wealthCap ${RACE.wealthCap}`,
     'ABSORBED marks a softMax weight under the ULP of 1: the fold came out bit-identical to a hard max, so',
     'the state has no gradient on that clock at all. A temperature that is a fraction of the leading clock',
     `floors every weight at exp(-1/${RACE.goalSoftening}) = ${Math.exp(-1 / RACE.goalSoftening).toExponential(1)}, so nothing is absorbed at this softening`,
@@ -456,6 +504,17 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
     // Absent rather than zero-filled: a pool whose drain does not deepen has no such fact, and a row
     // saying so would put a `0` beside every flat clock in the standing set.
     if (p.accel) rows.push({ goal: NO_GOAL, section: 'poolAccel', key: p.key, value: p.accel, unit: 'units/rd²' });
+    if (p.shortfall) rows.push({ goal: NO_GOAL, section: 'poolShortfall', key: p.key, value: p.shortfall, unit: 'units' });
+    // Keyed by the pool rather than by the card, so "which cells are charged for an unmade rescue, and of
+    // what" pivots the same way the pool clocks above it do.
+    if (p.rescue) {
+      rows.push({ goal: NO_GOAL, section: 'rescueUrgency', key: p.key, value: p.rescue.urgency });
+      rows.push({ goal: NO_GOAL, section: 'rescueLands', key: p.key, cardId: p.rescue.cardId, value: p.rescue.lands, unit: 'rounds' });
+      rows.push({ goal: NO_GOAL, section: 'rescuePenalty', key: p.key, cardId: p.rescue.cardId, value: p.rescue.penalty, unit: 'rounds' });
+      for (const { kind, route } of p.rescue.routes) {
+        rows.push({ goal: NO_GOAL, section: 'rescueRoute', key: `${p.key}.${kind}`, cardId: route.cardId, value: route.t, unit: 'rounds' });
+      }
+    }
   }
   for (const t of value.threats) {
     rows.push({ goal: NO_GOAL, section: 'threatClock', key: 'rounds', cardId: t.cardId, value: t.t, unit: 'rounds' });
@@ -485,6 +544,7 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
   rows.push({ goal: NO_GOAL, section: 'value', key: 'bottleneck', value: b.bottleneck });
   rows.push({ goal: NO_GOAL, section: 'value', key: 'margin', value: b.margin, unit: 'rounds' });
   rows.push({ goal: NO_GOAL, section: 'value', key: 'nearDeath', value: b.nearDeath, unit: 'rounds' });
+  rows.push({ goal: NO_GOAL, section: 'value', key: 'rescue', value: b.rescue, unit: 'rounds' });
   rows.push({ goal: NO_GOAL, section: 'value', key: 'wealth', value: b.wealth, unit: 'rounds' });
   rows.push({ goal: NO_GOAL, section: 'value', key: 'victory', value: b.victory, unit: 'rounds' });
   rows.push({ goal: NO_GOAL, section: 'value', key: 'total', value: b.total, unit: 'rounds' });

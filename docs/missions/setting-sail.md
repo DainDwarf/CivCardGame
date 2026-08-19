@@ -195,14 +195,15 @@ play.
 
 | | greedy @100 | planner @100 | prover @10 |
 |---|---|---|---|
-| City | 12% | 24% | 8/10 proven |
-| Chiefdom | 4% | 22% | 9/10 proven |
+| City | 4% | 15% | 6/10 proven |
+| Chiefdom | 1% | 20% | 8/10 proven |
 
-Defeats are the crews in the large majority (City 82/70 at the two tiers, Chiefdom 73/66); Chiefdom
-adds a famine tail the City cell doesn't, and both leak a little bankruptcy. Median winning run 18
-turns (City) / 24 (Chiefdom) at the planner tier, against the 20–32 the sibling Bronze nodes measure.
+Defeats are the crews in the large majority (City 92/81 at the two tiers, Chiefdom 72/70); Chiefdom
+adds a famine tail the City cell doesn't and leaks the more bankruptcy (20 of the greedy tier's 99
+losses). Median winning run 20 turns (City) / 24 (Chiefdom) at the planner tier, against the 20–32 the
+sibling Bronze nodes measure.
 
-**Read the planner column as a scorer floor, not the mission's difficulty.** The prover proves 8–9 of
+**Read the planner column as a scorer floor, not the mission's difficulty.** The prover proves 6–8 of
 10 seeds winnable, and the gap is attributed: the race value prices *refusing* a launch three separate
 ways, this mission's own entry in [`../TODO.md`](../TODO.md) → *Simulator · Fidelity* (its one-sided
 fix was measured and reverted there). The two boards read within a few points of each other; the wide
@@ -211,8 +212,8 @@ passed on affordable Houses and stranded itself at 0🧍), closed by the enabler
 superseded by the race-scorer cutover the table is recorded under (both in `../TODO.md` → *Done /
 shipped*).
 
-**Calendar found its first real job, as designed**: the planner plays it in most runs (71/100 City,
-64/100 Chiefdom) against zero in every earlier standard cell. The Writing card did not — ≤2 planner
+**Calendar found its first real job, as designed**: the planner plays it in most runs (56/100 City,
+67/100 Chiefdom) against zero in every earlier standard cell. The Writing card did not — ≤3 planner
 plays per 100 on either board, alive only in prover lines — so the digging pressure is real but
 Calendar answers it alone.
 
