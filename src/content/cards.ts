@@ -3,7 +3,7 @@ import { bumpCounter, getCounter, setCounter, type CardInstance, type GameEventT
 import { gainResources, type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
 import type { CardCost, CostContext, UnplayableReason } from '../rules/cost';
 import { drawInstance, peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
-import { assignedWorkers, freePopulation } from '../rules/population';
+import { assignedWorkers, findStaffable, freePopulation, producingUnits } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'trade' | 'event' | 'threat' | 'objective';
@@ -329,12 +329,28 @@ function trialsMastered(G: GameState): number {
   return G.removed.filter((c) => c.cardId === 'casting_trial').length;
 }
 
-/** The Bronze cards' standing-access gate: playable only while a Tin Route stands in the trade zone.
- *  Keyed on the route's own id rather than on the zone being non-empty — what the gate buys is tin,
- *  not trade. Exported because `content/stickers.ts` folds it onto a stickered copy's cost as the
- *  Bronze Tools charge-back. */
+/** How much ⚔️ "Sword & Chariot" wants mustered at once — shared by the `sword_chariot_goal` win
+ *  threshold and the mission's `victoryHint` (`content/missions.ts`). */
+export const MUSTER_TARGET = 40;
+
+/** Whether the tin is reaching the valley right now. Keyed on the route's own id rather than on the
+ *  zone being non-empty — what the Bronze cards buy is tin, not trade. The one definition behind both
+ *  shapes the gate takes: a play-time `CardCost.check` and the Sword's per-round production gate. */
+function tinRouteStands(G: GameState): boolean {
+  return G.tradeRoutes.some((r) => r.cardId === 'tin_route');
+}
+
+/** The Bronze cards' standing-access gate as a play-time cost check. Exported because
+ *  `content/stickers.ts` folds it onto a stickered copy's cost as the Bronze Tools charge-back. */
 export const needsTinRoute = ({ G }: CostContext): UnplayableReason | null =>
-  G.tradeRoutes.some((r) => r.cardId === 'tin_route') ? null : { kind: 'missingRoute', cardId: 'tin_route' };
+  tinRouteStands(G) ? null : { kind: 'missingRoute', cardId: 'tin_route' };
+
+/** The 🪙 the standing host costs the palace next round — shared by the `soldiers_wages` drain and its
+ *  readout, so the face can't quote a wage bill the threat doesn't take. The levy is free; only the
+ *  host kept under arms past it is paid. */
+function soldiersWages(G: GameState): number {
+  return Math.ceil(Math.max(0, G.resources.military - 10) / 5);
+}
 
 /**
  * The card catalogue. Numbers are a first pass. Tests install synthetic `test_*` cards on top via
@@ -347,6 +363,13 @@ export const CARDS: Record<string, CardDef> = {
   beer: { id: 'beer', name: 'Beer', kind: 'work', cost: { resources: { food: 1 } }, workers: 1, display: { art: '🍺' }, produces: { resources: { culture: 1 } } },
   trader: { id: 'trader', name: 'Trader', kind: 'work', cost: {}, workers: 1, display: { art: '💰' }, produces: { resources: { money: 3 } } },
   war_horse: { id: 'war_horse', name: 'War Horse', kind: 'work', cost: {}, workers: 1, display: { art: '🏇' }, produces: { resources: { military: 3 } } },
+  // A box lives one turn, so gating the play gates every round it could ever run.
+  chariot: {
+    id: 'chariot', name: 'Chariot', kind: 'work',
+    cost: { resources: { money: 2 }, check: needsTinRoute }, workers: 1,
+    display: { art: '🎠', note: 'needs a 🏝️ route' },
+    produces: { resources: { military: 5 } },
+  },
   // Pays off the trade zone rather than at a flat rate, so it is worth nothing on an empty sea and more
   //   than the Trader on a busy one. On `produces.resolve` for the Wharf's reason: the amount comes off
   //   `G.tradeRoutes.length`, which `resolveProduction`'s per-worker scaling can't express.
@@ -354,10 +377,10 @@ export const CARDS: Record<string, CardDef> = {
     id: 'merchant_ship', name: 'Merchant Ship', kind: 'work', cost: {}, workers: 1,
     display: {
       art: '🛳️',
-      description: 'Each open 🚢 route:\n+1🪙',
-      dynamicText: (G) => `+${G.tradeRoutes.length}🪙`,
+      description: 'Each open 🚢 route:\n+2🪙',
+      dynamicText: (G) => `+${2 * G.tradeRoutes.length}🪙`,
     },
-    produces: { resolve: (ctx) => gainResources(ctx, { money: ctx.G.tradeRoutes.length }) },
+    produces: { resolve: (ctx) => gainResources(ctx, { money: 2 * ctx.G.tradeRoutes.length }) },
   },
 
   // — Buildings —
@@ -432,6 +455,28 @@ export const CARDS: Record<string, CardDef> = {
     cost: { resources: { production: 4 }, check: needsTinRoute }, workers: 1,
     produces: { resources: { money: 3 } },
     display: { art: '🏪', note: 'needs a 🏝️ route' },
+  },
+
+  // The tin gate sits on `produces`, not on `cost`: a host already raised goes dark for as long as the
+  //   route is cut and comes back when it reopens, where a play-time gate could only ever have refused
+  //   the build. Output is all closure, so it owns the per-worker scaling `resolveProduction` applies
+  //   to a declarative bundle (`rules/effects.ts`).
+  sword: {
+    id: 'sword', name: 'Sword', kind: 'building',
+    cost: { resources: { production: 4 } }, workers: 2,
+    display: {
+      art: '🪖',
+      description: '+2 ⚔️ / round\nper worker.',
+      dynamicText: (G) => (tinRouteStands(G) ? '+2⚔️ / round per worker' : 'no 🏝️ route — idle'),
+      note: 'needs a 🏝️ route to operate',
+    },
+    produces: {
+      resolve: (ctx) => {
+        if (!tinRouteStands(ctx.G)) return;
+        const s = findStaffable(ctx.G, ctx.self.id);
+        gainResources(ctx, { military: 2 * (s ? producingUnits(s) : 1) });
+      },
+    },
   },
 
   // — Wonders —
@@ -963,6 +1008,12 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  sword_chariot_goal: {
+    id: 'sword_chariot_goal', name: 'Sword & Chariot', kind: 'objective', cost: {},
+    goals: [{ icon: '⚔️', measure: (G) => G.resources.military, target: MUSTER_TARGET }],
+    display: { description: `Muster ${MUSTER_TARGET} ⚔️ at once` },
+  },
+
   // Sandbox is an endless no-stakes mission: the objective never wins by design (a single bespoke
   //   goal whose `met` is always false), and nothing bounds the run — it lasts until the player quits
   //   or a core resource collapses.
@@ -1168,6 +1219,25 @@ export const CARDS: Record<string, CardDef> = {
     on: {
       reshuffle: {
         resolve: (ctx) => spawnIntoDeck(ctx, 'thief', Math.floor(ctx.G.resources.money / THIEVES_PER_GOLD)),
+      },
+    },
+  },
+  // Sword & Chariot's squeeze, and the arc's other threat that taxes the goal itself: the palace pays
+  //   every spear it keeps standing, so the bill climbs with the muster the win measures and the last
+  //   levy is raised under the heaviest one. Reads the ⚔️ pool through `soldiersWages`, the same
+  //   muster the goal measures. No `defeat` hook — an unpayable payroll is the universal 🪙 collapse,
+  //   which `run/engine.ts`'s `checkEndIf` reads *after* victory, so reaching the muster on the round
+  //   the treasury empties still wins.
+  soldiers_wages: {
+    id: 'soldiers_wages', name: "Soldiers' Wages", kind: 'threat', cost: {},
+    display: {
+      art: '💸',
+      description: '−1🪙 per 5 ⚔️ held past the first 10',
+      dynamicText: (G) => `−${soldiersWages(G)}🪙 next round`,
+    },
+    upkeep: {
+      resolve: ({ G }) => {
+        subtractResources(G.resources, { money: soldiersWages(G) });
       },
     },
   },

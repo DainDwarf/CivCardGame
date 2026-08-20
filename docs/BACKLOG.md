@@ -80,7 +80,7 @@
   | Setting Sail | ✅ | ✅ | ✅ | ⬜ | [setting-sail](missions/setting-sail.md) |
   | Sea Lanes | ✅ | ✅ | ✅ | ⬜ | [sea-lanes](missions/sea-lanes.md) |
   | Bronze *(convergence)* | ✅ | ✅ | ✅ | ⬜ | [bronze](missions/bronze.md) |
-  | Sword & chariot | 🟡 | ⬜ | ⬜ | ⬜ | — |
+  | Sword & chariot | ✅ | ✅ | ✅ | ⬜ | [sword-chariot](missions/sword-chariot.md) |
   | The Sea Peoples *(capstone)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
   | Fall of the Bronze Age *(infinite)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
 
@@ -112,7 +112,10 @@
      [`missions/raiding.md`](missions/raiding.md)). Then **Naval (×2)** — **Setting Sail** DONE,
      balance included (see [`missions/setting-sail.md`](missions/setting-sail.md)); **Sea Lanes** DONE,
      balance included (see [`missions/sea-lanes.md`](missions/sea-lanes.md)).
-  6. **Bronze** convergence → **Sword & chariot** → **capstone + infinite**.
+  6. **Bronze** convergence — DONE, balance included (see [`missions/bronze.md`](missions/bronze.md)).
+     **Sword & chariot** — DONE, balance included (see
+     [`missions/sword-chariot.md`](missions/sword-chariot.md)) →
+     **capstone + infinite**.
 
   **Mechanical identity `[?]`:** IDEAS frames the age as "trade-dependent palace civilizations" → the
   throughline is the **money economy** (underused in the Stone Age). Trade branches produce 🪙; Bronze
@@ -126,7 +129,9 @@
     proposals below are the last that can assume two.
   - **Bronze** (convergence) — decided, see [missions/bronze.md](missions/bronze.md): the Marketplace
     building + the tin-gated Bronze Tools sticker.
-  - **Sword & chariot** → Sword (military, needs bronze) + Chariot (spoked wheel + horse + bronze).
+  - **Sword & chariot** — decided, see [missions/sword-chariot.md](missions/sword-chariot.md): the
+    Sword building (standing infantry, continuously tin-gated) + the Chariot work box (the elite
+    War Horse successor).
   - **The Sea Peoples** (capstone, standard) → systems-collapse mission; reward **unlocks the infinite**
     below (City board already granted at Masonry).
   - **Fall of the Bronze Age** (infinite, scored survival) → escalating money/military/production pressure

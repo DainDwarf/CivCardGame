@@ -2,6 +2,7 @@ import { STICKERS, type StickerDef } from '../content/stickers';
 import { CARDS, type CardDef } from '../content/cards';
 import { findInstance, isStickerFull, type OwnedCards } from './collection';
 import type { CardCost } from './cost';
+import type { CardEffect } from './effects';
 import type { Resources } from './resources';
 
 /** The minimal shape `effectiveGain`/`effectiveCost`/`effectiveCard` need — any holder carrying a
@@ -127,20 +128,31 @@ export function effectiveCost(cost: CardCost, self: StickeredInstance): CardCost
   return out;
 }
 
+/** One gain-bearing slot with its declarative bundle swapped for the folded one. Every slot
+ *  `gainResources` folds a sticker over rebuilds through here, so the three stay one rule rather than
+ *  three transcriptions of it. */
+function effectiveSlot(effect: CardEffect, self: StickeredInstance): CardEffect {
+  const resources = effect.resources && effectiveGain(effect.resources, self);
+  return resources ? { ...effect, resources } : effect;
+}
+
 /** A card instance's *displayed* stats after any attached sticker — a shallow `CardDef` copy with
- *  `cost`/`produces.resources`/`effect.resources` swapped for their effective values, so any render
- *  site doing `card={CARDS[cardId]}` can pass `effectiveCard(CARDS[cardId], self)` instead and show the
- *  true number with no change to `CardFace`/`describeCost`/`describeBuilding`. Returns `card` unchanged
- *  when the instance carries no sticker. `produces` and `effect` rebuild identically — both are
- *  `CardEffect`s. */
+ *  `cost` and every gain slot swapped for their effective values, so any render site doing
+ *  `card={CARDS[cardId]}` can pass `effectiveCard(CARDS[cardId], self)` instead and show the true
+ *  number with no change to `CardFace`/`describeCost`/`describeBuilding`. Returns `card` unchanged when
+ *  the instance carries no sticker.
+ *
+ *  The slot list must stay the one `gainResources` folds over — play `effect`, `produces` yield and
+ *  `upkeep` drain, all three `CardEffect`s — or a face quotes a rate the run doesn't pay: signs are
+ *  neutral in a gain bag, so a sticker charging a standing price lands on the drain exactly as one
+ *  raising output lands on the yield (`content/stickers.ts`'s Convoy does both). */
 export function effectiveCard(card: CardDef, self: StickeredInstance): CardDef {
   if (!self.stickers?.length) return card;
-  const produces = card.produces?.resources && effectiveGain(card.produces.resources, self);
-  const resources = card.effect?.resources && effectiveGain(card.effect.resources, self);
   return {
     ...card,
     cost: effectiveCost(card.cost, self),
-    ...(card.produces ? { produces: { ...card.produces, ...(produces ? { resources: produces } : {}) } } : {}),
-    ...(card.effect ? { effect: { ...card.effect, ...(resources ? { resources } : {}) } } : {}),
+    ...(card.produces ? { produces: effectiveSlot(card.produces, self) } : {}),
+    ...(card.effect ? { effect: effectiveSlot(card.effect, self) } : {}),
+    ...(card.upkeep ? { upkeep: effectiveSlot(card.upkeep, self) } : {}),
   };
 }

@@ -104,8 +104,9 @@ declining the rest at the root — the designed no-line reading, but a low one, 
 delivery, one Tin Route copy in the deck's whole circulation, so the race value prices landing it flat
 while charging its full standing rent. When that ticket lands, both cells are re-swept.
 
-**Measurement debt still standing** — no **Wheel** sticker, no **Warband** board, no **Merchant Ship**,
-no **Convoy**. The **Tin Route**'s own rating, by contrast, is settled here: this is the first cell
+**Measurement debt still standing** — the **Wheel** sticker alone; the Warband board, Merchant Ship,
+Convoy and Marketplace were all rated one node later, in
+[sword-chariot](sword-chariot.md)'s cells. The **Tin Route**'s own rating is settled here: this is the first cell
 where its gate is load-bearing, and it opens on most runs of both boards.
 
 ## Polish ⬜

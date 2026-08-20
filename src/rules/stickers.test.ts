@@ -323,4 +323,12 @@ describe('effectiveCard', () => {
     const boosted = effectiveCard(FIXTURE_CARDS.test_work, { stickers: ['test_addgain'] });
     expect(boosted.produces).toEqual({ resources: { production: 4 } });
   });
+
+  // `gainResources` folds a sticker over an `upkeep` drain exactly as over a yield, so the face has to
+  // rebuild that slot too or it quotes a rent the run doesn't pay.
+  it("reflects the additive-gain sticker in a route's upkeep, not its produces alone", () => {
+    const boosted = effectiveCard(FIXTURE_CARDS.test_trade, { stickers: ['test_addgain'] });
+    expect(boosted.produces).toEqual({ resources: { food: 2 } });
+    expect(boosted.upkeep).toEqual({ resources: { money: 0 } });
+  });
 });

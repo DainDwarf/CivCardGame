@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { BRONZE_TRIALS, CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { BRONZE_TRIALS, CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, MUSTER_TARGET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -597,6 +597,34 @@ export const MISSIONS: Record<string, MissionDef> = {
       unlockStickerIds: ['bronze_tools'],
     },
     map: { col: 11, row: 0 },
+    age: 'bronze',
+  },
+  sword_chariot: {
+    id: 'sword_chariot',
+    name: 'Sword & Chariot',
+    lore:
+      'Your pours came out hard — and so did everyone else\'s. Every chief with a lane to the islands ' +
+      'is casting now: edges that hold to the end of a day\'s fighting, axles that take a charge, and ' +
+      'men behind them who no longer stop to re-knap a blade. There is no advantage left in knowing ' +
+      'how. There is only the advantage of number. So keep the smiths at the moulds and the tin ' +
+      'coming, break more horses to the pole, and put under arms a host larger than anything the ' +
+      'world has yet had to count. The metal is the cheap part: every spear you keep standing is a ' +
+      'man who eats and is paid out of the palace stores for as long as he stands.',
+    prereqs: ['bronze'],
+    threats: ['soldiers_wages'],
+    // No events, alone among the arc's late nodes: the goal is a standing muster rather than a set of
+    // one-shots to work through, so the pressure is the payroll the muster itself raises.
+    objectiveCardId: 'sword_chariot_goal',
+    victoryHint: `Muster ${MUSTER_TARGET} ⚔️ at once — a host held, not a host spent.`,
+    failureHint:
+      'Every 5 ⚔️ you hold past the first 10 costs the palace 1 🪙 in wages at the end of each round; ' +
+      'bleed the treasury dry and the run ends.',
+    kind: 'standard',
+    // Opens the bronze military kit, split standing vs. burst: the Sword (⚔️ per worker every round, and
+    // dark for as long as the tin route is cut) and the Chariot (the War Horse successor, a better rate
+    // per worker behind the same tin gate). Influence amount provisional.
+    reward: { influence: 12, unlockCardIds: ['sword', 'chariot'] },
+    map: { col: 12, row: 0 },
     age: 'bronze',
   },
   ice_age: {

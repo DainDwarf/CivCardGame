@@ -78,18 +78,20 @@ play the Bronze cards downstream: they gate on a standing tin route.
 ### Merchant Ship (`work`) ✅
 
 Must not be **Trader** repainted (free to play, 1 worker, +3🪙) — a strictly-equal card is dead on
-arrival. The differentiating axis: it pays **+1🪙 per open trade route**, so it is worthless in an
+arrival. The differentiating axis: it pays **+2🪙 per open trade route**, so it is worthless in an
 empty zone and the deck's best card in a full one, and the branch's goal is its own engine. Free to
-play · 1 worker (provisional): it meets Trader only at three open routes — behind before, ahead after.
+play · 1 worker: behind Trader at one open route, ahead from two (rate settled in
+[sword-chariot](sword-chariot.md) → *Balance* — at +1 it never outbid the flat Trader).
 
 The split against the **Port** board's prebuilt is settled with it: the **Wharf keeps 🎭**, the Ship
 takes the money side — same trigger, different currency, so neither duplicates the other.
 
 ### Convoy — the trade sticker ✅
 
-**+1⚔️ each round · +2🔨 to open** (🛡️, provisional 5 Influence), applying to **yield-bearing** `trade`
-cards. The route patrols itself: standing military bought with an outfitting surcharge — Irrigation's
-gain-plus-surcharge shape, landing on the branch's own pressure currency. As this mission's *reward* it
+**+1⚔️ each round · −1🪙 upkeep each round** (🛡️, provisional 5 Influence), applying to **yield-bearing** `trade`
+cards. The route patrols itself: standing military bought with standing escort wages — the charge
+deepens the route's own rent, so the escort competes in the treasury with everything else at sea
+(form settled in [sword-chariot](sword-chariot.md) → *Balance*). As this mission's *reward* it
 can't trivialize the mission that grants it; it pays off downstream, where Sword & chariot and the Sea
 Peoples want standing ⚔️. Yield-bearing only for the `producerOf` reason — `applyGain` raises an output
 the card has, never conjures one on a card without a `produces` — so the no-yield Tin Route is outside

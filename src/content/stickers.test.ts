@@ -25,8 +25,12 @@ describe('STICKERS', () => {
           const where = `${a}+${b} on ${card.id}`;
           expect(effectiveCost(card.cost, { stickers: [a, b] }), where)
             .toEqual(effectiveCost(card.cost, { stickers: [b, a] }));
-          expect(effectiveGain(card.produces?.resources, { stickers: [a, b] }), where)
-            .toEqual(effectiveGain(card.produces?.resources, { stickers: [b, a] }));
+          // Every slot `gainResources` folds a sticker over, not the yield alone — a hook charging a
+          // standing price meets the `upkeep` drain, and order has to wash out there too.
+          for (const bag of [card.produces?.resources, card.effect?.resources, card.upkeep?.resources]) {
+            expect(effectiveGain(bag, { stickers: [a, b] }), where)
+              .toEqual(effectiveGain(bag, { stickers: [b, a] }));
+          }
         }
       }
     }
