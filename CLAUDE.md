@@ -70,6 +70,21 @@ surprise, so nothing shows a locked placeholder or a total count.
   convergence (which would clear it and grant its reward); `--influence <n>` overrides the
   spendable balance; `--seed`/`--out` set randomization and output path. The DAG walk and default
   target set derive from `content/missions.ts` — missions are never hard-coded.
+  `--fixture <paths>` seeds the state a **baseline fixture** describes, so a cell the simulator
+  measures can be hand-piloted under exactly its conditions: its mission left *unplayed* (only the
+  transitive prereqs fold — hence a separate flag rather than `--upto`, whose walk is inclusive and would
+  pay the reward of the mission being handed over), its board asserted already unlocked by those clears
+  (a fixture naming one the campaign can't be on there is a data-coherence finding, so it fails loudly),
+  and its deck **bought**: copies up `shop.ts`'s tier ladder, stickers through `stickers.ts`'s attach
+  path, the list through `deckBuilder.ts`'s `addCard`, named after the fixture id. Fixtures are loaded
+  through `simFiles.ts`'s own loaders and every reject is fatal — a save whose deck is half-bought reads
+  as intact in-game, so the one thing this must never do is continue past one. Several fixtures compose
+  into one save (ownership is the **max** per variant across their decks, not the sum: decks legitimately
+  share an owned copy) as long as none is a prereq of another, and `--upto` unions in — which is how a
+  fixture whose deck reaches across to a parallel branch gets that branch cleared, the fix a missing card
+  names for itself — with the mission a fixture wants unplayed refused as a target either way. Influence is topped up to exactly what the bill needs when the campaign's own faucet
+  falls short (reported, and never folded into `lifetime.influenceEarned` — a top-up is fabricated, not
+  earned); `--influence` keeps meaning the *resulting* spendable balance.
 - `npm run sim` — balance tool (`scripts/sim.ts`): sweeps the headless simulator and **measures** it —
   one CSV row per run on stdout, flushed as each run lands, aggregating nothing. Folding is
   `npm run sim:report`'s separate job and committing is `npm run sim:record`'s, so a sweep is paid for
@@ -707,6 +722,11 @@ answers no human can play enough games to reach. It re-implements **no** game lo
 
 ## Conventions
 
+- **Long-running commands go through `run_in_background` — never a `sleep` poll.** A sim sweep or any
+  other slow command is launched with the shell tool's `run_in_background` and left to the harness's
+  completion notification. Sleep-based waiting is noise either way: a foreground sleep blocks the
+  session, and a background timer left alive when an agent finishes re-fires its completion
+  notification once per stale waiter.
 - **React version** — on React 18; nothing external pins it, so a bump to 19 is a deliberate choice.
   Whatever the version, keep `setState` updaters **pure** — the run loop relies on StrictMode's
   intentional dev double-invoke to catch impurity.

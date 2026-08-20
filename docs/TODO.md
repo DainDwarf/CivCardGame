@@ -114,6 +114,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ## Misc
 
+- **Player telemetry — collect real play data** `[size: M]` `[?]` — collect actual play data from
+  players, ideally as the same CSV the simulator writes (`sim/record.ts`'s `RunRecord` /
+  `recordToCsvLine`), so human runs and swept runs fold through the same `sim:report`/duckdb tooling.
+  Needs an **opt-out option visible at start** (not buried in settings). Open questions: where the
+  rows go (a collection endpoint — the app is a static Pages deploy today), and what identifies a
+  submission. Wanted for next week's polish work.
 - **Rework the Influence economy and the copy-count ladder together.** Explicitly **not** the
   `trade-redesign` branch's job — parked here so it isn't rediscovered from a card. How many copies of
   a card a player can reach is what decides whether a second-rate line is worth building at all, and
@@ -194,6 +200,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 ### Tooling
 
+- **Fixture board stickers are id-checked only** `[size: S]` — `simFiles.ts`'s `readBoard` accepts
+  `"board": { "board": …, "stickers": [...] }` and validates the sticker **ids**, but checks neither
+  `appliesTo` nor `MAX_BOARD_STICKERS` — harmless for the universal Opulence, but a board-restricted
+  sticker (or an over-cap list) would measure a cell no player can assemble, silently. The checks
+  exist as `rules/boardStickers.ts` leaves (`boardStickerAppliesTo`, the cap in
+  `canAttachBoardSticker`); fold them into the loader's reject.
 - **The `#sweep` header names no planner knobs** `[size: S]` — a sweep taken at an edited
   depth/determinizations/`turnConfigLimit` (or an experimental beam rule) is indistinguishable from a
   default one by its own record; the filename is the only provenance. Bitten twice during the search-shell
@@ -214,6 +226,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **`seed-save` seeds the state a baseline fixture describes** ✅ — hand-piloting a cell the simulator
+  measures meant manually grinding the campaign and shop into the fixture's exact conditions.
+  `--fixture <paths>` (comma-separated, loaded through `simFiles.ts`'s own loaders) folds each
+  fixture's mission's transitive prereqs — the mission itself left *unplayed*, guarded loudly, since
+  clearing it would grant the reward being tested — then buys the fixture's deck through the real
+  paths (`shop.ts` tiers, `stickers.ts` attach, `boardStickers.ts` for a board-sticker-carrying
+  fixture, `deckBuilder.ts` assembly), named after the fixture id. Influence is topped up only when
+  the campaign's own faucet falls short (reported); `--upto` composes by union for a fixture whose
+  deck needs a parallel branch's card, and the error for that case names the exact `--upto` to add.
+  First used to hand-verify the `sword_chariot_city`/`_port` cells the policies read near 0%.
 - **A threatened pool is charged for the rescue the run has not made** ✅ — `T̂loss` is a hard `min` over the
   pools, so the purchase that permanently ends a famine was worth nothing until the turn it was made, while
   the price it charges shortened some *other* pool's clock the whole way there: a run walked past the Farm in
