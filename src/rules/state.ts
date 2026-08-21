@@ -390,6 +390,27 @@ export function setCounter(inst: CardInstance, key: string, value: number): numb
   return value;
 }
 
+/**
+ * Take one copy of `stickerId` off a run instance, reporting whether there was one to take — the
+ * run-local counterpart of `rules/stickers.ts`'s `removeSticker`, which edits the player's collection
+ * instead. A copy legitimately carries the same sticker twice, so exactly one layer goes per call and
+ * the boolean is what lets a caller branch on "there was armour here" without counting first.
+ *
+ * The `stickers` key is **deleted** rather than left as `[]` when the last one goes, per
+ * `CardInstance.stickers`' absent-means-plain-copy contract — which is what returns the copy to the
+ * `contentKey` a plain one has, and so to the multiset the simulator's transposition key pools it in.
+ * The array is rebuilt rather than spliced, so nothing sharing it is written through.
+ */
+export function stripSticker(inst: CardInstance, stickerId: string): boolean {
+  const current = inst.stickers;
+  const idx = current ? current.lastIndexOf(stickerId) : -1;
+  if (!current || idx === -1) return false;
+  const remaining = current.filter((_, i) => i !== idx);
+  if (remaining.length) inst.stickers = remaining;
+  else delete inst.stickers;
+  return true;
+}
+
 /** Mint fresh card instances from an ordered list of card ids, assigning sequential ids from
  *  `startId`. The shared path turning a plain `string[]` (a `RunConfig.deck`, a mission's injected
  *  cards, a test fixture) into identity-bearing zone contents, so no one re-implements id assignment.

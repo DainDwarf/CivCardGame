@@ -231,7 +231,9 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   (all 8), the card zones `deck`/`hand`/`discard`/`removed` (each a `CardInstance[]` — `{ id, cardId,
   counters? }`, so every copy has a stable per-run **instance id** and its own per-copy `counters` via
   `getCounter`/`bumpCounter`/`setCounter` — the last for a counter that *resets*, like a streak of
-  rounds), the three board zones — `tableau`, `workZone` (played `work` awaiting
+  rounds; `stripSticker` is the other per-copy mutator, taking **one** layer of a sticker off a run copy
+  and deleting the key when the last goes — run-local, where `stickers.ts`'s `removeSticker` edits the
+  player's collection), the three board zones — `tableau`, `workZone` (played `work` awaiting
   staffing) and `tradeRoutes`, each a `PlacedCard[]` (`CardInstance` + `workers`, `0` on a box that
   takes none), so `territory.ts`'s `placedCards` reads them as one list (a board-wide read, *not* the
   territory cap — only the tableau spends land) — plus `threats`,

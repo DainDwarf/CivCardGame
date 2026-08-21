@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { blankState, getCounter, bumpCounter, setCounter, instancesFromDeckCards, type CardInstance } from './state';
+import { blankState, getCounter, bumpCounter, setCounter, instancesFromDeckCards, stripSticker, type CardInstance } from './state';
 import { scaleResources } from './resources';
 import { resolveCard } from './effects';
 import { installFixtures, uninstallFixtures } from './testFixtures';
@@ -68,6 +68,42 @@ describe('per-instance counter accessors', () => {
     const inst: CardInstance = { id: 1, cardId: 'k' };
     setCounter(inst, 'seen', 2);
     expect(inst.counters?.seen).toBe(2);
+  });
+});
+
+describe('stripSticker', () => {
+  it('reports nothing to strip on a bare copy, and on one carrying other stickers', () => {
+    expect(stripSticker({ id: 1, cardId: 'k' }, 'test_addgain')).toBe(false);
+    const other: CardInstance = { id: 1, cardId: 'k', stickers: ['test_costcut'] };
+    expect(stripSticker(other, 'test_addgain')).toBe(false);
+    expect(other.stickers).toEqual(['test_costcut']);
+  });
+
+  it('takes one layer off a double stack, leaving the copy still carrying one', () => {
+    const inst: CardInstance = { id: 1, cardId: 'k', stickers: ['test_addgain', 'test_addgain'] };
+    expect(stripSticker(inst, 'test_addgain')).toBe(true);
+    expect(inst.stickers).toEqual(['test_addgain']);
+  });
+
+  it('drops the stickers key entirely when the last one goes, returning a plain copy', () => {
+    const inst: CardInstance = { id: 1, cardId: 'k', stickers: ['test_addgain'] };
+    expect(stripSticker(inst, 'test_addgain')).toBe(true);
+    expect('stickers' in inst).toBe(false);
+  });
+
+  it('leaves the other stickers in place and in order', () => {
+    const inst: CardInstance = { id: 1, cardId: 'k', stickers: ['test_costcut', 'test_addgain', 'test_costcut'] };
+    stripSticker(inst, 'test_addgain');
+    expect(inst.stickers).toEqual(['test_costcut', 'test_costcut']);
+  });
+
+  // The strip is run-local by contract — it destroys this run's defenses, never the player's purchase —
+  // so it rebuilds the array rather than writing through the one it was handed.
+  it('never writes through an array another holder shares', () => {
+    const shared = ['test_addgain', 'test_costcut'];
+    const stripped: CardInstance = { id: 1, cardId: 'k', stickers: shared };
+    stripSticker(stripped, 'test_addgain');
+    expect(shared).toEqual(['test_addgain', 'test_costcut']);
   });
 });
 

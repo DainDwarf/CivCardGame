@@ -1,5 +1,6 @@
 import { scaleResources, subtractResources } from '../rules/resources';
-import { bumpCounter, getCounter, setCounter, type CardInstance, type GameEventType, type GameState } from '../rules/state';
+import { bumpCounter, getCounter, setCounter, stripSticker, type CardInstance, type GameEventType, type GameState } from '../rules/state';
+import { closeTradeRoute } from '../rules/tradeRoutes';
 import { gainResources, type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
 import type { CardCost, CostContext, UnplayableReason } from '../rules/cost';
 import { drawInstance, peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
@@ -352,6 +353,26 @@ export function tinRouteStands(G: GameState): boolean {
  *  `content/stickers.ts` folds it onto a stickered copy's cost as the Bronze Tools charge-back. */
 export const needsTinRoute = ({ G }: CostContext): UnplayableReason | null =>
   tinRouteStands(G) ? null : { kind: 'missingRoute', cardId: 'tin_route' };
+
+/** How many invasion waves "The Sea Peoples" seeds — shared by the mission's injected event list
+ *  (`content/missions.ts`), the `sea_peoples_goal` win threshold, its progress readout, and the
+ *  `sails_on_horizon` census. */
+export const INVASION_WAVES = 5;
+
+/** Waves already repelled: a raid reaches `removed` only by being played (paying its ⚔️ over a standing
+ *  tin route), while one that strikes unrepelled files to the discard and comes round again — so the
+ *  count there *is* the tally. Shared by the win threshold, its readout, the repel ladder and the
+ *  `sails_on_horizon` census, so the fleet the threat prices can't drift from the one the goal counts. */
+function wavesRepelled(G: GameState): number {
+  return G.removed.filter((c) => c.cardId === 'sea_raid').length;
+}
+
+/** Waves still at large — every one not in `removed`, wherever it sits: in hand, in the deck, in the
+ *  discard. Pricing the threat by that census rather than by zone is what stops parking a raid in the
+ *  discard from relieving the pressure, and it makes the toll stable across a whole upkeep batch. */
+function wavesAtLarge(G: GameState): number {
+  return Math.max(0, INVASION_WAVES - wavesRepelled(G));
+}
 
 /** The 🪙 the standing host costs the palace next round — shared by the `soldiers_wages` drain and its
  *  readout, so the face can't quote a wage bill the threat doesn't take. The levy is free; only the
@@ -743,6 +764,43 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🫗', description: '−2 🔨 at end of round while unpoured', note: 'needs a 🏝️ route' },
     upkeep: { resources: { production: -2 } },
   },
+  // Sea Raid: repelling a wave is playing it — the ⚔️ buys the beach back and the play choke exiles it
+  //   to `removed`, which `sea_peoples_goal` counts. The price climbs off that same tally, so a host that
+  //   answered the last wave is short for the next. Its `check` is the arc's tin gate at its sharpest:
+  //   the raid that cuts the lane is the reason there is no bronze to meet the one behind it.
+  //   Left in hand it falls on whatever stands between it and the coast. A route takes it first — a
+  //   Convoy dies holding the lane in place of the lane itself, and an unescorted one is cut — and only
+  //   an empty sea lets the raiders ashore, where they burn the fields and the yards. The branch is read
+  //   once off the zone, and each route is judged on its own, so neither half can depend on the order the
+  //   zone happens to be walked in (`sim/zoneOrderInvariance.test.ts`).
+  sea_raid: {
+    id: 'sea_raid', name: 'Sea Raid', kind: 'event',
+    cost: {
+      resources: { military: 8 },
+      check: needsTinRoute,
+      resolve: ({ G }, base) => ({
+        ...base,
+        resources: { ...base.resources, military: (base.resources?.military ?? 0) + 4 * wavesRepelled(G) },
+      }),
+    },
+    display: {
+      art: '🏴‍☠️',
+      description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
+      dynamicRule: 'cost rises per wave repelled',
+      note: 'needs a 🏝️ route',
+    },
+    upkeep: {
+      resolve: (ctx) => {
+        if (!ctx.G.tradeRoutes.length) {
+          gainResources(ctx, { food: -3, production: -2 });
+          return;
+        }
+        for (const route of [...ctx.G.tradeRoutes]) {
+          if (!stripSticker(route, 'convoy')) closeTradeRoute(ctx.G, route.id);
+        }
+      },
+    },
+  },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
   //   discard); paid off with ⚔️ (catching it) the play choke exiles it to `removed` for good. Costs and
@@ -984,8 +1042,9 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // Nothing ever closes a route, so the count only climbs: the goal latches the moment the last lane
-  //   opens rather than having to be held for any length of time.
+  // No player move takes a route off the board and this mission seeds nothing that cuts one, so the
+  //   count only climbs: the goal latches the moment the last lane opens rather than having to be held
+  //   for any length of time.
   sea_lanes_goal: {
     id: 'sea_lanes_goal', name: 'Sea Lanes', kind: 'objective', cost: {},
     goals: [{ icon: '🚢', measure: (G) => G.tradeRoutes.length, target: SEA_LANE_ROUTES }],
@@ -1019,6 +1078,16 @@ export const CARDS: Record<string, CardDef> = {
     id: 'sword_chariot_goal', name: 'Sword & Chariot', kind: 'objective', cost: {},
     goals: [{ icon: '⚔️', measure: (G) => G.resources.military, target: MUSTER_TARGET }],
     display: { description: `Muster ${MUSTER_TARGET} ⚔️ at once` },
+  },
+
+  // A raid reaches `removed` only by being played, so counting them there counts the waves thrown back.
+  sea_peoples_goal: {
+    id: 'sea_peoples_goal', name: 'The Sea Peoples', kind: 'objective', cost: {},
+    goals: [{ icon: '🏴‍☠️', measure: wavesRepelled, target: INVASION_WAVES }],
+    display: {
+      description: `Repel all ${INVASION_WAVES} invasion waves`,
+      dynamicText: (G) => `🏴‍☠️ ${Math.min(wavesRepelled(G), INVASION_WAVES)}/${INVASION_WAVES} repelled`,
+    },
   },
 
   // Sandbox is an endless no-stakes mission: the objective never wins by design (a single bespoke
@@ -1245,6 +1314,27 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: {
       resolve: ({ G }) => {
         subtractResources(G.resources, { money: soldiersWages(G) });
+      },
+    },
+  },
+  // The Sea Peoples' squeeze, and the age's bookend to Charcoal Fuel: Bronze taxed every pour mastered,
+  //   and the capstone charges for every wave still at large instead — so the toll opens at its heaviest
+  //   and lifts with each one thrown back. It bills the census (`wavesAtLarge`, off the same `removed`
+  //   tally the goal counts) rather than any one zone, so a raid parked in the discard exerts exactly the
+  //   pressure a held one does. It lands on 🪙 while the repel is bought in ⚔️, the split-pools rule, and
+  //   it stacks with the rents and escort wages the same lanes already charge — the coast is expensive to
+  //   hold whether or not it is attacked. No `defeat` hook: an unpayable tribute is the universal 🪙
+  //   collapse, read *after* victory, so repelling the last wave on the round the treasury empties wins.
+  sails_on_horizon: {
+    id: 'sails_on_horizon', name: 'Sails on the Horizon', kind: 'threat', cost: {},
+    display: {
+      art: '⛵',
+      description: '−1🪙 per invasion wave not yet repelled',
+      dynamicText: (G) => `−${wavesAtLarge(G)}🪙 next round`,
+    },
+    upkeep: {
+      resolve: ({ G }) => {
+        subtractResources(G.resources, { money: wavesAtLarge(G) });
       },
     },
   },

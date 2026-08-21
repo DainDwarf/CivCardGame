@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ⬜ · Balance ⬜ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ⬜ · Polish ⬜
 **Branch:** Bronze — the **capstone**: [Sword & chariot](sword-chariot.md) → **The Sea Peoples**;
 clearing it unlocks the *Fall of the Bronze Age* infinite (its own design, not this dossier's).
 **Placement:** `prereqs: ['sword_chariot']`, bronze col 13 row 0.
@@ -97,9 +97,46 @@ finally spent, and the thing it is spent *through* is the thing under attack.
   army to defeat but a storm to outlast with your lifelines intact; the win is repelling the raids
   with the tin still flowing, which is more than most of the age's real palaces managed.
 
-## Implement ⬜
+## Implement ✅ (shipped)
 
-Not started.
+The `sea_peoples` mission (bronze col 13 row 0, prereqs `sword_chariot`, 12⭐ and no unlock — the
+*Fall of the Bronze Age* infinite does not exist yet and will name this mission as its own prereq when
+it does) seeding the `sails_on_horizon` threat and **5** `sea_raid` events over the `sea_peoples_goal`
+objective. `INVASION_WAVES` is the one number behind the seed count, the win threshold, the threat's
+census and both hints.
+
+**The wave.** `sea_raid` is a plain `event`, so repelling it is the ordinary played-event path — pay,
+resolve nothing, exile to `removed` with its upkeep pre-empted — and `removed` is what the goal counts.
+Its price is **8⚔️ + 4⚔️ per wave already repelled** (8/12/16/20/24, 80⚔️ over the run), a `cost.resolve`
+reading the same `wavesRepelled` tally off `removed` and deriving from the base it is handed, so a
+sticker discount compounds with the ladder rather than being applied on top of it. `check:
+needsTinRoute` is the hard gate: with no tin route standing the face carries the `missingRoute` reason
+and the wave cannot be repelled at all.
+
+**The cut** rides the wave's own `upkeep`, which fires only on the unplayed path (`resolveHandEvents`,
+inside `settleEndOfTurn`) — deliberately *not* an `on.endTurn` handler or a threat drain, either of
+which would put it inside the production broadcast where the tin-gated `producesWhile` reads are.
+The branch is read once from `G.tradeRoutes` as the raid arrives, then each route is judged alone:
+`stripSticker(route, 'convoy')` takes one escort layer off, and a route with none is cut through
+`closeTradeRoute`. An empty zone burns **−3🌾 −2🔨** through `gainResources` instead. Nothing here reads
+across routes, so two waves in one hand commute — pinned in `sim/zoneOrderInvariance.test.ts`, whose
+fixture now carries two real `sea_raid`s over one escorted and one bare lane.
+
+**`stripSticker`** (`rules/state.ts`, beside the counter accessors) is the run-local counterpart of
+`stickers.ts`'s `removeSticker`: one layer per call, the `stickers` key deleted when the last goes so a
+stripped copy reads as the plain card it now is, and the array rebuilt rather than spliced so nothing
+sharing it is written through. The meta collection is never in reach of it.
+
+**The threat.** `sails_on_horizon` drains **−1🪙 per wave still at large**, `INVASION_WAVES` minus the
+same `wavesRepelled` tally the goal reads — so census and goal cannot drift, and the discard stall is
+closed by construction: an *unrepelled* wave files to `discard`, never `removed`, so parking one bills
+exactly what holding it does. That also makes the toll constant across a whole upkeep batch. It opens at
+**−5🪙/round** and lifts by 1 per repel — Charcoal Fuel inverted — and lands on 🪙 while the repel is
+bought in ⚔️, per the split-pools rule. No `defeat` hook: bankruptcy is the universal collapse, read
+after victory.
+
+Two content edits fall out: Sea Lanes' `victoryHint` and the `sea_lanes_goal` comment no longer claim
+that *nothing* closes a route, since now something does.
 
 ## Balance ⬜
 

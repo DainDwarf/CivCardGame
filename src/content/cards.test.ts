@@ -1,8 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { CARDS, COPPER_VEINS, isDeckable, isStaffable, RAIDER_WAVES, THIEVES_PER_GOLD } from './cards';
+import { CARDS, COPPER_VEINS, INVASION_WAVES, isDeckable, isStaffable, RAIDER_WAVES, THIEVES_PER_GOLD } from './cards';
 import { STARTING_COLLECTION } from './collection';
 import { DEFAULT_DECKS } from './decks';
-import { blankState, dispatchEvent, objectiveMet, resolveUpkeep, seedObjective } from '../rules';
+import {
+  blankState,
+  currentCost,
+  dispatchEvent,
+  objectiveMet,
+  openTradeRoute,
+  resolveHandEvents,
+  resolveUpkeep,
+  seedObjective,
+  type CardInstance,
+} from '../rules';
 import { CORE_KEYS, type Resources } from '../rules/resources';
 
 // Internal coherence of the CARDS catalogue (mirrors `boards.test.ts`'s id-check), plus the
@@ -141,6 +151,21 @@ describe('CARDS', () => {
     expect(withVeins(COPPER_VEINS + 1)).toBe(true);
   });
 
+  // The "The Sea Peoples" win, the raiders/copper shape once more: repelling a wave is playing it,
+  // which banishes it to `removed` — an unrepelled one files to the *discard* and comes round again, so
+  // that pile is the only tally of waves actually thrown back.
+  it('sea_peoples_goal is met at INVASION_WAVES raids in removed, not one short', () => {
+    const withRepelled = (n: number) => {
+      const G = blankState('sea_peoples');
+      seedObjective(G, 'sea_peoples_goal');
+      G.removed = Array.from({ length: n }, (_, i) => ({ id: i + 1, cardId: 'sea_raid' }));
+      return objectiveMet(G);
+    };
+    expect(withRepelled(INVASION_WAVES - 1)).toBe(false);
+    expect(withRepelled(INVASION_WAVES)).toBe(true);
+    expect(withRepelled(INVASION_WAVES + 1)).toBe(true);
+  });
+
   // The "Accounting" win: a single money threshold, same goal-derived check as the raiders/copper ones
   // above but on a live resource rather than a count in `removed`.
   it('accounting_goal is met at its 🪙 target, not one short', () => {
@@ -192,6 +217,81 @@ describe('envious_population', () => {
   it('spawns nothing below the threshold', () => {
     expect(spawnCount(THIEVES_PER_GOLD - 1)).toBe(0);
     expect(spawnCount(0)).toBe(0);
+  });
+});
+
+// The Sea Peoples' invasion wave. Its price climbs with the waves already thrown back, so it is read
+// through `currentCost` — the one seam a scaling price flows through — rather than off the declarative
+// base, which is only ever the first wave's number. Both the base and the step are derived from the
+// card itself, so a rebalance re-targets the assertion instead of breaking it.
+describe('sea_raid', () => {
+  const priceAt = (repelled: number) => {
+    const G = blankState('sea_peoples');
+    G.removed = Array.from({ length: repelled }, (_, i) => ({ id: i + 1, cardId: 'sea_raid' }));
+    return currentCost(CARDS.sea_raid, { G, self: { id: 99, cardId: 'sea_raid' } }).resources?.military ?? 0;
+  };
+
+  it('climbs by a fixed step for every wave already repelled', () => {
+    const base = CARDS.sea_raid.cost.resources!.military!;
+    const step = priceAt(1) - base;
+    expect(step).toBeGreaterThan(0);
+    expect(priceAt(0)).toBe(base);
+    expect(priceAt(2)).toBe(base + 2 * step);
+    expect(priceAt(INVASION_WAVES - 1)).toBe(base + (INVASION_WAVES - 1) * step);
+  });
+});
+
+// A wave left unplayed at end of round falls on whatever stands between it and the coast. Driven through
+// the real `resolveHandEvents` — the involuntary path an unplayed event actually takes — over real routes
+// opened through `openTradeRoute`, since what the raid does is entirely about the trade zone.
+describe('sea_raid left unrepelled', () => {
+  const coastalState = (routes: CardInstance[]) => {
+    const G = blankState('sea_peoples');
+    G.resources.food = 10;
+    G.resources.production = 10;
+    for (const r of routes) openTradeRoute(G, r);
+    G.hand = [{ id: 90, cardId: 'sea_raid' }];
+    return G;
+  };
+
+  it('cuts every route no escort holds, filing each to the discard', () => {
+    const G = coastalState([
+      { id: 1, cardId: 'tin_route' },
+      { id: 2, cardId: 'coastal_route' },
+    ]);
+    resolveHandEvents(G);
+    expect(G.tradeRoutes).toHaveLength(0);
+    expect(G.discard.map((c) => c.cardId).sort()).toEqual(['coastal_route', 'sea_raid', 'tin_route']);
+    // The war is at sea: nothing reaches the fields on a round the lanes take the raid.
+    expect(G.resources.food).toBe(10);
+    expect(G.resources.production).toBe(10);
+  });
+
+  it('kills one escort per wave instead, the lane surviving a layer at a time', () => {
+    const G = coastalState([
+      { id: 1, cardId: 'tin_route', stickers: ['convoy', 'convoy'] },
+      { id: 2, cardId: 'coastal_route' },
+    ]);
+
+    resolveHandEvents(G);
+    expect(G.tradeRoutes.map((r) => r.cardId)).toEqual(['tin_route']);
+    expect(G.tradeRoutes[0].stickers).toEqual(['convoy']);
+
+    G.hand = [{ id: 91, cardId: 'sea_raid' }];
+    resolveHandEvents(G);
+    expect(G.tradeRoutes.map((r) => r.cardId)).toEqual(['tin_route']);
+    expect('stickers' in G.tradeRoutes[0]).toBe(false);
+
+    G.hand = [{ id: 92, cardId: 'sea_raid' }];
+    resolveHandEvents(G);
+    expect(G.tradeRoutes).toHaveLength(0);
+  });
+
+  it('burns the coast when no route stands between it and the fields', () => {
+    const G = coastalState([]);
+    resolveHandEvents(G);
+    expect(G.resources.food).toBe(7);
+    expect(G.resources.production).toBe(8);
   });
 });
 

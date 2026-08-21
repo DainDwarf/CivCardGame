@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { BRONZE_TRIALS, CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, MUSTER_TARGET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { BRONZE_TRIALS, CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, INVASION_WAVES, MUSTER_TARGET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -549,7 +549,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     prereqs: ['setting_sail'],
     threats: ['unguarded_lanes'],
     objectiveCardId: 'sea_lanes_goal',
-    victoryHint: `Hold ${SEA_LANE_ROUTES} trade routes open at once — nothing ever closes one.`,
+    victoryHint: `Hold ${SEA_LANE_ROUTES} trade routes open at once — nothing here ever closes one.`,
     failureHint:
       'Every lane you open has to be patrolled for the rest of the run: each one drains 1 ⚔️ at the end ' +
       'of every round, and running the escorts into the ground ends it.',
@@ -625,6 +625,37 @@ export const MISSIONS: Record<string, MissionDef> = {
     // per worker behind the same tin gate). Influence amount provisional.
     reward: { influence: 12, unlockCardIds: ['sword', 'chariot'] },
     map: { col: 12, row: 0 },
+    age: 'bronze',
+  },
+  sea_peoples: {
+    id: 'sea_peoples',
+    name: 'The Sea Peoples',
+    lore:
+      'Your smiths pour the hardest bronze the world has yet seen, and not one grain of the tin in it ' +
+      'came out of your own ground: it crosses nine days of open water in hulls you have to keep afloat. ' +
+      'There are sails on that water now that answer to no palace — peoples burned off coasts further ' +
+      'east, come not to trade and not to hold ground, but to take what a season yields and be gone ' +
+      'before your host reaches the shore. Meet them on the beach with everything the age has given you, ' +
+      'and keep the lanes open while you do it, because every one they cut takes the metal out of your ' +
+      'hands. Cities older and richer than yours are going dark up the coast; the ones still standing ' +
+      'when the season turns are not the ones that won a battle, but the ones still fed and still supplied.',
+    prereqs: ['sword_chariot'],
+    threats: ['sails_on_horizon'],
+    // One `sea_raid` per wave, tied to the objective's threshold by the shared INVASION_WAVES const so
+    // the mission can't seed a different count than the win asks for.
+    events: Array.from({ length: INVASION_WAVES }, () => 'sea_raid'),
+    objectiveCardId: 'sea_peoples_goal',
+    victoryHint:
+      `Repel all ${INVASION_WAVES} invasion waves — 8 ⚔️ for the first and 4 more for each after, ` +
+      'every one of them over a standing 🏝️ tin route.',
+    failureHint:
+      'Every wave still at large drains 1 🪙 at the end of each round. A wave you cannot repel falls on ' +
+      'your trade routes instead — cutting every lane no escort holds, and burning 🌾 and 🔨 once none is ' +
+      'left standing. Lose the tin and no wave after it can be answered at all.',
+    kind: 'standard',
+    // The age ends here, so the reward is Influence alone — no card, no sticker, no board.
+    reward: { influence: 12 },
+    map: { col: 13, row: 0 },
     age: 'bronze',
   },
   ice_age: {

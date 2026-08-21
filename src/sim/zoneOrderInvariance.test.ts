@@ -112,9 +112,18 @@ function producingState(): GameState {
   openTradeRoute(G, mint(G, 'test_route_scaling'));
   openTradeRoute(G, mint(G, 'test_route_scaling'));
   openTradeRoute(G, mint(G, 'test_route_scaling'));
+  // The route-cutting case, and the one card in this fixture taken from the shipped catalogue: a Sea
+  // Raid strips one Convoy off an escorted route or cuts an unescorted one outright, so the zone it
+  // walks is a zone its own hand siblings are emptying underneath it. Real rather than synthetic because
+  // no number of the card's reaches the assertions below (they compare permutations against each other),
+  // so there is nothing here for a rebalance to break — while a synthetic copy of its branch would pass
+  // happily while the shipped one broke. One escorted lane and one bare one, so both branches fire.
+  openTradeRoute(G, mint(G, 'tin_route', ['convoy']));
+  openTradeRoute(G, mint(G, 'coastal_route'));
   // A few non-event hand cards + a stocked deck/discard, so the end-of-turn recycle and a possible
-  // reshuffle both run and their ordering can't leak into the result.
-  G.hand = instancesFromCardIds(['test_work', 'test_action', 'test_settlers'], 200);
+  // reshuffle both run and their ordering can't leak into the result. Two raids, not one: the second
+  // reads a trade zone the first has already cut down, which is the sibling interaction being pinned.
+  G.hand = instancesFromCardIds(['test_work', 'test_action', 'test_settlers', 'sea_raid', 'sea_raid'], 200);
   G.deck = instancesFromCardIds(['test_food', 'test_work', 'test_work_food'], 300);
   G.discard = instancesFromCardIds(['test_action', 'test_settlers', 'test_work'], 400);
   return G;
