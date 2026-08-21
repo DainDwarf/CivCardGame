@@ -640,7 +640,6 @@ export const MISSIONS: Record<string, MissionDef> = {
       'hands. Cities older and richer than yours are going dark up the coast; the ones still standing ' +
       'when the season turns are not the ones that won a battle, but the ones still fed and still supplied.',
     prereqs: ['sword_chariot'],
-    threats: ['sails_on_horizon'],
     // One `sea_raid` per wave, tied to the objective's threshold by the shared INVASION_WAVES const so
     // the mission can't seed a different count than the win asks for.
     events: Array.from({ length: INVASION_WAVES }, () => 'sea_raid'),
@@ -649,9 +648,9 @@ export const MISSIONS: Record<string, MissionDef> = {
       `Repel all ${INVASION_WAVES} invasion waves — 8 ⚔️ for the first and 4 more for each after, ` +
       'every one of them over a standing 🏝️ tin route.',
     failureHint:
-      'Every wave still at large drains 1 🪙 at the end of each round. A wave you cannot repel falls on ' +
-      'your trade routes instead — cutting every lane no escort holds, and burning 🌾 and 🔨 once none is ' +
-      'left standing. Lose the tin and no wave after it can be answered at all.',
+      'A wave you cannot repel falls on your trade routes — cutting every lane no escort holds, and ' +
+      'burning 🌾 and 🔨 once none is left standing. Lose the tin and no wave after it can be answered ' +
+      'at all.',
     kind: 'standard',
     // The age ends here, so the reward is Influence alone — no card, no sticker, no board.
     reward: { influence: 12 },

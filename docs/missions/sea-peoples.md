@@ -40,13 +40,10 @@ finally spent, and the thing it is spent *through* is the thing under attack.
   player's purchase), taken positionally so a double-Convoyed route survives two wave-rounds.
   Removal, not a negation marker, so a dead escort also stops billing its wages. Stickers ride the
   instance through the discard, so a cut route **re-stands with its surviving convoys** when replayed.
-- **Threat — Sails on the Horizon:** a per-round drain scaling with waves **not yet repelled,
-  wherever they sit** (N minus the `removed` tally the goal reads). Pricing by census rather than by
-  zone is what closes the discard-stall (parking waves in the discard exerts full pressure), and it
-  inverts Charcoal Fuel as the age's bookend: Bronze taxed success, the capstone relieves per
-  success. Drain pool is Implement's, on the split-pools principle ([bronze](bronze.md)) — a pool
-  distinct from the goal's ⚔️ bill. No `defeat` hook: the universal collapses suffice
-  (the `soldiers_wages` precedent).
+- **Deliberately no threat.** The wave's own teeth — the tin-gated repel, the cut, the burn, the
+  rents and escort wages the lanes already charge — are the whole pressure. A census-priced drain
+  (−1🪙 per wave at large, the discard-stall closer) was cut as too much stacked on top; it stays as
+  **Balance's reserve knob** if turtling proves free.
 - **Every tin gate works the same** — one player-facing rule, *bronze works only while tin flows*:
   continuous wherever a card stands, play-time where a card lives one turn (play-time *is*
   continuous there). Two shipped grants convert to match the Sword:
@@ -61,7 +58,8 @@ finally spent, and the thing it is spent *through* is the thing under attack.
     waves** (the play, the reopen price, the dark rounds), and Sisyphean during one (it cuts again
     each round). Demoted from exploit to mastery.
   - *Decoy route* — dead: chaff falls with everything else and billed rent while it stood.
-  - *Discard stall* — the threat's census pricing bills a parked wave the same as a held one.
+  - *Discard stall* — **reopened** by the threat's removal: a wave parked in the discard exerts no
+    pressure. Accepted for now; the census drain is the reserve knob if Balance finds stalling free.
   - *Tinless hermit* — unwinnable by construction, and blessed as such: the burn and the gate make
     the trap obvious, not subtle.
   - *One-round burn shield* (replaying a cheap route each round to keep the raid at sea) — cut the
@@ -101,9 +99,9 @@ finally spent, and the thing it is spent *through* is the thing under attack.
 
 The `sea_peoples` mission (bronze col 13 row 0, prereqs `sword_chariot`, 12⭐ and no unlock — the
 *Fall of the Bronze Age* infinite does not exist yet and will name this mission as its own prereq when
-it does) seeding the `sails_on_horizon` threat and **5** `sea_raid` events over the `sea_peoples_goal`
-objective. `INVASION_WAVES` is the one number behind the seed count, the win threshold, the threat's
-census and both hints.
+it does) seeding **5** `sea_raid` events over the `sea_peoples_goal` objective — **no threat**, per the
+design. `INVASION_WAVES` is the one number behind the seed count, the win threshold and the victory
+hint.
 
 **The wave.** `sea_raid` is a plain `event`, so repelling it is the ordinary played-event path — pay,
 resolve nothing, exile to `removed` with its upkeep pre-empted — and `removed` is what the goal counts.
@@ -126,14 +124,6 @@ fixture now carries two real `sea_raid`s over one escorted and one bare lane.
 `stickers.ts`'s `removeSticker`: one layer per call, the `stickers` key deleted when the last goes so a
 stripped copy reads as the plain card it now is, and the array rebuilt rather than spliced so nothing
 sharing it is written through. The meta collection is never in reach of it.
-
-**The threat.** `sails_on_horizon` drains **−1🪙 per wave still at large**, `INVASION_WAVES` minus the
-same `wavesRepelled` tally the goal reads — so census and goal cannot drift, and the discard stall is
-closed by construction: an *unrepelled* wave files to `discard`, never `removed`, so parking one bills
-exactly what holding it does. That also makes the toll constant across a whole upkeep batch. It opens at
-**−5🪙/round** and lifts by 1 per repel — Charcoal Fuel inverted — and lands on 🪙 while the repel is
-bought in ⚔️, per the split-pools rule. No `defeat` hook: bankruptcy is the universal collapse, read
-after victory.
 
 Two content edits fall out: Sea Lanes' `victoryHint` and the `sea_lanes_goal` comment no longer claim
 that *nothing* closes a route, since now something does.

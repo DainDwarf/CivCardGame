@@ -355,23 +355,14 @@ export const needsTinRoute = ({ G }: CostContext): UnplayableReason | null =>
   tinRouteStands(G) ? null : { kind: 'missingRoute', cardId: 'tin_route' };
 
 /** How many invasion waves "The Sea Peoples" seeds — shared by the mission's injected event list
- *  (`content/missions.ts`), the `sea_peoples_goal` win threshold, its progress readout, and the
- *  `sails_on_horizon` census. */
+ *  (`content/missions.ts`), the `sea_peoples_goal` win threshold, and its progress readout. */
 export const INVASION_WAVES = 5;
 
 /** Waves already repelled: a raid reaches `removed` only by being played (paying its ⚔️ over a standing
  *  tin route), while one that strikes unrepelled files to the discard and comes round again — so the
- *  count there *is* the tally. Shared by the win threshold, its readout, the repel ladder and the
- *  `sails_on_horizon` census, so the fleet the threat prices can't drift from the one the goal counts. */
+ *  count there *is* the tally. Shared by the win threshold, its readout and the repel ladder. */
 function wavesRepelled(G: GameState): number {
   return G.removed.filter((c) => c.cardId === 'sea_raid').length;
-}
-
-/** Waves still at large — every one not in `removed`, wherever it sits: in hand, in the deck, in the
- *  discard. Pricing the threat by that census rather than by zone is what stops parking a raid in the
- *  discard from relieving the pressure, and it makes the toll stable across a whole upkeep batch. */
-function wavesAtLarge(G: GameState): number {
-  return Math.max(0, INVASION_WAVES - wavesRepelled(G));
 }
 
 /** The 🪙 the standing host costs the palace next round — shared by the `soldiers_wages` drain and its
@@ -1314,27 +1305,6 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: {
       resolve: ({ G }) => {
         subtractResources(G.resources, { money: soldiersWages(G) });
-      },
-    },
-  },
-  // The Sea Peoples' squeeze, and the age's bookend to Charcoal Fuel: Bronze taxed every pour mastered,
-  //   and the capstone charges for every wave still at large instead — so the toll opens at its heaviest
-  //   and lifts with each one thrown back. It bills the census (`wavesAtLarge`, off the same `removed`
-  //   tally the goal counts) rather than any one zone, so a raid parked in the discard exerts exactly the
-  //   pressure a held one does. It lands on 🪙 while the repel is bought in ⚔️, the split-pools rule, and
-  //   it stacks with the rents and escort wages the same lanes already charge — the coast is expensive to
-  //   hold whether or not it is attacked. No `defeat` hook: an unpayable tribute is the universal 🪙
-  //   collapse, read *after* victory, so repelling the last wave on the round the treasury empties wins.
-  sails_on_horizon: {
-    id: 'sails_on_horizon', name: 'Sails on the Horizon', kind: 'threat', cost: {},
-    display: {
-      art: '⛵',
-      description: '−1🪙 per invasion wave not yet repelled',
-      dynamicText: (G) => `−${wavesAtLarge(G)}🪙 next round`,
-    },
-    upkeep: {
-      resolve: ({ G }) => {
-        subtractResources(G.resources, { money: wavesAtLarge(G) });
       },
     },
   },
