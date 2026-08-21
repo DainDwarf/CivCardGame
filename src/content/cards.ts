@@ -539,10 +539,12 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: { resources: { money: -2 } },
   },
   // Deliberately yieldless: what it buys is standing access, so the rent is the whole of its balance
-  //   sheet, and everything gating on `tinRouteStands` is the return. Numbers provisional.
+  //   sheet, and everything gating on `tinRouteStands` is the return. The access rides `note` rather than
+  //   a `display.description`, which would win over the generated text and go on reading "no yield" on a
+  //   copy an escort has since given one. Numbers provisional.
   tin_route: {
     id: 'tin_route', name: 'Tin Route', kind: 'trade', cost: { resources: { money: 2 } },
-    display: { art: '🏝️', description: 'Standing access.\nNo yield.' },
+    display: { art: '🏝️', note: 'standing access' },
     upkeep: { resources: { money: -1 } },
   },
   dogs: { id: 'dogs', name: 'Hunting', kind: 'work', cost: {}, workers: 1, display: { art: '🐕' }, produces: { resources: { military: 1 } } },

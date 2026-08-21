@@ -110,9 +110,11 @@ export function removeSticker(collection: OwnedCards, instanceId: string, index:
  * the declarative default (see `state.ts`'s `CardInstance.stickers`).
  */
 
-/** Fold each attached sticker's `applyGain` over `base` in order. `undefined` in → `undefined`
- *  out (a card with no gain has nothing to reinforce). The `?? out` is load-bearing: it both
- *  skips a sticker lacking `applyGain` (e.g. Efficient) and preserves the running value.
+/** Fold each attached sticker's `applyGain` over `base` in order. `undefined` in → `undefined` out —
+ *  a slot the card doesn't have, which no resolver hands this. An **empty bag** is not that: it is the
+ *  `produces` slot of a card printing no yield, and a hook may materialize an output there (see
+ *  `effectiveProduces` below). The `?? out` is load-bearing: it both skips a sticker lacking `applyGain`
+ *  (e.g. Efficient) and preserves the running value.
  *
  *  `G` is passed only where a *live* board exists to read — `effects.ts`'s `gainResources`, the run's
  *  one payment path. Every other caller (a card face, a deck tile, a projection of what a copy could
@@ -138,12 +140,25 @@ export function effectiveCost(cost: CardCost, self: StickeredInstance): CardCost
   return out;
 }
 
-/** One gain-bearing slot with its declarative bundle swapped for the folded one. Every slot
- *  `gainResources` folds a sticker over rebuilds through here, so the three stay one rule rather than
- *  three transcriptions of it. */
+/** A play `effect` or `upkeep` drain with its declarative bundle swapped for the folded one. Both
+ *  rebuild through here, so they stay one rule rather than two transcriptions of it. An absent bundle
+ *  stays absent: `runEffect` hands `gainResources` exactly this `effect.resources`, so there is no
+ *  fold at these two slots for a card that declares none. */
 function effectiveSlot(effect: CardEffect, self: StickeredInstance): CardEffect {
   const resources = effect.resources && effectiveGain(effect.resources, self);
   return resources ? { ...effect, resources } : effect;
+}
+
+/** The `produces` slot, which folds over an **absent** bundle as an empty one — mirroring the base
+ *  `effects.ts`'s `resolveProduction` hands `gainResources` every round the copy stands
+ *  (`produces?.resources ?? {}`), so a sticker materializing a per-round yield on a card that prints
+ *  none shows on the face at the rate the round really pays. That divergence is the only one this
+ *  module has to prevent: display and resolution differ in nothing else, since both fold through
+ *  `effectiveGain`. Returns the card's own slot untouched when the fold materialized nothing. */
+function effectiveProduces(card: CardDef, self: StickeredInstance): CardEffect | undefined {
+  const resources = effectiveGain(card.produces?.resources ?? {}, self);
+  if (!resources || Object.keys(resources).length === 0) return card.produces;
+  return { ...card.produces, resources };
 }
 
 /** A card instance's *displayed* stats after any attached sticker — a shallow `CardDef` copy with
@@ -155,13 +170,15 @@ function effectiveSlot(effect: CardEffect, self: StickeredInstance): CardEffect 
  *  The slot list must stay the one `gainResources` folds over — play `effect`, `produces` yield and
  *  `upkeep` drain, all three `CardEffect`s — or a face quotes a rate the run doesn't pay: signs are
  *  neutral in a gain bag, so a sticker charging a standing price lands on the drain exactly as one
- *  raising output lands on the yield (`content/stickers.ts`'s Convoy does both). */
+ *  raising output lands on the yield (`content/stickers.ts`'s Convoy does both), and a `produces` the
+ *  card never printed is a slot the round pays and the face must therefore show. */
 export function effectiveCard(card: CardDef, self: StickeredInstance): CardDef {
   if (!self.stickers?.length) return card;
+  const produces = effectiveProduces(card, self);
   return {
     ...card,
     cost: effectiveCost(card.cost, self),
-    ...(card.produces ? { produces: effectiveSlot(card.produces, self) } : {}),
+    ...(produces ? { produces } : {}),
     ...(card.effect ? { effect: effectiveSlot(card.effect, self) } : {}),
     ...(card.upkeep ? { upkeep: effectiveSlot(card.upkeep, self) } : {}),
   };

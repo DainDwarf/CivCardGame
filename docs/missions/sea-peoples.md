@@ -34,8 +34,9 @@ finally spent, and the thing it is spent *through* is the thing under attack.
   Routes are therefore shields twice over — they gate the repel *and* keep the burn off the fields —
   which is the pressure that makes a player open and hold them for dear life.
 - **Convoy is ablative armor, not a shield.** Its `appliesTo` widens to any `trade` card, so the Tin
-  Route (yieldless) can carry one: pure escort wages there, no ⚔️ to ride — an honest price for
-  guarding a cargo that pays in access. The strip is **run-local sticker removal** off the run
+  Route (yieldless) can carry one: the escort yields its ⚔️ there too, against the same standing wages
+  — what it guards is the lane, not the cargo, and a lane that pays in access is exactly the one worth
+  guarding. The strip is **run-local sticker removal** off the run
   `CardInstance` (the meta collection is untouched — the raid costs this run's defenses, never the
   player's purchase), taken positionally so a double-Convoyed route survives two wave-rounds.
   Removal, not a negation marker, so a dead escort also stops billing its wages. Stickers ride the
@@ -127,6 +128,15 @@ sharing it is written through. The meta collection is never in reach of it.
 
 Two content edits fall out: Sea Lanes' `victoryHint` and the `sea_lanes_goal` comment no longer claim
 that *nothing* closes a route, since now something does.
+
+**Convoy on a yieldless lane** pays its ⚔️ like any other. The escort's grant is keyed on the bag's own
+sign, and the `produces` slot of a route printing nothing arrives as an *empty* bag — which the hook now
+materializes into, the gain-side mirror of a surcharge `applyCost` landing on a free card. Display
+follows resolution because `effectiveCard` rebuilds the slot off the same `produces?.resources ?? {}`
+base `resolveProduction` hands the fold, and the sim's per-round output read (`probes.ts`'s
+`producedGain`) enters the fold for the same reason — a copy priced at zero is a play the plan scan
+never reaches for. Convoy's description drops "to any yield" for the per-round wording the Design seam
+asked for.
 
 ## Balance ⬜
 

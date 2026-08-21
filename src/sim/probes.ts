@@ -85,6 +85,21 @@ export function foldedGain(
   return realizedGain(G, self ? effectiveGain(bag, self) : bag);
 }
 
+/** A card's per-round `produces` as one copy really yields it. The printed bag may be **absent** and the
+ *  copy still yield: a sticker materializes an output there (`rules/stickers.ts`'s produces slot), which
+ *  reading `card.produces?.resources` raw would price at zero — and a plan that cannot see what a card
+ *  pays will not reach for it. The copy-less and stickerless readings are the printed bag itself, so the
+ *  fold is entered only where something could come of it. */
+export function producedGain(
+  G: GameState,
+  card: CardDef,
+  self?: CardInstance,
+): Partial<Resources> | undefined {
+  const printed = card.produces?.resources;
+  if (printed === undefined && !self?.stickers?.length) return undefined;
+  return foldedGain(G, printed ?? {}, self);
+}
+
 /** What playing a card charges, over all 8 pools: what its `cost` names plus every pool its play `effect`
  *  *takes away*. A negative play delta is semantically a price — the citizen a Voyage sails with is as much
  *  the cost of the launch as its 🪙 — and it has nowhere else to ride: `CardCost.resources` is core-only by
@@ -151,7 +166,7 @@ export function replacementCost(G: GameState, ids: Set<string>): Partial<Record<
       const staffable = (card.workers ?? 0) >= 1;
       return copies.get(card.id)!.map((self) => ({
         staffable,
-        produces: foldedGain(G, card.produces?.resources, self),
+        produces: producedGain(G, card, self),
         grant: foldedGain(G, card.effect?.resources, self),
         price: cardPrice(G, card, self),
       }));
@@ -257,7 +272,7 @@ export function outputDelta(
   measure: (G: GameState) => number,
   self?: CardInstance,
 ): number {
-  return withGain(probe, foldedGain(probe, card.produces?.resources, self), measure);
+  return withGain(probe, producedGain(probe, card, self), measure);
 }
 
 function withGain(

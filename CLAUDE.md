@@ -377,7 +377,12 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   touches run or display values (each a generic fold over the `StickerDef` hooks). `effectiveCost` folds
   the **whole `CardCost`**, not just its `resources`, so a sticker reaches any declarative field (a
   `cultureLevelReq` surcharge, a `discard`) and lands on a card with **no** printed price at all — which
-  is what lets a surcharge sticker charge a free work box. `effectiveGain` takes an **optional `G`**,
+  is what lets a surcharge sticker charge a free work box. The gain side mirrors that at one slot: the
+  `produces` bag folds **absent-as-empty** on both paths — `effects.ts`'s `resolveProduction` already
+  hands `gainResources` `produces?.resources ?? {}`, and `effectiveCard` rebuilds the slot from the same
+  base — so a sticker may materialize a per-round yield on a card printing none and the face quotes what
+  the round pays. `effect`/`upkeep` have no such resolver and stay printed-or-nothing. `effectiveGain`
+  takes an **optional `G`**,
   passed only by `gainResources` — the run's one payment path — so a hook may condition on the live
   board while every display and projection call omits it and reads the **potential** rate. See DESIGN.md
   → *Economy & progression* for the destroy / no-refund rationale.
@@ -445,7 +450,9 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   logic and an `icon`. Each is a **trade-off, not an upgrade**: it buys one thing (a raised output, a
   cut price) and charges for it in another currency, so the decision is what the copy gives up rather
   than whether you can afford it. A `applyCost` **discount** leaves an absent field absent; a
-  **surcharge** materializes it. Two hooks that can meet on one copy must **commute** — `stickerSignature`
+  **surcharge** materializes it, and `applyGain` mirrors that on the `produces` slot — an absent yield
+  reaches the hook as an *empty bag* (a slot the card doesn't have reaches it as `undefined` instead), so
+  a sticker may grant a per-round output to a card printing none. Two hooks that can meet on one copy must **commute** — `stickerSignature`
   normalizes attach order away — which is why a prerequisite surcharge raises to a floor, never steps
   (`content/stickers.test.ts` pins it over the catalogue).
 - **`boardStickers.ts`** — `BOARD_STICKERS`; each `BoardStickerDef` carries its own
@@ -655,7 +662,9 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   play or one more round of a card moves a `(G) => number` by (the injection/grant/output probes — the
   grant and output halves read the copy handed to them, the injection half counting cards and so reading
   none). Every rate comes off `foldedGain`, the copy's stickers then the board's standing modifiers, in
-  the order `gainResources` folds a real gain. It is the half
+  the order `gainResources` folds a real gain — and the per-round half reads through `producedGain`, which
+  hands the fold an **absent** `produces` as an empty bag, since a sticker may put a yield there and a
+  card priced at zero is one no plan scan reaches for. It is the half
   with no currency of its own: a probe reports what moved, and the model above it decides what that is
   worth, so two models pricing the same card share one derivation instead of drifting apart at the first
   retune.

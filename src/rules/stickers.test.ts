@@ -1,14 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buySticker, effectiveCard, effectiveCost, effectiveGain, removeSticker, stickerAppliesTo } from './stickers';
 import { collectionFromCounts, isStickerFull, stickerSignature, type OwnedCards } from './collection';
-import { blankState, type CardInstance } from './state';
-import { gainResources } from './effects';
+import { blankState, type CardInstance, type GameState } from './state';
+import { gainResources, resolveEndTurn } from './effects';
 import type { StickerDef } from '../content/stickers';
+import type { CardDef } from '../content/cards';
 import {
   FIXTURE_CARDS,
   FIXTURE_STICKERS,
+  installCards,
   installFixtures,
   installStickers,
+  uninstallCards,
   uninstallFixtures,
   uninstallStickers,
 } from './testFixtures';
@@ -295,6 +298,79 @@ describe('effectiveGain (board-conditional)', () => {
     G.tradeRoutes = [{ id: 9, cardId: 'test_trade', workers: 0 }];
     gainResources({ G, self }, { food: 2 });
     expect(G.resources.food).toBe(2 + 3);
+  });
+});
+
+describe('effectiveGain (materializing an absent produces)', () => {
+  // A route that prints no yield at all — the shape whose `produces` slot exists only once a sticker
+  // puts something in it.
+  const BARE_ROUTE: Record<string, CardDef> = {
+    test_trade_bare: {
+      id: 'test_trade_bare', name: 'Test Bare Route', kind: 'trade',
+      cost: { resources: { money: 2 } }, upkeep: { resources: { money: -1 } },
+    },
+  };
+  // Raises what the copy yields each round and materializes the yield where there is none, while
+  // leaving the all-negative rent bag alone — the three branches an `applyGain` meeting every slot has
+  // to separate, keyed on the bag's own sign.
+  const MATERIALIZE: Record<string, StickerDef> = {
+    test_materialize: {
+      id: 'test_materialize', name: 'Test Materialize', description: '+1⚔️ every round it stands',
+      icon: '🛡️', cost: 3,
+      applyGain: (base) => {
+        if (!base) return base;
+        const values = Object.values(base);
+        return values.some((v) => (v ?? 0) < 0) ? base : { ...base, military: (base.military ?? 0) + 1 };
+      },
+    },
+  };
+  beforeAll(() => { installCards(BARE_ROUTE); installStickers(MATERIALIZE); });
+  afterAll(() => { uninstallCards(BARE_ROUTE); uninstallStickers(MATERIALIZE); });
+
+  const standing = (stickers?: string[]): { G: GameState; self: CardInstance } => {
+    const G = blankState('test');
+    const self: CardInstance = { id: 1, cardId: 'test_trade_bare', ...(stickers ? { stickers } : {}) };
+    G.tradeRoutes = [{ ...self, workers: 0 }];
+    return { G, self };
+  };
+
+  it('pays the materialized yield every round the copy stands', () => {
+    const { G, self } = standing(['test_materialize']);
+    resolveEndTurn({ G, self });
+    expect(G.resources.military).toBe(1);
+    expect(G.resources.money).toBe(-1); // the rent bag is not a yield and takes nothing
+  });
+
+  it('stacks a second copy and still leaves the rent alone', () => {
+    const { G, self } = standing(['test_materialize', 'test_materialize']);
+    resolveEndTurn({ G, self });
+    expect(G.resources.military).toBe(2);
+    expect(G.resources.money).toBe(-1);
+  });
+
+  it('pays nothing extra on an unstickered copy', () => {
+    const { G, self } = standing();
+    resolveEndTurn({ G, self });
+    expect(G.resources.military).toBe(0);
+    expect(G.resources.money).toBe(-1);
+  });
+
+  // The one divergence this module has to prevent: what the face quotes per round is what the round pays.
+  it('shows the same bag on the face, and no slot the card never gains through', () => {
+    const shown = effectiveCard(BARE_ROUTE.test_trade_bare, { stickers: ['test_materialize'] });
+    expect(shown.produces).toEqual({ resources: { military: 1 } });
+    expect(shown.upkeep).toEqual({ resources: { money: -1 } });
+    expect(shown.effect).toBeUndefined();
+
+    const { G, self } = standing(['test_materialize']);
+    resolveEndTurn({ G, self });
+    expect(G.resources.military).toBe(shown.produces!.resources!.military);
+  });
+
+  it('leaves the produces slot absent when nothing materialized into it', () => {
+    const shown = effectiveCard(BARE_ROUTE.test_trade_bare, { stickers: ['test_costcut'] });
+    expect(shown.produces).toBeUndefined();
+    expect(shown.cost).toEqual({ resources: { money: 1 } });
   });
 });
 

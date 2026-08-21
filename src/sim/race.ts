@@ -21,8 +21,8 @@ import {
 } from '../rules';
 import { isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import {
-  cardPrice, foldedGain, grantDelta, outputDelta, positive, presenceDelta, replacementCost, runCardIds,
-  selfExiles,
+  cardPrice, foldedGain, grantDelta, outputDelta, positive, presenceDelta, producedGain, replacementCost,
+  runCardIds, selfExiles,
 } from './probes';
 import { DEFAULT_MAX_ROUNDS } from './simulate';
 
@@ -1589,7 +1589,7 @@ function deriveRescues(
     };
     for (const card of cards) {
       if (isDurableProducer(card)) {
-        const rate = positive(foldedGain(G, card.produces?.resources, copies.get(card.id))?.[key]);
+        const rate = positive(producedGain(G, card, copies.get(card.id))?.[key]);
         if (rate > 0) {
           weigh(card, rate, {
             kind: 'producer',

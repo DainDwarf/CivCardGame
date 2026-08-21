@@ -42,13 +42,18 @@ export interface StickerDef {
   /**
    * This sticker's contribution to a card's per-copy output, applied *once per attached copy*
    * — stacking (two of the same) and composing (two different) fall out of the fold in
-   * `rules/stickers.ts`'s `effectiveGain`. `undefined` in → `undefined` out (a card with no
-   * gain has nothing to bump). Absent = no output change.
+   * `rules/stickers.ts`'s `effectiveGain`. Absent = no output change.
    *
    * The hook meets **every** slot a card gains through — a play `effect`, a `produces` yield, and an
    * `upkeep` drain alike, since signs are neutral in a gain bag (`rules/effects.ts`). So a hook meaning
    * "more" must read the entry it amplifies as positive, and one charging a standing price reads the
-   * negative bag instead; a bag with neither is no slot of the card's and is returned untouched.
+   * negative bag instead.
+   *
+   * Two shapes of nothing, and the difference is the reach of the hook. `undefined` is a slot the card
+   * doesn't have and no resolver hands the fold — `undefined` in → `undefined` out. An **empty bag** is
+   * the `produces` slot of a card that prints no yield, which `resolveProduction` hands the fold every
+   * round it stands and `effectiveCard` rebuilds from: a hook may *materialize* an output there, the
+   * gain-side mirror of a surcharge `applyCost` landing on a free card.
    *
    * `G` is the live board when a real gain is being paid, and **absent** everywhere a rate is merely
    * being shown or projected. A hook conditioning on the board must therefore treat absence as "show
@@ -82,8 +87,10 @@ export interface StickerDef {
  * afford it".
  */
 
-/** A producer of `key` a sticker may bump: a staffable that already makes the resource, so a sticker
- *  raises an output the card has rather than granting one it doesn't. Buildings *and* work boxes —
+/** A producer of `key` a sticker may bump: a staffable that already makes the resource, so the three
+ *  stickers keyed on this raise an output the card has rather than granting one it doesn't (a hook may
+ *  materialize one — see `applyGain` — but a rate multiplier has nothing to say about a card with no
+ *  rate). Buildings *and* work boxes —
  *  the two kinds whose `produces` scales per staffed worker — and never a wonder, which
  *  `stickerAppliesTo` excludes globally. */
 const producerOf = (key: 'food' | 'culture' | 'production') => (c: CardDef) =>
@@ -120,7 +127,7 @@ export const STICKERS: Record<string, StickerDef> = {
   convoy: {
     id: 'convoy',
     name: 'Convoy',
-    description: '+1 ⚔️ to any yield, −1 🪙 upkeep',
+    description: '+1 ⚔️ every round it stands, −1 🪙 upkeep',
     icon: '🛡️',
     cost: 5,
     appliesTo: (c) => c.kind === 'trade',
@@ -129,12 +136,14 @@ export const STICKERS: Record<string, StickerDef> = {
     // rent. The bag's own sign says which it is: the escort rides with the yield, and its wages deepen
     // the rent — charged every round it stands, in the currency the route already pays in, so the
     // decision is whether the ⚔️ outruns the standing 🪙 rather than whether one 🔨 payment is
-    // affordable. An empty bag is neither slot and is left alone; two copies stack additively either way.
+    // affordable. The **empty** bag is the produces slot of a route that prints no yield, and the escort
+    // sails there too: what it guards is the lane, not the cargo. Two copies stack additively either way.
     applyGain: (base) => {
       if (!base) return base;
       const values = Object.values(base);
-      if (values.some((v) => (v ?? 0) > 0)) return { ...base, military: (base.military ?? 0) + 1 };
-      return values.some((v) => (v ?? 0) < 0) ? { ...base, money: (base.money ?? 0) - 1 } : base;
+      return values.length > 0 && values.every((v) => (v ?? 0) <= 0)
+        ? { ...base, money: (base.money ?? 0) - 1 }
+        : { ...base, military: (base.military ?? 0) + 1 };
     },
   },
   bronze_tools: {

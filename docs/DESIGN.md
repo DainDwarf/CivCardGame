@@ -336,6 +336,11 @@ should carry. The charge may land on any part of the price, not just its resourc
 prerequisite, a discarded card — and it may land on a card with no printed price at all, which is where
 the trade-off bites hardest, because there the sticker *creates* the cost.
 
+What it buys is symmetric: a sticker may grant a **per-round output to a card that prints none**, not
+only raise one the card already has. That is what lets an escort ride a lane whose whole return is
+standing access — the sticker is the yield, and the card's own economics are the price it is weighed
+against.
+
 Two stickers may meet on one copy, and **their folds must commute**: attach order is normalized away by
 the fungibility key (`rules/collection.ts`'s `stickerSignature`), so two copies the collection pools as
 one variant would otherwise price two different ways in a run. That is a real authoring constraint, not
