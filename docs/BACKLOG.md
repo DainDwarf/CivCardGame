@@ -81,7 +81,7 @@
   | Sea Lanes | ✅ | ✅ | ✅ | ⬜ | [sea-lanes](missions/sea-lanes.md) |
   | Bronze *(convergence)* | ✅ | ✅ | ✅ | ⬜ | [bronze](missions/bronze.md) |
   | Sword & chariot | ✅ | ✅ | ✅ | ⬜ | [sword-chariot](missions/sword-chariot.md) |
-  | The Sea Peoples *(capstone)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
+  | The Sea Peoples *(capstone)* | ✅ | ⬜ | ⬜ | ⬜ | [sea-peoples](missions/sea-peoples.md) |
   | Fall of the Bronze Age *(infinite)* | 🟡 | ⬜ | ⬜ | ⬜ | — |
 
   **Decided structure** (with the user):
@@ -132,8 +132,10 @@
   - **Sword & chariot** — decided, see [missions/sword-chariot.md](missions/sword-chariot.md): the
     Sword building (standing infantry, continuously tin-gated) + the Chariot work box (the elite
     War Horse successor).
-  - **The Sea Peoples** (capstone, standard) → systems-collapse mission; reward **unlocks the infinite**
-    below (City board already granted at Masonry).
+  - **The Sea Peoples** (capstone, standard) — decided, see
+    [missions/sea-peoples.md](missions/sea-peoples.md): tin-gated invasion waves that cut un-Convoyed
+    routes, Convoy as ablative armor; reward **unlocks the infinite** below (no card — City board
+    already granted at Masonry).
   - **Fall of the Bronze Age** (infinite, scored survival) → escalating money/military/production pressure
     (parallels Ice Age for Stone).
 
