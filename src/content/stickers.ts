@@ -1,6 +1,7 @@
 import type { Resources } from '../rules/resources';
 import type { CardCost } from '../rules/cost';
-import { needsTinRoute, type CardDef } from './cards';
+import type { GameState } from '../rules/state';
+import { needsTinRoute, tinRouteStands, type CardDef } from './cards';
 
 /**
  * Card stickers (docs/DESIGN.md, "Economy & progression"): permanent,
@@ -48,8 +49,13 @@ export interface StickerDef {
    * `upkeep` drain alike, since signs are neutral in a gain bag (`rules/effects.ts`). So a hook meaning
    * "more" must read the entry it amplifies as positive, and one charging a standing price reads the
    * negative bag instead; a bag with neither is no slot of the card's and is returned untouched.
+   *
+   * `G` is the live board when a real gain is being paid, and **absent** everywhere a rate is merely
+   * being shown or projected. A hook conditioning on the board must therefore treat absence as "show
+   * the potential" rather than as a failed condition, and must stay pure over `G`: it runs inside
+   * `gainResources`, which writing there would re-enter.
    */
-  applyGain?: (base: Partial<Resources> | undefined) => Partial<Resources> | undefined;
+  applyGain?: (base: Partial<Resources> | undefined, G?: GameState) => Partial<Resources> | undefined;
   /**
    * This sticker's contribution to play cost, applied *once per attached copy* (fold in
    * `effectiveCost`). The whole `CardCost` in and out, so a sticker may touch any declarative
@@ -114,13 +120,10 @@ export const STICKERS: Record<string, StickerDef> = {
   convoy: {
     id: 'convoy',
     name: 'Convoy',
-    description: '+1 ⚔️ each round, −1 🪙 upkeep',
+    description: '+1 ⚔️ to any yield, −1 🪙 upkeep',
     icon: '🛡️',
     cost: 5,
-    // `producerOf`'s rule on the one kind it can't be spelled with — a route's yield is flat rather
-    // than per-worker, so the shared helper's staffable check would reject every trade card.
-    appliesTo: (c) =>
-      c.kind === 'trade' && Object.values(c.produces?.resources ?? {}).some((v) => (v ?? 0) > 0),
+    appliesTo: (c) => c.kind === 'trade',
     // Both halves of the trade-off ride this one hook, because `gainResources` folds stickers over
     // *every* slot a card gains through and a route's two are its yield and its all-negative `upkeep`
     // rent. The bag's own sign says which it is: the escort rides with the yield, and its wages deepen
@@ -137,13 +140,16 @@ export const STICKERS: Record<string, StickerDef> = {
   bronze_tools: {
     id: 'bronze_tools',
     name: 'Bronze Tools',
-    description: '+1 🔨, needs a 🏝️ route',
+    description: '+1 🔨, needs a 🏝️ route to play and to work',
     icon: '🛠️',
     cost: 5,
     appliesTo: producerOf('production'),
-    applyGain: (base) => (base ? { ...base, production: (base.production ?? 0) + 1 } : base),
-    // A surcharge in the one currency `applyCost`'s resource fields can't name: the stickered copy is
-    // tin-shod, so it only works while the route that supplies the metal stands. Setting the gate rather
+    // The edge is only as good as the metal behind it: with no board to read (a face, a deck tile) the
+    // potential rate is the only honest answer, and with one the tin has to be flowing. Conditioning the
+    // sticker's own +1 and nothing else is what keeps two attached copies commutative.
+    applyGain: (base, G) =>
+      base && (!G || tinRouteStands(G)) ? { ...base, production: (base.production ?? 0) + 1 } : base,
+    // A surcharge in the one currency `applyCost`'s resource fields can't name. Setting the gate rather
     // than composing with an existing one is what keeps two attached copies commutative — the catalogue
     // has one such gate, so there is nothing to compose with.
     applyCost: (cost) => ({ ...cost, check: needsTinRoute }),

@@ -233,6 +233,45 @@ describe('resolveProduction', () => {
   });
 });
 
+// A `producesWhile` gate: a board condition that mothballs the whole `produces` slot for a round. The
+// fixture carries a declarative bag *and* a closure so one case can show the gate silencing both, and
+// keys on a zone the test writes directly, so nothing here depends on a shipped card's condition.
+describe('resolveProduction — producesWhile', () => {
+  const GATED: Record<string, CardDef> = {
+    test_gated_producer: {
+      id: 'test_gated_producer', name: 'Gated Producer', kind: 'building', cost: {}, workers: 2,
+      produces: { resources: { food: 1 }, resolve: (ctx) => gainResources(ctx, { science: 3 }) },
+      producesWhile: (G) => G.tradeRoutes.length > 0,
+    },
+  };
+  beforeAll(() => installCards(GATED));
+  afterAll(() => uninstallCards(GATED));
+
+  const produce = (open: boolean) => {
+    const G = blankState('test');
+    G.tableau = [{ id: 1, cardId: 'test_gated_producer', workers: 2 }];
+    if (open) G.tradeRoutes = [{ id: 2, cardId: 'test_trade', workers: 0 }];
+    resolveProduction({ G, self: { id: 1, cardId: 'test_gated_producer' } });
+    return G.resources;
+  };
+
+  it('pays the full per-worker output while the gate holds', () => {
+    expect(produce(true).food).toBe(2);
+    expect(produce(true).science).toBe(3);
+  });
+
+  it('yields nothing at all once the gate lapses — bundle and closure alike', () => {
+    expect(produce(false).food).toBe(0);
+    expect(produce(false).science).toBe(0);
+  });
+
+  it('leaves a gateless card producing unconditionally', () => {
+    const G = blankState('test');
+    resolveProduction({ G, self: { id: 1, cardId: 'test_food' } });
+    expect(G.resources.food).toBe(2);
+  });
+});
+
 // Content coherence: the `work` kind's whole output is per-round, so it lives entirely in
 // `produces` — a work card must not carry a one-shot `effect` (it would be dead, since
 // `playCard` resolves no effect for a work card, and it would blur the produces/effect separation).

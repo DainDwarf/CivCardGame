@@ -1,8 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buySticker, effectiveCard, effectiveCost, effectiveGain, removeSticker, stickerAppliesTo } from './stickers';
 import { collectionFromCounts, isStickerFull, stickerSignature, type OwnedCards } from './collection';
-import type { CardInstance } from './state';
-import { FIXTURE_CARDS, FIXTURE_STICKERS, installFixtures, uninstallFixtures } from './testFixtures';
+import { blankState, type CardInstance } from './state';
+import { gainResources } from './effects';
+import type { StickerDef } from '../content/stickers';
+import {
+  FIXTURE_CARDS,
+  FIXTURE_STICKERS,
+  installFixtures,
+  installStickers,
+  uninstallFixtures,
+  uninstallStickers,
+} from './testFixtures';
 
 // Synthetic fixtures stand in for shipped cards/stickers: `test_food` is a food-producing building
 // (eligible for the restricted sticker), `test_prod` a non-food building (ineligible); `test_addgain`/
@@ -243,6 +252,49 @@ describe('effectiveGain (additive-gain)', () => {
   it('stacks two additive-gain stickers on the same instance to +2', () => {
     const self: CardInstance = { id: 1, cardId: 'test_food', stickers: ['test_addgain', 'test_addgain'] };
     expect(effectiveGain({ food: 2 }, self)).toEqual({ food: 4 });
+  });
+});
+
+// The `G`-aware half of `applyGain`: a sticker whose bump is conditional on the live board. Two
+// readings, and the difference is the whole point — with a board the condition decides, without one the
+// potential rate is what a face or a projection must show.
+describe('effectiveGain (board-conditional)', () => {
+  const CONDITIONAL: Record<string, StickerDef> = {
+    test_conditional: {
+      id: 'test_conditional', name: 'Test Conditional', description: '+1🌾 while a route stands',
+      icon: '🧭', cost: 3,
+      applyGain: (base, G) =>
+        base && (!G || G.tradeRoutes.length > 0) ? { ...base, food: (base.food ?? 0) + 1 } : base,
+    },
+  };
+  beforeAll(() => installStickers(CONDITIONAL));
+  afterAll(() => uninstallStickers(CONDITIONAL));
+
+  const self: CardInstance = { id: 1, cardId: 'test_food', stickers: ['test_conditional'] };
+
+  it('shows the potential rate with no board to read', () => {
+    expect(effectiveGain({ food: 2 }, self)).toEqual({ food: 3 });
+    expect(effectiveCard(FIXTURE_CARDS.test_food, self).produces).toEqual({ resources: { food: 3 } });
+  });
+
+  it('applies the bump on a board that satisfies the condition', () => {
+    const G = blankState('test');
+    G.tradeRoutes = [{ id: 9, cardId: 'test_trade', workers: 0 }];
+    expect(effectiveGain({ food: 2 }, self, G)).toEqual({ food: 3 });
+  });
+
+  it('withholds it on a board that does not', () => {
+    expect(effectiveGain({ food: 2 }, self, blankState('test'))).toEqual({ food: 2 });
+  });
+
+  it('reaches the run payment path — gainResources hands the live board down', () => {
+    const G = blankState('test');
+    gainResources({ G, self }, { food: 2 });
+    expect(G.resources.food).toBe(2);
+
+    G.tradeRoutes = [{ id: 9, cardId: 'test_trade', workers: 0 }];
+    gainResources({ G, self }, { food: 2 });
+    expect(G.resources.food).toBe(2 + 3);
   });
 });
 

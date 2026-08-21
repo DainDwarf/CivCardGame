@@ -288,7 +288,10 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   `runEffect(ctx, effect)` applies the declarative `resources` field (folded through stickers) then
   runs any `resolve` closure — the two *compose*. `resolveCard` runs a card's play `effect`;
   `resolveUpkeep` its recurring `upkeep`; `resolveProduction` is a separate path that scales
-  `produces.resources` per staffed worker. `EffectContext` = `{ G, self, answer? }`. An interactive
+  `produces.resources` per staffed worker, first checking `CardDef.producesWhile` — the optional
+  pure-read board condition that mothballs the whole slot (bundle *and* closure) for a round it reads
+  false, declaratively enough that the face and `sim/probes.ts` still see the printed output.
+  `EffectContext` = `{ G, self, answer? }`. An interactive
   effect suspends via `suspendChoice` into `pendingInteraction` and re-enters via
   `moves.resolveInteraction` — all plain data, so undo/clone survive.
   Every gain reaches `G` through `gainResources` alone, which folds **twice**: the resolving copy's
@@ -329,8 +332,10 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
 - **`tradeRoutes.ts`** — the player-played counterpart to `threats.ts`: `openTradeRoute` files a played
   `trade` card into `G.tradeRoutes` (resolving its one-time entry `effect`), where the `endTurn`
   broadcast ticks it like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling.
-  A route takes **no workers** and **no territory**, and nothing removes one — so the rent alone
-  bounds the zone (an unpayable one collapses into bankruptcy).
+  A route takes **no workers** and **no territory**, and no player move removes one — so the rent alone
+  bounds the zone (an unpayable one collapses into bankruptcy). A *card effect* may cut one through
+  `closeTradeRoute`, the enemy-driven counterpart that files the route back to the discard (stickers and
+  counters riding along) under its own `discard` reason.
 - **`objective.ts`** — the win counterpart to `threats.ts`: `seedObjective` seeds the mission's
   objective card into `G.objective`; `objectiveMet` folds its declarative `goals` (`goalMet`/
   `goalProgress`/`goalsReadout`; a non-threshold goal carries its own bespoke `met`). Bus-driven:
@@ -370,8 +375,10 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   touches run or display values (each a generic fold over the `StickerDef` hooks). `effectiveCost` folds
   the **whole `CardCost`**, not just its `resources`, so a sticker reaches any declarative field (a
   `cultureLevelReq` surcharge, a `discard`) and lands on a card with **no** printed price at all — which
-  is what lets a surcharge sticker charge a free work box. See DESIGN.md → *Economy & progression* for
-  the destroy / no-refund rationale.
+  is what lets a surcharge sticker charge a free work box. `effectiveGain` takes an **optional `G`**,
+  passed only by `gainResources` — the run's one payment path — so a hook may condition on the live
+  board while every display and projection call omits it and reads the **potential** rate. See DESIGN.md
+  → *Economy & progression* for the destroy / no-refund rationale.
 - **`boardStickers.ts`** — the board counterpart: `buyBoardSticker`, `removeBoardSticker` (destroy at
   an *index* — positional for the same reason; deletes the board key at zero; returns a bare
   `BoardStickers`, **refunds nothing** — the missing `influence` field is the rule, not an oversight),

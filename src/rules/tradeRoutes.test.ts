@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { blankState, instancesFromCardIds } from './state';
-import { openTradeRoute } from './tradeRoutes';
+import { closeTradeRoute, openTradeRoute } from './tradeRoutes';
 import { applyUpkeep } from './upkeep';
 import { addBuilding } from './population';
 import { mint, installFixtures, uninstallFixtures } from './testFixtures';
@@ -58,9 +58,64 @@ describe('trade routes', () => {
     openTradeRoute(G, mint(G, 'test_trade'));
     applyUpkeep(G);
     expect(G.resources.money).toBe(0);
-    // Nothing closes a route, so the next round takes the treasury negative — collapse territory.
+    // No upkeep path takes a route off the board, so the next round runs the treasury negative —
+    // collapse territory.
     applyUpkeep(G);
     expect(G.resources.money).toBe(-1);
     expect(G.tradeRoutes).toHaveLength(1);
+  });
+
+  describe('closeTradeRoute', () => {
+    it('lifts the named route off the board and files it to the discard', () => {
+      const G = blankState('m');
+      openTradeRoute(G, mint(G, 'test_trade'));
+      const doomed = G.tradeRoutes[0];
+      openTradeRoute(G, mint(G, 'test_trade'));
+      const spared = G.tradeRoutes[1];
+
+      closeTradeRoute(G, doomed.id);
+      expect(G.tradeRoutes.map((r) => r.id)).toEqual([spared.id]);
+      expect(G.discard.map((c) => c.id)).toEqual([doomed.id]);
+    });
+
+    it('stops charging rent the round after it is cut', () => {
+      const G = blankState('m');
+      G.resources.money = 10;
+      G.resources.food = 10;
+      openTradeRoute(G, mint(G, 'test_trade'));
+      closeTradeRoute(G, G.tradeRoutes[0].id);
+      applyUpkeep(G);
+      expect(G.resources.money).toBe(10);
+      expect(G.resources.food).toBe(10);
+    });
+
+    it('files the card with its stickers and counters, minus the staffing field', () => {
+      const G = blankState('m');
+      openTradeRoute(G, mint(G, 'test_trade', ['test_addgain']));
+      G.tradeRoutes[0].counters = { plays: 2 };
+
+      closeTradeRoute(G, G.tradeRoutes[0].id);
+      expect(G.discard[0].stickers).toEqual(['test_addgain']);
+      expect(G.discard[0].counters).toEqual({ plays: 2 });
+      expect('workers' in G.discard[0]).toBe(false);
+    });
+
+    it('announces the cut as a discard for the next flush to dispatch', () => {
+      const G = blankState('m');
+      openTradeRoute(G, mint(G, 'test_trade'));
+      const id = G.tradeRoutes[0].id;
+
+      closeTradeRoute(G, id);
+      expect(G.events).toEqual([{ type: 'discard', instanceId: id, cardId: 'test_trade', reason: 'routeClosed' }]);
+    });
+
+    it('does nothing for an id the zone does not hold', () => {
+      const G = blankState('m');
+      openTradeRoute(G, mint(G, 'test_trade'));
+      closeTradeRoute(G, 9999);
+      expect(G.tradeRoutes).toHaveLength(1);
+      expect(G.discard).toHaveLength(0);
+      expect(G.events).toHaveLength(0);
+    });
   });
 });

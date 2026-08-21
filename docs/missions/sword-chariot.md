@@ -71,14 +71,12 @@ and its readout, and no `defeat` hook — an unpayable payroll is the universal 
 The tin gate now has one definition in two shapes: `tinRouteStands` is the bare predicate,
 `needsTinRoute` the play-time `CardCost.check` wrapping it (still exported for the Bronze Tools
 charge-back). Chariot takes the check, where a one-turn box makes play-time gating continuous by
-itself. Sword takes the predicate on the *production* side — its `produces` is all closure, so it
-mothballs by returning early and owns the per-worker scaling `resolveProduction` applies only to a
-declarative bundle, reading `producingUnits` off `findStaffable` exactly as that function does. The
-consequence to carry forward: a resolve-only `produces` is invisible to `race.ts`'s plan scan and
-`enablers.ts`, both of which walk `produces.resources` (the standing Wharf/Merchant Ship limitation).
-It does not touch *this* node's cells — the Sword is this mission's reward, so no deck here holds one —
-but any downstream cell decking the Sword (The Sea Peoples first) inherits it: the policies cannot see
-the card's ⚔️ output and may never build it.
+itself. Sword takes the predicate on the *production* side, as a `CardDef.producesWhile` over a
+declarative `produces` — so it mothballs whole rounds while keeping the per-worker scaling
+`resolveProduction` owns and its printed ⚔️ legible to `race.ts`'s plan scan and `enablers.ts`, both of
+which walk `produces.resources`. (The declarative gate is [The Sea Peoples](sea-peoples.md)'s seam,
+cut when the first deck to hold a Sword needed the policies to see it; those models read a gated
+producer at its potential, ignoring the condition.)
 
 ## Balance ✅
 

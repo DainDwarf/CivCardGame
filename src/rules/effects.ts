@@ -103,7 +103,7 @@ export function realizedGain(G: GameState, base: Partial<Resources> | undefined)
  *  rate and a standing modifier bends the result, mirroring `cost.ts`'s sticker-then-`resolve` price
  *  fold. */
 export function gainResources(ctx: EffectContext, base: Partial<Resources> | undefined): void {
-  const g = realizedGain(ctx.G, effectiveGain(base, ctx.self));
+  const g = realizedGain(ctx.G, effectiveGain(base, ctx.self, ctx.G));
   if (g) addResources(ctx.G.resources, g);
 }
 
@@ -154,9 +154,14 @@ export function resolveCard(ctx: EffectContext): void {
  * staffable zone — a card that stands *outside* those zones (a `trade` route) has no worker dimension
  * at all and yields its `produces` flat, which is what the 1-unit fallback expresses. The scaled bundle
  * rides `gainResources`, so a sticker applies.
+ *
+ * `producesWhile` is checked first and mothballs *both* halves — a card whose board condition has
+ * lapsed produces nothing this round, not a closure's worth of output over a silenced bundle.
  */
 export function resolveProduction(ctx: EffectContext): void {
-  const produces = CARDS[ctx.self.cardId].produces;
+  const card = CARDS[ctx.self.cardId];
+  if (card.producesWhile && !card.producesWhile(ctx.G)) return;
+  const produces = card.produces;
   const s = findStaffable(ctx.G, ctx.self.id);
   const units = s ? producingUnits(s) : 1;
   gainResources(ctx, scaleResources(produces?.resources ?? {}, units));

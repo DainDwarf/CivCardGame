@@ -67,7 +67,7 @@ export type TradeRouteInstance = PlacedCard;
 /** Why a card was filed to a pile — rides on a `discard` event so a card's `on.discard` handler can
  *  tell a *sacrifice* (a discard-cost cost, which should trigger) from an *end-of-turn recycle* (which
  *  usually shouldn't). Every discard site emits with its reason; the handler decides what to do. */
-export type DiscardReason = 'sacrifice' | 'endOfTurn' | 'workFiled' | 'event';
+export type DiscardReason = 'sacrifice' | 'endOfTurn' | 'workFiled' | 'event' | 'routeClosed';
 
 /** Where a `draw` came from — rides on the `draw` event so an `on.draw` handler can tell the routine
  *  round-start refill (`'turnStart'`, `drawUpTo`) from a draw an action/effect *caused* (`'effect'`,
@@ -152,8 +152,8 @@ export interface GameState {
   threats: ThreatInstance[];
   /** Trade routes the player has opened — see `rules/tradeRoutes.ts`. Standing and workerless, each
    *  paying its `upkeep` rent for the run while yielding its `produces` every round. Costs no
-   *  territory and nothing closes one, so the rent alone bounds the zone: open more than the treasury
-   *  carries and it collapses into bankruptcy. */
+   *  territory and no move of the player's closes one, so the rent alone bounds the zone: open more
+   *  than the treasury carries and it collapses into bankruptcy. */
   tradeRoutes: TradeRouteInstance[];
   /** The mission's win/lose condition as a card — seeded once at setup from the mission's
    *  `objectiveCardId` (`rules/objective.ts`'s `seedObjective`). Its card owns the win *logic*

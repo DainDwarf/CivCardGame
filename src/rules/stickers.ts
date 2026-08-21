@@ -4,6 +4,7 @@ import { findInstance, isStickerFull, type OwnedCards } from './collection';
 import type { CardCost } from './cost';
 import type { CardEffect } from './effects';
 import type { Resources } from './resources';
+import type { GameState } from './state';
 
 /** The minimal shape `effectiveGain`/`effectiveCost`/`effectiveCard` need — any holder carrying a
  *  `stickers` array (a run `CardInstance`, a meta `MetaCardInstance`, or a deck-editor display
@@ -111,10 +112,19 @@ export function removeSticker(collection: OwnedCards, instanceId: string, index:
 
 /** Fold each attached sticker's `applyGain` over `base` in order. `undefined` in → `undefined`
  *  out (a card with no gain has nothing to reinforce). The `?? out` is load-bearing: it both
- *  skips a sticker lacking `applyGain` (e.g. Efficient) and preserves the running value. */
-export function effectiveGain(base: Partial<Resources> | undefined, self: StickeredInstance): Partial<Resources> | undefined {
+ *  skips a sticker lacking `applyGain` (e.g. Efficient) and preserves the running value.
+ *
+ *  `G` is passed only where a *live* board exists to read — `effects.ts`'s `gainResources`, the run's
+ *  one payment path. Every other caller (a card face, a deck tile, a projection of what a copy could
+ *  yield) has no board and omits it, which a conditional sticker must read as "show the potential
+ *  rate": there is no state in which it is false, only one in which it is unknown. */
+export function effectiveGain(
+  base: Partial<Resources> | undefined,
+  self: StickeredInstance,
+  G?: GameState,
+): Partial<Resources> | undefined {
   let out = base;
-  for (const id of self.stickers ?? []) out = STICKERS[id]?.applyGain?.(out) ?? out;
+  for (const id of self.stickers ?? []) out = STICKERS[id]?.applyGain?.(out, G) ?? out;
   return out;
 }
 

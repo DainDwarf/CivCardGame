@@ -68,7 +68,15 @@ export function runInstances(G: GameState, ids: Set<string>): Map<string, (CardI
 /** A card's printed bag as one copy really yields it: the copy's own stickers, then every standing
  *  `modifyGain` — folded in the order `rules/effects.ts`'s `gainResources` folds a real gain, so a
  *  projection and the payment it projects can't part. With no copy the printed bag is the only reading
- *  there is (the carve-out is having no instance, never being in `sim/`). */
+ *  there is (the carve-out is having no instance, never being in `sim/`).
+ *
+ *  A **board condition** on the output — a `CardDef.producesWhile`, a sticker's `applyGain` reading `G`
+ *  — is deliberately not applied here, and `G` is deliberately withheld from the sticker fold: every
+ *  model above reads a conditioned producer at its **potential** rate. The optimism is the cheap half of
+ *  a choice, and the expensive half is what it buys — a condition is something a plan can go and make
+ *  true, so pricing the card at what it yields under a lapsed one would steer the search away from the
+ *  very play that restores it. It costs a model that over-values holding the card while the condition is
+ *  down; teaching the gate would cost it the route back up. */
 export function foldedGain(
   G: GameState,
   bag: Partial<Resources> | undefined,

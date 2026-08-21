@@ -3,7 +3,7 @@ import { bumpCounter, getCounter, setCounter, type CardInstance, type GameEventT
 import { gainResources, type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
 import type { CardCost, CostContext, UnplayableReason } from '../rules/cost';
 import { drawInstance, peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
-import { assignedWorkers, findStaffable, freePopulation, producingUnits } from '../rules/population';
+import { assignedWorkers, freePopulation } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
 
 export type CardKind = 'building' | 'wonder' | 'action' | 'work' | 'trade' | 'event' | 'threat' | 'objective';
@@ -75,6 +75,13 @@ export interface CardDef {
    *  exactly **once per play**. May touch any of the 8 pools. Kept distinct from `effect` so a play-time
    *  field can never fire at the production boundary. */
   produces?: CardEffect;
+  /** A pure-read condition on the board that `produces` needs true to pay at all — false mothballs the
+   *  whole slot for that round (`rules/effects.ts`'s `resolveProduction`), leaving the card standing.
+   *  Declarative rather than a `produces.resolve` early return so the printed output stays legible to
+   *  everything that reads `produces.resources` — the face, and `sim/`'s derivation front end. Narrow to
+   *  production on purpose: `effect` fires at a moment a `cost.check` already gates, and a card that
+   *  should stop *draining* under a condition owns that in its `upkeep`. */
+  producesWhile?: (G: GameState) => boolean;
   /** A recurring per-round effect fired *at the upkeep boundary*, flat (never per-worker-scaled like
    *  `produces`): a `threat`'s drain, an unplayed `event`'s upkeep disaster, a `trade` route's rent, or
    *  an operating staffable's maintenance. Composes with `produces` and `on.endTurn` — `resolveEndTurn`
@@ -334,9 +341,10 @@ function trialsMastered(G: GameState): number {
 export const MUSTER_TARGET = 40;
 
 /** Whether the tin is reaching the valley right now. Keyed on the route's own id rather than on the
- *  zone being non-empty — what the Bronze cards buy is tin, not trade. The one definition behind both
- *  shapes the gate takes: a play-time `CardCost.check` and the Sword's per-round production gate. */
-function tinRouteStands(G: GameState): boolean {
+ *  zone being non-empty — what the Bronze cards buy is tin, not trade. The one definition behind every
+ *  shape the gate takes: a play-time `CardCost.check`, a `producesWhile` production gate, and the
+ *  Bronze Tools sticker's continuous half (`content/stickers.ts`). */
+export function tinRouteStands(G: GameState): boolean {
   return G.tradeRoutes.some((r) => r.cardId === 'tin_route');
 }
 
@@ -454,13 +462,17 @@ export const CARDS: Record<string, CardDef> = {
     id: 'marketplace', name: 'Marketplace', kind: 'building',
     cost: { resources: { production: 4 }, check: needsTinRoute }, workers: 1,
     produces: { resources: { money: 3 } },
-    display: { art: '🏪', note: 'needs a 🏝️ route' },
+    producesWhile: tinRouteStands,
+    display: {
+      art: '🏪',
+      dynamicText: (G) => (tinRouteStands(G) ? '+3🪙 / round per worker' : 'no 🏝️ route — idle'),
+      note: 'needs a 🏝️ route to build and to operate',
+    },
   },
 
-  // The tin gate sits on `produces`, not on `cost`: a host already raised goes dark for as long as the
+  // The tin gate sits on production, not on `cost`: a host already raised goes dark for as long as the
   //   route is cut and comes back when it reopens, where a play-time gate could only ever have refused
-  //   the build. Output is all closure, so it owns the per-worker scaling `resolveProduction` applies
-  //   to a declarative bundle (`rules/effects.ts`).
+  //   the build.
   sword: {
     id: 'sword', name: 'Sword', kind: 'building',
     cost: { resources: { production: 4 } }, workers: 2,
@@ -470,13 +482,8 @@ export const CARDS: Record<string, CardDef> = {
       dynamicText: (G) => (tinRouteStands(G) ? '+2⚔️ / round per worker' : 'no 🏝️ route — idle'),
       note: 'needs a 🏝️ route to operate',
     },
-    produces: {
-      resolve: (ctx) => {
-        if (!tinRouteStands(ctx.G)) return;
-        const s = findStaffable(ctx.G, ctx.self.id);
-        gainResources(ctx, { military: 2 * (s ? producingUnits(s) : 1) });
-      },
-    },
+    produces: { resources: { military: 2 } },
+    producesWhile: tinRouteStands,
   },
 
   // — Wonders —
@@ -511,8 +518,8 @@ export const CARDS: Record<string, CardDef> = {
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
   // The zone's second route, and Bartering at Bronze scale: the same buy-standing-yield-with-standing-
   //   rent shape, landing on 🔨 rather than 🌾. Its net 1.5🔨 per 🪙 is the Material Caravan's rate made
-  //   permanent — the caravan pays it all at once and is gone, the lane pays it every round and the rent
-  //   never stops, and nothing closes a route. Numbers provisional (balance pending a sim sweep).
+  //   permanent — the caravan pays it all at once and is gone, while the lane pays it every round and no
+  //   move of the player's stops the rent. Numbers provisional (balance pending a sim sweep).
   coastal_route: {
     id: 'coastal_route', name: 'Coastal Route', kind: 'trade', cost: { resources: { money: 3 } },
     display: { art: '🚢' },
@@ -520,7 +527,7 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: { resources: { money: -2 } },
   },
   // Deliberately yieldless: what it buys is standing access, so the rent is the whole of its balance
-  //   sheet until the cards that gate on a standing tin route exist. Numbers provisional.
+  //   sheet, and everything gating on `tinRouteStands` is the return. Numbers provisional.
   tin_route: {
     id: 'tin_route', name: 'Tin Route', kind: 'trade', cost: { resources: { money: 2 } },
     display: { art: '🏝️', description: 'Standing access.\nNo yield.' },

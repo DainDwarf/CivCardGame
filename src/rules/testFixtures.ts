@@ -494,6 +494,17 @@ export function uninstallCards(cards: Record<string, CardDef>): void {
   for (const id of Object.keys(cards)) delete CARDS[id];
 }
 
+/** `installCards` for the sticker catalogue: splice a test's own local sticker shapes into the live
+ *  `STICKERS` on top of the shared set. Pair with `uninstallStickers` in teardown. */
+export function installStickers(stickers: Record<string, StickerDef>): void {
+  for (const [id, def] of Object.entries(stickers)) STICKERS[id] = def;
+}
+
+/** Remove a sticker record from the live `STICKERS`, undoing an `installStickers`. */
+export function uninstallStickers(stickers: Record<string, StickerDef>): void {
+  for (const id of Object.keys(stickers)) delete STICKERS[id];
+}
+
 /** Splice every shared fixture into the live catalogues for a test's duration. Call in `beforeAll`
  *  (or `beforeEach`); pair with `uninstallFixtures` in `afterAll`/`afterEach`. Idempotent overwrite. */
 export function installFixtures(): void {
