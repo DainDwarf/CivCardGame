@@ -30,6 +30,7 @@ function sampleRunResult(): RunResult {
     missionId: 'first-harvest',
     stats: {
       turnsTaken: 12,
+      score: 12,
       finalResources: { food: 1, production: 2, money: 3, science: 4, military: 5, population: 1, territory: 2, culture: 3 },
     },
   };
@@ -190,12 +191,15 @@ function rewardlessMission(): MissionDef {
   return { ...infiniteMission(), id: 'sandbox', rewardless: true };
 }
 
-function runResult(missionId: string, outcome: RunResult['outcome'], turnsTaken: number): RunResult {
+// `score` defaults to `turnsTaken`, matching `runScore`'s rounds-survived default; the one test
+// pinning that the payout reads score (not turns) passes them apart.
+function runResult(missionId: string, outcome: RunResult['outcome'], turnsTaken: number, score = turnsTaken): RunResult {
   return {
     outcome,
     missionId,
     stats: {
       turnsTaken,
+      score,
       finalResources: { food: 0, production: 0, money: 0, science: 0, military: 0, population: 0, territory: 0, culture: 0 },
     },
   };
@@ -255,11 +259,18 @@ describe('applyRunResult', () => {
     expect(next.unlockedBoards).toEqual({ tribe: true });
   });
 
-  it('an infinite mission pays Influence = rounds survived on a victory-outcome stop', () => {
+  it('an infinite mission pays Influence = the run score on a victory-outcome stop', () => {
     const store = sampleStore();
     const next = applyRunResult(store, runResult('toto', 'victory', 10), infiniteMission());
     expect(next.influence).toBe(store.influence + 10);
     expect(next.mapProgress.toto).toBeUndefined();
+  });
+
+  it('the payout and best both read the score, not turns, when the mission measures something else', () => {
+    const store = sampleStore();
+    const next = applyRunResult(store, runResult('toto', 'defeat', 40, 7), infiniteMission());
+    expect(next.influence).toBe(store.influence + 7);
+    expect(next.bestInfinite.toto).toBe(7);
   });
 
   it('an infinite mission pays the same Influence on a defeat-outcome stop — outcome doesn\'t gate the payout', () => {

@@ -106,6 +106,11 @@ export interface CardDef {
    *  bus-driven into `G.pendingVictory`. Defeat belongs elsewhere — a threat's `defeat` hook, or
    *  universal collapse in `run/engine.ts`. */
   goals?: ObjectiveGoal[];
+  /** `objective` cards only, `'infinite'` missions only: what a scored attempt *measures* — read once
+   *  at run end into `RunResult.stats.score` (`rules/objective.ts`'s `runScore`), which the meta loop
+   *  pays as Influence and records as the mission's best. Absent = rounds survived. A pure read over
+   *  `G`, like `goals` — the card owns the mission's scoring the way it owns its win. */
+  score?: (G: GameState) => number;
   /** `threat` cards only: a driven (non-collapse) defeat as a pure-read predicate returning the reason
    *  string, or falsy. Never mutates `G`; bus-driven into `G.pendingDefeat` set-OR-CLEAR
    *  (`rules/threats.ts`), so it must not stick. A round deadline uses `round > N`, not `>= N` —
@@ -357,6 +362,10 @@ export const needsTinRoute = ({ G }: CostContext): UnplayableReason | null =>
 /** How many invasion waves "The Sea Peoples" seeds — shared by the mission's injected event list
  *  (`content/missions.ts`), the `sea_peoples_goal` win threshold, and its progress readout. */
 export const INVASION_WAVES = 5;
+
+/** How often the Catastrophe adds a fresh `sea_raid` to the deck in "Fall of the Bronze Age" — shared
+ *  by the threat's clock, its face, and the mission's failure hint (`content/missions.ts`). */
+export const RAID_SPAWN_PERIOD = 4;
 
 /** Waves already repelled: a raid reaches `removed` only by being played (paying its ⚔️ over a standing
  *  tin route), while one that strikes unrepelled files to the discard and comes round again — so the
@@ -1109,6 +1118,21 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
+  // Fall of the Bronze Age is the Bronze endless survival mission: never-winning like the other two,
+  //   bounded by the Catastrophe's ever-growing raid census. Its `score` is *waves repelled* rather
+  //   than the rounds-survived default — the payout rewards holding the lanes and fighting, so a run
+  //   that hides from the storm banks nothing.
+  fall_of_bronze_goal: {
+    id: 'fall_of_bronze_goal', name: 'Fall of the Bronze Age', kind: 'objective', cost: {},
+    goals: [{ icon: '🌊', measure: () => 0, target: 1, met: () => false }],
+    score: wavesRepelled,
+    display: {
+      art: '🌊',
+      description: 'Hold back the endless tide, wave by wave.',
+      dynamicText: (G) => `🏴‍☠️ ${wavesRepelled(G)} repelled · round ${G.round}`,
+    },
+  },
+
   // — Threats —
   // Harsh Winter's threat, and the whole mission: nothing until `HARSH_WINTER_ONSET`, then a famine
   //   deepening every round until the winter breaks. Unlike `long_winter`'s unbounded ramp it is
@@ -1307,6 +1331,27 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: {
       resolve: ({ G }) => {
         subtractResources(G.resources, { money: soldiersWages(G) });
+      },
+    },
+  },
+  // Fall of the Bronze Age's engine: a steady clock feeding fresh `sea_raid`s into the deck (via
+  //   `spawnIntoDeck`, like the Thieves), so the circulating census — and with it the per-round
+  //   cut/burn of every wave left unanswered — grows without bound while the repel ladder climbs.
+  //   That census *is* the mission's deepening drain; no separate resource ramp needed.
+  catastrophe: {
+    id: 'catastrophe', name: 'The Catastrophe', kind: 'threat', cost: {},
+    display: {
+      art: '🌊',
+      description: `A fresh 🏴‍☠️ raid joins the deck every ${RAID_SPAWN_PERIOD} rounds`,
+      dynamicText: (_G, self) => `next sails in ${RAID_SPAWN_PERIOD - getCounter(self, 'clock')}`,
+    },
+    upkeep: {
+      resolve: (ctx) => {
+        bumpCounter(ctx.self, 'clock');
+        if (getCounter(ctx.self, 'clock') >= RAID_SPAWN_PERIOD) {
+          setCounter(ctx.self, 'clock', 0);
+          spawnIntoDeck(ctx, 'sea_raid', 1);
+        }
       },
     },
   },

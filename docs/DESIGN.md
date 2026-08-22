@@ -59,7 +59,7 @@ RunConfig   (meta → run)
 RunResult   (run → meta)
   outcome: 'victory' | 'defeat'
   missionId: string
-  stats:   { turnsTaken: number; finalResources: Resources; ... }
+  stats:   { turnsTaken: number; score: number; finalResources: Resources; ... }
   // No rewards field: the meta loop looks rewards up from the mission (by
   // missionId) or derives them from stats — the run itself doesn't carry them.
 ```

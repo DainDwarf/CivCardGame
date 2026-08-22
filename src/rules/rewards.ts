@@ -37,17 +37,19 @@ export interface RewardOutcome {
  *
  * An `'infinite'` mission has no fixed win state and never touches `mapProgress`
  * (see `App.tsx`'s `recordResult`), so its payout is unconditional instead: Influence equal
- * to `turnsTaken` (rounds survived), paid on *every* attempt regardless of `alreadyCompleted`
- * or whether the run's outcome reads as victory or defeat — there is no unlock to grant. A
- * `rewardless` infinite mission (the sandbox) is the exception: it pays nothing, a no-stakes space.
+ * to `score` — the attempt under the mission's own measure (`RunResult.stats.score`; the
+ * objective card's `score`, rounds survived by default) — paid on *every* attempt regardless
+ * of `alreadyCompleted` or whether the run's outcome reads as victory or defeat — there is no
+ * unlock to grant. A `rewardless` infinite mission (the sandbox) is the exception: it pays
+ * nothing, a no-stakes space.
  */
 export function computeRewards(
   mission: MissionDef,
   alreadyCompleted: boolean,
   progress: UnlockProgress,
-  turnsTaken?: number,
+  score?: number,
 ): RewardOutcome {
-  if (mission.kind === 'infinite') return { influence: mission.rewardless ? 0 : (turnsTaken ?? 0), progress };
+  if (mission.kind === 'infinite') return { influence: mission.rewardless ? 0 : (score ?? 0), progress };
   if (alreadyCompleted || !mission.reward) return { influence: 0, progress };
   const { influence, unlockCardIds, unlockStickerIds, unlockBoardStickerIds, unlockBoardIds } = mission.reward;
   // Grant every not-yet-owned unlock (a mission may open several cards at once). Already-owned

@@ -56,6 +56,16 @@ export function objectiveMet(G: GameState): boolean {
   return !!goals && goals.length > 0 && goals.every((g) => goalMet(g, G));
 }
 
+/** The attempt's score under the seeded objective's own `score` measure, defaulting to rounds
+ *  survived — the one number a scored `'infinite'` mission pays as Influence and records as its best
+ *  (`meta/store.ts`'s `applyRunResult`, via `RunResult.stats.score`). Defaulting here rather than at
+ *  the payout keeps "what does this mission score" answered in exactly one place. Meaningless on a
+ *  standard mission, but read unconditionally by `toRunResult` so the field is always populated. */
+export function runScore(G: GameState): number {
+  const score = G.objective ? CARDS[G.objective.cardId].score : undefined;
+  return score ? score(G) : G.round;
+}
+
 /** Re-derive the win flag from the objective card's own `objective` predicate — the bus's counterpart
  *  to `rules/threats.ts`'s `evaluateDefeat`. Called at every `flushEvents` boundary
  *  (`rules/events.ts`), so `G.pendingVictory` is fresh before every `checkEndIf`. Set-OR-CLEAR every

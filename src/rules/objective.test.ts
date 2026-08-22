@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { blankState } from './state';
-import { seedObjective, objectiveMet, goalsReadout } from './objective';
+import { seedObjective, objectiveMet, goalsReadout, runScore } from './objective';
 import { cultureForLevel, cultureLevel } from './culture';
-import { installFixtures, uninstallFixtures } from './testFixtures';
+import { installCards, installFixtures, uninstallCards, uninstallFixtures } from './testFixtures';
 import { CARDS } from '../content/cards';
 import type { GameState } from './state';
 
@@ -77,5 +77,35 @@ describe('objectiveMet (goals-derived win boolean)', () => {
         }),
       ),
     ).toBe(false);
+  });
+});
+
+describe('runScore (infinite-mission score)', () => {
+  const scoredObjective = {
+    test_scored_goal: {
+      id: 'test_scored_goal', name: 'Test Scored Goal', kind: 'objective' as const, cost: {},
+      goals: [{ icon: 'x', measure: () => 0, target: 1, met: () => false }],
+      score: (G: GameState) => G.resources.military * 2,
+    },
+  };
+
+  it('defaults to rounds survived — no objective seeded, or one without a score measure', () => {
+    const bare = blankState('sandbox');
+    bare.round = 9;
+    expect(runScore(bare)).toBe(9);
+    expect(runScore(withObjective('sandbox_goal', (G) => (G.round = 23)))).toBe(23);
+  });
+
+  it("reads the objective card's own score measure when it carries one", () => {
+    installCards(scoredObjective);
+    try {
+      const G = withObjective('test_scored_goal', (g) => {
+        g.round = 50;
+        g.resources.military = 4;
+      });
+      expect(runScore(G)).toBe(8); // the measure, not the round
+    } finally {
+      uninstallCards(scoredObjective);
+    }
   });
 });

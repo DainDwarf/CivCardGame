@@ -41,7 +41,8 @@ in DESIGN.md):
   separate Shop tab).
 - **Campaign-map DAG** — prereq-gated missions (`rules/campaign.ts`); each `'standard'` clear grants
   a fixed Influence reward + zero or more unlocks (`rules/rewards.ts`).
-- **Infinite missions + threats** — never-winning missions paying Influence = rounds survived;
+- **Infinite missions + threats** — never-winning missions paying Influence = the run's score (the
+  objective card's `score` measure, rounds survived by default);
   persistent board hazards (`rules/threats.ts`).
 - **Card + board stickers** — per-copy / per-board permanent modifiers bought with Influence
   (`rules/stickers.ts`, `rules/boardStickers.ts`).

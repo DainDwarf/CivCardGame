@@ -46,7 +46,8 @@ export interface PlayerStore {
    *  `influenceEarned` is gross Influence *gained* (the sum of every `applyRunResult` payout),
    *  ignoring shop spending — so it only ever grows. Feeds the Stats screen's profile summary. */
   lifetime: { runsPlayed: number; victories: number; influenceEarned: number };
-  /** Best rounds survived per `'infinite'` mission — a persistent per-mission max folded in
+  /** Best score per `'infinite'` mission (each mission's own measure — see `RunResult.stats.score`
+   *  and `MissionDef.scoreUnit`) — a persistent per-mission max folded in
    *  `applyRunResult`. Persistent for the same reason as `lifetime`: a record set more than
    *  `HISTORY_LIMIT` runs ago must not fall off the capped `runHistory` and make the displayed
    *  best *decrease*. A mission never yet played is absent. */
@@ -157,7 +158,7 @@ export const HISTORY_LIMIT = 10;
  * rather than buried in a component (see CLAUDE.md's core/shell boundary). A `'standard'`
  * mission marks `mapProgress` and pays its one-time first-clear reward only on a victory
  * outcome; an `'infinite'` mission never touches `mapProgress` and pays Influence
- * = rounds survived on *every* attempt, win or lose — unless it's `rewardless` (the sandbox),
+ * = the run's score on *every* attempt, win or lose — unless it's `rewardless` (the sandbox),
  * which pays nothing and keeps no best-score. `alreadyCompleted` is read from
  * `store.mapProgress` as it stood before this result, so a first clear is never masked by
  * its own just-applied update.
@@ -167,7 +168,7 @@ export const HISTORY_LIMIT = 10;
  * `HISTORY_LIMIT`. Every run increments `lifetime.runsPlayed`, a victory bumps `victories`, and
  * whatever Influence this run paid is added to `influenceEarned` (gross-of-spending). A *scored*
  * infinite mission additionally raises its `bestInfinite[missionId]` to the max of the old best and
- * this attempt's rounds survived; a `rewardless` one records none.
+ * this attempt's score; a `rewardless` one records none.
  */
 export function applyRunResult(store: PlayerStore, result: RunResult, mission: MissionDef): PlayerStore {
   const infinite = mission.kind === 'infinite';
@@ -185,7 +186,7 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
     unlockedBoards: store.unlockedBoards,
   };
   const { influence, progress: nextProgress } = infinite
-    ? computeRewards(mission, alreadyCompleted, progress, result.stats.turnsTaken)
+    ? computeRewards(mission, alreadyCompleted, progress, result.stats.score)
     : result.outcome === 'victory'
       ? computeRewards(mission, alreadyCompleted, progress)
       : { influence: 0, progress };
@@ -195,12 +196,12 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
     influenceEarned: store.lifetime.influenceEarned + influence,
   };
   // A `rewardless` infinite mission (the sandbox) keeps no best-score, the same no-stakes opt-out
-  // that zeroes its payout — rounds-survived is meaningless with nothing bounding the run.
+  // that zeroes its payout — a score is meaningless with nothing bounding the run.
   const bestInfinite =
     infinite && !mission.rewardless
       ? {
           ...store.bestInfinite,
-          [result.missionId]: Math.max(store.bestInfinite[result.missionId] ?? 0, result.stats.turnsTaken),
+          [result.missionId]: Math.max(store.bestInfinite[result.missionId] ?? 0, result.stats.score),
         }
       : store.bestInfinite;
   // A board upgrade fires on the same first-clear victory the unlock rewards do, but sits outside

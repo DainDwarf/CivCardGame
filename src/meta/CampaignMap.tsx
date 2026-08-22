@@ -366,7 +366,7 @@ export function CampaignMap({
  * `CardFace`'s `missionLocked` mode beforehand (the real `unlockCard` passed in, but rendered
  * blank but for its name — a deliberate sliver of information, since which card a mission grants
  * otherwise stays a surprise until it's actually cleared; see `rules/rewards.ts`). An `'infinite'`
- * mission has neither a fixed Influence amount nor an unlock — it scores rounds survived every
+ * mission has neither a fixed Influence amount nor an unlock — it pays its score out every
  * attempt — so it gets its own short "Influence" / "No Unlock" reward line instead, except the
  * rewardless sandbox, which pays nothing and shows only a "No Reward" column header.
  *

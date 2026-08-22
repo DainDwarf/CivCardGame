@@ -28,7 +28,7 @@ function outcome(opts: {
 }): SimOutcome {
   const finalResources = { ...emptyResources(), ...opts.finalResources };
   return {
-    result: { outcome: opts.outcome, missionId: 'test', stats: { turnsTaken: opts.turnsTaken ?? 1, finalResources } },
+    result: { outcome: opts.outcome, missionId: 'test', stats: { turnsTaken: opts.turnsTaken ?? 1, score: opts.turnsTaken ?? 1, finalResources } },
     gameover: { outcome: opts.outcome, reason: opts.reason, missionId: 'test' },
     finalState: blankState('test'),
     actionsApplied: 7,

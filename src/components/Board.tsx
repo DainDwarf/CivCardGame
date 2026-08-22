@@ -13,6 +13,7 @@ import {
   isOperating,
   producingUnits,
   projectedDelta,
+  runScore,
   workerCapOf,
   unplayableReason,
 } from '../rules';
@@ -2156,14 +2157,14 @@ export function Board({
       // Preview-only: mirrors the same computeRewards call App.tsx's recordResult makes for
       // real on End Run, off the same pre-run mapProgress/collection, so the two can't diverge.
       // An 'infinite' mission has no win state and never touches mapProgress — its Influence
-      // (rounds survived) is paid every attempt, win or lose, so its preview isn't gated on `won`.
+      // (the run's score) is paid every attempt, win or lose, so its preview isn't gated on `won`.
       const alreadyCompleted = won && mission.kind !== 'infinite' && isCompleted(mapProgress, mission.id);
       // The player's unlock state entering this run, bundled to pass through `computeRewards` (a
       // preview — only `reward.influence` is read here; the id lists below drive the unlock names).
       const progress = { collection, unlockedStickers, unlockedBoardStickers, unlockedBoards };
       const reward =
         mission.kind === 'infinite'
-          ? computeRewards(mission, false, progress, G.round)
+          ? computeRewards(mission, false, progress, runScore(G))
           : won
             ? computeRewards(mission, alreadyCompleted, progress)
             : null;

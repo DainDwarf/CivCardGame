@@ -52,6 +52,7 @@ export function Stats({
     id: m.id,
     name: m.name,
     best: bestInfinite[m.id] ?? null,
+    unit: m.scoreUnit ?? 'rounds',
   }));
   const topScore = Math.max(1, ...leaderboard.map((row) => row.best ?? 0));
 
@@ -85,7 +86,7 @@ export function Stats({
                   ) : (
                     <>
                       {row.best}
-                      <small> rounds</small>
+                      <small> {row.unit}</small>
                     </>
                   )}
                 </span>

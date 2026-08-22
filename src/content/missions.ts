@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { BRONZE_TRIALS, CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, INVASION_WAVES, MUSTER_TARGET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { BRONZE_TRIALS, CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, INVASION_WAVES, MUSTER_TARGET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_SPAWN_PERIOD, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -53,9 +53,13 @@ export interface MissionDef {
   kind: 'standard' | 'infinite';
   /** Opts an `'infinite'` mission out of scoring: no Influence payout and no `bestInfinite`
    *  best-score entry — a pure no-stakes practice space (the sandbox). One flag, both consequences,
-   *  so a scored infinite mission stays the default and the "rounds survived is a reward" and "…is a
-   *  score" branches can't diverge. Meaningless on a `'standard'` mission. */
+   *  so a scored infinite mission stays the default and the "the score is a reward" and "…is a
+   *  best" branches can't diverge. Meaningless on a `'standard'` mission. */
   rewardless?: boolean;
+  /** Display-only: the unit the Stats best-scores board renders after a scored `'infinite'`
+   *  mission's best (default `'rounds'`). The score *measure* itself lives on the objective card
+   *  (`CardDef.score`), where the win logic lives; this is just its label. */
+  scoreUnit?: string;
   /** Granted once, the first time this mission is cleared (see `rules/rewards.ts`'s
    *  `computeRewards`) — replays pay nothing. A `'standard'` mission's unlocks are **all optional**:
    *  it may grant any mix across four symmetric kinds — card unlocks (`unlockCardIds`, each naming a
@@ -65,7 +69,8 @@ export interface MissionDef {
    *  Influence-only reward, or no reward object). A coherence test pins only that whatever ids a
    *  mission *does* name are real. Unlike cards, a sticker/board unlock simply makes it *available*
    *  (hidden-until-unlocked, like a card); a board carries no Influence cost. `'infinite'` missions
-   *  have no reward object — they score Influence = rounds survived instead (unless `rewardless`).
+   *  have no reward object — they score Influence = the run's score instead (the objective card's
+   *  `score` measure, rounds survived by default; unless `rewardless`).
    *
    *  `boardUpgrade` is the odd one out — not an *unlock* but a board *replacement*: it retires the
    *  `from` board in favour of `to` (carrying its stickers across), so the player's government reads as
@@ -99,12 +104,13 @@ export interface MissionDef {
 }
 
 /**
- * The mission catalogue: the Stone Age arc, the opening of the Bronze Age, and two endless missions. The endless pair
- * both use a never-winning objective and end only on collapse, but differ in stakes: `ice_age` is a
- * *scored survival* mission — a deepening food-drain threat (`long_winter`) guarantees eventual famine,
- * and rounds survived pay out as Influence — while `sandbox` is `rewardless`, a no-stakes practice space
- * with no bounding threat that ends only on collapse or when the player quits. The simulator drives
- * neither (a never-winning objective offers it no gradient to climb).
+ * The mission catalogue: the Stone Age arc, the Bronze Age arc, and three endless missions. The endless
+ * set all use a never-winning objective and end only on collapse, but differ in stakes: `ice_age` and
+ * `fall_of_bronze` are *scored survival* missions — each guarantees eventual collapse (a deepening
+ * food-drain threat; an ever-growing raid census) and pays its score out as Influence — while `sandbox`
+ * is `rewardless`, a no-stakes practice space with no bounding threat that ends only on collapse or when
+ * the player quits. The simulator drives none of them (a never-winning objective offers it no gradient
+ * to climb).
  */
 export const MISSIONS: Record<string, MissionDef> = {
   first_settlement: {
@@ -671,6 +677,32 @@ export const MISSIONS: Record<string, MissionDef> = {
     victoryHint: 'Outlast the deepening winter, earning ⭐ Influence for every round survived.',
     failureHint: 'The Long Winter drains more 🌾 each round than the last.',
     kind: 'infinite',
+  },
+  fall_of_bronze: {
+    id: 'fall_of_bronze',
+    name: 'Fall of the Bronze Age',
+    lore:
+      'You met one season of sails and are still standing, which is more than most coasts can say. ' +
+      'But the season did not end, because it was never a season: the peoples of the sea have nowhere ' +
+      'to go back to, and behind every fleet you turn away rides another with less to lose. The ' +
+      'palaces up the coast have stopped answering; the last tablets their scribes fired say only ' +
+      'what yours will one day say — the ships came again. So hold the lanes. Hold them again. Hold ' +
+      'them until you cannot, and let the count of waves you threw back into the sea be what the next ' +
+      'age remembers of you.',
+    // Opened by the Bronze capstone — the age's scored survival mission (its Ice Age). The score is
+    // *waves repelled*, not rounds survived: sitting out the storm banks nothing.
+    prereqs: ['sea_peoples'],
+    threats: ['catastrophe'],
+    // Opens two waves short of the capstone's five — the Catastrophe supplies the rest, forever.
+    events: ['sea_raid', 'sea_raid', 'sea_raid'],
+    objectiveCardId: 'fall_of_bronze_goal',
+    victoryHint:
+      'Hold the lanes against a tide that never ends, earning ⭐ Influence for every 🏴‍☠️ wave repelled.',
+    failureHint:
+      `Fresh raids join the deck every ${RAID_SPAWN_PERIOD} rounds, each dearer to repel than the ` +
+      'last. When the tin lanes fall, no wave after can be answered.',
+    kind: 'infinite',
+    scoreUnit: 'waves',
   },
   sandbox: {
     id: 'sandbox',

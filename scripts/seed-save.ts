@@ -92,13 +92,16 @@ function runResult(mission: MissionDef, rng: Rng): RunResult {
   const infinite = mission.kind === 'infinite';
   const finalResources = emptyResources();
   for (const key of [...CORE_KEYS, ...STRATEGIC_KEYS]) finalResources[key] = randInt(rng, 0, 12);
+  const turnsTaken = infinite ? randInt(rng, 15, 40) : randInt(rng, 6, 18);
   return {
     // An infinite mission has no win condition, so a real attempt only ever ends in collapse — it
-    // pays out and scores off `turnsTaken` either way. Calling it a victory would credit the lifetime
+    // pays out and scores off `stats.score` either way. Calling it a victory would credit the lifetime
     // win rate with a win the mission can't produce.
     outcome: infinite ? 'defeat' : 'victory',
     missionId: mission.id,
-    stats: { turnsTaken: infinite ? randInt(rng, 15, 40) : randInt(rng, 6, 18), finalResources },
+    // A fabricated attempt has no run state to measure a bespoke score off, so rounds stand in for
+    // every mission — the same default `runScore` falls back to.
+    stats: { turnsTaken, score: turnsTaken, finalResources },
   };
 }
 

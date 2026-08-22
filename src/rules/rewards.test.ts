@@ -131,7 +131,7 @@ describe('computeRewards — sticker & board unlocks', () => {
 });
 
 describe('computeRewards — infinite missions', () => {
-  it('pays Influence equal to rounds survived, with no unlock', () => {
+  it("pays Influence equal to the run's score, with no unlock", () => {
     const m = infiniteMission();
     const result = computeRewards(m, false, progress(), 10);
     expect(result.influence).toBe(10);

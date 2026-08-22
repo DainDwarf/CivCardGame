@@ -1,5 +1,5 @@
 import { createInitialState } from './setup';
-import { applyUpkeep, cloneState, coreCollapse, drawUpTo, flushEvents, populationCollapse, settleEndOfTurn, snapshot, type CollapseReason, type GameState } from '../rules';
+import { applyUpkeep, cloneState, coreCollapse, drawUpTo, flushEvents, populationCollapse, runScore, settleEndOfTurn, snapshot, type CollapseReason, type GameState } from '../rules';
 import type { RunConfig, RunResult } from '../contract';
 
 export type Gameover = { outcome: 'victory' | 'defeat'; reason?: CollapseReason | string; missionId: string };
@@ -47,6 +47,7 @@ export function toRunResult(G: GameState, gameover: Gameover): RunResult {
     missionId: gameover.missionId,
     stats: {
       turnsTaken: G.round,
+      score: runScore(G),
       finalResources: { ...G.resources },
     },
   };

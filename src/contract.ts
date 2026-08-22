@@ -55,6 +55,10 @@ export interface RunResult {
   missionId: string;
   stats: {
     turnsTaken: number;
+    /** The attempt's score under the mission's own measure — the objective card's `score`, defaulting
+     *  to rounds survived (`rules/objective.ts`'s `runScore`). Read only by the `'infinite'` payout
+     *  and best-score folds in `meta/store.ts`; carried but meaningless on a standard mission. */
+    score: number;
     /** Every resource pool at run end — the five core plus the three strategic
      *  (population/territory/culture), mirroring `GameState.resources`. */
     finalResources: Resources;

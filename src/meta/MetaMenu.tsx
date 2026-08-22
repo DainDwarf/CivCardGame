@@ -80,7 +80,8 @@ export function MetaMenu({
   unlockedBoards: Record<string, true>;
   /** Lifetime cumulative counters — forwarded to `Stats` for its campaign-progress summary. */
   lifetime: LifetimeStats;
-  /** Best rounds survived per infinite mission — forwarded to `Stats` for the best-scores board. */
+  /** Best score per infinite mission (each in its own `scoreUnit`) — forwarded to `Stats` for the
+   *  best-scores board. */
   bestInfinite: Record<string, number>;
   /** Whole-UI scale (settings) — forwarded to `DeckEditor`, `BoardMenu`, and `Collection`'s detail
    *  panel (drag-clone coordinate math) and `CampaignMap` (pointer-drag pan). */
