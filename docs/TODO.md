@@ -139,6 +139,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > The race scorer's known weak cells, each with the constraint a fix must respect. The prover column in
 > the fixtures says which of these hide winnable seeds.
 
+- **`turnConfigLimit: 8` under-searches multi-action turns** `[size: M]` — the planner's within-turn
+  config cap stops before the three-action lines the one-ply greedy finds by construction (measured on
+  `fall_of_bronze`: 47% of *legal* repels declined at 8; at 64 the take rate is 77% and delivered score
+  2.4× — more than any content knob moved it). The knob is generic, so raising it slows every planner
+  sweep ~8× and owes a **full baseline re-record**; until then, read a planner column as measuring the
+  search budget first wherever a turn's best line takes 3+ actions. Deferred past 0.1.
 - **`accounting` — the race value has no savings gradient** `[size: L] [?]` — a bank's progress toward a
   big-step purchase prices as nothing until the purchase is affordable, and every search-shell experiment
   (wider beam, deeper planner, 4× budget) made the cell strictly *worse* under race while the same search
