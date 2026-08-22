@@ -695,15 +695,15 @@ export const MISSIONS: Record<string, MissionDef> = {
     prereqs: ['sea_peoples'],
     threats: ['catastrophe'],
     // Opens two waves short of the capstone's five — the Catastrophe supplies the rest, forever.
-    events: ['sea_raid', 'sea_raid', 'sea_raid'],
+    events: ['endless_raid', 'endless_raid', 'endless_raid'],
     objectiveCardId: 'fall_of_bronze_goal',
     victoryHint:
-      'Hold the lanes against a tide that never ends, earning ⭐ Influence for every 🏴‍☠️ wave repelled.',
+      'Hold the lanes against a tide that never ends, earning 2⭐ Influence for every 🏴‍☠️ wave repelled.',
     failureHint:
       `Fresh raids join the deck every ${RAID_SPAWN_PERIOD} rounds, each dearer to repel than the ` +
       'last. When the tin lanes fall, no wave after can be answered.',
     kind: 'infinite',
-    scoreUnit: 'waves',
+    scoreUnit: '⭐',
   },
   sandbox: {
     id: 'sandbox',

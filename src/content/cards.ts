@@ -364,16 +364,40 @@ export const needsTinRoute = ({ G }: CostContext): UnplayableReason | null =>
  *  (`content/missions.ts`), the `sea_peoples_goal` win threshold, and its progress readout. */
 export const INVASION_WAVES = 5;
 
-/** How often the Catastrophe adds a fresh `sea_raid` to the deck in "Fall of the Bronze Age" — shared
- *  by the threat's clock, its face, and the mission's failure hint (`content/missions.ts`). */
-export const RAID_SPAWN_PERIOD = 4;
+/** How often the Catastrophe adds a fresh `endless_raid` to the deck in "Fall of the Bronze Age" —
+ *  shared by the threat's clock, its face, and the mission's failure hint (`content/missions.ts`). */
+export const RAID_SPAWN_PERIOD = 6;
 
 /** Waves already repelled: a raid reaches `removed` only by being played (paying its ⚔️ over a standing
  *  tin route), while one that strikes unrepelled files to the discard and comes round again — so the
- *  count there *is* the tally. Shared by the win threshold, its readout and the repel ladder. */
+ *  count there *is* the tally. One tally across both wave cards: only one kind circulates per mission,
+ *  so each mission's threshold, readout, repel ladder and score all read the same number. */
 function wavesRepelled(G: GameState): number {
-  return G.removed.filter((c) => c.cardId === 'sea_raid').length;
+  return G.removed.filter((c) => c.cardId === 'sea_raid' || c.cardId === 'endless_raid').length;
 }
+
+/** The repel ladder both wave cards climb: +4⚔️ per wave already repelled, derived off whatever base the
+ *  card (post-sticker) hands in — so the two waves differ only in their printed beach price. */
+const raidLadder: NonNullable<CardCost['resolve']> = ({ G }, base) => ({
+  ...base,
+  resources: { ...base.resources, military: (base.resources?.military ?? 0) + 4 * wavesRepelled(G) },
+});
+
+/** The unrepelled wave's landing, shared by both wave cards: routes stand → each is judged alone (an
+ *  escort dies, else the lane is cut); an empty sea lets the raiders ashore to burn the fields and
+ *  yards. The branch is read once off the zone and no route's fate depends on another's, so two waves
+ *  in one hand commute (`sim/zoneOrderInvariance.test.ts`). */
+const RAID_LANDING: CardEffect = {
+  resolve: (ctx) => {
+    if (!ctx.G.tradeRoutes.length) {
+      gainResources(ctx, { food: -3, production: -2 });
+      return;
+    }
+    for (const route of [...ctx.G.tradeRoutes]) {
+      if (!stripSticker(route, 'convoy')) closeTradeRoute(ctx.G, route.id);
+    }
+  },
+};
 
 /** The 🪙 the standing host costs the palace next round — shared by the `soldiers_wages` drain and its
  *  readout, so the face can't quote a wage bill the threat doesn't take. The levy is free; only the
@@ -768,23 +792,16 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: { resources: { production: -2 } },
   },
   // Sea Raid: repelling a wave is playing it — the ⚔️ buys the beach back and the play choke exiles it
-  //   to `removed`, which `sea_peoples_goal` counts. The price climbs off that same tally, so a host that
-  //   answered the last wave is short for the next. Its `check` is the arc's tin gate at its sharpest:
-  //   the raid that cuts the lane is the reason there is no bronze to meet the one behind it.
-  //   Left in hand it falls on whatever stands between it and the coast. A route takes it first — a
-  //   Convoy dies holding the lane in place of the lane itself, and an unescorted one is cut — and only
-  //   an empty sea lets the raiders ashore, where they burn the fields and the yards. The branch is read
-  //   once off the zone, and each route is judged on its own, so neither half can depend on the order the
-  //   zone happens to be walked in (`sim/zoneOrderInvariance.test.ts`).
+  //   to `removed`, which `sea_peoples_goal` counts. The price climbs off that same tally (`raidLadder`),
+  //   so a host that answered the last wave is short for the next. Its `check` is the arc's tin gate at
+  //   its sharpest: the raid that cuts the lane is the reason there is no bronze to meet the one behind
+  //   it. Left in hand it falls on whatever stands between it and the coast (`RAID_LANDING`).
   sea_raid: {
     id: 'sea_raid', name: 'Sea Raid', kind: 'event',
     cost: {
       resources: { military: 8 },
       check: needsTinRoute,
-      resolve: ({ G }, base) => ({
-        ...base,
-        resources: { ...base.resources, military: (base.resources?.military ?? 0) + 4 * wavesRepelled(G) },
-      }),
+      resolve: raidLadder,
     },
     display: {
       art: '🏴‍☠️',
@@ -792,17 +809,27 @@ export const CARDS: Record<string, CardDef> = {
       dynamicRule: 'cost rises per wave repelled',
       note: 'needs a 🏝️ route',
     },
-    upkeep: {
-      resolve: (ctx) => {
-        if (!ctx.G.tradeRoutes.length) {
-          gainResources(ctx, { food: -3, production: -2 });
-          return;
-        }
-        for (const route of [...ctx.G.tradeRoutes]) {
-          if (!stripSticker(route, 'convoy')) closeTradeRoute(ctx.G, route.id);
-        }
-      },
+    upkeep: RAID_LANDING,
+  },
+  // The Fall of the Bronze Age's wave — the Sea Raid's machinery (the ladder, the tin gate, the
+  //   landing) at half the beach price. A separate card rather than a shared knob because the capstone's
+  //   ladder must not move with the infinite's: `sea_peoples` is balanced and fixtured at 8 + 4·k, while
+  //   the endless tally needs the cheaper rungs to discriminate (its price is the score's pace, not a
+  //   win threshold).
+  endless_raid: {
+    id: 'endless_raid', name: 'Endless Raid', kind: 'event',
+    cost: {
+      resources: { military: 4 },
+      check: needsTinRoute,
+      resolve: raidLadder,
     },
+    display: {
+      art: '🏴‍☠️',
+      description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
+      dynamicRule: 'cost rises per wave repelled',
+      note: 'needs a 🏝️ route',
+    },
+    upkeep: RAID_LANDING,
   },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
@@ -1121,17 +1148,17 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // Fall of the Bronze Age is the Bronze endless survival mission: never-winning like the other two,
-  //   bounded by the Catastrophe's ever-growing raid census. Its `score` is *waves repelled* rather
-  //   than the Ice Age's rounds survived — the payout rewards holding the lanes and fighting, so a run
-  //   that hides from the storm banks nothing.
+  //   bounded by the Catastrophe's ever-growing raid census. Its `score` pays 2⭐ per *wave repelled* —
+  //   never the rounds survived — so the payout rewards holding the lanes and fighting, and a run that
+  //   hides from the storm banks nothing.
   fall_of_bronze_goal: {
     id: 'fall_of_bronze_goal', name: 'Fall of the Bronze Age', kind: 'objective', cost: {},
     goals: [{ icon: '🌊', measure: () => 0, target: 1, met: () => false }],
-    score: wavesRepelled,
+    score: (G) => 2 * wavesRepelled(G),
     display: {
       art: '🌊',
       description: 'Hold back the endless tide, wave by wave.',
-      dynamicText: (G) => `🏴‍☠️ ${wavesRepelled(G)} repelled · round ${G.round}`,
+      dynamicText: (G) => `🏴‍☠️ ${wavesRepelled(G)} repelled · ${2 * wavesRepelled(G)}⭐ · round ${G.round}`,
     },
   },
 
@@ -1336,7 +1363,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     },
   },
-  // Fall of the Bronze Age's engine: a steady clock feeding fresh `sea_raid`s into the deck (via
+  // Fall of the Bronze Age's engine: a steady clock feeding fresh `endless_raid`s into the deck (via
   //   `spawnIntoDeck`, like the Thieves), so the circulating census — and with it the per-round
   //   cut/burn of every wave left unanswered — grows without bound while the repel ladder climbs.
   //   That census *is* the mission's deepening drain; no separate resource ramp needed.
@@ -1352,7 +1379,7 @@ export const CARDS: Record<string, CardDef> = {
         bumpCounter(ctx.self, 'clock');
         if (getCounter(ctx.self, 'clock') >= RAID_SPAWN_PERIOD) {
           setCounter(ctx.self, 'clock', 0);
-          spawnIntoDeck(ctx, 'sea_raid', 1);
+          spawnIntoDeck(ctx, 'endless_raid', 1);
         }
       },
     },

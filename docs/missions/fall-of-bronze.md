@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ⬜ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance 🟡 (sim-measured and applied; feel-play pending) · Polish ⬜
 **Branch:** Bronze — the age's **scored survival infinite** (its Ice Age), opened by clearing
 [The Sea Peoples](sea-peoples.md); the campaign's last unlock.
 **Placement:** `prereqs: ['sea_peoples']`, `kind: 'infinite'` — no map node, campaign-banner only.
@@ -18,16 +18,20 @@ machinery with the cap taken off — no new mechanics, one new threat card.
 
 - **Never-winning objective** (Ice Age shape: one bespoke always-false goal); the run ends only in
   collapse.
-- **Score = waves repelled, not rounds survived** — the first mission to use the objective-card
-  `score` seam (built for it). Rounds-survived pays a player for hiding; waves-repelled pays for
-  holding the lanes and fighting, which is the skill the capstone taught. It also closes the
-  skip-turns Influence grind the Ice Age's rounds payout permits (that mission's re-score is a
-  separate, later item).
+- **Score = 2⭐ per wave repelled, never rounds survived** — the first mission to use the
+  objective-card `score` seam (built for it). Rounds-survived pays a player for hiding;
+  waves-repelled pays for holding the lanes and fighting, which is the skill the capstone taught. It
+  also closes the skip-turns Influence grind the Ice Age's rounds payout permits (that mission's
+  re-score is a separate, later item).
 - **The Catastrophe** (threat): a steady clock adding a fresh `sea_raid` to the deck every
   `RAID_SPAWN_PERIOD` rounds (via `spawnIntoDeck`, the Thieves' mechanism). The growing circulating
   census — each unanswered wave cutting/stripping/burning per round — **is** the deepening drain; no
-  separate resource ramp. Meanwhile the repel ladder (8⚔️ + 4 per wave repelled, already unbounded)
+  separate resource ramp. Meanwhile the repel ladder (4⚔️ + 4 per wave repelled, unbounded)
   guarantees repelling eventually outprices any income: census up, answer down, collapse certain.
+  The wave is the capstone's machinery on the infinite's **own card** (`endless_raid`) at half the
+  beach price — the capstone's ladder is a balanced win threshold and must not move; the endless
+  ladder is the score's pace, and the measured knob matrix showed price, not spawn pressure, is
+  what the tally responds to.
 - **Play arc:** early, repels are cheap and permanently thin the census — spend ⚔️ to keep the sea
   clear while the economy compounds. Mid, every repel is dearer and triage begins. Late, repelling is
   unaffordable, the lanes fall, the board goes dark, and the tally stands. Skilled play is census
@@ -44,8 +48,14 @@ machinery with the cap taken off — no new mechanics, one new threat card.
 
 ## Implement ✅ (shipped)
 
-The `fall_of_bronze` mission (`kind: 'infinite'`, prereqs `sea_peoples`, `scoreUnit: 'waves'`) seeds
-**3** `sea_raid` events over the `fall_of_bronze_goal` objective and the **`catastrophe`** threat.
+The `fall_of_bronze` mission (`kind: 'infinite'`, prereqs `sea_peoples`, `scoreUnit: '⭐'` — the best
+recorded is the Influence banked, not a wave count) seeds **3** `endless_raid` events over the
+`fall_of_bronze_goal` objective and the **`catastrophe`** threat.
+
+**`endless_raid`** is the Sea Raid's machinery on its own card at a **4⚔️** beach price: the two
+waves share one `raidLadder` cost resolve (+4⚔️ per wave repelled) and one `RAID_LANDING` upkeep
+(cut / strip / burn), so only the printed base differs — and `wavesRepelled` counts both ids, one
+tally whichever wave a mission circulates.
 
 **The score seam** (generic, built here, mission-agnostic): `CardDef.score` — an objective card's
 optional score measure, read once at run end by `rules/objective.ts`'s `runScore` into the new
@@ -56,13 +66,13 @@ G.round` for its rounds-survived tally and the sandbox stays unscored. The end-o
 preview reads the same `runScore`, so the preview can't diverge. `MissionDef.scoreUnit` is the
 display-only label the Stats best-scores board renders (default `'rounds'`).
 
-**`fall_of_bronze_goal`** carries `score: wavesRepelled` — the same `removed`-zone tally the capstone's
-win threshold and the repel ladder read, so the three can never disagree on what "repelled" means.
+**`fall_of_bronze_goal`** carries `score: (G) => 2 * wavesRepelled(G)` — the same `removed`-zone
+tally the capstone's win threshold and the repel ladder read, so the three can never disagree on what
+"repelled" means; the payout doubles it.
 
-**`catastrophe`** ticks a `clock` counter in its `upkeep` and every `RAID_SPAWN_PERIOD` (4) rounds
-spawns one `sea_raid` via `spawnIntoDeck` — fresh instance ids, deterministic shuffle-in, the face
-counting down to the next sails. The waves themselves are the capstone's card, verbatim: the ladder,
-the tin-gated repel, the cut/strip/burn upkeep all just keep working at census > 5.
+**`catastrophe`** ticks a `clock` counter in its `upkeep` and every `RAID_SPAWN_PERIOD` (6) rounds
+spawns one `endless_raid` via `spawnIntoDeck` — fresh instance ids, deterministic shuffle-in, the
+face counting down to the next sails.
 
 ## Balance ⬜
 
@@ -72,23 +82,28 @@ gradient, so what the competent policies steer by here is the `score` measure it
 term, one round of margin a point), and the sweep row carries a `score` column — the Influence an attempt
 banks.
 
-Measured ad-hoc on the capstone's own City deck + board (`sea_peoples_city`'s), 20 seeds, `--max-rounds
-200`; no stalls, every run ends in collapse:
+The shipped numbers — 4⚔️ base · +4 ladder · period 6 · 2⭐ a wave — came out of a measured
+investigation rather than feel alone. The scorer was cleared first: at every state where a repel was
+legal the race value favored it (greedy takes 100% of its windows), so the delivered ⭐ is
+**opportunity-limited** — the tally is "how many ladder rungs the run's total ⚔️ mint affords", and
+the knob matrix confirmed it: spawn-side knobs (seed count, onset, period) bought rounds but not
+score, while the price axis moved it directly. The as-first-authored 8-base configuration delivered
+1–2 waves flat; the applied one, on the capstone's own City deck + board, 20 seeds,
+`--max-rounds 200` (every run ends in collapse):
 
-| policy  | ⭐ mean | ⭐ max | rounds mean | rounds max | defeats            |
-|---------|--------|-------|-------------|------------|--------------------|
-| greedy  | 1.1    | 2     | 34.3        | 70         | ruin 12 · bank 4 · famine 4 |
-| planner | 1.0    | 2     | 45.1        | 84         | ruin 14 · famine 5 · bank 1 |
+| policy  | ⭐ mean | ⭐ max | rounds mean | defeats            |
+|---------|--------|-------|-------------|--------------------|
+| greedy  | 3.6    | 8     | 48.6        | ruin 16 · famine 3 · bank 1 |
+| planner | 3.4    | 8     | 63.6        | ruin 13 · famine 5 · bank 2 |
 
-**One or two waves is the whole tally**, on the deck that just cleared the capstone — the 8 + 4·k ladder
-outprices the board's ⚔️ income after the first repel or two, exactly as designed, but it does so *early*
-enough that the score barely discriminates between a good attempt and a poor one. Raising the score term's
-weight fivefold moves neither number (the repels the policies skip are unaffordable, not undervalued), so
-the knob is content: the ladder's step, the spawn period, or the ⚔️ the Bronze board can field.
+A good attempt and a poor one now separate (1–4 waves). Two caveats ride with the planner column:
+its within-turn search cap under-finds three-action repel lines (TODO → *Simulator*, deferred past
+0.1), so read greedy as the search-independent floor; and the biggest untapped lever is the deck's
+own ⚔️ throughput — a stronger Bronze military economy raises the tally with no mission edit.
 
-The pass here is still **feel-play**: the spawn period and seed count against a real deck, and the turtle
-watch above (the sim's turtle reading is that hiding is *not* rewarded — the score is waves, and the
-policies do spend on repels when they can afford them).
+The pass left open is **feel-play**: the pacing against a hand-piloted deck, and the turtle watch
+above (the sim's turtle reading is that hiding banks nothing — the score is waves, and the policies
+spend on repels whenever they can afford them).
 
 ## Polish ⬜
 
