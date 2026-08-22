@@ -120,14 +120,11 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   Needs an **opt-out option visible at start** (not buried in settings). Open questions: where the
   rows go (a collection endpoint — the app is a static Pages deploy today), and what identifies a
   submission. Wanted for next week's polish work.
-- **Rework the Influence economy and the copy-count ladder together.** Explicitly **not** the
-  `trade-redesign` branch's job — parked here so it isn't rediscovered from a card. How many copies of
-  a card a player can reach is what decides whether a second-rate line is worth building at all, and
-  right now that scarcity is doing load-bearing balance work it was never tuned for — a second Farm
-  is a shop purchase *and* a territory slot, while a second Bead Workshop + Bartering pair needs only
-  the one slot (a route takes no land). **Which of the two food lines wins is therefore set by the copy
-  ladder, not by their rates**, so re-read that pair when the ladder moves. `npm run economy` prints the faucet ledger and price list the rework starts from.
-  `[size: L]`
+- **Re-read Farm vs Bead Workshop + Bartering under the reworked ladder.** The remainder of the
+  economy rework (→ *Done / shipped*): which of the two food lines wins is set by copy scarcity and
+  price, not by their rates — a second Farm is a shop purchase *and* a territory slot, while the
+  route pair takes one slot and no land — and the rework moved both inputs (Stone copies now flat
+  2⭐ but capped ×4; the faucet halved). Nobody has re-read the pair since. `[size: S]`
 
 ## Simulator (`src/sim/`, `scripts/sim.ts`)
 
@@ -232,6 +229,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Influence economy + copy ladder reworked together** ✅ — every standard mission's reward halved
+  rounded down (the DAG's guaranteed faucet 243 → 120⭐), the copy ladder cut from ×1→×2→×4→×8 to
+  **×1→×2→×3→×4** (one copy a rung, ×4 terminal), and the rung price made **flat per age** — 2⭐ a
+  Stone copy, 4⭐ a Bronze one — read off the card's unlocking mission (`content/cardAge.ts`, starting
+  collection = Stone), so no def is annotated and Iron's first card unlock forces its price to be
+  authored. Measured consequence, accepted: eight late-Bronze baseline decks now cost more than the
+  campaign guarantees by their mission (up to 70⭐ short at `sea_peoples_warband`) — the scored
+  infinites are the faucet that covers the difference.
 - **`seed-save` seeds the state a baseline fixture describes** ✅ — hand-piloting a cell the simulator
   measures meant manually grinding the campaign and shop into the fixture's exact conditions.
   `--fixture <paths>` (comma-separated, loaded through `simFiles.ts`'s own loaders) folds each

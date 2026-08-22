@@ -146,11 +146,14 @@ reachable board line — cut, swept under the standing protocol, and recorded:
 | Cell | greedy | planner | prover |
 |---|---|---|---|
 | sea_peoples_city | 3% | **84%** | 10/10 |
-| sea_peoples_port | 10% | **59%** | 9/10 |
+| sea_peoples_port | 13% | **67%** | 10/10 |
 | sea_peoples_warband | 13% | **79%** | 9/10 |
 
 Far better than the sword-chariot shape the Design section braced for: the planner's numbers are a
-real reading, not a floor, and the prover's two misses are ordinary `noWinFound:deadEnd` declines.
+real reading, not a floor, and the prover's one miss (warband) is an ordinary `noWinFound:deadEnd`
+decline. The port deck was later trimmed from 6 to 4 tin routes when the copy ladder capped at ×4 —
+re-measured slightly *up* (13/67/10): the extra routes were rent-heavy dead weight, and the deck now
+fits the campaign's own faucet with no top-up.
 The huge greedy→planner gap (3→84 on city) is the capstone demanding actual planning, as it should.
 Defeat textures: port drowns in **bankruptcy** (its rent-heavy lane deck's own wages), warband in
 **famine**, greedy city in stalls. Every winning column repels for real (`sea_raid` plays high
