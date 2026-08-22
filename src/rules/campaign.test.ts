@@ -113,7 +113,14 @@ describe('campaign DAG walk', () => {
   });
 
   it('pins the real campaign: Influence arriving at Masonry', () => {
-    // The guaranteed faucet into masonry — the anchor the economy ledger reports.
-    expect(cumulativeInfluenceInto(MISSIONS, 'masonry')).toBe(62);
+    // The guaranteed faucet into masonry — the anchor the economy ledger reports. The *chain* is the
+    // claim (these missions feed masonry, Finding Copper does not); the amounts are read off MISSIONS,
+    // so a reward rebalance re-targets the assertion instead of breaking it.
+    const feeding = [
+      'first_settlement', 'growing_numbers', 'raiders_at_border', 'first_trades',
+      'harsh_winter', 'reading_seasons', 'rites_rituals', 'first_temple',
+    ];
+    const expected = feeding.reduce((sum, id) => sum + (MISSIONS[id].reward?.influence ?? 0), 0);
+    expect(cumulativeInfluenceInto(MISSIONS, 'masonry')).toBe(expected);
   });
 });

@@ -4,10 +4,10 @@
  * Founding deck; everything else is unlocked through missions. A plain
  * `{ cardId: count }` map, not an `OwnedCards` itself: instance identity doesn't exist until granted.
  *
- * Every count is a **copy-tier-attainable** number (the shop's ×1→×2→×4→×8 ladder — 1/2/4/8, never 3),
- * so a seeded quantity is one the shop economy could itself reproduce. The two staffed producers a run
- * leans on every turn (Foraging, Toolmaking) get the most copies; everything else the minimum. This
- * exactly covers the Founding deck.
+ * Every count is a **copy-tier-attainable** number (the shop's ×1→×2→×3→×4 ladder, so 1 through 4),
+ * so a seeded quantity is one the shop economy could itself reproduce — pinned by a coherence check in
+ * `rules/collection.test.ts`. The two staffed producers a run leans on every turn (Foraging,
+ * Toolmaking) get the most copies; everything else the minimum. This exactly covers the Founding deck.
  *
  * Pointed at the first mission's two resources rather than sampling all five: a fresh profile holds
  * exactly `MIN_DECK_SIZE` cards and no Influence, so the opening deck is *forced* — a card the first

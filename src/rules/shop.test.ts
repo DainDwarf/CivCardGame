@@ -1,40 +1,66 @@
 import { describe, it, expect } from 'vitest';
-import { nextTier, buyTier, canBuyTier } from './shop';
+import { nextTier, buyTier, canBuyTier, copyPrice, COPY_PRICE_BY_AGE, TIER_LADDER } from './shop';
 import { copiesOwned, collectionFromCounts } from './collection';
+import { cardAge } from '../content/cardAge';
 
-describe('nextTier', () => {
-  it('walks the ×1 → ×2 → ×4 → ×8 ladder with its costs', () => {
-    expect(nextTier(1)).toEqual({ to: 2, cost: 1 });
-    expect(nextTier(2)).toEqual({ to: 4, cost: 2 });
-    expect(nextTier(4)).toEqual({ to: 8, cost: 5 });
+const TERMINAL = TIER_LADDER[TIER_LADDER.length - 1].to;
+const stonePrice = COPY_PRICE_BY_AGE.stone;
+
+describe('copyPrice', () => {
+  it('charges the card\'s age band, flat', () => {
+    expect(copyPrice('farm')).toBe(COPY_PRICE_BY_AGE[cardAge('farm')!]);
+    expect(copyPrice('house')).toBe(COPY_PRICE_BY_AGE[cardAge('house')!]);
   });
 
-  it('returns null at the terminal tier (×8)', () => {
-    expect(nextTier(8)).toBeNull();
+  it('leaves a card the campaign never hands out unpriced, and so unsellable', () => {
+    // A board's `prebuilt` structure: nobody can own it, so it has no age and no price.
+    expect(copyPrice('war_camp')).toBeUndefined();
+    expect(nextTier('war_camp', 1)).toBeNull();
+  });
+});
+
+describe('nextTier', () => {
+  it('walks one copy per rung to the terminal tier', () => {
+    expect(TIER_LADDER.map((r) => [r.from, r.to])).toEqual(
+      TIER_LADDER.map((_, i) => [i + 1, i + 2]),
+    );
+    for (const rung of TIER_LADDER) {
+      expect(nextTier('farm', rung.from)).toEqual({ to: rung.to, cost: stonePrice });
+    }
+  });
+
+  it('prices every rung the same, and a later age dearer', () => {
+    const costs = TIER_LADDER.map((rung) => nextTier('house', rung.from)!.cost);
+    expect(new Set(costs).size).toBe(1);
+    expect(costs[0]).toBeGreaterThan(stonePrice);
+  });
+
+  it('returns null at the terminal tier', () => {
+    expect(nextTier('farm', TERMINAL)).toBeNull();
   });
 
   it('returns null for a not-owned card (0 copies) and off-ladder counts', () => {
-    expect(nextTier(0)).toBeNull();
-    expect(nextTier(3)).toBeNull();
+    expect(nextTier('farm', 0)).toBeNull();
+    expect(nextTier('farm', TERMINAL + 1)).toBeNull();
   });
 });
 
 describe('buyTier', () => {
-  it('deducts the cost and bumps the card to its next tier', () => {
-    const result = buyTier(collectionFromCounts({ farm: 1 }), 5, 'farm');
-    expect(result!.influence).toBe(4);
+  it('deducts the cost and bumps the card by one copy', () => {
+    const result = buyTier(collectionFromCounts({ farm: 1 }), 99, 'farm');
+    expect(result!.influence).toBe(99 - stonePrice);
     expect(copiesOwned(result!.collection, 'farm')).toBe(2);
   });
 
-  it('upgrades ×4 to ×8', () => {
-    const result = buyTier(collectionFromCounts({ farm: 4 }), 5, 'farm');
+  it('buys the last rung up to the terminal tier', () => {
+    const result = buyTier(collectionFromCounts({ farm: TERMINAL - 1 }), stonePrice, 'farm');
     expect(result!.influence).toBe(0);
-    expect(copiesOwned(result!.collection, 'farm')).toBe(8);
+    expect(copiesOwned(result!.collection, 'farm')).toBe(TERMINAL);
   });
 
   it('grants fresh instances distinct from the ones already owned', () => {
     const before = collectionFromCounts({ farm: 1 });
-    const result = buyTier(before, 5, 'farm')!;
+    const result = buyTier(before, 99, 'farm')!;
     const ids = result.collection.instances.filter((i) => i.cardId === 'farm').map((i) => i.id);
     expect(new Set(ids).size).toBe(2);
     expect(ids).toContain(before.instances[0].id);
@@ -42,7 +68,7 @@ describe('buyTier', () => {
 
   it('does not mutate the input collection', () => {
     const collection = collectionFromCounts({ farm: 1 });
-    buyTier(collection, 5, 'farm');
+    buyTier(collection, 99, 'farm');
     expect(copiesOwned(collection, 'farm')).toBe(1);
   });
 
@@ -51,12 +77,11 @@ describe('buyTier', () => {
   });
 
   it('returns null when the card is already at its cap', () => {
-    expect(buyTier(collectionFromCounts({ farm: 8 }), 99, 'farm')).toBeNull();
+    expect(buyTier(collectionFromCounts({ farm: TERMINAL }), 99, 'farm')).toBeNull();
   });
 
   it('returns null when the player cannot afford the upgrade', () => {
-    // ×2 → ×4 costs 2; with only 1 Influence it must fail and spend nothing.
-    expect(buyTier(collectionFromCounts({ farm: 2 }), 1, 'farm')).toBeNull();
+    expect(buyTier(collectionFromCounts({ farm: 2 }), stonePrice - 1, 'farm')).toBeNull();
   });
 
   it('rejects a wonder outright — wonders are unique, copies can never be bought', () => {

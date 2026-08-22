@@ -314,10 +314,19 @@ per attempt — that's the only performance-scaled source. Influence is spent on
 
 **Ownership & copies.** The collection tracks, per card, how many copies you own
 (`number`; an absent entry = not yet unlocked). A mission unlock grants the
-first copy; the **shop** raises that along a bounded ×1 / ×2 / ×4 / ×8 ladder (no infinite
-tier — every owned count is a finite, instantiable number). The deck editor caps each card
+first copy; the **shop** raises that along a bounded ×1 / ×2 / ×3 / ×4 ladder, one copy per rung (no
+infinite tier — every owned count is a finite, instantiable number). The deck editor caps each card
 at the number you own — the first deck-construction constraint to bite
 (a minimum deck size now joins it; rarity limits are dropped).
+
+**A copy's price is its card's age, not its rung.** Every rung of the ladder charges the same, and what
+sets that figure is how far into history the card sits: a Stone-age card's copy costs 2⭐, a Bronze-age
+card's 4⭐. Depth doesn't get punitively steeper the more of a card you hold — a fourth Farm is worth
+what the second was — while a later age's breadth stays proportionally dearer than an early one's. The
+age itself is **derived, never annotated**: a card belongs to the age of the mission that unlocks it
+(`content/cardAge.ts`), so moving a card to a different unlocking mission re-prices it, and a new age
+needs only its missions and one price. A card the campaign never hands out — a board's `prebuilt` — has
+no age and is simply not for sale.
 
 **Two non-overlapping channels.** *Missions = breadth* (a new card type, board, or wonder).
 *Shop = depth* (more copies of owned cards; permanent **stickers**). There are **no rating

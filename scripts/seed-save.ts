@@ -51,7 +51,7 @@ import {
   type DeckCard,
 } from '../src/rules';
 import { copiesOwned, instancesOf, variantInstancesOf } from '../src/rules/collection';
-import { buyTier, nextTier } from '../src/rules/shop';
+import { buyTier, nextTier, TIER_LADDER } from '../src/rules/shop';
 import { buySticker } from '../src/rules/stickers';
 import { buyBoardSticker } from '../src/rules/boardStickers';
 import { STICKERS } from '../src/content/stickers';
@@ -181,12 +181,12 @@ function outfit(base: PlayerStore, fixtures: Cell[]): { store: PlayerStore; log:
     const wanted = [...byVariant.values()].reduce((n, need) => n + need.count, 0);
     while (copiesOwned(collection, cardId) < wanted) {
       const owned = copiesOwned(collection, cardId);
-      const up = nextTier(owned);
+      const up = nextTier(cardId, owned);
       if (!up) {
         fail(
           owned === 0
             ? `the fixture decks need '${cardId}', which the cleared prereqs never unlock — the shop only sells copies of a card already owned.${unlockHint(cardId)}`
-            : `the fixture decks need ${wanted} copies of '${cardId}', past the shop's ×8 ceiling.`,
+            : `the fixture decks need ${wanted} copies of '${cardId}', past the shop's ×${TIER_LADDER[TIER_LADDER.length - 1].to} ceiling.`,
         );
       }
       afford(up.cost);

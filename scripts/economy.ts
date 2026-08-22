@@ -24,7 +24,7 @@
 import { parseArgs } from 'node:util';
 import { MISSIONS, type MissionDef } from '../src/content/missions';
 import { cumulativeInfluenceInto, foldOrder, prereqClosure } from '../src/rules/campaign';
-import { TIER_LADDER } from '../src/rules/shop';
+import { COPY_PRICE_BY_AGE, TIER_LADDER } from '../src/rules/shop';
 import { STICKERS } from '../src/content/stickers';
 import { BOARD_STICKERS } from '../src/content/boardStickers';
 
@@ -61,12 +61,13 @@ const ledger = standard.map((m) => ({
   cumulativeInto: cumulativeInfluenceInto(MISSIONS, m.id),
 }));
 
-// Copy-tier ladder priced as the cumulative Influence to reach each tier from a single owned copy.
-let cumulative = 0;
-const copyTiers = TIER_LADDER.map((rung) => {
-  cumulative += rung.cost;
-  return { tier: rung.to, rungCost: rung.cost, cumulative };
-});
+// A copy costs the same at every rung and differs only by the card's age, so the ladder is one row per
+// age: the flat per-copy price, and the cumulative Influence to reach each tier from a single copy.
+const copyTiers = Object.entries(COPY_PRICE_BY_AGE).map(([age, perCopy]) => ({
+  age,
+  perCopy,
+  tiers: TIER_LADDER.map((rung, i) => ({ tier: rung.to, cumulative: perCopy * (i + 1) })),
+}));
 
 const cardStickers = Object.values(STICKERS).map((s) => ({ id: s.id, name: s.name, cost: s.cost }));
 const boardStickers = Object.values(BOARD_STICKERS).map((s) => ({ id: s.id, name: s.name, cost: s.cost }));
@@ -90,8 +91,11 @@ for (const row of ledger) {
 }
 out.push('');
 out.push('Price list — shop costs (Influence)');
-out.push('  Card copies (per card, cumulative from ×1)');
-for (const t of copyTiers) out.push(`    → ×${pad(String(t.tier), 4)}${num(t.cumulative, 4)}`);
+out.push('  Card copies (flat per copy, by the card\'s age; cumulative from ×1)');
+for (const band of copyTiers) {
+  const ladder = band.tiers.map((t) => `→ ×${t.tier} ${t.cumulative}`).join('   ');
+  out.push(`    ${pad(band.age, 10)}${num(band.perCopy, 4)}/copy   ${ladder}`);
+}
 out.push('  Card stickers');
 if (cardStickers.length === 0) out.push('    (none unlocked in content yet)');
 for (const s of cardStickers) out.push(`    ${pad(s.name, 16)}${num(s.cost, 4)}`);

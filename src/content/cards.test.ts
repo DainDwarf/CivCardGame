@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { CARDS, COPPER_VEINS, INVASION_WAVES, isDeckable, isStaffable, RAIDER_WAVES, THIEVES_PER_GOLD } from './cards';
 import { STARTING_COLLECTION } from './collection';
 import { DEFAULT_DECKS } from './decks';
+import { prebuiltCardIds } from './boards';
+import { cardAge } from './cardAge';
+import { copyPrice } from '../rules/shop';
 import {
   blankState,
   currentCost,
@@ -40,6 +43,19 @@ describe('CARDS', () => {
   it('every deckable card sets its own art glyph', () => {
     for (const card of Object.values(CARDS)) {
       if (isDeckable(card)) expect(card.display?.art, `${card.id} has no art`).toBeTruthy();
+    }
+  });
+
+  // A copy's price rides the card's age (`content/cardAge.ts`), derived from the campaign rather than
+  // annotated — so a buyable card no mission unlocks and the starting collection doesn't hold is priced
+  // nowhere, and the shop quietly declines to sell it. That's a content gap, and this is the check that
+  // makes it loud. Wonders are never bought and a board's `prebuilt` can never be owned, so neither
+  // needs an age; a later age shipping its first unlocks trips this until it is priced.
+  it('every buyable card resolves to a priced age', () => {
+    const prebuilt = prebuiltCardIds();
+    for (const card of Object.values(CARDS)) {
+      if (!isDeckable(card) || card.kind === 'wonder' || prebuilt.has(card.id)) continue;
+      expect(copyPrice(card.id), `${card.id} (age ${cardAge(card.id)}) has no copy price`).toBeDefined();
     }
   });
 

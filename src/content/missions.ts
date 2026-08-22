@@ -144,7 +144,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Raising the roof is what upgrades the Tribe board into the settled `settlement` government, so
     // this is the last mission played on Tribe.
     reward: {
-      influence: 6,
+      influence: 3,
       unlockStickerIds: ['irrigation'],
       unlockBoardStickerIds: ['granary', 'stockpile'],
       boardUpgrade: { from: 'tribe', to: 'settlement' },
@@ -173,7 +173,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // toolkit: Bead Workshop is 🪙's only faucet and Bartering the only sink that spends it. The faucet is
     // a building because the route's rent is charged every round, which no drawn card can cover.
     // Influence amount + board stats are provisional.
-    reward: { influence: 8, unlockCardIds: ['bead_workshop', 'bartering'], unlockBoardIds: ['chiefdom'] },
+    reward: { influence: 4, unlockCardIds: ['bead_workshop', 'bartering'], unlockBoardIds: ['chiefdom'] },
     map: { col: 2, row: -1 },
     age: 'stone',
   },
@@ -195,7 +195,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Unlocks Beer, whose 🌾 price is only cheap once a route is paying food for no workers — so the
     // reward is worth having precisely because of what this mission taught you to build. Influence
     // amount provisional.
-    reward: { influence: 8, unlockCardIds: ['beer'] },
+    reward: { influence: 4, unlockCardIds: ['beer'] },
     map: { col: 3, row: -1 },
     age: 'stone',
   },
@@ -220,7 +220,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // for its resource mission, the same shape the upper branch uses. Both *make* 🔬 and neither spends
     // it — the mission they feed asks the player to stockpile science. Influence amount inherited from
     // the mission this replaces, so the downstream faucet ledger is unmoved — provisional either way.
-    reward: { influence: 9, unlockCardIds: ['storytelling', 'fire'] },
+    reward: { influence: 4, unlockCardIds: ['storytelling', 'fire'] },
     map: { col: 2, row: 1 },
     age: 'stone',
   },
@@ -246,7 +246,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // upstream both *make* science and nothing in the age spends it until the Bronze copper veins.
     // Granting it here rather than upstream is what keeps a sink out of the hand during the very run
     // that asks for a stockpile.
-    reward: { influence: 9, unlockCardIds: ['sun_stone', 'calendar'] },
+    reward: { influence: 4, unlockCardIds: ['sun_stone', 'calendar'] },
     map: { col: 3, row: 1 },
     age: 'stone',
   },
@@ -271,7 +271,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // on this mission (a single-term goal ends the run the moment the level lands) and live on the
     // conjunction goals downstream. Influence amount provisional: a fresh addition to the faucet ledger,
     // since the original mission's 8⭐ was inherited by The First Trades.
-    reward: { influence: 10, unlockStickerIds: ['elegant'] },
+    reward: { influence: 5, unlockStickerIds: ['elegant'] },
     map: { col: 4, row: 0 },
     age: 'stone',
   },
@@ -290,7 +290,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     failureHint: null,
     kind: 'standard',
     // Unlocks the Göbekli Tepe wonder — the age's capstone build. Influence amount provisional.
-    reward: { influence: 12, unlockCardIds: ['gobekli_tepe'] },
+    reward: { influence: 6, unlockCardIds: ['gobekli_tepe'] },
     map: { col: 5, row: 0 },
     age: 'stone',
   },
@@ -313,7 +313,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     // Opens the Bronze Age: unlocks the Forge, the answer to the very drain this mission inflicts.
     // Influence amount provisional (balance pending a sim sweep).
-    reward: { influence: 12, unlockCardIds: ['forge'] },
+    reward: { influence: 6, unlockCardIds: ['forge'] },
     map: { col: 6, row: -1 },
     age: 'bronze',
   },
@@ -332,7 +332,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Opens the Bronze government: City Walls (a standing garrison), the House (a bigger population
     // grant), and the City board that retires the Settlement. Influence amount provisional.
     reward: {
-      influence: 12,
+      influence: 6,
       unlockCardIds: ['city_walls', 'house'],
       boardUpgrade: { from: 'settlement', to: 'city' },
     },
@@ -355,7 +355,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     // An optional challenge leaf off Masonry — a bigger reward for a harder clear: unlocks the Pyramid
     // wonder (the culture powerhouse). Influence amount provisional.
-    reward: { influence: 25, unlockCardIds: ['pyramid'] },
+    reward: { influence: 12, unlockCardIds: ['pyramid'] },
     map: { col: 7, row: 1 },
     age: 'bronze',
   },
@@ -380,7 +380,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Trader is a better 🪙 faucet than the Bead Workshop the player already owns, not their first one —
     // money opens five missions upstream. Plus the Opulence board sticker (a starting treasury).
     // Influence amount provisional.
-    reward: { influence: 12, unlockCardIds: ['trader'], unlockBoardStickerIds: ['opulence'] },
+    reward: { influence: 6, unlockCardIds: ['trader'], unlockBoardStickerIds: ['opulence'] },
     // Mainline convergence rejoining the centre axis (like first_temple); the pyramid leaf sits below at
     // col 7 row 1.
     map: { col: 7, row: 0 },
@@ -407,7 +407,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     // Opens the literacy half of the Bronze spine: the Archives (the first science *building*) and the
     // Writing action. Influence amount provisional (balance pending a sim sweep).
-    reward: { influence: 12, unlockCardIds: ['archives', 'writing'] },
+    reward: { influence: 6, unlockCardIds: ['archives', 'writing'] },
     map: { col: 8, row: 0 },
     age: 'bronze',
   },
@@ -433,7 +433,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Opens the military branch: unlocks the War Horse (the first ⚔️ work box) and Raiding
     // (a single-use ⚔️ → 🌾+🔨 plunder burst) — the pair the next mission is built around. Influence
     // amount provisional.
-    reward: { influence: 12, unlockCardIds: ['war_horse', 'raiding'] },
+    reward: { influence: 6, unlockCardIds: ['war_horse', 'raiding'] },
     map: { col: 9, row: 0 },
     age: 'bronze',
   },
@@ -459,7 +459,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     // Closes the military branch: the reward is the government itself, upgrading the martial board into
     // Warband rather than handing out another card. Influence amount provisional.
-    reward: { influence: 12, boardUpgrade: { from: 'chiefdom', to: 'warband' } },
+    reward: { influence: 6, boardUpgrade: { from: 'chiefdom', to: 'warband' } },
     map: { col: 10, row: 0 },
     age: 'bronze',
   },
@@ -482,7 +482,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     kind: 'standard',
     // Opens the expansion branch: unlocks the Road, Conquest's economic twin (🪙+🔨 → +1 territory), the
     // tool the Wheel mission's territory goal is built around. Influence amount provisional.
-    reward: { influence: 12, unlockCardIds: ['road'] },
+    reward: { influence: 6, unlockCardIds: ['road'] },
     map: { col: 9, row: -1 },
     age: 'bronze',
   },
@@ -507,7 +507,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // resolves the mission's own 🔨 crisis, and the two Caravans turn the 🪙 a wide realm earns back
     // into the 🌾 and 🔨 holding it costs. Influence amount provisional.
     reward: {
-      influence: 12,
+      influence: 6,
       unlockCardIds: ['food_caravan', 'material_caravan'],
       unlockStickerIds: ['wheel'],
     },
@@ -539,7 +539,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // multi-route goal is unreachable with Bartering alone), and the Port board is a *new* government
     // line rather than an upgrade — few hands, but paid for the water it opens. Influence amount
     // provisional.
-    reward: { influence: 12, unlockCardIds: ['coastal_route'], unlockBoardIds: ['port'] },
+    reward: { influence: 6, unlockCardIds: ['coastal_route'], unlockBoardIds: ['port'] },
     map: { col: 9, row: 1 },
     age: 'bronze',
   },
@@ -565,7 +565,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // (standing access, no yield), the Merchant Ship is the engine the goal itself feeds, and Convoy
     // answers the mission's own ⚔️ pressure one node downstream. Influence amount provisional.
     reward: {
-      influence: 12,
+      influence: 6,
       unlockCardIds: ['tin_route', 'merchant_ship'],
       unlockStickerIds: ['convoy'],
     },
@@ -599,7 +599,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Both grants read the same tin gate this mission enforces by hand — the sticker charges it in place
     // of a price — so each is worth only what the trade branches keep open. Influence amount provisional.
     reward: {
-      influence: 12,
+      influence: 6,
       unlockCardIds: ['marketplace'],
       unlockStickerIds: ['bronze_tools'],
     },
@@ -630,7 +630,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // Opens the bronze military kit, split standing vs. burst: the Sword (⚔️ per worker every round, and
     // dark for as long as the tin route is cut) and the Chariot (the War Horse successor, a better rate
     // per worker behind the same tin gate). Influence amount provisional.
-    reward: { influence: 12, unlockCardIds: ['sword', 'chariot'] },
+    reward: { influence: 6, unlockCardIds: ['sword', 'chariot'] },
     map: { col: 12, row: 0 },
     age: 'bronze',
   },
@@ -660,7 +660,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'at all.',
     kind: 'standard',
     // The age ends here, so the reward is Influence alone — no card, no sticker, no board.
-    reward: { influence: 12 },
+    reward: { influence: 6 },
     map: { col: 13, row: 0 },
     age: 'bronze',
   },

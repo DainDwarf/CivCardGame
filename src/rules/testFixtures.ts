@@ -428,11 +428,28 @@ export const FIXTURE_BOARD_STICKERS: Record<string, BoardStickerDef> = {
 
 // --- Synthetic missions ----------------------------------------------------------------------------
 
+/** The age every fixture card sits in, and so the copy price the shop charges for one
+ *  (`rules/shop.ts`'s `COPY_PRICE_BY_AGE`). A shop test reads its expected price off this rather than
+ *  copying a number, so an age reprice re-targets the assertion instead of breaking it. */
+export const FIXTURE_AGE = 'stone';
+
 /** The fixture missions the *full-run* sim tests (`report`, `oracle`) drive through `simConfig` →
  *  `run/setup.ts`, which looks the mission up in the live `MISSIONS`. Built on the fixture objective/
  *  threat cards above so a content reset can't break them. Only the fields `setup`/`report` read are
- *  filled — the campaign-map presentation fields (`map`/`age`/`reward`) are irrelevant to a headless run. */
+ *  filled — the campaign-map presentation fields are irrelevant to a headless run, save on
+ *  `test_unlocks`, which exists purely to carry the `age`/`reward` a fixture card's price is read off. */
 export const FIXTURE_MISSIONS: Record<string, MissionDef> = {
+  // Never driven as a run — it exists only to give every fixture card an age, which is what lets the
+  // shop put a copy price on one. `content/cardAge.ts` reads the live `MISSIONS`, so this prices the
+  // whole fixture set for as long as the fixtures are installed.
+  test_unlocks: {
+    id: 'test_unlocks', name: 'Test Unlocks', lore: '', prereqs: [],
+    objectiveCardId: 'test_objective',
+    victoryHint: '', failureHint: null,
+    kind: 'standard',
+    age: FIXTURE_AGE,
+    reward: { influence: 0, unlockCardIds: Object.keys(FIXTURE_CARDS) },
+  },
   // A shallow, genuinely winnable threshold mission: reach 10🔬 (`test_objective`). The far deadline
   // only guarantees termination on a policy's non-winning fallback path — a real winning line lands
   // long before it. Seed a science-producer deck at the call site (the mission names no cards).

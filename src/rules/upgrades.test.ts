@@ -5,7 +5,7 @@ import {
   instancesOf,
   type OwnedCards,
 } from './collection';
-import { buyTier } from './shop';
+import { buyTier, COPY_PRICE_BY_AGE, TIER_LADDER } from './shop';
 import { buySticker } from './stickers';
 import { buyBoardSticker, type BoardStickers } from './boardStickers';
 import {
@@ -22,6 +22,7 @@ import {
   FIXTURE_BOARD_STICKERS,
   TEST_BOARD_ID,
   TEST_BOARD_2_ID,
+  FIXTURE_AGE,
 } from './testFixtures';
 import type { BoardId } from '../content/boards';
 
@@ -41,6 +42,11 @@ import type { BoardId } from '../content/boards';
 
 beforeAll(installFixtures);
 afterAll(uninstallFixtures);
+
+/** What one more copy of a fixture card costs, and the copy count past which no tier remains — both
+ *  read off the shop's own data, so a reprice or a longer ladder re-targets these cases. */
+const TIER_COST = COPY_PRICE_BY_AGE[FIXTURE_AGE];
+const MAX_COPIES = TIER_LADDER[TIER_LADDER.length - 1].to;
 
 // Every fixture sticker unlocked — the default the hint tests run under, so the pre-existing oracle
 // assertions (which predate the unlock gate) still hold. The dedicated "locked" tests pass a partial
@@ -90,10 +96,10 @@ describe('cardUpgradeAvailable — matches the real buy functions', () => {
   // test_food is a food building (the restricted sticker applies); test_prod produces no food.
   const cases: { name: string; counts: Record<string, number>; influence: number; card: string }[] = [
     { name: 'x1, no influence — nothing affordable', counts: { test_food: 1 }, influence: 0, card: 'test_food' },
-    { name: 'x1, 1 influence — next tier affordable', counts: { test_food: 1 }, influence: 1, card: 'test_food' },
+    { name: 'x1, exactly one copy of influence — next tier affordable', counts: { test_food: 1 }, influence: TIER_COST, card: 'test_food' },
     { name: 'x1, 3 influence — tier + sticker affordable', counts: { test_food: 1 }, influence: 3, card: 'test_food' },
-    { name: 'x8 maxed, 2 influence — no tier, sticker unaffordable', counts: { test_food: 8 }, influence: 2, card: 'test_food' },
-    { name: 'x8 maxed, 3 influence — no tier but sticker affordable+room', counts: { test_food: 8 }, influence: 3, card: 'test_food' },
+    { name: 'maxed, 2 influence — no tier, sticker unaffordable', counts: { test_food: MAX_COPIES }, influence: 2, card: 'test_food' },
+    { name: 'maxed, 3 influence — no tier but sticker affordable+room', counts: { test_food: MAX_COPIES }, influence: 3, card: 'test_food' },
     { name: 'test_prod x1, 3 influence — restricted N/A but universal stickers apply', counts: { test_prod: 1 }, influence: 3, card: 'test_prod' },
     { name: 'not owned', counts: {}, influence: 100, card: 'test_food' },
   ];
@@ -108,24 +114,24 @@ describe('cardUpgradeAvailable — matches the real buy functions', () => {
   }
 
   it('all copies sticker-full but tier still buyable — on iff tier affordable', () => {
-    // test_food x2 (tier x2->x4 costs 2), both copies at the sticker cap: only the tier upgrade remains.
+    // test_food x2, both copies at the sticker cap: only the tier upgrade remains.
     const full = fillStickers(collectionFromCounts({ test_food: 2 }), 'test_food');
-    expect(cardUpgradeAvailable(full, 2, 'test_food', UNLOCKED_STICKERS)).toBe(true); // tier affordable
-    expect(cardUpgradeAvailable(full, 2, 'test_food', UNLOCKED_STICKERS)).toBe(cardUpgradeOracle(full, 2, 'test_food'));
-    expect(cardUpgradeAvailable(full, 1, 'test_food', UNLOCKED_STICKERS)).toBe(false); // tier unaffordable, no sticker room
-    expect(cardUpgradeAvailable(full, 1, 'test_food', UNLOCKED_STICKERS)).toBe(cardUpgradeOracle(full, 1, 'test_food'));
+    expect(cardUpgradeAvailable(full, TIER_COST, 'test_food', UNLOCKED_STICKERS)).toBe(true); // tier affordable
+    expect(cardUpgradeAvailable(full, TIER_COST, 'test_food', UNLOCKED_STICKERS)).toBe(cardUpgradeOracle(full, TIER_COST, 'test_food'));
+    expect(cardUpgradeAvailable(full, TIER_COST - 1, 'test_food', UNLOCKED_STICKERS)).toBe(false); // tier unaffordable, no sticker room
+    expect(cardUpgradeAvailable(full, TIER_COST - 1, 'test_food', UNLOCKED_STICKERS)).toBe(cardUpgradeOracle(full, TIER_COST - 1, 'test_food'));
   });
 
-  it('crossing the price flips the hint (test_food x8 maxed, sticker cost 3)', () => {
-    const maxed = collectionFromCounts({ test_food: 8 });
+  it('crossing the price flips the hint (test_food maxed, sticker cost 3)', () => {
+    const maxed = collectionFromCounts({ test_food: MAX_COPIES });
     expect(cardUpgradeAvailable(maxed, 2, 'test_food', UNLOCKED_STICKERS)).toBe(false);
     expect(cardUpgradeAvailable(maxed, 3, 'test_food', UNLOCKED_STICKERS)).toBe(true);
   });
 
   it('a locked sticker never lights the hint (maxed copies, sticker affordable, but not unlocked)', () => {
-    // x8 maxed → no tier; a sticker is affordable + has room, but with no stickers unlocked the only
+    // Maxed → no tier; a sticker is affordable + has room, but with no stickers unlocked the only
     // remaining upgrade avenue is gated off. Stays in lockstep with the oracle under the same empty set.
-    const maxed = collectionFromCounts({ test_food: 8 });
+    const maxed = collectionFromCounts({ test_food: MAX_COPIES });
     expect(cardUpgradeAvailable(maxed, 3, 'test_food', {})).toBe(false);
     expect(cardUpgradeAvailable(maxed, 3, 'test_food', {})).toBe(cardUpgradeOracle(maxed, 3, 'test_food', {}));
   });

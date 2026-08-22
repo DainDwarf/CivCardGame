@@ -37,8 +37,8 @@ The economy/progression systems that exist (each detailed in the Architecture ma
 in DESIGN.md):
 
 - **Ownership + Influence currency** — `rules/collection.ts`'s `OwnedCards` + `PlayerStore`.
-- **Copy-tier shop** — ×1→×2→×4→×8 (`rules/shop.ts`), bought from the Collection card panel (no
-  separate Shop tab).
+- **Copy-tier shop** — ×1→×2→×3→×4 (`rules/shop.ts`), one copy per rung at a flat price set by the
+  card's age (`content/cardAge.ts`), bought from the Collection card panel (no separate Shop tab).
 - **Campaign-map DAG** — prereq-gated missions (`rules/campaign.ts`); each `'standard'` clear grants
   a fixed Influence reward + zero or more unlocks (`rules/rewards.ts`).
 - **Infinite missions + threats** — never-winning missions paying Influence = the run's score (the
@@ -200,7 +200,8 @@ surprise, so nothing shows a locked placeholder or a total count.
 - `npm run economy` — economy tool (`scripts/economy.ts`): pure computation over content (no
   simulation). Prints the **faucet ledger** (guaranteed Influence granted per standard mission + the
   cumulative amount arriving at each, via `campaign.ts`'s `cumulativeInfluenceInto`) and the **price
-  list** (copy tiers from `shop.ts`, card/board stickers), in raw Influence. `--format text|json`. The
+  list** (copy tiers from `shop.ts`, one row per age band since the price is the card's age; card/board
+  stickers), in raw Influence. `--format text|json`. The
   *income* half of a planned meta-progression economy explorer (`docs/ECONOMY-EXPLORER.md`); the
   *demand* half (what a mission forces you to buy) and a grind-normalized yardstick both need the
   simulator and would be later phases.
@@ -374,8 +375,11 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   references never go stale; `copiesOwned`/`isOwned` filter instances (an absent cardId = not yet
   unlocked). Two copies are **fungible** when they share a cardId *and* a `stickerSignature` (stickers
   normalized order-independently) — what `variantInstancesOf` pools and every ×N view counts.
-- **`shop.ts`** — the copy-tier economy: `TIER_LADDER`, `nextTier`, the immutable `buyTier`, and
-  `canBuyTier` (mirrors `buyTier`'s reject — the leaf the upgrade hints fold over).
+- **`shop.ts`** — the copy-tier economy: `TIER_LADDER` (the ×1→×2→×3→×4 ownership rungs, price-free),
+  `COPY_PRICE_BY_AGE` + `copyPrice` (a copy costs the same at every rung and differs only by the card's
+  age — `undefined` for a card the campaign never hands out, which is then simply unsellable), `nextTier`,
+  the immutable `buyTier`, and `canBuyTier` (mirrors `buyTier`'s reject — the leaf the upgrade hints
+  fold over).
 - **`stickers.ts`** — sticker logic: `buySticker`, `removeSticker` (destroy the sticker at an *index*
   on one copy — positional because a copy may carry the same sticker twice, so an id would destroy both
   of a stack; drops the `stickers` key when the last one goes, returning the copy to the fungible pool;
@@ -450,8 +454,8 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   plain cardIds, resolved by `buildSeedDecks`). A fresh player starts with one editable deck — the
   buildingless **Founding deck**; there's no read-only "built-in" tier.
 - **`collection.ts`** — `STARTING_COLLECTION` (a plain `Record<cardId, count>` → real `OwnedCards` via
-  `collectionFromCounts`). Counts must be **copy-tier-attainable** (the ×1→×2→×4→×8 ladder — so 1/2/4/8,
-  never 3); `rules/collection.test.ts` pins that the starting collection covers the Founding deck.
+  `collectionFromCounts`). Counts must be **copy-tier-attainable** (the ×1→×2→×3→×4 ladder — so 1 through
+  4); `rules/collection.test.ts` pins both that and that the starting collection covers the Founding deck.
 - **`stickers.ts`** — `STICKERS`; each `StickerDef` carries its own `appliesTo`/`applyGain`/`applyCost`
   logic and an `icon`. Each is a **trade-off, not an upgrade**: it buys one thing (a raised output, a
   cut price) and charges for it in another currency, so the decision is what the copy gives up rather
@@ -486,6 +490,12 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   decorative pre-Stone **Nomadic Age** gutter is the deliberate exception: no missions, drawn
   CampaignMap-locally (not an `AGES` entry), parked off the left edge and revealed by the map's left
   elastic-overscroll.
+- **`cardAge.ts`** — `cardAge(cardId)`: a card's age, **derived not annotated** — the age of the mission
+  whose `reward.unlockCardIds` grants it, or Stone for a card in `STARTING_COLLECTION`. `undefined` for
+  one the campaign never hands out (a board's `prebuilt`, a mission-injected event/threat/objective),
+  which `rules/shop.ts` reads as "not for sale"; `content/cards.test.ts` pins that no *buyable* card
+  lands there. Walks the live `MISSIONS` per call rather than folding a map at import, so
+  `rules/testFixtures.ts`'s spliced-in entries are visible like they are to every other catalogue read.
 
 ### Shell — run loop (`src/run/`)
 

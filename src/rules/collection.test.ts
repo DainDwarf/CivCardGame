@@ -13,6 +13,7 @@ import {
 import { buildSeedDecks, MIN_DECK_SIZE } from './deckBuilder';
 import { DEFAULT_DECKS } from '../content/decks';
 import { STARTING_COLLECTION } from '../content/collection';
+import { TIER_LADDER } from './shop';
 
 describe('copiesOwned', () => {
   it('returns the raw count for an owned card', () => {
@@ -122,5 +123,15 @@ describe('STARTING_COLLECTION covers DEFAULT_DECKS', () => {
         .toBeGreaterThanOrEqual(MIN_DECK_SIZE);
       expect(deck.cards.length).toBe(DEFAULT_DECKS[i].cards.length);
     });
+  });
+
+  // A seeded quantity must be one the shop could itself reproduce: the first copy is the unlock, every
+  // further one a rung of `TIER_LADDER`. A count off that ladder is a quantity no player could ever
+  // reach, and one past its top is a deck the collection can hold but the editor's own cap refuses.
+  it('every seeded count sits on the copy-tier ladder', () => {
+    const attainable = new Set([1, ...TIER_LADDER.map((rung) => rung.to)]);
+    for (const [cardId, count] of Object.entries(STARTING_COLLECTION)) {
+      expect(attainable.has(count), `${cardId}: ×${count} is off the copy-tier ladder`).toBe(true);
+    }
   });
 });

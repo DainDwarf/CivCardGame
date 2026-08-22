@@ -11,9 +11,9 @@ Masonry is the trigger case — "reach 6 🧍 population" is unwinnable without 
 (and the food/territory to support them), so its difficulty lives half in the run loop and half in the
 shop. But the need is **general**: the campaign is planned to span 9+ ages (`docs/IDEAS.md`), old cards
 stay legal but semantically obsolesce (House is a strictly-better Hut yet never removes it), and the
-user is "drowning in the economics of influence." The user is also considering changing the copy-buy
-price formula (from the ×1→×2→×4→×8 tier ladder to a simpler per-copy cost) and wants to know whether
-that must come first.
+user is "drowning in the economics of influence." The copy-buy price formula has since been simplified
+in exactly the direction that question anticipated — a ×1→×2→×3→×4 ladder charging a flat per-copy
+price set by the card's age — so the tool now reads a much simpler demand side than it was planned for.
 
 **Goal:** a tool that (a) shows the Influence *income* the campaign grants per mission, and (b) finds
 the deck/sticker/board configurations that actually clear a mission and surfaces their Influence
@@ -80,7 +80,7 @@ Pin these with a unit test in `src/rules/campaign.test.ts` (e.g. `cumulativeInfl
    (`reward` column) and the cumulative running total banked arriving at it (`total` column,
    `cumulativeInfluenceInto`).
 2. **Price list** — every shop upgrade priced through the real functions in **raw Influence**: copy
-   tiers (cumulative to ×2/×4/×8, folding `shop.ts`'s `TIER_LADDER`), card stickers
+   tiers (one row per age band, cumulative to ×2/×3/×4 over `shop.ts`'s `TIER_LADDER`), card stickers
    (`STICKERS[id].cost`), board stickers (`BOARD_STICKERS[id].cost`).
 3. **`--format text|json`.**
 
@@ -121,7 +121,7 @@ running away. That curve is also the real yardstick to price every mission rewar
   signal; set the Influence-per-round multiplier *after* seeing the curve's shape.
 - Existing dampers to keep in mind when reading the curve: `long_winter` deepens every round (a
   built-in survival ceiling — a stronger deck buys only a few more rounds); one-time prereq-gated
-  breadth; the rising ×2/×4/×8 price curve on depth.
+  breadth; the flat per-copy, age-scaled price on depth.
 
 ## Phase B (cont.) — Demand explorer (sim-based) — *plan in detail later*
 
@@ -207,7 +207,7 @@ That is a narrower tool than "automated deck discovery," but it's the half that 
 ## Verification (Phase A)
 
 - `npm run economy` prints the ledger + price list; hand-check the anchor: cumulative influence into
-  `masonry` = **52** (0+6+8+9+8+9+12), and a full ×8 copy stack = **8** influence (1+2+5).
+  `masonry` = **30** (0+3+4+4+4+4+5+6), and a full ×4 stack of a Stone-age card = **6** influence (2+2+2).
 - `npx vitest run src/rules/campaign.test.ts` — the new closure/cumulative helper test passes.
 - `npm run typecheck` — covers both the `src` and the Node `scripts` project (the lifted helpers cross
   that boundary).
