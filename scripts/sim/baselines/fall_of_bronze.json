@@ -1,0 +1,79 @@
+{
+  "id": "fall_of_bronze",
+  "mission": "fall_of_bronze",
+  "board": { "board": "city", "stickers": ["opulence", "opulence"] },
+  "deck": [
+    { "cardId": "sword", "count": 2 },
+    { "cardId": "chariot", "count": 2 },
+    { "cardId": "war_horse", "count": 4 },
+    { "cardId": "tin_route", "count": 1, "stickers": ["convoy", "convoy"] },
+    { "cardId": "tin_route", "count": 1 },
+    { "cardId": "bartering", "count": 1, "stickers": ["convoy", "convoy"] },
+    { "cardId": "road", "count": 2 },
+    { "cardId": "house", "count": 2 },
+    { "cardId": "farm", "count": 3, "stickers": ["irrigation", "irrigation"] },
+    { "cardId": "fire", "count": 4 },
+    { "cardId": "food_caravan", "count": 2 },
+    { "cardId": "forge", "count": 1, "stickers": ["bronze_tools", "bronze_tools"] },
+    { "cardId": "toolmaking", "count": 2, "stickers": ["bronze_tools", "bronze_tools"] },
+    { "cardId": "material_caravan", "count": 2 },
+    { "cardId": "trader", "count": 4 },
+    { "cardId": "bead_workshop", "count": 2 },
+    { "cardId": "marketplace", "count": 2 },
+    { "cardId": "writing", "count": 2 }
+  ],
+  "results": {
+    "greedy": {
+      "maxRounds": 200,
+      "columns": "cell,policy,seed,outcome,turns,score,actions,food,production,science,military,money,population,culture,territory,structures,routes,reshuffles,cardsPlayed",
+      "rows": [
+        "fall_of_bronze,greedy,0,ruin,43,6,77,50,-2,2,15,0,2,0,2,1,0,4,bartering:0;bead_workshop:0;chariot:0;endless_raid:3;farm:1;fire:2;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:6;road:0;sword:0;tin_route:3;toolmaking:2;trader:3;war_horse:13;writing:0",
+        "fall_of_bronze,greedy,1,ruin,53,4,82,52,-4,1,9,5,2,0,2,2,0,4,bartering:4;bead_workshop:1;chariot:1;endless_raid:2;farm:1;fire:1;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:9;road:0;sword:0;tin_route:4;toolmaking:1;trader:1;war_horse:2;writing:0",
+        "fall_of_bronze,greedy,2,ruin,29,0,46,61,-1,0,11,11,2,0,2,1,0,2,bartering:2;bead_workshop:0;chariot:0;endless_raid:0;farm:1;fire:0;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:5;road:0;sword:0;tin_route:0;toolmaking:0;trader:6;war_horse:3;writing:0",
+        "fall_of_bronze,greedy,3,famine,86,2,108,-2,33,4,5,1,2,0,2,2,0,7,bartering:0;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:4;food_caravan:6;forge:1;house:0;marketplace:0;material_caravan:2;road:0;sword:0;tin_route:1;toolmaking:0;trader:1;war_horse:3;writing:0",
+        "fall_of_bronze,greedy,4,ruin,50,4,84,46,-3,2,8,2,2,0,2,2,0,4,bartering:0;bead_workshop:1;chariot:0;endless_raid:2;farm:1;fire:2;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:10;road:0;sword:0;tin_route:6;toolmaking:1;trader:3;war_horse:5;writing:0",
+        "fall_of_bronze,greedy,5,ruin,53,8,96,58,-2,4,0,7,2,0,2,2,0,5,bartering:1;bead_workshop:1;chariot:0;endless_raid:4;farm:1;fire:4;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:8;road:0;sword:0;tin_route:4;toolmaking:0;trader:10;war_horse:3;writing:0",
+        "fall_of_bronze,greedy,6,ruin,41,4,67,34,-2,3,0,13,2,0,2,2,0,3,bartering:0;bead_workshop:1;chariot:0;endless_raid:2;farm:1;fire:3;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:8;road:0;sword:0;tin_route:3;toolmaking:2;trader:2;war_horse:4;writing:0",
+        "fall_of_bronze,greedy,7,ruin,39,2,61,51,-2,1,12,0,2,0,2,1,0,3,bartering:1;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:1;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:7;road:0;sword:0;tin_route:2;toolmaking:1;trader:3;war_horse:4;writing:0",
+        "fall_of_bronze,greedy,8,ruin,21,0,38,46,-1,3,19,12,2,0,2,1,0,2,bartering:1;bead_workshop:0;chariot:0;endless_raid:0;farm:1;fire:3;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:1;road:0;sword:0;tin_route:1;toolmaking:0;trader:7;war_horse:2;writing:0",
+        "fall_of_bronze,greedy,9,ruin,14,0,24,16,-2,2,6,19,2,0,2,1,0,1,bartering:0;bead_workshop:0;chariot:0;endless_raid:0;farm:1;fire:2;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:2;road:0;sword:0;tin_route:1;toolmaking:0;trader:2;war_horse:2;writing:0",
+        "fall_of_bronze,greedy,10,bankruptcy,37,4,66,29,2,6,3,-1,2,0,2,1,0,3,bartering:0;bead_workshop:0;chariot:0;endless_raid:2;farm:1;fire:6;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:6;road:0;sword:0;tin_route:3;toolmaking:4;trader:2;war_horse:5;writing:0",
+        "fall_of_bronze,greedy,11,ruin,35,4,57,49,-2,1,12,0,2,0,2,1,0,3,bartering:0;bead_workshop:0;chariot:0;endless_raid:2;farm:1;fire:1;food_caravan:2;forge:0;house:0;marketplace:0;material_caravan:4;road:0;sword:0;tin_route:2;toolmaking:2;trader:0;war_horse:8;writing:0",
+        "fall_of_bronze,greedy,12,ruin,54,6,77,60,-4,1,0,23,2,0,2,2,0,5,bartering:0;bead_workshop:0;chariot:0;endless_raid:3;farm:1;fire:1;food_caravan:0;forge:0;house:0;marketplace:1;material_caravan:9;road:0;sword:0;tin_route:5;toolmaking:1;trader:1;war_horse:1;writing:0",
+        "fall_of_bronze,greedy,13,ruin,50,6,87,50,-4,0,11,12,2,0,2,2,0,4,bartering:3;bead_workshop:1;chariot:0;endless_raid:3;farm:1;fire:0;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:6;road:0;sword:0;tin_route:3;toolmaking:2;trader:6;war_horse:5;writing:0",
+        "fall_of_bronze,greedy,14,ruin,37,2,55,44,-2,0,8,3,2,0,2,1,0,3,bartering:0;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:0;food_caravan:2;forge:0;house:0;marketplace:0;material_caravan:6;road:0;sword:0;tin_route:1;toolmaking:2;trader:1;war_horse:4;writing:0",
+        "fall_of_bronze,greedy,15,ruin,45,6,81,48,-2,3,6,5,2,0,2,1,0,4,bartering:0;bead_workshop:0;chariot:0;endless_raid:3;farm:1;fire:3;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:8;road:0;sword:0;tin_route:3;toolmaking:2;trader:5;war_horse:10;writing:0",
+        "fall_of_bronze,greedy,16,ruin,56,4,95,49,-2,3,9,15,2,0,2,2,0,5,bartering:3;bead_workshop:1;chariot:0;endless_raid:2;farm:1;fire:3;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:10;road:0;sword:0;tin_route:3;toolmaking:2;trader:4;war_horse:4;writing:0",
+        "fall_of_bronze,greedy,17,famine,91,4,121,-4,23,9,0,0,2,0,2,2,0,7,bartering:0;bead_workshop:0;chariot:0;endless_raid:2;farm:1;fire:9;food_caravan:3;forge:1;house:0;marketplace:0;material_caravan:5;road:0;sword:0;tin_route:2;toolmaking:1;trader:2;war_horse:4;writing:0",
+        "fall_of_bronze,greedy,18,ruin,48,4,70,54,-4,4,9,7,2,0,2,2,0,4,bartering:0;bead_workshop:1;chariot:0;endless_raid:2;farm:1;fire:4;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:8;road:0;sword:0;tin_route:4;toolmaking:0;trader:2;war_horse:0;writing:0",
+        "fall_of_bronze,greedy,19,famine,91,2,113,-4,29,2,5,0,2,0,2,2,0,8,bartering:0;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:2;food_caravan:7;forge:1;house:0;marketplace:0;material_caravan:2;road:0;sword:0;tin_route:1;toolmaking:2;trader:2;war_horse:3;writing:0"
+      ]
+    },
+    "planner": {
+      "maxRounds": 200,
+      "columns": "cell,policy,seed,outcome,turns,score,actions,food,production,science,military,money,population,culture,territory,structures,routes,reshuffles,cardsPlayed",
+      "rows": [
+        "fall_of_bronze,planner,0,ruin,49,2,80,56,-3,9,8,0,2,0,2,1,0,4,bartering:0;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:9;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:8;road:0;sword:0;tin_route:3;toolmaking:1;trader:3;war_horse:4;writing:0",
+        "fall_of_bronze,planner,1,bankruptcy,57,6,105,60,1,7,20,-1,2,0,2,1,0,5,bartering:0;bead_workshop:0;chariot:0;endless_raid:3;farm:1;fire:7;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:10;road:0;sword:0;tin_route:4;toolmaking:1;trader:8;war_horse:14;writing:0",
+        "fall_of_bronze,planner,2,famine,114,6,185,-1,17,17,16,0,2,0,3,3,0,10,bartering:4;bead_workshop:1;chariot:1;endless_raid:3;farm:1;fire:17;food_caravan:3;forge:1;house:0;marketplace:0;material_caravan:1;road:1;sword:0;tin_route:7;toolmaking:0;trader:5;war_horse:9;writing:0",
+        "fall_of_bronze,planner,3,famine,106,0,149,-1,11,16,6,0,2,0,2,2,0,8,bartering:0;bead_workshop:0;chariot:0;endless_raid:0;farm:1;fire:16;food_caravan:10;forge:1;house:0;marketplace:0;material_caravan:2;road:0;sword:0;tin_route:3;toolmaking:0;trader:4;war_horse:2;writing:0",
+        "fall_of_bronze,planner,4,ruin,43,2,64,56,-1,5,10,1,2,0,2,1,0,4,bartering:0;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:5;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:7;road:0;sword:0;tin_route:2;toolmaking:0;trader:1;war_horse:4;writing:0",
+        "fall_of_bronze,planner,5,ruin,60,8,116,36,-2,3,12,3,2,0,2,2,0,5,bartering:0;bead_workshop:0;chariot:1;endless_raid:4;farm:1;fire:7;food_caravan:3;forge:0;house:0;marketplace:1;material_caravan:9;road:0;sword:0;tin_route:5;toolmaking:1;trader:4;war_horse:7;writing:2",
+        "fall_of_bronze,planner,6,ruin,41,0,64,34,-3,7,9,2,2,0,2,1,0,3,bartering:0;bead_workshop:0;chariot:0;endless_raid:0;farm:1;fire:7;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:7;road:0;sword:0;tin_route:2;toolmaking:2;trader:1;war_horse:3;writing:0",
+        "fall_of_bronze,planner,7,famine,109,2,156,-1,2,16,8,1,2,0,2,2,0,9,bartering:0;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:16;food_caravan:5;forge:1;house:0;marketplace:0;material_caravan:4;road:0;sword:0;tin_route:4;toolmaking:1;trader:4;war_horse:4;writing:0",
+        "fall_of_bronze,planner,8,ruin,38,4,65,55,-1,6,4,1,2,0,2,1,0,3,bartering:1;bead_workshop:0;chariot:1;endless_raid:2;farm:1;fire:6;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:5;road:0;sword:0;tin_route:3;toolmaking:0;trader:6;war_horse:2;writing:0",
+        "fall_of_bronze,planner,9,bankruptcy,18,0,36,30,3,3,15,-1,2,0,2,1,1,1,bartering:0;bead_workshop:0;chariot:0;endless_raid:0;farm:1;fire:5;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:3;road:0;sword:0;tin_route:2;toolmaking:0;trader:1;war_horse:3;writing:1",
+        "fall_of_bronze,planner,10,ruin,54,4,99,35,-2,4,14,4,2,0,2,2,0,4,bartering:1;bead_workshop:1;chariot:0;endless_raid:2;farm:1;fire:4;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:10;road:0;sword:0;tin_route:4;toolmaking:2;trader:3;war_horse:7;writing:0",
+        "fall_of_bronze,planner,11,ruin,47,4,78,61,-2,5,12,2,2,0,2,1,0,4,bartering:0;bead_workshop:0;chariot:0;endless_raid:2;farm:1;fire:5;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:7;road:0;sword:0;tin_route:3;toolmaking:1;trader:3;war_horse:8;writing:0",
+        "fall_of_bronze,planner,12,famine,106,2,136,-3,16,9,9,1,2,0,2,2,0,9,bartering:2;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:9;food_caravan:2;forge:1;house:0;marketplace:0;material_caravan:1;road:0;sword:0;tin_route:3;toolmaking:0;trader:3;war_horse:3;writing:0",
+        "fall_of_bronze,planner,13,famine,109,2,150,-1,14,17,8,2,2,0,2,2,0,9,bartering:0;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:17;food_caravan:6;forge:1;house:0;marketplace:0;material_caravan:2;road:0;sword:0;tin_route:2;toolmaking:1;trader:2;war_horse:4;writing:0",
+        "fall_of_bronze,planner,14,ruin,67,6,114,51,-2,5,9,1,2,0,2,2,0,6,bartering:1;bead_workshop:0;chariot:0;endless_raid:3;farm:1;fire:5;food_caravan:0;forge:0;house:0;marketplace:1;material_caravan:11;road:0;sword:0;tin_route:6;toolmaking:3;trader:3;war_horse:7;writing:0",
+        "fall_of_bronze,planner,15,ruin,59,6,107,64,-4,7,8,1,2,0,3,2,0,5,bartering:0;bead_workshop:0;chariot:0;endless_raid:3;farm:1;fire:7;food_caravan:1;forge:0;house:0;marketplace:1;material_caravan:9;road:1;sword:0;tin_route:5;toolmaking:2;trader:4;war_horse:7;writing:0",
+        "fall_of_bronze,planner,16,ruin,41,2,71,43,-1,5,9,8,2,0,2,2,0,3,bartering:0;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:5;food_caravan:2;forge:0;house:0;marketplace:0;material_caravan:7;road:0;sword:1;tin_route:1;toolmaking:2;trader:4;war_horse:3;writing:0",
+        "fall_of_bronze,planner,17,ruin,43,2,69,50,-2,3,10,0,2,0,2,1,0,4,bartering:0;bead_workshop:0;chariot:0;endless_raid:1;farm:1;fire:5;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:7;road:0;sword:0;tin_route:2;toolmaking:1;trader:2;war_horse:4;writing:1",
+        "fall_of_bronze,planner,18,ruin,63,6,121,80,-1,12,12,0,2,0,2,2,0,6,bartering:3;bead_workshop:1;chariot:0;endless_raid:3;farm:1;fire:12;food_caravan:1;forge:0;house:0;marketplace:0;material_caravan:5;road:0;sword:0;tin_route:5;toolmaking:2;trader:4;war_horse:6;writing:0",
+        "fall_of_bronze,planner,19,ruin,48,4,84,51,-3,1,14,2,2,0,2,2,0,4,bartering:1;bead_workshop:1;chariot:0;endless_raid:2;farm:1;fire:3;food_caravan:0;forge:0;house:0;marketplace:0;material_caravan:6;road:0;sword:0;tin_route:3;toolmaking:3;trader:4;war_horse:4;writing:1"
+      ]
+    }
+  }
+}

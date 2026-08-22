@@ -74,13 +74,13 @@ tally the capstone's win threshold and the repel ladder read, so the three can n
 spawns one `endless_raid` via `spawnIntoDeck` — fresh instance ids, deterministic shuffle-in, the
 face counting down to the next sails.
 
-## Balance ⬜
+## Balance 🟡
 
-**No baseline fixture, by construction** — an infinite stays unfixtured, the same standing exemption as
-`ice_age`/`sandbox`. But the simulator now *measures* the delivery: the objective still offers no **win**
-gradient, so what the competent policies steer by here is the `score` measure itself (`sim/race.ts`'s score
-term, one round of margin a point), and the sweep row carries a `score` column — the Influence an attempt
-banks.
+**Fixtured** — `scripts/sim/baselines/fall_of_bronze.json` pins the capstone's City deck + board,
+recorded at `greedy`/`planner` @20 with **no prover** (a never-winning objective declines every seed,
+so the column would measure nothing). The objective offers no **win** gradient; what the competent
+policies steer by is the `score` measure itself (`sim/race.ts`'s score term, one round of margin a
+point), and each row's `score` column is the Influence the attempt banks.
 
 The shipped numbers — 4⚔️ base · +4 ladder · period 6 · 2⭐ a wave — came out of a measured
 investigation rather than feel alone. The scorer was cleared first: at every state where a repel was

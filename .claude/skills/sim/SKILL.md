@@ -207,15 +207,17 @@ Baseline — a whole cell in one file:
 }
 ```
 A fixture holds its **own** measurement, one entry per policy — so the seed counts of the
-standing protocol (greedy/planner @100, prover @10) live in one file, and re-measuring one
-policy replaces one key. The rows are raw, not the folded report: the fold is cheap and
+standing protocol (greedy/planner @100, prover @10; a scored infinite is greedy/planner @20 with
+no prover, which would decline every seed of a never-winning objective) live in one file, and
+re-measuring one policy replaces one key. The rows are raw, not the folded report: the fold is cheap and
 re-runnable, the sweep is not, so keeping them means "which seeds flipped?" is answerable
 without re-measuring, and a rebalance reads as a per-seed `git diff`.
 
 ## The standing set — `scripts/sim/baselines/`
 
 The committed baselines are the standing regression references (the equivalent of the old
-`SCENARIOS` rows), covering the measured standard missions, each pinning the deck and board a
+`SCENARIOS` rows), covering the measured missions — standard and scored-infinite alike — each
+pinning the deck and board a
 player actually has **arriving** at it. Usually one per mission; a mission reachable from two
 boards that play it differently gets one fixture per board (`masonry` / `masonry_chiefdom`),
 since a fixture holds exactly one board:

@@ -103,14 +103,17 @@ surprise, so nothing shows a locked placeholder or a total count.
   `--deck`/`--board` point at JSON files (examples under `scripts/sim/`). **`--baseline <paths|dir>`**
   loads *self-contained* fixtures that each own their own mission, deck and board — so one sweep spans
   cells sharing none of the three. `scripts/sim/baselines/` is the committed standing set, covering the
-  *measured* standard missions (a freshly-shipped one has none until its balance pass cuts it: an
+  *measured* missions — standard and scored-infinite alike (a freshly-shipped one has none until its
+  balance pass cuts it: an
   unmeasured fixture is worse than no fixture, since its numbers read as fact) — usually one apiece, but
   a fixture holds exactly one board, so a mission the campaign reaches from two boards gets one per
   board; the Stone Age ones are deliberately **minimal no-purchase decks**, since no
   Influence can be ground before `ice_age` unlocks — a mission needing the shop there would be a
   softlock. A fixture carries its **own** measured rows in a `results` key, one entry per policy
   (`greedy`/`planner` @100 + `prover` @10 is the standing protocol — the prover column is the
-  search-proven winnability lower bound, so a low one flags a hard cell, not a broken one), whose commit *is* their content-SHA
+  search-proven winnability lower bound, so a low one flags a hard cell, not a broken one; a scored
+  infinite records `greedy`/`planner` @20 alone, since a prover on a never-winning objective declines
+  every seed and its column would measure nothing), whose commit *is* their content-SHA
   record — so a policy with no entry is simply unmeasured, not measured-and-absent, and a re-cut fixture
   can no longer strand rows in a file nobody edits. Every row is swept at the **default search beam** and
   the **default scorer**, so a `--search-beam` or `--scorer` sweep is a diagnostic, never a baseline. Both styles take
