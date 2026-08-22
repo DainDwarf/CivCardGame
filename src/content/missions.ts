@@ -109,8 +109,9 @@ export interface MissionDef {
  * `fall_of_bronze` are *scored survival* missions — each guarantees eventual collapse (a deepening
  * food-drain threat; an ever-growing raid census) and pays its score out as Influence — while `sandbox`
  * is `rewardless`, a no-stakes practice space with no bounding threat that ends only on collapse or when
- * the player quits. The simulator drives none of them (a never-winning objective offers it no gradient
- * to climb).
+ * the player quits. A never-winning objective offers the simulator no *win* gradient; what it steers by on
+ * the two scored ones is the `score` measure itself (`sim/race.ts`), and the sandbox, declaring none, is
+ * driven by survival alone.
  */
 export const MISSIONS: Record<string, MissionDef> = {
   first_settlement: {

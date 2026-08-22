@@ -545,7 +545,7 @@ moving the rest — with both sides of every clock in raw units and rounds, that
 to appear. Rounds also make engine value fall out instead of being shaped in (a producer is worth the
 rounds it shaves off `T̂win`, zero once it cannot repay before `T̂loss`) and let the model trade survival
 for tempo continuously (collapsing in six rounds while winning in four is a good state). The discipline
-that survives from the tuning eras: the model carries exactly **six tuned constants**, each stating its
+that survives from the tuning eras: the model carries exactly **seven tuned constants**, each stating its
 units and why it is tuned rather than derived, on the constant itself; everything else derives from card
 `cost`→`produces`/`effect` data through shared probes (`sim/probes.ts`), never from a per-mission table.
 
@@ -562,6 +562,17 @@ instead vanishes by *executing* the rescue (the projection flips and the pool le
 the ordinary drain reading) and shrinks by approaching one. Alongside it, the near-death steepening reads the
 **shortfall the coming boundary opens** wherever a pool's clock has reached zero: `level / drain` stops
 discriminating at an empty pool, so without it the play that quadruples the burn at zero food reads as free.
+
+**A never-winning mission is steered by what it is paid, not by a win it cannot reach.** An `'infinite'`
+objective pins `T̂win` at the horizon whatever the run does, so the margin above it is pure survival and the
+attempt's own tally — the thing the payout settles on — reaches the value nowhere: the simulator would
+measure how long a policy hides rather than how much Influence an attempt delivers. So a state is
+additionally worth what it has **scored** under the objective card's own `score` measure, at one round of
+runway per point. Par is the rate the content already states: the Ice Age scores exactly its rounds
+survived, so any other exchange would contradict a measure the mission authored. An objective declaring no
+measure never folds the term at all, which leaves every standard mission's rows byte-identical to a model
+that had never heard of scoring — and the frozen band scorer, which gains no such term, reads an infinite
+blind by construction.
 
 **The band scorer stays on as a frozen second opinion.** The pre-race value function — `scoreState`'s
 survival-first score bands plus the **enabler potential** (`sim/enablers.ts`), the leaf term that credits

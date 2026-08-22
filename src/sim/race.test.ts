@@ -56,6 +56,18 @@ const FIXTURES: Record<string, CardDef> = {
       { icon: '🪙', measure: (G) => G.resources.money, target: 10 },
     ],
   },
+  // The never-winning pair: one bespoke always-false goal, differing only in whether the card declares a
+  // `score`. Both measure 🎭, a pool nothing else in this model reads, so the two states are otherwise
+  // identical and the whole difference between them is the term.
+  race_goal_endless: {
+    id: 'race_goal_endless', name: 'Race Goal Endless', kind: 'objective', cost: {},
+    goals: [{ icon: '🌀', measure: () => 0, target: 1, met: () => false }],
+  },
+  race_goal_scored: {
+    id: 'race_goal_scored', name: 'Race Goal Scored', kind: 'objective', cost: {},
+    goals: [{ icon: '🌀', measure: () => 0, target: 1, met: () => false }],
+    score: (G) => G.resources.culture,
+  },
   // Wins by surviving, the way Harsh Winter does — the one measure that moves without an economy.
   race_goal_round: {
     id: 'race_goal_round', name: 'Race Goal Round', kind: 'objective', cost: {},
@@ -1775,6 +1787,27 @@ describe('ranking', () => {
     expect(ex.clock.cardId).toBe('race_relic');
     expect(ex.landings.map((p) => p.netted)).toEqual([{ production: 12 }, { production: 13.5 }]);
     expect(raceBreakdown(G, { model }).wealth).toBeCloseTo(((13.5 - 12) / RACE.wealthCap) * RACE.wealthRounds, 12);
+  });
+});
+
+describe('the score a never-winning objective is paid for', () => {
+  const endless = (culture: number, objectiveCardId = 'race_goal_scored') => {
+    const G = state(objectiveCardId, { producers: 1 });
+    G.resources.culture = culture;
+    return valued(G);
+  };
+
+  it('is worth RACE.scoreRounds a point, and nothing before the first one', () => {
+    expect(endless(0).score).toBe(0);
+    expect(endless(7).score).toBe(7 * RACE.scoreRounds);
+    expect(endless(7).total - endless(0).total).toBeCloseTo(7 * RACE.scoreRounds, 10);
+  });
+
+  it('is not folded at all where the objective declares no measure', () => {
+    // The byte-identity CI's baseline gate checks indirectly: on every standard mission nothing the term
+    // would read can move the value, because the term is never reached.
+    expect(endless(7, 'race_goal_endless').score).toBe(0);
+    expect(endless(7, 'race_goal_endless').total).toBe(endless(0, 'race_goal_endless').total);
   });
 });
 

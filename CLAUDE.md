@@ -94,7 +94,9 @@ surprise, so nothing shows a locked placeholder or a total count.
   `#`-comment header — the sweep's own flags (the **effective** `maxRounds`/`beamWidth`, not the ones a
   flag happened to name), then one manifest line per cell naming its mission, board and deck — so a sweep
   file is a complete record of itself (a data row carries no constant-per-cell field, and a deck's copy
-  counts and per-copy stickers are expressible nowhere else). `cardsPlayed` is **zero-filled** over the deck plus
+  counts and per-copy stickers are expressible nowhere else). `score` is the Influence the attempt
+  delivers — the objective card's own `score` measure, `0` on every standard mission (whose objectives
+  declare none), so only an `'infinite'` cell moves it. `cardsPlayed` is **zero-filled** over the deck plus
   the mission's `events` and `alsoDisplay`, which makes "unplayed" a per-run fact and keeps the key set
   identical across every row of a cell. Cells are named one of two mutually-exclusive ways. **Ad-hoc**, over a mission ×
   deck × board matrix: `--scenario <ids>` names missions (live from `content/missions.ts`),
@@ -626,7 +628,13 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   left and zero at `slackCap`. It vanishes by *executing* the rescue and shrinks by approaching one, which
   is the whole of it: crediting a merely reachable rescue instead removes the pressure that would perform
   it (measured — see DESIGN.md). Where a pool's clock has run to zero the near-death steepening reads the
-  **shortfall** the coming boundary opens rather than the clock, which no longer discriminates. Six tuned
+  **shortfall** the coming boundary opens rather than the clock, which no longer discriminates. A
+  never-winning objective pins `T̂win` at the horizon, leaving the margin all survival and the attempt's own
+  tally unread, so a state is additionally worth what it has **scored** under the objective card's `score`
+  measure (`rules/objective.ts`'s `runScore`), at `scoreRounds` a point — the only term steering an
+  `'infinite'` mission, and never folded at all where an objective declares no measure (every standard
+  mission, so its rows are byte-identical to a model without it). The band scorer stays frozen: `--scorer
+  band` reads an infinite blind. Seven tuned
   constants, each stating its units and why it is tuned rather than derived, on the constant itself.
 - **Policies** — `randomPolicy` (random legal move), `greedyPolicy` (a two-phase one-ply optimizer over
   the `Scorer`'s value, splitting off the `endTurn` decision), `heuristicPolicy` (a
@@ -693,8 +701,8 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   and oracle share, parameterized by the ranking heuristic — which it hands the node's transposition key
   alongside `G`, a memo hint the planner caches its (expensive, projection-based) leaf value on.
 - **Measure, then fold** — the two are separate passes over one currency, `record.ts`'s **`RunRecord`**
-  (one finished run: cell · policy · seed · outcome · turns · actions · all 8 end pools · structures/
-  routes/reshuffles · zero-filled `cardPlays`). `runBatch(scenarios, { seeds })` (`batch.ts`) sweeps a
+  (one finished run: cell · policy · seed · outcome · turns · score · actions · all 8 end pools ·
+  structures/routes/reshuffles · zero-filled `cardPlays`). `runBatch(scenarios, { seeds })` (`batch.ts`) sweeps a
   flat `Scenario[]` ×N seeds (two deterministic streams per run — `…-cfg-i` shuffle, `…-pol-i` moves —
   so a batch is reproducible) and emits one record per run through `onRun` as it lands, aggregating
   nothing; `seedIndices` narrows the sweep to chosen indices without disturbing their streams, which is

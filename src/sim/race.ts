@@ -13,6 +13,7 @@ import {
   isOperating,
   producingUnits,
   resolveEndTurn,
+  runScore,
   scaleResources,
   type CardInstance,
   type CoreResources,
@@ -38,6 +39,12 @@ import { DEFAULT_MAX_ROUNDS } from './simulate';
  * repay before `T̂loss`); survival and tempo trade against each other continuously, so a survivable dip
  * that buys a faster win is takeable; and staffing registers as value because it raises τ in `T̂win`'s
  * denominator.
+ *
+ * A mission that can never win is the one shape the margin alone says nothing about: `T̂win` sits at the
+ * horizon whatever the run does, so every term is survival and the attempt's own tally — what the payout
+ * actually settles on — reaches the value nowhere. So a state is additionally worth what it has **scored**
+ * under the objective card's own measure (`rules/objective.ts`'s `runScore`), at `RACE.scoreRounds` a
+ * point. An objective declaring no measure never folds the term, which is every standard mission.
  *
  * A **pure read** over `G` (it clones to project), so it is safe on a candidate's resulting state.
  */
@@ -83,6 +90,13 @@ export const RACE = {
    *  set really reads (3–5 rounds), so the ceiling bounds an unreachable rescue rather than flattening a
    *  live one — a ceiling that binds on a real route turns the whole charge into a constant. */
   rescueRounds: 10,
+  /** Rounds of margin one point of the mission's own `score` measure is worth (`rules/objective.ts`'s
+   *  `runScore`). Tuned because it prices an exchange between two things a scored attempt is paid in that
+   *  no arithmetic here relates: a round of runway and a banked point. Par, because the one mission that
+   *  already states the exchange states it there — the Ice Age scores exactly its rounds — so any other
+   *  rate would contradict a measure the content authored. Folded only where the objective declares a
+   *  measure; every other mission never reaches it. */
+  scoreRounds: 1,
   /** Rounds — the tie-break's ceiling, reached at `wealthCap` banked core resources (the two together
    *  are one constant: a weight with no cap is unbounded, and cannot then be held under a margin step).
    *  Sized so a full bank never outweighs a real difference in the race. */
@@ -141,6 +155,9 @@ export interface RaceBreakdown {
   rescue: number;
   /** The banked-wealth tie-break, ≥ 0. */
   wealth: number;
+  /** What the attempt has already scored, in rounds — `0` on an objective declaring no measure, where the
+   *  term is not folded at all rather than folded as a zero. */
+  score: number;
   /** `RACE.victory` or 0. */
   victory: number;
   total: number;
@@ -1958,6 +1975,17 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
   const wealth = (Math.min(core, RACE.wealthCap) / RACE.wealthCap) * RACE.wealthRounds;
   total += wealth;
 
+  // What a scored attempt is actually paid for. A never-winning objective leaves `T̂win` pinned at the
+  // horizon, so every term above it is survival and nothing reads the tally the payout settles on — the
+  // run holds the lanes only if holding them is worth something here. Skipped, not zeroed, where the
+  // objective declares no measure: every standard mission then accumulates exactly the sum it always did.
+  const measured = runScore(G);
+  let score = 0;
+  if (measured !== undefined) {
+    score = RACE.scoreRounds * measured;
+    total += score;
+  }
+
   const victory = G.pendingVictory ? RACE.victory : 0;
   total += victory;
 
@@ -1973,6 +2001,7 @@ function computeRace(G: GameState, opts: RaceOptions, ex?: RaceSink): RaceBreakd
     nearDeath,
     rescue,
     wealth,
+    score,
     victory,
     total,
   };

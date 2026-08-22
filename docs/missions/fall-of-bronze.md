@@ -66,11 +66,29 @@ the tin-gated repel, the cut/strip/burn upkeep all just keep working at census >
 
 ## Balance ⬜
 
-**No baseline fixture, by construction** — the simulator cannot drive a never-winning objective (no
-gradient), the same standing exemption as `ice_age`/`sandbox`. Smoke-swept `random`/`heuristic`
-(no crashes, no invariant violations; the spawner fired through a reshuffle with the enlarged deck).
-The pass here is **feel-play**: the spawn period and seed count against a real deck, and the turtle
-watch above.
+**No baseline fixture, by construction** — an infinite stays unfixtured, the same standing exemption as
+`ice_age`/`sandbox`. But the simulator now *measures* the delivery: the objective still offers no **win**
+gradient, so what the competent policies steer by here is the `score` measure itself (`sim/race.ts`'s score
+term, one round of margin a point), and the sweep row carries a `score` column — the Influence an attempt
+banks.
+
+Measured ad-hoc on the capstone's own City deck + board (`sea_peoples_city`'s), 20 seeds, `--max-rounds
+200`; no stalls, every run ends in collapse:
+
+| policy  | ⭐ mean | ⭐ max | rounds mean | rounds max | defeats            |
+|---------|--------|-------|-------------|------------|--------------------|
+| greedy  | 1.1    | 2     | 34.3        | 70         | ruin 12 · bank 4 · famine 4 |
+| planner | 1.0    | 2     | 45.1        | 84         | ruin 14 · famine 5 · bank 1 |
+
+**One or two waves is the whole tally**, on the deck that just cleared the capstone — the 8 + 4·k ladder
+outprices the board's ⚔️ income after the first repel or two, exactly as designed, but it does so *early*
+enough that the score barely discriminates between a good attempt and a poor one. Raising the score term's
+weight fivefold moves neither number (the repels the policies skip are unaffordable, not undervalued), so
+the knob is content: the ladder's step, the spawn period, or the ⚔️ the Bronze board can field.
+
+The pass here is still **feel-play**: the spawn period and seed count against a real deck, and the turtle
+watch above (the sim's turtle reading is that hiding is *not* rewarded — the score is waves, and the
+policies do spend on repels when they can afford them).
 
 ## Polish ⬜
 

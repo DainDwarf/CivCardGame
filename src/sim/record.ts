@@ -24,6 +24,11 @@ export interface RunRecord {
    *  `'unknown'` is the one value no card authored — a defeat the engine gave no reason for. */
   outcome: string;
   turns: number;
+  /** What the attempt scored under the mission's own measure (`RunResult.stats.score`) — the Influence a
+   *  scored `'infinite'` attempt delivers. `0` where the objective declares no measure, which is every
+   *  standard mission: an unscored cell then reads as a flat zero column rather than as a hole, and the
+   *  row stays rectangular across a sweep spanning both kinds. */
+  score: number;
   /** Actions dispatched, including ones the engine rejected (`SimOutcome.actionsApplied`). */
   actions: number;
   /** All eight pools at run end. A collapse legitimately ends on a negative one. */
@@ -46,6 +51,7 @@ export const RECORD_COLUMNS = [
   'seed',
   'outcome',
   'turns',
+  'score',
   'actions',
   ...CORE_KEYS,
   ...STRATEGIC_KEYS,
@@ -81,6 +87,7 @@ export function toRunRecord(scenario: Scenario, policy: string, seed: number, o:
     seed,
     outcome: o.result.outcome === 'victory' ? WIN_OUTCOME : o.gameover.reason ?? 'unknown',
     turns: o.result.stats.turnsTaken,
+    score: o.result.stats.score ?? 0,
     actions: o.actionsApplied,
     resources: o.result.stats.finalResources,
     structures: o.finalState.tableau.length,
@@ -143,6 +150,7 @@ export function recordToCsvLine(r: RunRecord): string {
     r.seed,
     esc(r.outcome),
     r.turns,
+    r.score,
     r.actions,
     ...CORE_KEYS.map((k) => r.resources[k]),
     ...STRATEGIC_KEYS.map((k) => r.resources[k]),
@@ -264,6 +272,7 @@ export function parseRecordCsv(text: string): {
       seed: Number(at('seed')),
       outcome: at('outcome'),
       turns: Number(at('turns')),
+      score: Number(at('score')),
       actions: Number(at('actions')),
       resources,
       structures: Number(at('structures')),

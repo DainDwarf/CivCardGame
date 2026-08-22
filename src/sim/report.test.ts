@@ -19,6 +19,7 @@ function record(opts: {
   resources?: Partial<Resources>;
   cell?: string;
   seed?: number;
+  score?: number;
 }): RunRecord {
   return {
     cell: opts.cell ?? 's',
@@ -26,6 +27,7 @@ function record(opts: {
     seed: opts.seed ?? 0,
     outcome: opts.outcome,
     turns: opts.turns,
+    score: opts.score ?? 0,
     actions: opts.actions ?? 0,
     resources: { ...emptyResources(), ...opts.resources },
     structures: 0,
@@ -48,6 +50,15 @@ describe('summarize', () => {
     expect(s.winRate).toBe(0.25);
     expect(s.turns).toEqual({ min: 2, mean: 5, median: 5, max: 8 });
     expect(s.meanActions).toBe(12);
+  });
+
+  it('folds the attempt scores, and reads a flat zero off an unscored cell', () => {
+    const scored = summarize([
+      record({ outcome: 'famine', turns: 4, score: 3 }),
+      record({ outcome: 'famine', turns: 9, score: 8 }),
+    ]);
+    expect(scored.score).toEqual({ mean: 5.5, max: 8 });
+    expect(summarize([record({ outcome: WIN_OUTCOME, turns: 4 })]).score).toEqual({ mean: 0, max: 0 });
   });
 
   it('groups defeat causes off the outcome, keeping a deadline defeat separate from a famine', () => {

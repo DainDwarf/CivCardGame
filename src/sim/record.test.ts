@@ -25,10 +25,15 @@ function outcome(opts: {
   turnsTaken?: number;
   cardPlays?: Record<string, number>;
   finalResources?: Partial<Resources>;
+  score?: number;
 }): SimOutcome {
   const finalResources = { ...emptyResources(), ...opts.finalResources };
   return {
-    result: { outcome: opts.outcome, missionId: 'test', stats: { turnsTaken: opts.turnsTaken ?? 1, score: opts.turnsTaken ?? 1, finalResources } },
+    result: {
+      outcome: opts.outcome,
+      missionId: 'test',
+      stats: { turnsTaken: opts.turnsTaken ?? 1, ...(opts.score !== undefined ? { score: opts.score } : {}), finalResources },
+    },
     gameover: { outcome: opts.outcome, reason: opts.reason, missionId: 'test' },
     finalState: blankState('test'),
     actionsApplied: 7,
@@ -43,6 +48,7 @@ function record(over: Partial<RunRecord> = {}): RunRecord {
     seed: 3,
     outcome: WIN_OUTCOME,
     turns: 12,
+    score: 0,
     actions: 40,
     resources: { food: -2, production: 4, science: 0, military: 3, money: 11, population: 5, culture: 2, territory: 6 },
     structures: 3,
@@ -78,6 +84,13 @@ describe('the CSV round-trip', () => {
     const r = record({ outcome: 'the pharaoh died, and his tomb stood empty' });
     expect(recordToCsvLine(r)).toContain('"the pharaoh died, and his tomb stood empty"');
     expect(roundTrip(r)).toEqual(r);
+  });
+
+  // Every standard mission's objective declares no measure, so the column has to mean "unscored" rather
+  // than go missing — a row is only rectangular if every cell writes it.
+  it('records a scored attempt, and zeroes an unscored one', () => {
+    expect(toRunRecord(scenario, 'greedy', 0, outcome({ outcome: 'defeat', reason: 'famine', score: 6 })).score).toBe(6);
+    expect(toRunRecord(scenario, 'greedy', 0, outcome({ outcome: 'victory' })).score).toBe(0);
   });
 
   it('rejects a file whose columns are not the ones it claims', () => {

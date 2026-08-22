@@ -311,7 +311,7 @@ function cellBlock(cell: RaceValuationCell): string {
   out.push('');
 
   out.push(
-    `value  margin ${n(b.margin, 3)} · nearDeath ${n(b.nearDeath, 3)} · rescue ${n(b.rescue, 3)} · wealth ${n(b.wealth, 3)} · victory ${b.victory} · total ${n(b.total, 3)}`,
+    `value  margin ${n(b.margin, 3)} · nearDeath ${n(b.nearDeath, 3)} · rescue ${n(b.rescue, 3)} · wealth ${n(b.wealth, 3)} · score ${n(b.score, 3)} · victory ${b.victory} · total ${n(b.total, 3)}`,
   );
   return out.join('\n');
 }
@@ -323,7 +323,7 @@ export function formatRaceValuation(cells: RaceValuationCell[], maxRounds: numbe
     'scale: everything is rounds, except worker-rounds (wr) and the dimensionless softMax weights',
     `derived at the run root from content alone — seed-independent (every zone read as a multiset), so no run is simulated`,
     `horizon: maxRounds ${maxRounds}, the drive-loop cutoff every estimate clamps to`,
-    `constants: victory ${RACE.victory} · goalSoftening ${RACE.goalSoftening} × the leading clock · slackCap ${RACE.slackCap} rd · nearDeathSteepness ${RACE.nearDeathSteepness} · rescueRounds ${RACE.rescueRounds} rd · wealthRounds ${RACE.wealthRounds} rd at wealthCap ${RACE.wealthCap}`,
+    `constants: victory ${RACE.victory} · goalSoftening ${RACE.goalSoftening} × the leading clock · slackCap ${RACE.slackCap} rd · nearDeathSteepness ${RACE.nearDeathSteepness} · rescueRounds ${RACE.rescueRounds} rd · wealthRounds ${RACE.wealthRounds} rd at wealthCap ${RACE.wealthCap} · scoreRounds ${RACE.scoreRounds} rd a point`,
     'ABSORBED marks a softMax weight under the ULP of 1: the fold came out bit-identical to a hard max, so',
     'the state has no gradient on that clock at all. A temperature that is a fraction of the leading clock',
     `floors every weight at exp(-1/${RACE.goalSoftening}) = ${Math.exp(-1 / RACE.goalSoftening).toExponential(1)}, so nothing is absorbed at this softening`,
@@ -546,6 +546,7 @@ export function raceCsvLines(cell: RaceValuationCell): string[] {
   rows.push({ goal: NO_GOAL, section: 'value', key: 'nearDeath', value: b.nearDeath, unit: 'rounds' });
   rows.push({ goal: NO_GOAL, section: 'value', key: 'rescue', value: b.rescue, unit: 'rounds' });
   rows.push({ goal: NO_GOAL, section: 'value', key: 'wealth', value: b.wealth, unit: 'rounds' });
+  rows.push({ goal: NO_GOAL, section: 'value', key: 'score', value: b.score, unit: 'rounds' });
   rows.push({ goal: NO_GOAL, section: 'value', key: 'victory', value: b.victory, unit: 'rounds' });
   rows.push({ goal: NO_GOAL, section: 'value', key: 'total', value: b.total, unit: 'rounds' });
   rows.push({ goal: NO_GOAL, section: 'lossCause', key: b.lossCause, cardId: b.lossCardId, value: b.tLoss, unit: 'rounds' });

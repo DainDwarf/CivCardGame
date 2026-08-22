@@ -9,6 +9,7 @@ function record(over: Partial<RunRecord> = {}): RunRecord {
     seed: 0,
     outcome: WIN_OUTCOME,
     turns: 12,
+    score: 0,
     actions: 40,
     resources: { food: 1, production: 2, science: 3, military: 4, money: 5, population: 6, culture: 7, territory: 8 },
     structures: 3,

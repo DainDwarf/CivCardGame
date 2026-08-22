@@ -126,10 +126,12 @@ per-copy stickers live nowhere else, and `sim:record` decides off that header al
 rows are a baseline or a diagnostic.
 
 One row per run:
-`cell,policy,seed,outcome,turns,actions,`(the 8 pools)`,structures,routes,reshuffles,cardsPlayed`
+`cell,policy,seed,outcome,turns,score,actions,`(the 8 pools)`,structures,routes,reshuffles,cardsPlayed`
 
 - **`outcome` is one column**: `win` on a victory, else the defeat's authoritative cause
   verbatim. Wins are `== win`, all defeats `!= win`, one cause an equality.
+- **`score` is the Influence the attempt delivers** — the objective card's own `score` measure.
+  `0` on every standard mission, whose objectives declare none; only an `'infinite'` cell moves it.
 - **`cardsPlayed` is zero-filled** over the cell's deck plus the mission's `events` and
   `alsoDisplay` (what a run can only mint mid-play — Accounting's Thief). So "unplayed" is a
   *per-run* fact readable off the row, and the key set is identical across every row of a cell.

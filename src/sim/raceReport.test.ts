@@ -100,6 +100,7 @@ function cell(): RaceValuationCell {
         nearDeath: 0,
         rescue: -1.8,
         wealth: 0.01,
+        score: 0,
         victory: 0,
         total: 6.21,
       },

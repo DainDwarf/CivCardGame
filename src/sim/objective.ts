@@ -23,7 +23,8 @@ import { CARDS } from '../content/cards';
  * Progress in roughly `[0, 1]` toward the seeded objective (`1` once met): the average of the objective
  * card's own `goals` (`goalProgress`). With no objective (or no goals) it is a constant `0` — for the
  * sandbox, whose single goal never wins, that is no steering and the greedy's `scoreState` is unchanged on
- * it. Pure over `G`.
+ * it. A never-winning objective that is *scored* is steered by its `score` measure instead, in `race.ts`'s
+ * own term; nothing here reads it. Pure over `G`.
  */
 export function objectiveProgress(G: GameState): number {
   const o = G.objective;
