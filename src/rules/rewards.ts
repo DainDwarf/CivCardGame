@@ -38,10 +38,10 @@ export interface RewardOutcome {
  * An `'infinite'` mission has no fixed win state and never touches `mapProgress`
  * (see `App.tsx`'s `recordResult`), so its payout is unconditional instead: Influence equal
  * to `score` — the attempt under the mission's own measure (`RunResult.stats.score`; the
- * objective card's `score`, rounds survived by default) — paid on *every* attempt regardless
- * of `alreadyCompleted` or whether the run's outcome reads as victory or defeat — there is no
- * unlock to grant. A `rewardless` infinite mission (the sandbox) is the exception: it pays
- * nothing, a no-stakes space.
+ * objective card's `score`) — paid on *every* attempt regardless of `alreadyCompleted` or
+ * whether the run's outcome reads as victory or defeat — there is no unlock to grant. An
+ * attempt with no score pays nothing: either the objective declares no measure, or the
+ * mission is `rewardless` (the sandbox), a no-stakes space that is both.
  */
 export function computeRewards(
   mission: MissionDef,

@@ -55,10 +55,11 @@ export interface RunResult {
   missionId: string;
   stats: {
     turnsTaken: number;
-    /** The attempt's score under the mission's own measure — the objective card's `score`, defaulting
-     *  to rounds survived (`rules/objective.ts`'s `runScore`). Read only by the `'infinite'` payout
-     *  and best-score folds in `meta/store.ts`; carried but meaningless on a standard mission. */
-    score: number;
+    /** The attempt's score under the mission's own measure — the objective card's `score`
+     *  (`rules/objective.ts`'s `runScore`). Absent where the objective declares no measure, which is
+     *  every standard mission and the sandbox: such an attempt pays no Influence and records no best
+     *  (`meta/store.ts`). Read only by those `'infinite'` folds. */
+    score?: number;
     /** Every resource pool at run end — the five core plus the three strategic
      *  (population/territory/culture), mirroring `GameState.resources`. */
     finalResources: Resources;

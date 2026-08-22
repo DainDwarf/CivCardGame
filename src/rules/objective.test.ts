@@ -89,11 +89,11 @@ describe('runScore (infinite-mission score)', () => {
     },
   };
 
-  it('defaults to rounds survived — no objective seeded, or one without a score measure', () => {
+  it('is undefined with no objective seeded, or one declaring no score measure', () => {
     const bare = blankState('sandbox');
     bare.round = 9;
-    expect(runScore(bare)).toBe(9);
-    expect(runScore(withObjective('sandbox_goal', (G) => (G.round = 23)))).toBe(23);
+    expect(runScore(bare)).toBeUndefined();
+    expect(runScore(withObjective('sandbox_goal', (G) => (G.round = 23)))).toBeUndefined();
   });
 
   it("reads the objective card's own score measure when it carries one", () => {

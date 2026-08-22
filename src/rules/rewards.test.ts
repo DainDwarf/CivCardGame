@@ -144,6 +144,10 @@ describe('computeRewards — infinite missions', () => {
     expect(result.influence).toBe(7);
   });
 
+  it('pays nothing for an attempt with no score — an objective declaring no measure', () => {
+    expect(computeRewards(infiniteMission(), false, progress()).influence).toBe(0);
+  });
+
   it('passes the unlock progress through untouched', () => {
     const m = infiniteMission();
     const before: OwnedCards = collectionFromCounts({ granary: 1 });

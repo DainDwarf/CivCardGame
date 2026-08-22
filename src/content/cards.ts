@@ -108,8 +108,9 @@ export interface CardDef {
   goals?: ObjectiveGoal[];
   /** `objective` cards only, `'infinite'` missions only: what a scored attempt *measures* — read once
    *  at run end into `RunResult.stats.score` (`rules/objective.ts`'s `runScore`), which the meta loop
-   *  pays as Influence and records as the mission's best. Absent = rounds survived. A pure read over
-   *  `G`, like `goals` — the card owns the mission's scoring the way it owns its win. */
+   *  pays as Influence and records as the mission's best. Absent = unscored: the attempt pays nothing
+   *  and records no best. A pure read over `G`, like `goals` — the card owns the mission's scoring the
+   *  way it owns its win. */
   score?: (G: GameState) => number;
   /** `threat` cards only: a driven (non-collapse) defeat as a pure-read predicate returning the reason
    *  string, or falsy. Never mutates `G`; bus-driven into `G.pendingDefeat` set-OR-CLEAR
@@ -1107,10 +1108,11 @@ export const CARDS: Record<string, CardDef> = {
 
   // Return of the Ice Age is an endless survival mission: like the sandbox its objective never wins (one
   //   bespoke always-false goal), so the run ends only when the deepening cold (the `long_winter` threat)
-  //   starves the food store. The score is rounds survived, paid as Influence by the infinite-mission payout.
+  //   starves the food store. Its `score` is rounds survived, paid as Influence by the infinite payout.
   ice_age_goal: {
     id: 'ice_age_goal', name: 'Return of the Ice Age', kind: 'objective', cost: {},
     goals: [{ icon: '🧊', measure: () => 0, target: 1, met: () => false }],
+    score: (G) => G.round,
     display: {
       art: '🧊',
       description: 'Endure the deepening cold as long as you can.',
@@ -1120,7 +1122,7 @@ export const CARDS: Record<string, CardDef> = {
 
   // Fall of the Bronze Age is the Bronze endless survival mission: never-winning like the other two,
   //   bounded by the Catastrophe's ever-growing raid census. Its `score` is *waves repelled* rather
-  //   than the rounds-survived default — the payout rewards holding the lanes and fighting, so a run
+  //   than the Ice Age's rounds survived — the payout rewards holding the lanes and fighting, so a run
   //   that hides from the storm banks nothing.
   fall_of_bronze_goal: {
     id: 'fall_of_bronze_goal', name: 'Fall of the Bronze Age', kind: 'objective', cost: {},

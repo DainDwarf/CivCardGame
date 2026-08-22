@@ -42,12 +42,15 @@ export function createRun(config: RunConfig): RunState {
 
 /** Promote a finished run's state into the minimal `RunResult` handed back to the meta loop. */
 export function toRunResult(G: GameState, gameover: Gameover): RunResult {
+  const score = runScore(G);
   return {
     outcome: gameover.outcome,
     missionId: gameover.missionId,
     stats: {
       turnsTaken: G.round,
-      score: runScore(G),
+      // Omitted rather than zero-filled where the objective declares no measure: a scored zero and an
+      // unscored attempt are different facts, and only the second must record no best.
+      ...(score !== undefined ? { score } : {}),
       finalResources: { ...G.resources },
     },
   };

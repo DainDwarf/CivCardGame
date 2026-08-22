@@ -191,7 +191,7 @@ function rewardlessMission(): MissionDef {
   return { ...infiniteMission(), id: 'sandbox', rewardless: true };
 }
 
-// `score` defaults to `turnsTaken`, matching `runScore`'s rounds-survived default; the one test
+// `score` defaults to `turnsTaken`, the measure a rounds-survived objective declares; the one test
 // pinning that the payout reads score (not turns) passes them apart.
 function runResult(missionId: string, outcome: RunResult['outcome'], turnsTaken: number, score = turnsTaken): RunResult {
   return {
@@ -203,6 +203,12 @@ function runResult(missionId: string, outcome: RunResult['outcome'], turnsTaken:
       finalResources: { food: 0, production: 0, money: 0, science: 0, military: 0, population: 0, territory: 0, culture: 0 },
     },
   };
+}
+
+/** The same result as an attempt whose objective declares no `score` measure. */
+function unscored(result: RunResult): RunResult {
+  const { score: _dropped, ...stats } = result.stats;
+  return { ...result, stats };
 }
 
 describe('applyRunResult', () => {
@@ -322,6 +328,14 @@ describe('applyRunResult', () => {
     expect(store.lifetime.influenceEarned).toBe(3); // no gross gain either
     expect(store.bestInfinite.sandbox).toBeUndefined();
     expect(store.lifetime.runsPlayed).toBe(3); // still counts as runs played
+  });
+
+  it('an infinite attempt whose objective declares no measure pays nothing and records no best', () => {
+    const store = sampleStore();
+    const next = applyRunResult(store, unscored(runResult('toto', 'defeat', 30)), infiniteMission());
+    expect(next.influence).toBe(store.influence);
+    expect(next.lifetime.influenceEarned).toBe(store.lifetime.influenceEarned);
+    expect(next.bestInfinite.toto).toBeUndefined();
   });
 
   it('a standard mission never records a bestInfinite entry', () => {

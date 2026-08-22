@@ -48,13 +48,13 @@ The `fall_of_bronze` mission (`kind: 'infinite'`, prereqs `sea_peoples`, `scoreU
 **3** `sea_raid` events over the `fall_of_bronze_goal` objective and the **`catastrophe`** threat.
 
 **The score seam** (generic, built here, mission-agnostic): `CardDef.score` — an objective card's
-optional score measure, read once at run end by `rules/objective.ts`'s `runScore` (default: rounds
-survived) into the new **`RunResult.stats.score`**, which is now what a scored infinite pays as
-Influence (`computeRewards`) and records as its best (`applyRunResult`'s `bestInfinite`). The
-end-of-run overlay's payout preview reads the same `runScore`, so the preview can't diverge.
-`MissionDef.scoreUnit` is the display-only label the Stats best-scores board renders (default
-`'rounds'`). Ice Age and the sandbox are untouched: no `score` on their objectives means the rounds
-default, byte-for-byte the old behaviour.
+optional score measure, read once at run end by `rules/objective.ts`'s `runScore` into the new
+**`RunResult.stats.score`**, which is what a scored infinite pays as Influence (`computeRewards`) and
+records as its best (`applyRunResult`'s `bestInfinite`). An objective declaring no measure scores
+nothing — the attempt pays nothing and records no best — so `ice_age_goal` declares `score: (G) =>
+G.round` for its rounds-survived tally and the sandbox stays unscored. The end-of-run overlay's payout
+preview reads the same `runScore`, so the preview can't diverge. `MissionDef.scoreUnit` is the
+display-only label the Stats best-scores board renders (default `'rounds'`).
 
 **`fall_of_bronze_goal`** carries `score: wavesRepelled` — the same `removed`-zone tally the capstone's
 win threshold and the repel ladder read, so the three can never disagree on what "repelled" means.

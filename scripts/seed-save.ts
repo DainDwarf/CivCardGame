@@ -99,9 +99,9 @@ function runResult(mission: MissionDef, rng: Rng): RunResult {
     // win rate with a win the mission can't produce.
     outcome: infinite ? 'defeat' : 'victory',
     missionId: mission.id,
-    // A fabricated attempt has no run state to measure a bespoke score off, so rounds stand in for
-    // every mission — the same default `runScore` falls back to.
-    stats: { turnsTaken, score: turnsTaken, finalResources },
+    // A fabricated attempt has no run state to measure a bespoke score off, so rounds stand in — which
+    // is the Ice Age's own measure. A standard mission carries none, as a real result wouldn't.
+    stats: { turnsTaken, ...(infinite ? { score: turnsTaken } : {}), finalResources },
   };
 }
 

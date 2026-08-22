@@ -158,8 +158,9 @@ export const HISTORY_LIMIT = 10;
  * rather than buried in a component (see CLAUDE.md's core/shell boundary). A `'standard'`
  * mission marks `mapProgress` and pays its one-time first-clear reward only on a victory
  * outcome; an `'infinite'` mission never touches `mapProgress` and pays Influence
- * = the run's score on *every* attempt, win or lose — unless it's `rewardless` (the sandbox),
- * which pays nothing and keeps no best-score. `alreadyCompleted` is read from
+ * = the run's score on *every* attempt, win or lose — unless the attempt carries no score at all
+ * (an objective declaring no measure, or the `rewardless` sandbox), which pays nothing and keeps
+ * no best-score. `alreadyCompleted` is read from
  * `store.mapProgress` as it stood before this result, so a first clear is never masked by
  * its own just-applied update.
  *
@@ -197,11 +198,12 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
   };
   // A `rewardless` infinite mission (the sandbox) keeps no best-score, the same no-stakes opt-out
   // that zeroes its payout — a score is meaningless with nothing bounding the run.
+  const score = result.stats.score;
   const bestInfinite =
-    infinite && !mission.rewardless
+    infinite && !mission.rewardless && score !== undefined
       ? {
           ...store.bestInfinite,
-          [result.missionId]: Math.max(store.bestInfinite[result.missionId] ?? 0, result.stats.score),
+          [result.missionId]: Math.max(store.bestInfinite[result.missionId] ?? 0, score),
         }
       : store.bestInfinite;
   // A board upgrade fires on the same first-clear victory the unlock rewards do, but sits outside

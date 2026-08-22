@@ -56,14 +56,13 @@ export function objectiveMet(G: GameState): boolean {
   return !!goals && goals.length > 0 && goals.every((g) => goalMet(g, G));
 }
 
-/** The attempt's score under the seeded objective's own `score` measure, defaulting to rounds
- *  survived — the one number a scored `'infinite'` mission pays as Influence and records as its best
- *  (`meta/store.ts`'s `applyRunResult`, via `RunResult.stats.score`). Defaulting here rather than at
- *  the payout keeps "what does this mission score" answered in exactly one place. Meaningless on a
- *  standard mission, but read unconditionally by `toRunResult` so the field is always populated. */
-export function runScore(G: GameState): number {
-  const score = G.objective ? CARDS[G.objective.cardId].score : undefined;
-  return score ? score(G) : G.round;
+/** The attempt's score under the seeded objective's own `score` measure, or `undefined` where the card
+ *  declares none — the one number a scored `'infinite'` mission pays as Influence and records as its best
+ *  (`meta/store.ts`'s `applyRunResult`, via `RunResult.stats.score`). An unmeasured attempt scores
+ *  *nothing* rather than falling back to a rounds count: a mission that wants rounds survived says so on
+ *  its objective card, so "what does this mission score" is answered on the card alone. */
+export function runScore(G: GameState): number | undefined {
+  return G.objective ? CARDS[G.objective.cardId].score?.(G) : undefined;
 }
 
 /** Re-derive the win flag from the objective card's own `objective` predicate — the bus's counterpart
