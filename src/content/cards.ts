@@ -368,6 +368,17 @@ export const INVASION_WAVES = 5;
  *  shared by the threat's clock, its face, and the mission's failure hint (`content/missions.ts`). */
 export const RAID_SPAWN_PERIOD = 6;
 
+/** How often the Long Winter adds a fresh `cold_snap` to the deck in "Return of the Ice Age" — shared
+ *  by the threat's clock, its face, and the mission's failure hint (`content/missions.ts`). */
+export const COLD_SNAP_PERIOD = 6;
+
+/** Snaps already endured: a snap reaches `removed` only by being played (burning the 🔨 stores that keep
+ *  the hearths lit), while one left to bite files to the discard and comes round again — so the count
+ *  there *is* the tally the score and the fuel ladder both read. */
+function snapsEndured(G: GameState): number {
+  return G.removed.filter((c) => c.cardId === 'cold_snap').length;
+}
+
 /** Waves already repelled: a raid reaches `removed` only by being played (paying its ⚔️ over a standing
  *  tin route), while one that strikes unrepelled files to the discard and comes round again — so the
  *  count there *is* the tally. One tally across both wave cards: only one kind circulates per mission,
@@ -831,6 +842,29 @@ export const CARDS: Record<string, CardDef> = {
     },
     upkeep: RAID_LANDING,
   },
+  // Return of the Ice Age's cold front: outlasting one is playing it — the 🔨 is fuel and stores burnt to
+  //   hold the hearths through the front, and the play choke exiles it to `removed`, which
+  //   `ice_age_goal` counts. The price climbs off that same tally, so each front costs more to sit out
+  //   than the one before. Left in hand it takes the difference out of the granary instead.
+  cold_snap: {
+    id: 'cold_snap', name: 'Cold Snap', kind: 'event',
+    cost: {
+      resources: { production: 2 },
+      resolve: ({ G }, base) => ({
+        ...base,
+        resources: {
+          ...base.resources,
+          production: (base.resources?.production ?? 0) + 2 * snapsEndured(G),
+        },
+      }),
+    },
+    display: {
+      art: '❄️',
+      description: 'Unendured: −2🌾 at end of round',
+      dynamicRule: 'cost rises per snap endured',
+    },
+    upkeep: { resources: { food: -2 } },
+  },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
   //   discard); paid off with ⚔️ (catching it) the play choke exiles it to `removed` for good. Costs and
@@ -1133,17 +1167,18 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
 
-  // Return of the Ice Age is an endless survival mission: like the sandbox its objective never wins (one
-  //   bespoke always-false goal), so the run ends only when the deepening cold (the `long_winter` threat)
-  //   starves the food store. Its `score` is rounds survived, paid as Influence by the infinite payout.
+  // Return of the Ice Age is the Stone Age's endless survival mission: like the sandbox its objective
+  //   never wins (one bespoke always-false goal), bounded instead by the Long Winter's ever-growing snap
+  //   census. Its `score` pays 1⭐ per *snap endured* — never the rounds survived — so the payout rewards
+  //   feeding the hearths, and a run that skips its turns banks nothing.
   ice_age_goal: {
     id: 'ice_age_goal', name: 'Return of the Ice Age', kind: 'objective', cost: {},
     goals: [{ icon: '🧊', measure: () => 0, target: 1, met: () => false }],
-    score: (G) => G.round,
+    score: snapsEndured,
     display: {
       art: '🧊',
-      description: 'Endure the deepening cold as long as you can.',
-      dynamicText: (G) => `Survived ${G.round} rounds`,
+      description: 'Outlast the deepening cold, front by front.',
+      dynamicText: (G) => `❄️ ${snapsEndured(G)} endured · ${snapsEndured(G)}⭐ · round ${G.round}`,
     },
   },
 
@@ -1187,21 +1222,24 @@ export const CARDS: Record<string, CardDef> = {
       },
     },
   },
-  // Return of the Ice Age's escalating famine: a cold that deepens each round (−1🌾, then −2, …) via a
-  //   bespoke `upkeep.resolve` reading its own `level` counter, like the escalating threat fixture. The
-  //   drain is unbounded by design — the endless mission ends only when the cold finally outpaces the
-  //   harvest and food collapses. Linear +1/round escalation is provisional (balance pass pending).
+  // Return of the Ice Age's engine: a steady clock feeding fresh `cold_snap`s into the deck (via
+  //   `spawnIntoDeck`, like the Catastrophe's raids), so the circulating census — and with it the
+  //   per-round 🌾 burn of every front left unendured — grows without bound while the fuel ladder climbs.
+  //   That census *is* the deepening cold; no separate resource ramp needed.
   long_winter: {
     id: 'long_winter', name: 'The Long Winter', kind: 'threat', cost: {},
     display: {
-      art: '❄️',
-      description: '−1🌾 every round, worsening',
-      dynamicText: (_G, self) => `−${getCounter(self, 'level') + 1}🌾 next round`,
+      art: '🧊',
+      description: `A fresh ❄️ cold snap joins the deck every ${COLD_SNAP_PERIOD} rounds`,
+      dynamicText: (_G, self) => `next bites in ${COLD_SNAP_PERIOD - getCounter(self, 'clock')}`,
     },
     upkeep: {
-      resolve: ({ G, self }) => {
-        subtractResources(G.resources, { food: getCounter(self, 'level') + 1 });
-        bumpCounter(self, 'level');
+      resolve: (ctx) => {
+        bumpCounter(ctx.self, 'clock');
+        if (getCounter(ctx.self, 'clock') >= COLD_SNAP_PERIOD) {
+          setCounter(ctx.self, 'clock', 0);
+          spawnIntoDeck(ctx, 'cold_snap', 1);
+        }
       },
     },
   },

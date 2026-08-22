@@ -61,8 +61,8 @@ tally whichever wave a mission circulates.
 optional score measure, read once at run end by `rules/objective.ts`'s `runScore` into the new
 **`RunResult.stats.score`**, which is what a scored infinite pays as Influence (`computeRewards`) and
 records as its best (`applyRunResult`'s `bestInfinite`). An objective declaring no measure scores
-nothing — the attempt pays nothing and records no best — so `ice_age_goal` declares `score: (G) =>
-G.round` for its rounds-survived tally and the sandbox stays unscored. The end-of-run overlay's payout
+nothing — the attempt pays nothing and records no best — so `ice_age_goal` declares its own measure
+(snaps endured, since its cold-snap rework) and the sandbox stays unscored. The end-of-run overlay's payout
 preview reads the same `runScore`, so the preview can't diverge. `MissionDef.scoreUnit` is the
 display-only label the Stats best-scores board renders (default `'rounds'`).
 

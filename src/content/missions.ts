@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { BRONZE_TRIALS, CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, INVASION_WAVES, MUSTER_TARGET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_SPAWN_PERIOD, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { BRONZE_TRIALS, CLAY_TABLETS, COLD_SNAP_PERIOD, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, INVASION_WAVES, MUSTER_TARGET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_SPAWN_PERIOD, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -70,7 +70,7 @@ export interface MissionDef {
    *  mission *does* name are real. Unlike cards, a sticker/board unlock simply makes it *available*
    *  (hidden-until-unlocked, like a card); a board carries no Influence cost. `'infinite'` missions
    *  have no reward object — they score Influence = the run's score instead (the objective card's
-   *  `score` measure, rounds survived by default; unless `rewardless`).
+   *  `score` measure; unless `rewardless`).
    *
    *  `boardUpgrade` is the odd one out — not an *unlock* but a board *replacement*: it retires the
    *  `from` board in favour of `to` (carrying its stickers across), so the player's government reads as
@@ -106,8 +106,8 @@ export interface MissionDef {
 /**
  * The mission catalogue: the Stone Age arc, the Bronze Age arc, and three endless missions. The endless
  * set all use a never-winning objective and end only on collapse, but differ in stakes: `ice_age` and
- * `fall_of_bronze` are *scored survival* missions — each guarantees eventual collapse (a deepening
- * food-drain threat; an ever-growing raid census) and pays its score out as Influence — while `sandbox`
+ * `fall_of_bronze` are *scored survival* missions — each guarantees eventual collapse (an ever-growing
+ * census of cold snaps; of raids) and pays its score out as Influence — while `sandbox`
  * is `rewardless`, a no-stakes practice space with no bounding threat that ends only on collapse or when
  * the player quits. A never-winning objective offers the simulator no *win* gradient; what it steers by on
  * the two scored ones is the `score` measure itself (`sim/race.ts`), and the sandbox, declaring none, is
@@ -671,13 +671,22 @@ export const MISSIONS: Record<string, MissionDef> = {
       'Food is the most basic need of every civilization. Should a future ice age come and threaten ' +
       'our crops, how long would we manage to survive?',
     // Opened by the Stone Age capstone — the first endless *survival* mission (a scored infinite, unlike
-    // the rewardless sandbox), so it earns Influence for every round the deepening winter is outlasted.
+    // the rewardless sandbox). The score is *snaps endured*, not rounds survived: skipping turns banks
+    // nothing.
     prereqs: ['first_temple'],
     threats: ['long_winter'],
+    // Two fronts to open on — one fewer than the Bronze infinite's three, the Stone collection being
+    // thinner. The Long Winter supplies the rest, forever.
+    events: ['cold_snap', 'cold_snap'],
     objectiveCardId: 'ice_age_goal',
-    victoryHint: 'Outlast the deepening winter, earning ⭐ Influence for every round survived.',
-    failureHint: 'The Long Winter drains more 🌾 each round than the last.',
+    victoryHint:
+      'Outlast a winter that never breaks, earning 1⭐ Influence for every ❄️ cold snap you burn ' +
+      'fuel to endure.',
+    failureHint:
+      `A fresh cold snap joins the deck every ${COLD_SNAP_PERIOD} rounds, each dearer to endure than ` +
+      'the last. Every one left unendured burns 🌾 for as long as it keeps coming round.',
     kind: 'infinite',
+    scoreUnit: '⭐',
   },
   fall_of_bronze: {
     id: 'fall_of_bronze',
