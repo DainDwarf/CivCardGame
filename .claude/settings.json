@@ -1,4 +1,25 @@
 {
+  "permissions": {
+    "allow": [
+      "PowerShell(Select-Object *)",
+      "PowerShell(duckdb *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Measure-Object *)",
+      "PowerShell(Write-Output *)",
+      "PowerShell(ConvertFrom-Json *)",
+      "PowerShell(Select-String *)",
+      "PowerShell(Sort-Object *)",
+      "PowerShell(Format-Table *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Group-Object *)",
+      "PowerShell(Import-Csv *)",
+      "PowerShell(ConvertFrom-Csv *)",
+      "PowerShell(npx tsc *)",
+      "PowerShell(node scripts/baselineMatrix.mjs *)",
+      "PowerShell(gh run watch *)",
+      "Bash(duckdb *)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
