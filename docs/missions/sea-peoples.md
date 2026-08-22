@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ⬜ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
 **Branch:** Bronze — the **capstone**: [Sword & chariot](sword-chariot.md) → **The Sea Peoples**;
 clearing it unlocks the *Fall of the Bronze Age* infinite (its own design, not this dossier's).
 **Placement:** `prereqs: ['sword_chariot']`, bronze col 13 row 0.
@@ -98,10 +98,10 @@ finally spent, and the thing it is spent *through* is the thing under attack.
 
 ## Implement ✅ (shipped)
 
-The `sea_peoples` mission (bronze col 13 row 0, prereqs `sword_chariot`, 12⭐ and no unlock — the
-*Fall of the Bronze Age* infinite does not exist yet and will name this mission as its own prereq when
-it does) seeding **5** `sea_raid` events over the `sea_peoples_goal` objective — **no threat**, per the
-design. `INVASION_WAVES` is the one number behind the seed count, the win threshold and the victory
+The `sea_peoples` mission (bronze col 13 row 0, prereqs `sword_chariot`, 12⭐ and no unlock card — the
+*Fall of the Bronze Age* infinite ([fall-of-bronze](fall-of-bronze.md)) names this mission as its own
+prereq, which is the whole unlock) seeding **5** `sea_raid` events over the `sea_peoples_goal`
+objective — **no threat**, per the design. `INVASION_WAVES` is the one number behind the seed count, the win threshold and the victory
 hint.
 
 **The wave.** `sea_raid` is a plain `event`, so repelling it is the ordinary played-event path — pay,
@@ -138,9 +138,24 @@ base `resolveProduction` hands the fold, and the sim's per-round output read (`p
 never reaches for. Convoy's description drops "to any yield" for the per-round wording the Design seam
 asked for.
 
-## Balance ⬜
+## Balance ✅
 
-Not started.
+Three standing fixtures — `sea_peoples_city` / `sea_peoples_port` / `sea_peoples_warband`, one per
+reachable board line — cut, swept under the standing protocol, and recorded:
+
+| Cell | greedy | planner | prover |
+|---|---|---|---|
+| sea_peoples_city | 3% | **84%** | 10/10 |
+| sea_peoples_port | 10% | **59%** | 9/10 |
+| sea_peoples_warband | 13% | **79%** | 9/10 |
+
+Far better than the sword-chariot shape the Design section braced for: the planner's numbers are a
+real reading, not a floor, and the prover's two misses are ordinary `noWinFound:deadEnd` declines.
+The huge greedy→planner gap (3→84 on city) is the capstone demanding actual planning, as it should.
+Defeat textures: port drowns in **bankruptcy** (its rent-heavy lane deck's own wages), warband in
+**famine**, greedy city in stalls. Every winning column repels for real (`sea_raid` plays high
+throughout). One noted wart, accepted as-is: the port cell wins at **1 population** — the lane deck
+never grows, all coin and canvas. Verdict: shipped at these numbers.
 
 ## Polish ⬜
 
