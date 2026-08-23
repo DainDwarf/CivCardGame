@@ -43,6 +43,43 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   is state-dependent: the same card shows a different number at pop 2 than at pop 5. `[size: S]` `[?]`
 - **Sticker locked/unlocked visual on mission preview** — rework how a mission's sticker reward reads locked vs. unlocked (currently a generic locked chip → real face). Maybe extract a **shared sticker widget** (the `CardFace`/`BoardMini` counterpart for a single sticker) reused across the mission-detail preview and elsewhere. `[?]`
 
+- **Discard-mode affordance when a play costs cards** `[size: S]` — *(beta playtest)* playing Fire
+  (`cost: { discard: 1 }`) drops the player into choosing a card to give up with nothing saying so; the
+  discard reads as cards vanishing. Wants a visible "choose N to discard" mode on the hand while the
+  payment is pending. Fire is the **only** card with a discard cost today, but `discard` is a first-class
+  `CardCost` field, so hang this off `cost.ts`'s `discardCount` choke point — any play that sacrifices
+  cards enters the mode — never a Fire branch.
+- **Sticker drag: valid-target outline missing on cards** `[size: S]` — *(beta playtest)* dragging a
+  sticker badge onto a copy in `CardInstancePanel` highlights nothing, so there's no read on what the
+  drop would accept. `BoardMenu`'s board drag does highlight via `isValidTarget`; check whether that path
+  is shared or panel-local before fixing. Suspected **regression**, not a missing feature.
+- **Deck Copy button goes unseen** `[size: S]` — *(beta playtest)* a first-time player missed Copy
+  entirely on the deck tile (`DeckDisplay.tsx`'s `DeckTile`) — it reads as one of three same-weight
+  buttons beside Edit/Delete. Wants a distinct accent, or a different affordance altogether.
+- **Resource-icon tooltips on a zoomed card** `[size: S]` — *(beta playtest)* hovering a resource glyph
+  in `CardZoomOverlay` should name the pool. The 8 icons are the game's whole economic vocabulary and
+  nothing teaches them; the zoom is where a player is already looking closely. Per the tooltip
+  convention, keep the text generic — name the resource, don't cite cards or missions.
+- **Split the two upgrade hints in the Collection** `[size: S]` `[?]` — *(beta playtest)* `upgrades.ts`
+  drives both `cardUpgradeAvailable` (a copy tier is buyable) and the sticker-attachable hint, but both
+  render in the one `--hint-gold` accent, so a tile says *something* is available without saying which.
+  Prefer a glyph/shape split over a second hue — hue alone would be the only signal, so a two-color
+  version needs a CVD pass before it counts as done.
+- **Sticker column in the Collection, click-to-filter** `[size: M]` `[?]` — *(beta playtest)* a
+  right-hand column listing every unlocked sticker; selecting one filters the card grid to the copies it
+  applies to. Mirrors `BoardMenu`'s sticky tray, plus the filter. Today stickers are only visible once
+  you've drilled into a single copy (`CardInstancePanel`), so there's no way to ask "what can this
+  sticker go on?"
+- **Codex: culture vs culture *level*** `[size: S]` — *(beta playtest)* the Codex entry
+  (`content/codex.ts`) runs the two together. Say plainly that 🎭 is the stockpiled pool, that the
+  *level* is the tier derived from it, that `cultureLevelReq` gates against the level, and what the
+  thresholds are.
+- **Buy copies / stickers from inside the Deck Editor** `[size: M]` `[?]` — *(beta playtest)* hitting a
+  card you don't own enough of means leaving the editor for the Collection and coming back. Both the
+  player and a first-time player felt it. **Explicitly low priority and not a publish blocker** (user
+  call): nothing is confusing, nothing is broken, every feature is reachable — it is convenience only.
+  No obvious cheap fix, hence the `[?]`.
+
 ## Run loop (`src/rules/`, `src/run/`)
 
 - **Removal cards — trade cancellation + building destroy** `[size: M]` `[?]` — the trade zone ships with
@@ -81,6 +118,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   a drain reading a count — but **self-referential** where those aren't, since the card reads the size of
   the zone it sits in). Pure authoring, zero engine work; `sim/zoneOrderInvariance.test.ts` already pins
   the shape via its `test_route_scaling` fixture. A **balance** question, not a blocking one.
+
+- **Remove the deck minimum-card rule** `[size: S]` — *(beta playtest)* drop `MIN_DECK_SIZE`
+  entirely; no lower bound on deck size. Touches `rules/deckBuilder.ts` (the const), `app/App.tsx:152`
+  (the save backstop), `meta/DeckEditor.tsx:249,257` (the count label + disabled Save),
+  `content/decks.test.ts`, and a comment in `content/collection.ts`. Check on the way through that a
+  zero-card deck terminates cleanly rather than throwing in the draw/reshuffle path — that is a
+  correctness check, not a reason to keep a floor.
 
 ## Tech debt / architecture
 
@@ -125,6 +169,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   price, not by their rates — a second Farm is a shop purchase *and* a territory slot, while the
   route pair takes one slot and no land — and the rework moved both inputs (Stone copies now flat
   2⭐ but capped ×4; the faucet halved). Nobody has re-read the pair since. `[size: S]`
+
+- **Re-read the Calendar's price — measured, it is barely played.** *(beta playtest)* Two signals: it
+  reads as **expensive before it is ever tried** (2🔬 plus a card slot, for a look-and-draw whose payoff
+  isn't legible on the face), and the user reports **dropping it after a while**. Folding the committed
+  fixtures (`npm run --silent sim:report -- --format csv scripts/sim/baselines`, group `cardsPlayed`)
+  backs the second: across the 16 cells whose deck carries it, `planner` plays it **0.03–1.35×/run** —
+  under 1 in most cells, for a card sitting in the deck the whole run. So the question is whether 2🔬 is
+  the wrong price or whether peek-and-draw is the wrong *effect* for this slot. `[size: S]` `[?]`
 
 ## Simulator (`src/sim/`, `scripts/sim.ts`)
 

@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
 **Branch:** Bronze — the age's second mission, a *megalopolis* goal.
 **Placement:** `prereqs: ['first_temple']`, bronze col 5 row 1 — a symmetric fork off gobekli
 opposite Copper (Copper moved to row -1).
@@ -22,45 +22,38 @@ opposite Copper (Copper moved to row -1).
 
 House/City Walls cards + the Settlement → City board upgrade shipped.
 
-## Balance ✅ (settled)
+## Balance 🟡 (reopened)
 
-**6🧍 holds as printed.** The structural worry — House and City are *this mission's own rewards*, so the
-only in-mission population source is **Hut** (+1, one-shot, one territory slot) — is real but not
-prohibitive: hand-won on the second try, and the sweep clears it on both boards. Conquest chains
-(military → territory) are what open the slots, competing with Farms for the same space against
-6🧍 eating 6🌾/round.
+**Reopened by the 2026-08-23 beta playtest — on price, not on difficulty.** The goal is comfortably
+reachable; what is unbalanced is what reaching it *charges*. Masonry is the campaign's first mission
+that requires buying copies, and the copies it forces are retired by its own reward (see *Open*).
+
+**6🧍 holds as printed** as a target. The structural fact behind the cost is that House and City are
+*this mission's own rewards*, so the only in-mission population source is the **Hut** (+1, one-shot,
+one territory slot). Conquest chains (military → territory) are what open the slots, competing with
+Farms for the same space against 6🧍 eating 6🌾/round.
 
 **Two fixtures, one per board**, since Settlement (2🧍/4🏞️) and Chiefdom (3🧍/2🏞️) meet the same goal
-from opposite ends. Same 21-card deck (the First Temple pool, Bead Workshop · Farm+2 Irrigation ·
-4 Hut · 4 Foraging · 2 Hunting · 4 Toolmaking · 2 Bow · 2 Conquest · Bartering):
-
-Re-measured under the split territory cap (Conquest a `work` card; Settlement 2🏞️ free, Chiefdom none —
-its one slot holds the pre-built Raider Camp):
-
-| board | greedy | planner | oracle |
-|---|---|---|---|
-| settlement | 77/100 · famine 23 | **89/100** · famine 11 | 10/10 |
-| chiefdom | 97/100 · famine 3 | **92/100** · famine 8 | 10/10 |
-
-Turns (min/med/mean/max) under planner: settlement 8 / 31 / 29.4 / 40 · chiefdom 10 / 29 / 29.2 / 69.
-Every defeat on both boards is famine — **the stalls are gone** — and Conquest is played ~3.3–4.0×/run
-under *both* policies.
-
-**This is the one cell where Chiefdom passes Settlement**, and the Raider Camp is why: +4🌾 on each of
-those ~3.3–4.0 Conquests lands directly on the only thing that was killing the board here, taking
-famine 43 → 3. The board that has to go and take its land now feeds itself off taking it, which on a
-population goal is worth more than the two slots Settlement is handed. Read the pair as the arc's
-board lesson finally having two live answers rather than a right one and a punishing one.
-
-**Greedy went 0/100 → 77 and 0/100 → 57**, which is the largest move anywhere in the re-measure. The
-old reading — "greedy wins neither board; the ⚔️→🏞️→🧍 chain is multi-turn, so Conquest goes unplayed
-under it entirely" — no longer describes the cell, and this mission was the standing example of a
-one-ply policy plateauing. **Why it moved is not measured**; `--policies greedy,greedy2 --seeds 100`
-on this fixture is the comparison that would say whether the multi-turn chain got shorter or the
-one-ply value function simply started seeing it.
+from opposite ends: `scripts/sim/baselines/masonry.json` and `masonry_chiefdom.json`. The measured
+numbers live in those fixtures' own `results` keys — read them with `npm run sim:report`, which is the
+authority. No transcription here: the previous one drifted out of date against the files it quoted.
 
 ## Open
 
+- **The forced Hut purchase is retired by this mission's own reward `[?]`** — raised by the
+  2026-08-23 beta playtest. The Balance section above already names the structural fact (Hut is the only
+  in-mission population source, since House and City are the reward); what the playtest adds is the
+  **shop** half. A player arrives owning Hut ×1 — an unlock grants one copy — against a 6🧍 goal on a
+  2🧍 board, so clearing Masonry means buying ×2→×4 at 2⭐ each. Then the clear hands them the House,
+  which is the *same* 3🔨-per-🧍 rate (6🔨/+2🧍 vs 3🔨/+1🧍) in **half the territory and half the deck
+  slots** — so the 6⭐ buys compactness that the reward immediately supersedes. Reads as a tax rather
+  than a choice, and the fixtures agree: hut plays are exactly `6 − startingPop` every run under every
+  policy (settlement 4/4, chiefdom 3 of 4) — zero variance, where genuine decisions like Bartering swing
+  100 → 86 → 65 across greedy/planner/prover. Note this is *not* the ordinary cross-age progression case
+  where a better successor is fine; the problem is the **forced** purchase sitting immediately before
+  the supersession, with no other use for those copies afterward. This is also the content half of the
+  *Stone → Bronze cliff* ([`../BACKLOG.md`](../BACKLOG.md)) — Masonry is the campaign's **first mission
+  that requires buying anything**, and those three Hut copies are the whole of that bill.
 - **Both rewards were re-cut after the sweep and are unmeasured** — City Walls 4🔨/−1🔨 upkeep → **3🔨
   flat, no upkeep**; the City board 6🔨 → **10🔨** start. They are this mission's own rewards, so no
   fixture here can reach them; the six City-board fixtures downstream (accounting, horse_taming,

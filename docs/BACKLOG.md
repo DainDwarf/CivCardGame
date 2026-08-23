@@ -69,7 +69,7 @@
   | Mission | Dsn | Impl | Bal | Pol | Dossier |
   |---|:-:|:-:|:-:|:-:|---|
   | Copper | ✅ | ✅ | ✅ | ⬜ | [copper](missions/copper.md) |
-  | Masonry | ✅ | ✅ | ✅ | ⬜ | [masonry](missions/masonry.md) |
+  | Masonry | ✅ | ✅ | 🟡 | ⬜ | [masonry](missions/masonry.md) |
   | Pyramid *(leaf)* | ✅ | ✅ | ✅ | ⬜ | [pyramid](missions/pyramid.md) |
   | Accounting | ✅ | ✅ | ✅ | ⬜ | [accounting](missions/accounting.md) |
   | Writing | ✅ | ✅ | ✅ | ⬜ | [writing](missions/writing.md) |
@@ -97,7 +97,7 @@
   more than double the 7-mission Stone Age, all remixing existing mechanics. So author it in **order**,
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see [`missions/copper.md`](missions/copper.md)).
-  2. **Masonry** — DONE (see [`missions/masonry.md`](missions/masonry.md)). Optional **Pyramid** leaf — DONE, balance
+  2. **Masonry** — implemented; **balance reopened** by the beta playtest on the Hut/House reward supersession, not on win rate (see [`missions/masonry.md`](missions/masonry.md)). Optional **Pyramid** leaf — DONE, balance
      included (see [`missions/pyramid.md`](missions/pyramid.md); its target proved sound as authored, and its
      `planner` row is a simulator floor rather than a difficulty reading).
   3. **Accounting** — DONE, balance included (see [`missions/accounting.md`](missions/accounting.md)). **Writing** — DONE,
@@ -189,6 +189,14 @@
   once; "tutorial seen" state would live in device-local `Settings` (`meta/settings.ts`), **not**
   `PlayerStore` (not game progress).
 
+  **Reopened by the 2026-08-23 beta playtest `[?]`** — the cut assumed the Codex plus an itch-page
+  blurb carries onboarding. Watching a first-time player says it does not: the **run loop** was not
+  self-explanatory, and **deck editing** was discovered late and painfully (the campaign does force it
+  at `growing_numbers`, so this is friction, not a wall). The sharper gap is downstream — see the
+  *Stone → Bronze cliff* cross-cutting note below: the campaign never rehearses **spending Influence**
+  before the first mission that demands it. If a minimal slice of this comes back, that is what it
+  should teach; the full per-mission scripted layer below is *not* what the evidence asks for.
+
   **Per-mission tutorial substeps** — one scripted lesson per Stone Age mission, covering the
   gameplay elements that mission introduces and (post-clear) what its reward hands the player.
   All seven missions (6.1–6.7) have shipped, so every substep below is ready to script.
@@ -253,6 +261,26 @@
   the measurement debt noted under Step 7 above, plus `ice_age`/`sandbox`, which want a **total rework**
   rather than a re-measure. Step 8 (Iron) still sequences after it.
   `[size: L]` `[?]`
+
+> **Cross-cutting (not a step): the Stone → Bronze cliff `[?]`** — surfaced by the 2026-08-23 beta
+> playtest, where a first-time player cleared the Stone Age and stalled at the boundary. It is one
+> structural fact, not a difficulty curve: **Masonry is the first mission in the campaign that requires
+> using the shop.** Every Stone mission is clearable with ×1 of each granted card — that is deliberate
+> (no Influence can be ground before `ice_age`), and the fixtures show it: `first_temple.json` is
+> everything ×1, exactly what a player owns on clearing. `masonry.json` carries hut ×4 and 2 Irrigation.
+> Masonry asks for 6🧍, Settlement starts at 2🧍, the only population source that exists there is the
+> Hut (+1, and a mission unlock grants exactly **one** copy) — so the goal is unreachable until three
+> more copies are *bought*, an action nothing upstream has ever asked for.
+>
+> **This is a knowledge gap, not a currency gap:** the ≈14⭐ bill sits well inside the 30⭐ the faucet
+> has delivered by Masonry, so raising Influence rewards would do nothing.
+>
+> **No fixture measures what a player actually holds on arriving**, which is why Masonry reads
+> 100%-on-every-policy while a real player stalls — the fixture is measuring a bought deck.
+> Deck *editing* is not the gap: `growing_numbers` (mission 2) requires building a Hut and a Farm, so
+> the campaign forces the editor open long before here. **Buying** is the unrehearsed verb. The fix is
+> split across the **content** side (Masonry's dossier) and the **onboarding** side (Step 9 above);
+> neither closes it alone.
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*
