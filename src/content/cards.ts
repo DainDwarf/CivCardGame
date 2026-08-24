@@ -221,7 +221,7 @@ export function cardSections(cards: CardDef[]): CardSection[] {
  *  is pulled from the building's own `art`. */
 export const GROWING_NUMBERS_BUILDINGS: readonly string[] = ['hut', 'farm'];
 
-/** Total 🗺️ "Growing Numbers" wants held at once — an absolute pool, not a gain over the board's
+/** Total 🏞️ "Growing Numbers" wants held at once — an absolute pool, not a gain over the board's
  *  start, so a wider government arrives closer to it. Shared by the win goal and its readout. */
 export const GROWING_NUMBERS_TERRITORY = 2;
 
@@ -480,10 +480,10 @@ export const CARDS: Record<string, CardDef> = {
   // The martial boards' standing perks (`boards.ts`'s `prebuilt`) rather than cards anyone draws or
   //   buys: neither produces anything itself, and both pay only through what the rest of the board
   //   takes. The spoils scale with the land, so a bigger seizure is worth proportionally more and each
-  //   face's "each 🗺️" reads literally.
+  //   face's "each 🏞️" reads literally.
   raider_camp: {
     id: 'raider_camp', name: 'Raider Camp', kind: 'building', cost: {}, workers: 0,
-    display: { art: '🏕️', description: 'Each 🗺️ you take:\n+4🌾' },
+    display: { art: '🏕️', description: 'Each 🏞️ you take:\n+4🌾' },
     modifyGain: (base) => {
       const taken = base?.territory ?? 0;
       if (!base || taken <= 0) return base;
@@ -492,7 +492,7 @@ export const CARDS: Record<string, CardDef> = {
   },
   war_camp: {
     id: 'war_camp', name: 'War Camp', kind: 'building', cost: {}, workers: 0,
-    display: { art: '⛺', description: 'Each 🗺️ you take:\n+8🌾 +2🪙' },
+    display: { art: '⛺', description: 'Each 🏞️ you take:\n+8🌾 +2🪙' },
     modifyGain: (base) => {
       const taken = base?.territory ?? 0;
       if (!base || taken <= 0) return base;
@@ -895,16 +895,16 @@ export const CARDS: Record<string, CardDef> = {
         measure: (G) => GROWING_NUMBERS_BUILDINGS.filter((id) => G.tableau.some((b) => b.cardId === id)).length,
         target: GROWING_NUMBERS_BUILDINGS.length,
       },
-      { icon: '🗺️', measure: (G) => G.resources.territory, target: GROWING_NUMBERS_TERRITORY },
+      { icon: '🏞️', measure: (G) => G.resources.territory, target: GROWING_NUMBERS_TERRITORY },
     ],
     display: {
-      description: `Build 🛖 🌱\nHold ${GROWING_NUMBERS_TERRITORY} 🗺️`,
+      description: `Build 🛖 🌱\nHold ${GROWING_NUMBERS_TERRITORY} 🏞️`,
       dynamicText: (G) =>
         [
           ...GROWING_NUMBERS_BUILDINGS.map(
             (id) => `${CARDS[id].display?.art} ${G.tableau.some((b) => b.cardId === id) ? 1 : 0}/1`,
           ),
-          `🗺️ ${G.resources.territory}/${GROWING_NUMBERS_TERRITORY}`,
+          `🏞️ ${G.resources.territory}/${GROWING_NUMBERS_TERRITORY}`,
         ].join('\n'),
     },
   },
@@ -1120,11 +1120,11 @@ export const CARDS: Record<string, CardDef> = {
   //   is pure expansion — and reads the same win on every board regardless of its starting territory.
   wheel_goal: {
     id: 'wheel_goal', name: 'The Wheel', kind: 'objective', cost: {},
-    goals: [{ icon: '🗺️', measure: (G) => G.resources.territory - G.startResources.territory, target: WHEEL_TERRITORY }],
+    goals: [{ icon: '🏞️', measure: (G) => G.resources.territory - G.startResources.territory, target: WHEEL_TERRITORY }],
     display: {
       description: `Gain ${WHEEL_TERRITORY} territory`,
       dynamicText: (G) =>
-        `🗺️ ${Math.min(G.resources.territory - G.startResources.territory, WHEEL_TERRITORY)}/${WHEEL_TERRITORY}`,
+        `🏞️ ${Math.min(G.resources.territory - G.startResources.territory, WHEEL_TERRITORY)}/${WHEEL_TERRITORY}`,
     },
   },
 

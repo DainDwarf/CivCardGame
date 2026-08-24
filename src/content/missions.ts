@@ -139,7 +139,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'sure you never run out of food to eat.',
     prereqs: ['first_settlement'],
     objectiveCardId: 'growing_numbers_goal',
-    victoryHint: `Build a 🛖 Hut and a 🌱 Farm, while holding ${GROWING_NUMBERS_TERRITORY} 🗺️ territory.`,
+    victoryHint: `Build a 🛖 Hut and a 🌱 Farm, while holding ${GROWING_NUMBERS_TERRITORY} 🏞️ territory.`,
     failureHint: null,
     kind: 'standard',
     // Raising the roof is what upgrades the Tribe board into the settled `settlement` government, so
