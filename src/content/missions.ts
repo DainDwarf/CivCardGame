@@ -204,18 +204,14 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'harsh_winter',
     name: 'Harsh Winter',
     lore:
-      'The cold came early this year, and it came to stay. The herds have gone thin and moved on, the ' +
-      'ground has shut like a fist, and every night something circles the stores your people spent the ' +
-      'summer filling. There is nothing to win here and nothing to build — only a winter to be outlasted, ' +
-      'on what you thought to set aside before it began. Come through it, and your people will swear ' +
-      'never to be caught by the turning of the year again.',
+      'The cold came early this year, and it means to stay. The herds have moved on, the ground is ' +
+      'frozen solid, and what your people set aside over the summer is now all there is between them ' +
+      'and spring. Outlast it, and they will never be caught by the turning of the year again.',
     prereqs: ['growing_numbers'],
     threats: ['deep_cold'],
     objectiveCardId: 'harsh_winter_goal',
     victoryHint: `Outlast the winter — survive to round ${HARSH_WINTER_BREAK}.`,
-    failureHint:
-      `From round ${HARSH_WINTER_ONSET} the cold drains 🌾 every round, deepening until it breaks — ` +
-      'starve and the run ends.',
+    failureHint: `From round ${HARSH_WINTER_ONSET} the cold drains 🌾 every round, deepening until it breaks.`,
     kind: 'standard',
     // Grants the science pair, which is `reading_seasons`' toolkit: the branch's pressure mission pays
     // for its resource mission, the same shape the upper branch uses. Both *make* 🔬 and neither spends

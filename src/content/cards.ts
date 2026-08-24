@@ -944,7 +944,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'harsh_winter_goal', name: 'Harsh Winter', kind: 'objective', cost: {},
     goals: [{ icon: '❄️', measure: (G) => G.round, target: HARSH_WINTER_BREAK }],
     display: {
-      description: `Outlast the winter — survive to round ${HARSH_WINTER_BREAK}`,
+      description: `Survive ${HARSH_WINTER_BREAK} rounds`,
       dynamicText: (G) => `❄️ round ${Math.min(G.round, HARSH_WINTER_BREAK)}/${HARSH_WINTER_BREAK}`,
     },
   },
@@ -1206,13 +1206,13 @@ export const CARDS: Record<string, CardDef> = {
   deep_cold: {
     id: 'deep_cold', name: 'The Deep Cold', kind: 'threat', cost: {},
     display: {
-      art: '🥶',
-      description: `From round ${HARSH_WINTER_ONSET}: −1🌾 each round, worsening until the winter breaks.`,
+      art: '❄️',
+      description: `From round ${HARSH_WINTER_ONSET}: −1🌾 worsening each round`,
       dynamicText: (G) => {
         const famine = famineAt(G.round);
         return famine > 0
           ? `−${famine}🌾 · breaks in ${Math.max(0, HARSH_WINTER_BREAK - G.round)}`
-          : `bites in ${HARSH_WINTER_ONSET - G.round}`;
+          : `Starts in ${HARSH_WINTER_ONSET - G.round}`;
       },
     },
     upkeep: {
