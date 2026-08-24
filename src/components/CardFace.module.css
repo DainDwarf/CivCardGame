@@ -287,6 +287,20 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
 
+/* Another copy of this card is affordable (`CardFace`'s `copyHint`) — the count badge itself goes
+   buyable-hint gold and takes a ▲, since the hint is about that very number. The mark *leads* the
+   count: the badge is right-anchored, so a trailing one would shove the ×N sideways as affordability
+   comes and goes. ▲ is the text glyph U+25B2, not an emoji arrow, so it takes `color`. */
+.countBadgeHint {
+  background: var(--hint-gold);
+  color: var(--text-on-hint-gold);
+}
+
+.copyMark {
+  font-size: 0.8em;
+  margin-right: 2px;
+}
+
 /* Bottom-left row of per-sticker badges for a stickered meta card instance — straddles the bottom
    edge the way the top-corner countBadge straddles its own corner. One circle per attached sticker id (not one combined
    pill), so a stacked sticker (a duplicate id) reads as two circles instead of a doubled glyph
@@ -340,13 +354,12 @@
   line-height: 1;
 }
 
-/* Empty gold-outlined placeholder slot appended to the sticker row (StickerRow's `openSlots`) — the
-   buyable-hint "you have room for a sticker here" affordance (the Board menu shows a board's remaining
-   capacity). Same footprint as an attached `.sticker` badge so the row reads as filled + open slots,
-   toned with the gold hint token. There's no global box-sizing reset, so the box must be border-box
-   to match the badge's rendered 24px: a taller slot would set the row's height and, since a badge has
-   a definite height and so never stretches, shove the badges off the row's bottom edge whenever the
-   slots come and go. */
+/* Empty placeholder slot appended to the sticker row (StickerRow's `openSlots`) — same footprint as an
+   attached `.sticker` badge so the row reads as filled + open slots. Gold by default: the buyable-hint
+   "a sticker can go here right now" affordance. There's no global box-sizing reset, so the box must be
+   border-box to match the badge's rendered 24px: a taller slot would set the row's height and, since a
+   badge has a definite height and so never stretches, shove the badges off the row's bottom edge
+   whenever the slots come and go. */
 .stickerSlot {
   box-sizing: border-box;
   width: 24px;
@@ -357,13 +370,10 @@
   box-shadow: 0 0 0 3px rgb(var(--hint-gold-rgb) / 18%);
 }
 
-/* Available-upgrade hint (`rules/upgrades.ts`): a gold border + soft gold ring around the whole face
-   when the card has an affordable upgrade available (a buyable copy tier or an applicable, affordable
-   sticker with room) — the buyable-hint gold accent, echoing the ⭐ Influence glyph. Defined after the
-   kind border rules (`.event`/`.objective`) so its border-color wins; the ring carries the visibility
-   on the white Light face where a 1px gold border alone would be faint. */
-.upgradeAvailable {
-  border-color: var(--hint-gold);
-  border-width: 2px;
-  box-shadow: 0 0 0 4px rgb(var(--hint-gold-rgb) / 55%), 0 3px 8px rgba(0, 0, 0, 0.18);
+/* The same slot as plain capacity (`openSlotsTone: 'idle'`) — the room exists, nothing affordable fits
+   it. Keeps the footprint so a slot going live is a colour change, not a reflow of the row. */
+.stickerSlotIdle {
+  border-color: var(--border-card);
+  background: none;
+  box-shadow: none;
 }

@@ -422,9 +422,13 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   Also the DAG-walk primitives shared by the dev scripts — `prereqClosure` (a target's transitive
   prereqs), `foldOrder` (topological sort so prereqs fold first), and `cumulativeInfluenceInto` (the
   guaranteed Influence arriving at a mission); `seed-save.ts` and `economy.ts` both consume these.
-- **`upgrades.ts`** — the **available-upgrade hints**: per-tile `cardUpgradeAvailable`/
-  `boardUpgradeAvailable` + nav-badge roll-ups `anyCardUpgradeAvailable`/`anyBoardUpgradeAvailable`,
-  each **on ⟺ some real purchase would succeed right now**. They compose the authoritative buy-reject
+- **`upgrades.ts`** — the **available-upgrade hints**: per-tile `boardUpgradeAvailable` and, on the card
+  side, the two causes **split** — `shop.ts`'s `canBuyTier` unwrapped for the copy half, and
+  `stickerUpgradeAvailableFor` (one named sticker) folded by `stickerUpgradeAvailable` (any unlocked
+  one) for the sticker half, since the Collection draws them as separate marks and its tray asks the
+  question a sticker at a time; `cardUpgradeAvailable` is their OR, for the nav badge that carries one
+  dot for both. Plus the nav roll-ups `anyCardUpgradeAvailable`/`anyBoardUpgradeAvailable`. Each is
+  **on ⟺ some real purchase would succeed right now**, composing the authoritative buy-reject
   leaves (`canBuyTier`, `stickerableInstancesOf`, `canAttachBoardSticker`) so a hint can never disagree
   with a drop (`upgrades.test.ts` pins this against the real `buy*` functions). All hints render in one
   gold accent (`--hint-gold`, echoing the ⭐ Influence glyph).
@@ -531,7 +535,9 @@ logic that rides on it. **A building card *is* the building** — there's no sep
 - **`components/Board.tsx`** — the React board; display only (reads `projectedDelta`/`freePopulation`
   from `rules/`, never recomputes logic). Supporting pieces: `CardFace.tsx` (the one card visual —
   name/cost/kind banner/art/workers/effect, shared by hand/deck-editor/Collection; shows `effectiveCard`
-  numbers + a `StickerRow` badge; also owns the `RESOURCE_ICON` map for all 8 resources),
+  numbers + a `StickerRow` of attached badges and `openSlots` empty ones, gold or muted per
+  `openSlotsTone`, and the ×N `countBadge`, which `copyHint` turns gold and marks ▲;
+  also owns the `RESOURCE_ICON` map for all 8 resources),
   `ZoomOverlay.tsx` (the shell every full-screen enlargement shares — scrim, dismiss hint, arrival
   animation, click-anywhere-to-close — reserving no size of its own, so what is enlarged and at what
   footprint belongs to the caller) and its two consumers `CardZoomOverlay.tsx` (a card at 2.2×, plus
@@ -550,8 +556,10 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   the bargain — one silhouette for a card and a board sticker alike, so it leaks neither what the
   sticker does nor which catalogue it comes from, matching `CardFace`'s `missionLocked` and
   `BoardMini`'s locked board. In a buy tray it
-  is also the merchandise: the ⭐ price strikes the seal's corner and the wax disc *is* the
-  drag handle, lifted as a bare `StickerSealMark` clone for the gesture), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
+  is also the merchandise: the ⭐ price strikes the seal's corner, the rim is poured in `--hint-gold`
+  wherever the sticker is buyable right now (`hint`, implied by the drag handle), and in the two
+  drag trays the wax disc *is* that handle, lifted as a bare `StickerSealMark` clone for the gesture —
+  where the Collection's tray instead takes a click on the whole widget and wears `selected`), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
   `.objectiveCorner` above a scrolling `.threatZone` of `G.threats` — all `CardFace`s reading only
   `GameState`, never the mission) and its mirror `BoardRightColumn` (a `.tradeZone` of `G.tradeRoutes`,
   rendered only once a route opens). The play area is **three zones**, matching the three board zones
@@ -569,8 +577,18 @@ logic that rides on it. **A building card *is* the building** — there's no sep
     second click, re-clicking the selected deck opening its list-view and the selected board its
     `BoardZoomOverlay` (which a *revealed* board reward in the detail step also opens; the
     `locked`/`upgrade` teasers stay inert). Infinite missions render in a bottom banner, not as nodes.
-  - `Collection.tsx` — owned cards (omits locked ones); a tile opens `CardInstancePanel.tsx`, the
-    per-copy drill-down that is *also* the card shop. Each copy is a real `CardFace` beside a sticky
+  - `Collection.tsx` — owned cards (omits locked ones) beside a sticky sticker tray with the Board
+    menu's chrome, where a seal is a **filter** rather than a drag handle: selecting one narrows the
+    grid to the cards it fits (so "what can this sticker go on?" is askable without opening copies) and
+    names itself in the screen's `<h1>`, and the seals wear the gold rim exactly where the sticker is
+    buyable onto something now — never dimmed, since an unaffordable sticker still filters. Each tile
+    carries the two hints separately: its always-shown ×N badge going gold with a ▲ when another copy is
+    affordable, and a gold open sticker slot bottom-left
+    when a sticker fits — the *selected* sticker while a filter is on. A wonder shows neither, and no
+    count. A tile opens `CardInstancePanel.tsx`, the
+    per-copy drill-down that is *also* the card shop. Each copy is a real `CardFace` — its attached
+    stickers and its remaining empty slots, gold where a tray sticker would land on *that* copy — beside
+    a sticky
     tray (Influence balance + buy-next-copy-tier button + one draggable sticker badge per applicable
     sticker). Dragging a badge onto a copy buys+attaches in one gesture (a hand-rolled pointer-drag, no
     DnD library; only *valid* targets highlight via `isValidTarget`); clicking a placed badge destroys

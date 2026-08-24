@@ -9,6 +9,64 @@
   margin: 0 0 1.5rem;
 }
 
+/* Cards left, sticker tray pinned right — the Board menu's layout, same measurements. The tray keeps
+   a fixed width and stays put; the card column takes the rest and is allowed to shrink (min-width: 0)
+   so a narrow viewport squeezes the grid rather than forcing horizontal body scroll (UI-scaling
+   invariant #1). No wrap — the tray is meant to stay on the right, not drop below. */
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
+
+.cards {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Sticky within the meta `.content` scroll area, not `position: fixed`, which wouldn't pin inside the
+   transform:scale() wrapper (invariant #1). `align-self: flex-start` keeps it its own height so sticky
+   has room to travel; its own bounded height + scroll keeps a long list from growing the body. Sized,
+   like the Board menu's, so a seal — which caps its own width at the column — still leaves the plaque
+   room for a wrapped applies-to line beside it; `min-width: 0` is what makes that percentage cap bite
+   while the tray's automatic minimum is computed. */
+.tray {
+  flex: 0 0 236px;
+  min-width: 0;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  max-height: calc(90vh / var(--ui-scale, 1));
+  overflow-y: auto;
+}
+
+.trayTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.trayStickers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* The whole widget is the filter toggle here, not just its wax disc — so the cursor sits on the root,
+   where the drag trays put it on the seal alone. */
+.traySeal {
+  cursor: pointer;
+  user-select: none;
+}
+
 .sectionTitle {
   font-size: 1rem;
   font-weight: 700;

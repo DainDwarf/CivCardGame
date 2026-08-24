@@ -76,19 +76,24 @@
   font-weight: 800;
 }
 
-/* The seal doubles as a buy surface's drag handle, and says so by re-pouring its own rim in the
-   buyable-hint gold the meta screens put on every affordable purchase — the wax ring between the disc
-   edge and the device *becomes* the gold one (12% of the diameter, `.face`'s own inset), rather than a
-   gold ring drawn outside a rim left brown. Solid, not a wash: any alpha over the dark wax mixes back
-   toward brown and stops reading as gold at all, which is what the outer glow is for instead. */
-.grabbable {
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
+/* An affordable purchase, said in the buyable-hint gold the meta screens put on every one — the wax
+   ring between the disc edge and the device *becomes* the gold one (12% of the diameter, `.face`'s own
+   inset), rather than a gold ring drawn outside a rim left brown. Solid, not a wash: any alpha over the
+   dark wax mixes back toward brown and stops reading as gold at all, which is what the outer glow is
+   for instead. */
+.hinted {
   box-shadow:
     inset 0 0 0 calc(var(--seal) * 0.12) var(--hint-gold),
     0 0 0.5em rgb(var(--hint-gold-rgb) / 55%),
     0 0.14em 0.34em rgba(0, 0, 0, 0.28);
+}
+
+/* The seal doubling as a buy surface's drag handle — what the cursor lifts is the thing that lands.
+   Always gold too: a seal that can be dragged is one that can be bought. */
+.grabbable {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
 }
 
 /* The ⭐ price drips off the seal's corner the way CardFace's countBadge straddles its own. */
@@ -191,6 +196,13 @@
 /* Offered but not takeable right now — the same dim the meta trays give an unaffordable buy. */
 .disabled {
   opacity: 0.4;
+}
+
+/* Picked out of a list of seals (`selected`) — the accent outline + glow every live target in the meta
+   screens wears, so "this one is acting on the screen" reads the same here as on a drop target. */
+.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 30%);
 }
 
 .inline {

@@ -58,16 +58,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   in `CardZoomOverlay` should name the pool. The 8 icons are the game's whole economic vocabulary and
   nothing teaches them; the zoom is where a player is already looking closely. Per the tooltip
   convention, keep the text generic — name the resource, don't cite cards or missions.
-- **Split the two upgrade hints in the Collection** `[size: S]` `[?]` — *(beta playtest)* `upgrades.ts`
-  drives both `cardUpgradeAvailable` (a copy tier is buyable) and the sticker-attachable hint, but both
-  render in the one `--hint-gold` accent, so a tile says *something* is available without saying which.
-  Prefer a glyph/shape split over a second hue — hue alone would be the only signal, so a two-color
-  version needs a CVD pass before it counts as done.
-- **Sticker column in the Collection, click-to-filter** `[size: M]` `[?]` — *(beta playtest)* a
-  right-hand column listing every unlocked sticker; selecting one filters the card grid to the copies it
-  applies to. Mirrors `BoardMenu`'s sticky tray, plus the filter. Today stickers are only visible once
-  you've drilled into a single copy (`CardInstancePanel`), so there's no way to ask "what can this
-  sticker go on?"
 - **Codex: culture vs culture *level*** `[size: S]` — *(beta playtest)* the Codex entry
   (`content/codex.ts`) runs the two together. Say plainly that 🎭 is the stockpiled pool, that the
   *level* is the tier derived from it, that `cultureLevelReq` gates against the level, and what the
@@ -293,6 +283,22 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The Collection's sticker tray, and the two upgrade hints split** ✅ — one change, since both
+  questions were about the same tile. `upgrades.ts`'s card side split per cause —
+  `stickerUpgradeAvailableFor` (one sticker) folded by `stickerUpgradeAvailable` (any unlocked one),
+  with `canBuyTier` standing unwrapped as the copy half and `cardUpgradeAvailable` left as their OR for
+  the nav badge — so a tile can draw them apart: the whole-face gold outline is gone (and with it
+  `CardFace`'s `upgradeHint`), replaced by an always-shown ×N badge that goes gold and takes a ▲ for an
+  affordable copy and a gold open sticker slot bottom-left for an attachable sticker. Shape, not a
+  second hue, which is what
+  the CVD pass wanted. The Collection also gained `BoardMenu`'s sticky tray, but the seal here is a
+  **filter**: clicking one narrows the grid to the cards it fits (`stickerAppliesTo`) and names itself
+  in the screen's title, and each tile's ring then answers for *that* sticker; the rim goes gold exactly where the sticker is buyable onto
+  something now, and never dims, since an unaffordable sticker still filters. `StickerSeal` grew the
+  `hint`/`selected`/`onClick` props that needed (the gold rim split off `.grabbable`, which keeps only
+  the grab cursor), and `StickerRow` an `openSlotsTone`, so the detail panel can show every copy's
+  remaining capacity — gold where a tray sticker would really land on that copy, muted where it
+  wouldn't. One new token, `--text-on-hint-gold`, for the ▲ on its gold disc.
 - **Inspect a board's cards from the `BoardMini`** ✅ — a board tile now zooms like a card:
   `components/ZoomOverlay.tsx` holds the scrim/hint/animation/dismiss both enlargements share, with
   `CardZoomOverlay` keeping only the card half and a new `BoardZoomOverlay` putting the enlarged mini

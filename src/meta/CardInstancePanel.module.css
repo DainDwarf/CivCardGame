@@ -160,8 +160,8 @@
 }
 
 /* The buy-next-tier button — a blank neutral pill; when a tier is *available* (affordable, i.e. not
-   disabled) its border/ring go gold, the buyable-hint accent that matches the tray seals and card
-   borders. Disabled (unaffordable) keeps the plain neutral border and dims. */
+   disabled) its border/ring go gold, the buyable-hint accent the tray seals' rims and the faces' open
+   sticker slots share. Disabled (unaffordable) keeps the plain neutral border and dims. */
 .buyBtn {
   display: flex;
   align-items: center;

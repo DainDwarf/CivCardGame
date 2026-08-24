@@ -5,11 +5,13 @@ import {
   instancesOf,
   type OwnedCards,
 } from './collection';
-import { buyTier, COPY_PRICE_BY_AGE, TIER_LADDER } from './shop';
+import { buyTier, canBuyTier, COPY_PRICE_BY_AGE, TIER_LADDER } from './shop';
 import { buySticker } from './stickers';
 import { buyBoardSticker, type BoardStickers } from './boardStickers';
 import {
   cardUpgradeAvailable,
+  stickerUpgradeAvailable,
+  stickerUpgradeAvailableFor,
   boardUpgradeAvailable,
   anyCardUpgradeAvailable,
   anyBoardUpgradeAvailable,
@@ -67,6 +69,20 @@ function cardUpgradeOracle(
   if (buyTier(collection, influence, cardId) !== null) return true;
   return instancesOf(collection, cardId).some((inst) =>
     Object.values(FIXTURE_STICKERS).some((s) => buySticker(collection, influence, inst.id, s.id, unlockedStickers) !== null),
+  );
+}
+
+/** Oracle: does attaching *this* sticker to some owned copy of `cardId` actually go through? The
+ *  per-sticker leaf's counterpart — same brute force, one sticker wide. */
+function stickerUpgradeOracle(
+  collection: OwnedCards,
+  influence: number,
+  cardId: string,
+  stickerId: string,
+  unlockedStickers: Record<string, true> = UNLOCKED_STICKERS,
+): boolean {
+  return instancesOf(collection, cardId).some(
+    (inst) => buySticker(collection, influence, inst.id, stickerId, unlockedStickers) !== null,
   );
 }
 
@@ -134,6 +150,79 @@ describe('cardUpgradeAvailable — matches the real buy functions', () => {
     const maxed = collectionFromCounts({ test_food: MAX_COPIES });
     expect(cardUpgradeAvailable(maxed, 3, 'test_food', {})).toBe(false);
     expect(cardUpgradeAvailable(maxed, 3, 'test_food', {})).toBe(cardUpgradeOracle(maxed, 3, 'test_food', {}));
+  });
+});
+
+describe('stickerUpgradeAvailableFor — matches the real buy function, one sticker wide', () => {
+  // Sticker costs span the cases: test_addgain 10, the rest 3; test_restricted applies to food
+  // buildings only. A wonder takes no sticker at all.
+  const collections: { name: string; counts: Record<string, number> }[] = [
+    { name: 'x1', counts: { test_food: 1, test_prod: 1, test_wonder: 1 } },
+    { name: 'maxed', counts: { test_food: MAX_COPIES, test_prod: MAX_COPIES, test_wonder: 1 } },
+    { name: 'none owned', counts: {} },
+  ];
+
+  for (const c of collections) {
+    for (const cardId of ['test_food', 'test_prod', 'test_wonder']) {
+      for (const influence of [0, 3, 10]) {
+        it(`${c.name} · ${cardId} · ${influence}⭐`, () => {
+          const collection = collectionFromCounts(c.counts);
+          for (const s of Object.values(FIXTURE_STICKERS)) {
+            expect(stickerUpgradeAvailableFor(collection, influence, cardId, s)).toBe(
+              stickerUpgradeOracle(collection, influence, cardId, s.id),
+            );
+          }
+        });
+      }
+    }
+  }
+
+  it('every copy sticker-full leaves no sticker buyable however rich', () => {
+    const full = fillStickers(collectionFromCounts({ test_food: 2 }), 'test_food');
+    for (const s of Object.values(FIXTURE_STICKERS)) {
+      expect(stickerUpgradeAvailableFor(full, 100, 'test_food', s)).toBe(false);
+      expect(stickerUpgradeAvailableFor(full, 100, 'test_food', s)).toBe(
+        stickerUpgradeOracle(full, 100, 'test_food', s.id),
+      );
+    }
+  });
+
+  it('stickerUpgradeAvailable folds the leaf over the unlocked stickers only', () => {
+    const collection = collectionFromCounts({ test_food: 1 });
+    const onlyDear: Record<string, true> = { test_addgain: true };
+    for (const influence of [0, 3, 10]) {
+      expect(stickerUpgradeAvailable(collection, influence, 'test_food', UNLOCKED_STICKERS)).toBe(
+        Object.values(FIXTURE_STICKERS).some((s) =>
+          stickerUpgradeAvailableFor(collection, influence, 'test_food', s),
+        ),
+      );
+      // With only the 10⭐ sticker unlocked, 3⭐ buys nothing even though a 3⭐ sticker exists.
+      expect(stickerUpgradeAvailable(collection, influence, 'test_food', onlyDear)).toBe(influence >= 10);
+    }
+  });
+});
+
+describe('cardUpgradeAvailable — the OR of its two halves', () => {
+  const collections: Record<string, number>[] = [
+    { test_food: 1 },
+    { test_food: MAX_COPIES },
+    { test_prod: 1, test_food: 2 },
+    { test_wonder: 1 },
+    {},
+  ];
+
+  it('equals the copy half or the sticker half, at every price point', () => {
+    for (const counts of collections) {
+      const collection = collectionFromCounts(counts);
+      for (const cardId of ['test_food', 'test_prod', 'test_wonder']) {
+        for (const influence of [0, 2, 3, TIER_COST, 10]) {
+          expect(cardUpgradeAvailable(collection, influence, cardId, UNLOCKED_STICKERS)).toBe(
+            canBuyTier(collection, influence, cardId) ||
+              stickerUpgradeAvailable(collection, influence, cardId, UNLOCKED_STICKERS),
+          );
+        }
+      }
+    }
   });
 });
 

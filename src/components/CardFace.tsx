@@ -48,15 +48,18 @@ export function StickerRow({
   stickers,
   items,
   openSlots = 0,
+  openSlotsTone = 'live',
   onRemove,
 }: {
   stickers?: string[];
   items?: { icon: string; name?: string }[];
-  /** Empty gold-outlined placeholder slots appended after the attached badges — the buyable-hint
-   *  "you have room for a sticker here" affordance (the Board menu passes a board's remaining
-   *  capacity). Defaults to 0 so every other caller (a plain card face, the launch-popup BoardMini)
-   *  renders no hint slots. */
+  /** Empty placeholder slots appended after the attached badges — the remaining sticker capacity.
+   *  Defaults to 0 so every other caller (a plain card face, the launch-popup BoardMini) renders
+   *  none. */
   openSlots?: number;
+  /** `live` (default) is the buyable-hint gold: something could go in that slot right now. `idle`
+   *  draws the same footprint in a muted dashed outline — the room is there, the purchase isn't. */
+  openSlotsTone?: 'live' | 'idle';
   /** Opt-in removal affordance: when set, each badge becomes clickable and reveals a ✕ on hover,
    *  reporting the index the player clicked. Only the two buy surfaces pass it — the Board menu (via
    *  `BoardMini`) and Collection's `CardInstancePanel` (via `CardFace`'s `onRemoveSticker`); every
@@ -93,7 +96,10 @@ export function StickerRow({
         </span>
       ))}
       {Array.from({ length: slots }, (_, i) => (
-        <span key={`slot-${i}`} className={styles.stickerSlot} />
+        <span
+          key={`slot-${i}`}
+          className={openSlotsTone === 'idle' ? `${styles.stickerSlot} ${styles.stickerSlotIdle}` : styles.stickerSlot}
+        />
       ))}
     </span>
   );
@@ -262,12 +268,11 @@ export interface CardFaceProps extends CardFaceCommonProps {
   /** Renders a small "×N" pill in the corner when set > 1 (deck editor banner, pile
    *  viewer, Collection / deck editor picker showing copies owned). Suppressed at
    *  exactly 1 unless `alwaysShowBadge` opts in — a lone card in a stack doesn't need
-   *  a "×1", but the deck editor picker's *remaining-copies* badge does (1 left to add
-   *  is still worth stating), so it sets that flag explicitly. */
+   *  a "×1", but a count that is a *quantity the player is deciding about* does (1 copy owned,
+   *  1 left to add), so those callers set the flag explicitly. */
   countBadge?: number;
   /** Shows `countBadge` even when it's exactly `1` (or `0`) instead of only `> 1`. See
-   *  `countBadge`'s doc for why the deck editor picker needs this and stack-count badges
-   *  elsewhere don't. */
+   *  `countBadge`'s doc for which callers need it and which don't. */
   alwaysShowBadge?: boolean;
   /** Extra class(es) layered onto the countBadge span itself — lets a caller override its
    *  default always-visible look (e.g. Decks.tsx's shingled tile hides it until hover). */
@@ -285,11 +290,16 @@ export interface CardFaceProps extends CardFaceCommonProps {
    *  (the Collection tiles, the zoom, the deck editor, the hand) omits it and renders inert badges, so
    *  a sticker is destroyed from the one surface that confirms first. See `StickerRow`'s `onRemove`. */
   onRemoveSticker?: (index: number) => void;
-  /** Tints the whole face's border/ring gold to mark that this card has an affordable upgrade
-   *  available (a buyable copy tier or an applicable, affordable sticker with room) — the Collection
-   *  grid's at-a-glance hint so the player needn't open each card. Pure display; the predicate
-   *  lives in `rules/upgrades.ts`. See `.upgradeAvailable`. */
-  upgradeHint?: boolean;
+  /** Empty sticker slots trailing the `stickerBadge` row, and their tone — see `StickerRow`. The
+   *  Collection's tiles pass one live slot as their "a sticker fits here now" hint; its detail panel
+   *  passes a copy's whole remaining capacity. */
+  openSlots?: number;
+  openSlotsTone?: 'live' | 'idle';
+  /** Turns the `countBadge` gold and puts a ▲ in it: another copy of this card is affordable right
+   *  now. The Collection grid's at-a-glance hint so the player needn't open each card. Rides the count
+   *  rather than sitting beside it — the hint is *about* that number. Renders nothing without a badge
+   *  to modify. Pure display; the predicate is `shop.ts`'s `canBuyTier`. */
+  copyHint?: boolean;
 }
 
 /**
@@ -355,18 +365,16 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
     );
   }
 
-  const { countBadge, alwaysShowBadge, badgeClassName, stickerBadge, onRemoveSticker, upgradeHint } = props;
+  const { countBadge, alwaysShowBadge, badgeClassName, stickerBadge, onRemoveSticker, openSlots, openSlotsTone, copyHint } =
+    props;
   const text = overrideText ?? describeCard(card);
   const conditions = describeConditions(card);
   const banner = cardBanner(card);
   // Worker-space meeples: staffable cards (building/wonder/work) show their `workers` capacity
   // (`0` = self-sufficient/always operating so no meeple shown); other kinds show none.
   const workers = isStaffable(card) ? cardWorkerCap(card.id) : 0;
-  // An available upgrade tints the whole face's border/ring gold (the buyable-hint accent) rather
-  // than dropping a corner dot — see `.upgradeAvailable`.
-  const rootClassName = `${styles.card} ${kindClass(card.kind)}${upgradeHint ? ` ${styles.upgradeAvailable}` : ''}${
-    className ? ` ${className}` : ''
-  }`;
+  const rootClassName = `${styles.card} ${kindClass(card.kind)}${className ? ` ${className}` : ''}`;
+  const showBadge = countBadge !== undefined && (countBadge > 1 || alwaysShowBadge);
 
   const inner = (
     <>
@@ -393,12 +401,26 @@ export const CardFace = forwardRef<HTMLButtonElement | HTMLDivElement, CardFaceP
       </div>
       {conditions && <div className={styles.cardConditions}>{conditions}</div>}
       {text && <div className={styles.cardText}>{text}</div>}
-      {countBadge !== undefined && (countBadge > 1 || alwaysShowBadge) && (
-        <span className={`${styles.countBadge}${badgeClassName ? ` ${badgeClassName}` : ''}`}>
+      {showBadge && (
+        <span
+          className={`${styles.countBadge}${copyHint ? ` ${styles.countBadgeHint}` : ''}${
+            badgeClassName ? ` ${badgeClassName}` : ''
+          }`}
+        >
+          {copyHint && (
+            <span className={styles.copyMark} aria-hidden="true">
+              ▲
+            </span>
+          )}
           ×{countBadge}
         </span>
       )}
-      <StickerRow stickers={stickerBadge} onRemove={onRemoveSticker} />
+      <StickerRow
+        stickers={stickerBadge}
+        openSlots={openSlots}
+        openSlotsTone={openSlotsTone}
+        onRemove={onRemoveSticker}
+      />
     </>
   );
 

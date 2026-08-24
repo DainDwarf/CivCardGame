@@ -5,8 +5,8 @@ import styles from './StickerSeal.module.css';
  * The one visual of a single sticker — `CardFace`'s counterpart for the two sticker catalogues
  * (`content/stickers.ts` and `content/boardStickers.ts`), which share no type but do share this
  * shape: an icon, a name, and a bargain. It holds no catalogue knowledge and takes every string from
- * its caller, so a card sticker and a board sticker reach it the same way — and the one gesture it
- * offers, the seal as a drag handle, it only forwards.
+ * its caller, so a card sticker and a board sticker reach it the same way — and the two gestures it
+ * offers, the seal as a drag handle and a click on the widget, it only forwards.
  */
 
 /** One drawing at three sizes — `panel` reading size, `inline` for a list, `hero` enlarged. The
@@ -43,9 +43,18 @@ type StickerSealProps = {
       /** Dimmed — a buy surface offering a sticker that couldn't land anywhere right now. Purely
        *  visual: the caller withholds `onSealPointerDown` to make it inert. */
       disabled?: boolean;
+      /** Pours the seal's rim in the buyable-hint gold — this sticker is affordable and has somewhere
+       *  to land. Implied by `onSealPointerDown`, so a tray that drags need not pass both; a tray whose
+       *  gesture is something else (Collection's filter) says it on its own. */
+      hint?: boolean;
+      /** Picked out of a list — the accent outline the caller's gesture selects with. */
+      selected?: boolean;
       /** Makes the wax seal the drag handle of a buy-and-attach gesture, so what the cursor lifts
        *  is the thing that lands. Absent → display only. */
       onSealPointerDown?: (e: PointerEvent<HTMLElement>) => void;
+      /** A click anywhere on the widget. The seal's own drag (`onSealPointerDown`) is the other
+       *  gesture; no caller wires both. */
+      onClick?: () => void;
       /** Only what the drawing can't show — why a drag is refused, what a drop would do. The
        *  bargain itself is already on the plaque, so a tooltip restating it is noise. */
       title?: string;
@@ -103,10 +112,17 @@ export function StickerSeal(props: StickerSealProps) {
     );
   }
 
+  const grabbable = props.onSealPointerDown !== undefined;
   return (
-    <div className={`${root}${props.disabled ? ` ${styles.disabled}` : ''}`} title={props.title}>
+    <div
+      className={`${root}${props.disabled ? ` ${styles.disabled}` : ''}${props.selected ? ` ${styles.selected}` : ''}`}
+      title={props.title}
+      onClick={props.onClick}
+    >
       <div
-        className={`${styles.seal}${props.onSealPointerDown ? ` ${styles.grabbable}` : ''}`}
+        className={`${styles.seal}${props.hint || grabbable ? ` ${styles.hinted}` : ''}${
+          grabbable ? ` ${styles.grabbable}` : ''
+        }`}
         onPointerDown={props.onSealPointerDown}
       >
         <div className={styles.face} aria-hidden="true">

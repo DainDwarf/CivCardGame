@@ -79,6 +79,7 @@
      `--hint-gold-rgb`, so the 1px border need not do it alone. */
   --hint-gold: #cf9a12;
   --hint-gold-rgb: 207 154 18;
+  --text-on-hint-gold: #2c2c2c;  /* glyphs drawn *on* the gold (the copy-hint ▲) — gold is too light for white */
 
   /* ── Sticker wax ──────────────────────────────────────
      The pressed seal of the sticker widget (`components/StickerSeal.tsx`): a sealing-wax red the
@@ -271,6 +272,7 @@
   /* ── Buyable-hint (gold) — brighter on dark surfaces ── */
   --hint-gold: #f0c236;
   --hint-gold-rgb: 240 194 54;
+  --text-on-hint-gold: #2c2c2c;
 
   /* ── Sticker wax — lifted, since the seal sits on a dark card face ── */
   --sticker-wax: #b8503a;

@@ -6,6 +6,7 @@ import {
   instancesOf,
   isStickerFull,
   stickerableInstancesOf,
+  MAX_STICKERS,
   type MetaCardInstance,
   type OwnedCards,
 } from '../rules/collection';
@@ -43,7 +44,8 @@ interface DragState {
 /**
  * The per-card detail view opened from Collection — and that card's *buy/attach* surface (the fused
  * Shop). Each owned copy renders as a real `CardFace` (its sticker-adjusted `effectiveCard` numbers +
- * bottom-left sticker badge); the applicable stickers sit in a right-side tray as `StickerSeal`s, the
+ * a bottom-left row of its stickers and its still-empty slots, gold where one could be filled right
+ * now); the applicable stickers sit in a right-side tray as `StickerSeal`s, the
  * buy-next-copy-tier button pinned at its top. Dragging a seal out of the tray onto a card face buys
  * and attaches it in one gesture: a hand-rolled pointer-drag (like `DeckEditor.tsx` / `BoardMenu.tsx`,
  * no DnD library) with a single `isValidTarget` predicate gating both the mid-drag highlight and the
@@ -263,6 +265,11 @@ export function CardInstancePanel({
                     <CardFace
                       card={effectiveCard(card, inst)}
                       stickerBadge={inst.stickers}
+                      // A copy's free capacity is always drawn, so the row says how many more stickers
+                      // this copy can take; it goes gold only where a tray sticker would really land on
+                      // *this* copy right now (the same predicate the drop uses).
+                      openSlots={MAX_STICKERS - (inst.stickers?.length ?? 0)}
+                      openSlotsTone={stickerDefs.some((s) => isValidTarget(inst, s)) ? 'live' : 'idle'}
                       // Removal is the shop surface's affordance, so a read-only browse shows inert
                       // badges. Suppressed mid-drag (like the tray's own gating): while a seal is in
                       // the air this face's message is "droppable target", and a ✕ under the cursor
