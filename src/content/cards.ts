@@ -877,12 +877,12 @@ export const CARDS: Record<string, CardDef> = {
 
   // — Objectives —
   first_settlement_goal: {
-    id: 'first_settlement_goal', name: 'The First Settlement', kind: 'objective', cost: {},
+    id: 'first_settlement_goal', name: 'First Settlement', kind: 'objective', cost: {},
     goals: [
       { icon: '🔨', measure: (G) => G.resources.production, target: 10 },
       { icon: '⚔️', measure: (G) => G.resources.military, target: 10 },
     ],
-    display: { description: 'Have 10 🔨 and 10 ⚔️' },
+    display: { description: '10 🔨 and 10 ⚔️' },
   },
   growing_numbers_goal: {
     id: 'growing_numbers_goal', name: 'Growing Numbers', kind: 'objective', cost: {},

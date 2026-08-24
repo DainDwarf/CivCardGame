@@ -118,11 +118,12 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'first_settlement',
     name: 'The First Settlement',
     lore:
-      'Today your tribe has found a very promising land, one that could sustain us for a long time to ' +
-      'come. Now we must make this place ours — and defend it from anything that would take it from us.',
+      'Today your tribe has found a very promising land, one that could sustain your people for a long ' +
+      'time to come. Now you must make this place yours — and defend it from anything that would take ' +
+      'it from you.',
     prereqs: [],
     objectiveCardId: 'first_settlement_goal',
-    victoryHint: 'Stockpile 10 🔨 production and 10 ⚔️ military at once.',
+    victoryHint: 'Stockpile 10 🔨 production and 10 ⚔️ military.',
     failureHint: null,
     kind: 'standard',
     reward: { influence: 0, unlockCardIds: ['farm', 'hut', 'conquest'] },
@@ -669,7 +670,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     name: 'Return of the Ice Age',
     lore:
       'Food is the most basic need of every civilization. Should a future ice age come and threaten ' +
-      'our crops, how long would we manage to survive?',
+      'your crops, how long would your people manage to survive?',
     // Opened by the Stone Age capstone — the first endless *survival* mission (a scored infinite, unlike
     // the rewardless sandbox). The score is *snaps endured*, not rounds survived: skipping turns banks
     // nothing.
