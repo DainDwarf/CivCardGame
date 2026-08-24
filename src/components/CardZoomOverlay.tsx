@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { CARDS, type CardDef } from '../content/cards';
 import { CardFace } from './CardFace';
+import { ZoomOverlay } from './ZoomOverlay';
 import styles from './CardZoomOverlay.module.css';
 
 /**
  * A full-screen, dismissable enlargement of a single card — the run loop's own card
  * zoom (`Board.tsx`'s hand/pile-viewer click-to-zoom) lifted out so `Collection.tsx`
- * can reuse the identical backdrop/animation instead of duplicating it.
+ * can reuse it. Only the card half lives here; the scrim/hint/animation are `ZoomOverlay`'s.
  */
 export function CardZoomOverlay({
   cardId,
@@ -67,32 +68,24 @@ export function CardZoomOverlay({
   };
 
   return (
-    <div className={styles.backdrop} onClick={onClose} role="dialog" aria-modal="true">
-      <div className={styles.wrap} ref={wrapRef}>
-        <CardFace
-          card={overrideCard ?? CARDS[cardId]}
-          overrideText={overrideText}
-          stickerBadge={stickerBadge}
-          className={styles.card}
-          onArtClick={petable ? petTheDog : undefined}
-        />
-        {woof !== null && (
-          <div key={woof} className={styles.woof} aria-hidden="true">
-            woof!
-          </div>
-        )}
-        {pets.map((p) => (
-          <div
-            key={p.id}
-            className={styles.pet}
-            style={{ left: `${p.x}%`, top: `${p.y}%` }}
-            aria-hidden="true"
-          >
-            *pet* *pet*
-          </div>
-        ))}
-      </div>
-      <p className={styles.hint}>Click anywhere to close</p>
-    </div>
+    <ZoomOverlay onClose={onClose} className={styles.wrap} contentRef={wrapRef}>
+      <CardFace
+        card={overrideCard ?? CARDS[cardId]}
+        overrideText={overrideText}
+        stickerBadge={stickerBadge}
+        className={styles.card}
+        onArtClick={petable ? petTheDog : undefined}
+      />
+      {woof !== null && (
+        <div key={woof} className={styles.woof} aria-hidden="true">
+          woof!
+        </div>
+      )}
+      {pets.map((p) => (
+        <div key={p.id} className={styles.pet} style={{ left: `${p.x}%`, top: `${p.y}%` }} aria-hidden="true">
+          *pet* *pet*
+        </div>
+      ))}
+    </ZoomOverlay>
   );
 }

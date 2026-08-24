@@ -532,8 +532,16 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   from `rules/`, never recomputes logic). Supporting pieces: `CardFace.tsx` (the one card visual —
   name/cost/kind banner/art/workers/effect, shared by hand/deck-editor/Collection; shows `effectiveCard`
   numbers + a `StickerRow` badge; also owns the `RESOURCE_ICON` map for all 8 resources),
-  `CardZoomOverlay.tsx`, `BoardMini.tsx` (a read-only board miniature driven off `effectiveBoard`,
-  reused across meta screens; its slot grid seats a board's `prebuilt` art in the leading slots, while
+  `ZoomOverlay.tsx` (the shell every full-screen enlargement shares — scrim, dismiss hint, arrival
+  animation, click-anywhere-to-close — reserving no size of its own, so what is enlarged and at what
+  footprint belongs to the caller) and its two consumers `CardZoomOverlay.tsx` (a card at 2.2×, plus
+  the pet-the-dog easter egg) and `BoardZoomOverlay.tsx` (a board enlarged beside a real `CardFace` per
+  `prebuilt` structure — the only place that card is readable; display only, and the `locked`/`upgrade`
+  minis never open it), `BoardMini.tsx` (a read-only board miniature driven off `effectiveBoard`,
+  reused across meta screens; its slot grid is a **single non-wrapping row**, which is what gives every
+  board one fixed 260×175.2 footprint for a caller to reserve a scaled box against — a board with more
+  territory than fits across it would run off the edge, and the slot size is what gives; it seats a
+  board's `prebuilt` art in the leading slots, while
   the `locked`/`upgrade` branches render no slots at all so neither the territory count nor the perk
   leaks before the unlock), `StickerSeal.tsx` (the same for a single sticker, serving **both**
   catalogues off plain string props — a pressed wax seal beside a plaque carrying the name and the
@@ -557,8 +565,10 @@ logic that rides on it. **A building card *is* the building** — there's no sep
 - **`meta/MetaMenu.tsx`** — the shell; a left nav switches five screens:
   - `CampaignMap.tsx` (Mission) — the mission DAG as a drag-to-pan tech tree under themed age bands; a
     node opens `MissionDetailPanel` (lore + reward preview), whose "Continue" hands off to a board/deck
-    launch popup that assembles a `RunConfig` via `buildRunConfig`. Infinite missions render in a bottom
-    banner, not as nodes.
+    launch popup that assembles a `RunConfig` via `buildRunConfig` — whose two pickers take the same
+    second click, re-clicking the selected deck opening its list-view and the selected board its
+    `BoardZoomOverlay` (which a *revealed* board reward in the detail step also opens; the
+    `locked`/`upgrade` teasers stay inert). Infinite missions render in a bottom banner, not as nodes.
   - `Collection.tsx` — owned cards (omits locked ones); a tile opens `CardInstancePanel.tsx`, the
     per-copy drill-down that is *also* the card shop. Each copy is a real `CardFace` beside a sticky
     tray (Influence balance + buy-next-copy-tier button + one draggable sticker badge per applicable
@@ -569,6 +579,7 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   - `BoardMenu.tsx` (Board) — the board-sticker buy surface: available boards (`availableBoardIds`) as
     `BoardMini`s beside a sticky sticker tray; dragging a badge onto a board buys+attaches via
     `onBuyBoardSticker` (only *valid* targets highlight); the same click-to-destroy-behind-confirm.
+    Clicking a tile opens its `BoardZoomOverlay`.
   - `Decks.tsx` — every deck as a tile (a hover-revealed ×N card fan), the shared
     `DeckTile`/`DeckListOverlay` (`components/DeckDisplay.tsx`) with Edit/Copy/Delete; "New Deck"
     disabled once `MAX_DECKS` is hit.

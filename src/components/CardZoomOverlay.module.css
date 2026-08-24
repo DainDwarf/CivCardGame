@@ -1,25 +1,12 @@
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  background: rgb(var(--scrim-rgb) / 0.6);
-  cursor: zoom-out;
-  animation: fadeIn 0.15s ease;
-}
+/* The card half of the zoom; the scrim, hint and arrival animation are ZoomOverlay.module.css's. */
 
+/* The scaled card's own footprint (118×162 at 2.2×), so the overlay centres the enlargement rather
+   than the card's unscaled box. Also the positioning context for the pet-the-dog *pet* text + woof
+   bubble. */
 .wrap {
-  position: relative; /* positioning context for the pet-the-dog *pet* text + woof bubble */
+  position: relative;
   width: 260px;
   height: 356px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: zoomIn 0.16s ease-out;
 }
 
 /* "Pet the dog" easter egg (Hunting card only): a woof! speech bubble above the dog + floating
@@ -110,28 +97,3 @@
   box-shadow: 0 22px 50px rgba(0, 0, 0, 0.5);
 }
 
-.hint {
-  margin: 0;
-  color: var(--text-on-scrim);
-  font-size: 0.9rem;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes zoomIn {
-  from {
-    transform: scale(0.6);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}

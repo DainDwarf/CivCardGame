@@ -7,10 +7,21 @@
    the bottom-left sticker badges (which overhang the corner like a CardFace's, so this box is NOT
    overflow-clipped — the ground rounds its own corners instead, see .ground). */
 .mini {
-  /* A slot's *rendered* height (border included, hence the border-box on .slotEmpty), shared by the
-     slot row and the grid's reserved minimum — the two must stay equal for a landless board to
-     reserve exactly one row (see .slotGrid). */
+  /* A slot's *rendered* size (border included, hence the border-box on .slotEmpty). The height is
+     shared by the slot row and the grid's reserved minimum — the two must stay equal for a landless
+     board to reserve exactly one row (see .slotGrid). */
   --mini-slot-height: 30px;
+  --mini-slot-width: 42px;
+  box-sizing: border-box;
+  /* One fixed footprint for every board: the slot grid is a single non-wrapping row and the banner
+     has a definite minimum, so nothing here varies with the board's territory count. That is what
+     lets `BoardZoomOverlay` reserve the box a `transform: scale()` of this widget will occupy, the
+     way a card face's 118×162 lets `CardZoomOverlay` reserve its scaled wrap. Sums border (2) +
+     padding (8 + 32) + banner (5rem + its own 0.4rem padding, which is content-box and so sits
+     *outside* that minimum) + gap (0.4rem) + a slot row (30 + 4). Fall short of the true sum and the
+     flex column overflows into the bottom padding strip, where the name pill and the sticker badges
+     live — the collision reads as the name label sitting on the slots. */
+  height: 175.2px;
   position: relative;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -18,6 +29,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  /* Declared, not inherited: this widget is dropped into hosts that set no font of their own (a zoom
+     overlay renders as a sibling of the screen it was opened from), and `body` sets none either — so
+     an inherited stack would silently fall back to the UA's. Same reason `CardFace` declares it. */
+  font-family: system-ui, -apple-system, sans-serif;
   /* Extra bottom padding leaves room beneath the territory grid for the bottom-left sticker badges
      and the bottom-right name pill (both anchored to this box's bottom edge), so the slots never
      sit on top of them. */
@@ -195,12 +210,15 @@
   color: var(--text-secondary);
 }
 
-/* The territory grid: one slot per territory, wrapping left-to-right — the board's starting
-   capacity, scaled down from the run board's 200×110 slots. A slot is dashed and open, or solid
-   around the structure the board stands there pre-built. */
+/* The territory grid: one slot per territory in a **single row that never wraps** — the board's
+   starting capacity, scaled down from the run board's 200×110 slots. A slot is dashed and open, or
+   solid around the structure the board stands there pre-built. The one row is what fixes the widget's
+   height (see .mini); a board with more territory than fits across 260px would run off the edge
+   rather than wrap onto a second row, and the slot size is what would give. */
 .slotGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 42px);
+  grid-auto-flow: column;
+  grid-auto-columns: var(--mini-slot-width);
   gap: 5px;
   justify-content: center;
   padding: 2px;

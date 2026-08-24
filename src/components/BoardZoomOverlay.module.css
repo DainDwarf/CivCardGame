@@ -1,0 +1,97 @@
+/* The board half of the zoom; the scrim, hint and arrival animation are ZoomOverlay.module.css's. */
+
+/* The composition: the enlarged board beside the cards it stands. Its own bounded scroll box —
+   nothing here may reach the body (UI-scaling invariant #1) — and the caps divide by the UI scale so
+   they measure the real screen rather than the pre-scale one (invariant #3). `flex-start` rather than
+   centred: a centred flex line overflowing its scroll container clips the top out of reach.
+   It wraps because both columns are enlargements at a fixed rendered width, so a narrow window can't
+   squeeze them — without the wrap they overflow sideways, and a horizontal scrollbar on a box that
+   scrolls on both axes also grows the row's own height by the track's thickness. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  /* Cross-axis *line* packing, which is what the centring worry is really about: once the row wraps,
+     the stack starts at the top, so an overflowing composition scrolls from its beginning instead of
+     centring its overflow out of reach. `align-items` is then free to centre within a line. */
+  align-content: flex-start;
+  gap: 1.5rem;
+  padding: 0.5rem;
+  max-width: calc(94vw / var(--ui-scale, 1));
+  max-height: calc(84vh / var(--ui-scale, 1));
+  overflow: auto;
+}
+
+/* Each enlargement is the card zoom's arrangement: a wrap sized to the *scaled* footprint, around a
+   widget at its natural size that a transform blows up inside it — so the enlargement occupies a real
+   layout box and the two columns can't overlap. `BoardMini` has a fixed 260×175.2 for exactly this. */
+.enlarged {
+  --board-zoom: 1.9;
+  box-sizing: border-box;
+  width: calc(260px * var(--board-zoom));
+  height: calc(175.2px * var(--board-zoom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+/* The width the meta screens' tiles give a mini, so the enlargement is that same drawing rather than
+   a differently-proportioned one. */
+.mini {
+  width: 260px;
+  transform: scale(var(--board-zoom));
+  transform-origin: center;
+  /* Dropped for the same reason as `.face`'s below — a scaled shadow reaches past the reserved box
+     and is cut square by the row's clip. */
+  box-shadow: none;
+}
+
+/* The bottom padding balances the caption's line box and the gap above the face, so the column is
+   symmetric about the *face* — otherwise the row centres the caption-plus-face block and the face
+   itself hangs below the board's centre line by half a caption. */
+.standing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: calc(0.95rem * 1.2 + 0.6rem);
+}
+
+.caption {
+  margin: 0;
+  color: var(--text-on-scrim);
+  font-size: 0.95rem;
+  /* Definite, so the balancing padding above can be computed rather than guessed at. */
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.faces {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.enlargedFace {
+  --face-zoom: 1.8;
+  box-sizing: border-box;
+  width: calc(118px * var(--face-zoom));
+  height: calc(162px * var(--face-zoom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* A card face is a drag handle everywhere else; here it is a picture. It carries no shadow: the wrap
+   reserves exactly the scaled face and the row clips what leaves it, so a shadow — the face's own
+   included, multiplied by the same transform — is cut off square at the box edge instead of fading,
+   which reads as a smear under the card rather than a lift. */
+.face {
+  transform: scale(var(--face-zoom));
+  transform-origin: center;
+  cursor: default;
+  box-shadow: none;
+}

@@ -521,11 +521,17 @@
 /* A BoardMini has no intrinsic width, so as a bare flex item it collapses to its min-content width
    (a squished, card-shaped board). Give it the same footprint it has in the Board menu grid
    (`minmax(260px, 1fr)`); `max-width: 100%` still lets it shrink inside a cramped reward column
-   rather than overflowing. Targets the direct child so it catches the BoardMini regardless of its
-   (module-scoped) class name. */
+   rather than overflowing. Targets the direct child so it catches the mini regardless of its
+   (module-scoped) class name, and equally the wrapper an inspectable one sits in. */
 .rewardBoards > * {
   width: 260px;
   max-width: 100%;
+}
+
+/* A revealed board reward opens the same enlargement the Board menu's tiles do; the still-withheld
+   `locked`/`upgrade` previews are rendered bare, with no wrapper, so they stay inert. */
+.zoomableBoard {
+  cursor: zoom-in;
 }
 
 .picker {

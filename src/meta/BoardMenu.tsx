@@ -4,6 +4,7 @@ import { BOARD_STICKERS, BOARD_STICKER_SCOPE, type BoardStickerDef } from '../co
 import { canAttachBoardSticker, unlockedBoardStickerDefs, MAX_BOARD_STICKERS, type BoardStickers } from '../rules/boardStickers';
 import { boardUpgradeAvailable } from '../rules/upgrades';
 import { BoardMini } from '../components/BoardMini';
+import { BoardZoomOverlay } from '../components/BoardZoomOverlay';
 import { StickerSeal, StickerSealMark } from '../components/StickerSeal';
 import { availableBoardIds } from './boardDisplay';
 import styles from './BoardMenu.module.css';
@@ -40,6 +41,9 @@ interface DragState {
  * card sticker tray) — a hand-rolled pointer-drag like `DeckEditor.tsx` (no DnD library). During a
  * drag only the *valid* target boards for that sticker highlight; an invalid/missed drop no-ops (the
  * clone just disappears).
+ *
+ * Clicking a board enlarges it (`BoardZoomOverlay`) — a tile shows a pre-built structure as an emoji
+ * in a slot, so the enlargement is the only place that card can actually be read.
  *
  * This is also the only screen where an *attached* sticker can be destroyed: clicking a badge on a
  * board opens a confirm, and accepting frees the slot for nothing back. The gesture is a plain click
@@ -87,6 +91,8 @@ export function BoardMenu({
   // The removal a player has clicked but not yet confirmed — the destroy is irreversible and unpaid,
   // so it never fires straight off the click.
   const [pendingRemoval, setPendingRemoval] = useState<{ boardId: BoardId; index: number } | null>(null);
+  // The board whose enlargement is open — the only way to read what a board stands pre-built.
+  const [zoomBoard, setZoomBoard] = useState<BoardId | null>(null);
   // Each mini-board wrapper's DOM node, registered by callback ref — hit-tested (visual px) on drop.
   const boardEls = useRef(new Map<BoardId, HTMLElement>());
 
@@ -192,6 +198,10 @@ export function BoardMenu({
           else boardEls.current.delete(boardId);
         }}
         className={`${styles.boardTile}${highlight ? ` ${styles.boardTileValid}` : ''}`}
+        // A drop that ends a seal drag never reaches here: the click lands on the nearest common
+        // ancestor of the press and the release, and the press was on the tray's seal.
+        onClick={() => setZoomBoard(boardId)}
+        title="Click to inspect this board"
       >
         <BoardMini
           boardId={boardId}
@@ -274,6 +284,12 @@ export function BoardMenu({
           </div>
         </div>
       )}
+
+      <BoardZoomOverlay
+        boardId={zoomBoard}
+        stickerIds={zoomBoard ? boardStickers[zoomBoard] : undefined}
+        onClose={() => setZoomBoard(null)}
+      />
 
       {/* The wax seal itself, lifted off its tray widget and following the cursor. */}
       {drag?.active && dragSticker && (

@@ -77,10 +77,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   player and a first-time player felt it. **Explicitly low priority and not a publish blocker** (user
   call): nothing is confusing, nothing is broken, every feature is reachable — it is convenience only.
   No obvious cheap fix, hence the `[?]`.
-- **Inspect a board's cards from the `BoardMini`** `[size: S]` — *(beta playtest)* a `prebuilt` slot
-  renders art with a `title` attribute and nothing else (`BoardMini.tsx`), so the standing card a board
-  carries — its whole distinguishing perk — can't be read before picking that board. Wants the same
-  click-to-zoom the run board gives (`CardZoomOverlay`), on every slot rather than a prebuilt branch.
 - **Mission-screen polish (`CampaignMap.tsx`)** `[size: M]` `[?]` — three passes over the map's
   horizontal extent, all user-flagged optional:
   - **Open centred on the available missions.** The map has no initial scroll at all (`scrollLeft` is
@@ -297,6 +293,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Inspect a board's cards from the `BoardMini`** ✅ — a board tile now zooms like a card:
+  `components/ZoomOverlay.tsx` holds the scrim/hint/animation/dismiss both enlargements share, with
+  `CardZoomOverlay` keeping only the card half and a new `BoardZoomOverlay` putting the enlarged mini
+  beside a real `CardFace` per `prebuilt` structure — the card whose text a slot's emoji couldn't
+  carry. Opened by a click on a Board-menu tile, and by re-clicking the already-selected board in the
+  launch popup (the deck picker's gesture) and by a *revealed* board reward in the mission detail
+  panel. Display only, and the withholding `locked`/`upgrade` minis never open it. `BoardMini`'s slot
+  grid became a single non-wrapping row along the way, giving every board one fixed footprint — which
+  is what lets the enlargement be a plain `transform: scale()` over a reserved box, one zoom mechanism
+  across the app.
 - **Victory / gameover screens + the unlock reveal** ✅ — the end-of-run overlay's cramped
   `+N ⭐ · Unlocked X, Y` line is split in two. The run screen keeps the payout (full size, gold) and
   closes on exactly one tinted insert per outcome — a sealed no-name teaser in gold when the clear

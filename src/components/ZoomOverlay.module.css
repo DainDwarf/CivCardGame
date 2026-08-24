@@ -1,0 +1,50 @@
+/* The chrome every full-screen zoom shares — scrim, dismiss hint, arrival animations. `.wrap`
+   deliberately declares no size: what is enlarged, and to what footprint, belongs to the caller's own
+   module, which composes its class onto this one. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  background: rgb(var(--scrim-rgb) / 0.6);
+  cursor: zoom-out;
+  animation: fadeIn 0.15s ease;
+}
+
+.wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: zoomIn 0.16s ease-out;
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-on-scrim);
+  font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

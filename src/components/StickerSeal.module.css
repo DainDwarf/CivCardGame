@@ -76,16 +76,19 @@
   font-weight: 800;
 }
 
-/* The seal doubles as a buy surface's drag handle, ringed in the same buyable-hint gold the meta
-   screens put on every affordable purchase. */
+/* The seal doubles as a buy surface's drag handle, and says so by re-pouring its own rim in the
+   buyable-hint gold the meta screens put on every affordable purchase — the wax ring between the disc
+   edge and the device *becomes* the gold one (12% of the diameter, `.face`'s own inset), rather than a
+   gold ring drawn outside a rim left brown. Solid, not a wash: any alpha over the dark wax mixes back
+   toward brown and stops reading as gold at all, which is what the outer glow is for instead. */
 .grabbable {
   cursor: grab;
   user-select: none;
   touch-action: none;
   box-shadow:
-    0 0 0 0.2em rgb(var(--hint-gold-rgb) / 32%),
-    0 0.14em 0.34em rgba(0, 0, 0, 0.28),
-    inset 0 0 0 0.07em rgba(0, 0, 0, 0.18);
+    inset 0 0 0 calc(var(--seal) * 0.12) var(--hint-gold),
+    0 0 0.5em rgb(var(--hint-gold-rgb) / 55%),
+    0 0.14em 0.34em rgba(0, 0, 0, 0.28);
 }
 
 /* The ⭐ price drips off the seal's corner the way CardFace's countBadge straddles its own. */

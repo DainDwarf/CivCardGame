@@ -13,6 +13,7 @@ import { isCompleted, isAvailable } from '../rules/campaign';
 import { availableBoardIds } from './boardDisplay';
 import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
 import { BoardMini } from '../components/BoardMini';
+import { BoardZoomOverlay } from '../components/BoardZoomOverlay';
 import { CardFace } from '../components/CardFace';
 import { CardZoomOverlay } from '../components/CardZoomOverlay';
 import { StickerSeal } from '../components/StickerSeal';
@@ -366,15 +367,17 @@ export function CampaignMap({
  * unlock — the real card face once cleared (under a "Cards already unlocked" subtitle), or
  * `CardFace`'s `missionLocked` mode beforehand (the real `unlockCard` passed in, but rendered
  * blank but for its name — a deliberate sliver of information, since which card a mission grants
- * otherwise stays a surprise until it's actually cleared; see `rules/rewards.ts`). An `'infinite'`
+ * otherwise stays a surprise until it's actually cleared; see `rules/rewards.ts`). A board reward is
+ * inspectable (`BoardZoomOverlay`) once revealed, and only then. An `'infinite'`
  * mission has neither a fixed Influence amount nor an unlock — it pays its score out every
  * attempt — so it gets its own short "Influence" / "No Unlock" reward line instead, except the
  * rewardless sandbox, which pays nothing and shows only a "No Reward" column header.
  *
  * **Launch step** — a board picker on the left, a deck picker on the right (lore/reward already
  * shown in the detail step). Nothing is pre-selected; "Start Mission" stays disabled until the
- * player has chosen both. Clicking an unselected deck selects it; clicking the already-selected
- * deck opens its list-view (`DeckListOverlay`, no edit/copy/delete).
+ * player has chosen both. Both pickers take the same second click: clicking an unselected deck/board
+ * selects it, clicking the already-selected one opens it — the deck's list-view (`DeckListOverlay`,
+ * no edit/copy/delete), the board's enlargement (`BoardZoomOverlay`).
  */
 function MissionFlowPopup({
   mission,
@@ -443,6 +446,8 @@ function MissionFlowPopup({
   const [deckId, setDeckId] = useState<string | null>(null);
   // The deck whose list-view overlay is open (opened by re-clicking the selected deck).
   const [viewing, setViewing] = useState<DeckDef | null>(null);
+  // The board whose enlargement is open — re-clicking the selected board, mirroring the deck above.
+  const [zoomBoard, setZoomBoard] = useState<BoardId | null>(null);
   // The card zoomed via click — the reward (only once already unlocked; a face-down card has
   // nothing to reveal) or one of the mission's cards below the lore text.
   const [zoomCardId, setZoomCardId] = useState<string | null>(null);
@@ -590,7 +595,20 @@ function MissionFlowPopup({
                             // A `BoardMini` either way — post-clear revealing the real board, pre-clear
                             // its `locked` silhouette (greyed, stats withheld, name shown), mirroring
                             // the card unlock's face-down → face reveal via `CardFace`'s `missionLocked`.
-                            <BoardMini key={board.id} boardId={board.id} locked={!alreadyCleared} />,
+                            // Only the revealed one is inspectable: a silhouette has nothing to enlarge
+                            // and enlarging it would be the leak it exists to prevent.
+                            alreadyCleared ? (
+                              <div
+                                key={board.id}
+                                className={styles.zoomableBoard}
+                                title="Click to inspect this board"
+                                onClick={() => setZoomBoard(board.id)}
+                              >
+                                <BoardMini boardId={board.id} />
+                              </div>
+                            ) : (
+                              <BoardMini key={board.id} boardId={board.id} locked />
+                            ),
                           )}
                         </div>
                       )}
@@ -599,7 +617,13 @@ function MissionFlowPopup({
                           {/* Pre-clear: the *current* board with a ⬆ and its numbers withheld — the
                               improved stats stay secret. Post-clear: just the new board, revealed. */}
                           {alreadyCleared ? (
-                            <BoardMini boardId={boardUpgrade.to} />
+                            <div
+                              className={styles.zoomableBoard}
+                              title="Click to inspect this board"
+                              onClick={() => setZoomBoard(boardUpgrade.to)}
+                            >
+                              <BoardMini boardId={boardUpgrade.to} />
+                            </div>
                           ) : (
                             <BoardMini boardId={boardUpgrade.from} upgrade />
                           )}
@@ -620,7 +644,8 @@ function MissionFlowPopup({
                         type="button"
                         className={`${styles.optionCard}${boardId === id ? ` ${styles.selected}` : ''}`}
                         aria-pressed={boardId === id}
-                        onClick={() => setBoardId(id)}
+                        title={boardId === id ? 'Click to inspect this board' : 'Click to select this board'}
+                        onClick={() => (boardId === id ? setZoomBoard(id) : setBoardId(id))}
                       >
                         <BoardMini boardId={id} stickerIds={boardStickers[id]} />
                       </button>
@@ -654,6 +679,11 @@ function MissionFlowPopup({
       </div>
 
       {viewing && <DeckListOverlay deck={viewing} collection={collection} onClose={() => setViewing(null)} />}
+      <BoardZoomOverlay
+        boardId={zoomBoard}
+        stickerIds={zoomBoard ? boardStickers[zoomBoard] : undefined}
+        onClose={() => setZoomBoard(null)}
+      />
       <CardZoomOverlay cardId={zoomCardId} onClose={() => setZoomCardId(null)} />
     </>
   );
