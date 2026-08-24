@@ -184,8 +184,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     lore:
       'The raiders are driven off, and the border holds. But not every tribe beyond it came with ' +
       'spears — some came with salt, with obsidian, with shells from a sea none of your people have ' +
-      'ever seen. War made the border. Now make it worth holding: open a road to your neighbours, ' +
-      'pay what they ask, and let the grain pile up in stores you never dug from your own soil.',
+      'ever seen. Open a road to your neighbours, pay what they ask, and let the grain pile up in ' +
+      'stores you never dug from your own soil.',
     prereqs: ['raiders_at_border'],
     objectiveCardId: 'first_trades_goal',
     victoryHint: `Open a 🤝 trade route and stockpile ${FIRST_TRADES_FOOD} 🌾 food.`,
