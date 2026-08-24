@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
 **Branch:** Bronze — the optional challenge leaf off Masonry.
 **Placement:** `prereqs: ['masonry']`, bronze col 6 row 1.
 **Reward influence:** 25 (challenge → bigger reward; provisional).
@@ -20,40 +20,40 @@
 
 First shipped use of the `defeat` hook (a deadline, not a drain).
 
-## Balance ✅ (target holds; the planner row is not a difficulty measurement)
+## Balance 🟡 (reopened)
 
-**Target (50🪙 · 40🔨 · 🎭 L2) and `PHARAOH_DEADLINE` (40) hold as authored.** Hand-won first try on City,
-and **search-proven on 50/50 seeds** — every line wins in 26–38 turns against the 40-round clock, ending at
-🎭 30.5 with no overshoot. The ~10 turns of slack at optimum is the room a first-try human win with late
-mistakes needs.
+**Reopened by the 2026-08-24 stream session** — on the mission being board-dependent to the point of
+being two different missions, and on the wonder it hands back (see *Open*).
 
-Measured on a 22-card City deck: 1 each Bead Workshop · Farm+2 Irrigation · Forge · House · Göbekli Tepe,
-plus 4 Conquest · 2 Beer · 2 Hunting · 2 Toolmaking · 4 Trader · 2 Bow · Bartering.
+**The measured numbers live in the fixtures' own `results` keys** — read them with `npm run sim:report`,
+which is the authority. The transcribed table that stood here is deleted rather than refreshed: it had
+drifted against the files it quoted on every row.
 
-| policy | result |
-|---|---|
-| `prover` @50 | **50/50** |
-| `oracle` @10 | 10/10 · 28–33 turns |
-| `planner` @100 | 18/100 |
-| `greedy` @100 | 0/100 |
+What survives the drift, because it is structural rather than measured:
 
-**Göbekli Tepe is the mission's pivot** — it appears in all 50 proven lines and none of the failures, paying
+**Göbekli Tepe is the mission's pivot** — it appears in the proven lines and not in the failures, paying
 🔨+🪙+🎭 per worker from one slot, which is the only way three simultaneous thresholds fit inside the
 deadline. The five structures want ~5 slots against City's 2, so ~3 Conquests are load-bearing.
-
-**The 82-point planner gap is simulator fidelity, not difficulty** — two shaping fixes this session took it
-0 → 18 and the remaining causes are logged under [`../TODO.md`](../TODO.md) → *Simulator shaping*. Read
-`prover` here until that closes; the planner row is not yet a human-difficulty estimate.
 
 **🎭 L2 is not the term to give** if these ever move: the Pyramid wonder this mission unlocks is itself
 `cultureLevelReq: 2`, so a level-1 goal would grant a reward the player cannot play.
 
-**Fixt ✅** — `scripts/sim/baselines/pyramid.json` carries the deck above. Only City has a fixture: Chiefdom also
-reaches this mission but measures 0/100 on this deck and is **food-bound, not land-bound** (8🌾 start, one
-Farm, famine 54/100), so like Accounting it would need its own deck before a row there said anything.
+**Read `prover` here, not `planner`** — the planner gap on this mission is simulator fidelity, with the
+remaining causes logged under [`../TODO.md`](../TODO.md) → *Simulator shaping*.
 
-The earlier growth-window read (~34–38 turns) is untested; nothing measured was deadline-bound, and the
-oracle finishes in 28–33 of the 40 rounds.
+**Fixtures ✅, two — one per board**, since City and Chiefdom reach this mission from opposite ends:
+`scripts/sim/baselines/pyramid.json` and `pyramid_chiefdom.json`, carrying the *same* 22-card deck. That
+they diverge as far as they do on one deck is the reopen.
+
+## Open
+
+- **"The Pyramid just sucks rn" `[?]`** — *(2026-08-24 stream session)*, unelaborated. Two candidate
+  readings, both live: the **mission** is now wildly board-dependent — the committed fixtures fold to
+  City `prover` 4/10 (six `noWinFound:deadEnd`) · `greedy` 1/100 against Chiefdom `prover` 10/10 ·
+  `greedy` 73/100 on the *same* deck, so the board Masonry's own upgrade hands you is the losing one;
+  and the **wonder** is dominated by Göbekli Tepe, which this deck already owns (8🔨/L1/3 workers/no
+  upkeep, +1🔨+1🪙+1🎭 each, vs 10🔨+6🪙/L2/4 workers/−2🌾, +2🎭+1🪙 each — dearer on every axis to
+  trade 1🔨 per worker for 1🎭). Ask which before reworking either.
 
 ## Polish ⬜ (not started)
 

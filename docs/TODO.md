@@ -79,6 +79,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   player and a first-time player felt it. **Explicitly low priority and not a publish blocker** (user
   call): nothing is confusing, nothing is broken, every feature is reachable — it is convenience only.
   No obvious cheap fix, hence the `[?]`.
+- **Inspect a board's cards from the `BoardMini`** `[size: S]` — *(beta playtest)* a `prebuilt` slot
+  renders art with a `title` attribute and nothing else (`BoardMini.tsx`), so the standing card a board
+  carries — its whole distinguishing perk — can't be read before picking that board. Wants the same
+  click-to-zoom the run board gives (`CardZoomOverlay`), on every slot rather than a prebuilt branch.
+- **Mission-screen polish (`CampaignMap.tsx`)** `[size: M]` `[?]` — three passes over the map's
+  horizontal extent, all user-flagged optional:
+  - **Open centred on the available missions.** The map has no initial scroll at all (`scrollLeft` is
+    only ever set from the drag-to-pan handler), so it opens at the far left on the Nomadic gutter and
+    the player pans right past every cleared mission to reach what they can actually play. Centre the
+    canvas on `campaign.ts`'s available set on mount.
+  - **An empty Iron Age gutter on the right**, mirroring the Nomadic one on the left — same
+    parked-off-the-edge treatment, revealed by right elastic-overscroll. Not symmetric in the data
+    though: Nomadic is deliberately *not* an `AGES` entry and never will be, while Iron **is** one that
+    simply has no missions placed yet, so `ageColSpans` gives it no span. Decide whether the gutter is
+    CampaignMap-local like Nomadic's or the zero-mission rendering of a real age.
+  - **Don't let the pan reach Bronze before it is unlocked** — clamp the scroll extent to the ages the
+    player has opened, so the Bronze band isn't browsable until the Stone capstone (`first_temple`) is
+    cleared. Same reasoning as hiding locked unlockables: the next age's shape is a surprise.
 
 ## Run loop (`src/rules/`, `src/run/`)
 

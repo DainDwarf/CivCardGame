@@ -54,6 +54,19 @@ authority. No transcription here: the previous one drifted out of date against t
   the supersession, with no other use for those copies afterward. This is also the content half of the
   *Stone → Bronze cliff* ([`../BACKLOG.md`](../BACKLOG.md)) — Masonry is the campaign's **first mission
   that requires buying anything**, and those three Hut copies are the whole of that bill.
+  - **Candidate: make the House a card *upgrade*, not an unlock** — *(2026-08-24 stream session)*
+    `reward.cardUpgrade: { from: 'hut', to: 'house' }`, the card mirror of the `boardUpgrade` this same
+    mission already carries, so the copies the player was forced to buy *become* the reward instead of
+    being superseded by it, and the whole reward reads as one improvement rather than an unlock beside a
+    bill. Three things it has to answer: (a) `cardAge` derives from `reward.unlockCardIds`
+    (`content/cardAge.ts`), so a House granted only by an upgrade would return `undefined` and
+    `shop.ts` would read it as unsellable forever — either the new field feeds `cardAge` or House stays
+    listed and the upgrade only converts held copies; (b) the boardUpgrade mirror breaks in one place —
+    no `DeckDef` names a board, but `DeckDef.cards` holds meta *instance* ids, so retiring Hut instances
+    means rewriting deck references, which `applyBoardUpgrade` never has to do; (c) `writing.json` and
+    `writing_chiefdom.json` are both downstream of Masonry and name `hut`, so both need re-cutting.
+    Note it resolves the supersession half of this finding only — Masonry being the first mission that
+    forces buying, with nothing having taught buying, is untouched by it.
 - **Both rewards were re-cut after the sweep and are unmeasured** — City Walls 4🔨/−1🔨 upkeep → **3🔨
   flat, no upkeep**; the City board 6🔨 → **10🔨** start. They are this mission's own rewards, so no
   fixture here can reach them; the six City-board fixtures downstream (accounting, horse_taming,
