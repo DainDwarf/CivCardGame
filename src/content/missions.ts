@@ -159,7 +159,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     lore:
       'Your settlement is stronger than it has ever been — and that has not gone unnoticed. Less ' +
       'fortunate tribes around your village have grown envious, and now turn to violence to survive. ' +
-      'It is time to defend the food supplies you fought so hard to gather.',
+      'It is time to defend the food supplies you worked so hard to gather.',
     prereqs: ['growing_numbers'],
     // One `raider` event per wave, tied to the objective's threshold by the shared RAIDER_WAVES const
     // so the mission can't seed a different count than the win asks for. `Array.from` (not `.fill`)

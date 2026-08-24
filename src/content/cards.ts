@@ -920,7 +920,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     ],
     display: {
-      description: `Defeat all ${RAIDER_WAVES} raider waves`,
+      description: `Defeat all ${RAIDER_WAVES} raiders`,
       dynamicText: (G) =>
         `⚔️ ${Math.min(G.removed.filter((c) => c.cardId === 'raider').length, RAIDER_WAVES)}/${RAIDER_WAVES} defeated`,
     },
