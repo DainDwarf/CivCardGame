@@ -1,0 +1,318 @@
+/* The unlock reveal — a full-screen celebratory overlay on the meta menu. The unlocks themselves are
+   real widgets (`CardFace`, `StickerSeal` at hero scale, `BoardMini`), so this module styles only the
+   staging around them: the scrim, the count-up, the arrival animations, and the two controls. All
+   color via theme tokens; only the allowed white/black scrims are literals. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  /* Above the meta shell's own overlays (the deck-editor discard confirm sits at 100). */
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  /* Heavier than the shell's 0.6 confirm scrim: the gold accents below are small bold text, and this
+     is the ground they have to hold their contrast against in the *light* palettes too — which
+     composite far lighter than Dark's. */
+  background: rgb(var(--scrim-rgb) / 0.88);
+  /* Clicking anywhere hurries the next beat along (mouse-only UI — no keyboard affordance). */
+  cursor: pointer;
+}
+
+/* The overlay scrolls inside its own bounded column rather than growing the document: the whole app
+   renders inside a transform:scale() wrapper, where body scroll drags the fixed-position furniture
+   out of view (see App.module.css / CLAUDE.md's UI-scaling invariants). The footer keeps its place
+   below it either way. */
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+}
+
+/* `margin: auto` rather than the scroller's own `justify-content: center` — a centered flex line that
+   overflows its container is unreachable off the top edge, and a haul of four unlocks does overflow. */
+.inner {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2rem 1.5rem;
+}
+
+.kicker {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-on-scrim);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--text-on-accent);
+}
+
+.payout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  margin-top: 0.9rem;
+  animation: payoutIn 0.3s cubic-bezier(0.2, 1.3, 0.3, 1) both;
+}
+
+@keyframes payoutIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: none; }
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 3.4rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--hint-gold);
+  /* The digit count changes every frame of the count-up; without this the whole row jitters. */
+  font-variant-numeric: tabular-nums;
+}
+
+.star {
+  font-size: 2.6rem;
+}
+
+.counterLabel {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-on-scrim);
+}
+
+/* Revealed unlocks accumulate side by side rather than replacing each other, so the last frame of the
+   sequence is the whole haul. `flex-start` keeps their captions on one line whatever their heights. */
+.items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1.5rem 1.7rem;
+  margin-top: 1.6rem;
+}
+
+.item {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+/* Cards and boards arrive; a sticker's own seal does the arriving (see StickerSeal's `entering`), so
+   its frame only fades in — two entrances on one widget read as a stumble. */
+.itemPop {
+  animation: itemPop 0.44s cubic-bezier(0.18, 1.24, 0.32, 1) both;
+}
+
+.itemFade {
+  animation: itemFade 0.34s ease both;
+}
+
+@keyframes itemPop {
+  from { opacity: 0; transform: translateY(26px) scale(0.62) rotate(-5deg); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes itemFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.caption {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hint-gold);
+}
+
+/* A card at reveal scale — the same face the hand and the Collection draw, enlarged as a whole (its
+   own module sizes every band off the box, so scaling the box is enough). */
+.face {
+  transform: scale(1.45);
+  transform-origin: top center;
+  /* transform doesn't affect layout, so the row has to be told how much room the scaled face takes:
+     a 118×162 face at 1.45 leaves 53px of width and 73px of height to reserve. */
+  margin: 0 26px 73px;
+  cursor: default;
+}
+
+.mini {
+  width: 260px;
+}
+
+/* The gold ring that flashes once around an arriving card or board — the buyable-hint accent, which
+   is the same gold the ⭐ payout above it just landed in. */
+.itemPop .face::after,
+.itemPop .mini::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 16px;
+  box-shadow: 0 0 0 3px rgb(var(--hint-gold-rgb) / 85%), 0 0 34px 6px rgb(var(--hint-gold-rgb) / 45%);
+  pointer-events: none;
+  animation: ringFlash 0.85s ease-out 0.1s both;
+}
+
+@keyframes ringFlash {
+  0% { opacity: 0; transform: scale(0.9); }
+  25% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.06); }
+}
+
+/* --- Board upgrade: a transformation, not an unlock --- */
+.upgrade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.upgradePair {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* The retiring board is left standing and *then* stepped back, so the player reads the swap as
+   happening to the board they know rather than as two boards appearing at once. */
+.retiring {
+  animation: retire 0.6s ease 0.55s both;
+}
+
+@keyframes retire {
+  from { opacity: 1; filter: none; transform: none; }
+  to { opacity: 0.42; filter: grayscale(0.75); transform: scale(0.9); }
+}
+
+.arriving {
+  animation: arrive 0.5s cubic-bezier(0.18, 1.24, 0.32, 1) 0.5s both;
+}
+
+@keyframes arrive {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: none; }
+}
+
+.arrow {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--hint-gold);
+  animation: arrowIn 0.42s ease-out 0.3s both;
+}
+
+@keyframes arrowIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: none; }
+}
+
+.upgradeCaption {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-on-scrim);
+}
+
+/* --- The two controls --- */
+.foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  /* A definite height so Continue fading in doesn't shift the row it shares with Skip. */
+  min-height: 3.5rem;
+  padding: 0 1.5rem 1.25rem;
+}
+
+.hint {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-on-scrim);
+}
+
+.skipBtn,
+.continueBtn {
+  padding: 0.55rem 1.3rem;
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.skipBtn {
+  background: var(--btn-soft);
+  color: var(--text-strong);
+}
+
+.skipBtn:hover {
+  background: var(--btn-soft-hover);
+}
+
+/* Ringed in the buyable-hint gold rather than filled with it: gold is the ⭐ currency's colour here,
+   and a solid gold button would want a text colour no palette has for it. */
+.continueBtn {
+  background: var(--badge-bg);
+  color: var(--text-on-accent);
+  box-shadow: 0 0 0 3px rgb(var(--hint-gold-rgb) / 40%);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease, background 0.12s ease;
+}
+
+.continueBtn:hover {
+  background: var(--badge-hover);
+}
+
+.continueReady {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* Every animation here is arrival — a state it plays *into* — so switching them off leaves each
+   element exactly where the sequence would have put it. The beats still step; only the travel goes. */
+@media (prefers-reduced-motion: reduce) {
+  .payout,
+  .itemPop,
+  .itemFade,
+  .itemPop .face::after,
+  .itemPop .mini::after,
+  .retiring,
+  .arriving,
+  .arrow {
+    animation: none;
+  }
+
+  .retiring {
+    opacity: 0.42;
+    filter: grayscale(0.75);
+  }
+
+  .continueBtn {
+    transition: none;
+  }
+}

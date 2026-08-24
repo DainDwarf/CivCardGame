@@ -1,0 +1,289 @@
+/* The sticker widget, in three scales. Every dimension is `em` off the root's `--k`, so a scale is
+   one number and the drawing enlarges as a whole rather than being redrawn per context — `--seal`
+   being the second, the disc's own diameter, which the drag clone hands in as raw px. */
+
+.sticker {
+  --k: 1rem;
+  --seal: 4.4em;
+  font-size: var(--k);
+  font-family: system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'seal plaque'
+    'ledger ledger';
+  align-items: center;
+  column-gap: 0.8em;
+  row-gap: 0.5em;
+  /* Fixed, so a column of seals is one silhouette rather than each sizing to its own text; the cap
+     lets a narrower container (a buy tray) squeeze them all to the same smaller width instead. */
+  width: 18em;
+  max-width: 100%;
+  padding: 0.75em 0.85em;
+  border: 1px solid var(--border-card);
+  border-radius: 0.625em;
+  background: linear-gradient(180deg, var(--card-face-top), var(--card-face-bottom));
+  box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.18);
+}
+
+/* Highlight and shading are black/white overlays over the two wax tokens rather than tokens of their
+   own — the wax is one colour lit from above, not four. */
+.seal {
+  grid-area: seal;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--seal);
+  height: var(--seal);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 60%),
+    linear-gradient(155deg, var(--sticker-wax), var(--sticker-wax-deep));
+  box-shadow: 0 0.14em 0.34em rgba(0, 0, 0, 0.28), inset 0 0 0 0.07em rgba(0, 0, 0, 0.18);
+}
+
+/* Percent, not `em`: the inset must measure against the seal, and `em` here would resolve against
+   this element's own enlarged font-size instead. The device is sized off `--seal` rather than `--k`
+   so the whole disc is one number — which is what lets a drag clone be a seal at any size. */
+.face {
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  background: var(--card-face-top);
+  border: 1px solid var(--border-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--seal) * 0.34);
+  line-height: 1;
+  box-shadow: inset 0 0.08em 0.16em rgba(0, 0, 0, 0.28);
+}
+
+/* Locked: wax poured but never pressed — no device, no name, no ledger, and the same silhouette for
+   a card and a board sticker, so the shape gives away neither the sticker nor its catalogue. */
+.sealBlank {
+  background: var(--map-node-locked);
+  border: 1px solid var(--map-node-locked-border);
+  box-shadow: inset 0 0.1em 0.3em rgba(0, 0, 0, 0.12);
+}
+
+.sealBlank .face {
+  background: var(--map-node-locked);
+  border-color: var(--map-node-locked-border);
+  box-shadow: none;
+}
+
+/* The seal doubles as a buy surface's drag handle, ringed in the same buyable-hint gold the meta
+   screens put on every affordable purchase. */
+.grabbable {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  box-shadow:
+    0 0 0 0.2em rgb(var(--hint-gold-rgb) / 32%),
+    0 0.14em 0.34em rgba(0, 0, 0, 0.28),
+    inset 0 0 0 0.07em rgba(0, 0, 0, 0.18);
+}
+
+/* The ⭐ price drips off the seal's corner the way CardFace's countBadge straddles its own. */
+.price {
+  position: absolute;
+  right: -0.4em;
+  bottom: -0.3em;
+  box-sizing: border-box;
+  min-width: 2em;
+  height: 1.55em;
+  padding: 0 0.35em;
+  border-radius: 0.775em;
+  background: var(--badge-bg);
+  color: var(--text-on-accent);
+  font-size: 0.72em;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0.14em 0.34em rgba(0, 0, 0, 0.35);
+}
+
+.plaque {
+  grid-area: plaque;
+  min-width: 0;
+}
+
+.name {
+  font-size: 0.95em;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text-strong);
+}
+
+.rule {
+  font-size: 0.72em;
+  line-height: 1.3;
+  color: var(--text-faint);
+  margin-top: 0.25em;
+}
+
+/* Under the seal *and* the name, spanning both columns: the bargain is the widget's payload, and a
+   side column would size to its own text — which is what made a stack of seals ragged. */
+.ledger {
+  grid-area: ledger;
+  display: grid;
+  gap: 0.25em;
+  min-width: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1em minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.35em;
+  font-size: 0.8em;
+  line-height: 1.3;
+}
+
+.mark {
+  font-size: 0.85em;
+  font-weight: 800;
+  text-align: center;
+}
+
+.rowGive {
+  color: var(--text-body);
+}
+
+.rowGive .mark {
+  color: var(--accent);
+}
+
+.rowTake {
+  color: var(--text-secondary);
+}
+
+.rowTake .mark {
+  color: var(--text-faint);
+}
+
+.rowNone {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.rowNone .mark {
+  color: var(--text-faint);
+}
+
+.locked {
+  background: var(--map-node-locked);
+  border-color: var(--map-node-locked-border);
+}
+
+.locked .name {
+  color: var(--text-secondary);
+}
+
+/* Offered but not takeable right now — the same dim the meta trays give an unaffordable buy. */
+.disabled {
+  opacity: 0.4;
+}
+
+.inline {
+  --k: 0.9rem;
+  --seal: 3.4em;
+  width: 20em;
+  padding: 0.6em 0.7em;
+}
+
+.inline .ledger {
+  gap: 0.1em;
+}
+
+.inline .row {
+  font-size: 0.78em;
+}
+
+.hero {
+  --k: 1.6rem;
+  --seal: 6.6em;
+  width: 15em;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'seal'
+    'plaque'
+    'ledger';
+  justify-items: center;
+  row-gap: 0.6em;
+  padding: 1em 1.1em 1.1em;
+  border-width: 2px;
+}
+
+.hero .plaque {
+  text-align: center;
+}
+
+.hero .ledger {
+  width: 100%;
+}
+
+/* The arrival (`entering`): the wax is pressed, the press cracks it open, and the plaque and ledger
+   rise under it — the widget assembling itself in the order a real seal would. Every step animates
+   *into* its resting state, so switching the motion off leaves the finished drawing.
+   The clip is scoped to this variant rather than sitting on `.seal`: the sweep has to be cut to the
+   disc, and a clipping seal would cut off the `price` badge that straddles its corner everywhere else. */
+.entering .seal {
+  overflow: hidden;
+  animation: sealPress 0.34s cubic-bezier(0.2, 0.9, 0.2, 1) 0.06s backwards;
+}
+
+@keyframes sealPress {
+  0% { transform: scale(1.75); filter: brightness(1.5); }
+  60% { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+
+.entering .seal::after {
+  content: '';
+  position: absolute;
+  /* Overhangs the disc so the band is already at full width when it crosses the visible face. */
+  inset: -30%;
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.75) 50%, transparent 58%);
+  opacity: 0;
+  animation: sealCrack 0.6s ease-out 0.3s backwards;
+}
+
+@keyframes sealCrack {
+  0% { opacity: 0; transform: translateX(-60%); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(60%); }
+}
+
+.entering .plaque {
+  animation: sealRise 0.32s ease-out 0.4s backwards;
+}
+
+.entering .ledger {
+  animation: sealRise 0.32s ease-out 0.52s backwards;
+}
+
+@keyframes sealRise {
+  from { opacity: 0; transform: translateY(0.3em); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entering .seal,
+  .entering .seal::after,
+  .entering .plaque,
+  .entering .ledger {
+    animation: none;
+  }
+}
+
+/* The seal on its own (`StickerSealMark`), its `--seal` handed in as raw px — so a clone lifted out
+   of a widget comes out at exactly the diameter it was grabbed at, whatever scale that widget was.
+   The shadow/ring `em`s still want a scale, which at the seal's own proportion is that diameter over
+   `--seal`'s panel value. Positioning is the caller's: the drag layers pin it. */
+.lifted {
+  display: inline-block;
+  font-size: calc(var(--seal) / 4.4);
+}

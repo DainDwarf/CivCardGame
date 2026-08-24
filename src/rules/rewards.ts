@@ -22,6 +22,58 @@ export interface RewardOutcome {
 }
 
 /**
+ * One unlock a clear newly opens. The *names* of what `computeRewards` grants, which that function
+ * returns no account of — it folds each grant into `progress` and an idempotent set-union leaves no
+ * trace of which ids were actually new. Two surfaces need exactly that account: the run-end overlay,
+ * to know whether the clear carries anything at all (its sealed teaser names nothing, so a count is
+ * the whole of what it reads), and the meta menu's reveal, which shows them one by one. Both read it
+ * off the *pre-clear* `progress`, the same value `computeRewards` grants against, so neither can
+ * disagree with what was granted.
+ *
+ * `boardUpgrade` is the odd one out here as it is there: a replacement, not an unlock, so it carries
+ * the board it retires alongside the one it opens.
+ */
+export type PendingUnlock =
+  | { kind: 'card' | 'sticker' | 'boardSticker' | 'board'; id: string }
+  | { kind: 'boardUpgrade'; id: string; from: string };
+
+/**
+ * What a clear newly opens, in the order the reveal shows them: cards, card stickers, board
+ * stickers, boards, then the board upgrade — the transformation last, since it re-frames the board
+ * every other unlock will be played on. Empty on every path `computeRewards` grants nothing:
+ * an infinite mission, a replay, a mission with no reward — and an already-owned card or an
+ * already-unlocked id is filtered out the same way the grant skips it.
+ *
+ * Both arguments mean exactly what they mean to `computeRewards`, and the caller gates on the run's
+ * outcome the same way `applyRunResult` does.
+ */
+export function pendingUnlocks(
+  mission: MissionDef,
+  alreadyCompleted: boolean,
+  progress: UnlockProgress,
+): PendingUnlock[] {
+  if (mission.kind === 'infinite' || alreadyCompleted || !mission.reward) return [];
+  const { unlockCardIds, unlockStickerIds, unlockBoardStickerIds, unlockBoardIds, boardUpgrade } = mission.reward;
+  return [
+    ...(unlockCardIds ?? [])
+      .filter((id) => !isOwned(progress.collection, id))
+      .map((id) => ({ kind: 'card' as const, id })),
+    ...(unlockStickerIds ?? [])
+      .filter((id) => !progress.unlockedStickers[id])
+      .map((id) => ({ kind: 'sticker' as const, id })),
+    ...(unlockBoardStickerIds ?? [])
+      .filter((id) => !progress.unlockedBoardStickers[id])
+      .map((id) => ({ kind: 'boardSticker' as const, id })),
+    ...(unlockBoardIds ?? [])
+      .filter((id) => !progress.unlockedBoards[id])
+      .map((id) => ({ kind: 'board' as const, id })),
+    ...(boardUpgrade && !progress.unlockedBoards[boardUpgrade.to]
+      ? [{ kind: 'boardUpgrade' as const, id: boardUpgrade.to, from: boardUpgrade.from }]
+      : []),
+  ];
+}
+
+/**
  * A `'standard'` mission's reward is a one-time first-clear bonus (docs/DESIGN.md, "Economy
  * & progression") — replaying an already-completed mission pays nothing. `alreadyCompleted`
  * must reflect `mapProgress` *before* this run's result is folded in, or every clear would

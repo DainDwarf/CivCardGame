@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { CampaignMap } from './CampaignMap';
 import { Collection } from './Collection';
 import { BoardMenu } from './BoardMenu';
@@ -12,6 +12,7 @@ import type { LifetimeStats } from './store';
 import type { BoardStickers } from '../rules/boardStickers';
 import type { BoardId } from '../content/boards';
 import { anyCardUpgradeAvailable, anyBoardUpgradeAvailable } from '../rules/upgrades';
+import { UnlockReveal, type RunReveal } from './UnlockReveal';
 import styles from './MetaMenu.module.css';
 
 type Screen = 'mission' | 'collection' | 'board' | 'decks' | 'stats' | 'deckEditor';
@@ -48,6 +49,8 @@ export function MetaMenu({
   lifetime,
   bestInfinite,
   uiScale,
+  reveal,
+  onDismissReveal,
   onLaunch,
   onSaveDeck,
   onDeleteDeck,
@@ -86,6 +89,10 @@ export function MetaMenu({
   /** Whole-UI scale (settings) — forwarded to `DeckEditor`, `BoardMenu`, and `Collection`'s detail
    *  panel (drag-clone coordinate math) and `CampaignMap` (pointer-drag pan). */
   uiScale: number;
+  /** What the run just finished opened, or `null` when it opened nothing — the celebratory overlay is
+   *  an event, so a repeat clear with nothing new renders no overlay at all (`UnlockReveal.tsx`). */
+  reveal: RunReveal | null;
+  onDismissReveal: () => void;
   onLaunch: (config: RunConfig) => void;
   onSaveDeck: (deck: DeckDef) => void;
   onDeleteDeck: (id: string) => void;
@@ -111,6 +118,14 @@ export function MetaMenu({
   // action parked behind the discard-confirm while that's true.
   const [editorDirty, setEditorDirty] = useState(false);
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
+  // The reveal's Influence count-up walks this badge up from the pre-run balance. It writes the
+  // number straight into the node instead of through state because it ticks once per frame, and a
+  // state update here re-renders the whole shell — the campaign map included — 60 times a second.
+  // React still owns the value: the next render puts the store's own number back.
+  const influenceValueRef = useRef<HTMLSpanElement>(null);
+  const showInfluenceTick = useCallback((value: number) => {
+    if (influenceValueRef.current) influenceValueRef.current.textContent = String(value);
+  }, []);
 
   function openEditor(deck: DeckDef) {
     setEditingDeck(deck);
@@ -148,7 +163,7 @@ export function MetaMenu({
         <h1 className={styles.gameTitle}>CivCardGame</h1>
         <div className={styles.influenceBadge}>
           <span aria-hidden="true">⭐</span>
-          {influence}
+          <span ref={influenceValueRef}>{influence}</span>
         </div>
         {NAV.map((n) => (
           <button
@@ -234,6 +249,8 @@ export function MetaMenu({
           />
         )}
       </div>
+
+      {reveal && <UnlockReveal reveal={reveal} onInfluenceTick={showInfluenceTick} onDismiss={onDismissReveal} />}
 
       {pendingLeave && (
         // Backdrop-click keeps editing (the escape hatch); the card stops the click so only its

@@ -1550,17 +1550,69 @@
   margin: 0.35rem 0 0;
 }
 
-/* Whichever of the two summary lines above renders last (gameoverReward only shows on a
-   win) gets the gap before the button row, so the spacing holds either way. */
-.gameoverPanel p:last-of-type {
-  margin-bottom: 1.75rem;
+/* The run's payout, at full size — the one number the player is owed before leaving the run. What the
+   clear *unlocked* is no longer named here at all: that is the meta menu's reveal
+   (`meta/UnlockReveal.tsx`), which shows each one rather than listing it. */
+.gameoverPayout {
+  margin: 0.9rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--hint-gold);
+  font-variant-numeric: tabular-nums;
 }
 
+/* The sealed teaser: unpressed wax and a line that names nothing. Its whole job is to say the menu is
+   worth returning to — so it renders only when the clear really did open something, and it withholds
+   what, down to which catalogue it came from. */
+.gameoverTeaser {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  margin: 1.15rem 0 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  border: 1px dashed rgb(var(--hint-gold-rgb) / 45%);
+  background: rgb(var(--hint-gold-rgb) / 8%);
+}
+
+/* Wax poured and not yet pressed — the same lighting as the real seal (`StickerSeal.module.css`),
+   with no device struck into it. */
+.teaserSeal {
+  flex: 0 0 auto;
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 60%),
+    linear-gradient(155deg, var(--sticker-wax), var(--sticker-wax-deep));
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.teaserSeal::after {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.teaserText {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-body);
+}
+
+/* The gap before the button row, held by the row itself rather than by whichever summary line happens
+   to render last — the teaser is a div, so a `p:last-of-type` rule would leave it out. */
 .gameoverBtns {
   display: flex;
   gap: 0.65rem;
   justify-content: center;
   flex-wrap: wrap;
+  margin-top: 1.75rem;
 }
 
 .gameoverBtn {

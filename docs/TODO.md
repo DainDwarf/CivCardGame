@@ -31,7 +31,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **Per-pip worker drag** — independent per-pip *drag* (drag a specific pip to another box); box-level
   worker drag still moves one worker at a time. Deferred follow-up from the shipped multi-pip staffing UI. `[?]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]`
-- **Re-polish the victory / gameover screens + flow** — revisit the end-of-run overlay and the transition back to the meta loop now that missions grant real rewards: the win/loss screen should surface what the run earned (Influence, any unlocks) and read well for both outcomes, and the hand-back-to-meta flow should feel finished rather than functional. `[?]`
 - **BoardMini: color starting numbers vs. a baseline** — on the board widget, tint each starting counter relative to a baseline (probably the average of all boards): above baseline → green with an up-arrow, below → red with a down-arrow; a 0 against a 0 baseline greys out/ghosts. Makes a board's strengths/weaknesses legible at a glance. `[?]`
 - **Work reordering + insert-at-drop** — let the player reorder placed work cards, and have a newly-played
   work card insert at the drop position rather than appending. `[?]`
@@ -41,7 +40,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   discovers it after building. Surface the delta on the face (and/or in the play preview) — `foodPerNextPop`
   (`rules/population.ts`) already exists for exactly this, so the curve isn't re-derived in the UI. Note it
   is state-dependent: the same card shows a different number at pop 2 than at pop 5. `[size: S]` `[?]`
-- **Sticker locked/unlocked visual on mission preview** — rework how a mission's sticker reward reads locked vs. unlocked (currently a generic locked chip → real face). Maybe extract a **shared sticker widget** (the `CardFace`/`BoardMini` counterpart for a single sticker) reused across the mission-detail preview and elsewhere. `[?]`
 
 - **Discard-mode affordance when a play costs cards** `[size: S]` — *(beta playtest)* playing Fire
   (`cost: { discard: 1 }`) drops the player into choosing a card to give up with nothing saying so; the
@@ -299,6 +297,31 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **Victory / gameover screens + the unlock reveal** ✅ — the end-of-run overlay's cramped
+  `+N ⭐ · Unlocked X, Y` line is split in two. The run screen keeps the payout (full size, gold) and
+  gains only a sealed no-name teaser when the clear carries unlocks — `Board.tsx` no longer imports the
+  sticker/board catalogues at all, so it *can't* leak a name. The celebration moved to the return into
+  the meta menu: `meta/UnlockReveal.tsx`, an overlay running an Influence count-up (the nav ⭐ badge
+  ticking in sync) then each unlock entering one at a time as its real widget — `CardFace`, `StickerSeal`
+  at hero scale (its first hero consumer), `BoardMini`, a `boardUpgrade` framed as `from` ⟶ `to` — with
+  click-to-hurry, Skip-to-final-state, and Continue. What's *new* comes from `rules/rewards.ts`'s
+  `pendingUnlocks`, diffed against the same pre-clear progress `computeRewards` grants over; the reveal
+  itself is transient `App.tsx` state, never persisted. A scored infinite reuses just the count-up; a
+  replay with nothing new hands back with no overlay at all. `prefers-reduced-motion` keeps the pacing,
+  drops the travel.
+- **Sticker widget — the "Signet" seal** ✅ — `components/StickerSeal.tsx`, the `CardFace`/`BoardMini`
+  counterpart for a single sticker, serving **both** catalogues: a pressed wax seal beside a plaque
+  carrying the name and the applies-to rule, with a ▲/▼ ledger of what the sticker gives against what
+  it charges stacked under both, in three scales (`panel` / `inline` / `hero`) and a **locked** blank —
+  one silhouette for card and board stickers alike, so the shape leaks neither the sticker nor its
+  catalogue. The data it needed came as authored display fields: each def's flat `description` split
+  into `gives` + optional `charges`, plus a per-card-sticker `appliesToLabel` (the readable form of the
+  `appliesTo` predicate; board stickers share one `BOARD_STICKER_SCOPE` line, since every one attaches
+  anywhere). It replaces the mission-detail reward preview's generic locked chip → ad-hoc unlocked
+  treatment *and* both metamenu buy trays' chip badges (Collection card panel, Board menu), where the
+  ⭐ price strikes the seal's corner and the wax disc is the buy-and-attach drag handle — the clone
+  under the cursor being that same seal (`StickerSealMark`). Two new palette tokens (`--sticker-wax`,
+  `--sticker-wax-deep`).
 - **Influence economy + copy ladder reworked together** ✅ — every standard mission's reward halved
   rounded down (the DAG's guaranteed faucet 243 → 120⭐), the copy ladder cut from ×1→×2→×4→×8 to
   **×1→×2→×3→×4** (one copy a rung, ×4 terminal), and the rung price made **flat per age** — 2⭐ a

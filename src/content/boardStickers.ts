@@ -21,7 +21,9 @@ import type { BoardDef } from './boards';
 export interface BoardStickerDef {
   id: string;
   name: string;
-  description: string;
+  /** What the board gains, as the player reads it — the `gives` half of `StickerDef`'s ledger.
+   *  There is no `charges` counterpart: a board sticker only adds. */
+  gives: string;
   /** A distinct glyph identifying this sticker wherever an attached board shows a badge (the Board
    *  menu, the launch popup's board picker) — mirrors `StickerDef.icon`. */
   icon: string;
@@ -38,6 +40,10 @@ export interface BoardStickerDef {
   applyToBoard: (board: BoardDef) => BoardDef;
 }
 
+/** Every board sticker attaches to every board, so the readable form of `appliesTo` is one shared
+ *  line rather than a field on each def; a board sticker that ever restricts itself earns the field. */
+export const BOARD_STICKER_SCOPE = 'Any government board';
+
 /**
  * The board-sticker catalogue. Each entry is *hidden until unlocked* by a mission reward
  * (`MissionDef.reward.unlockBoardStickerIds`) — purchasable only once
@@ -50,7 +56,7 @@ export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
   granary: {
     id: 'granary',
     name: 'Granary',
-    description: '+6 starting Food',
+    gives: '+6 starting 🌾',
     icon: '🧺',
     cost: 6,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, food: b.resources.food + 6 } }),
@@ -58,7 +64,7 @@ export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
   stockpile: {
     id: 'stockpile',
     name: 'Stockpile',
-    description: '+6 starting Production',
+    gives: '+6 starting 🔨',
     icon: '🪵',
     cost: 6,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, production: b.resources.production + 6 } }),
@@ -66,7 +72,7 @@ export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
   opulence: {
     id: 'opulence',
     name: 'Opulence',
-    description: '+10 starting Money',
+    gives: '+10 starting 🪙',
     icon: '💎',
     cost: 10,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, money: b.resources.money + 10 } }),

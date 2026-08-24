@@ -264,7 +264,8 @@ describe('effectiveGain (additive-gain)', () => {
 describe('effectiveGain (board-conditional)', () => {
   const CONDITIONAL: Record<string, StickerDef> = {
     test_conditional: {
-      id: 'test_conditional', name: 'Test Conditional', description: '+1🌾 while a route stands',
+      id: 'test_conditional', name: 'Test Conditional', gives: '+1🌾 while a route stands',
+      appliesToLabel: 'Any card',
       icon: '🧭', cost: 3,
       applyGain: (base, G) =>
         base && (!G || G.tradeRoutes.length > 0) ? { ...base, food: (base.food ?? 0) + 1 } : base,
@@ -315,7 +316,8 @@ describe('effectiveGain (materializing an absent produces)', () => {
   // to separate, keyed on the bag's own sign.
   const MATERIALIZE: Record<string, StickerDef> = {
     test_materialize: {
-      id: 'test_materialize', name: 'Test Materialize', description: '+1⚔️ every round it stands',
+      id: 'test_materialize', name: 'Test Materialize', gives: '+1⚔️ every round it stands',
+      appliesToLabel: 'Any card',
       icon: '🛡️', cost: 3,
       applyGain: (base) => {
         if (!base) return base;

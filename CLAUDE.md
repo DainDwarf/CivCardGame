@@ -413,7 +413,11 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   `unlockBoardStickerIds`, `unlockBoardIds`. The four sets travel through it as one `UnlockProgress`
   bundle (mirroring the `PlayerStore` fields — in unchanged, out with this mission's unlocks folded in)
   rather than a run of transposable positional args. Append-only; a `boardUpgrade` is a *replacement*,
-  handled separately (`boardUpgrade.ts`).
+  handled separately (`boardUpgrade.ts`). `pendingUnlocks` is the display counterpart: the fold's
+  set-union keeps no account of which ids were actually *new*, so it re-reads the same pre-clear
+  progress the grant is made against and returns the `PendingUnlock` list a clear will really reveal
+  (a `boardUpgrade` paired as `from` ⟶ `to`) — the unlock-reveal overlay's one data source, so the
+  celebration can never disagree with the grant.
 - **`campaign.ts`** — the prereq-gated mission DAG: availability derived from each mission's `prereqs`.
   Also the DAG-walk primitives shared by the dev scripts — `prereqClosure` (a target's transitive
   prereqs), `foldOrder` (topological sort so prereqs fold first), and `cumulativeInfluenceInto` (the
@@ -531,7 +535,13 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   `CardZoomOverlay.tsx`, `BoardMini.tsx` (a read-only board miniature driven off `effectiveBoard`,
   reused across meta screens; its slot grid seats a board's `prebuilt` art in the leading slots, while
   the `locked`/`upgrade` branches render no slots at all so neither the territory count nor the perk
-  leaks before the unlock), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
+  leaks before the unlock), `StickerSeal.tsx` (the same for a single sticker, serving **both**
+  catalogues off plain string props — a pressed wax seal beside a plaque carrying the name and the
+  `appliesToLabel` rule, with a ▲/▼ ledger of `gives` against `charges` stacked under both, at
+  `panel`/`inline`/`hero` scale; its `locked` blank is one silhouette for a card and a board sticker
+  alike, so the shape leaks neither the sticker nor which catalogue it comes from. In a buy tray it
+  is also the merchandise: the ⭐ price strikes the seal's corner and the wax disc *is* the
+  drag handle, lifted as a bare `StickerSealMark` clone for the gesture), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
   `.objectiveCorner` above a scrolling `.threatZone` of `G.threats` — all `CardFace`s reading only
   `GameState`, never the mission) and its mirror `BoardRightColumn` (a `.tradeZone` of `G.tradeRoutes`,
   rendered only once a route opens). The play area is **three zones**, matching the three board zones
@@ -569,6 +579,14 @@ logic that rides on it. **A building card *is* the building** — there's no sep
     grid over a deck banner, cards moved by click or the hand-rolled pointer-drag through
     `rules/deckBuilder.ts`. Both grids are one ×N tile per **variant** (`ownedVariantsOf`), each tile
     carrying a `DeckCard`, never an instance id.
+  - `UnlockReveal.tsx` — the end-of-run reveal overlay, mounted over the shell whenever `App.tsx`
+    hands `MetaMenu` a reveal: an Influence count-up (the nav ⭐ badge ticks in sync via a ref write —
+    a per-frame `setState` there would re-render the whole shell), then each `pendingUnlocks` entry
+    entering one at a time as its real widget — `CardFace`, `StickerSeal` at **hero** scale,
+    `BoardMini`, a `boardUpgrade` framed `from` ⟶ `to`. Auto-advances; a click hurries the next beat,
+    Skip lays out the remainder in final state, Continue dismisses. A scored infinite gets the
+    count-up alone; a clear with nothing new mounts no overlay. `prefers-reduced-motion` keeps the
+    one-at-a-time pacing (that's information) and collapses only the travel.
   - `store.ts` — persists `PlayerStore` to `localStorage` (`loadStore`/`saveStore`, seeded from
     `content/` on a fresh profile); `applyRunResult` is the pure fold that records a finished run.
     Pre-alpha: an unrecognized store shape resets to `emptyStore()`, no migration.
@@ -579,7 +597,10 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   the run screen a `runControls` prop adds **Restart / End Run**.
 - **`app/App.tsx`** — switches between `<MetaMenu>` (calls `onLaunch` with an assembled `RunConfig`) and
   `<GameProvider>` + `<Board>`. Owns the meta write paths — `recordResult` (via `applyRunResult`),
-  `buyCardTier`, `attachSticker`, `saveDeck` — each persisting the updated `PlayerStore`.
+  `buyCardTier`, `attachSticker`, `saveDeck` — each persisting the updated `PlayerStore`. `recordResult`
+  also derives the **transient reveal** (the payout as the fold's Influence difference + `pendingUnlocks`
+  off the pre-fold store) into plain App state handed to `MetaMenu` — deliberately ephemeral: nothing
+  persists, a refresh loses the animation but never the unlocks.
 - **`main.tsx`** — mounts `<App>` in `<StrictMode>` and imports `src/index.css` (the one global
   stylesheet: the theme palette + the few `body` resets that can't live in a module). Sets `data-theme`
   on `documentElement` before first paint (no theme flash).

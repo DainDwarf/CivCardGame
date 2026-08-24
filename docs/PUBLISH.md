@@ -55,8 +55,9 @@ the infinite is the casualty, The Sea Peoples' reward simply drops the unlock.)
 
 ### 3 — Polish
 
-- **Victory/gameover screens + the hand-back-to-meta flow** (TODO → *UI*) — the strong item: every
-  session ends on it, and a 0.1 run should end by showing what it earned.
+- ~~**Victory/gameover screens + the hand-back-to-meta flow**~~ ✅ — the run overlay slimmed to the
+  payout + a sealed no-name teaser, and the unlock reveal now plays on the return into the meta menu
+  (TODO → *Done / shipped* has the full entry).
 - **Per-mission Polish stage** — card text, art, lore across Stone + Bronze (the ⬜ column in
   BACKLOG's status boards). A light pass: readable and consistent beats exhaustive.
 

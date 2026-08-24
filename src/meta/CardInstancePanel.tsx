@@ -14,15 +14,16 @@ import { nextTier } from '../rules/shop';
 import { effectiveCard, stickerAppliesTo, unlockedStickerDefs } from '../rules/stickers';
 import { CardFace } from '../components/CardFace';
 import { CardZoomOverlay } from '../components/CardZoomOverlay';
+import { StickerSeal, StickerSealMark } from '../components/StickerSeal';
 import styles from './CardInstancePanel.module.css';
 
-/** Pointer travel (px) before a press on a tray badge becomes a drag rather than a click — the same
- *  threshold the deck editor / board menu / run loop use. A plain click on a badge is inert (a badge
+/** Pointer travel (px) before a press on a tray seal becomes a drag rather than a click — the same
+ *  threshold the deck editor / board menu / run loop use. A plain click on a seal is inert (a seal
  *  has no default target copy), so only a real drag past this threshold onto a valid face commits. */
 const DRAG_THRESHOLD = 6;
 
-/** A sticker badge being dragged from the tray onto one owned card face. Mirrors `BoardMenu`'s
- *  `DragState` (which drags a board sticker onto a board) — here the drop target is a card copy. */
+/** A tray sticker being dragged onto one owned card face. Mirrors `BoardMenu`'s `DragState` (which
+ *  drags a board sticker onto a board) — here the drop target is a card copy. */
 interface DragState {
   stickerId: string;
   pointerId: number;
@@ -30,11 +31,11 @@ interface DragState {
   startY: number;
   x: number;
   y: number;
-  /** Offset from the badge's top-left to the grab point, so the clone tracks the cursor. */
+  /** Offset from the seal's top-left to the grab point, so the clone tracks the cursor. */
   grabX: number;
   grabY: number;
-  w: number;
-  h: number;
+  /** The grabbed seal's diameter, so the clone comes out the size it was lifted at. */
+  size: number;
   /** Becomes true once the pointer moves past the click/drag threshold. */
   active: boolean;
 }
@@ -42,11 +43,11 @@ interface DragState {
 /**
  * The per-card detail view opened from Collection — and that card's *buy/attach* surface (the fused
  * Shop). Each owned copy renders as a real `CardFace` (its sticker-adjusted `effectiveCard` numbers +
- * bottom-left sticker badge); the applicable stickers sit in a right-side tray, the buy-next-copy-tier
- * button pinned at its top. Dragging a sticker badge out of the tray onto a card face buys and attaches
- * it in one gesture: a hand-rolled pointer-drag (like `DeckEditor.tsx` / `BoardMenu.tsx`, no DnD
- * library) with a single `isValidTarget` predicate gating both the mid-drag highlight and the drop; an
- * invalid/missed drop no-ops.
+ * bottom-left sticker badge); the applicable stickers sit in a right-side tray as `StickerSeal`s, the
+ * buy-next-copy-tier button pinned at its top. Dragging a seal out of the tray onto a card face buys
+ * and attaches it in one gesture: a hand-rolled pointer-drag (like `DeckEditor.tsx` / `BoardMenu.tsx`,
+ * no DnD library) with a single `isValidTarget` predicate gating both the mid-drag highlight and the
+ * drop; an invalid/missed drop no-ops.
  *
  * Each face carries a caption naming the deck(s) that copy sits in ("1/2 · in Aggro" / "1/2 · unused"),
  * the anti-surprise core: a sticker always lands on — and is destroyed from — a *known* copy.
@@ -72,7 +73,7 @@ export function CardInstancePanel({
   collection: OwnedCards;
   decks: DeckDef[];
   /** When set, the panel becomes the card's buy/attach surface: the tray with the Influence balance,
-   *  a copy-tier buy button, and one draggable badge per sticker that `stickerAppliesTo` this card.
+   *  a copy-tier buy button, and one draggable seal per sticker that `stickerAppliesTo` this card.
    *  Omitted → read-only browse (faces + click-to-zoom, no tray). */
   shop?: {
     influence: number;
@@ -135,7 +136,7 @@ export function CardInstancePanel({
     return !isStickerFull(inst) && influence >= sticker.cost;
   }
 
-  function onBadgePointerDown(e: React.PointerEvent<HTMLElement>, stickerId: string) {
+  function onSealPointerDown(e: React.PointerEvent<HTMLElement>, stickerId: string) {
     if (e.button !== 0) return;
     const r = e.currentTarget.getBoundingClientRect();
     setDrag({
@@ -147,8 +148,7 @@ export function CardInstancePanel({
       y: e.clientY,
       grabX: e.clientX - r.left,
       grabY: e.clientY - r.top,
-      w: r.width,
-      h: r.height,
+      size: r.width,
       active: false,
     });
   }
@@ -173,7 +173,7 @@ export function CardInstancePanel({
     setDrag(null);
   }
 
-  // While a drag is live, track the pointer on the window so it follows even past the badge.
+  // While a drag is live, track the pointer on the window so it follows even past the seal.
   useEffect(() => {
     if (!drag) return;
     function onMove(e: PointerEvent) {
@@ -213,7 +213,7 @@ export function CardInstancePanel({
 
   // A wonder can't be upgraded at all — it's unique (one copy, never bought) and takes no stickers —
   // so its detail popup drops the whole face-grid + tray and just shows the single card with its deck
-  // usage under a one-line note. (The drag machinery above stays inert; no badge can ever be dragged.)
+  // usage under a one-line note. (The drag machinery above stays inert; no seal can ever be dragged.)
   if (isWonder) {
     const inst = instances[0];
     const usedIn = inst ? decksContaining(inst.id, decks).map((d) => d.name) : [];
@@ -264,7 +264,7 @@ export function CardInstancePanel({
                       card={effectiveCard(card, inst)}
                       stickerBadge={inst.stickers}
                       // Removal is the shop surface's affordance, so a read-only browse shows inert
-                      // badges. Suppressed mid-drag (like the tray's own gating): while a badge is in
+                      // badges. Suppressed mid-drag (like the tray's own gating): while a seal is in
                       // the air this face's message is "droppable target", and a ✕ under the cursor
                       // would contradict it.
                       onRemoveSticker={
@@ -320,44 +320,33 @@ export function CardInstancePanel({
                 {stickerDefs.length === 0 ? (
                   <p className={styles.trayEmpty}>No stickers for this card.</p>
                 ) : (
-                  <div className={styles.trayChips}>
+                  <div className={styles.trayStickers}>
                     {stickerDefs.map((s) => {
                       // Draggable only when it could actually land somewhere: affordable AND some copy
-                      // still has room. A badge that can't drop anywhere is dimmed and inert.
+                      // still has room. A seal that can't drop anywhere is dimmed and inert.
                       const canDrag = influence >= s.cost && anyRoom;
                       return (
-                        <div
+                        <StickerSeal
                           key={s.id}
-                          className={`${styles.chip}${canDrag ? '' : ` ${styles.chipDisabled}`}`}
+                          scale="inline"
+                          icon={s.icon}
+                          name={s.name}
+                          gives={s.gives}
+                          charges={s.charges}
+                          appliesToLabel={s.appliesToLabel}
+                          price={s.cost}
+                          disabled={!canDrag}
+                          onSealPointerDown={canDrag ? (e) => onSealPointerDown(e, s.id) : undefined}
+                          // The bargain and the price are already drawn; the tooltip only carries
+                          // what isn't — the gesture, or the reason there isn't one.
                           title={
                             canDrag
-                              ? `${s.name} — ${s.description}. Drag onto a copy (${s.cost} Influence).`
+                              ? 'Drag the seal onto a copy to buy and attach it.'
                               : !anyRoom
-                                ? `${s.name} — every copy already carries the maximum stickers.`
-                                : `${s.name} — ${s.description}. Not enough Influence (${s.cost}).`
+                                ? 'Every copy already carries the maximum stickers.'
+                                : 'Not enough Influence.'
                           }
-                        >
-                          <div className={styles.chipTop}>
-                            {/* The sticker itself — the draggable, styled like the on-card badge (same
-                                tokens) but larger, so the player recognizes it as the very thing that
-                                lands on the card. Only this element starts a drag. */}
-                            <span
-                              className={styles.stickerDraggable}
-                              aria-hidden="true"
-                              onPointerDown={canDrag ? (e) => onBadgePointerDown(e, s.id) : undefined}
-                            >
-                              {s.icon}
-                            </span>
-                            <span className={styles.chipName}>{s.name}</span>
-                          </div>
-                          <div className={styles.chipBottom}>
-                            <span className={styles.chipEffect}>{s.description}</span>
-                            <span className={styles.chipCost}>
-                              <span aria-hidden="true">⭐</span>
-                              {s.cost}
-                            </span>
-                          </div>
-                        </div>
+                        />
                       );
                     })}
                   </div>
@@ -401,17 +390,17 @@ export function CardInstancePanel({
         </div>
       )}
 
-      {/* The sticker clone following the cursor while it's dragged onto a face — the same round badge
-          (bigger than the on-card one) picked up from the tray. Its layer sits above the modal
-          backdrop (z-index 75), unlike BoardMenu's non-modal 60, so it renders over the panel. */}
+      {/* The wax seal itself, lifted off its tray widget and following the cursor. Its layer sits
+          above the modal backdrop (z-index 75), unlike BoardMenu's non-modal 60, so it renders over
+          the panel. */}
       {drag?.active && dragSticker && (
         <div className={styles.dragLayer} aria-hidden="true">
-          <div
+          <StickerSealMark
             className={styles.dragClone}
-            style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
-          >
-            {dragSticker.icon}
-          </div>
+            icon={dragSticker.icon}
+            size={px(drag.size)}
+            style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY) }}
+          />
         </div>
       )}
 

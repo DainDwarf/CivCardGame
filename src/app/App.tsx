@@ -5,6 +5,9 @@ import { GameMenu } from '../components/GameMenu';
 import { AccessibilityWelcome } from '../components/AccessibilityWelcome';
 import { GameProvider, useGame } from '../run/GameContext';
 import { applyRunResult, loadStore, saveStore, type PlayerStore } from '../meta/store';
+import type { RunReveal } from '../meta/UnlockReveal';
+import { pendingUnlocks } from '../rules/rewards';
+import { isCompleted } from '../rules/campaign';
 import { MAX_DECKS, MIN_DECK_SIZE } from '../rules/deckBuilder';
 import { buyTier } from '../rules/shop';
 import { buySticker, removeSticker } from '../rules/stickers';
@@ -86,6 +89,12 @@ export function App() {
   // Drives the fade-to-black screen transition (App.module.css's `.transitionOverlay`,
   // always mounted below). 'covering' = fading to black, 'revealing' = fading back in.
   const [transitionPhase, setTransitionPhase] = useState<'idle' | 'covering' | 'revealing'>('idle');
+  // What the last finished run has to show for itself, waiting for the player to come back to the
+  // menu (`meta/UnlockReveal.tsx`). Deliberately *not* in `PlayerStore`: a reveal is an event, not
+  // progress — everything it announces is already persisted by the time it renders, so losing one to
+  // a refresh costs nothing but the celebration. `null` whenever the run opened nothing, which is
+  // what keeps a repeat clear's hand-back overlay-free.
+  const [reveal, setReveal] = useState<RunReveal | null>(null);
 
   /** Runs `action` behind a fade-to-black-and-back: covers the screen, swaps state
    *  while hidden, then reveals it — used for the three jarring instant cuts (new run,
@@ -138,7 +147,35 @@ export function App() {
   // The actual history/mapProgress/reward folding is `meta/store.ts`'s `applyRunResult` — a
   // pure, unit-tested function, not buried here (see CLAUDE.md's core/shell boundary).
   function recordResult(result: RunResult) {
-    persist(applyRunResult(store, result, MISSIONS[result.missionId]));
+    const mission = MISSIONS[result.missionId];
+    const next = applyRunResult(store, result, mission);
+    // Both halves of the reveal are read against the store as it stood *before* the fold — the payout
+    // as the difference the fold made, the unlocks off the same pre-clear progress `computeRewards`
+    // grants against — so neither can announce something the fold didn't actually do. The outcome
+    // gate mirrors `applyRunResult`'s own.
+    const unlocks =
+      result.outcome === 'victory'
+        ? pendingUnlocks(mission, isCompleted(store.mapProgress, result.missionId), {
+            collection: store.collection,
+            unlockedStickers: store.unlockedStickers,
+            unlockedBoardStickers: store.unlockedBoardStickers,
+            unlockedBoards: store.unlockedBoards,
+          })
+        : [];
+    const influence = next.influence - store.influence;
+    setReveal(
+      influence > 0 || unlocks.length > 0
+        ? {
+            missionName: mission.name,
+            outcome: result.outcome,
+            infinite: mission.kind === 'infinite',
+            influence,
+            influenceBefore: store.influence,
+            unlocks,
+          }
+        : null,
+    );
+    persist(next);
   }
 
   function saveDeck(deck: DeckDef) {
@@ -261,7 +298,14 @@ export function App() {
             lifetime={store.lifetime}
             bestInfinite={store.bestInfinite}
             uiScale={settings.uiScale}
-            onLaunch={(config) => transition(() => setView({ screen: 'run', config }))}
+            reveal={reveal}
+            onDismissReveal={() => setReveal(null)}
+            // Launching drops an undismissed reveal: it belongs to the run just finished, and the one
+            // starting will hand over its own (or none).
+            onLaunch={(config) => {
+              setReveal(null);
+              transition(() => setView({ screen: 'run', config }));
+            }}
             onSaveDeck={saveDeck}
             onDeleteDeck={deleteDeck}
             onBuyTier={buyCardTier}

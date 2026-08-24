@@ -363,7 +363,8 @@ export const FIXTURE_CARDS: Record<string, CardDef> = {
  *  - `test_restricted` (Irrigation-like): attaches only to a food-producing building; bumps its food. */
 export const FIXTURE_STICKERS: Record<string, StickerDef> = {
   test_addgain: {
-    id: 'test_addgain', name: 'Test Add-Gain', description: "+1 to this copy's output",
+    id: 'test_addgain', name: 'Test Add-Gain', gives: "+1 to this copy's output",
+    appliesToLabel: 'Any card',
     icon: '➕', cost: 10,
     applyGain: (base) => {
       if (!base) return base;
@@ -373,7 +374,8 @@ export const FIXTURE_STICKERS: Record<string, StickerDef> = {
     },
   },
   test_costcut: {
-    id: 'test_costcut', name: 'Test Cost-Cut', description: 'Costs 1 less to play',
+    id: 'test_costcut', name: 'Test Cost-Cut', gives: 'Costs 1 less to play',
+    appliesToLabel: 'Any card',
     icon: '➖', cost: 3,
     applyCost: (cost) => {
       const resources: NonNullable<typeof cost.resources> = {};
@@ -386,12 +388,14 @@ export const FIXTURE_STICKERS: Record<string, StickerDef> = {
   // The non-resource half of `applyCost`'s reach: a sticker raising a card's culture-level
   // prerequisite, which no resource-only hook could express.
   test_gated: {
-    id: 'test_gated', name: 'Test Gated', description: 'Requires one more 🎭 level',
+    id: 'test_gated', name: 'Test Gated', gives: 'Nothing', charges: 'Requires one more 🎭 level',
+    appliesToLabel: 'Any card',
     icon: '🔒', cost: 3,
     applyCost: (cost) => ({ ...cost, cultureLevelReq: (cost.cultureLevelReq ?? 0) + 1 }),
   },
   test_restricted: {
-    id: 'test_restricted', name: 'Test Restricted', description: '+1🌾 on a food building',
+    id: 'test_restricted', name: 'Test Restricted', gives: '+1🌾 per staffed worker',
+    appliesToLabel: 'Buildings that produce 🌾',
     icon: '💧', cost: 3,
     appliesTo: (c) => c.kind === 'building' && (c.produces?.resources?.food ?? 0) > 0,
     applyGain: (base) => (base ? { ...base, food: (base.food ?? 0) + 1 } : base),
@@ -408,19 +412,19 @@ export const FIXTURE_STICKERS: Record<string, StickerDef> = {
  *  board upgrade dropping a sticker that doesn't apply to the new board. */
 export const FIXTURE_BOARD_STICKERS: Record<string, BoardStickerDef> = {
   test_bs_food: {
-    id: 'test_bs_food', name: 'Test BS Food', description: '+2 starting Food', icon: '🌾', cost: 3,
+    id: 'test_bs_food', name: 'Test BS Food', gives: '+2 starting 🌾', icon: '🌾', cost: 3,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, food: b.resources.food + 2 } }),
   },
   test_bs_territory: {
-    id: 'test_bs_territory', name: 'Test BS Territory', description: '+1 starting Territory', icon: '🗺️', cost: 10,
+    id: 'test_bs_territory', name: 'Test BS Territory', gives: '+1 starting 🗺️', icon: '🗺️', cost: 10,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, territory: b.resources.territory + 1 } }),
   },
   test_bs_military: {
-    id: 'test_bs_military', name: 'Test BS Military', description: '+1 starting Military', icon: '⚔️', cost: 3,
+    id: 'test_bs_military', name: 'Test BS Military', gives: '+1 starting ⚔️', icon: '⚔️', cost: 3,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, military: b.resources.military + 1 } }),
   },
   test_bs_restricted: {
-    id: 'test_bs_restricted', name: 'Test BS Restricted', description: '+1 starting Culture on the test board only', icon: '🎭', cost: 3,
+    id: 'test_bs_restricted', name: 'Test BS Restricted', gives: '+1 starting 🎭 on the test board only', icon: '🎭', cost: 3,
     appliesTo: (b) => b.id === TEST_BOARD_ID,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, culture: b.resources.culture + 1 } }),
   },

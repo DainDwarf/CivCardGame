@@ -1,8 +1,8 @@
 /* Per-card detail panel. A modal whose body is two columns:
    a grid of real `CardFace`s (one per owned copy) on the left, a sticker tray pinned on the right.
-   Dragging a sticker badge out of the tray onto a face buys+attaches it (mirrors BoardMenu's tray +
-   hand-rolled pointer-drag). All color via theme tokens; only the allowed white/black scrims are
-   literals. */
+   Dragging a `StickerSeal`'s seal out of the tray onto a face buys+attaches it (mirrors BoardMenu's
+   tray + hand-rolled pointer-drag). All color via theme tokens; only the allowed white/black scrims
+   are literals. */
 
 .backdrop {
   position: fixed;
@@ -29,7 +29,7 @@
 
 /* Capped against the viewport with the /var(--ui-scale) divide (UI-scaling invariant #3) and
    scrolling *inside* itself (invariant #1 — never grows the body). */
-/* Wide enough for a 4-column face grid: 4×128px tracks + 3×0.6rem gaps ≈ 541px, plus the 210px tray,
+/* Wide enough for a 4-column face grid: 4×128px tracks + 3×0.6rem gaps ≈ 541px, plus the 236px tray,
    the 1rem body gap, and the panel's own 1.1rem side padding ≈ 840px. Still capped against the
    viewport with the /var(--ui-scale) divide so a small screen shrinks it instead of overflowing. */
 .panel {
@@ -122,7 +122,13 @@
    position: fixed, which wouldn't pin inside the transform:scale() wrapper — invariant #1). Sticky
    keeps the buy-tier button at its top visible while the face grid scrolls. */
 .tray {
-  flex: 0 0 210px;
+  /* Sized so a `StickerSeal`, which caps its own width at the column, still leaves the plaque room
+     for a wrapped applies-to line beside the seal. `min-width: 0` is what makes that cap bite: a
+     seal's width is an `em` length capped by a *percentage* max-width, and percentage maxima are
+     ignored while an ancestor's intrinsic size is computed — so without this the seal's uncapped
+     width becomes the tray's automatic minimum and widens it, stealing a column from the face grid. */
+  flex: 0 0 236px;
+  min-width: 0;
   position: sticky;
   top: 0;
   align-self: flex-start;
@@ -154,7 +160,7 @@
 }
 
 /* The buy-next-tier button — a blank neutral pill; when a tier is *available* (affordable, i.e. not
-   disabled) its border/ring go gold, the buyable-hint accent that matches the tray badges and card
+   disabled) its border/ring go gold, the buyable-hint accent that matches the tray seals and card
    borders. Disabled (unaffordable) keeps the plain neutral border and dims. */
 .buyBtn {
   display: flex;
@@ -204,97 +210,10 @@
   color: var(--text-muted);
 }
 
-.trayChips {
+.trayStickers {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-}
-
-/* A sticker box: the draggable badge + name on top, effect + price below. The box itself is not
-   draggable — only the badge inside it is (see .stickerDraggable). Mirrors BoardMenu's .chip. */
-.chip {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.5rem 0.55rem;
-  border: 1px solid var(--border-divider);
-  border-radius: 10px;
-  background: var(--surface-card);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-}
-
-/* Can't drop anywhere (unaffordable, or every copy full) — dimmed, and its badge won't start a drag. */
-.chipDisabled {
-  opacity: 0.4;
-}
-
-.chipTop {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.chipName {
-  flex: 1 1 auto;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--text);
-}
-
-.chipBottom {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.chipEffect {
-  font-size: 0.72rem;
-  line-height: 1.25;
-  color: var(--text-secondary);
-}
-
-.chipCost {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  color: var(--text-secondary);
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-/* The draggable sticker badge — styled with the *same* tokens the on-card StickerRow badge uses
-   (CardFace.module.css's `.sticker`: --card-face-top fill, --border-card ring, round) so it reads as
-   the very object that lands on the card — just larger (40px) for an easy grab target. Only this
-   element carries the pointerdown that starts a drag. Matches BoardMenu's .stickerDraggable. */
-.stickerDraggable {
-  flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--card-face-top);
-  border: 1px solid var(--border-card);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
-  font-size: 1.35rem;
-  line-height: 1;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-}
-
-/* An available (affordable + some copy has room) tray sticker gets a golden border + soft ring — the
-   buyable-hint accent, matching BoardMenu's tray. A disabled chip keeps the plain ring below. */
-.chip:not(.chipDisabled) .stickerDraggable {
-  border-color: var(--hint-gold);
-  border-width: 2px;
-  box-shadow: 0 0 0 4px rgb(var(--hint-gold-rgb) / 30%), 0 2px 5px rgba(0, 0, 0, 0.35);
-}
-
-.chipDisabled .stickerDraggable {
-  cursor: default;
 }
 
 /* The destroy-sticker confirm's scrim. Unlike `.dragLayer` this one *does* take pointer events —
@@ -372,7 +291,7 @@
   background: var(--btn-soft-hover);
 }
 
-/* The overlay the dragged badge clone lives in — fixed and pointer-transparent so it never eats the
+/* The overlay the dragged seal clone lives in — fixed and pointer-transparent so it never eats the
    pointerup that ends the drag. ABOVE the modal backdrop (z-index 75), unlike BoardMenu's non-modal
    60, so the clone renders over the panel instead of behind it. */
 .dragLayer {
@@ -382,19 +301,13 @@
   pointer-events: none;
 }
 
-/* The badge following the cursor mid-drag — the same round sticker (sized inline from the picked-up
-   badge, px-converted in the component), lifted with a bigger shadow + slight scale. */
+/* The seal following the cursor mid-drag — a `StickerSealMark` sized inline off the picked-up seal
+   (px-converted in the component), lifted with a drop shadow + slight scale. `drop-shadow` rather
+   than `box-shadow`: the mark is a square wrapper around a round seal, so a box shadow would cast
+   the wrapper's corners. */
 .dragClone {
   position: fixed;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--card-face-top);
-  border: 1px solid var(--border-card);
-  font-size: 1.35rem;
-  line-height: 1;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.45));
   transform: scale(1.12);
   transform-origin: center;
   cursor: grabbing;

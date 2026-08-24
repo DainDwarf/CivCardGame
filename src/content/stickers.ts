@@ -27,7 +27,17 @@ import { needsTinRoute, tinRouteStands, type CardDef } from './cards';
 export interface StickerDef {
   id: string;
   name: string;
-  description: string;
+  /** What the copy gains, as the player reads it. Split from `charges` rather than one sentence
+   *  because the sticker widget (`components/StickerSeal.tsx`) ledgers the two halves separately —
+   *  a bargain reads as a bargain only when both sides are placed. */
+  gives: string;
+  /** What the copy gives up for it. Absent = a pure addition, which no card sticker is (see the
+   *  catalogue note below) but the shared widget shape allows, since board stickers only give. */
+  charges?: string;
+  /** The readable form of `appliesTo`, which is a predicate and has none. Authored, not derived:
+   *  a display need is a small authored field, never a system the predicate is forced to explain
+   *  itself through. */
+  appliesToLabel: string;
   /** A distinct glyph identifying this sticker wherever a stickered instance shows a badge
    *  (`CardFace`'s `stickerBadge`) — one per sticker, so the badge reads as *which*
    *  sticker(s) a copy carries instead of a single generic 🏷️ regardless of identity. */
@@ -100,7 +110,9 @@ export const STICKERS: Record<string, StickerDef> = {
   irrigation: {
     id: 'irrigation',
     name: 'Irrigation',
-    description: '+1 🌾, +1 🔨 to play',
+    gives: '+1 🌾 per staffed worker',
+    charges: '+1 🔨 added to its price',
+    appliesToLabel: 'Buildings and work that produce 🌾',
     icon: '💧',
     cost: 3,
     appliesTo: producerOf('food'),
@@ -115,7 +127,9 @@ export const STICKERS: Record<string, StickerDef> = {
   elegant: {
     id: 'elegant',
     name: 'Elegant',
-    description: '+1 🎭, needs 🎭 level 1',
+    gives: '+1 🎭 per staffed worker',
+    charges: 'needs 🎭 level 1 to play',
+    appliesToLabel: 'Buildings and work that produce 🎭',
     icon: '✨',
     cost: 4,
     appliesTo: producerOf('culture'),
@@ -127,7 +141,9 @@ export const STICKERS: Record<string, StickerDef> = {
   convoy: {
     id: 'convoy',
     name: 'Convoy',
-    description: '+1 ⚔️ every round it stands, −1 🪙 upkeep',
+    gives: '+1 ⚔️ every round it stands',
+    charges: '−1 🪙 upkeep every round',
+    appliesToLabel: 'Trade routes',
     icon: '🛡️',
     cost: 5,
     appliesTo: (c) => c.kind === 'trade',
@@ -149,7 +165,9 @@ export const STICKERS: Record<string, StickerDef> = {
   bronze_tools: {
     id: 'bronze_tools',
     name: 'Bronze Tools',
-    description: '+1 🔨, needs a 🏝️ route to play and to work',
+    gives: '+1 🔨 per staffed worker',
+    charges: 'needs a 🏝️ route standing to play and to work',
+    appliesToLabel: 'Buildings and work that produce 🔨',
     icon: '🛠️',
     cost: 5,
     appliesTo: producerOf('production'),
@@ -166,7 +184,9 @@ export const STICKERS: Record<string, StickerDef> = {
   wheel: {
     id: 'wheel',
     name: 'Wheel',
-    description: '−1 🔨, needs 🎭 level 1',
+    gives: '−1 🔨 off its price',
+    charges: 'needs 🎭 level 1 to play',
+    appliesToLabel: 'Any card that pays 🔨',
     icon: '🛞',
     cost: 5,
     // Any card that actually pays 🔨, whatever its kind (so it can't be wasted on a card it can't

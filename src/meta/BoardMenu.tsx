@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { BOARDS, type BoardId } from '../content/boards';
-import { BOARD_STICKERS, type BoardStickerDef } from '../content/boardStickers';
+import { BOARD_STICKERS, BOARD_STICKER_SCOPE, type BoardStickerDef } from '../content/boardStickers';
 import { canAttachBoardSticker, unlockedBoardStickerDefs, MAX_BOARD_STICKERS, type BoardStickers } from '../rules/boardStickers';
 import { boardUpgradeAvailable } from '../rules/upgrades';
 import { BoardMini } from '../components/BoardMini';
+import { StickerSeal, StickerSealMark } from '../components/StickerSeal';
 import { availableBoardIds } from './boardDisplay';
 import styles from './BoardMenu.module.css';
 
 /** Pointer travel (px) before a press becomes a drag rather than a click — same threshold the
- *  deck editor / run loop use for their click-vs-drag split. Here a plain click is inert (a chip
+ *  deck editor / run loop use for their click-vs-drag split. Here a plain click is inert (a seal
  *  has no target board), so only a drag past this threshold onto a valid board ever commits. */
 const DRAG_THRESHOLD = 6;
 
-/** A board sticker chip being dragged from the tray onto a mini-board. */
+/** A board sticker being dragged from the tray onto a mini-board. */
 interface DragState {
   stickerId: string;
   pointerId: number;
@@ -20,11 +21,11 @@ interface DragState {
   startY: number;
   x: number;
   y: number;
-  /** Offset from the chip's top-left to the grab point, so the clone tracks the cursor. */
+  /** Offset from the seal's top-left to the grab point, so the clone tracks the cursor. */
   grabX: number;
   grabY: number;
-  w: number;
-  h: number;
+  /** The grabbed seal's diameter, so the clone comes out the size it was lifted at. */
+  size: number;
   /** Becomes true once the pointer moves past the click/drag threshold. */
   active: boolean;
 }
@@ -34,12 +35,11 @@ interface DragState {
  * board's *starting* profile (`rules/boardStickers.ts`), attached per board on the store's
  * `boardStickers`. A board is singular (no per-copy identity), so — unlike a card sticker — the buy
  * attaches directly, no instance picker. Each board renders as a `BoardMini`; the available
- * stickers sit in a right-side **tray** pinned beside the boards, each a
- * box (a sticker badge + name on top, effect + price below). The badge is styled like the on-board
- * sticker but larger, and *it* is the draggable: dragging it onto a board buys+attaches it in one
- * gesture (mirroring the card sticker tray) — a hand-rolled pointer-drag like `DeckEditor.tsx` (no
- * DnD library). During a drag only the *valid* target boards for that sticker highlight; an
- * invalid/missed drop no-ops (the clone just disappears).
+ * stickers sit in a right-side **tray** pinned beside the boards, one `StickerSeal` apiece. The wax
+ * seal *is* the draggable: dragging it onto a board buys+attaches it in one gesture (mirroring the
+ * card sticker tray) — a hand-rolled pointer-drag like `DeckEditor.tsx` (no DnD library). During a
+ * drag only the *valid* target boards for that sticker highlight; an invalid/missed drop no-ops (the
+ * clone just disappears).
  *
  * This is also the only screen where an *attached* sticker can be destroyed: clicking a badge on a
  * board opens a confirm, and accepting frees the slot for nothing back. The gesture is a plain click
@@ -56,7 +56,7 @@ export function BoardMenu({
   onRemoveBoardSticker,
 }: {
   /** Board stickers attached per board — shows each board's effective profile and gates which
-   *  boards a dragged chip may drop onto (a board already at the per-board cap is not a valid
+   *  boards a dragged seal may drop onto (a board already at the per-board cap is not a valid
    *  target). */
   boardStickers: BoardStickers;
   influence: number;
@@ -105,7 +105,7 @@ export function BoardMenu({
     return canAttachBoardSticker(boardStickers, influence, boardId, sticker);
   }
 
-  function onChipPointerDown(e: React.PointerEvent<HTMLElement>, stickerId: string) {
+  function onSealPointerDown(e: React.PointerEvent<HTMLElement>, stickerId: string) {
     if (e.button !== 0) return;
     const r = e.currentTarget.getBoundingClientRect();
     setDrag({
@@ -117,13 +117,12 @@ export function BoardMenu({
       y: e.clientY,
       grabX: e.clientX - r.left,
       grabY: e.clientY - r.top,
-      w: r.width,
-      h: r.height,
+      size: r.width,
       active: false,
     });
   }
 
-  /** Resolve a finished drag: a plain click (never crossed the threshold) is inert — a chip has no
+  /** Resolve a finished drag: a plain click (never crossed the threshold) is inert — a seal has no
    *  target board, so there's nothing to do. A real drag commits only when released over a *valid*
    *  board (hit-test raw clientX/Y against each wrapper's rect, then re-check `isValidTarget`).
    *  Anything else no-ops (the clone just disappears). */
@@ -142,7 +141,7 @@ export function BoardMenu({
     setDrag(null);
   }
 
-  // While a drag is live, track the pointer on the window so it follows even past the chip.
+  // While a drag is live, track the pointer on the window so it follows even past the seal.
   useEffect(() => {
     if (!drag) return;
     function onMove(e: PointerEvent) {
@@ -168,7 +167,7 @@ export function BoardMenu({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drag?.pointerId]);
 
-  // The dragged chip's sticker (for the highlight predicate + the clone), null when idle.
+  // The dragged seal's sticker (for the highlight predicate + the clone), null when idle.
   const dragSticker = drag?.active ? BOARD_STICKERS[drag.stickerId] : undefined;
 
   // The sticker a pending removal would destroy — resolved for the confirm's copy. An id that no
@@ -179,10 +178,10 @@ export function BoardMenu({
 
   function boardTile(boardId: BoardId) {
     const attached = boardStickers[boardId] ?? [];
-    // Highlight only valid targets for the chip currently being dragged.
+    // Highlight only valid targets for the seal currently being dragged.
     const highlight = dragSticker ? isValidTarget(boardId, dragSticker) : false;
     // At-a-glance hint: this board can still take an affordable, under-cap sticker (idle only —
-    // during a drag the highlight carries the same information, per-chip). Rendered as gold open
+    // during a drag the highlight carries the same information, per-sticker). Rendered as gold open
     // slots in the board's sticker row (its remaining capacity) rather than a corner dot.
     const hint = !dragSticker && boardUpgradeAvailable(boardStickers, influence, boardId, unlockedBoardStickers);
     return (
@@ -198,7 +197,7 @@ export function BoardMenu({
           boardId={boardId}
           stickerIds={attached}
           openSlots={hint ? MAX_BOARD_STICKERS - attached.length : 0}
-          // Suppressed mid-drag (like `hint`): while a chip is in the air the tile's message is
+          // Suppressed mid-drag (like `hint`): while a seal is in the air the tile's message is
           // "droppable target", and a ✕ under the cursor would contradict it.
           onRemoveSticker={dragSticker ? undefined : (index) => setPendingRemoval({ boardId, index })}
         />
@@ -216,41 +215,27 @@ export function BoardMenu({
 
           <aside className={styles.tray}>
             <h2 className={styles.trayTitle}>Stickers</h2>
-            <div className={styles.trayChips}>
+            <div className={styles.trayStickers}>
               {unlockedBoardStickerDefs(unlockedBoardStickers).map((s) => {
-                // Affordable for at least one board? A chip too expensive everywhere is dimmed.
+                // Affordable for at least one board? A seal too expensive everywhere is dimmed.
                 const affordable = influence >= s.cost;
                 return (
-                  <div
+                  <StickerSeal
                     key={s.id}
-                    className={`${styles.chip}${affordable ? '' : ` ${styles.chipDisabled}`}`}
+                    scale="inline"
+                    icon={s.icon}
+                    name={s.name}
+                    gives={s.gives}
+                    appliesToLabel={BOARD_STICKER_SCOPE}
+                    price={s.cost}
+                    disabled={!affordable}
+                    onSealPointerDown={affordable ? (e) => onSealPointerDown(e, s.id) : undefined}
+                    // The bargain and the price are already drawn; the tooltip only carries what
+                    // isn't — the gesture, or the reason there isn't one.
                     title={
-                      affordable
-                        ? `${s.name} — ${s.description}. Drag the sticker onto a board (${s.cost} Influence).`
-                        : `${s.name} — ${s.description}. Not enough Influence (${s.cost}).`
+                      affordable ? 'Drag the seal onto a board to buy and attach it.' : 'Not enough Influence.'
                     }
-                  >
-                    <div className={styles.chipTop}>
-                      {/* The sticker itself — the draggable, styled like the on-board badge (same
-                          tokens) but larger, so the player recognizes it as the very thing that
-                          lands on the board. Only this element starts a drag. */}
-                      <span
-                        className={styles.stickerDraggable}
-                        aria-hidden="true"
-                        onPointerDown={affordable ? (e) => onChipPointerDown(e, s.id) : undefined}
-                      >
-                        {s.icon}
-                      </span>
-                      <span className={styles.chipName}>{s.name}</span>
-                    </div>
-                    <div className={styles.chipBottom}>
-                      <span className={styles.chipEffect}>{s.description}</span>
-                      <span className={styles.chipCost}>
-                        <span aria-hidden="true">⭐</span>
-                        {s.cost}
-                      </span>
-                    </div>
-                  </div>
+                  />
                 );
               })}
             </div>
@@ -290,16 +275,15 @@ export function BoardMenu({
         </div>
       )}
 
-      {/* The sticker clone following the cursor while it's dragged onto a board — the same round
-          badge (bigger than the on-board one) picked up from the tray. */}
+      {/* The wax seal itself, lifted off its tray widget and following the cursor. */}
       {drag?.active && dragSticker && (
         <div className={styles.dragLayer} aria-hidden="true">
-          <div
+          <StickerSealMark
             className={styles.dragClone}
-            style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY), width: px(drag.w), height: px(drag.h) }}
-          >
-            {dragSticker.icon}
-          </div>
+            icon={dragSticker.icon}
+            size={px(drag.size)}
+            style={{ left: px(drag.x - drag.grabX), top: px(drag.y - drag.grabY) }}
+          />
         </div>
       )}
     </>

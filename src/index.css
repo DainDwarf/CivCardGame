@@ -80,6 +80,14 @@
   --hint-gold: #cf9a12;
   --hint-gold-rgb: 207 154 18;
 
+  /* ── Sticker wax ──────────────────────────────────────
+     The pressed seal of the sticker widget (`components/StickerSeal.tsx`): a sealing-wax red the
+     rest of the palette has no token for. Carries identity, not state — nothing else on screen has
+     to stay distinguishable from it, so the pair is a fill and its shaded edge, with the highlight
+     and the press left to black/white overlays. */
+  --sticker-wax: #a8402c;
+  --sticker-wax-deep: #74251a;
+
   /* ── Card kinds ───────────────────────────────────── */
   --card-building-banner: #3b7dd8;
   --card-building-band: #e7f0fb;
@@ -262,6 +270,10 @@
   /* ── Buyable-hint (gold) — brighter on dark surfaces ── */
   --hint-gold: #f0c236;
   --hint-gold-rgb: 240 194 54;
+
+  /* ── Sticker wax — lifted, since the seal sits on a dark card face ── */
+  --sticker-wax: #b8503a;
+  --sticker-wax-deep: #6e2418;
 
   /* ── Card kinds ──
      Banners keep their saturated hue (white text sits on them); the light title/text bands
@@ -456,6 +468,10 @@
   --culture-rgb: 204 121 167;
   --culture-ghost: rgba(204, 121, 167, 0.35);
 
+  /* ── Sticker wax (red → vermillion) ── */
+  --sticker-wax: #d55e00;
+  --sticker-wax-deep: #8f3f00;
+
   /* ── Board ground tints ── */
   --board-chiefdom-ground: #8fa9bd;
 
@@ -527,6 +543,10 @@
   --culture-fill: #de9cc0;
   --culture-rgb: 212 133 176;
   --culture-ghost: rgba(212, 133, 176, 0.35);
+
+  /* ── Sticker wax (red → vermillion, brightened for the long-wavelength dimming) ── */
+  --sticker-wax: #e8720f;
+  --sticker-wax-deep: #9c4b08;
 
   /* ── Board ground tints ── */
   --board-chiefdom-ground: #8fa9bd;

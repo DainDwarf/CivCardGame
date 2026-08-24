@@ -1,8 +1,7 @@
 /* The Board screen: a two-column layout — a grid of BoardMini tiles (left) and a right-side tray
-   pinned beside them, each a box holding a draggable sticker badge (styled like the on-board one).
-   Dragging a badge onto a board buys+attaches it. Mirrors the Shop's screen chrome
-   (title/subtitle/balance). All color via theme tokens; only the allowed white/black scrims are
-   literals. */
+   pinned beside them, one `StickerSeal` apiece. Dragging a seal onto a board buys+attaches it.
+   Mirrors the Shop's screen chrome (title/subtitle/balance). All color via theme tokens; only the
+   allowed white/black scrims are literals. */
 .boardMenu {
   font-family: system-ui, -apple-system, sans-serif;
   color: var(--text);
@@ -42,19 +41,24 @@
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
-/* A valid drop target for the chip being dragged — an accent outline + soft glow so the player
+/* A valid drop target for the seal being dragged — an accent outline + soft glow so the player
    sees exactly which boards will accept it. */
 .boardTileValid {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 30%);
 }
 
-/* The sticker tray — a bordered panel of sticker boxes, pinned to the right (sticky within the meta
+/* The sticker tray — a bordered panel of `StickerSeal`s, pinned to the right (sticky within the meta
    `.content` scroll area, not `position: fixed`, which wouldn't pin inside the transform:scale()
    wrapper — UI-scaling invariant #1). `align-self: flex-start` keeps it its own height (so sticky
-   has room to travel); its own bounded height + scroll keeps a long list from growing the body. */
+   has room to travel); its own bounded height + scroll keeps a long list from growing the body. The
+   width is sized so a seal, which caps its own width at the column, still leaves the plaque room for
+   a wrapped applies-to line beside it. */
 .tray {
-  flex: 0 0 220px;
+  flex: 0 0 236px;
+  /* See CardInstancePanel's `.tray` — without it a seal's percentage width cap goes unread while the
+     tray's automatic minimum is computed, and the uncapped `em` width widens the tray instead. */
+  min-width: 0;
   position: sticky;
   top: 0;
   align-self: flex-start;
@@ -75,101 +79,13 @@
   margin: 0;
 }
 
-.trayChips {
+.trayStickers {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
 }
 
-/* A sticker box: the draggable sticker badge + name on top, effect + price below. The box itself is
-   not draggable — only the badge inside it is (see .stickerDraggable). */
-.chip {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.5rem 0.55rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-card);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-}
-
-/* Not affordable for any board — dimmed, and its badge won't start a drag (handler omitted in JSX). */
-.chipDisabled {
-  opacity: 0.4;
-}
-
-.chipTop {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.chipName {
-  flex: 1 1 auto;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--text);
-}
-
-.chipBottom {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.chipEffect {
-  font-size: 0.72rem;
-  line-height: 1.25;
-  color: var(--text-secondary);
-}
-
-.chipCost {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  color: var(--text-secondary);
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-/* The draggable sticker badge — the actual sticker, styled with the *same* tokens the on-board
-   StickerRow badge uses (CardFace.module.css's `.sticker`: --card-face-top fill, --border-card
-   ring, round) so it reads as the very object that lands on the board — just larger (40px vs 22px)
-   for an easy grab target. Only this element carries the pointerdown that starts a drag. */
-.stickerDraggable {
-  flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--card-face-top);
-  border: 1px solid var(--border-card);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
-  font-size: 1.35rem;
-  line-height: 1;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-}
-
-/* An available (affordable) tray sticker gets a golden border + soft ring — the buyable-hint accent,
-   so the badge itself signals "you can buy this now". A disabled (unaffordable) chip keeps the plain
-   ring below. */
-.chip:not(.chipDisabled) .stickerDraggable {
-  border-color: var(--hint-gold);
-  border-width: 2px;
-  box-shadow: 0 0 0 4px rgb(var(--hint-gold-rgb) / 30%), 0 2px 5px rgba(0, 0, 0, 0.35);
-}
-
-.chipDisabled .stickerDraggable {
-  cursor: default;
-}
-
-/* The overlay the dragged badge clone lives in — fixed and pointer-transparent so it never eats the
+/* The overlay the dragged seal clone lives in — fixed and pointer-transparent so it never eats the
    pointerup that ends the drag. Matches DeckEditor's `.dragLayer`. */
 .dragLayer {
   position: fixed;
@@ -178,19 +94,13 @@
   pointer-events: none;
 }
 
-/* The badge following the cursor mid-drag — the same round sticker (sized inline from the picked-up
-   badge, px-converted in the component), lifted with a bigger shadow + slight scale. */
+/* The seal following the cursor mid-drag — a `StickerSealMark` sized inline off the picked-up seal
+   (px-converted in the component), lifted with a drop shadow + slight scale. `drop-shadow` rather
+   than `box-shadow`: the mark is a square wrapper around a round seal, so a box shadow would cast
+   the wrapper's corners. */
 .dragClone {
   position: fixed;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--card-face-top);
-  border: 1px solid var(--border-card);
-  font-size: 1.35rem;
-  line-height: 1;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.45));
   transform: scale(1.12);
   transform-origin: center;
   cursor: grabbing;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeRewards, type UnlockProgress } from './rewards';
+import { computeRewards, pendingUnlocks, type UnlockProgress } from './rewards';
 import { copiesOwned, emptyCollection, collectionFromCounts, type OwnedCards } from './collection';
 import type { MissionDef } from '../content/missions';
 
@@ -161,5 +161,49 @@ describe('computeRewards — infinite missions', () => {
     expect(result.progress.unlockedStickers).toEqual({ irrigation: true });
     expect(result.progress.unlockedBoardStickers).toEqual({ stockpile: true });
     expect(result.progress.unlockedBoards).toEqual({ chiefdom: true });
+  });
+});
+
+describe('pendingUnlocks', () => {
+  it('names what a first clear opens, in reveal order', () => {
+    const m = mission({
+      influence: 1,
+      unlockBoardIds: ['chiefdom'],
+      unlockCardIds: ['granary', 'stockpile'],
+      unlockBoardStickerIds: ['opulence'],
+      unlockStickerIds: ['irrigation'],
+    });
+    expect(pendingUnlocks(m, false, progress())).toEqual([
+      { kind: 'card', id: 'granary' },
+      { kind: 'card', id: 'stockpile' },
+      { kind: 'sticker', id: 'irrigation' },
+      { kind: 'boardSticker', id: 'opulence' },
+      { kind: 'board', id: 'chiefdom' },
+    ]);
+  });
+
+  it('leaves out what the player already has — the same skip the grant makes', () => {
+    const m = mission({ influence: 1, unlockCardIds: ['granary', 'stockpile'], unlockStickerIds: ['irrigation'] });
+    const held = progress({
+      collection: collectionFromCounts({ granary: 1 }),
+      unlockedStickers: { irrigation: true },
+    });
+    expect(pendingUnlocks(m, false, held)).toEqual([{ kind: 'card', id: 'stockpile' }]);
+    // The pairing that matters: what it names is exactly what the grant adds.
+    expect(copiesOwned(computeRewards(m, false, held).progress.collection, 'stockpile')).toBe(1);
+    expect(copiesOwned(computeRewards(m, false, held).progress.collection, 'granary')).toBe(1);
+  });
+
+  it('carries the retired board alongside an upgrade, and drops it once the new board stands', () => {
+    const m = mission({ influence: 1, boardUpgrade: { from: 'tribe', to: 'settlement' } });
+    expect(pendingUnlocks(m, false, progress())).toEqual([{ kind: 'boardUpgrade', id: 'settlement', from: 'tribe' }]);
+    expect(pendingUnlocks(m, false, progress({ unlockedBoards: { settlement: true } }))).toEqual([]);
+  });
+
+  it('opens nothing on a replay, an infinite mission, or a mission with no reward', () => {
+    const m = mission({ influence: 2, unlockCardIds: ['granary'] });
+    expect(pendingUnlocks(m, true, progress())).toEqual([]);
+    expect(pendingUnlocks(infiniteMission(), false, progress())).toEqual([]);
+    expect(pendingUnlocks(mission(undefined), false, progress())).toEqual([]);
   });
 });

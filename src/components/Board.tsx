@@ -19,14 +19,11 @@ import {
 } from '../rules';
 import type { CoreCollapseReason } from '../rules';
 import { CARDS, isStaffable, isStructure, type CardDef } from '../content/cards';
-import { STICKERS } from '../content/stickers';
-import { BOARD_STICKERS } from '../content/boardStickers';
-import { BOARDS } from '../content/boards';
 import { MISSIONS } from '../content/missions';
 import type { GameState } from '../rules';
 import { isCompleted } from '../rules/campaign';
-import { computeRewards } from '../rules/rewards';
-import { isOwned, type OwnedCards } from '../rules/collection';
+import { computeRewards, pendingUnlocks } from '../rules/rewards';
+import { type OwnedCards } from '../rules/collection';
 import { effectiveCard } from '../rules/stickers';
 import { discardCount, runCard } from '../rules/cost';
 import { sortDeckEntries } from '../rules/deckBuilder';
@@ -2168,25 +2165,11 @@ export function Board({
           : won
             ? computeRewards(mission, alreadyCompleted, progress)
             : null;
-      // The names of every unlock this clear actually grants — each reward card not already owned
-      // (a mission may open several at once, e.g. the Stone Age set), and each card/board sticker or
-      // board not already unlocked. `alreadyCompleted` already suppresses the whole reward line on a replay.
-      const unlockedNames =
-        reward && mission.reward
-          ? [
-              ...(mission.reward.unlockCardIds ?? []).filter((id) => !isOwned(collection, id)).map((id) => CARDS[id].name),
-              ...(mission.reward.unlockStickerIds ?? []).filter((id) => !unlockedStickers[id]).map((id) => STICKERS[id].name),
-              ...(mission.reward.unlockBoardStickerIds ?? [])
-                .filter((id) => !unlockedBoardStickers[id])
-                .map((id) => BOARD_STICKERS[id].name),
-              ...(mission.reward.unlockBoardIds ?? []).filter((id) => !unlockedBoards[id]).map((id) => BOARDS[id].name),
-              // A board upgrade grants its `to` board (the from→to swap the pickers show) — name it here
-              // too so the win summary announces the headline reward, not just the card unlocks.
-              ...(mission.reward.boardUpgrade && !unlockedBoards[mission.reward.boardUpgrade.to]
-                ? [BOARDS[mission.reward.boardUpgrade.to].name]
-                : []),
-            ]
-          : [];
+      // Whether this clear opens anything at all — and nothing more than that. What it opens is shown
+      // on the meta menu when the player comes back (`meta/UnlockReveal.tsx`), where each unlock gets
+      // its own face; naming them here would spend the surprise on a line of text and then repeat it.
+      // So the teaser below reads a count and stays sealed.
+      const opensUnlocks = won && reward !== null && pendingUnlocks(mission, alreadyCompleted, progress).length > 0;
       return (
         <div className={styles.gameoverOverlay}>
           <div className={styles.gameoverPanel}>
@@ -2194,17 +2177,21 @@ export function Board({
             <p className={styles.gameoverMission}>{mission.name}</p>
             <p className={styles.gameoverResult}>{won ? 'Objective achieved.' : defeatMessage}</p>
             <p className={styles.gameoverRound}>Reached round {G.round}</p>
-            {reward && (
-              <p className={styles.gameoverReward}>
-                {alreadyCompleted
-                  ? 'Already cleared — no reward for a replay.'
-                  : [
-                      reward.influence > 0 ? `+${reward.influence} ⭐ Influence` : null,
-                      unlockedNames.length ? `Unlocked ${unlockedNames.join(', ')}` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-              </p>
+            {reward &&
+              (alreadyCompleted ? (
+                <p className={styles.gameoverReward}>Already cleared — no reward for a replay.</p>
+              ) : (
+                reward.influence > 0 && (
+                  <p className={styles.gameoverPayout}>
+                    +{reward.influence} <span aria-hidden="true">⭐</span> Influence
+                  </p>
+                )
+              ))}
+            {opensUnlocks && (
+              <div className={styles.gameoverTeaser}>
+                <span className={styles.teaserSeal} aria-hidden="true" />
+                <span className={styles.teaserText}>New discoveries await</span>
+              </div>
             )}
             <div className={styles.gameoverBtns}>
               <button

@@ -4,7 +4,7 @@ import { ageColSpans } from '../content/ages';
 import { BOARDS, type BoardId } from '../content/boards';
 import { CARDS } from '../content/cards';
 import { STICKERS } from '../content/stickers';
-import { BOARD_STICKERS } from '../content/boardStickers';
+import { BOARD_STICKERS, BOARD_STICKER_SCOPE } from '../content/boardStickers';
 import type { DeckDef } from '../content/decks';
 import type { OwnedCards } from '../rules/collection';
 import { type BoardStickers } from '../rules/boardStickers';
@@ -15,6 +15,7 @@ import { DeckTile, DeckListOverlay } from '../components/DeckDisplay';
 import { BoardMini } from '../components/BoardMini';
 import { CardFace } from '../components/CardFace';
 import { CardZoomOverlay } from '../components/CardZoomOverlay';
+import { StickerSeal } from '../components/StickerSeal';
 import styles from './CampaignMap.module.css';
 
 // --- Map geometry (px, pre-scale — the whole app is scaled by the UI-size wrapper) ---
@@ -400,18 +401,24 @@ function MissionFlowPopup({
 }) {
   const infinite = mission.kind === 'infinite';
   const unlockCards = mission.reward ? (mission.reward.unlockCardIds ?? []).map((id) => CARDS[id]) : [];
-  // Card- and board-sticker unlocks share one preview shape (icon + name + effect). Pre-clear they're
-  // rendered as generic locked chips (the whole sticker is the surprise); the reveal only happens once
-  // the mission is cleared. Both defs carry `{ icon, name, description }`, so one list drives both.
+  // Card- and board-sticker unlocks share one preview shape — `StickerSeal`'s — so the two catalogues
+  // are flattened into its props here and one list drives both. No `price`: this is a reward, not an
+  // offer. A board sticker attaches anywhere, hence the one shared scope line rather than a per-def one.
   const unlockStickers = mission.reward
     ? [
-        ...(mission.reward.unlockStickerIds ?? []).map((id) => STICKERS[id]),
-        ...(mission.reward.unlockBoardStickerIds ?? []).map((id) => BOARD_STICKERS[id]),
+        ...(mission.reward.unlockStickerIds ?? []).map((id) => {
+          const { icon, name, gives, charges, appliesToLabel } = STICKERS[id];
+          return { key: id, icon, name, gives, charges, appliesToLabel };
+        }),
+        ...(mission.reward.unlockBoardStickerIds ?? []).map((id) => {
+          const { icon, name, gives } = BOARD_STICKERS[id];
+          return { key: id, icon, name, gives, appliesToLabel: BOARD_STICKER_SCOPE };
+        }),
       ]
     : [];
   // Board unlocks get their own preview row (a `BoardDef` has no `icon`, so it can't join the sticker
-  // chip list): a generic locked chip pre-clear, a `BoardMini` reveal post-clear — mirroring how a
-  // card unlock shows a face-down `missionLocked` face → real `CardFace`.
+  // seals): a locked silhouette pre-clear, a `BoardMini` reveal post-clear — mirroring how a card
+  // unlock shows a face-down `missionLocked` face → real `CardFace`.
   const unlockBoards = mission.reward ? (mission.reward.unlockBoardIds ?? []).map((id) => BOARDS[id]) : [];
   // A board *upgrade* (Tribe → Settlement): not an unlock but a replacement, previewed as a from→to
   // pair rather than a single reveal so the "your board improves" story is legible. Counts as one gain.
@@ -565,28 +572,14 @@ function MissionFlowPopup({
                       )}
                       {unlockStickers.length > 0 && (
                         <div className={styles.rewardStickers}>
-                          {unlockStickers.map((s, i) =>
-                            // Pre-clear: a generic locked chip — the sticker itself is the surprise, so
-                            // nothing about it is revealed until the mission is cleared.
+                          {unlockStickers.map(({ key, ...s }, i) =>
+                            // Pre-clear: an unpressed blank — the sticker itself is the surprise, so
+                            // nothing about it is revealed until the mission is cleared, not even
+                            // which of the two catalogues it comes from.
                             alreadyCleared ? (
-                              <div key={s.id} className={styles.stickerChip} title={`${s.name} — ${s.description}`}>
-                                <span className={styles.stickerChipIcon} aria-hidden="true">
-                                  {s.icon}
-                                </span>
-                                <span className={styles.stickerChipText}>
-                                  <span className={styles.stickerChipName}>{s.name}</span>
-                                  <span className={styles.stickerChipEffect}>{s.description}</span>
-                                </span>
-                              </div>
+                              <StickerSeal key={key} scale="inline" {...s} />
                             ) : (
-                              <div key={i} className={`${styles.stickerChip} ${styles.stickerChipLocked}`} title="A sticker, revealed on first clear">
-                                <span className={styles.stickerChipIcon} aria-hidden="true">
-                                  🔒
-                                </span>
-                                <span className={styles.stickerChipText}>
-                                  <span className={styles.stickerChipName}>New sticker</span>
-                                </span>
-                              </div>
+                              <StickerSeal key={i} scale="inline" locked />
                             ),
                           )}
                         </div>
