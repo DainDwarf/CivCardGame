@@ -634,7 +634,7 @@ export const CARDS: Record<string, CardDef> = {
   // effect on resume, so any resource field would double-apply.
   calendar: {
     id: 'calendar', name: 'Calendar', kind: 'action',
-    display: { art: '📅', description: 'Look at the top 3 cards of your draw pile and draw one.' },
+    display: { art: '📅', description: 'Look at the next 3 cards and draw one.' },
     // Nothing to look at in an empty pile — gate it (reusing the peek reason) rather than fizzle for
     // its cost. Peeking never reshuffles, so `deck.length` (not deck+discard) is the emptiness test.
     cost: {
