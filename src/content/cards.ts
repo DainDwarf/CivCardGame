@@ -637,7 +637,7 @@ export const CARDS: Record<string, CardDef> = {
     // Nothing to look at in an empty pile — gate it (reusing the peek reason) rather than fizzle for
     // its cost. Peeking never reshuffles, so `deck.length` (not deck+discard) is the emptiness test.
     cost: {
-      resources: { science: 2 },
+      resources: { science: 1 },
       check: ({ G }) => (G.deck.length === 0 ? { kind: 'emptyDrawPile' } : null),
     },
     effect: {

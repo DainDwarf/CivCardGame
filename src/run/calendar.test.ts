@@ -2,8 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { playCard, resolveInteraction } from './moves';
 import { blankState, instancesFromCardIds, type GameState } from '../rules';
 import { assertRunInvariants } from '../sim';
+import { CARDS } from '../content/cards';
 
-// Calendar is a real catalogue card (cost 2🔬): peek the top 3 of the draw pile, draw one, and leave
+/** Read off the catalogue, not copied from it: what these tests pin is that a play charges exactly
+ *  what the card asks and a refused play charges nothing, which a rebalance must not break. */
+const CALENDAR_PRICE = CARDS.calendar.cost.resources?.science ?? 0;
+
+// Calendar is a real catalogue card: peek the top 3 of the draw pile, draw one, and leave
 // the rest where they were. The generic suspend/resume machinery is pinned on a synthetic fixture in
 // `interaction.test.ts`; what's Calendar's own — and tested here — is the *deck* side: how deep the
 // peek reaches, and where the cards it passes over end up. Deck cards use synthetic ids ('a'…): the
@@ -11,7 +16,7 @@ import { assertRunInvariants } from '../sim';
 function freshWithCalendar(deck: string[]): GameState {
   const G = blankState('test');
   G.hand = instancesFromCardIds(['calendar']); // id 1
-  G.resources.science = 2;
+  G.resources.science = CALENDAR_PRICE;
   G.deck = instancesFromCardIds(deck, 10); // ids 10…
   return G;
 }
@@ -66,7 +71,7 @@ describe('Calendar (deck peek) — look at 3, draw 1', () => {
     // The emptyDrawPile gate rejects the play outright instead of parking a zero-option choice.
     expect(playCard(G, 0)).toBe('invalid');
     expect(G.hand.map((c) => c.cardId)).toEqual(['calendar']); // still in hand
-    expect(G.resources.science).toBe(2); // cost not paid
+    expect(G.resources.science).toBe(CALENDAR_PRICE); // cost not paid
     expect(G.pendingInteraction).toBeNull();
     expect(G.revealCount).toBe(0);
   });
