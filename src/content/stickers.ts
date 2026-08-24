@@ -131,7 +131,7 @@ export const STICKERS: Record<string, StickerDef> = {
     charges: 'needs 🎭 level 1 to play',
     appliesToLabel: 'Buildings and work that produce 🎭',
     icon: '✨',
-    cost: 4,
+    cost: 3,
     appliesTo: producerOf('culture'),
     applyGain: (base) => (base ? { ...base, culture: (base.culture ?? 0) + 1 } : base),
     // The sticker pays for itself in the resource it makes: it demands the culture level it then helps

@@ -58,7 +58,7 @@ export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
     name: 'Granary',
     gives: '+6 starting 🌾',
     icon: '🧺',
-    cost: 6,
+    cost: 4,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, food: b.resources.food + 6 } }),
   },
   stockpile: {
@@ -66,7 +66,7 @@ export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
     name: 'Stockpile',
     gives: '+6 starting 🔨',
     icon: '🪵',
-    cost: 6,
+    cost: 4,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, production: b.resources.production + 6 } }),
   },
   opulence: {
@@ -74,7 +74,7 @@ export const BOARD_STICKERS: Record<string, BoardStickerDef> = {
     name: 'Opulence',
     gives: '+10 starting 🪙',
     icon: '💎',
-    cost: 10,
+    cost: 6,
     applyToBoard: (b) => ({ ...b, resources: { ...b.resources, money: b.resources.money + 10 } }),
   },
 };
