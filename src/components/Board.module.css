@@ -1531,25 +1531,6 @@
   margin: 0 0 0.35rem;
 }
 
-.gameoverResult {
-  color: var(--text-secondary);
-  margin: 0 0 0.2rem;
-  font-size: 0.95rem;
-}
-
-.gameoverRound {
-  color: var(--text-faint);
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-.gameoverReward {
-  color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin: 0.35rem 0 0;
-}
-
 /* The run's payout, at full size — the one number the player is owed before leaving the run. What the
    clear *unlocked* is no longer named here at all: that is the meta menu's reveal
    (`meta/UnlockReveal.tsx`), which shows each one rather than listing it. */
@@ -1562,19 +1543,64 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The sealed teaser: unpressed wax and a line that names nothing. Its whole job is to say the menu is
-   worth returning to — so it renders only when the clear really did open something, and it withholds
-   what, down to which catalogue it came from. */
-.gameoverTeaser {
+/* Every summary closes on exactly one of these — the same box whatever the run did, so the outcome
+   line always lands in the same place and only the tint and the mark inside it change. */
+.gameoverInsert {
   display: flex;
   align-items: center;
-  justify-content: center;
+  /* Not centred: centring the mark+line pair as a unit slides the mark by ~90px between the shortest
+     and longest variant, which is the one thing that would stop the four reading as one component. */
+  justify-content: flex-start;
   gap: 0.7rem;
   margin: 1.15rem 0 0;
   padding: 0.6rem 0.9rem;
   border-radius: 10px;
-  border: 1px dashed rgb(var(--hint-gold-rgb) / 45%);
+  border: 1px dashed;
+}
+
+/* The sealed teaser: unpressed wax and a line that names nothing. Its whole job is to say the menu is
+   worth returning to — so it renders only when the clear really did open something, and it withholds
+   what, down to which catalogue it came from. */
+.insertTeaser {
+  border-color: rgb(var(--hint-gold-rgb) / 45%);
   background: rgb(var(--hint-gold-rgb) / 8%);
+}
+
+.insertWin {
+  border-color: rgb(var(--success-rgb) / 45%);
+  background: rgb(var(--success-rgb) / 8%);
+}
+
+.insertLoss {
+  border-color: rgb(var(--danger-rgb) / 45%);
+  background: rgb(var(--danger-rgb) / 8%);
+}
+
+/* Stands in the seal's footprint so a tinted insert and the sealed one keep one rhythm. Colour here
+   is redundant with the line beside it, which is what makes the tint safe under the CVD themes. */
+.insertMark {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.insertWin .insertMark {
+  background: rgb(var(--success-rgb) / 16%);
+  color: var(--success-text);
+}
+
+/* `--danger-text`, not `--danger-strong`: the strong red is a near-match for its own tinted disc in
+   Dark (2.8:1 measured), where the text red separates from it in every palette. */
+.insertLoss .insertMark {
+  background: rgb(var(--danger-rgb) / 16%);
+  color: var(--danger-text);
 }
 
 /* Wax poured and not yet pressed — the same lighting as the real seal (`StickerSeal.module.css`),
@@ -1599,14 +1625,23 @@
   border: 1px solid rgba(0, 0, 0, 0.25);
 }
 
-.teaserText {
+/* Left, not centred: a collapse message runs to three lines in this width and a centred ragged block
+   reads as decoration rather than as the thing that just happened. */
+.insertText {
+  text-align: left;
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-body);
 }
 
+/* The collapse messages are authored to trail the title ("Defeat — famine struck…"); boxed off on
+   their own they open a sentence, so lift the first letter here rather than re-cutting the copy. */
+.insertLoss .insertText::first-letter {
+  text-transform: uppercase;
+}
+
 /* The gap before the button row, held by the row itself rather than by whichever summary line happens
-   to render last — the teaser is a div, so a `p:last-of-type` rule would leave it out. */
+   to render last — the insert is a div, so a `p:last-of-type` rule would leave it out. */
 .gameoverBtns {
   display: flex;
   gap: 0.65rem;

@@ -2175,22 +2175,29 @@ export function Board({
           <div className={styles.gameoverPanel}>
             <h1 className={styles.gameoverTitle}>{won ? '🏛️ Victory' : '💀 Defeat'}</h1>
             <p className={styles.gameoverMission}>{mission.name}</p>
-            <p className={styles.gameoverResult}>{won ? 'Objective achieved.' : defeatMessage}</p>
-            <p className={styles.gameoverRound}>Reached round {G.round}</p>
-            {reward &&
-              (alreadyCompleted ? (
-                <p className={styles.gameoverReward}>Already cleared — no reward for a replay.</p>
-              ) : (
-                reward.influence > 0 && (
-                  <p className={styles.gameoverPayout}>
-                    +{reward.influence} <span aria-hidden="true">⭐</span> Influence
-                  </p>
-                )
-              ))}
-            {opensUnlocks && (
-              <div className={styles.gameoverTeaser}>
+            {reward && !alreadyCompleted && reward.influence > 0 && (
+              <p className={styles.gameoverPayout}>
+                +{reward.influence} <span aria-hidden="true">⭐</span> Influence
+              </p>
+            )}
+            {/* Exactly one insert closes the summary, and the three cases are exhaustive: the teaser
+                already implies `won`, so the win branch takes every other victory. */}
+            {opensUnlocks ? (
+              <div className={`${styles.gameoverInsert} ${styles.insertTeaser}`}>
                 <span className={styles.teaserSeal} aria-hidden="true" />
-                <span className={styles.teaserText}>New discoveries await</span>
+                <span className={styles.insertText}>New discoveries await</span>
+              </div>
+            ) : won ? (
+              <div className={`${styles.gameoverInsert} ${styles.insertWin}`}>
+                <span className={styles.insertMark} aria-hidden="true">✓</span>
+                <span className={styles.insertText}>
+                  {alreadyCompleted ? 'Already cleared — no reward for a replay.' : 'Objective achieved.'}
+                </span>
+              </div>
+            ) : (
+              <div className={`${styles.gameoverInsert} ${styles.insertLoss}`}>
+                <span className={styles.insertMark} aria-hidden="true">✕</span>
+                <span className={styles.insertText}>{defeatMessage}</span>
               </div>
             )}
             <div className={styles.gameoverBtns}>

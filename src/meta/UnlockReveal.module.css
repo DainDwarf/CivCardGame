@@ -250,19 +250,21 @@
   color: var(--text-on-scrim);
 }
 
+/* Size is deliberately *not* shared: Continue is the sequence's one act and Skip stays secondary, so
+   each states its own padding/font-size rather than inheriting one and overriding it. */
 .skipBtn,
 .continueBtn {
-  padding: 0.55rem 1.3rem;
   border: none;
   border-radius: 8px;
   font: inherit;
-  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.12s ease;
 }
 
 .skipBtn {
+  padding: 0.55rem 1.3rem;
+  font-size: 0.95rem;
   background: var(--btn-soft);
   color: var(--text-strong);
 }
@@ -274,6 +276,8 @@
 /* Ringed in the buyable-hint gold rather than filled with it: gold is the ⭐ currency's colour here,
    and a solid gold button would want a text colour no palette has for it. */
 .continueBtn {
+  padding: 0.85rem 2.2rem;
+  font-size: 1.15rem;
   background: var(--badge-bg);
   color: var(--text-on-accent);
   box-shadow: 0 0 0 3px rgb(var(--hint-gold-rgb) / 40%);

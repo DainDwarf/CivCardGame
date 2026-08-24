@@ -131,6 +131,7 @@
   --danger-text: #a00;           /* reject-toast text */
   --reject-bg: #fff0f0;
   --success: #2f7d3b;            /* victory / stat win */
+  --success-rgb: 47 125 59;      /* channel for success alpha overlays */
   --success-alt: #2e7d32;        /* positive delta */
   --success-text: #2a7a3d;       /* save-ok text */
   --loss: #a13030;               /* defeat / stat loss */
@@ -317,6 +318,7 @@
   --danger-text: #ff8a8a;
   --reject-bg: #3a1f1f;
   --success: #57b46e;
+  --success-rgb: 87 180 110;
   --success-alt: #57b45b;
   --success-text: #6fcf87;
   --loss: #e07575;
@@ -456,6 +458,7 @@
   --danger-text: #a04400;
   --reject-bg: #fbe9dc;
   --success: #009e73;
+  --success-rgb: 0 158 115;
   --success-alt: #00875f;
   --success-text: #00754f;
   --loss: #b34e00;
@@ -532,6 +535,7 @@
   --danger-text: #a85408;
   --reject-bg: #fce9dc;
   --success: #00ab80;
+  --success-rgb: 0 171 128;
   --success-alt: #00966d;
   --success-text: #007e5c;
   --loss: #c25e0a;

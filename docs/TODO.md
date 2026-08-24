@@ -299,7 +299,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Victory / gameover screens + the unlock reveal** ✅ — the end-of-run overlay's cramped
   `+N ⭐ · Unlocked X, Y` line is split in two. The run screen keeps the payout (full size, gold) and
-  gains only a sealed no-name teaser when the clear carries unlocks — `Board.tsx` no longer imports the
+  closes on exactly one tinted insert per outcome — a sealed no-name teaser in gold when the clear
+  carries unlocks, else the outcome line itself in a success or danger tint. `Board.tsx` no longer imports the
   sticker/board catalogues at all, so it *can't* leak a name. The celebration moved to the return into
   the meta menu: `meta/UnlockReveal.tsx`, an overlay running an Influence count-up (the nav ⭐ badge
   ticking in sync) then each unlock entering one at a time as its real widget — `CardFace`, `StickerSeal`
