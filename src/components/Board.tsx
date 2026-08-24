@@ -516,11 +516,15 @@ function BoardBox({
   // closure over the board leaves them with nothing to find, and its `dynamicText` is the only thing
   // that can describe it. A closure taking over from the staffable branch takes over its per-worker
   // scaling with it.
-  const flow =
+  const roundFlow =
     card.display?.dynamicText?.(G, inst) ??
     (staffable
       ? boxOutputLabels(card.produces?.resources, producingUnits(inst)).join(' ')
       : describeRoundFlow(card));
+  // A card whose whole behaviour is a claim on *other* cards' gains moves nothing per round of its
+  // own, so every reader above comes back empty and the box would stand blank. Its face text is the
+  // only statement of what standing there does, so the box borrows that.
+  const flow = roundFlow || card.display?.description || '';
   return (
     <div className={className} ref={boxRef} onPointerDown={onPointerDown} onClick={onZoomClick}>
       {cap > 0 && (

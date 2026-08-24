@@ -479,11 +479,10 @@ export const CARDS: Record<string, CardDef> = {
   },
   // The martial boards' standing perks (`boards.ts`'s `prebuilt`) rather than cards anyone draws or
   //   buys: neither produces anything itself, and both pay only through what the rest of the board
-  //   takes. The spoils scale with the land, so a bigger seizure is worth proportionally more and each
-  //   face's "each 🏞️" reads literally.
+  //   takes. The spoils scale with the land, so a bigger seizure is worth proportionally more.
   raider_camp: {
     id: 'raider_camp', name: 'Raider Camp', kind: 'building', cost: {}, workers: 0,
-    display: { art: '🏕️', description: 'Each 🏞️ you take:\n+4🌾' },
+    display: { art: '🏕️', description: 'On 🏞️ gain: +4🌾' },
     modifyGain: (base) => {
       const taken = base?.territory ?? 0;
       if (!base || taken <= 0) return base;
@@ -492,7 +491,7 @@ export const CARDS: Record<string, CardDef> = {
   },
   war_camp: {
     id: 'war_camp', name: 'War Camp', kind: 'building', cost: {}, workers: 0,
-    display: { art: '⛺', description: 'Each 🏞️ you take:\n+8🌾 +2🪙' },
+    display: { art: '⛺', description: 'On 🏞️ gain: +8🌾 +2🪙' },
     modifyGain: (base) => {
       const taken = base?.territory ?? 0;
       if (!base || taken <= 0) return base;
