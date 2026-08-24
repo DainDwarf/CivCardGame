@@ -22,7 +22,12 @@ type StickerSealProps = {
    *  A one-shot on mount; there is nothing to turn back off. */
   entering?: boolean;
 } & (
-  | { locked: true }
+  | {
+      locked: true;
+      /** Named even locked — the same deliberate sliver `CardFace`'s `missionLocked` and
+       *  `BoardMini`'s locked silhouette show. The bargain is the part withheld. */
+      name: string;
+    }
   | {
       locked?: false;
       icon: string;
@@ -87,18 +92,12 @@ export function StickerSeal(props: StickerSealProps) {
     return (
       <div className={`${root} ${styles.locked}`}>
         <div className={`${styles.seal} ${styles.sealBlank}`}>
-          <div className={styles.face} />
+          <div className={styles.face} aria-hidden="true">
+            ?
+          </div>
         </div>
         <div className={styles.plaque}>
-          <div className={styles.name}>Sealed</div>
-        </div>
-        <div className={styles.ledger}>
-          <div className={`${styles.row} ${styles.rowNone}`}>
-            <span className={styles.mark} aria-hidden="true">
-              ?
-            </span>
-            <span>Revealed on first clear</span>
-          </div>
+          <div className={styles.name}>{props.name}</div>
         </div>
       </div>
     );

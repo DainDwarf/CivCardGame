@@ -59,8 +59,9 @@
   box-shadow: inset 0 0.08em 0.16em rgba(0, 0, 0, 0.28);
 }
 
-/* Locked: wax poured but never pressed — no device, no name, no ledger, and the same silhouette for
-   a card and a board sticker, so the shape gives away neither the sticker nor its catalogue. */
+/* Locked: wax poured but never pressed, so the disc carries a bare "?" where the device would be —
+   the same silhouette for a card and a board sticker, giving away neither the bargain nor which
+   catalogue it comes from. */
 .sealBlank {
   background: var(--map-node-locked);
   border: 1px solid var(--map-node-locked-border);
@@ -71,6 +72,8 @@
   background: var(--map-node-locked);
   border-color: var(--map-node-locked-border);
   box-shadow: none;
+  color: var(--text-faint);
+  font-weight: 800;
 }
 
 /* The seal doubles as a buy surface's drag handle, ringed in the same buyable-hint gold the meta

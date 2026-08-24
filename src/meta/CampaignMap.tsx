@@ -572,14 +572,14 @@ function MissionFlowPopup({
                       )}
                       {unlockStickers.length > 0 && (
                         <div className={styles.rewardStickers}>
-                          {unlockStickers.map(({ key, ...s }, i) =>
-                            // Pre-clear: an unpressed blank — the sticker itself is the surprise, so
-                            // nothing about it is revealed until the mission is cleared, not even
-                            // which of the two catalogues it comes from.
+                          {unlockStickers.map(({ key, ...s }) =>
+                            // Pre-clear: an unpressed blank carrying the name alone, like the locked
+                            // card and board previews beside it — the bargain is the surprise, and the
+                            // blank gives away neither it nor which of the two catalogues it comes from.
                             alreadyCleared ? (
                               <StickerSeal key={key} scale="inline" {...s} />
                             ) : (
-                              <StickerSeal key={i} scale="inline" locked />
+                              <StickerSeal key={key} scale="inline" locked name={s.name} />
                             ),
                           )}
                         </div>

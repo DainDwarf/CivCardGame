@@ -538,8 +538,10 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   leaks before the unlock), `StickerSeal.tsx` (the same for a single sticker, serving **both**
   catalogues off plain string props — a pressed wax seal beside a plaque carrying the name and the
   `appliesToLabel` rule, with a ▲/▼ ledger of `gives` against `charges` stacked under both, at
-  `panel`/`inline`/`hero` scale; its `locked` blank is one silhouette for a card and a board sticker
-  alike, so the shape leaks neither the sticker nor which catalogue it comes from. In a buy tray it
+  `panel`/`inline`/`hero` scale; its `locked` blank keeps the name and a `?`-stamped disc and withholds
+  the bargain — one silhouette for a card and a board sticker alike, so it leaks neither what the
+  sticker does nor which catalogue it comes from, matching `CardFace`'s `missionLocked` and
+  `BoardMini`'s locked board. In a buy tray it
   is also the merchandise: the ⭐ price strikes the seal's corner and the wax disc *is* the
   drag handle, lifted as a bare `StickerSealMark` clone for the gesture), and `BoardLeftColumn` (the mission's `G.objective` card pinned in
   `.objectiveCorner` above a scrolling `.threatZone` of `G.threats` — all `CardFace`s reading only
