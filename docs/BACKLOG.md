@@ -41,11 +41,12 @@
     `rites_rituals` and `restless_people` gave way to *The First Trades* (🪙) and *Harsh Winter* (famine
     threat), inverting each branch to **pressure-first**, and **Rites & Rituals** came back as the
     culture node on the reconvergence — re-pointing `first_temple`'s prereqs, shifting every mission
-    behind it one column right, and granting the **Elegant** sticker. Every mission in the age is
-    designed, implemented and balanced; **Polish is the one stage left** across the arc, and the four
-    re-rated originals (First Settlement · Growing Numbers · Raiders · Reading the Seasons) are in the
-    same position. Step 9's substeps below are written against the old arc and are stale for
-    **9.3 / 9.5 / 9.6**; **9.6b** is the culture node's lesson.
+    behind it one column right, and granting the **Elegant** sticker. **All four stages are now done
+    across the arc** — the polish pass walked every mission in play order, correcting lore voice, card
+    and objective text, the territory glyph, and the two blanks the pass turned up (a locked sticker
+    that withheld even its name, a pre-built camp whose slot said nothing). Step 9's substeps below are
+    written against the old arc and are stale for **9.3 / 9.5 / 9.6**; **9.6b** is the culture node's
+    lesson.
 
 - **Step 7 — Bronze Age arc** (content expansion) — new cards + missions themed to the Bronze
   Age, **no new mechanics**. Continues unlocking cards/stickers/boards through mission rewards.
@@ -284,7 +285,9 @@
 
 > **Cross-cutting (not a step):** the Influence economy — shop tier + sticker prices — is
 > tuned to the *old* content and must be re-tuned as new content lands, running *through*
-> Steps 5–7, simulator-informed, not as a one-shot.
+> Steps 5–7, simulator-informed, not as a one-shot. The sticker half took a pass with the Stone
+> polish: the board tray now reads 4/4/6 against card stickers at 3/3/5/5/5, priced against what the
+> faucet has actually delivered by the mission that unlocks each. The shop-tier half is untouched.
 >
 > **Cross-cutting (not a step):** the sim scorer's knobs (`RACE` in `src/sim/race.ts`, e.g. the
 > softMax fraction) were tuned against the standing baseline set of their day. After each age arc
