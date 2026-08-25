@@ -70,7 +70,7 @@
   | Mission | Dsn | Impl | Bal | Pol | Dossier |
   |---|:-:|:-:|:-:|:-:|---|
   | Copper | ✅ | ✅ | ✅ | ⬜ | [copper](missions/copper.md) |
-  | Masonry | ✅ | ✅ | 🟡 | ⬜ | [masonry](missions/masonry.md) |
+  | Masonry | ✅ | ✅ | ✅ | ⬜ | [masonry](missions/masonry.md) |
   | Pyramid *(leaf)* | ✅ | ✅ | 🟡 | ⬜ | [pyramid](missions/pyramid.md) |
   | Accounting | ✅ | ✅ | ✅ | ⬜ | [accounting](missions/accounting.md) |
   | Writing | ✅ | ✅ | ✅ | ⬜ | [writing](missions/writing.md) |
@@ -98,7 +98,7 @@
   more than double the 7-mission Stone Age, all remixing existing mechanics. So author it in **order**,
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see [`missions/copper.md`](missions/copper.md)).
-  2. **Masonry** — implemented; **balance reopened** by the beta playtest on the Hut/House reward supersession, not on win rate (see [`missions/masonry.md`](missions/masonry.md)). Optional **Pyramid** leaf — implemented; **balance
+  2. **Masonry** — DONE, balance included (see [`missions/masonry.md`](missions/masonry.md)). Optional **Pyramid** leaf — implemented; **balance
      reopened** by the stream session on how far the two boards diverge, and on the wonder it rewards
      (see [`missions/pyramid.md`](missions/pyramid.md)).
   3. **Accounting** — DONE, balance included (see [`missions/accounting.md`](missions/accounting.md)). **Writing** — DONE,
@@ -268,12 +268,12 @@
 > structural fact, not a difficulty curve: **Masonry is the first mission in the campaign that requires
 > using the shop.** Every Stone mission is clearable with ×1 of each granted card — that is deliberate
 > (no Influence can be ground before `ice_age`), and the fixtures show it: `first_temple.json` is
-> everything ×1, exactly what a player owns on clearing. `masonry.json` carries hut ×4 and 2 Irrigation.
-> Masonry asks for 6🧍, Settlement starts at 2🧍, the only population source that exists there is the
-> Hut (+1, and a mission unlock grants exactly **one** copy) — so the goal is unreachable until three
+> everything ×1, exactly what a player owns on clearing. `masonry.json` carries hut ×3 and 2 Irrigation.
+> Masonry asks for 5🧍, Settlement starts at 2🧍, the only population source that exists there is the
+> Hut (+1, and a mission unlock grants exactly **one** copy) — so the goal is unreachable until two
 > more copies are *bought*, an action nothing upstream has ever asked for.
 >
-> **This is a knowledge gap, not a currency gap:** the ≈14⭐ bill sits well inside the 30⭐ the faucet
+> **This is a knowledge gap, not a currency gap:** the ≈12⭐ bill sits well inside the 30⭐ the faucet
 > has delivered by Masonry, so raising Influence rewards would do nothing.
 >
 > **No fixture measures what a player actually holds on arriving**, which is why Masonry reads

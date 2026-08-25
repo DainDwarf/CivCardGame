@@ -7,7 +7,7 @@ answer the question that actually matters for balancing missions across the camp
 meta-progression (bought card copies, stickers, board choice) does a mission demand, and does the
 campaign hand the player enough Influence to afford it by the time the mission unlocks?**
 
-Masonry is the trigger case — "reach 6 🧍 population" is unwinnable without buying enough Hut copies
+Masonry is the trigger case — "reach 5 🧍 population" is unwinnable without buying enough Hut copies
 (and the food/territory to support them), so its difficulty lives half in the run loop and half in the
 shop. But the need is **general**: the campaign is planned to span 9+ ages (`docs/IDEAS.md`), old cards
 stay legal but semantically obsolesce (House is a strictly-better Hut yet never removes it), and the

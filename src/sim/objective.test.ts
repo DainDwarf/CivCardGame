@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { objectiveProgress, hasObjectiveGradient } from './objective';
 import { blankState, seedObjective, cultureForLevel, type GameState } from '../rules';
 import { installFixtures, uninstallFixtures } from '../rules/testFixtures';
-import { GROWING_NUMBERS_TERRITORY } from '../content/cards';
+import { CARDS, GROWING_NUMBERS_TERRITORY } from '../content/cards';
 
 /** A zeroed state carrying the given objective card, tweaked per case. */
 function withObjective(cardId: string, mut: (G: GameState) => void = () => {}): GameState {
@@ -158,6 +158,6 @@ describe('objectiveProgress (sim-local goal gradient)', () => {
         G.resources.territory = territory;
       }));
     expect(mas(3, 5)).toBe(mas(3, 0));
-    expect(mas(6, 0)).toBe(1);
+    expect(mas(CARDS.masonry_goal.goals![0].target, 0)).toBe(1);
   });
 });

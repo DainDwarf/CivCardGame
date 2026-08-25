@@ -47,10 +47,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   payment is pending. Fire is the **only** card with a discard cost today, but `discard` is a first-class
   `CardCost` field, so hang this off `cost.ts`'s `discardCount` choke point — any play that sacrifices
   cards enters the mode — never a Fire branch.
-- **Sticker drag: valid-target outline missing on cards** `[size: S]` — *(beta playtest)* dragging a
-  sticker badge onto a copy in `CardInstancePanel` highlights nothing, so there's no read on what the
-  drop would accept. `BoardMenu`'s board drag does highlight via `isValidTarget`; check whether that path
-  is shared or panel-local before fixing. Suspected **regression**, not a missing feature.
 - **Deck Copy button goes unseen** `[size: S]` — *(beta playtest)* a first-time player missed Copy
   entirely on the deck tile (`DeckDisplay.tsx`'s `DeckTile`) — it reads as one of three same-weight
   buttons beside Edit/Delete. Wants a distinct accent, or a different affordance altogether.

@@ -323,7 +323,7 @@ export const MISSIONS: Record<string, MissionDef> = {
       'the courses true, and a village becomes a city.',
     prereqs: ['first_temple'],
     objectiveCardId: 'masonry_goal',
-    victoryHint: 'Grow your civilization to 6 🧍 population.',
+    victoryHint: 'Grow your civilization to 5 🧍 population.',
     failureHint: null,
     kind: 'standard',
     // Opens the Bronze government: City Walls (a standing garrison), the House (a bigger population

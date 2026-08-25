@@ -985,8 +985,8 @@ export const CARDS: Record<string, CardDef> = {
   // Masonry's megalopolis goal: a single population threshold — grow the settlement into a city.
   masonry_goal: {
     id: 'masonry_goal', name: 'Masonry', kind: 'objective', cost: {},
-    goals: [{ icon: '🧍', measure: (G) => G.resources.population, target: 6 }],
-    display: { description: 'Reach 6 🧍 population' },
+    goals: [{ icon: '🧍', measure: (G) => G.resources.population, target: 5 }],
+    display: { description: 'Reach 5 🧍 population' },
   },
 
   // Accounting's ledger goal: a single money threshold. The fight isn't the number — it's holding it
