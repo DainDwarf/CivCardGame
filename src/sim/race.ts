@@ -23,7 +23,7 @@ import {
 import { isDurableProducer, isStructure, type CardDef } from '../content/cards';
 import {
   cardPrice, foldedGain, grantDelta, outputDelta, positive, presenceDelta, producedGain, replacementCost,
-  runCardIds, selfExiles,
+  runCardIds, selfRemoves,
 } from './probes';
 import { DEFAULT_MAX_ROUNDS } from './simulate';
 
@@ -199,7 +199,7 @@ export interface RaceModel {
 }
 
 /** The two ways a card takes a drain off a pool: standing a producer whose output feeds it, or playing a
- *  circulating `event` to exile the copy and the recurring disaster it keeps dealing. */
+ *  circulating `event` to remove the copy and the recurring disaster it keeps dealing. */
 export type RescueKind = 'producer' | 'defusal';
 
 /**
@@ -1095,7 +1095,7 @@ export function landingClock(payment: number, delivery: number, weightsOut?: num
  * a distance travelled, and cannot be one: a rate that moved when a card crossed between them would price
  * every play by how many cards it shifted.
  *
- * Circulation changes when a card really enters or leaves it — exiled to `removed`, spent by a landing, or
+ * Circulation changes when a card really enters or leaves it — sent to `removed`, spent by a landing, or
  * standing on the board for the rest of the run — and the clock moves with it, since the draws that remain
  * really are that much richer in what the plan needs. What shortens a **recycling** plan's clock instead is
  * `copies`: the box's output moved `need`, and the copies still owed fall with it.
@@ -1563,7 +1563,7 @@ function probeRoute(
  *
  * - a **producer** whose standing output feeds the pool, read off the very copy the route would be played
  *   with, priced as a building plan is (its slot included) plus the citizen it stands to run;
- * - a **defusal** — playing a circulating `event` exiles the copy to `removed`, and the recurring disaster
+ * - a **defusal** — playing a circulating `event` sends the copy to `removed`, and the recurring disaster
  *   the pool drains charge it for goes with it.
  *
  * The second is what reaches a pool through a currency nothing drains: a defusal's price is quoted in a pool
@@ -1662,7 +1662,7 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
   const cards = Object.values(CARDS).filter((c) => ids.has(c.id));
   // A fact about the card, not about any goal, so it is read once rather than per goal below — and only
   // where it can be false at all: a kind with no discard filing recycles nothing whatever its effect does.
-  const exiles = new Set(cards.filter((c) => c.kind === 'action' && selfExiles(G, c)).map((c) => c.id));
+  const removesSelf = new Set(cards.filter((c) => c.kind === 'action' && selfRemoves(G, c)).map((c) => c.id));
   const explained: GoalPlanExplain[] = [];
   const plans = objectiveGoals(G).map((goal) => {
     const need = Math.max(0, goal.target - goal.measure(banked));
@@ -1722,9 +1722,9 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
       };
       if (delta > 0) {
         // Where the delta is what the play *added*, the copy files where its kind sends it and the two that
-        // file to the discard are dealt again — bar an action whose own effect exiled it first. Where the
+        // file to the discard are dealt again — bar an action whose own effect removed it first. Where the
         // delta is the copy *standing* somewhere counted, it is spent standing there whatever its kind.
-        const recycles = played >= standing && (work || (card.kind === 'action' && !exiles.has(card.id)));
+        const recycles = played >= standing && (work || (card.kind === 'action' && !removesSelf.has(card.id)));
         // A second copy that buys nothing is a ceiling rather than a rate, and a goal past it is reachable
         // only alongside another card. Probed only on the standing half, the played one summing by construction.
         const cap = played >= standing || presenceDelta(probe, card, goal.measure, 2) >= 2 * standing

@@ -566,7 +566,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'bow', name: 'Bow', kind: 'action', cost: { resources: { production: 2 } },
     // The "single use" note is the face's heads-up for the self-removal below — kept in step with it.
     display: { art: '🏹', note: 'single use' },
-    // A one-shot: grant the military (declarative, folded first) then exile this copy to `removed`
+    // A one-shot: grant the military (declarative, folded first) then send this copy to `removed`
     // so it never recycles back into the deck. The play choke point skips its usual action→discard
     // file once the effect has already filed the copy (see `moves.ts`'s `playCard`).
     effect: { resources: { military: 3 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
@@ -722,12 +722,12 @@ export const CARDS: Record<string, CardDef> = {
       },
     },
   },
-  // Paying the cost *is* mining the vein: the play choke point exiles a played event to `removed`, which
+  // Paying the cost *is* mining the vein: the play choke point sends a played event to `removed`, which
   // is what `finding_copper_goal` counts, so no effect is needed. No `upkeep` either — unlike Raiders,
   // an unmined vein is not a disaster, it just waits (filing to discard and recurring). The mission's
   // pressure lives on its threat instead.
   copper_vein: { id: 'copper_vein', name: 'Copper Vein', kind: 'event', cost: { resources: { production: 2, science: 5 } }, display: { art: '⛏️' } },
-  // Roadwork: paving a segment (paying its 🔨) exiles the played event to `removed`, which `roads_goal`
+  // Roadwork: paving a segment (paying its 🔨) sends the played event to `removed`, which `roads_goal`
   //   counts. Unlike the copper vein, a segment left in hand *is* a disaster — an unfinished road cuts a
   //   settlement off, bleeding a flat 🌾 each round it goes unpaved (no per-instance escalation, unlike
   //   the clay tablet). The events are the whole pressure, so the mission seeds no threat.
@@ -736,7 +736,7 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🚧', description: '−2 🌾 at end of round while unpaved' },
     upkeep: { resources: { food: -2 } },
   },
-  // Wild Horse: paying the ⚔️ *is* taming it — the play choke exiles the played event to `removed`,
+  // Wild Horse: paying the ⚔️ *is* taming it — the play choke sends the played event to `removed`,
   //   which `horse_taming_goal` counts, so no effect is needed. Left in hand it eats into the season's
   //   labour (a flat 🔨, like the roadwork's 🌾) and recurs; the drain is a *different* currency than the
   //   ⚔️ tame cost, so passing a horse up is a real trade rather than deferred change.
@@ -745,7 +745,7 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🐎', description: '−1 🔨 at end of round while untamed' },
     upkeep: { resources: { production: -1 } },
   },
-  // Stronghold: cracking it is playing it — the ⚔️ buys the walls down, the play choke exiles it to
+  // Stronghold: cracking it is playing it — the ⚔️ buys the walls down, the play choke sends it to
   //   `removed` (what `raiding_goal` counts), and the effect hands the plunder. Held unplayed at end of
   //   round its one upkeep does both halves of the pressure: the garrison rides out for 🪙, and the
   //   walls go up — one `walls` counter both that drain and its own cost read back, so a target hardens
@@ -775,7 +775,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     },
   },
-  // Voyage: outfitting the hull and provisioning it *is* the launch — the play choke exiles the played
+  // Voyage: outfitting the hull and provisioning it *is* the launch — the play choke sends the played
   //   event to `removed`, which `setting_sail_goal` counts. The crew is the other half of the price:
   //   population is not a payable `cost.resources` field (that half is spent blind, past the staffing
   //   that gates the pool), so the citizen leaves through `effect` with a `check` standing in for the
@@ -791,7 +791,7 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '⛵', description: 'Sails with 1 idle 🧍, for good' },
     effect: { resources: { population: -1 } },
   },
-  // Casting Trial: pouring the alloy *is* playing it — the play choke exiles it to `removed`, which
+  // Casting Trial: pouring the alloy *is* playing it — the play choke sends it to `removed`, which
   //   `bronze_goal` counts. Its `check` is the mission teaching the tin gate one node before the
   //   tin-gated rewards land: a trial drawn before any route opens is unplayable by rule, so its 🔨
   //   bleed is partly unavoidable.
@@ -801,7 +801,7 @@ export const CARDS: Record<string, CardDef> = {
     display: { art: '🫗', description: '−2 🔨 at end of round while unpoured', note: 'needs a 🏝️ route' },
     upkeep: { resources: { production: -2 } },
   },
-  // Sea Raid: repelling a wave is playing it — the ⚔️ buys the beach back and the play choke exiles it
+  // Sea Raid: repelling a wave is playing it — the ⚔️ buys the beach back and the play choke sends it
   //   to `removed`, which `sea_peoples_goal` counts. The price climbs off that same tally (`raidLadder`),
   //   so a host that answered the last wave is short for the next. Its `check` is the arc's tin gate at
   //   its sharpest: the raid that cuts the lane is the reason there is no bronze to meet the one behind
@@ -842,7 +842,7 @@ export const CARDS: Record<string, CardDef> = {
     upkeep: RAID_LANDING,
   },
   // Return of the Ice Age's cold front: outlasting one is playing it — the 🔨 is fuel and stores burnt to
-  //   hold the hearths through the front, and the play choke exiles it to `removed`, which
+  //   hold the hearths through the front, and the play choke sends it to `removed`, which
   //   `ice_age_goal` counts. The price climbs off that same tally, so each front costs more to sit out
   //   than the one before. Left in hand it takes the difference out of the granary instead.
   cold_snap: {
@@ -866,7 +866,7 @@ export const CARDS: Record<string, CardDef> = {
   },
   // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
-  //   discard); paid off with ⚔️ (catching it) the play choke exiles it to `removed` for good. Costs and
+  //   discard); paid off with ⚔️ (catching it) the play choke sends it to `removed` for good. Costs and
   //   drain provisional (balance pending).
   thief: {
     id: 'thief', name: 'Thief', kind: 'event', cost: { resources: { military: 2 } },
@@ -1030,7 +1030,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     ],
     display: {
-      description: `Mine all ${COPPER_VEINS} copper veins`,
+      description: `Play all ${COPPER_VEINS} copper veins`,
       dynamicText: (G) =>
         `⛏️ ${Math.min(G.removed.filter((c) => c.cardId === 'copper_vein').length, COPPER_VEINS)}/${COPPER_VEINS} mined`,
     },
@@ -1246,11 +1246,11 @@ export const CARDS: Record<string, CardDef> = {
   //   with the workers staffed on the *tableau only* — work cards are exempt, taxing permanent
   //   infrastructure rather than labour. `assignedWorkers` (not `producingUnits`) is the right read: a
   //   self-sufficient `workers: 0` building like Hut staffs nobody and so wears nothing.
-  failing_stone_tools: {
-    id: 'failing_stone_tools', name: 'Failing Stone Tools', kind: 'threat', cost: {},
+  failing_tools: {
+    id: 'failing_tools', name: 'Failing Tools', kind: 'threat', cost: {},
     display: {
       art: '💥',
-      description: '−1🔨 per worker in a building',
+      description: '−1🔨 per 🧍 in a building',
       dynamicText: (G) => `−${assignedWorkers(G.tableau)}🔨 next round`,
     },
     upkeep: {

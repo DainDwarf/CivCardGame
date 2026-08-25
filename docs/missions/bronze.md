@@ -12,7 +12,7 @@ col 10, rows −1/0/+1).
 
 ## Design ✅ (converged)
 
-- **Goal:** master all **4 Casting Trial events** (**4🪙+6🔬** each; playing one exiles it to `removed`,
+- **Goal:** master all **4 Casting Trial events** (**4🪙+6🔬** each; playing one sends it to `removed`,
   which the goal counts — the Copper/Roads seeded-completion pattern, tied to the objective threshold
   by a shared const). The pour is bought in **money and knowledge**, not in labour: tin is a thing that
   comes off the islands at a price, and the age's throughline is the money economy.

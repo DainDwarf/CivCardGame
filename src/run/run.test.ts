@@ -178,7 +178,7 @@ describe('run loop (headless integration)', () => {
     client.stop();
   });
 
-  it('an event sitting in hand can be played — its upkeep disaster is pre-empted and it is banished to removed', () => {
+  it('an event sitting in hand can be played — its upkeep disaster is pre-empted and it is sent to removed', () => {
     const client = start('test');
     client.getState().G.resources.military = 10;
     client.getState().G.hand.push({ id: 999, cardId: 'test_event' });

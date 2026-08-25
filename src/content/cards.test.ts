@@ -137,7 +137,7 @@ describe('CARDS', () => {
     }
   });
 
-  // The "Raiders at the Border" win: playing a raider event banishes it to `removed` (the only
+  // The "Raiders at the Border" win: playing a raider event sends it to `removed` (the only
   // path a raider reaches that pile), so the objective is met exactly once RAIDER_WAVES of them sit
   // there — verified through the goal-derived `objectiveMet`, the one check that pins the win
   // end-to-end without a playthrough.
@@ -154,7 +154,7 @@ describe('CARDS', () => {
   });
 
   // The "Finding Copper" win, same shape as the raiders one above: mining a vein is playing it, which
-  // banishes it to `removed` (the only path a vein reaches that pile).
+  // sends it to `removed` (the only path a vein reaches that pile).
   it('finding_copper_goal is met at COPPER_VEINS veins in removed, not one short', () => {
     const withVeins = (n: number) => {
       const G = blankState('finding_copper');
@@ -168,7 +168,7 @@ describe('CARDS', () => {
   });
 
   // The "The Sea Peoples" win, the raiders/copper shape once more: repelling a wave is playing it,
-  // which banishes it to `removed` — an unrepelled one files to the *discard* and comes round again, so
+  // which sends it to `removed` — an unrepelled one files to the *discard* and comes round again, so
   // that pile is the only tally of waves actually thrown back.
   it('sea_peoples_goal is met at INVASION_WAVES raids in removed, not one short', () => {
     const withRepelled = (n: number) => {
@@ -311,15 +311,15 @@ describe('sea_raid left unrepelled', () => {
   });
 });
 
-// Failing Stone Tools drains 🔨 per worker staffed *in a building* — the buildings-only rule is the
+// Failing Tools drains 🔨 per worker staffed *in a building* — the buildings-only rule is the
 // whole identity of the threat, so it's pinned here against the real catalogue rather than a fixture.
 // Each case ticks the threat via the `endTurn` broadcast, the same path a real round uses. The staffed
 // cards are chosen to produce anything *but* production (Farm → 🌾, Sun Stone → 🎭, Foraging → 🌾), so the
 // asserted 🔨 delta is the drain alone and not a producer's output netted against it.
-describe('failing_stone_tools', () => {
+describe('failing_tools', () => {
   const tick = (G: ReturnType<typeof blankState>) => {
     G.resources.production = 10;
-    G.threats = [{ id: 99, cardId: 'failing_stone_tools' }];
+    G.threats = [{ id: 99, cardId: 'failing_tools' }];
     dispatchEvent(G, { type: 'endTurn' });
     return G.resources.production;
   };

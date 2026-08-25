@@ -203,7 +203,7 @@ export function replacementCost(G: GameState, ids: Set<string>): Partial<Record<
 
 /** By **standing in a zone**: `copies` synthetic copies injected into each zone the card *stays* in, so a
  *  measure that counts cards registers them. `removed` is not filtered by kind, since any card may
- *  self-exile through its `resolve`; the two standing zones are, because `run/moves.ts`'s `playCard` is
+ *  self-removal through its `resolve`; the two standing zones are, because `run/moves.ts`'s `playCard` is
  *  their only writer and routes by kind — probing a card into a zone it can never reach would credit a step
  *  that has no path to happen.
  *
@@ -236,12 +236,12 @@ export function presenceDelta(
 
 /** Whether playing a card files its own copy to `removed` rather than back into circulation — the one thing
  *  `CardKind` does not settle, since `run/moves.ts`'s action→discard filing is skipped for a copy whose own
- *  `resolve` already exiled it. Run rather than read: a closure states its filing by doing it.
+ *  `resolve` already removed it. Run rather than read: a closure states its filing by doing it.
  *
  *  The clone absorbs everything the effect does; a resolver that suspends into a `pendingInteraction` parks
  *  it there and is answered by nobody, which is exactly the read wanted — an unanswered effect files
  *  nothing. */
-export function selfExiles(G: GameState, card: CardDef): boolean {
+export function selfRemoves(G: GameState, card: CardDef): boolean {
   if (!card.effect?.resolve) return false;
   const probe = cloneState(G);
   resolveCard({ G: probe, self: { id: -1, cardId: card.id } });

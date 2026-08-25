@@ -151,7 +151,7 @@ describe('playCard: cards vs. buildings', () => {
     expect(G.discard).toEqual([]); // work cards file to discard only at end of turn
   });
 
-  it('a played event pre-empts its upkeep disaster and is banished to removed', () => {
+  it('a played event pre-empts its upkeep disaster and is sent to removed', () => {
     const G = blankState('test');
     G.hand = instancesFromCardIds(['test_event']);
     G.resources.military = 10;
@@ -185,7 +185,7 @@ describe('playCard: cards vs. buildings', () => {
     }
   });
 
-  it('a single-use action that exiles itself is removed, not discarded (Bow), and its gain still applies', () => {
+  it('a single-use action that removes itself is removed, not discarded (Bow), and its gain still applies', () => {
     // A self-removing action, like the shipped Bow: its `effect` grants a resource then pushes its own
     // copy to `removed`, and the play choke point must *not* also file it to discard (double-filing
     // would put one instance in two zones). The declarative gain still folds in first.
@@ -202,7 +202,7 @@ describe('playCard: cards vs. buildings', () => {
       G.resources.science = 1; // test_action's cost, to prove a normal action still discards
       play(G, 'single_use');
       expect(G.resources.military).toBe(3); // the gain applied
-      expect(G.removed.map((c) => c.id)).toEqual([1]); // exiled, once
+      expect(G.removed.map((c) => c.id)).toEqual([1]); // removed, once
       expect(G.discard).toEqual([]); // not double-filed to discard
       play(G, 'test_action'); // a normal action still recycles to discard
       expect(G.discard.map((c) => c.cardId)).toEqual(['test_action']);

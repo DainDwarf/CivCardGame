@@ -28,7 +28,7 @@ This node is the **ships**: outfitting and launching the voyages that open the c
 ## Goal ✅
 
 **Seeded completion, priced in 🪙.** N seeded `voyage` `event` cards; launching one means *playing* it,
-paying its **🪙 + 🔨** outfitting cost (a hull and a season's provisions) → exiled to `removed`, which
+paying its **🪙 + 🔨** outfitting cost (a hull and a season's provisions) → sent to `removed`, which
 the goal counts — the Copper / Writing / Roads seeded-completion pattern. Money can't be hoarded into
 the win; it has to be converted.
 

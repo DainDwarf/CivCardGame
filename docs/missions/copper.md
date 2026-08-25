@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the age's opening mission.
 **Placement:** `prereqs: ['first_temple']`, bronze col 5.
 **Reward influence:** standard Bronze node.
@@ -11,7 +11,7 @@
 ## Design ✅ (converged)
 
 - **Goal:** mine all 3 copper-vein events (2🔨+5🔬 each, played → `removed`).
-- **Pressure:** the **Failing Stone Tools** threat — −1🔨 per round per worker staffed *in a building*;
+- **Pressure:** the **Failing Tools** threat — −1🔨 per round per worker staffed *in a building*;
   work cards exempt.
 - **Reward:** unlocks the **Forge** (building, 3🔨, 2🔨/worker — deliberately obsoletes Toolmaking).
 
@@ -52,6 +52,22 @@ permanent infrastructure, and the route is the most permanent thing in the pool.
   reach it. It is measured downstream on [writing](writing.md)'s cell, the earliest swept one that
   stocks it: the single copy is played in 98 of 100 planner runs, 31 of 100 greedy, and 10 of 10 oracle.
 
-## Polish ⬜ (not started)
+## Polish ✅ (done)
 
-- Nothing yet — card display/text, art, lore.
+- **Lore rewritten.** The old text opened on the temple and put the discovery in the elders' mouths.
+  Copper is across an **age gap** from the Stone capstone, so the hand-off was dropped, and the find is
+  now a diggers' report rather than a legend — the middle line teaches why copper matters (it spreads
+  under the hammer where flint shatters) without promising an advance.
+- **Objective and hints.** The goal card reads *"Play all 3 copper veins"* — the veins are events, and
+  *mine* named an action the player has no verb for. The victory hint drops the per-vein price, which
+  the vein card itself prints.
+- **The threat is `failing_tools`** (name and id), down from *Failing Stone Tools* — the material is
+  already the mission's subject. Its face reads `−1🔨 per 🧍 in a building`.
+- **`banish`/`exile` are gone from the vocabulary**, run-loop-wide: a card **goes to `removed`**, a play
+  **sends** it there, a single-use action **removes itself**. The face band now reads
+  *"play to remove · resolves at end of round"*. Prompted here, but it swept every mission's card text,
+  the two docs, the internal comments and `probes.ts`'s `selfExiles` → `selfRemoves`.
+- **`CardFace`'s empty-effect fallback is "No effect"**, not the literal `action`. Copper Vein is the
+  card that hits it — an event that is pure cost, with no `effect`/`produces`/`upkeep` at all. Browser
+  check: the conditions strip and the text band stack flush, nothing clips (`.cardText` sits 0.8px past
+  the root's bottom edge, invisible at 4×).

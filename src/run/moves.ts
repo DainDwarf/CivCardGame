@@ -68,9 +68,9 @@ export function playCard(
   // at end of turn) and trade cards (standing in the trade zone) stay put. An `action` recycles to the
   // **discard** — the same instance
   // object, carrying whatever counters its resolver just bumped — unless its own effect already
-  // exiled it (a single-use action like Bow pushing itself to `removed`), in which case leave it be
+  // removed it (a single-use action like Bow pushing itself to `removed`), in which case leave it be
   // rather than double-file it into two zones. A voluntarily *played* `event` is **removed**
-  // (banished for good, its recurring `upkeep` never firing), versus an unplayed one, which
+  // (removed for good, its recurring `upkeep` never firing), versus an unplayed one, which
   // auto-resolves and files to discard at upkeep (`upkeep.ts`'s `resolveHandEvents`). The
   // played-vs-auto split is the event kind's whole point.
   if (card.kind === 'action' && !G.removed.some((c) => c.id === played.id)) G.discard.push(played);

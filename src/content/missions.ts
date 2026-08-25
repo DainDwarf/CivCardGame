@@ -295,21 +295,21 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'finding_copper',
     name: 'Finding Copper',
     lore:
-      'The temple stands, and the valley is yours — but the tools that built it are failing you. Flint ' +
-      'chips, stone blunts, and every hand you put to work wears through more of it than the work gives ' +
-      'back. The elders speak of a green-streaked rock in the hills that the fire can soften and the ' +
-      'hammer can shape, and that does not shatter. Find it, and your people will never work in stone again.',
+      'Diggers came back from the hills with rock too heavy for its size, broken green along the seam. ' +
+      'In the fire it softened; under the hammer it spread instead of shattering; cooled, it held an edge ' +
+      'for a season where flint held one for a morning. Whatever it is, there is more of it down there. ' +
+      'Go and take it out.',
     prereqs: ['first_temple'],
-    threats: ['failing_stone_tools'],
+    threats: ['failing_tools'],
     // One `copper_vein` event per vein, tied to the objective's threshold by the shared COPPER_VEINS
     // const so the mission can't seed a different count than the win asks for.
     events: Array.from({ length: COPPER_VEINS }, () => 'copper_vein'),
     objectiveCardId: 'finding_copper_goal',
-    victoryHint: `Mine all ${COPPER_VEINS} copper veins — pay 2 🔨 and 5 🔬 for each.`,
-    failureHint: 'Failing stone tools drain 1 🔨 each round for every worker staffed in a building.',
+    victoryHint: `Mine all ${COPPER_VEINS} copper veins.`,
+    failureHint: 'Failing tools drain 1 🔨 each round for every worker staffed in a building.',
     kind: 'standard',
     // Opens the Bronze Age: unlocks the Forge, the answer to the very drain this mission inflicts.
-    // Influence amount provisional (balance pending a sim sweep).
+    // Influence amount provisional.
     reward: { influence: 6, unlockCardIds: ['forge'] },
     map: { col: 6, row: -1 },
     age: 'bronze',

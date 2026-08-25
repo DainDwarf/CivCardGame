@@ -69,7 +69,7 @@
 
   | Mission | Dsn | Impl | Bal | Pol | Dossier |
   |---|:-:|:-:|:-:|:-:|---|
-  | Copper | ✅ | ✅ | ✅ | ⬜ | [copper](missions/copper.md) |
+  | Copper | ✅ | ✅ | ✅ | ✅ | [copper](missions/copper.md) |
   | Masonry | ✅ | ✅ | ✅ | ⬜ | [masonry](missions/masonry.md) |
   | Pyramid *(leaf)* | ✅ | ✅ | 🟡 | ⬜ | [pyramid](missions/pyramid.md) |
   | Accounting | ✅ | ✅ | ✅ | ⬜ | [accounting](missions/accounting.md) |
@@ -217,7 +217,7 @@
     `cultureLevelReq` play-gate) gets taught is settled — the convergence node teaches it.
   - **9.4 — Raiders at the Border tutorial** — teach the **event** card mechanic: mission-injected
     disasters (the raider waves) that auto-resolve from hand each round, draining a resource, and are
-    defused for good by *playing* them (paying the cost banishes the card unresolved). **Post-clear:**
+    defused for good by *playing* them (paying the cost removes the card unresolved). **Post-clear:**
     teach **board choice** — the reward unlocks the **Chiefdom** board (first military-leaning
     government), so future launches choose Tribe vs. Chiefdom.
   - **9.5 — Restless People tutorial** — teach the **threat** mechanic: a persistent board hazard (the

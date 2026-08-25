@@ -25,7 +25,7 @@ const LOCAL: Record<string, CardDef> = {
       },
     },
   },
-  // Survival objective: win once ≥2 events have been beaten (exiled to `removed`) with Military intact.
+  // Survival objective: win once ≥2 events have been beaten (sent to `removed`) with Military intact.
   test_survive_obj: {
     id: 'test_survive_obj', name: 'Survive', kind: 'objective', cost: {},
     display: { description: 'Beat 2 events without Military falling below zero.' },
@@ -40,7 +40,7 @@ const LOCAL: Record<string, CardDef> = {
     display: { description: 'Survive past round 3.' },
     goals: [{ icon: '⏳', measure: (G) => G.round, target: 4 }],
   },
-  // Spends a citizen on play and exiles itself to `removed` (the played-event path) — the one shape
+  // Spends a citizen on play and removes itself to `removed` (the played-event path) — the one shape
   // that can empty the population pool and complete a goal on the same play.
   test_launch: {
     id: 'test_launch', name: 'Launch', kind: 'event', cost: {},
@@ -141,13 +141,13 @@ describe('event resolution', () => {
     state = endTurn(state);
     expect(state.gameover).toBeUndefined();
     expect(state.G.resources.military).toBe(8); // test_event drained 2 when it auto-resolved
-    expect(state.G.removed.map((c) => c.cardId)).not.toContain('test_event'); // unplayed → never exiled
+    expect(state.G.removed.map((c) => c.cardId)).not.toContain('test_event'); // unplayed → never removed
     // It filed to discard, which (deck was empty) reshuffled back and was redrawn — the recurrence
     // that makes an unplayed event a standing hazard, not a one-shot.
     expect(state.G.hand.map((c) => c.cardId)).toEqual(['test_event']);
   });
 
-  it('playing an event pre-empts its upkeep drain and banishes it to removed', () => {
+  it('playing an event pre-empts its upkeep drain and sends it to removed', () => {
     let state = run();
     state.G.resources.military = 10;
     state.G.hand = instancesFromCardIds(['test_event']);
@@ -159,13 +159,13 @@ describe('event resolution', () => {
     expect(state.G.hand).toEqual([]);
   });
 
-  it('banishing the second event with Military intact wins', () => {
+  it('removing the second event with Military intact wins', () => {
     let state = run();
     seedObjective(state.G, 'test_survive_obj');
-    state.G.removed = instancesFromCardIds(['test_event']); // one already banished
+    state.G.removed = instancesFromCardIds(['test_event']); // one already removed
     state.G.resources.military = 10;
     state.G.hand = instancesFromCardIds(['test_event'], 100);
-    // The win is a move-granularity flag read: playing the 2nd event exiles it (its upkeep drain
+    // The win is a move-granularity flag read: playing the 2nd event sends it (its upkeep drain
     // pre-empted, so safe) and trips the objective.
     state = applyMove(state, playCard, 0);
     expect(state.gameover).toMatchObject({ outcome: 'victory', missionId: 'test' });
@@ -174,7 +174,7 @@ describe('event resolution', () => {
   it('an unplayed event whose auto-resolve drives Military below zero is a defeat', () => {
     let state = run();
     seedObjective(state.G, 'test_survive_obj');
-    state.G.removed = instancesFromCardIds(['test_event']); // one banished, one short of the objective
+    state.G.removed = instancesFromCardIds(['test_event']); // one removed, one short of the objective
     state.G.resources.military = 1; // 1 - 2 = -1 when the unplayed event fires at upkeep
     state.G.resources.food = 20; // keep famine out of it
     state.G.hand = instancesFromCardIds(['test_event'], 100);

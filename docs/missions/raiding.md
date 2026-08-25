@@ -46,7 +46,7 @@ The tension is a **race, not a resource split**: ⚔️ has exactly *one* job (c
 retaliation is a *money* drain, and delay hurts on both fronts, both saying *raid faster*.
 
 - **Goal:** sack all **N seeded `stronghold` `event` cards**. **Sacking** = *play* it, paying its
-  crack-cost in **⚔️** → exiled to `removed`, which the goal counts (the Copper/Roads/Horse
+  crack-cost in **⚔️** → sent to `removed`, which the goal counts (the Copper/Roads/Horse
   seeded-completion pattern). Money can't tick the goal — only the raid act does.
 - **Fortification escalation (per-pass-up):** each stronghold carries its **own per-instance counter**
   (`CardInstance.counters`). Every end-of-turn it sits **unplayed in hand**, its upkeep fires and

@@ -10,7 +10,7 @@
 
 ## Design ✅ (converged)
 
-- **Goal:** pave all 6 **Roadwork** events (8🔨 each; paving one exiles it to `removed`, which the goal
+- **Goal:** pave all 6 **Roadwork** events (8🔨 each; paving one sends it to `removed`, which the goal
   counts — the Copper/Writing seeded-completion pattern).
 - **Pressure:** no threat card — the segments *are* the pressure. Each unpaved copy held in hand bleeds
   a **flat −2🌾** at end of round (an unfinished road starves a cut-off settlement), then files to

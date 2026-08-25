@@ -28,7 +28,7 @@ export function discardWorkZone(G: GameState): void {
  * Resolve any `event` cards *left unplayed* in hand at upkeep: each fires its `upkeep` effect,
  * then files to the **discard** (so it reshuffles back and can recur — an unplayed event is a recurring
  * hazard). This is the involuntary path where the `upkeep` effect *actually fires*; the voluntary one is
- * `moves.playCard`, which pays the event's cost to banish it to `removed` **unresolved** (its `upkeep`
+ * `moves.playCard`, which pays the event's cost to send it to `removed` **unresolved** (its `upkeep`
  * never fires — playing an event is preventive). Non-event cards are left in hand
  * for the end-of-turn discard sweep. Partition first, then resolve, so an event's own effect
  * (e.g. a draw) can't reorder the sweep. Called by `applyUpkeep`.

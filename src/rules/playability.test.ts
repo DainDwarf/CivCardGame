@@ -77,7 +77,7 @@ describe('unplayableReason', () => {
     expect(unplayableReason(cultureMet, card, self)).toBeNull();
   });
 
-  it('lets an affordable event card be played — playing it is how you banish it', () => {
+  it('lets an affordable event card be played — playing it is how you remove it', () => {
     const G = blankState('test');
     // Events are now player-playable (paying the cost defuses them); an affordable, otherwise
     // unconstrained event blocks on nothing. Unaffordable ones fall to the normal `cost` reason.

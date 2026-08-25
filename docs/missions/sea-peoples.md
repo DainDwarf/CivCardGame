@@ -19,7 +19,7 @@ life. The dramatic irony [sword-chariot](sword-chariot.md) deferred is sprung he
 finally spent, and the thing it is spent *through* is the thing under attack.
 
 - **Goal: repel all N invasion-wave events** — seeded-completion (all N seeded at setup, paced by the
-  deck like the Raiders waves): playing one costs ⚔️ (escalating per wave repelled) and exiles it to
+  deck like the Raiders waves): playing one costs ⚔️ (escalating per wave repelled) and sends it to
   `removed`, which the goal counts. **Every wave is tin-gated** (`needsTinRoute`): no standing tin
   route, no repelling. A tinless deck is a death trap *by construction* — the Bronze mission's own
   no-safety-net precedent, visible on the wave's face and in the mission flow popup. This is what
@@ -105,7 +105,7 @@ objective — **no threat**, per the design. `INVASION_WAVES` is the one number 
 hint.
 
 **The wave.** `sea_raid` is a plain `event`, so repelling it is the ordinary played-event path — pay,
-resolve nothing, exile to `removed` with its upkeep pre-empted — and `removed` is what the goal counts.
+resolve nothing, go to `removed` with its upkeep pre-empted — and `removed` is what the goal counts.
 Its price is **8⚔️ + 4⚔️ per wave already repelled** (8/12/16/20/24, 80⚔️ over the run), a `cost.resolve`
 reading the same `wavesRepelled` tally off `removed` and deriving from the base it is handed, so a
 sticker discount compounds with the ladder rather than being applied on top of it. `check:

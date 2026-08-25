@@ -23,7 +23,7 @@ steppe (Yamnaya / Sintashta); horses as war-mounts, **no mounted cavalry** (Iron
   end of turn, so it pays out once per play, not per round). Free to play (the Foraging/Trader
   shape), so the worker it occupies for that turn is its whole cost — the rate has to beat **Hunting**
   (free, 1⚔️ per worker-turn) or nobody would ever spend a worker on it.
-- **Reward — Raiding:** an **action**, spend **⚔️ → gain 🌾+🔨**, **single-use** (exiles itself on play,
+- **Reward — Raiding:** an **action**, spend **⚔️ → gain 🌾+🔨**, **single-use** (removes itself on play,
   the Bow shape). Single-use is what makes an inward converting edge admissible at all
   ([`DESIGN.md`](../DESIGN.md) → *Core resources*); 🌾+🔨 rather than 🪙 because those are the two pools
   Chiefdom — the board this branch is built for — is short of.
@@ -36,7 +36,7 @@ whole life, and the last horse is tamed under the heaviest drain (the Wheel "hea
 final push" shape, here emergent from the goal rather than a parallel threat).
 
 - **Goal:** tame all **N Wild Horse** cards (`WILD_HORSES`). Each is a seeded `event`; **taming** = *play*
-  it, paying its **big ⚔️** cost → exiled to `removed`, which the goal counts (the Copper/Roads seeded-
+  it, paying its **big ⚔️** cost → sent to `removed`, which the goal counts (the Copper/Roads seeded-
   completion pattern).
 - **Let-pass cost:** a Wild Horse left *unplayed* in hand fires its `upkeep` (a small **prod** drain) and
   recurs — the existing unplayed-event mechanic *is* the "few to let it pass" cost, no separate
@@ -113,7 +113,7 @@ narrower than anything a player arrives holding.
    `clay_tablet` shape) or a soft deadline.
 2. ✅ **The knife-edge: ⚔️-tame-cost vs. food-economy growth** — resolved by the sweep, on the food side.
    The in-mission ⚔️ economy is thinner than the goal: **City Walls** (3🔨, no worker, +1⚔️/round) is the
-   sustainable faucet, **Hunting** (free, 1⚔️/worker-turn) the repeatable one, **Bow** (2🔨 → 3⚔️, exiled)
+   sustainable faucet, **Hunting** (free, 1⚔️/worker-turn) the repeatable one, **Bow** (2🔨 → 3⚔️, removed)
    the burst — and **Conquest is a ⚔️ *sink*** (2⚔️ doubling per copy → territory) competing for the same
    pool. On the fixture deck none of that binds: every tier dies to famine, so the drain is what sets the
    difficulty and the ⚔️ side is slack.

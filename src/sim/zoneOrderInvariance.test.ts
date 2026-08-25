@@ -33,8 +33,8 @@ const LOCAL_CARDS: Record<string, CardDef> = {
   // cardId sit in `removed` — a *zone-membership* read, where the pair above is a scalar-pool read. The
   // distinction matters because self-removing work cards push into `removed` from inside the same
   // production batch, so the zone's contents change mid-dispatch under whatever order the batch runs in.
-  test_exile_work: {
-    id: 'test_exile_work', name: 'Test Exiling Work', kind: 'work', cost: {}, workers: 1,
+  test_removal_work: {
+    id: 'test_removal_work', name: 'Test Removal Work', kind: 'work', cost: {}, workers: 1,
     produces: {
       resources: { money: 1 },
       resolve: (ctx) => {
@@ -47,7 +47,7 @@ const LOCAL_CARDS: Record<string, CardDef> = {
     id: 'test_removed_threat', name: 'Test Removed-Count Threat', kind: 'threat', cost: {},
     upkeep: {
       resolve: ({ G }) => {
-        subtractResources(G.resources, { food: G.removed.filter((c) => c.cardId === 'test_exile_work').length });
+        subtractResources(G.resources, { food: G.removed.filter((c) => c.cardId === 'test_removal_work').length });
       },
     },
   },
@@ -98,7 +98,7 @@ function producingState(): GameState {
   addWork(G, mint(G, 'test_work_food'));
   addWork(G, mint(G, 'test_terr_work'));
   addWork(G, mint(G, 'test_terr_work'));
-  addWork(G, mint(G, 'test_exile_work'));
+  addWork(G, mint(G, 'test_removal_work'));
   // The territory-scaled drain: it ticks after the workZone production pass, so it reads the +2 territory
   // the two work boxes just landed — pinning that the committed drain is order-independent regardless.
   addThreat(G, 'test_terr_threat');
@@ -106,7 +106,7 @@ function producingState(): GameState {
   // that production pass, and this drain counts it — with a pre-seeded copy already there, so the count
   // is non-zero either way and a mis-ordered read would move the scalar.
   addThreat(G, 'test_removed_threat');
-  G.removed = instancesFromCardIds(['test_exile_work'], 500);
+  G.removed = instancesFromCardIds(['test_removal_work'], 500);
   // Three standing routes, each yielding food and charging a rent scaled by the zone's own size — so a
   // mis-ordered read across the route batch would move money.
   openTradeRoute(G, mint(G, 'test_route_scaling'));

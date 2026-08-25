@@ -446,7 +446,7 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   call site open-codes `kind === 'building'`) and differs only in the meta loop (own Collection/deck
   category, no bought copies, no stickers, ≤ `MAX_WONDERS_PER_DECK` per deck). Filing defaults to
   `discard`; the one exception is routed by *path*, not a kind rule — a **played** `event` resolves its
-  one-shot `effect` and is exiled to `removed` with its `upkeep` disaster pre-empted, while one **left
+  one-shot `effect` and is sent to `removed` with its `upkeep` disaster pre-empted, while one **left
   unplayed** fires `upkeep` at end of turn and files to `discard` so it recurs (`moves.playCard` /
   `upkeep.ts`'s `resolveHandEvents`). `isDeckable(card)` is the single "a card the player builds decks
   with" predicate (excludes event/threat/objective); `isStructure(card)` the single "enters the tableau

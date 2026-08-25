@@ -97,8 +97,8 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     - The cancellation must mint into **`discard`, never `hand`** — that is what keeps the reversible
       play/close pair out of a single turn's `expandTurn` line enumeration. Minting to hand blows up the
       planner and oracle search.
-    - It self-exiles on the **resume** pass (splice itself out of `discard` by id → `removed`), not on
-      the suspending pass; a `bow`-style pre-exile leaves a committed, undo-visible state where the
+    - It removes itself on the **resume** pass (splice itself out of `discard` by id → `removed`), not on
+      the suspending pass; a `bow`-style pre-removal leaves a committed, undo-visible state where the
       cancellation is gone but the route still stands.
     - Build the choice's `options` in a **canonical order** (sorted by `contentKey`): `oracleKey.ts`'s
       `pendingToken` joins them positionally while `keyOf` folds `tradeRoutes` as a multiset.

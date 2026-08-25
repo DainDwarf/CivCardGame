@@ -134,9 +134,9 @@ export interface GameState {
    *  runs dry. Going to `removed` instead is the exception — see `removed`. */
   discard: CardInstance[];
   /**
-   * Exile pile — cards permanently removed from the deck (never drawn or reshuffled again); distinct
+   * Removed pile — cards permanently removed from the deck (never drawn or reshuffled again); distinct
    * from the tableau (an active board entity). A card lands here only by a **voluntarily played**
-   * `event` (paying its cost banishes it *unresolved* — its `upkeep` never fires — versus an unplayed
+   * `event` (paying its cost removes it *unresolved* — its `upkeep` never fires — versus an unplayed
    * event, whose `upkeep` resolves to `discard` and recurs; see `rules/upkeep.ts`), never by a static
    * kind rule.
    */

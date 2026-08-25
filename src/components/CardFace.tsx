@@ -120,11 +120,11 @@ export function describeCost(c: CardDef): string {
  *  worker-icon rendering.) */
 export function describeConditions(c: CardDef): string {
   const parts: string[] = [];
-  // An event: play it (pay its cost) to banish it unresolved — its effect never fires (preventive);
+  // An event: play it (pay its cost) to remove it unresolved — its effect never fires (preventive);
   // leave it and it fires for free at end of round, then recurs from the discard. Each clause is
   // bound by non-breaking spaces so the band's one wrap opportunity falls between them: broken
-  // anywhere else, "banish" and "resolves" collide into a phrase that says the opposite.
-  if (c.kind === 'event') parts.push('play\u00a0to\u00a0banish resolves\u00a0at\u00a0end\u00a0of\u00a0round');
+  // anywhere else, "remove" and "resolves" collide into a phrase that says the opposite.
+  if (c.kind === 'event') parts.push('play\u00a0to\u00a0remove resolves\u00a0at\u00a0end\u00a0of\u00a0round');
   if (c.cost.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.cost.cultureLevelReq}`);
   if (c.cost.discard) parts.push(`discard ${c.cost.discard}`);
   if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
@@ -204,7 +204,7 @@ export function describeCard(c: CardDef): string {
     const flow = describeRoundFlow(c);
     if (flow) parts.push(flow);
   }
-  return parts.join(' · ') || 'action';
+  return parts.join(' · ') || 'No effect';
 }
 
 /** The card's type banner — label + colour variant, shown under the name. */

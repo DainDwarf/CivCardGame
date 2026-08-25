@@ -89,7 +89,7 @@ by how they leave your hand; `threat` and `objective` are the odd ones out — t
 pile at all, living instead in persistent board zones (see below). By default a card returns to the
 **discard** pile once it's done being useful (reshuffled into the deck when it runs
 dry) — the **removed** pile is the exception. What routes a card there is a *path*, not a
-static kind rule: the `event` kind's played-vs-unplayed split (a *played* event is banished;
+static kind rule: the `event` kind's played-vs-unplayed split (a *played* event is removed;
 see below). An *effect* can route a card there too — see the building note.
 
 - **Building (commit):** the card *is* the building. Pay a cost to play; it leaves
@@ -126,7 +126,7 @@ see below). An *effect* can route a card there too — see the building note.
   → a standing *commitment*.
 - **Event (recurring hazard):** missions inject it into the deck; the player can't
   build with it, but *can play it* once drawn. Its two fates are the mechanic:
-  **play it** — pay its cost to banish it to **removed**, resolving its one-shot `effect` (if any)
+  **play it** — pay its cost to send it to **removed**, resolving its one-shot `effect` (if any)
   but *pre-empting* the recurring disaster (its `upkeep` never fires), so playing is *preventive*; or
   **leave it** — at upkeep it auto-resolves its `upkeep` for free and goes to **discard**, so it
   reshuffles back and *recurs* round after round. Doing nothing lets the disaster keep striking;
@@ -207,7 +207,7 @@ Five spendable/trackable resources, each with a **mechanical role** and a **them
 
 - **Food** — population management. Population eats food each round. Going negative: **Famine**. More food supports more population, which means more workers available to staff buildings.
 - **Production** — the build currency. Represents the material the civilization has accumulated — housing, industry, infrastructure. Spent to play permanent building cards. Going negative: **Ruin**.
-- **Money** — the treasury, and the economy's **one-way hub**: it is *earned* only from producers and spent *outward* toward the other four, never converted back into. That asymmetry is the invariant — no card turns another resource into money — and it is what keeps the resource graph acyclic, so the five resources stay five resources instead of one wearing five costumes. It has to hold one step further than it first reads: **a route may produce money, or non-money, but no card may convert that non-money output back into money.** A route that pays food plus any card converting food to money is a pump at *any* rate, so the invariant is about the whole cycle rather than about single cards. What it forbids is a **repeatable** inward edge: a **single-use** card — one that exiles itself to `removed` on play, the Bow shape — converts inward a bounded number of times, its total output capped by copies owned rather than by turns elapsed, so it closes no pump and is admissible. Money buys standing **access** rather than raw materials: its principal sink is a **trade route**, a card that pays a per-round money upkeep, gating what it carries for as long as it runs — and no move of yours closes one, so opening it is a commitment, not a lease you can end. So money is flexibility you *rent* — a wildcard in reach, without an exchange rate to arbitrage. Going negative: **Bankruptcy**.
+- **Money** — the treasury, and the economy's **one-way hub**: it is *earned* only from producers and spent *outward* toward the other four, never converted back into. That asymmetry is the invariant — no card turns another resource into money — and it is what keeps the resource graph acyclic, so the five resources stay five resources instead of one wearing five costumes. It has to hold one step further than it first reads: **a route may produce money, or non-money, but no card may convert that non-money output back into money.** A route that pays food plus any card converting food to money is a pump at *any* rate, so the invariant is about the whole cycle rather than about single cards. What it forbids is a **repeatable** inward edge: a **single-use** card — one that removes itself to `removed` on play, the Bow shape — converts inward a bounded number of times, its total output capped by copies owned rather than by turns elapsed, so it closes no pump and is admissible. Money buys standing **access** rather than raw materials: its principal sink is a **trade route**, a card that pays a per-round money upkeep, gating what it carries for as long as it runs — and no move of yours closes one, so opening it is a commitment, not a lease you can end. So money is flexibility you *rent* — a wildcard in reach, without an exchange rate to arbitrage. Going negative: **Bankruptcy**.
 - **Science** — anticipation and planning. Primarily expressed through card manipulation: drawing extra cards, discarding strategically, retrieving cards from the discard pile, peeking at the top of the deck. Going negative: **Dark Age**.
 - **Military** — power projection, both defensive and offensive. Defends against external threats (disasters, invasion event cards) and enables aggression: expanding territory and pillaging resources. Going negative: **Revolt**.
 

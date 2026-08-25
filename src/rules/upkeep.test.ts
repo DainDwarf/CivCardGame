@@ -65,7 +65,7 @@ describe('resolveHandEvents', () => {
     resolveHandEvents(G);
     expect(G.resources.military).toBe(8); // test_event drained 2
     expect(G.discard.map((c) => c.cardId)).toEqual(['test_event']); // unplayed → discard, not removed
-    expect(G.removed).toEqual([]); // only a *played* event is exiled (see moves.playCard)
+    expect(G.removed).toEqual([]); // only a *played* event is removed (see moves.playCard)
     expect(G.hand.map((c) => c.cardId)).toEqual(['test_food', 'test_prod']); // non-events stay for the discard sweep
   });
 

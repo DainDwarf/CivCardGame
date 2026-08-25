@@ -617,7 +617,7 @@ describe('a prerequisite the cost refuses without', () => {
 });
 
 describe('delivery', () => {
-  it('deals a played copy again where it files back to circulation, and never where it exiles itself', () => {
+  it('deals a played copy again where it files back to circulation, and never where it removes itself', () => {
     // Both grant the goal's pool one unit a play and the run holds one of each, so the whole difference is
     // where `run/moves.ts` files the copy afterwards — which no `CardKind` states and only the play tells.
     const recycled = planned('race_goal', ['race_spark'], { production: 0 });
@@ -625,7 +625,7 @@ describe('delivery', () => {
     expect(deriveRace(recycled).plans[0].landings[0]).toMatchObject({ cardId: 'race_spark', recycles: true });
     expect(Number.isFinite(clockOf(recycled).t)).toBe(true);
 
-    // The copy that exiles itself is one unit of the ten and can never be a second, so the route is a real
+    // The copy that removes itself is one unit of the ten and can never be a second, so the route is a real
     // one and the goal is short of nine — where the recycling copy is dealt as often as the clock needs it.
     expect(deriveRace(spent).plans[0].landings[0]).toMatchObject({ cardId: 'race_flare', delta: 1 });
     expect(deriveRace(spent).plans[0].landings[0].recycles).toBeUndefined();
@@ -662,7 +662,7 @@ describe('delivery', () => {
   });
 
   it('shortens a clock when a card genuinely leaves circulation', () => {
-    // The thinning that is real: a copy exiled from the run is one the deck will never deal again, so
+    // The thinning that is real: a copy removed from the run is one the deck will never deal again, so
     // every remaining draw is likelier to be a plan copy. The bank covers all three relics either way,
     // which leaves the pile the only thing between the two states.
     const pile = (deck: string[], removed: string[]) =>
