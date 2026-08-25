@@ -32,7 +32,7 @@ export interface DeckSeed {
  * One buildingless Paleolithic deck. Every cardId
  * must be owned with enough copies in `content/collection.ts`'s `STARTING_COLLECTION` (`buildSeedDecks`
  * silently drops any occurrence the collection can't cover) — a coherence test in
- * `rules/collection.test.ts` pins that the resolved deck still meets `MIN_DECK_SIZE`.
+ * `rules/collection.test.ts` pins that the resolved deck keeps every seeded card.
  */
 export const DEFAULT_DECKS: DeckSeed[] = [
   {

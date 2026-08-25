@@ -286,9 +286,9 @@ the meta loop to the mission they pick.
 - **Deck construction** ✅ — build/edit run decks from the collection (`src/meta/DeckEditor.tsx`).
   Every deck is player-editable — there's no separate "premade" tier; a fresh
   profile just starts with a few seeded decks (`content/decks.ts`'s `DEFAULT_DECKS`)
-  the player can edit or delete like any other. A **minimum deck size** and the per-card
-  **copy cap = copies owned** now bite; **rarity limits** and the possible **civilization
-  identity** are both dropped (see *Deferred decisions*). *The core puzzle.*
+  the player can edit or delete like any other. The per-card **copy cap = copies owned** bites;
+  a **minimum deck size**, **rarity limits** and the possible **civilization identity** are all
+  dropped (see *Deferred decisions*). *The core puzzle.*
 - **Government boards** — the civilization's starting configuration, chosen alongside
   the deck: it sets the run's opening resources and reskins the run loop, and is
   unlocked/upgraded through mission rewards. See *Government boards* below.
@@ -316,8 +316,8 @@ per attempt — that's the only performance-scaled source. Influence is spent on
 (`number`; an absent entry = not yet unlocked). A mission unlock grants the
 first copy; the **shop** raises that along a bounded ×1 / ×2 / ×3 / ×4 ladder, one copy per rung (no
 infinite tier — every owned count is a finite, instantiable number). The deck editor caps each card
-at the number you own — the first deck-construction constraint to bite
-(a minimum deck size now joins it; rarity limits are dropped).
+at the number you own — the one deck-construction constraint that bites
+(a minimum deck size and rarity limits are both dropped).
 
 **A copy's price is its card's age, not its rung.** Every rung of the ladder charges the same, and what
 sets that figure is how far into history the card sits: a Stone-age card's copy costs 2⭐, a Bronze-age
@@ -610,7 +610,7 @@ day the scorer is deleted instead.
 - **Phase 4 — Content & balance** (in progress): reset all content and rebuild it as the
   **first three ages — Stone Age, Bronze Age, Iron Age**. The **Stone Age** — the tutorial
   age, introducing every core mechanic (buildings, territory, conquest, culture) — is
-  **shipped**, along with the deferred **deck-construction constraints** (min deck size, hand
+  **shipped**, along with the deferred **deck-construction constraints** (the copy cap, hand
   limit) and the **headless simulator** (`src/sim/`) used to tune it; boards and card/board
   stickers were reset alongside the cards, and **stickers now unlock through mission rewards**
   (breadth), not only the shop. **Bronze Age + Iron Age remain ahead** — content expansion
@@ -670,10 +670,10 @@ branching tech tree of human history) — see *Theme & framing* and *Campaign ma
 Still open, deferred until the phase that needs them:
 
 - **Resource set** ✅ — resolved in Phase 1: Food / Production / Money / Science / Military. See *Resources* section above.
-- **Deck construction constraints** — shipped ✅: a **minimum deck size** (`MIN_DECK_SIZE`,
-  provisional 20) and a **default hand limit** lowered 5→4, both enforced at the deck writer
-  (`rules/deckBuilder.ts` + `App.saveDeck`, the `MAX_DECKS` precedent — a core rule, not a UI
-  gate). The **per-card copy cap = copies owned** shipped alongside the shop (see
+- **Deck construction constraints** — settled ✅: there is **no lower bound on deck size** — a deck
+  too thin to survive its own reshuffle is already punished by the game, so a floor protected against
+  nothing; the **default hand limit** is 4 (lowered from 5). The **per-card copy cap = copies owned**
+  shipped alongside the shop (see
   *Economy & progression*). The two that were open past it are now closed: **rarity limits** are
   **dropped** with the meta retune they were to be decided in (see *Demo scope*);
   the **"civilization" identity** that gates combos is **dropped** ✅.

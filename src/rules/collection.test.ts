@@ -10,7 +10,7 @@ import {
   stickerableInstancesOf,
   distinctCardIdsOwned,
 } from './collection';
-import { buildSeedDecks, MIN_DECK_SIZE } from './deckBuilder';
+import { buildSeedDecks } from './deckBuilder';
 import { DEFAULT_DECKS } from '../content/decks';
 import { STARTING_COLLECTION } from '../content/collection';
 import { TIER_LADDER } from './shop';
@@ -108,7 +108,7 @@ describe('stickerableInstancesOf', () => {
 // Content↔content coherence: the starting collection must own enough copies of
 // every card in every `DEFAULT_DECKS` seed. `buildSeedDecks` *silently drops* any occurrence the
 // collection can't cover, so an under-provisioned collection yields a resolved deck shorter than its
-// seed — which would then fall below the committed `MIN_DECK_SIZE` floor a fresh player launches with.
+// seed — a fresh player quietly launching with fewer cards than authored.
 // Asserting the *resolved* deck size catches that in one check (a data-coherence check, never deferred).
 describe('STARTING_COLLECTION covers DEFAULT_DECKS', () => {
   const resolved = buildSeedDecks(DEFAULT_DECKS, collectionFromCounts(STARTING_COLLECTION));
@@ -117,11 +117,10 @@ describe('STARTING_COLLECTION covers DEFAULT_DECKS', () => {
     expect(resolved.length).toBe(DEFAULT_DECKS.length);
   });
 
-  it('every resolved deck still meets the minimum deck size (collection fully covers the seed)', () => {
+  it('every resolved deck keeps every seeded card (collection fully covers the seed)', () => {
     resolved.forEach((deck, i) => {
       expect(deck.cards.length, `${deck.id}: ${deck.cards.length} resolved vs ${DEFAULT_DECKS[i].cards.length} seeded`)
-        .toBeGreaterThanOrEqual(MIN_DECK_SIZE);
-      expect(deck.cards.length).toBe(DEFAULT_DECKS[i].cards.length);
+        .toBe(DEFAULT_DECKS[i].cards.length);
     });
   });
 

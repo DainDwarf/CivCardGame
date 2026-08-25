@@ -8,7 +8,7 @@ import { applyRunResult, loadStore, saveStore, type PlayerStore } from '../meta/
 import type { RunReveal } from '../meta/UnlockReveal';
 import { pendingUnlocks } from '../rules/rewards';
 import { isCompleted } from '../rules/campaign';
-import { MAX_DECKS, MIN_DECK_SIZE } from '../rules/deckBuilder';
+import { MAX_DECKS } from '../rules/deckBuilder';
 import { buyTier } from '../rules/shop';
 import { buySticker, removeSticker } from '../rules/stickers';
 import { buyBoardSticker, removeBoardSticker } from '../rules/boardStickers';
@@ -184,9 +184,6 @@ export function App() {
     // existing deck (same id) is always allowed. The Decks screen disables "+ New Deck" at the
     // cap so this branch is a backstop, not the primary gate.
     if (!exists && store.decks.length >= MAX_DECKS) return;
-    // The minimum deck size is likewise a core rule: refuse to save a deck under the floor. The
-    // deck editor disables "Save" below MIN_DECK_SIZE, so this branch is a backstop too.
-    if (deck.cards.length < MIN_DECK_SIZE) return;
     // map-if-exists-else-append keeps an edited deck's position stable instead of bumping it to the end.
     const decks = exists ? store.decks.map((d) => (d.id === deck.id ? deck : d)) : [...store.decks, deck];
     persist({ ...store, decks });

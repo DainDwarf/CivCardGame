@@ -9,7 +9,6 @@ import {
   variantKey,
   deckWonderCount,
   MAX_WONDERS_PER_DECK,
-  MIN_DECK_SIZE,
   type DeckCard,
 } from '../rules/deckBuilder';
 import { isOwned, variantInstancesOf, type OwnedCards } from '../rules/collection';
@@ -246,7 +245,7 @@ export function DeckEditor({
             onChange={(e) => setDeck((d) => ({ ...d, name: e.target.value }))}
             placeholder="Deck name"
           />
-          <span className={styles.count}>{deck.cards.length} cards (min {MIN_DECK_SIZE})</span>
+          <span className={styles.count}>{deck.cards.length} cards</span>
           <div className={styles.bannerActions}>
             <button type="button" className={styles.cancelBtn} onClick={onCancel}>
               Cancel
@@ -254,8 +253,7 @@ export function DeckEditor({
             <button
               type="button"
               className={styles.saveBtn}
-              disabled={deck.cards.length < MIN_DECK_SIZE}
-              title={deck.cards.length < MIN_DECK_SIZE ? `A deck needs at least ${MIN_DECK_SIZE} cards to save.` : 'Save this deck'}
+              title="Save this deck"
               onClick={() => onSave(deck)}
             >
               Save

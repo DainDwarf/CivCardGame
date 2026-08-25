@@ -9,9 +9,9 @@
  * `rules/collection.test.ts`. The two staffed producers a run leans on every turn (Foraging,
  * Toolmaking) get the most copies; everything else the minimum. This exactly covers the Founding deck.
  *
- * Pointed at the first mission's two resources rather than sampling all five: a fresh profile holds
- * exactly `MIN_DECK_SIZE` cards and no Influence, so the opening deck is *forced* — a card the first
- * mission can't use isn't a chaff-cutting lesson, it's a dead draw the player can't remove.
+ * Pointed at the first mission's two resources rather than sampling all five: a fresh profile owns
+ * these copies and no Influence, so the opening deck is *forced* — a card the first mission can't use
+ * isn't a chaff-cutting lesson, it's a dead draw the player can't remove.
  */
 export const STARTING_COLLECTION: Record<string, number> = {
   foraging: 4,

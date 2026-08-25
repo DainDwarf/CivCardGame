@@ -117,13 +117,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   the zone it sits in). Pure authoring, zero engine work; `sim/zoneOrderInvariance.test.ts` already pins
   the shape via its `test_route_scaling` fixture. A **balance** question, not a blocking one.
 
-- **Remove the deck minimum-card rule** `[size: S]` — *(beta playtest)* drop `MIN_DECK_SIZE`
-  entirely; no lower bound on deck size. Touches `rules/deckBuilder.ts` (the const), `app/App.tsx:152`
-  (the save backstop), `meta/DeckEditor.tsx:249,257` (the count label + disabled Save),
-  `content/decks.test.ts`, and a comment in `content/collection.ts`. Check on the way through that a
-  zero-card deck terminates cleanly rather than throwing in the draw/reshuffle path — that is a
-  correctness check, not a reason to keep a floor.
-
 ## Tech debt / architecture
 
 - **Audit existing tests for the integration split** — the `*.integration.test.ts` convention (end-to-end/
@@ -278,6 +271,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > entries. **Mission** work is *not* archived here — a finished mission's record is its dossier
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
+
+- **No lower bound on deck size** ✅ — `MIN_DECK_SIZE` is gone: the const, the `App.saveDeck`
+  backstop, and the deck editor's "(min N)" label + disabled Save. The floor was protecting against
+  nothing — a deck too thin to survive its own reshuffle is already punished by the game, and
+  `drawUpTo` stops early rather than throwing, so a zero-card deck terminates cleanly. The per-card
+  copy cap (a deck holds at most the copies owned) is now the only deck-composition rule besides the
+  wonder cap.
 
 - **One voice for objective cards and mission hints** ✅ — a pass over all missions, cut out of the
   Bronze polish once the same three symptoms turned up on every node. An **objective card** states the

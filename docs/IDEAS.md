@@ -10,10 +10,6 @@
 
 ## Random Ideas
 
- - Drop the minimum deck size entirely? `MIN_DECK_SIZE` is down to 10 and the floor is starting to
-   look like a rule with no job: a deck too thin to survive its own reshuffle is already punished by
-   the game, so the cap may be protecting against nothing. Would remove a committed core rule, so it
-   wants a deliberate look rather than a quiet deletion.
  - **Filter the card listings** (Collection + the deck editor's picker) — at least by age, maybe by
    kind or by "has a sticker". The plumbing is already shaped for it: both screens hand one
    `CardDef[]` to `cardSections`, which drops empty groups, so a predicate applied to that list is

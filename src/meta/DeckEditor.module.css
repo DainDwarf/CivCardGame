@@ -143,11 +143,6 @@
   background: var(--accent-hover);
 }
 
-.saveBtn:disabled {
-  background: var(--accent-soft);
-  cursor: not-allowed;
-}
-
 /* Horizontally-scrolling strip of the deck's cards, grouped into ×N stacks. Top padding keeps
    the ×N badge (which sits slightly above the card) from being clipped by the scroll box. */
 .bannerStrip {
