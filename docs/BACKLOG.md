@@ -73,7 +73,7 @@
   | Masonry | ✅ | ✅ | ✅ | ✅ | [masonry](missions/masonry.md) |
   | Pyramid *(leaf)* | ✅ | ✅ | 🟡 | ⬜ | [pyramid](missions/pyramid.md) |
   | Accounting | ✅ | ✅ | ✅ | ✅ | [accounting](missions/accounting.md) |
-  | Writing | ✅ | ✅ | ✅ | ⬜ | [writing](missions/writing.md) |
+  | Writing | ✅ | ✅ | ✅ | ✅ | [writing](missions/writing.md) |
   | Roads | ✅ | ✅ | ✅ | ⬜ | [roads](missions/roads.md) |
   | Wheel | ✅ | ✅ | ✅ | ⬜ | [wheel](missions/wheel.md) |
   | Horse taming | ✅ | ✅ | ✅ | ⬜ | [horse-taming](missions/horse-taming.md) |

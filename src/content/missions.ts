@@ -387,11 +387,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'writing',
     name: 'Writing',
     lore:
-      'Your scribes can tally what the storehouses hold, but nothing holds what your people know. The ' +
-      'oldest potter dies and her glaze dies with her; a flood comes a generation after the last one ' +
-      'and no one living recalls how high the water rose. Tallies were only the beginning — press the ' +
-      'stories, the measures, and the laws into wet clay, and your civilization will outlive the ' +
-      'memory of any single elder.',
+      'A reed pressed into wet clay leaves a mark, and a fired tablet keeps that mark longer than ' +
+      'anyone who made it. What began as a count of jars can hold a name, a measure, a law, the height ' +
+      'of a flood — anything a person could say and no one could keep. Write it down, and your people ' +
+      'stop losing what they learn.',
     prereqs: ['accounting'],
     // One `clay_tablet` per record, tied to the objective's threshold by the shared CLAY_TABLETS const
     // so the mission can't seed a different count than the win asks for.

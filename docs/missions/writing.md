@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the age's literacy node, on the centre axis.
 **Placement:** `prereqs: ['accounting']`, bronze col 7 row 0.
 **Reward influence:** 12.
@@ -74,6 +74,22 @@ Left open, none of them blocking:
 - **Planner wins on one worker.** Its end state is pop 2.0 / terr 2.0 with 10.4🔨 banked; a replay shows
   population parked at 1 of 2 assigned for all 20 turns. Neither Hut nor Conquest earns its slot.
 
-## Polish ⬜ (not started)
+## Polish ✅ (done)
 
-- Card display/text, art, lore.
+- **The objective card reads `Play all 5 Clay Tablets`**, the victory hint *"Record all 5 Clay
+  Tablets."* and the failure hint keeps the deepening drain alone — the dark-age tail restated the
+  universal collapse. Writing is where the arc's three recurring text symptoms were first named, so
+  they were swept over every mission rather than fixed here (TODO → *Done / shipped*).
+- **Clay Tablet prints `−0🔬, worsening`.** The drain starts at zero and climbs a step per round the
+  tablet is passed over, so a printed rate would be wrong on every round but the first; the zero says
+  "nothing yet" and the counter says the rest. Its in-run readout is bare `−X🔬` — the round it applies
+  to is the conditions strip's job. The written description survives the event-face pass because the
+  upkeep is a `resolve` closure with no declarative bag to derive from.
+- **Lore rewritten.** The old text opened on the scribes tallying the storehouses — a hand-off to
+  Accounting — and ran half again as long as the arc's other openers. It is material-first now: a reed
+  in wet clay leaves a mark that outlives whoever made it, and what began as a count of jars can hold a
+  name, a law, the height of a flood.
+- **The Writing action reads `Draw a chosen card from your discard.`** The old text spelled out the
+  zones (*return … to your hand*); drawing already means "into your hand", and the discard is the only
+  thing worth naming. The in-run choice prompt keeps its fuller sentence — it is read with the pile
+  open in front of you, not on a card face.

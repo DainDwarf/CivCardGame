@@ -676,7 +676,7 @@ export const CARDS: Record<string, CardDef> = {
   // resume, so any resource field would double-apply.
   writing: {
     id: 'writing', name: 'Writing', kind: 'action',
-    display: { art: '✍️', description: 'Return a chosen card from your discard to your hand.' },
+    display: { art: '✍️', description: 'Draw a chosen card from your discard.' },
     // A zero-option `chooseCard` would park a modal with no options and no dismiss, soft-locking the
     // run — so an empty discard is gated unplayable rather than left to fizzle for its cost.
     cost: {
@@ -712,8 +712,8 @@ export const CARDS: Record<string, CardDef> = {
     id: 'clay_tablet', name: 'Clay Tablet', kind: 'event', cost: { resources: { production: 4, science: 2 } },
     display: {
       art: '📜',
-      description: '−🔬, worsening',
-      dynamicText: (_G, self) => `−${getCounter(self, 'level')}🔬 next round`,
+      description: '−0🔬, worsening',
+      dynamicText: (_G, self) => `−${getCounter(self, 'level')}🔬`,
     },
     upkeep: {
       resolve: ({ G, self }) => {
