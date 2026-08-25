@@ -951,7 +951,7 @@ export const CARDS: Record<string, CardDef> = {
   reading_seasons_goal: {
     id: 'reading_seasons_goal', name: 'Reading the Seasons', kind: 'objective', cost: {},
     goals: [{ icon: '🔬', measure: (G) => G.resources.science, target: 10 }],
-    display: { description: 'Reach 10 🔬 science' },
+    display: { description: 'Reach 10 🔬' },
   },
 
   // Culture is never spent, so `culture >= cultureForLevel(N)` is exactly `cultureLevel >= N`. The
