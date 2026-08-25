@@ -212,15 +212,15 @@ describe('thief', () => {
   });
 });
 
-// The Envious Population threat breeds thieves in proportion to the hoard: each reshuffle mints
+// The Unguarded Wealth threat breeds thieves in proportion to the hoard: each reshuffle mints
 // `floor(money / THIEVES_PER_GOLD)` `thief` events into the deck. Ticked via the `reshuffle` broadcast,
 // the same path a real deck-fold takes. Counts are pinned to the shared const so a rebalance re-targets
 // them instead of breaking the test.
-describe('envious_population', () => {
+describe('unguarded_wealth', () => {
   const spawnCount = (money: number) => {
     const G = blankState('accounting');
     G.resources.money = money;
-    G.threats = [{ id: 99, cardId: 'envious_population' }];
+    G.threats = [{ id: 99, cardId: 'unguarded_wealth' }];
     dispatchEvent(G, { type: 'reshuffle' });
     return G.deck.filter((c) => c.cardId === 'thief').length;
   };

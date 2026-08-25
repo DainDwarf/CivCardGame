@@ -1,6 +1,6 @@
 // Integration suite (`*.integration.test.ts`): drives a full `simulateRun` end-to-end over the real
 // Accounting mission, so it exercises the *whole* breeding loop the unit tests can only stub — reshuffle
-// emitted mid-draw → flushed at a boundary → `envious_population` mints Thieves into the deck → they're
+// emitted mid-draw → flushed at a boundary → `unguarded_wealth` mints Thieves into the deck → they're
 // drawn on a later refill → unplayed ones drain via `resolveHandEvents`. `simulateRun` runs
 // `assertRunInvariants` after every action, so "cards breeding cards mid-run never corrupts state"
 // (unique ids, staffing bounds, drained bus) is asserted for free across the run. Run in isolation with
@@ -44,7 +44,7 @@ function runSeed(seed: number) {
 }
 
 describe('Accounting breeds thieves end-to-end', () => {
-  // The core claim: over a real run the Envious Population threat actually mints Thieves through the live
+  // The core claim: over a real run the Unguarded Wealth threat actually mints Thieves through the live
   // reshuffle cycle (not the stubbed `dispatchEvent` the unit test uses), and no invariant trips while it
   // does. A hoard-pursuing policy on a sink-free deck banks past the threshold on every seed.
   it('mints thieves into the deck as the treasury grows', () => {

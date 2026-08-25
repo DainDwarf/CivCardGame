@@ -32,7 +32,7 @@ export interface MissionDef {
    *  single-source-of-truth reasoning as `threats`. */
   events?: string[];
   /** Extra cards for the mission-detail panel that no setup list names — ones a run only injects
-   *  *mid-play* (Accounting's Thief, bred into the deck by the Envious Population threat), which the
+   *  *mid-play* (Accounting's Thief, bred into the deck by the Unguarded Wealth threat), which the
    *  player would otherwise first meet in their own draw pile. Display-only, and authored rather than
    *  derived: unlike `threats`/`events` nothing seeds from it, so a mission whose injecting card
    *  changes has to be re-checked by hand. */
@@ -211,7 +211,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     threats: ['deep_cold'],
     objectiveCardId: 'harsh_winter_goal',
     victoryHint: `Outlast the winter — survive to round ${HARSH_WINTER_BREAK}.`,
-    failureHint: `From round ${HARSH_WINTER_ONSET} the cold drains 🌾 every round, deepening until it breaks.`,
+    failureHint: `From round ${HARSH_WINTER_ONSET} The Deep Cold drains 🌾 every round, deepening until it breaks.`,
     kind: 'standard',
     // Grants the science pair, which is `reading_seasons`' toolkit: the branch's pressure mission pays
     // for its resource mission, the same shape the upper branch uses. Both *make* 🔬 and neither spends
@@ -306,7 +306,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     events: Array.from({ length: COPPER_VEINS }, () => 'copper_vein'),
     objectiveCardId: 'finding_copper_goal',
     victoryHint: `Mine all ${COPPER_VEINS} copper veins.`,
-    failureHint: 'Failing tools drain 1 🔨 each round for every worker staffed in a building.',
+    failureHint: 'Failing Tools drain 1 🔨 each round for every worker staffed in a building.',
     kind: 'standard',
     // Opens the Bronze Age: unlocks the Forge, the answer to the very drain this mission inflicts.
     // Influence amount provisional.
@@ -348,7 +348,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     threats: ['pharaohs_reign'],
     objectiveCardId: 'pyramid_goal',
     victoryHint: "Amass 50 🪙, 40 🔨, and 🎭 culture level 2 before the pharaoh's reign ends.",
-    failureHint: `The tomb must be finished within ${PHARAOH_DEADLINE} rounds, before the pharaoh's reign ends.`,
+    failureHint: `The tomb must be finished within ${PHARAOH_DEADLINE} rounds, before Pharaoh's Reign ends.`,
     kind: 'standard',
     // An optional challenge leaf off Masonry — a bigger reward for a harder clear: unlocks the Pyramid
     // wonder (the culture powerhouse). Influence amount provisional.
@@ -368,11 +368,11 @@ export const MISSIONS: Record<string, MissionDef> = {
     // The convergence: Accounting demands both the metal branch and the monumental one — the surplus that
     // must be tracked exists only once you have both the copper to make it and the city to store it.
     prereqs: ['finding_copper', 'masonry'],
-    threats: ['envious_population'],
+    threats: ['unguarded_wealth'],
     alsoDisplay: ['thief'],
     objectiveCardId: 'accounting_goal',
-    victoryHint: 'Amass 40 🪙. The richer you grow, the more thieves envy breeds — pay ⚔️ to catch them.',
-    failureHint: `Each reshuffle, envy adds a thief to your deck for every ${THIEVES_PER_GOLD} 🪙 you hold; an uncaught thief skims 🪙 and 🔨 every round.`,
+    victoryHint: 'Amass a treasury of 40 🪙.',
+    failureHint: `Each reshuffle, Unguarded Wealth adds a Thief to your deck for every ${THIEVES_PER_GOLD} 🪙 you hold.`,
     kind: 'standard',
     // Trader is a better 🪙 faucet than the Bead Workshop the player already owns, not their first one —
     // money opens five missions upstream. Plus the Opulence board sticker (a starting treasury).

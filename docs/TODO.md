@@ -676,7 +676,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 
 - **Mission detail panel shows mid-play injections** ✅ — the panel's card list read `threats`/`events`
   alone, so a card a run only *breeds* was invisible: Accounting is about Thieves, but the Thief is
-  minted mid-run by the Envious Population threat and the player first met one in their own draw pile.
+  minted mid-run by the Unguarded Wealth threat and the player first met one in their own draw pile.
   New authored `MissionDef.alsoDisplay` (Accounting: `['thief']`) rendered after the seeded faces,
   badgeless since the copy count is a function of how the run goes, deduped against the seeded set, with
   an id-existence coherence case beside the `threats`/`events` one.

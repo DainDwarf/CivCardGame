@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the money-spine convergence (both branches rejoin here).
 **Placement:** `prereqs: ['finding_copper', 'masonry']` (the first two-prereq gate), bronze col 6
 row 0, rejoining the centre axis.
@@ -14,7 +14,7 @@ row 0, rejoining the centre axis.
 A single 🪙-stockpile goal fought against a **theft economy** — a fat treasury floods your own draws.
 
 - **Goal:** stockpile 40🪙 (provisional).
-- **Pressure:** the **Envious Population** threat mints **Thief** events into the deck each reshuffle,
+- **Pressure:** the **Unguarded Wealth** threat mints **Thief** events into the deck each reshuffle,
   `floor(money / THIEVES_PER_GOLD)` of them (=10, provisional). An unpaid Thief skims 🪙+🔨 and recurs;
   paying its ⚔️ cost catches it (→ `removed`).
 - **Reward:** unlocks the **Trader** (work, free, 3🪙/staffed worker) + the **Opulence** board sticker
@@ -74,6 +74,18 @@ the liability it breeds (jotted in `TODO.md`). Widening only the search beam lif
 floor that moves with a knob. `planner` is the honest human-difficulty figure — a player has no proof
 search either, and the trap is unsignposted for them too.
 
-## Polish ⬜ (not started)
+## Polish ✅ (done)
 
-- Nothing yet — card display/text, art, lore.
+- **The threat is `unguarded_wealth`** (name, id and art 👀 → 💸), down from *Envious Population*. The
+  old name pointed at the citizens; the spawn reads `floor(money / THIEVES_PER_GOLD)` and never touches
+  population at all, so the name now names what the arithmetic does. Glyph collision with
+  *Soldiers' Wages* is accepted — two missions never share a board.
+- **Both hints cut to one claim each.** The victory hint is *"Amass a treasury of 40 🪙."* — the thief
+  economy it used to explain is the failure hint's job. The failure hint keeps the spawn rule alone; the
+  Thief's own skim is printed on the Thief card, which `alsoDisplay` already puts in the mission-flow
+  popup.
+- **The objective card reads `Reach 40 🪙`**, putting every threshold objective on one verb (*Reach*)
+  and leaving *Amass* to the hint's fuller sentence.
+- **A failure hint capitalizes the card it names.** Prompted here, applied across the four missions
+  that have one: *The Deep Cold*, *Failing Tools*, *Pharaoh's Reign*, and this mission's *Unguarded
+  Wealth* / *Thief* — so the hint reads as a pointer to a card on the board rather than as prose.

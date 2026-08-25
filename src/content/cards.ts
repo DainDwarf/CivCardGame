@@ -326,7 +326,7 @@ function overextensionDrain(G: GameState): number {
  *  design: the Pyramid is an optional challenge leaf, not an impossible one. */
 export const PHARAOH_DEADLINE = 40;
 
-/** How much stockpiled 🪙 breeds one extra Thief — shared by the `envious_population` threat's
+/** How much stockpiled 🪙 breeds one extra Thief — shared by the `unguarded_wealth` threat's
  *  reshuffle spawn math and its readout, so the shown rate can't drift from the enforced one.
  *  Provisional (balance pending a sim sweep). */
 export const THIEVES_PER_GOLD = 10;
@@ -864,7 +864,7 @@ export const CARDS: Record<string, CardDef> = {
     },
     upkeep: { resources: { food: -2 } },
   },
-  // Accounting's thief: unbred at setup — the `envious_population` threat spawns these into the deck as
+  // Accounting's thief: unbred at setup — the `unguarded_wealth` threat spawns these into the deck as
   //   the treasury grows. Left in hand it skims 🪙 and "stock" (🔨) via `upkeep` and recurs (files to
   //   discard); paid off with ⚔️ (catching it) the play choke sends it to `removed` for good. Costs and
   //   drain provisional (balance pending).
@@ -990,12 +990,12 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // Accounting's ledger goal: a single money threshold. The fight isn't the number — it's holding it
-  //   against the thieves the treasury itself breeds (`envious_population`). Target provisional.
+  //   against the thieves the treasury itself breeds (`unguarded_wealth`). Target provisional.
   accounting_goal: {
     id: 'accounting_goal', name: 'Accounting', kind: 'objective', cost: {},
     goals: [{ icon: '🪙', measure: (G) => G.resources.money, target: 40 }],
     display: {
-      description: 'Amass 40 🪙',
+      description: 'Reach 40 🪙',
       dynamicText: (G) => `🪙 ${Math.min(G.resources.money, 40)}/40`,
     },
   },
@@ -1368,10 +1368,10 @@ export const CARDS: Record<string, CardDef> = {
   //   `floor(money / THIEVES_PER_GOLD)` `thief` events into the deck (via `spawnIntoDeck`, so the mint
   //   ids stay unique and the shuffle-in is deterministic) — so a fat treasury floods your own draws,
   //   the pressure that stops the player sitting on a pile. The one shipped card on the `reshuffle` bus.
-  envious_population: {
-    id: 'envious_population', name: 'Envious Population', kind: 'threat', cost: {},
+  unguarded_wealth: {
+    id: 'unguarded_wealth', name: 'Unguarded Wealth', kind: 'threat', cost: {},
     display: {
-      art: '👀',
+      art: '💸',
       description: `Reshuffles add one 🦹 per ${THIEVES_PER_GOLD} stockpiled 🪙`,
       dynamicText: (G) => `+${Math.floor(G.resources.money / THIEVES_PER_GOLD)} 🦹 next shuffle`,
     },

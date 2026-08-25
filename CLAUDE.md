@@ -267,7 +267,7 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   (draw one *specific* card, emits `draw`), `returnToDeck`,
   `recoverFromDiscard` (return one chosen card discard→hand — drives the **Writing** action), and
   `spawnIntoDeck` (mint N *fresh* copies of a cardId and shuffle them in — the only primitive that
-  introduces new instances mid-run; the **Envious Population** threat breeds Thieves through it).
+  introduces new instances mid-run; the **Unguarded Wealth** threat breeds Thieves through it).
   The **Calendar** action composes the first two: `peekTop` reads the top 3, the pick is lifted off the
   deck by id and handed to `drawInstance`, and the cards passed over keep their places — so the peek
   primitive itself stays look-only.
@@ -490,7 +490,7 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   `lore`. There is no bespoke per-mission setup/upkeep hook — a mission's behaviour is whatever its
   seeded threat/event *cards* do through the normal spine. `CampaignMap`'s `MissionFlowPopup` reads the
   same lists, so the display can't drift from what a run seeds — plus an authored `alsoDisplay` list for
-  cards a run injects only **mid-play** (Accounting's Thief, bred by its Envious Population threat),
+  cards a run injects only **mid-play** (Accounting's Thief, bred by its Unguarded Wealth threat),
   which no seed list can name.
 - **`ages.ts`** — `AGES` (Stone → Bronze → Iron) plus `ageColSpans`, which derives each age's
   contiguous DAG **column slice** from its missions' `map.col`. `CampaignMap` positions each age's band
