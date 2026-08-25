@@ -68,6 +68,12 @@ permanent infrastructure, and the route is the most permanent thing in the pool.
   *"play to remove · resolves at end of round"*. Prompted here, but it swept every mission's card text,
   the two docs, the internal comments and `probes.ts`'s `selfExiles` → `selfRemoves`.
 - **`CardFace`'s empty-effect fallback is "No effect"**, not the literal `action`. Copper Vein is the
-  card that hits it — an event that is pure cost, with no `effect`/`produces`/`upkeep` at all. Browser
-  check: the conditions strip and the text band stack flush, nothing clips (`.cardText` sits 0.8px past
-  the root's bottom edge, invisible at 4×).
+  card that hits it — an event that is pure cost, with no `effect`/`produces`/`upkeep` at all.
+- **The event band reads `c.upkeep`.** Copper Vein is the catalogue's only event carrying no disaster,
+  so *"resolves at end of round"* claimed a resolution that never happens on it; an upkeep-less event
+  now says **"play to remove"** alone. The banner still names the kind — EVENT — since branching *that*
+  would be the special case.
+- **The card's bottom band no longer spills.** `.cardMid` is the column's one flexible row, but a flex
+  item's auto minimum pinned it to the art glyph, so a card carrying *both* bottom bands outgrew the
+  fixed 162px box and pushed `.cardText` past the bottom edge. `min-height: 0` lets the art row give
+  instead. Measured: `.cardText` sits 1.0px inside the root, and every other card shape is untouched.

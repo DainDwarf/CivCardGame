@@ -130,6 +130,10 @@
 /* Row holding the worker-capacity column (if any) beside the art glyph. */
 .cardMid {
   flex: 1;
+  /* A flex item's auto minimum pins this row to the art glyph's own height, so on a card carrying
+     both bottom bands the stack outgrows the fixed card box and pushes the description band past
+     the bottom edge. Zeroed, this row is the one that gives. */
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;

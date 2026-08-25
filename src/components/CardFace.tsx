@@ -121,10 +121,14 @@ export function describeCost(c: CardDef): string {
 export function describeConditions(c: CardDef): string {
   const parts: string[] = [];
   // An event: play it (pay its cost) to remove it unresolved — its effect never fires (preventive);
-  // leave it and it fires for free at end of round, then recurs from the discard. Each clause is
-  // bound by non-breaking spaces so the band's one wrap opportunity falls between them: broken
-  // anywhere else, "remove" and "resolves" collide into a phrase that says the opposite.
-  if (c.kind === 'event') parts.push('play\u00a0to\u00a0remove resolves\u00a0at\u00a0end\u00a0of\u00a0round');
+  // leave it and it fires for free at end of round, then recurs from the discard. One carrying no
+  // `upkeep` has no disaster to pre-empt, so the second clause would claim a resolution that never
+  // happens. In the pair, each clause is bound by non-breaking spaces so the band's one wrap
+  // opportunity falls between them: broken anywhere else, "remove" and "resolves" collide into a
+  // phrase that says the opposite.
+  if (c.kind === 'event') {
+    parts.push(c.upkeep ? 'play\u00a0to\u00a0remove resolves\u00a0at\u00a0end\u00a0of\u00a0round' : 'play to remove');
+  }
   if (c.cost.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.cost.cultureLevelReq}`);
   if (c.cost.discard) parts.push(`discard ${c.cost.discard}`);
   if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
