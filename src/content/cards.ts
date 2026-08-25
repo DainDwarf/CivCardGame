@@ -712,7 +712,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'clay_tablet', name: 'Clay Tablet', kind: 'event', cost: { resources: { production: 4, science: 2 } },
     display: {
       art: '📜',
-      description: '−🔬 at end of round, worsening',
+      description: '−🔬, worsening',
       dynamicText: (_G, self) => `−${getCounter(self, 'level')}🔬 next round`,
     },
     upkeep: {
@@ -733,7 +733,7 @@ export const CARDS: Record<string, CardDef> = {
   //   the clay tablet). The events are the whole pressure, so the mission seeds no threat.
   roadwork: {
     id: 'roadwork', name: 'Roadwork', kind: 'event', cost: { resources: { production: 8 } },
-    display: { art: '🚧', description: '−2 🌾 at end of round while unpaved' },
+    display: { art: '🚧' },
     upkeep: { resources: { food: -2 } },
   },
   // Wild Horse: paying the ⚔️ *is* taming it — the play choke sends the played event to `removed`,
@@ -742,7 +742,7 @@ export const CARDS: Record<string, CardDef> = {
   //   ⚔️ tame cost, so passing a horse up is a real trade rather than deferred change.
   wild_horse: {
     id: 'wild_horse', name: 'Wild Horse', kind: 'event', cost: { resources: { military: 6 } },
-    display: { art: '🐎', description: '−1 🔨 at end of round while untamed' },
+    display: { art: '🐎' },
     upkeep: { resources: { production: -1 } },
   },
   // Stronghold: cracking it is playing it — the ⚔️ buys the walls down, the play choke sends it to
@@ -761,7 +761,6 @@ export const CARDS: Record<string, CardDef> = {
     },
     display: {
       art: '🏰',
-      description: '−2 🪙 at end of round while it stands',
       dynamicRule: 'cost and reprisal rise each round it stands',
     },
     effect: { resources: { money: 6 } },
@@ -798,7 +797,7 @@ export const CARDS: Record<string, CardDef> = {
   casting_trial: {
     id: 'casting_trial', name: 'Casting Trial', kind: 'event',
     cost: { resources: { money: 4, science: 6 }, check: needsTinRoute },
-    display: { art: '🫗', description: '−2 🔨 at end of round while unpoured', note: 'needs a 🏝️ route' },
+    display: { art: '🫗', note: 'needs a 🏝️ route' },
     upkeep: { resources: { production: -2 } },
   },
   // Sea Raid: repelling a wave is playing it — the ⚔️ buys the beach back and the play choke sends it
@@ -859,7 +858,6 @@ export const CARDS: Record<string, CardDef> = {
     },
     display: {
       art: '❄️',
-      description: 'Unendured: −2🌾 at end of round',
       dynamicRule: 'cost rises per snap endured',
     },
     upkeep: { resources: { food: -2 } },
