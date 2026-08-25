@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the age's second mission, a *megalopolis* goal.
 **Placement:** `prereqs: ['first_temple']`, bronze col 5 row 1 — a symmetric fork off gobekli
 opposite Copper (Copper moved to row -1).
@@ -64,6 +64,13 @@ it quoted.
   on the amortized reading — the card takes no workers, so it is priced against draw frequency rather
   than the worker-turn, and its flat 1⚔️/round already out-rates a War Horse drawn about every sixth turn.
 
-## Polish ⬜ (not started)
+## Polish ✅ (done)
 
-- Nothing yet — card display/text, art, lore. (City drawback still to author.)
+- **Lore rewritten.** The old text opened on the temple; Masonry sits across an **age gap** from the
+  Stone capstone, so the hand-off was dropped. Masonry is now framed as a *trade* someone learned —
+  anyone can pile rock, fitting it is the skill — which keeps the old text's best line (houses that
+  outlast the hands that raised them) and lands on people putting down roots, the population the goal
+  actually counts.
+- **The objective card reads `Reach 5 🧍`.** The trailing word *population* only restated the glyph.
+  The victory hint keeps its full phrasing — the hint is read before the run, where the glyph has no
+  board around it to name itself.

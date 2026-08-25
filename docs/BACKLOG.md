@@ -70,7 +70,7 @@
   | Mission | Dsn | Impl | Bal | Pol | Dossier |
   |---|:-:|:-:|:-:|:-:|---|
   | Copper | ✅ | ✅ | ✅ | ✅ | [copper](missions/copper.md) |
-  | Masonry | ✅ | ✅ | ✅ | ⬜ | [masonry](missions/masonry.md) |
+  | Masonry | ✅ | ✅ | ✅ | ✅ | [masonry](missions/masonry.md) |
   | Pyramid *(leaf)* | ✅ | ✅ | 🟡 | ⬜ | [pyramid](missions/pyramid.md) |
   | Accounting | ✅ | ✅ | ✅ | ⬜ | [accounting](missions/accounting.md) |
   | Writing | ✅ | ✅ | ✅ | ⬜ | [writing](missions/writing.md) |

@@ -986,7 +986,7 @@ export const CARDS: Record<string, CardDef> = {
   masonry_goal: {
     id: 'masonry_goal', name: 'Masonry', kind: 'objective', cost: {},
     goals: [{ icon: '🧍', measure: (G) => G.resources.population, target: 5 }],
-    display: { description: 'Reach 5 🧍 population' },
+    display: { description: 'Reach 5 🧍' },
   },
 
   // Accounting's ledger goal: a single money threshold. The fight isn't the number — it's holding it

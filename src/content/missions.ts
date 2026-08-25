@@ -318,9 +318,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'masonry',
     name: 'Masonry',
     lore:
-      'The temple drew your people together; now they mean to stay. Flint and mud give way to dressed, ' +
-      'fitted stone — walls that stand a lifetime, houses that outlast the hands that raised them. Lay ' +
-      'the courses true, and a village becomes a city.',
+      'Anyone can pile rock; fitting it is the trade. The face is chosen, the block dressed square, ' +
+      'each one set so the weight of the next locks it in place. Houses raised that way outlast the ' +
+      'hands that raised them, and people put down roots beside walls they expect to outlive them.',
     prereqs: ['first_temple'],
     objectiveCardId: 'masonry_goal',
     victoryHint: 'Grow your civilization to 5 🧍 population.',
