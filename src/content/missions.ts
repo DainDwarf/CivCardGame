@@ -166,7 +166,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // for a clean `string[]`.
     events: Array.from({ length: RAIDER_WAVES }, () => 'raider'),
     objectiveCardId: 'raiders_at_border_goal',
-    victoryHint: `Defeat all ${RAIDER_WAVES} raider waves — pay 3 ⚔️ to drive off each one.`,
+    victoryHint: `Defeat all ${RAIDER_WAVES} Raiders.`,
     failureHint: null,
     kind: 'standard',
     // Unlocks the Chiefdom board — the first military-leaning government, so the arc teaches board
@@ -305,7 +305,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // const so the mission can't seed a different count than the win asks for.
     events: Array.from({ length: COPPER_VEINS }, () => 'copper_vein'),
     objectiveCardId: 'finding_copper_goal',
-    victoryHint: `Mine all ${COPPER_VEINS} copper veins.`,
+    victoryHint: `Mine all ${COPPER_VEINS} Copper Veins.`,
     failureHint: 'Failing Tools drain 1 🔨 each round for every worker staffed in a building.',
     kind: 'standard',
     // Opens the Bronze Age: unlocks the Forge, the answer to the very drain this mission inflicts.
@@ -397,10 +397,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     // so the mission can't seed a different count than the win asks for.
     events: Array.from({ length: CLAY_TABLETS }, () => 'clay_tablet'),
     objectiveCardId: 'writing_goal',
-    victoryHint: `Record all ${CLAY_TABLETS} clay tablets — pay 4 🔨 and 2 🔬 for each.`,
+    victoryHint: `Record all ${CLAY_TABLETS} Clay Tablets.`,
     failureHint:
-      'A tablet left unrecorded drains 🔬 at the end of each round, deepening every time it goes ' +
-      'unwritten — let too much knowledge slip and a dark age ends the run.',
+      'A Clay Tablet left unrecorded drains 🔬 at the end of each round, deepening every time it ' +
+      'goes unwritten.',
     kind: 'standard',
     // Opens the literacy half of the Bronze spine: the Archives (the first science *building*) and the
     // Writing action. Influence amount provisional (balance pending a sim sweep).
@@ -423,9 +423,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     // the mission can't seed a different count than the win asks for.
     events: Array.from({ length: WILD_HORSES }, () => 'wild_horse'),
     objectiveCardId: 'horse_taming_goal',
-    victoryHint: `Tame all ${WILD_HORSES} wild horses — pay 6 ⚔️ for each.`,
+    victoryHint: `Tame all ${WILD_HORSES} Wild Horses.`,
     failureHint:
-      'Every horse you tame eats 1 🌾 each round for the rest of the run; starve the herd and the run ends.',
+      'Every horse you tame eats 1 🌾 each round for the rest of the run.',
     kind: 'standard',
     // Opens the military branch: unlocks the War Horse (the first ⚔️ work box) and Raiding
     // (a single-use ⚔️ → 🌾+🔨 plunder burst) — the pair the next mission is built around. Influence
@@ -449,7 +449,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // the whole pressure, and they are the rare one that pushes *back* — each left standing raids you.
     events: Array.from({ length: RAID_TARGETS }, () => 'stronghold'),
     objectiveCardId: 'raiding_goal',
-    victoryHint: `Sack all ${RAID_TARGETS} strongholds — pay 8 ⚔️ for each, and take 🪙 in plunder.`,
+    victoryHint: `Sack all ${RAID_TARGETS} Strongholds.`,
     failureHint:
       'Every stronghold you leave standing raids you back for 🪙 at the end of each round and raises its ' +
       'walls another 2 ⚔️ — bleed the treasury dry and the run ends.',
@@ -473,9 +473,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     // mission can't seed a different count than the win asks for. No threat: the segments are the pressure.
     events: Array.from({ length: ROADWORKS }, () => 'roadwork'),
     objectiveCardId: 'roads_goal',
-    victoryHint: `Pave all ${ROADWORKS} road segments — pay 8 🔨 for each.`,
+    victoryHint: `Pave all ${ROADWORKS} Roadworks.`,
     failureHint:
-      'Each unpaved segment you hold drains 2 🌾 at end of round — let your settlements starve and the run ends.',
+      'Each unpaved Roadwork you hold drains 2 🌾 at end of round.',
     kind: 'standard',
     // Opens the expansion branch: unlocks the Road, Conquest's economic twin (🪙+🔨 → +1 territory), the
     // tool the Wheel mission's territory goal is built around. Influence amount provisional.
@@ -526,7 +526,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // mission can't seed a different count than the win asks for.
     events: Array.from({ length: VOYAGES }, () => 'voyage'),
     objectiveCardId: 'setting_sail_goal',
-    victoryHint: `Launch all ${VOYAGES} voyages — pay 5 🪙, 5 🔨 and one idle 🧍 for each.`,
+    victoryHint: `Launch all ${VOYAGES} Voyages.`,
     failureHint:
       `Go ${CREW_PATIENCE} rounds without launching and the crews take berths elsewhere, ending the run. ` +
       'Every voyage that does sail takes a citizen with it for good, so each one leaves you fewer hands ' +
@@ -588,7 +588,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // so the mission can't seed a different count than the win asks for.
     events: Array.from({ length: BRONZE_TRIALS }, () => 'casting_trial'),
     objectiveCardId: 'bronze_goal',
-    victoryHint: `Master all ${BRONZE_TRIALS} casting trials — pay 4 🪙 and 6 🔬 for each, over a standing 🏝️ tin route.`,
+    victoryHint: `Master all ${BRONZE_TRIALS} Casting Trials, over a standing 🏝️ tin route.`,
     failureHint:
       'A trial you cannot pour bleeds 2 🔨 at the end of each round, and every one you do master is a ' +
       'furnace kept lit — 1 🔨 more every round after. Let the fires eat your industry bare and the run ends.',
@@ -649,8 +649,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     events: Array.from({ length: INVASION_WAVES }, () => 'sea_raid'),
     objectiveCardId: 'sea_peoples_goal',
     victoryHint:
-      `Repel all ${INVASION_WAVES} invasion waves — 8 ⚔️ for the first and 4 more for each after, ` +
-      'every one of them over a standing 🏝️ tin route.',
+      `Repel all ${INVASION_WAVES} Sea Raids, every one of them over a standing 🏝️ tin route.`,
     failureHint:
       'A wave you cannot repel falls on your trade routes — cutting every lane no escort holds, and ' +
       'burning 🌾 and 🔨 once none is left standing. Lose the tin and no wave after it can be answered ' +

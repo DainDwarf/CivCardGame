@@ -919,7 +919,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     ],
     display: {
-      description: `Defeat all ${RAIDER_WAVES} raiders`,
+      description: `Play all ${RAIDER_WAVES} Raiders`,
       dynamicText: (G) =>
         `⚔️ ${Math.min(G.removed.filter((c) => c.cardId === 'raider').length, RAIDER_WAVES)}/${RAIDER_WAVES} defeated`,
     },
@@ -1030,7 +1030,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     ],
     display: {
-      description: `Play all ${COPPER_VEINS} copper veins`,
+      description: `Play all ${COPPER_VEINS} Copper Veins`,
       dynamicText: (G) =>
         `⛏️ ${Math.min(G.removed.filter((c) => c.cardId === 'copper_vein').length, COPPER_VEINS)}/${COPPER_VEINS} mined`,
     },
@@ -1047,7 +1047,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     ],
     display: {
-      description: `Record all ${CLAY_TABLETS} clay tablets`,
+      description: `Play all ${CLAY_TABLETS} Clay Tablets`,
       dynamicText: (G) =>
         `📜 ${Math.min(G.removed.filter((c) => c.cardId === 'clay_tablet').length, CLAY_TABLETS)}/${CLAY_TABLETS} recorded`,
     },
@@ -1064,7 +1064,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     ],
     display: {
-      description: `Pave all ${ROADWORKS} road segments`,
+      description: `Play all ${ROADWORKS} Roadworks`,
       dynamicText: (G) =>
         `🚧 ${Math.min(G.removed.filter((c) => c.cardId === 'roadwork').length, ROADWORKS)}/${ROADWORKS} paved`,
     },
@@ -1074,7 +1074,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'horse_taming_goal', name: 'Horse Taming', kind: 'objective', cost: {},
     goals: [{ icon: '🐎', measure: tamedHorses, target: WILD_HORSES }],
     display: {
-      description: `Tame all ${WILD_HORSES} wild horses`,
+      description: `Play all ${WILD_HORSES} Wild Horses`,
       dynamicText: (G) => `🐎 ${Math.min(tamedHorses(G), WILD_HORSES)}/${WILD_HORSES} tamed`,
     },
   },
@@ -1090,7 +1090,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     ],
     display: {
-      description: `Sack all ${RAID_TARGETS} strongholds`,
+      description: `Play all ${RAID_TARGETS} Strongholds`,
       dynamicText: (G) =>
         `🏰 ${Math.min(G.removed.filter((c) => c.cardId === 'stronghold').length, RAID_TARGETS)}/${RAID_TARGETS} sacked`,
     },
@@ -1100,7 +1100,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'setting_sail_goal', name: 'Setting Sail', kind: 'objective', cost: {},
     goals: [{ icon: '⛵', measure: voyagesLaunched, target: VOYAGES }],
     display: {
-      description: `Launch all ${VOYAGES} voyages`,
+      description: `Play all ${VOYAGES} Voyages`,
       dynamicText: (G) => `⛵ ${Math.min(voyagesLaunched(G), VOYAGES)}/${VOYAGES} launched`,
     },
   },
@@ -1132,7 +1132,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'bronze_goal', name: 'Bronze', kind: 'objective', cost: {},
     goals: [{ icon: '🫗', measure: trialsMastered, target: BRONZE_TRIALS }],
     display: {
-      description: `Master all ${BRONZE_TRIALS} casting trials`,
+      description: `Play all ${BRONZE_TRIALS} Casting Trials`,
       dynamicText: (G) => `🫗 ${Math.min(trialsMastered(G), BRONZE_TRIALS)}/${BRONZE_TRIALS} mastered`,
     },
   },
@@ -1148,7 +1148,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'sea_peoples_goal', name: 'The Sea Peoples', kind: 'objective', cost: {},
     goals: [{ icon: '🏴‍☠️', measure: wavesRepelled, target: INVASION_WAVES }],
     display: {
-      description: `Repel all ${INVASION_WAVES} invasion waves`,
+      description: `Play all ${INVASION_WAVES} Sea Raids`,
       dynamicText: (G) => `🏴‍☠️ ${Math.min(wavesRepelled(G), INVASION_WAVES)}/${INVASION_WAVES} repelled`,
     },
   },

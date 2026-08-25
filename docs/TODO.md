@@ -279,6 +279,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **One voice for objective cards and mission hints** ✅ — a pass over all missions, cut out of the
+  Bronze polish once the same three symptoms turned up on every node. An **objective card** states the
+  mechanic and names the card — *Play all N <Card Name>* — leaving the flavour verb (mine, pave, tame,
+  sack, launch, master, repel) to the **victory hint**, which no longer re-tells the price the card
+  itself prints; a **hint capitalizes the card it names**, so it reads as a pointer to something on the
+  board rather than as prose. A clause carrying a *rule* rather than a price is kept — Bronze's and Sea
+  Peoples' tin-route gate, Wheel's two routes to territory, Sea Lanes' no-route-ever-closes, Sword &
+  Chariot's held-not-spent muster.
+
 - **The Collection's sticker tray, and the two upgrade hints split** ✅ — one change, since both
   questions were about the same tile. `upgrades.ts`'s card side split per cause —
   `stickerUpgradeAvailableFor` (one sticker) folded by `stickerUpgradeAvailable` (any unlocked one),
