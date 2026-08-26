@@ -11,6 +11,9 @@ import { cloneState, type CardInstance, type GameState } from './state';
  * `endTurn` *after* `applyUpkeep` has collected staffed-Work production — the whole point of the
  * `work` kind is that the card sticks around (staffable) through the turn and only recycles at
  * end of turn. Not part of `applyUpkeep` itself, since the projection clone runs upkeep too.
+ *
+ * A single-use box (one whose `produces` spends it through `deck.ts`'s `removeFromRun`) has already
+ * left the zone by the time this runs, so there is nothing here to file it twice.
  */
 export function discardWorkZone(G: GameState): void {
   // Strip `workers` and nothing else: staffing is the one thing that belongs to the box rather than

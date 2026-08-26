@@ -1663,8 +1663,11 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
   const rates: PriceRates = { unitCost, income: incomeRates(G, permanentProjection(G).perm) };
   const cards = Object.values(CARDS).filter((c) => ids.has(c.id));
   // A fact about the card, not about any goal, so it is read once rather than per goal below — and only
-  // where it can be false at all: a kind with no discard filing recycles nothing whatever its effect does.
-  const removesSelf = new Set(cards.filter((c) => c.kind === 'action' && selfRemoves(G, c)).map((c) => c.id));
+  // over the two kinds that would otherwise be dealt again: an action and a work box both file back to the
+  // discard unless their own resolver spends the copy first.
+  const removesSelf = new Set(
+    cards.filter((c) => (c.kind === 'action' || c.kind === 'work') && selfRemoves(G, c)).map((c) => c.id),
+  );
   const explained: GoalPlanExplain[] = [];
   const plans = objectiveGoals(G).map((goal) => {
     const need = Math.max(0, goal.target - goal.measure(banked));
@@ -1724,9 +1727,11 @@ export function explainRaceModel(G: GameState): RaceModelExplain {
       };
       if (delta > 0) {
         // Where the delta is what the play *added*, the copy files where its kind sends it and the two that
-        // file to the discard are dealt again — bar an action whose own effect removed it first. Where the
-        // delta is the copy *standing* somewhere counted, it is spent standing there whatever its kind.
-        const recycles = played >= standing && (work || (card.kind === 'action' && !removesSelf.has(card.id)));
+        // file to the discard are dealt again — bar one whose own resolver spent it first, an action at play
+        // or a work box as it produces. Where the delta is the copy *standing* somewhere counted, it is
+        // spent standing there whatever its kind.
+        const recycles =
+          played >= standing && (work || card.kind === 'action') && !removesSelf.has(card.id);
         // A second copy that buys nothing is a ceiling rather than a rate, and a goal past it is reachable
         // only alongside another card. Probed only on the standing half, the played one summing by construction.
         const cap = played >= standing || presenceDelta(probe, card, goal.measure, 2) >= 2 * standing

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { installFixtures, mint, uninstallFixtures } from '../rules/testFixtures';
-import { blankState, type CardInstance, type GameState } from '../rules';
+import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
+import { blankState, removeFromRun, type CardInstance, type GameState } from '../rules';
 import { effectiveCost, effectiveGain } from '../rules/stickers';
-import { CARDS } from '../content/cards';
-import { grantDelta, outputDelta, replacementCost, runCardIds } from './probes';
+import { CARDS, type CardDef } from '../content/cards';
+import { grantDelta, outputDelta, replacementCost, runCardIds, selfRemoves } from './probes';
 
 /** Every figure below is derived through the production fold rather than written out, so a fixture's
  *  numbers can move without re-teaching this suite what a sticker does. */
@@ -80,5 +80,35 @@ describe('the delta probes over one copy', () => {
     expect(outputDelta(G, CARDS.test_food, food, copy('test_food', 'test_restricted'))).toBe(
       stickered('test_food', 'produces', 'test_restricted').food,
     );
+  });
+});
+
+describe('selfRemoves over the two slots that can spend a copy', () => {
+  const LOCAL: Record<string, CardDef> = {
+    probe_oneshot: {
+      id: 'probe_oneshot', name: 'Probe One-Shot', kind: 'action', cost: {},
+      effect: { resources: { science: 1 }, resolve: (ctx) => { removeFromRun(ctx); } },
+    },
+    // The removal a play `effect` cannot state: it happens at the production boundary, and only for a box
+    // that was staffed enough to produce at all.
+    probe_paving: {
+      id: 'probe_paving', name: 'Probe Paving', kind: 'work', cost: {}, workers: 1,
+      produces: { resources: { territory: 1 }, resolve: (ctx) => { removeFromRun(ctx); } },
+    },
+  };
+  beforeAll(() => { installFixtures(); installCards(LOCAL); });
+  afterAll(() => { uninstallCards(LOCAL); uninstallFixtures(); });
+
+  it('reads a self-removing action and a self-removing work box alike', () => {
+    const G = blankState('probe_test');
+    expect(selfRemoves(G, CARDS.probe_oneshot)).toBe(true);
+    expect(selfRemoves(G, CARDS.probe_paving)).toBe(true);
+  });
+
+  it('reads a card that files back into circulation as keeping its copy', () => {
+    const G = blankState('probe_test');
+    expect(selfRemoves(G, CARDS.test_action)).toBe(false); // declarative effect, no closure at all
+    expect(selfRemoves(G, CARDS.test_bespoke)).toBe(false); // a closure that gains rather than spends
+    expect(selfRemoves(G, CARDS.test_work)).toBe(false); // a plain work box, dealt again after its turn
   });
 });

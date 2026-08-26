@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { drawUpTo, peekTop, drawInstance, returnToDeck, recoverFromDiscard, spawnIntoDeck } from './deck';
+import { drawUpTo, peekTop, drawInstance, returnToDeck, recoverFromDiscard, removeFromRun, spawnIntoDeck } from './deck';
 import { blankState, instancesFromCardIds, type CardInstance, type GameState } from './state';
 import type { EffectContext } from './effects';
 
@@ -193,5 +193,40 @@ describe('spawnIntoDeck', () => {
     spawnIntoDeck(ctxFor(G), 'thief', 0);
     expect(G.deck.map((c) => c.cardId)).toEqual(['a', 'b', 'c']); // untouched
     expect(G.rngState).toEqual(before); // stream not advanced
+  });
+});
+
+describe('removeFromRun', () => {
+  it('lifts the copy off the board and files it as a bare instance, dropping the box\'s staffing', () => {
+    const G = blankState('enlightenment');
+    const box = { id: 4, cardId: 'a', workers: 2, counters: { plays: 1 }, stickers: ['s'] };
+    G.workZone = [box];
+    removeFromRun({ G, self: box });
+    expect(G.workZone).toEqual([]); // gone from the board the instant it is removed
+    const filed = G.removed[0]!;
+    expect(filed.id).toBe(4);
+    expect('workers' in filed).toBe(false); // a `PlacedCard` field has no business in a pile
+    expect(filed.counters).toEqual({ plays: 1 });
+    expect(filed.stickers).toEqual(['s']);
+    expect(G.events).toEqual([]); // a removal is not a discard — nothing announced
+  });
+
+  it('lifts a standing copy out of whichever board zone holds it', () => {
+    const G = blankState('enlightenment');
+    G.tableau = [{ id: 4, cardId: 'a', workers: 1 }];
+    G.tradeRoutes = [{ id: 5, cardId: 'b', workers: 0 }];
+    removeFromRun({ G, self: G.tableau[0]! });
+    removeFromRun({ G, self: G.tradeRoutes[0]! });
+    expect(G.tableau).toEqual([]);
+    expect(G.tradeRoutes).toEqual([]);
+    expect(G.removed.map((c) => c.id)).toEqual([4, 5]);
+  });
+
+  it('is idempotent by id, so a second call cannot double-file the copy', () => {
+    const G = blankState('enlightenment');
+    const self: CardInstance = { id: 4, cardId: 'a' };
+    removeFromRun({ G, self });
+    removeFromRun({ G, self });
+    expect(G.removed).toHaveLength(1);
   });
 });

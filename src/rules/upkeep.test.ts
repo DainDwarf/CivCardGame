@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { resolveHandEvents, projectedDelta, applyUpkeep, discardWorkZone } from './upkeep';
+import { resolveHandEvents, projectedDelta, applyUpkeep, discardWorkZone, settleEndOfTurn } from './upkeep';
 import { blankState, getCounter, instancesFromCardIds } from './state';
+import { removeFromRun } from './deck';
+import { assertRunInvariants } from '../sim/invariants';
 import { gainResources } from './effects';
 import { subtractResources } from './resources';
 import type { CardDef } from '../content/cards';
@@ -26,6 +28,12 @@ const LOCAL: Record<string, CardDef> = {
     id: 'test_upkeep_producer', name: 'Test Upkeep Producer', kind: 'building', cost: { resources: { production: 4 } }, workers: 0,
     produces: { resources: { military: 1 } },
     upkeep: { resources: { production: -1 } },
+  },
+  // Single-use work box: its `produces` spends the copy as it pays out. Since `produces` fires only
+  // for an *operating* box, an unstaffed one never reaches the removal and recycles like any other.
+  test_work_single_use: {
+    id: 'test_work_single_use', name: 'Test Work Single Use', kind: 'work', cost: {}, workers: 1,
+    produces: { resources: { production: 1 }, resolve: (ctx) => { removeFromRun(ctx); } },
   },
 };
 
@@ -190,5 +198,37 @@ describe('filing the work zone', () => {
     expect(filed.stickers).toEqual(['test_addgain']);
     expect(getCounter(filed, 'plays')).toBe(2);
     expect('workers' in filed).toBe(false);
+  });
+
+  it('leaves a box its own resolver spent in `removed` alone, from the upkeep boundary on', () => {
+    const G = blankState('test');
+    G.resources.population = 1;
+    G.workZone = [{ id: 7, cardId: 'test_work_single_use', workers: 1 }];
+    applyUpkeep(G);
+    // The verdict on this boundary can end the run before the settle ever runs (`engine.ts`'s
+    // `endTurn`), so the copy has to be in one zone *here*, not merely by the time the zone clears.
+    assertRunInvariants(G);
+    expect(G.workZone).toEqual([]);
+    expect(G.removed.map((c) => c.id)).toEqual([7]);
+    expect(G.resources.production).toBe(1); // it did pay out before spending itself
+
+    settleEndOfTurn(G);
+    expect(G.discard).toEqual([]); // and the settle finds nothing left to recycle
+  });
+
+  it('recycles an unstaffed box to the discard with its workFiled event, since it never produced', () => {
+    const G = blankState('test');
+    G.workZone = [{ id: 7, cardId: 'test_work_single_use', workers: 0 }];
+    applyUpkeep(G);
+    // Stop at the emitting site rather than running the whole settle, so the batch is readable
+    // before the flush drains it.
+    discardWorkZone(G);
+
+    expect(G.removed).toEqual([]);
+    expect(G.discard.map((c) => c.id)).toEqual([7]);
+    expect(G.resources.production).toBe(0);
+    expect(G.events).toEqual([
+      { type: 'discard', instanceId: 7, cardId: 'test_work_single_use', reason: 'workFiled' },
+    ]);
   });
 });

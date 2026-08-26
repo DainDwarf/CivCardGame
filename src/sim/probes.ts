@@ -2,7 +2,7 @@ import {
   CORE_KEYS, cloneState, currentCost, placedCards,
   type CardInstance, type GameState, type Resources,
 } from '../rules';
-import { realizedGain, resolveCard } from '../rules/effects';
+import { realizedGain, resolveCard, resolveProduction } from '../rules/effects';
 import { effectiveGain } from '../rules/stickers';
 import { CARDS, isStructure, type CardDef } from '../content/cards';
 
@@ -234,17 +234,29 @@ export function presenceDelta(
   return best;
 }
 
-/** Whether playing a card files its own copy to `removed` rather than back into circulation — the one thing
- *  `CardKind` does not settle, since `run/moves.ts`'s action→discard filing is skipped for a copy whose own
- *  `resolve` already removed it. Run rather than read: a closure states its filing by doing it.
+/** Whether a card takes its own copy out of the run rather than filing it back into circulation — the one
+ *  thing `CardKind` does not settle, since both routine filing sites (`run/moves.ts`'s action→discard, and
+ *  the end-of-turn work-zone sweep) are skipped for a copy whose own resolver already removed it. Run
+ *  rather than read: a closure states its filing by doing it.
  *
- *  The clone absorbs everything the effect does; a resolver that suspends into a `pendingInteraction` parks
+ *  Two slots can do the removing, at the two moments a copy is resolved: a play `effect`, and a `work`
+ *  box's `produces` at the upkeep boundary. The work half has to seat a **staffed** copy in the probe's
+ *  work zone first, because `resolveProduction` resolves the live box through `findStaffable` and pays
+ *  nothing for one that isn't standing and operating.
+ *
+ *  The clone absorbs everything the resolver does; one that suspends into a `pendingInteraction` parks
  *  it there and is answered by nobody, which is exactly the read wanted — an unanswered effect files
  *  nothing. */
 export function selfRemoves(G: GameState, card: CardDef): boolean {
-  if (!card.effect?.resolve) return false;
+  const fromProduction = card.kind === 'work' && card.produces?.resolve !== undefined;
+  if (!card.effect?.resolve && !fromProduction) return false;
   const probe = cloneState(G);
-  resolveCard({ G: probe, self: { id: -1, cardId: card.id } });
+  if (card.effect?.resolve) resolveCard({ G: probe, self: { id: -1, cardId: card.id } });
+  if (fromProduction && !probe.removed.some((c) => c.id === -1)) {
+    const box = { id: -1, cardId: card.id, workers: 1 };
+    probe.workZone.push(box);
+    resolveProduction({ G: probe, self: box });
+  }
   return probe.removed.some((c) => c.id === -1);
 }
 

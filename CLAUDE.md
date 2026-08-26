@@ -267,7 +267,11 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   (draw one *specific* card, emits `draw`), `returnToDeck`,
   `recoverFromDiscard` (return one chosen card discard→hand — drives the **Writing** action), and
   `spawnIntoDeck` (mint N *fresh* copies of a cardId and shuffle them in — the only primitive that
-  introduces new instances mid-run; the **Unguarded Wealth** threat breeds Thieves through it).
+  introduces new instances mid-run; the **Unguarded Wealth** threat breeds Thieves through it), and
+  `removeFromRun` (take the resolving copy out of the run — lifted off whichever board zone holds it
+  and filed into `removed` as a bare `CardInstance`, idempotent by id; the single-use verb behind
+  Bow and Raiding, doing its own lifting because a run can end on the upkeep boundary a
+  `produces` resolver fires at, before any end-of-turn filing runs).
   The **Calendar** action composes the first two: `peekTop` reads the top 3, the pick is lifted off the
   deck by id and handed to `drawInstance`, and the cards passed over keep their places — so the peek
   primitive itself stays look-only.

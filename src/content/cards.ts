@@ -3,7 +3,7 @@ import { bumpCounter, getCounter, setCounter, stripSticker, type CardInstance, t
 import { closeTradeRoute } from '../rules/tradeRoutes';
 import { gainResources, type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
 import type { CardCost, CostContext, UnplayableReason } from '../rules/cost';
-import { drawInstance, peekTop, recoverFromDiscard, spawnIntoDeck } from '../rules/deck';
+import { drawInstance, peekTop, recoverFromDiscard, removeFromRun, spawnIntoDeck } from '../rules/deck';
 import { assignedWorkers, freePopulation } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
 
@@ -576,7 +576,7 @@ export const CARDS: Record<string, CardDef> = {
     // A one-shot: grant the military (declarative, folded first) then send this copy to `removed`
     // so it never recycles back into the deck. The play choke point skips its usual action→discard
     // file once the effect has already filed the copy (see `moves.ts`'s `playCard`).
-    effect: { resources: { military: 3 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
+    effect: { resources: { military: 3 }, resolve: (ctx) => { removeFromRun(ctx); } },
   },
   bartering: { id: 'bartering', name: 'Bartering', kind: 'trade', cost: { resources: { money: 1 } }, display: { art: '🤝' }, produces: { resources: { food: 2 } }, upkeep: { resources: { money: -1 } } },
   // The zone's second route, and Bartering at Bronze scale: the same buy-standing-yield-with-standing-
@@ -602,7 +602,7 @@ export const CARDS: Record<string, CardDef> = {
   raiding: {
     id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } },
     display: { art: '🏴', note: 'single use' },
-    effect: { resources: { food: 4, production: 4 }, resolve: (ctx) => { ctx.G.removed.push(ctx.self); } },
+    effect: { resources: { food: 4, production: 4 }, resolve: (ctx) => { removeFromRun(ctx); } },
   },
   conquest: {
     id: 'conquest', name: 'Conquest', kind: 'work', workers: 1,

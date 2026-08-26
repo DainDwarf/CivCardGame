@@ -163,3 +163,34 @@ export function spawnIntoDeck(ctx: EffectContext, cardId: string, count: number)
   const minted = instancesFromCardIds(Array.from({ length: count }, () => cardId), nextInstanceId(ctx.G));
   returnToDeck(ctx, minted);
 }
+
+/**
+ * Take the resolving copy out of the run for good — the single-use verb a card's own resolver calls
+ * on itself (a one-shot action spending itself, a work box consumed by the round it pays out).
+ *
+ * It lifts the copy off the board *itself* rather than leaving a later filing site to notice: the
+ * move that follows a play is skippable (`moves.ts`'s action path checks `removed` before recycling),
+ * but a `produces`/`upkeep` resolver fires mid-`endTurn` broadcast, and the run can end on that
+ * boundary's verdict before end-of-turn filing ever runs (`engine.ts`'s `endTurn`) — so anything left
+ * standing would be committed in two zones at once. The observer walk snapshots its zones for exactly
+ * this (`events.ts`'s `dispatchEvent`), so removing from one mid-dispatch is safe.
+ *
+ * Files a bare `CardInstance`: `ctx.self` may be a live `PlacedCard`, whose `workers` belongs to the
+ * board box rather than to the physical card and must not ride into a pile (`cloneState` would drop
+ * it on the next clone, so the state would differ across a clone). Idempotent by id, and emits
+ * nothing — a removal is not a discard, and no `on` handler watches it.
+ */
+export function removeFromRun(ctx: EffectContext): void {
+  const { G, self } = ctx;
+  if (G.removed.some((c) => c.id === self.id)) return;
+  for (const zone of [G.tableau, G.workZone, G.tradeRoutes]) {
+    const i = zone.findIndex((c) => c.id === self.id);
+    if (i !== -1) zone.splice(i, 1);
+  }
+  G.removed.push({
+    id: self.id,
+    cardId: self.cardId,
+    counters: self.counters,
+    stickers: self.stickers,
+  });
+}

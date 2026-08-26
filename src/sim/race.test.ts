@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { installCards, installFixtures, mint, uninstallCards, uninstallFixtures } from '../rules/testFixtures';
-import { addBuilding, addWork, blankState, bumpCounter, getCounter, openTradeRoute, scaleResources, seedObjective, setCounter, subtractResources, type GameState } from '../rules';
+import { addBuilding, addWork, blankState, bumpCounter, getCounter, openTradeRoute, removeFromRun, scaleResources, seedObjective, setCounter, subtractResources, type GameState } from '../rules';
 import { effectiveGain } from '../rules/stickers';
 import { CARDS, CREW_PATIENCE, type CardDef } from '../content/cards';
 import {
@@ -197,6 +197,13 @@ const FIXTURES: Record<string, CardDef> = {
   race_claim: {
     id: 'race_claim', name: 'Race Claim', kind: 'work', cost: {}, workers: 1,
     produces: { resources: { territory: 1 } },
+  },
+  // `race_claim`'s single-use twin: the same box spending itself as it pays out, so the pair differ only
+  // in whether a played copy is dealt again — the work-kind counterpart of `race_spark`/`race_flare`, and
+  // a removal no play `effect` states, since this one happens at the production boundary.
+  race_paving: {
+    id: 'race_paving', name: 'Race Paving', kind: 'work', cost: {}, workers: 1,
+    produces: { resources: { territory: 1 }, resolve: (ctx) => { removeFromRun(ctx); } },
   },
   // An event whose drain is computed rather than printed, and deepens every time the copy comes round.
   // Nothing declarative can be read off it, so only settling the boundary reaches the amount at all.
@@ -633,6 +640,21 @@ describe('delivery', () => {
     expect(spentEx.reach).toBe(1);
     expect(spentEx.clock.route).toBe('none');
     expect(routeCause(spentEx)).toBe('copies short');
+  });
+
+  it('reads a work box that spends itself producing as spent, not dealt again', () => {
+    // A work box's removal happens at the production boundary, which no play `effect` states — so the pair
+    // below are identical cards to everything except the probe that actually runs the `produces` closure.
+    const recycled = planned('race_goal_land', ['race_claim'], { territory: 0 });
+    const spent = planned('race_goal_land', ['race_paving'], { territory: 0 });
+    expect(deriveRace(recycled).plans[0].landings[0]).toMatchObject({ cardId: 'race_claim', recycles: true });
+
+    // One copy against three units of land: the route is real but reaches only what the run holds, where
+    // the recycling twin is dealt as often as its clock asks for.
+    const landing = deriveRace(spent).plans[0].landings[0];
+    expect(landing).toMatchObject({ cardId: 'race_paving', delta: 1 });
+    expect(landing.recycles).toBeUndefined();
+    expect(explainRaceValue(spent, { model: deriveRace(spent) }).goals[0].reach).toBe(1);
   });
 
   it('shortens a landing clock as the copies land, not merely as the bank covers them', () => {
