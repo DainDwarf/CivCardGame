@@ -523,8 +523,9 @@ function BoardBox({
       : describeRoundFlow(card));
   // A card whose whole behaviour is a claim on *other* cards' gains moves nothing per round of its
   // own, so every reader above comes back empty and the box would stand blank. Its face text is the
-  // only statement of what standing there does, so the box borrows that.
-  const flow = roundFlow || card.display?.description || '';
+  // only statement of what standing there does, so the box borrows that — `boxText` first, for a face
+  // whose statement is split across two bands the box doesn't have.
+  const flow = roundFlow || card.display?.boxText || card.display?.description || '';
   return (
     <div className={className} ref={boxRef} onPointerDown={onPointerDown} onClick={onZoomClick}>
       {cap > 0 && (

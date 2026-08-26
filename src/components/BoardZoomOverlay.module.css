@@ -28,9 +28,14 @@
    layout box and the two columns can't overlap. `BoardMini` has a fixed 260×175.2 for exactly this. */
 .enlarged {
   --board-zoom: 1.9;
+  /* A mini's sticker badges hang 8px past its bottom-left corner (`CardFace`'s `.stickerRow`), and the
+     transform multiplies that overhang along with everything else. Reserved on every side because
+     `.row` scrolls: overflow past a scroll box's *start* edge is clipped rather than reachable, so an
+     unreserved badge simply loses its outer edge. */
+  --sticker-overhang: calc(8px * var(--board-zoom));
   box-sizing: border-box;
-  width: calc(260px * var(--board-zoom));
-  height: calc(175.2px * var(--board-zoom));
+  width: calc(260px * var(--board-zoom) + 2 * var(--sticker-overhang));
+  height: calc(175.2px * var(--board-zoom) + 2 * var(--sticker-overhang));
   display: flex;
   align-items: center;
   justify-content: center;

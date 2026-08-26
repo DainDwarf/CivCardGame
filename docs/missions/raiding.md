@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the **military** branch's closing node ([Horse taming](horse-taming.md) → Raiding).
 Prereq **horse-taming**; the branch converges into **Bronze**. Placed bronze col 10 row 0 (parallel to
 Wheel at col 10 row −1).
@@ -149,9 +149,32 @@ pressure at once. That coupling is the thing a future rebalance most needs to kn
 - **`writing` never plays** in any recorded row and `calendar` barely — the value-function gap the sim
   skill names (discard→hand recovery isn't scored), not a playability finding.
 
-## Polish ⬜
+## Polish ✅
 
-Not started — card text, art (🏰 / ⛺ provisional), lore.
+Text only; the art stands as authored (🏰 Stronghold · ⛺ War Camp).
 
-- **Name collision:** the previous mission's reward card is *Raiding* and so is this mission. A card and
-  a mission sharing a name is a readability smell; rename one at Polish.
+- **The Stronghold face states both halves of the escalation.** It printed the auto-generated
+  `+6🪙 · -2🪙`, which read the reprisal as flat and never mentioned the wall step; the face now carries
+  the plunder in the conditions band (`On play: +6🪙`) and the pressure in the text band
+  (`−2🪙 worsening, cost +3⚔️`), with a `dynamicText` so a held copy prints the drain it will actually
+  pay — `−2🪙`, `−4🪙`, `−6🪙` — the way Clay Tablet does.
+- **The failure hint was wrong, not just wordy.** It quoted the wall step as 2⚔️ (the *money* step's
+  number) and left the reprisal reading flat; it now names both rates and capitalizes **Stronghold**.
+- **New lore** — the chiefs have run the same arithmetic and are already building. The branch is the one
+  where violence is the strategy the player *chose*, so the text argues from appetite and timing rather
+  than from provocation.
+- **A board box and a card face may phrase one statement differently** (`CardDisplay.boxText`, read by
+  `Board.tsx` ahead of `description`). The camps' `On 🏞️ gain: +8🌾 +2🪙` wrapped between the `2` and the
+  🪙 — a digit→emoji boundary is a legal break, so the token splits — and the box, being one line with no
+  conditions band, can't take the face's fix of moving the clause up into the band. Face: `On 🏞️ gain` /
+  `+8🌾 +2🪙`. Box: `On 🏞️: +8🌾 +2🪙`. Raider Camp took the same treatment, so the two boards' perks read
+  alike.
+- **The board zoom cropped a sticker badge.** `BoardZoomOverlay`'s wrap reserved the mini's box exactly,
+  while the badges hang 8px past its bottom-left corner and the 1.9× transform multiplies that too — and
+  `.row` scrolls, so the overflow past its start edge was clipped rather than reachable. The wrap now
+  reserves the scaled overhang on every side.
+- **Name collision: dropped, not fixed.** The mission, its objective card and Horse taming's reward card
+  are all *Raiding*. The player never sees two of them side by side, and in code the ids live in separate
+  catalogues with every reference site typed to one of them (`unlockCardIds`/`cardId` vs
+  `prereqs`/`mission`), nothing looks a card up by name, and the coherence tests pin each field against
+  its own catalogue. The only cost is a noisier `grep`.

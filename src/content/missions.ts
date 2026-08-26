@@ -436,11 +436,11 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'raiding',
     name: 'Raiding',
     lore:
-      'The herds are broken to the halter, and word of them has run ahead of you. Behind their ditches ' +
-      'and timber walls the valley chiefs are counting your riders and thickening their gates, and every ' +
-      'season you leave them standing they raise the palisade another course and send their own men out ' +
-      'after your grain. Their walls will never be lower than they are this year. Ride out, break them ' +
-      'open, and let what they hoarded pay for the horses that took it.',
+      'The valley chiefs have stopped sending messengers and started sending timber up onto the ' +
+      'palisade, which means they have done the same arithmetic you did and reached the same answer: ' +
+      'what they hold is worth taking, and you are the ones who can take it. They are not wrong, and ' +
+      'they are not going to be ready. Ride now — every season you spend deciding is another course of ' +
+      'wood between you and the granary.',
     prereqs: ['horse_taming'],
     // One `stronghold` per target, tied to the objective's threshold by the shared RAID_TARGETS const
     // so the mission can't seed a different count than the win asks for. No threat: the strongholds are
@@ -449,8 +449,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     objectiveCardId: 'raiding_goal',
     victoryHint: `Sack all ${RAID_TARGETS} Strongholds.`,
     failureHint:
-      'Every stronghold you leave standing raids you back for 🪙 at the end of each round and raises its ' +
-      'walls another 2 ⚔️ — bleed the treasury dry and the run ends.',
+      'Every Stronghold you leave standing raids you back for 🪙, and each round it stands raises both ' +
+      'its reprisal 2 🪙 and its walls 3 ⚔️.',
     kind: 'standard',
     // Closes the military branch: the reward is the government itself, upgrading the martial board into
     // Warband rather than handing out another card. Influence amount provisional.

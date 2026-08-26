@@ -26,6 +26,10 @@ export interface CardDisplay {
    *  cost/effect text can't state (e.g. a self-removing card's "single use"). Display-only: it never
    *  drives logic, so it must be kept in step with the closure that actually implements the behaviour. */
   note?: string;
+  /** The board box's own phrasing, for a card whose face splits one statement across the conditions
+   *  band and the text band: the box is a single line with no band, so borrowing the text half alone
+   *  would state a gain without the condition it hangs on. Falls back to `description`. */
+  boxText?: string;
   /** The card's central art glyph, shown big on the face and on a building/work box. Optional — a
    *  card without one falls back to a per-kind default in `CardFace.tsx`'s `artFor`. Every deckable
    *  card must set it (pinned by `cards.test.ts`). */
@@ -482,7 +486,7 @@ export const CARDS: Record<string, CardDef> = {
   //   takes. The spoils scale with the land, so a bigger seizure is worth proportionally more.
   raider_camp: {
     id: 'raider_camp', name: 'Raider Camp', kind: 'building', cost: {}, workers: 0,
-    display: { art: '🏕️', description: 'On 🏞️ gain: +4🌾' },
+    display: { art: '🏕️', note: 'On 🏞️ gain', description: '+4🌾', boxText: 'On 🏞️: +4🌾' },
     modifyGain: (base) => {
       const taken = base?.territory ?? 0;
       if (!base || taken <= 0) return base;
@@ -491,7 +495,7 @@ export const CARDS: Record<string, CardDef> = {
   },
   war_camp: {
     id: 'war_camp', name: 'War Camp', kind: 'building', cost: {}, workers: 0,
-    display: { art: '⛺', description: 'On 🏞️ gain: +8🌾 +2🪙' },
+    display: { art: '⛺', note: 'On 🏞️ gain', description: '+8🌾 +2🪙', boxText: 'On 🏞️: +8🌾 +2🪙' },
     modifyGain: (base) => {
       const taken = base?.territory ?? 0;
       if (!base || taken <= 0) return base;
@@ -761,7 +765,9 @@ export const CARDS: Record<string, CardDef> = {
     },
     display: {
       art: '🏰',
-      dynamicRule: 'cost and reprisal rise each round it stands',
+      note: 'On play: +6🪙',
+      description: '−2🪙 worsening, cost +3⚔️',
+      dynamicText: (_G, self) => `−${2 + 2 * getCounter(self, 'walls')}🪙`,
     },
     effect: { resources: { money: 6 } },
     upkeep: {
