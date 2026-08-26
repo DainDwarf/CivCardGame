@@ -1030,7 +1030,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       description: `Play all ${COPPER_VEINS} Copper Veins`,
       dynamicText: (G) =>
-        `⛏️ ${Math.min(G.removed.filter((c) => c.cardId === 'copper_vein').length, COPPER_VEINS)}/${COPPER_VEINS} mined`,
+        `⛏️ ${Math.min(G.removed.filter((c) => c.cardId === 'copper_vein').length, COPPER_VEINS)}/${COPPER_VEINS} removed`,
     },
   },
 
@@ -1047,7 +1047,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       description: `Play all ${CLAY_TABLETS} Clay Tablets`,
       dynamicText: (G) =>
-        `📜 ${Math.min(G.removed.filter((c) => c.cardId === 'clay_tablet').length, CLAY_TABLETS)}/${CLAY_TABLETS} recorded`,
+        `📜 ${Math.min(G.removed.filter((c) => c.cardId === 'clay_tablet').length, CLAY_TABLETS)}/${CLAY_TABLETS} removed`,
     },
   },
 
@@ -1064,7 +1064,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       description: `Play all ${ROADWORKS} Roadworks`,
       dynamicText: (G) =>
-        `🚧 ${Math.min(G.removed.filter((c) => c.cardId === 'roadwork').length, ROADWORKS)}/${ROADWORKS} paved`,
+        `🚧 ${Math.min(G.removed.filter((c) => c.cardId === 'roadwork').length, ROADWORKS)}/${ROADWORKS} removed`,
     },
   },
 
@@ -1090,7 +1090,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       description: `Play all ${RAID_TARGETS} Strongholds`,
       dynamicText: (G) =>
-        `🏰 ${Math.min(G.removed.filter((c) => c.cardId === 'stronghold').length, RAID_TARGETS)}/${RAID_TARGETS} sacked`,
+        `🏰 ${Math.min(G.removed.filter((c) => c.cardId === 'stronghold').length, RAID_TARGETS)}/${RAID_TARGETS} removed`,
     },
   },
 
@@ -1099,7 +1099,7 @@ export const CARDS: Record<string, CardDef> = {
     goals: [{ icon: '⛵', measure: voyagesLaunched, target: VOYAGES }],
     display: {
       description: `Play all ${VOYAGES} Voyages`,
-      dynamicText: (G) => `⛵ ${Math.min(voyagesLaunched(G), VOYAGES)}/${VOYAGES} launched`,
+      dynamicText: (G) => `⛵ ${Math.min(voyagesLaunched(G), VOYAGES)}/${VOYAGES} removed`,
     },
   },
 
@@ -1131,7 +1131,7 @@ export const CARDS: Record<string, CardDef> = {
     goals: [{ icon: '🫗', measure: trialsMastered, target: BRONZE_TRIALS }],
     display: {
       description: `Play all ${BRONZE_TRIALS} Casting Trials`,
-      dynamicText: (G) => `🫗 ${Math.min(trialsMastered(G), BRONZE_TRIALS)}/${BRONZE_TRIALS} mastered`,
+      dynamicText: (G) => `🫗 ${Math.min(trialsMastered(G), BRONZE_TRIALS)}/${BRONZE_TRIALS} removed`,
     },
   },
 
@@ -1147,7 +1147,7 @@ export const CARDS: Record<string, CardDef> = {
     goals: [{ icon: '🏴‍☠️', measure: wavesRepelled, target: INVASION_WAVES }],
     display: {
       description: `Play all ${INVASION_WAVES} Sea Raids`,
-      dynamicText: (G) => `🏴‍☠️ ${Math.min(wavesRepelled(G), INVASION_WAVES)}/${INVASION_WAVES} repelled`,
+      dynamicText: (G) => `🏴‍☠️ ${Math.min(wavesRepelled(G), INVASION_WAVES)}/${INVASION_WAVES} removed`,
     },
   },
 
