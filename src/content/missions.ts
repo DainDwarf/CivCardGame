@@ -411,11 +411,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'horse_taming',
     name: 'Horse Taming',
     lore:
-      'Out past the last ploughed field the grass runs on without end, and the herds run with it — ' +
-      'faster than any runner, stronger than any ox, and answering to no one. Your riders have watched ' +
-      'them at the watering places for a season now, learning where they drink and how they startle. ' +
-      'Take them, and no war party on the steppe will match you. But a horse is not a harvest: every one ' +
-      'you break to the halter must be fed for the rest of its life, out of the same fields that feed you.',
+      'The horses come down to drink at dusk and are gone at any sound, and there is no fence on the ' +
+      'steppe long enough to matter. What works is water, salt, a rope, and a man who will not leave — a ' +
+      'week of standing close enough to be smelled and not fled from, until one morning the animal takes ' +
+      'the weight of a man and distance stops being a wall. Break them one at a time; there is no other way.',
     prereqs: ['writing'],
     threats: ['tamed_horses'],
     // One `wild_horse` per horse, tied to the objective's threshold by the shared WILD_HORSES const so
@@ -424,7 +423,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     objectiveCardId: 'horse_taming_goal',
     victoryHint: `Tame all ${WILD_HORSES} Wild Horses.`,
     failureHint:
-      'Every horse you tame eats 1 🌾 each round for the rest of the run.',
+      'Every Wild Horse you tame eats 1 🌾 each round for the rest of the run.',
     kind: 'standard',
     // Opens the military branch: unlocks the War Horse (the first ⚔️ work box) and Raiding
     // (a single-use ⚔️ → 🌾+🔨 plunder burst) — the pair the next mission is built around. Influence

@@ -41,6 +41,10 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   (`rules/population.ts`) already exists for exactly this, so the curve isn't re-derived in the UI. Note it
   is state-dependent: the same card shows a different number at pop 2 than at pop 5. `[size: S]` `[?]`
 
+- **Buy-a-copy affordance in the Collection** `[size: S]` — the buy-next-tier button in
+  `CardInstancePanel`'s tray is a plain button off to the side of the copies it adds to. Wants to read as
+  *the next copy*: a ghost card in the panel's copy grid, in the slot the purchase would fill, with the ⭐
+  price carried prominently on it rather than tucked in a button label.
 - **Discard-mode affordance when a play costs cards** `[size: S]` — *(beta playtest)* playing Fire
   (`cost: { discard: 1 }`) drops the player into choosing a card to give up with nothing saying so; the
   discard reads as cards vanishing. Wants a visible "choose N to discard" mode on the hand while the

@@ -1073,7 +1073,7 @@ export const CARDS: Record<string, CardDef> = {
     goals: [{ icon: '🐎', measure: tamedHorses, target: WILD_HORSES }],
     display: {
       description: `Play all ${WILD_HORSES} Wild Horses`,
-      dynamicText: (G) => `🐎 ${Math.min(tamedHorses(G), WILD_HORSES)}/${WILD_HORSES} tamed`,
+      dynamicText: (G) => `🐎 ${Math.min(tamedHorses(G), WILD_HORSES)}/${WILD_HORSES} removed`,
     },
   },
 
@@ -1280,8 +1280,8 @@ export const CARDS: Record<string, CardDef> = {
     id: 'tamed_horses', name: 'Tamed Horses', kind: 'threat', cost: {},
     display: {
       art: '🐴',
-      description: '−1🌾 per tamed horse',
-      dynamicText: (G) => `−${tamedHorses(G)}🌾 next round`,
+      description: '−1🌾 per Wild Horse removed',
+      dynamicText: (G) => `−${tamedHorses(G)}🌾`,
     },
     upkeep: {
       resolve: ({ G }) => {

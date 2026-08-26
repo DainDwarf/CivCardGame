@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the **military** branch's first node (Horse taming → [Raiding](raiding.md)), a `×2`
 branch parallel to Wheel+roads (expansion) and Naval (trade). Prereq **Writing**; the branch converges
 into **Bronze**.
@@ -128,6 +128,15 @@ narrower than anything a player arrives holding.
    back into Hunting's shape.
 - **Sweep on:** `scripts/sim/baselines/horse_taming.json`.
 
-## Polish ⬜
+## Polish ✅
 
-Not started — card text, art (🐎 / 🐴 / 🏇 / 🔥 are provisional), lore.
+Text only; the art stands as authored (🐎 Wild Horse · 🐴 Tamed Horses · 🏇 War Horse · 🏴 Raiding).
+
+- **Every readout names the pile, not the fiction.** The threat prints `−1🌾 per Wild Horse removed` and
+  the objective `🐎 X/5 removed`, both pointing at the zone the player watches fill — "tamed" was a word
+  only the lore and the internals used. The threat's `next round` tail went with it (a threat's dynamic
+  line is already what the coming boundary charges), and the failure hint capitalizes **Wild Horse** so it
+  reads as a pointer to a card.
+- **New lore** — the taming itself (patience, salt, a rope, one horse at a time) rather than the herd on
+  the horizon. It no longer closes on the food price: the failure hint prints that, and the lore was the
+  second telling.

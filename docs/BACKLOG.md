@@ -76,7 +76,7 @@
   | Writing | ✅ | ✅ | ✅ | ✅ | [writing](missions/writing.md) |
   | Roads | ✅ | ✅ | ✅ | ⬜ | [roads](missions/roads.md) |
   | Wheel | ✅ | ✅ | ✅ | ⬜ | [wheel](missions/wheel.md) |
-  | Horse taming | ✅ | ✅ | ✅ | ⬜ | [horse-taming](missions/horse-taming.md) |
+  | Horse taming | ✅ | ✅ | ✅ | ✅ | [horse-taming](missions/horse-taming.md) |
   | Raiding | ✅ | ✅ | ✅ | ⬜ | [raiding](missions/raiding.md) |
   | Setting Sail | ✅ | ✅ | ✅ | ⬜ | [setting-sail](missions/setting-sail.md) |
   | Sea Lanes | ✅ | ✅ | ✅ | ⬜ | [sea-lanes](missions/sea-lanes.md) |
