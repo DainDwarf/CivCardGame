@@ -120,7 +120,9 @@ export type GoalRoute = 'met' | 'flat' | 'throughput' | 'landing' | 'cover' | 'b
 
 /** One goal's clock. `need` and `tau` are in the goal's own measure units; `t` is in rounds. */
 export interface GoalClock {
-  icon: string;
+  /** The goal's own readout glyph, absent where it declares none — a report label, and the goal's
+   *  index is what actually identifies it. */
+  icon?: string;
   /** Units of `measure` still to gain, counting output already in flight (`0` once satisfied). */
   need: number;
   /** Per-round movement of `measure` from the permanent economy alone. */
@@ -334,7 +336,7 @@ export interface PlanCandidate {
 
 /** One goal's derivation: the scan that produced its plans. */
 export interface GoalPlanExplain {
-  icon: string;
+  icon?: string;
   /** Cards in the run — the scan universe. */
   scanned: number;
   /** Those that moved the measure in no way at all, so ranked for nothing. */

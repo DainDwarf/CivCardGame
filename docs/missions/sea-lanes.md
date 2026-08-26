@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the closing node of the **naval / trade** branch
 ([Setting Sail](setting-sail.md) → Sea Lanes). Prereq **setting_sail**; the branch converges into
 **Bronze**.
@@ -107,15 +107,15 @@ route's rent *is* the money cost of bronze, and the gate-not-pay reading settled
 ## Implement ✅ (shipped)
 
 The `sea_lanes` mission (bronze col 10 row +1, prereq `setting_sail`, 12 Influence) seeding one
-`unguarded_lanes` threat and the `sea_lanes_goal` objective; the `tin_route` and `merchant_ship` cards
+`escort_duty` threat and the `sea_lanes_goal` objective; the `tin_route` and `merchant_ship` cards
 and the `convoy` sticker as its reward. **Zero new engine primitives** — every piece rides an existing
 spine.
 
 - **No gating mechanism was built.** The Tin Route opens and taxes; the `CardCost.check` gate the
   *Reward* section describes lands on the Bronze cards that read it, which don't exist yet.
 - **The goal is a plain threshold**, not a bespoke `met`: `first_trades_goal` already measures
-  `G.tradeRoutes.length` declaratively, so `SEA_LANE_ROUTES = 4` is a `goals` target and the generic
-  `goalsReadout` renders `🚢 n/4` with no `dynamicText`. No shared count helper either — a zone's
+  `G.tradeRoutes.length` declaratively, so `SEA_LANE_ROUTES = 4` is a `goals` target. (Polish gave it a
+  `dynamicText` and deleted its glyph — see below.) No shared count helper either — a zone's
   `length` can't drift the way a filter over `removed` can, so the Wharf's inline read is the precedent
   followed, not Horse Taming's `tamedHorses`.
 - **The threat is a state-scaled `upkeep.resolve`** (`−G.tradeRoutes.length` ⚔️), the `tamed_horses`
@@ -143,8 +143,8 @@ spine.
   they stand. `sim/zoneOrderInvariance.test.ts` needs no fixture entry: a zone `length` is
   order-independent. Full suite and typecheck green.
 
-Names provisional: **Unguarded Lanes** (`threat`) above all — it names the absence rather than the navy
-the pressure is actually about. **Tin Route**, **Merchant Ship** and **Convoy** are the design's own.
+Names settled at Polish: the threat is **Escort Duty**; **Tin Route**, **Merchant Ship** and **Convoy**
+stand as the design's own.
 
 ## Balance ✅
 
@@ -177,10 +177,35 @@ Port's one citizen), and its winning lines span 47–162 turns at every populati
 sets the board's pace is when the fourth route lands rather than how many citizens carry it. Deck note,
 not a mission change: `road` is a sibling-branch grant not guaranteed at this node.
 
-## Polish ⬜
+## Polish ✅
 
-Not started — card text, art, lore.
+**Name:** *Sea Lanes* stands (the *The Tin Islands* alternative dropped), as do Tin Route, Merchant Ship
+and Convoy. The threat is the one rename.
 
-- **Name:** *Sea Lanes* is provisional (*The Tin Islands* is the alternative). Deliberately **not**
-  named for its reward card: [Raiding](raiding.md) already carries a mission and a card sharing a name,
-  and that readability smell is one to fix, not to repeat.
+- **The threat is now `escort_duty` / Escort Duty** 🛡️, id included, and reads `−1⚔️ per trade route`.
+  Implement had flagged *Unguarded Lanes* as naming the absence rather than the navy the drain actually
+  pays for; the ⚔️ is a standing escort, not a raid that happens. The art moved off 🌊 with it, which was
+  illustrating the hazard framing.
+- **No glyph stands in for a trade route anywhere.** The objective is `Hold 4 trade routes` over a new
+  `X/4 trade route` readout, and the goal's `icon` is **deleted**, not orphaned —
+  `ObjectiveGoal.icon` is optional now (`goalsReadout` drops the space with it, and the sim's report
+  types carry it through, the goal's index being what identifies it there). An icon left behind renders
+  nowhere but would come back the day someone reads the default readout again. 🚢 and 🛳️ survive only as
+  Coastal Route's and Merchant Ship's own art, which are pictures of ships.
+- **Both per-route payers print the rate in the band and the zero in the text** — Wharf `1🎭 per trade` /
+  `+0🎭`, Merchant Ship `2🪙 per trade` / `+0🪙`, each with the live number in `dynamicText` (the Clay
+  Tablet shape: a face states what the board is paying now, not a rate it isn't). "per trade" is
+  shortened deliberately — a card face is the one surface with no room. This supersedes the phrasing
+  [Setting Sail](setting-sail.md)'s polish landed a few hours earlier.
+- **The Tin Route says what it is for.** `standing access` named a mechanic with no visible referent:
+  every card gating on `tinRouteStands` is still locked when this route is unlocked, sometimes for five
+  missions. It reads `Needed for bronze` — the payoff is a node on the map, where `standing access`
+  was a rule with nothing to point at.
+- **Both hints trimmed** to the rule and nothing else: `Hold 4 trade routes open at once.` and `Every
+  trade route needs an escort, draining 1 ⚔️ in addition to its usual cost.`
+- **New lore** — the tin is real, the coast knows your hulls sail home loaded, and out there piracy is a
+  trade like any other: you pay for the metal twice, once to the islanders and once to the men who see
+  it home. The mission's two costs (route rent, escort ⚔️) argued as one sentence.
+- **Sticker labels are noun phrases across both catalogues** (not a Sea Lanes change, but Convoy's
+  `Trade routes` is what exposed it): `Buildings/works producing 🌾 / 🎭 / 🔨`, `Cards costing 🔨`,
+  `Government board`.

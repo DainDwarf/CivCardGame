@@ -202,7 +202,7 @@ function cellBlock(cell: RaceValuationCell): string {
   model.goals.forEach((g, i) => {
     const p = g.plan;
     out.push(
-      `  goal ${i} ${g.icon}  scanned ${g.scanned} · ${g.inert} moved nothing · kept ${p.landings.length} landing, ${p.buildings.length} building${
+      `  goal ${i}${g.icon ? ` ${g.icon}` : ''}  scanned ${g.scanned} · ${g.inert} moved nothing · kept ${p.landings.length} landing, ${p.buildings.length} building${
         p.dropped?.length ? ` · dropped for ${p.dropped.join(' + ')}` : ''
       }`,
     );
@@ -253,7 +253,7 @@ function cellBlock(cell: RaceValuationCell): string {
     const via = c.cardId ? `:${c.cardId}` : '';
     const cause = routeCause(g);
     out.push(
-      `  goal ${i} ${c.icon}  need ${n(c.need)} · τ ${n(c.tau, 3)}/rd · t ${n(c.t)}${
+      `  goal ${i}${c.icon ? ` ${c.icon}` : ''}  need ${n(c.need)} · τ ${n(c.tau, 3)}/rd · t ${n(c.t)}${
         g.clamped ? ` (raw ${n(g.raw)} — HORIZON CLAMPED)` : ''
       }  route ${c.route}${via}${cause ? ` (${cause})` : ''}   ${weight(value.foldWeights[i])}`,
     );

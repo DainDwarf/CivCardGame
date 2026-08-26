@@ -41,9 +41,10 @@ export interface CardDisplay {
  *  lives on the structure, the way `CardEffect` owns `resolve`. See `rules/objective.ts` for the
  *  `goalMet`/`goalProgress` folds every consumer (predicate, readout, sim gradient) reads through. */
 export interface ObjectiveGoal {
-  /** Glyph for the derived live readout (`goalsReadout`). Unread when the card overrides its readout
-   *  via `display.dynamicText`. */
-  icon: string;
+  /** Glyph for the derived live readout (`goalsReadout`), which drops the space with it when absent —
+   *  omitted by a card overriding that readout via `display.dynamicText`, where an icon left behind
+   *  would be a glyph nothing renders and the next reader of the readout would silently revive. */
+  icon?: string;
   /** Current value toward this sub-goal — a pure read over `G`. */
   measure: (G: GameState) => number;
   /** Value of `measure` that satisfies the sub-goal. */
@@ -446,8 +447,8 @@ export const CARDS: Record<string, CardDef> = {
     id: 'merchant_ship', name: 'Merchant Ship', kind: 'work', cost: {}, workers: 1,
     display: {
       art: '🛳️',
-      note: 'For each trade route',
-      description: '+2🪙',
+      note: '2🪙 per trade',
+      description: '+0🪙',
       dynamicText: (G) => `+${2 * G.tradeRoutes.length}🪙`,
     },
     produces: { resolve: (ctx) => gainResources(ctx, { money: 2 * ctx.G.tradeRoutes.length }) },
@@ -513,8 +514,8 @@ export const CARDS: Record<string, CardDef> = {
     id: 'wharf', name: 'Wharf', kind: 'building', cost: {}, workers: 0,
     display: {
       art: '⚓',
-      note: 'For each trade route',
-      description: '+1🎭',
+      note: '1🎭 per trade',
+      description: '+0🎭',
       dynamicText: (G) => `+${G.tradeRoutes.length}🎭`,
     },
     produces: { resolve: (ctx) => gainResources(ctx, { culture: ctx.G.tradeRoutes.length }) },
@@ -594,7 +595,7 @@ export const CARDS: Record<string, CardDef> = {
   //   copy an escort has since given one. Numbers provisional.
   tin_route: {
     id: 'tin_route', name: 'Tin Route', kind: 'trade', cost: { resources: { money: 2 } },
-    display: { art: '🏝️', note: 'standing access' },
+    display: { art: '🏝️', note: 'Needed for bronze' },
     upkeep: { resources: { money: -1 } },
   },
   dogs: { id: 'dogs', name: 'Hunting', kind: 'work', cost: {}, workers: 1, display: { art: '🐕' }, produces: { resources: { military: 1 } } },
@@ -1115,8 +1116,11 @@ export const CARDS: Record<string, CardDef> = {
   //   for any length of time.
   sea_lanes_goal: {
     id: 'sea_lanes_goal', name: 'Sea Lanes', kind: 'objective', cost: {},
-    goals: [{ icon: '🚢', measure: (G) => G.tradeRoutes.length, target: SEA_LANE_ROUTES }],
-    display: { description: `Hold ${SEA_LANE_ROUTES} 🚢 trade routes open at once` },
+    goals: [{ measure: (G) => G.tradeRoutes.length, target: SEA_LANE_ROUTES }],
+    display: {
+      description: `Hold ${SEA_LANE_ROUTES} trade routes`,
+      dynamicText: (G) => `${Math.min(G.tradeRoutes.length, SEA_LANE_ROUTES)}/${SEA_LANE_ROUTES} trade route`,
+    },
   },
 
   // Measures territory *gained* since setup (`resources − startResources`), not the absolute realm
@@ -1339,11 +1343,11 @@ export const CARDS: Record<string, CardDef> = {
   //   run, so the last one is taken on under the heaviest drain. No `defeat` hook by design: ⚔️ going
   //   negative is the universal collapse, which `run/engine.ts`'s `checkEndIf` reads *after* victory,
   //   so opening the last lane on the round the escorts run out still wins.
-  unguarded_lanes: {
-    id: 'unguarded_lanes', name: 'Unguarded Lanes', kind: 'threat', cost: {},
+  escort_duty: {
+    id: 'escort_duty', name: 'Escort Duty', kind: 'threat', cost: {},
     display: {
-      art: '🌊',
-      description: '−1⚔️ per open trade route',
+      art: '🛡️',
+      description: '−1⚔️ per trade route',
       dynamicText: (G) => `−${G.tradeRoutes.length}⚔️`,
     },
     upkeep: {

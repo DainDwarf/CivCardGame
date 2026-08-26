@@ -245,7 +245,7 @@ moved.
   leaves fewer hands to earn the next, which the player is already told by the Voyage's own face.
   *Impatient Crews* drops its trailing period — it was the catalogue's only threat whose text ended in
   one — and its defeat line now matches the hint's wording (*left for another port*).
-- **Both per-route payers phrase it the same way and neither prints a route glyph** — Wharf `For each
-  trade route` / `+1🎭` and Merchant Ship `For each trade route` / `+2🪙`, each with a `dynamicText`
-  carrying the live number alone. The Wharf's board box had been quoting a `/ round` cadence no other
-  box states.
+- **Both per-route payers phrase it the same way and neither prints a route glyph**, each with a
+  `dynamicText` carrying the live number alone — the Wharf's board box had been quoting a `/ round`
+  cadence no other box states. Their exact wording is [Sea Lanes](sea-lanes.md)' polish, which took
+  them a step further the same day (`1🎭 per trade` over a `+0🎭`).

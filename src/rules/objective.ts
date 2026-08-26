@@ -40,10 +40,13 @@ export function goalProgress(goal: ObjectiveGoal, G: GameState): number {
   return goal.target > 0 ? Math.min(goal.measure(G), goal.target) / goal.target : 0;
 }
 
-/** The default live readout derived from an objective's goals — `icon capped/target` per goal. A card
- *  wanting a richer readout (a level bar, extra words) overrides it via `display.dynamicText`. */
+/** The default live readout derived from an objective's goals — `icon capped/target` per goal, the
+ *  icon and its space dropped where the goal names none. A card wanting a richer readout (a level bar,
+ *  extra words) overrides it via `display.dynamicText`. */
 export function goalsReadout(goals: readonly ObjectiveGoal[], G: GameState): string {
-  return goals.map((g) => `${g.icon} ${Math.min(g.measure(G), g.target)}/${g.target}`).join(' · ');
+  return goals
+    .map((g) => `${g.icon ? `${g.icon} ` : ''}${Math.min(g.measure(G), g.target)}/${g.target}`)
+    .join(' · ');
 }
 
 /** Whether the seeded objective's win condition is met right now — *every* goal satisfied. False when

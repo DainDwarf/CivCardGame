@@ -539,19 +539,16 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'sea_lanes',
     name: 'Sea Lanes',
     lore:
-      'The coast is yours as far as a single hull can carry, and a single hull is not enough. The tin ' +
-      'lies out past the last headland your crews can name, on islands that deal with whoever is ' +
-      'moored there when the season turns — and being there means a lane held open all year, not a ' +
-      'voyage remembered. Lay them down one after another and keep them running. Every lane you open ' +
-      'is another stretch of water somebody else would rather own, and your tin will only cross the ' +
-      'water your spears have crossed first.',
+      'The tin is real. Your crews saw it stacked on the quay, and everybody along that coast now knows ' +
+      'your hulls sail home loaded. Out there piracy is not a disaster, it is a trade like any other — ' +
+      'and yours is the newest and richest customer it has ever had. So you will pay for this metal ' +
+      'twice: once to the islanders who dig it and once to the men you put aboard to see that it ' +
+      'arrives. Open the lanes anyway. Bronze is not made out of tin you left on an island.',
     prereqs: ['setting_sail'],
-    threats: ['unguarded_lanes'],
+    threats: ['escort_duty'],
     objectiveCardId: 'sea_lanes_goal',
-    victoryHint: `Hold ${SEA_LANE_ROUTES} trade routes open at once — nothing here ever closes one.`,
-    failureHint:
-      'Every lane you open has to be patrolled for the rest of the run: each one drains 1 ⚔️ at the end ' +
-      'of every round, and running the escorts into the ground ends it.',
+    victoryHint: `Hold ${SEA_LANE_ROUTES} trade routes open at once.`,
+    failureHint: 'Every trade route needs an escort, draining 1 ⚔️ in addition to its usual cost.',
     kind: 'standard',
     // Closes the naval branch: the Tin Route is the branch's deliverable to the Bronze convergence
     // (standing access, no yield), the Merchant Ship is the engine the goal itself feeds, and Convoy

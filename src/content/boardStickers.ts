@@ -42,7 +42,7 @@ export interface BoardStickerDef {
 
 /** Every board sticker attaches to every board, so the readable form of `appliesTo` is one shared
  *  line rather than a field on each def; a board sticker that ever restricts itself earns the field. */
-export const BOARD_STICKER_SCOPE = 'Any government board';
+export const BOARD_STICKER_SCOPE = 'Government board';
 
 /**
  * The board-sticker catalogue. Each entry is *hidden until unlocked* by a mission reward
