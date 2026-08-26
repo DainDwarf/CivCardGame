@@ -94,7 +94,7 @@ export const CODEX_CARD_KINDS: CardKindEntry[] = [
     kind: 'event',
     name: 'Event',
     definition:
-      'Disasters a mission shuffles into your deck. Left in your hand, an event’s effect strikes at the end of the turn. Pay its cost to remove it instead.',
+      'Disasters a mission shuffles into your deck. Pay an event’s cost to play it and it never strikes at all — the card leaves the run for good. Left in your hand, its effect hits you at the end of the round, and the card returns to your discard pile to come round again.',
   },
   {
     kind: 'threat',

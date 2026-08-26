@@ -64,15 +64,11 @@ permanent infrastructure, and the route is the most permanent thing in the pool.
 - **The threat is `failing_tools`** (name and id), down from *Failing Stone Tools* — the material is
   already the mission's subject. Its face reads `−1🔨 per 🧍 in a building`.
 - **`banish`/`exile` are gone from the vocabulary**, run-loop-wide: a card **goes to `removed`**, a play
-  **sends** it there, a single-use action **removes itself**. The face band now reads
-  *"play to remove · resolves at end of round"*. Prompted here, but it swept every mission's card text,
-  the two docs, the internal comments and `probes.ts`'s `selfExiles` → `selfRemoves`.
+  **sends** it there, a single-use action **removes itself**. Prompted here, but it swept every
+  mission's card text, the two docs, the internal comments and `probes.ts`'s `selfExiles` →
+  `selfRemoves`.
 - **`CardFace`'s empty-effect fallback is "No effect"**, not the literal `action`. Copper Vein is the
   card that hits it — an event that is pure cost, with no `effect`/`produces`/`upkeep` at all.
-- **The event band reads `c.upkeep`.** Copper Vein is the catalogue's only event carrying no disaster,
-  so *"resolves at end of round"* claimed a resolution that never happens on it; an upkeep-less event
-  now says **"play to remove"** alone. The banner still names the kind — EVENT — since branching *that*
-  would be the special case.
 - **The card's bottom band no longer spills.** `.cardMid` is the column's one flexible row, but a flex
   item's auto minimum pinned it to the art glyph, so a card carrying *both* bottom bands outgrew the
   fixed 162px box and pushed `.cardText` past the bottom edge. `min-height: 0` lets the art row give
