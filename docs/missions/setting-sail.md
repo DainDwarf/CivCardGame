@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the opening node of the **naval / trade** branch (Setting Sail →
 [Sea Lanes](sea-lanes.md)). Prereq **writing**; the branch converges into **Bronze**.
 **Placement:** bronze col 9 row +1 — parallel to [Roads](roads.md) (col 9 row −1) and
@@ -45,7 +45,7 @@ keep every time you meet it.**
 
 An `impatient_crews` threat: each round that ends with no voyage launched bumps an idle counter, a
 launch resets it to **0**, and its `defeat` hook fires at **K consecutive idle rounds** — *the crews
-took berths in another port*.
+left for another port*.
 
 It is not a deadline on the mission, it is a deadline on **stalling**. A patient build is fine at any
 length so long as it is punctuated; what the mission forbids is going quiet. Distinct from the one
@@ -227,6 +227,25 @@ The Port board is this mission's *reward*, so no fixture can reach it until
 [Sea Lanes](sea-lanes.md) is authored — the same position Warband was left in by
 [Raiding](raiding.md).
 
-## Polish ⬜
+## Polish ✅
 
-Not started — card text, art, lore.
+Names confirmed as authored — **Port**, **Wharf**, **Voyage**, **Impatient Crews**. Text only; no art
+moved.
+
+- **The Voyage exposed a face bug rather than needing an authored face.** Its citizen reads as a play
+  cost in the conditions band (`On play: -1🧍`) over a `No effect` text band, and both lines are
+  *generated*: `describeCard` had been leading with the play `effect` for every kind, which on an event
+  states a branch that can never run alongside the `upkeep` beside it. Fixed at the choke point (TODO's
+  *Done / shipped*), which also generated the Stronghold's hand-written note away.
+- **New lore** — the land is closed, so the water is the way out: every direction ends at somebody's
+  fence, "inland is finished: surveyed, claimed, taxed and dull", and the sea is the only side of the
+  country with nothing written on it. Replaces a version that opened on the same idea but spent its
+  length on the launching rather than on the reach.
+- **The failure hint is one clause**, the clock alone; it used to close on a reminder that each voyage
+  leaves fewer hands to earn the next, which the player is already told by the Voyage's own face.
+  *Impatient Crews* drops its trailing period — it was the catalogue's only threat whose text ended in
+  one — and its defeat line now matches the hint's wording (*left for another port*).
+- **Both per-route payers phrase it the same way and neither prints a route glyph** — Wharf `For each
+  trade route` / `+1🎭` and Merchant Ship `For each trade route` / `+2🪙`, each with a `dynamicText`
+  carrying the live number alone. The Wharf's board box had been quoting a `/ round` cadence no other
+  box states.

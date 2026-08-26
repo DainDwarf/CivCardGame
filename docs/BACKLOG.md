@@ -78,7 +78,7 @@
   | Wheel | ✅ | ✅ | ✅ | ✅ | [wheel](missions/wheel.md) |
   | Horse taming | ✅ | ✅ | ✅ | ✅ | [horse-taming](missions/horse-taming.md) |
   | Raiding | ✅ | ✅ | ✅ | ✅ | [raiding](missions/raiding.md) |
-  | Setting Sail | ✅ | ✅ | ✅ | ⬜ | [setting-sail](missions/setting-sail.md) |
+  | Setting Sail | ✅ | ✅ | ✅ | ✅ | [setting-sail](missions/setting-sail.md) |
   | Sea Lanes | ✅ | ✅ | ✅ | ⬜ | [sea-lanes](missions/sea-lanes.md) |
   | Bronze *(convergence)* | ✅ | ✅ | ✅ | ⬜ | [bronze](missions/bronze.md) |
   | Sword & chariot | ✅ | ✅ | ✅ | ⬜ | [sword-chariot](missions/sword-chariot.md) |

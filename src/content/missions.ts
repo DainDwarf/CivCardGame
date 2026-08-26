@@ -513,11 +513,11 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'setting_sail',
     name: 'Setting Sail',
     lore:
-      'Every field you own has a fence around it, and every neighbour who might sell you tin wants a ' +
-      'war party escorted through his valley first. But the water past the headland belongs to nobody, ' +
-      'and beyond it lie coasts your carts will never reach. Lay a keel, cut a sail, and pay the ' +
-      'chandlers what they ask — then find crews willing to go, and send them while they are still ' +
-      'willing. Men who wait on a beach for a ship that never launches find another beach.',
+      'Every direction you can walk in ends at somebody\'s fence, and behind every fence stands a man ' +
+      'who already knows what you want and has priced it accordingly. Inland is finished: surveyed, ' +
+      'claimed, taxed and dull. The sea is the only side of your country with nothing written on it ' +
+      'yet. Put ships on it and find out who lives at the far end — before your neighbours have the ' +
+      'same idea.',
     prereqs: ['writing'],
     threats: ['impatient_crews'],
     // One `voyage` per ship, tied to the objective's threshold by the shared VOYAGES const so the
@@ -525,10 +525,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     events: Array.from({ length: VOYAGES }, () => 'voyage'),
     objectiveCardId: 'setting_sail_goal',
     victoryHint: `Launch all ${VOYAGES} Voyages.`,
-    failureHint:
-      `Go ${CREW_PATIENCE} rounds without launching and the crews take berths elsewhere, ending the run. ` +
-      'Every voyage that does sail takes a citizen with it for good, so each one leaves you fewer hands ' +
-      'to earn the next.',
+    failureHint: `Go ${CREW_PATIENCE} rounds without launching and the crews leave for another port.`,
     kind: 'standard',
     // Opens the naval branch: the Coastal Route gives the trade zone a second card (the next mission's
     // multi-route goal is unreachable with Bartering alone), and the Port board is a *new* government

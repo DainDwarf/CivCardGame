@@ -446,7 +446,8 @@ export const CARDS: Record<string, CardDef> = {
     id: 'merchant_ship', name: 'Merchant Ship', kind: 'work', cost: {}, workers: 1,
     display: {
       art: '🛳️',
-      description: 'Each open 🚢 route:\n+2🪙',
+      note: 'For each trade route',
+      description: '+2🪙',
       dynamicText: (G) => `+${2 * G.tradeRoutes.length}🪙`,
     },
     produces: { resolve: (ctx) => gainResources(ctx, { money: 2 * ctx.G.tradeRoutes.length }) },
@@ -512,8 +513,9 @@ export const CARDS: Record<string, CardDef> = {
     id: 'wharf', name: 'Wharf', kind: 'building', cost: {}, workers: 0,
     display: {
       art: '⚓',
-      description: 'Each open 🚢 route:\n+1🎭 / round',
-      dynamicText: (G) => `+${G.tradeRoutes.length}🎭 / round`,
+      note: 'For each trade route',
+      description: '+1🎭',
+      dynamicText: (G) => `+${G.tradeRoutes.length}🎭`,
     },
     produces: { resolve: (ctx) => gainResources(ctx, { culture: ctx.G.tradeRoutes.length }) },
   },
@@ -792,7 +794,7 @@ export const CARDS: Record<string, CardDef> = {
       resources: { money: 5, production: 5 },
       check: ({ G }) => (freePopulation(G) < 1 ? { kind: 'noIdlePopulation' } : null),
     },
-    display: { art: '⛵', description: 'Sails with 1 idle 🧍, for good' },
+    display: { art: '⛵' },
     effect: { resources: { population: -1 } },
   },
   // Casting Trial: pouring the alloy *is* playing it — the play choke sends it to `removed`, which
@@ -1318,7 +1320,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'impatient_crews', name: 'Impatient Crews', kind: 'threat', cost: {},
     display: {
       art: '⏱️',
-      description: `Launch a voyage at least every ${CREW_PATIENCE} rounds.`,
+      description: `Launch a voyage at least every ${CREW_PATIENCE} rounds`,
       dynamicText: (_G, self) => `⏱️ ${Math.max(0, CREW_PATIENCE - getCounter(self, 'idle'))} rounds left`,
     },
     upkeep: {
@@ -1331,7 +1333,7 @@ export const CARDS: Record<string, CardDef> = {
       },
     },
     defeat: (_G, self) =>
-      getCounter(self, 'idle') >= CREW_PATIENCE && 'the crews took berths in another port',
+      getCounter(self, 'idle') >= CREW_PATIENCE && 'the crews left for another port',
   },
   // Sea Lanes' squeeze: the goal is its own pressure — a lane opened is patrolled for the rest of the
   //   run, so the last one is taken on under the heaviest drain. No `defeat` hook by design: ⚔️ going
