@@ -462,10 +462,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'roads',
     name: 'Roads',
     lore:
-      'Your settlements sit scattered across the valley, each an island reached only by the tracks your ' +
-      'feet have worn — impassable in the rains, and every haul of grain a day lost to the mud. Cut the ' +
-      'roadbed, lay the stone, and bind your holdings into one. What the road reaches, your people can ' +
-      'feed and defend; what it cannot, the wilderness keeps.',
+      'What you call a realm is six villages that happen to pay the same chief, and a chief is only as ' +
+      'real as the days it takes him to arrive. Stone changes that. Lay the roadbed and the far fields ' +
+      'come inside the border, the levy arrives before the raiders have gone, and a bad harvest in the ' +
+      'uplands is a hard year instead of a burial. Lay it slowly, and the mud goes on deciding who is yours.',
     prereqs: ['writing'],
     // One `roadwork` per segment, tied to the objective's threshold by the shared ROADWORKS const so the
     // mission can't seed a different count than the win asks for. No threat: the segments are the pressure.

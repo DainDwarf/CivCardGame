@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the first node of the expansion/territory branch (Roads → Wheel).
 **Placement:** `prereqs: ['writing']`, bronze col 9 row -1.
 **Reward influence:** 12 (matches the standard Bronze nodes).
@@ -65,6 +65,10 @@ Settlement having been upgraded away at Masonry — but it has no committed cell
   Road's flat price, so the Road overtakes it from the third expansion on. Settles at Wheel, the first
   cell that stocks it.
 
-## Polish ⬜ (not started)
+## Polish ✅
 
-- Nothing yet — card display/text, art, lore.
+New lore, and nothing else — the Roadwork face, the hints and the objective readout all read correctly
+as authored. The old text was the road as *relief* (mud, lost hauls, bind the holdings together); the
+new one is the road as what makes six villages into one country — a chief being only as real as the days
+it takes him to arrive, with the far fields, the levy and a bad upland harvest as the three things the
+stone changes.
