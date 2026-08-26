@@ -622,12 +622,14 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // Road: Conquest's economic twin — the same worker for the turn and the same +1 territory, paid in
-  //   🪙+🔨 instead of ⚔️, so expansion has a trade route as well as a war party.
+  //   🪙+🔨 instead of ⚔️, so expansion has a trade route as well as a war party. A paved segment is
+  //   spent: a box that actually produces removes itself, while an unstaffed one never produces and so
+  //   recycles like any work card.
   road: {
     id: 'road', name: 'Road', kind: 'work', workers: 1,
     cost: { resources: { money: 3, production: 3 } },
-    display: { art: '🛣️' },
-    produces: { resources: { territory: 1 } },
+    display: { art: '🛣️', note: 'single use' },
+    produces: { resources: { territory: 1 }, resolve: (ctx) => { removeFromRun(ctx); } },
   },
 
   food_caravan: { id: 'food_caravan', name: 'Food Caravan', kind: 'action', cost: { resources: { money: 2 } }, display: { art: '🐫' }, effect: { resources: { food: 3 } } },

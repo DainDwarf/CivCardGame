@@ -17,8 +17,8 @@ push through a 🔨 crisis, earn 🔨 relief.
 
 - **Goal:** reach `WHEEL_TERRITORY` (=6, provisional) — measured off the `territory` **resource**
   (the realm-size cap, not slots filled), climbed through the player's own deck: **Road**
-  (🪙+🔨, unlocked by Roads) and **Conquest** (⚔️, from First Settlement) — both already owned by
-  the time the player reaches here.
+  (🪙+🔨, single-use — a box that produces spends itself; unlocked by Roads) and **Conquest** (⚔️,
+  doubling per use, from First Settlement) — both already owned by the time the player reaches here.
 - **Pressure:** the **Overextension** threat drains **−1🔨 per territory** each round (road upkeep —
   the wider the realm, the costlier to hold). It reads the just-gained territory *the same turn*, so
   the final push to N happens under the heaviest drain — you can't out-expand your economy.
@@ -64,43 +64,38 @@ arrived. Swept at the standing protocol:
 
 | policy | seeds | win rate | turns (min · med · max) | end terr | failure mode |
 |---|---|---|---|---|---|
-| greedy | 100 | 10% | 6 · 16 · 201 | 5.2 | ruin 52 · stall 19 · famine 14 · bankruptcy 5 |
-| planner | 100 | **55%** | 4 · 24 · 201 | 6.2 | famine 35 · stall 8 |
-| oracle | 10 | 100% | 13 · 18 · 29 | 8.0 | — |
+| greedy | 100 | 29% | 5 · 14 · 201 | 6.2 | ruin 68 · stall 3 |
+| planner | 100 | **53%** | 30 · 74.5 · 201 | 6.6 | stall 41 · ruin 6 |
+| prover | 10 | 2/10 proven | 1 · 1 · 87 | 3.2 | noWinFound:depth 8 |
 
-⚠️ **The planner row is a floor, not a difficulty reading — read `oracle`/`prover` here.** Its 35 famines
-are dominated by one repeated *policy* opening error, not by the mission: across 25 replayed seeds,
-**9 of 9 famines** play House (+2🧍, so food upkeep goes 1 → 4/round on `floor(pop²/4)`) before the
-Farm is down, and **0 of 16 non-famines** do. Three of those famine seeds were handed to `prover`, which
-found a winning line in all three — Farm first, House 7–9 turns later, wins in 17–21 turns:
+Read the planner column beside the prover's: 8 of 10 seeds decline at the root (`noWinFound:depth`),
+so the search bound sets the proven floor rather than the mission, and the planner's 47 losses are 41
+stalls — runs idling past the cutoff — with no famine in either competent column.
 
-| seed | planner | prover |
-|---|---|---|
-| 10 | House T1, no Farm → famine T4 | Farm T9 · House T10 → victory T21 |
-| 15 | House T1, no Farm → famine T6 | Farm T6 · House T9 → victory T17 |
-| 23 | House T1, no Farm → famine T4 | Farm T7 · House T8 → victory T17 |
+**The Road is single-use** (a box that produces spends itself; an unstaffed one recycles), settled here
+since this is the first cell stocking it: its flat 3🪙+3🔨 had overtaken Conquest's doubling 2⚔️ from the
+third expansion on. Measured across the 11 cells carrying it, with the race model reading the removal
+(`selfRemoves` probes `produces` as well as the play `effect`, so a spent box caps at the copies held):
+here planner 51→53, greedy 32→29, prover 3→2/10 — a wash inside seed churn — while the cells that
+stocked it for room paid: `bronze_city` 23→14, `sea_lanes_port` 11→2, `sea_peoples_city` 84→77.
 
-So the food question the mission asks **is** answerable on this deck. Same shape as the `pyramid` row's
-warning, and narrower than it — the gap here is one identifiable opening, and the cause is logged as
-simulator work rather than balance.
+The 🔨 crisis the mission is named for shows up only in the greedy column, where 68 runs ruin — read
+that column as the one-ply plateau it is, not as the drain biting.
 
-The 🔨 crisis the mission is named for shows up only in the greedy column, where 52 runs ruin: greedy
-ends holding 65🔨 mean and never converts it, so read that column as the one-ply plateau it is, not as
-the drain biting.
-
-**Chiefdom edges City at the planner here** — 77% vs 73%, oracle 100% both, on the same deck. Its
+**Chiefdom and City sit within noise of each other at the planner** — 50% vs 53% on the same deck,
+though the prover proves Chiefdom far more readily (9/10 against City's 2/10). Its
 **Raider Camp** (+4🌾 per 🗺️ taken) pays on exactly the action this mission demands most, and famine was
-what used to kill it (68 of greedy's 100 runs before the perk). Greedy stays at 1%: the ⚔️→🗺️ chain is
+what used to kill it (68 of greedy's 100 runs before the perk). Greedy stays at 0%: the ⚔️→🗺️ chain is
 multi-turn, so a one-ply policy never starts it and never collects the spoils either.
 
 Note the perk deliberately pays **food, not territory**. This is the one mission that both counts
 territory gained *and* taxes it through `overextension`, so a land-paying perk would have scaled the
 win condition and the toll together — measured at the time as a net +4pp underneath 28 of 100 seeds
-changing outcome, which is churn, not a reading. Chiefdom ends on **6.4🗺️ against City's 7.3**, so it
+changing outcome, which is churn, not a reading. Chiefdom ends on **5.5🗺️ against City's 6.6**, so it
 clears the 6-territory goal with less overshoot and pays less toll doing it.
 
 **Writing is the deck's one dead card** — unplayed across all 200 greedy/planner runs, played once in
-10 oracle runs. Kept because the deck is the one the player arrives with.
+10 prover runs. Kept because the deck is the one the player arrives with.
 
 ## Polish ✅
 

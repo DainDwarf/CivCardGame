@@ -105,7 +105,10 @@ is the standing set's first fixture carrying board stickers (2× Opulence):
 |---|---|---|---|
 | Warband (45 cards, conquest-fed, 2 double-Convoy routes) | 19% | 54% (win med 66) | 4/10 |
 | City (37 cards, Road-bought land, Convoyed Bartering) | 0% | 0% | 0/10 |
-| Port (34 cards + 2× Opulence, Merchant Ships) | 0% | 2% | 0/10 |
+| Port (34 cards + 2× Opulence, Merchant Ships) | 0% | 4% | 1/10 |
+
+City and Port were re-recorded when the Road went single-use ([`roads.md`](roads.md)): Port planner
+2→4 and prover 0→1/10, City unmoved at zero.
 
 **The settled boards' near-zero columns are a fidelity artifact, not a rating** — the route-opening
 blind spot ([`../TODO.md`](../TODO.md) → *Simulator · Fidelity*, the `setting_sail`/`sea_lanes`

@@ -67,8 +67,11 @@ Fixtures `bronze_city` / `bronze_port` — one 32-card deck on both boards, at t
 
 | | greedy @100 | planner @100 | prover @10 |
 |---|---|---|---|
-| City | 0% | 23% | 3/10 proven |
-| Port | 0% | 2% | 1/10 proven |
+| City | 0% | 14% | 3/10 proven |
+| Port | 0% | 5% | 1/10 proven |
+
+Re-recorded when the Road went single-use ([`roads.md`](roads.md)): planner City 23→14, Port 2→5 —
+the deck's Roads buy room it now pays for once per copy; greedy and the prover did not move.
 
 **The deck carries the Tin Route and no other trade card**, and that is a measurement, not a taste: a
 deck stocking Bartering and Coastal Route alongside it bankrupts on the rent it didn't need and crowds

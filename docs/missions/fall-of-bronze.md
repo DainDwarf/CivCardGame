@@ -94,7 +94,10 @@ score, while the price axis moved it directly. The as-first-authored 8-base conf
 | policy  | ⭐ mean | ⭐ max | rounds mean | defeats            |
 |---------|--------|-------|-------------|--------------------|
 | greedy  | 3.6    | 8     | 48.6        | ruin 16 · famine 3 · bank 1 |
-| planner | 3.4    | 8     | 63.6        | ruin 13 · famine 5 · bank 2 |
+| planner | 3.3    | 8     | 62.9        | ruin 13 · famine 5 · bank 2 |
+
+(Planner row re-recorded when the Road went single-use — [`roads.md`](roads.md); the deck plays it
+0.1×/run, so the movement is draw-order churn.)
 
 A good attempt and a poor one now separate (1–4 waves). Two caveats ride with the planner column:
 its within-turn search cap under-finds three-action repel lines (TODO → *Simulator*, deferred past

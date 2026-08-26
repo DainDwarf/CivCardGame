@@ -157,9 +157,12 @@ shipped*), and the cells are recorded under that fix and the rescue-pending char
 
 | | greedy @100 | planner @100 | prover @10 |
 |---|---|---|---|
-| City | 0% | 13% | 2/10 proven |
-| Chiefdom | 0% | 5% | 1/10 proven |
-| Port | 0% | 11% | 2/10 proven |
+| City | 0% | 14% | 2/10 proven |
+| Chiefdom | 0% | 2% | 1/10 proven |
+| Port | 0% | 2% | 2/10 proven |
+
+Re-recorded when the Road went single-use ([`roads.md`](roads.md)): planner City 13→14, Chiefdom
+7→2, Port 11→2 — the deck's Roads buy room it now pays for once per copy.
 
 **Read this table as a fidelity artifact, not the mission's difficulty.** The race value prices a
 route's landing at the flat `1/handSize` while charging its full standing bill, so competent play under
