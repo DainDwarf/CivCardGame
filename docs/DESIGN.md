@@ -634,11 +634,19 @@ under a time-box, so the arc ends coherently wherever the box closes), plus:
   light polish pass; the mini-arc rework is cancelled.
 - **Polish** — the victory/gameover → meta hand-back flow, and each mission's card text / art /
   lore.
+- **Onboarding, minimal** — **three generic popups**, each shown once (device-local `Settings`,
+  not `PlayerStore`): one for the **run** (how a turn plays, the card types — including the event
+  rule, which the event faces no longer print), one for the **meta menu** (the map, the Collection
+  as shop, and that **the player edits their own deck**, unlike a standard roguelike deckbuilder),
+  and one at the **end of the campaign** (a thank-you, the contact/feedback links, and the plan for
+  the future — the successor game). Publish blockers: the beta playtest showed the Codex + an
+  itch-page blurb don't carry onboarding alone. The itch page still carries a how-to-play blurb
+  pointing at the Codex.
 - **Community + publish** — outbound links (Discord / GitHub / contact), the feedback funnel, the
-  itch page — which also carries the onboarding (a how-to-play blurb, pointing at the in-game
-  Codex), since the tutorial layer is cut.
+  itch page.
 
-**Out of scope** — the **Iron Age**, the **tutorial layer**, the **culture rework**, the **endless
+**Out of scope** — the **Iron Age**, the **scripted per-mission tutorial layer** (only the two
+generic popups above ship), the **culture rework**, the **endless
 rework**, the **meta-economy retune** (shop tiers + sticker prices stay as tuned today, minus a
 sanity glance), every age from Empire onward, procedurally-generated mission arcs, and the
 **civilization identity** that gates combos, which is dropped rather than deferred.

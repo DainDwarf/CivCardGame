@@ -19,8 +19,10 @@ Relative to the old demo scope, the cuts:
   for it to carry.
 - **Endless rework** — cancelled; `ice_age`/`sandbox` keep their current shape, receiving only the
   small polish pass in step 2.
-- **Tutorial layer** — cut. Onboarding is the in-game Codex plus a how-to-play blurb on the itch
-  page.
+- **Tutorial layer** — cut down to a **minimal slice**: the scripted per-mission layer stays cut, but
+  the 2026-08-23 beta playtest showed the Codex + itch blurb don't carry onboarding on their own, so
+  **two generic tutorial popups** ship (step 3 below), plus a third on reaching the campaign's end —
+  publish blockers, not polish.
 - **Meta economy retune** — cut; at most a sanity glance over `npm run economy`'s ledger.
 
 **0.1 ends pre-alpha:** from 0.1 on, a changed store shape owes a save migration. This being the
@@ -61,6 +63,18 @@ the infinite is the casualty, The Sea Peoples' reward simply drops the unlock.)
   (TODO → *Done / shipped* has the full entry).
 - **Per-mission Polish stage** — card text, art, lore across Stone + Bronze (the ⬜ column in
   BACKLOG's status boards). A light pass: readable and consistent beats exhaustive.
+- **Three generic popups** — **publish blocker.** Generic (not per-mission), each shown once:
+  1. **The run** — how a turn plays, and the card types (building / action / work / trade / event /
+     the mission's threat and objective). This is also where the **event** rule now lives — play it
+     to remove it unresolved, leave it and it fires at end of round and recurs — since the event
+     faces no longer print it.
+  2. **The meta menu** — the campaign map, the Collection/shop, and above all that **the player
+     edits their own deck** (unlike a standard roguelike deckbuilder, where the run builds it).
+  3. **The end** — on clearing the campaign's last mission: a thank-you note, the contact / feedback
+     links (the funnel from step 4, surfaced in-game), and the plan for the future — 0.1 is this
+     project's last planned version and its lessons feed a successor designed from scratch.
+  "Seen" state is device-local `Settings` (`meta/settings.ts`), not `PlayerStore`. Detail in
+  [`BACKLOG.md`](BACKLOG.md) → *Step 9*.
 
 ### 4 — Publish surface
 

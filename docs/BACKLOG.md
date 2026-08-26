@@ -183,21 +183,39 @@
     - China — a distinct cultural/technological line
     - Central Arabia (maybe) — a trade/desert line, tentative third branch
 
-- **Step 9 — Tutorial onboarding UI** — **CUT** with the 0.1 scope (see [`DESIGN.md`](DESIGN.md) →
-  *Demo scope*): onboarding is the Codex plus a how-to-play blurb on the itch page. Kept below only
-  as reference for the successor project. Was: the scripted popups/indicators layer over the
-  **Stone Age** arc (the sole tutorial age), so new mechanics aren't dumped on the player at
-  once; "tutorial seen" state would live in device-local `Settings` (`meta/settings.ts`), **not**
-  `PlayerStore` (not game progress).
+- **Step 9 — Tutorial onboarding UI** — cut down to a **minimal slice for 0.1** (see
+  [`DESIGN.md`](DESIGN.md) → *Demo scope*, [`PUBLISH.md`](PUBLISH.md) → step 3): the scripted
+  per-mission layer below stays cut and is kept only as reference for the successor project, but
+  **two generic tutorial popups ship, plus an end-of-campaign note, and all three are publish
+  blockers**. Decided 2026-08-26 off the
+  2026-08-23 beta playtest, which showed the Codex + itch blurb don't carry onboarding: the **run
+  loop** was not self-explanatory, and **deck editing** was discovered late and painfully (the campaign
+  forces it at `growing_numbers`, so friction, not a wall). "Seen" state lives in device-local
+  `Settings` (`meta/settings.ts`), **not** `PlayerStore` (not game progress).
 
-  **Reopened by the 2026-08-23 beta playtest `[?]`** — the cut assumed the Codex plus an itch-page
-  blurb carries onboarding. Watching a first-time player says it does not: the **run loop** was not
-  self-explanatory, and **deck editing** was discovered late and painfully (the campaign does force it
-  at `growing_numbers`, so this is friction, not a wall). If a minimal slice of this comes back, the
-  run loop and the deck editor are what it should teach; the full per-mission scripted layer below is
-  *not* what the evidence asks for.
+  - **9.a — The run popup** `[size: M]` — one generic popup on (first) entering a run: how a turn
+    plays (draw → play/staff → end turn → upkeep), and the **card types** — building / action / work /
+    trade / event, plus the mission's threat and objective cards. Carries the **event** rule in full
+    (play it to remove it unresolved; leave it in hand and it fires at end of round, then returns to
+    the discard and recurs) — the event faces **no longer print** the `play to remove · resolves at end
+    of round` banner (removed 2026-08-26 to cut face text), so this popup and play itself are what
+    teach it.
+  - **9.b — The meta-menu popup** `[size: M]` — one generic popup on (first) landing in the meta
+    menu: the campaign map, the Collection as the shop, and above all that **the player builds and
+    edits their own deck** — the opposite of a standard roguelike deckbuilder, where the run assembles
+    it — so a locked deck that isn't working is fixed in the Decks screen, not by replaying.
+  - **9.c — The end popup** `[size: S]` — on first clearing the campaign's **last standard mission**
+    (the node with no dependents — derived from the DAG, never a hard-coded id, so it follows
+    wherever the time-box ends the Bronze arc): a **thank-you** note, the **contact / feedback
+    links** (the same funnel the itch page carries — Discord / GitHub / contact), and the **plan for
+    the future**: 0.1 is the last planned version, and what it teaches goes into a successor game
+    designed from scratch. Plays after the unlock reveal, not over it.
 
-  **Per-mission tutorial substeps** — one scripted lesson per Stone Age mission, covering the
+  All three are generic, not mission-scripted: nothing in them names a specific card or mission (the
+  tooltip convention), so they stay true as content moves.
+
+  **Per-mission tutorial substeps** *(reference only — cut)* — one scripted lesson per Stone Age
+  mission, covering the
   gameplay elements that mission introduces and (post-clear) what its reward hands the player.
   All seven missions (6.1–6.7) have shipped, so every substep below is ready to script.
   - **9.1 — First Settlement tutorial** — teach the **run loop**: work + action cards, the

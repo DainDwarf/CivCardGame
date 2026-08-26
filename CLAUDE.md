@@ -821,7 +821,11 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   other slow command is launched with the shell tool's `run_in_background` and left to the harness's
   completion notification. Sleep-based waiting is noise either way: a foreground sleep blocks the
   session, and a background timer left alive when an agent finishes re-fires its completion
-  notification once per stale waiter.
+  notification once per stale waiter. **The same holds for a child agent**: once one is spawned, finish
+  whatever finite work remains and then **end the turn** — the child's completion resumes the parent
+  with its result intact, for a subagent exactly as for the main session. Ending a turn never discards
+  a pending child, so filling the wait with reads, `Monitor` loops or background `sleep`s is pure
+  spam.
 - **React version** — on React 18; nothing external pins it, so a bump to 19 is a deliberate choice.
   Whatever the version, keep `setState` updaters **pure** — the run loop relies on StrictMode's
   intentional dev double-invoke to catch impurity.
