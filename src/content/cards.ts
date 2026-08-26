@@ -1255,7 +1255,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       art: '💥',
       description: '−1🔨 per 🧍 in a building',
-      dynamicText: (G) => `−${assignedWorkers(G.tableau)}🔨 next round`,
+      dynamicText: (G) => `−${assignedWorkers(G.tableau)}🔨`,
     },
     upkeep: {
       resolve: ({ G }) => {
@@ -1271,7 +1271,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       art: '🛤️',
       description: `−1🔨 per territory gained past ${OVEREXTENSION_GRACE}`,
-      dynamicText: (G) => `−${overextensionDrain(G)}🔨 next round`,
+      dynamicText: (G) => `−${overextensionDrain(G)}🔨`,
     },
     upkeep: {
       resolve: ({ G }) => {
@@ -1343,7 +1343,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       art: '🌊',
       description: '−1⚔️ per open trade route',
-      dynamicText: (G) => `−${G.tradeRoutes.length}⚔️ next round`,
+      dynamicText: (G) => `−${G.tradeRoutes.length}⚔️`,
     },
     upkeep: {
       resolve: ({ G }) => {
@@ -1360,7 +1360,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       art: '🔥',
       description: '−1🔨 per casting trial mastered',
-      dynamicText: (G) => `−${trialsMastered(G)}🔨 next round`,
+      dynamicText: (G) => `−${trialsMastered(G)}🔨`,
     },
     upkeep: {
       resolve: ({ G }) => {
@@ -1396,7 +1396,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       art: '💸',
       description: '−1🪙 per 5 ⚔️ held past the first 10',
-      dynamicText: (G) => `−${soldiersWages(G)}🪙 next round`,
+      dynamicText: (G) => `−${soldiersWages(G)}🪙`,
     },
     upkeep: {
       resolve: ({ G }) => {
