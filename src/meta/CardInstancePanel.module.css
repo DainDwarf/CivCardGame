@@ -1,5 +1,5 @@
-/* Per-card detail panel. A modal whose body is two columns:
-   a grid of real `CardFace`s (one per owned copy) on the left, a sticker tray pinned on the right.
+/* Per-card detail panel. A modal whose body is two columns: a grid of real `CardFace`s (one per owned
+   copy, plus the buy-a-copy ghost tile trailing them) on the left, a sticker tray pinned on the right.
    Dragging a `StickerSeal`'s seal out of the tray onto a face buys+attaches it (mirrors BoardMenu's
    tray + hand-rolled pointer-drag). All color via theme tokens; only the allowed white/black scrims
    are literals. */
@@ -118,9 +118,70 @@
   color: var(--text-secondary);
 }
 
+/* The buy-a-copy tile, trailing the owned copies. Exactly a CardFace's 118×162 box (border-box, so
+   the 2px outline draws inside it) so it sits in a grid track like a copy and the captions line up.
+   Deliberately blank inside: the price is the whole message, and a tinted interior would read as a
+   card that is already there. */
+.ghost {
+  box-sizing: border-box;
+  width: 118px;
+  height: 162px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0;
+  border: 2px dashed var(--border-card);
+  border-radius: 10px;
+  background: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  cursor: pointer;
+}
+
+/* Affordable — the buyable-hint gold the tray seals' rims and the faces' open sticker slots share,
+   carried by the rim and its ring alone. */
+.ghost:not(:disabled) {
+  border-color: var(--hint-gold);
+  box-shadow: 0 0 0 4px rgb(var(--hint-gold-rgb) / 25%);
+}
+
+.ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ghostPrice {
+  display: flex;
+  align-items: baseline;
+  gap: 0.1rem;
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.ghost:not(:disabled) .ghostPrice {
+  color: var(--text);
+}
+
+/* Light enough to read as "and one more" beside the price without competing with it — carried by
+   weight, not by a dimmer colour, so it stays legible at the gold rim's contrast. */
+.ghostPlus {
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.ghost:not(:disabled) .ghostPlus {
+  color: var(--text);
+}
+
 /* The sticker tray — a bordered panel pinned beside the faces (sticky within the scrolling panel, not
    position: fixed, which wouldn't pin inside the transform:scale() wrapper — invariant #1). Sticky
-   keeps the buy-tier button at its top visible while the face grid scrolls. */
+   keeps the Influence balance visible while the face grid scrolls. */
 .tray {
   /* Sized so a `StickerSeal`, which caps its own width at the column, still leaves the plaque room
      for a wrapped applies-to line beside the seal. `min-width: 0` is what makes that cap bite: a
@@ -141,7 +202,7 @@
   background: var(--surface);
 }
 
-/* The tray's pinned top: the Influence balance + the buy-next-copy-tier button (or a "max" note). */
+/* The tray's pinned top: the Influence balance. */
 .trayHead {
   display: flex;
   flex-direction: column;
@@ -157,45 +218,6 @@
   font-weight: 700;
   font-size: 0.85rem;
   color: var(--text-secondary);
-}
-
-/* The buy-next-tier button — a blank neutral pill; when a tier is *available* (affordable, i.e. not
-   disabled) its border/ring go gold, the buyable-hint accent the tray seals' rims and the faces' open
-   sticker slots share. Disabled (unaffordable) keeps the plain neutral border and dims. */
-.buyBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  padding: 0.4rem 0.6rem;
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: var(--text);
-  background: var(--chip-bg);
-  border: 2px solid var(--border-divider);
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.buyBtn:not(:disabled) {
-  border-color: var(--hint-gold);
-  box-shadow: 0 0 0 4px rgb(var(--hint-gold-rgb) / 25%);
-}
-
-.buyBtn:hover:not(:disabled) {
-  background: var(--chip-bg-hover);
-}
-
-.buyBtn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.maxTier {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-muted);
 }
 
 .trayTitle {

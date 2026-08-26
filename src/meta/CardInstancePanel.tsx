@@ -46,10 +46,14 @@ interface DragState {
  * Shop). Each owned copy renders as a real `CardFace` (its sticker-adjusted `effectiveCard` numbers +
  * a bottom-left row of its stickers and its still-empty slots, gold where one could be filled right
  * now); the applicable stickers sit in a right-side tray as `StickerSeal`s, the
- * buy-next-copy-tier button pinned at its top. Dragging a seal out of the tray onto a card face buys
+ * Influence balance pinned at its top. Dragging a seal out of the tray onto a card face buys
  * and attaches it in one gesture: a hand-rolled pointer-drag (like `DeckEditor.tsx` / `BoardMenu.tsx`,
  * no DnD library) with a single `isValidTarget` predicate gating both the mid-drag highlight and the
  * drop; an invalid/missed drop no-ops.
+ *
+ * The next copy tier is bought from a blank ghost tile trailing the owned copies, so the purchase sits
+ * in the row it grows. It buys straight off the click — unlike destroying a sticker, which confirms —
+ * and at the terminal tier it simply isn't rendered.
  *
  * Each face carries a caption naming the deck(s) that copy sits in ("1/2 · in Aggro" / "1/2 · unused"),
  * the anti-surprise core: a sticker always lands on — and is destroyed from — a *known* copy.
@@ -74,9 +78,9 @@ export function CardInstancePanel({
   cardId: string;
   collection: OwnedCards;
   decks: DeckDef[];
-  /** When set, the panel becomes the card's buy/attach surface: the tray with the Influence balance,
-   *  a copy-tier buy button, and one draggable seal per sticker that `stickerAppliesTo` this card.
-   *  Omitted → read-only browse (faces + click-to-zoom, no tray). */
+  /** When set, the panel becomes the card's buy/attach surface: the ghost tile that buys the next copy
+   *  tier, and the tray with the Influence balance and one draggable seal per sticker that
+   *  `stickerAppliesTo` this card. Omitted → read-only browse (faces + click-to-zoom, no tray). */
   shop?: {
     influence: number;
     /** Unlocked card stickers — the tray offers only these (a locked sticker is hidden entirely). */
@@ -292,6 +296,33 @@ export function CardInstancePanel({
                   </div>
                 );
               })}
+
+              {/* Trails the copies in the same grid, and is deliberately absent from `faceEls` — a
+                  sticker dropped on it would have no copy to land on. */}
+              {shop && upgrade && (
+                <div className={styles.faceWrap}>
+                  <button
+                    type="button"
+                    className={styles.ghost}
+                    disabled={influence < upgrade.cost}
+                    onClick={() => shop.onBuyTier(cardId)}
+                    title={
+                      influence < upgrade.cost
+                        ? 'Not enough Influence'
+                        : `Buy a copy — ×${upgrade.to} for ${upgrade.cost} Influence`
+                    }
+                  >
+                    <span className={styles.ghostPrice}>
+                      <span aria-hidden="true">⭐</span>
+                      {upgrade.cost}
+                    </span>
+                    <span className={styles.ghostPlus} aria-hidden="true">
+                      +
+                    </span>
+                  </button>
+                  <span className={styles.faceCaption}>add another copy</span>
+                </div>
+              )}
             </div>
 
             {shop && (
@@ -301,26 +332,6 @@ export function CardInstancePanel({
                     <span aria-hidden="true">⭐</span>
                     {influence} to spend
                   </span>
-                  {upgrade ? (
-                    <button
-                      type="button"
-                      className={styles.buyBtn}
-                      disabled={influence < upgrade.cost}
-                      onClick={() => shop.onBuyTier(cardId)}
-                      title={
-                        influence < upgrade.cost
-                          ? 'Not enough Influence'
-                          : `Buy a copy tier — ×${upgrade.to} for ${upgrade.cost} Influence`
-                      }
-                    >
-                      <span aria-hidden="true">⭐</span>
-                      {upgrade.cost} → ×{upgrade.to} copies
-                    </button>
-                  ) : (
-                    <span className={styles.maxTier}>
-                      {isWonder ? 'Unique — one per deck' : `Max copies (×${instances.length})`}
-                    </span>
-                  )}
                 </div>
 
                 <h4 className={styles.trayTitle}>Stickers</h4>

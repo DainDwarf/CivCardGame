@@ -587,9 +587,12 @@ logic that rides on it. **A building card *is* the building** — there's no sep
     when a sticker fits — the *selected* sticker while a filter is on. A wonder shows neither, and no
     count. A tile opens `CardInstancePanel.tsx`, the
     per-copy drill-down that is *also* the card shop. Each copy is a real `CardFace` — its attached
-    stickers and its remaining empty slots, gold where a tray sticker would land on *that* copy — beside
+    stickers and its remaining empty slots, gold where a tray sticker would land on *that* copy — and the
+    next copy tier is bought from a blank **ghost tile** trailing them in the same grid (a dashed
+    CardFace-footprint box carrying the ⭐ price and a `+`, gold-rimmed while affordable, dimmed and
+    inert otherwise, absent at the terminal tier), which buys on the click with no confirm. Beside them
     a sticky
-    tray (Influence balance + buy-next-copy-tier button + one draggable sticker badge per applicable
+    tray (Influence balance + one draggable sticker badge per applicable
     sticker). Dragging a badge onto a copy buys+attaches in one gesture (a hand-rolled pointer-drag, no
     DnD library; only *valid* targets highlight via `isValidTarget`); clicking a placed badge destroys
     it behind a confirm (refunds nothing); clicking a copy zooms it. Calls `App.tsx`'s

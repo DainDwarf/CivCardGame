@@ -41,10 +41,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   (`rules/population.ts`) already exists for exactly this, so the curve isn't re-derived in the UI. Note it
   is state-dependent: the same card shows a different number at pop 2 than at pop 5. `[size: S]` `[?]`
 
-- **Buy-a-copy affordance in the Collection** `[size: S]` — the buy-next-tier button in
-  `CardInstancePanel`'s tray is a plain button off to the side of the copies it adds to. Wants to read as
-  *the next copy*: a ghost card in the panel's copy grid, in the slot the purchase would fill, with the ⭐
-  price carried prominently on it rather than tucked in a button label.
 - **Discard-mode affordance when a play costs cards** `[size: S]` — *(beta playtest)* playing Fire
   (`cost: { discard: 1 }`) drops the player into choosing a card to give up with nothing saying so; the
   discard reads as cards vanishing. Wants a visible "choose N to discard" mode on the hand while the
@@ -275,6 +271,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > entries. **Mission** work is *not* archived here — a finished mission's record is its dossier
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
+
+- **Buy-a-copy affordance in the Collection** ✅ — the next copy tier is bought from a blank **ghost
+  tile** trailing the owned copies in `CardInstancePanel`'s grid, so the purchase sits in the row it
+  grows; the tray head keeps only the ⭐ balance and the buy button is gone. The tile is a CardFace
+  footprint carrying the ⭐ price and a `+` and nothing else — gold rim and ring while affordable (the
+  same buyable-hint accent the tray seals and open sticker slots wear), muted dashes and dimmed when
+  not, absent at the terminal tier, where the old button's "Max copies (×4)" note is simply not
+  replaced. **Blank inside on purpose**: a gold interior wash and a faded real face were both mocked,
+  and a tinted tile reads as a card that is already there. It buys straight off the click — unlike
+  destroying a sticker, which confirms — and it is deliberately absent from `faceEls`, so a dragged
+  sticker can neither highlight it nor land on it.
 
 - **No lower bound on deck size** ✅ — `MIN_DECK_SIZE` is gone: the const, the `App.saveDeck`
   backstop, and the deck editor's "(min N)" label + disabled Save. The floor was protecting against
