@@ -272,6 +272,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **An event face states one branch, not both** ✅ — `describeCard` led with the play-time `effect` for
+  every kind and appended the recurring reading after it, which for an `event` joins two *exclusive*
+  branches: playing it resolves `effect` and pre-empts the `upkeep`, while leaving it in hand fires
+  `upkeep` and never `effect`. The text band now keeps the unplayed branch — the hazard the card is a
+  warning about — and `describeConditions` prints the played one as `On play: …`, which is also where a
+  price in a non-core pool can be stated at all (`CardCost.resources` spends only the five core ones, so
+  a Voyage's citizen has no cost corner to sit in). Both events carrying an `effect` had been
+  hand-authored around this: the Stronghold's `note` is now generated verbatim and deleted from the
+  catalogue, and the Voyage reads `On play: -1🧍` over `No effect`.
+
 - **Buy-a-copy affordance in the Collection** ✅ — the next copy tier is bought from a blank **ghost
   tile** trailing the owned copies in `CardInstancePanel`'s grid, so the purchase sits in the row it
   grows; the tray head keeps only the ⭐ balance and the buy button is gone. The tile is a CardFace

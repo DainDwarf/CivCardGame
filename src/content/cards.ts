@@ -765,7 +765,6 @@ export const CARDS: Record<string, CardDef> = {
     },
     display: {
       art: '🏰',
-      note: 'On play: +6🪙',
       description: '−2🪙 worsening, cost +3⚔️',
       dynamicText: (_G, self) => `−${2 + 2 * getCounter(self, 'walls')}🪙`,
     },

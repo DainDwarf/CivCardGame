@@ -115,13 +115,22 @@ export function describeCost(c: CardDef): string {
 }
 
 /** Presentation-only summary of a card's extra conditions for play — culture-level gate, discard
- *  cost, a dynamic card's scaling rule (`dynamicRule`) and its authored `note` — shown in their own
- *  banded section on the card face, which renders at all only when one of them applies. (Work cards
- *  show their worker spaces as a meeple column instead, via the shared worker-icon rendering.) */
+ *  cost, an event's play-time `effect`, a dynamic card's scaling rule (`dynamicRule`) and its authored
+ *  `note` — shown in their own banded section on the card face, which renders at all only when one of
+ *  them applies. (Work cards show their worker spaces as a meeple column instead, via the shared
+ *  worker-icon rendering.) */
 export function describeConditions(c: CardDef): string {
   const parts: string[] = [];
   if (c.cost.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.cost.cultureLevelReq}`);
   if (c.cost.discard) parts.push(`discard ${c.cost.discard}`);
+  if (c.kind === 'event') {
+    // The half of the price `cost` can't carry (only the five core pools are spendable) and the
+    // one-shot the payment buys, in the band that reads as terms of the play — leaving the text band
+    // to the branch the player is really being warned about (see `describeCard`).
+    const played: string[] = [];
+    describeSignedResources(c.effect?.resources, played);
+    if (played.length) parts.push(`On play: ${played.join(' ')}`);
+  }
   if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
   if (c.display?.note) parts.push(c.display.note);
   return parts.join(' · ');
@@ -184,9 +193,13 @@ function describeSignedResources(res: Partial<Resources> | undefined, into: stri
 export function describeCard(c: CardDef): string {
   if (c.display?.description) return c.display.description;
   const parts: string[] = [];
-  // The one-shot play-time `effect` leads for every kind — an entry effect the engine resolves must
-  // reach the face — and the card's recurring reading appends after it.
-  describeSignedResources(c.effect?.resources, parts);
+  // The one-shot play-time `effect` leads — an entry effect the engine resolves must reach the face —
+  // and the card's recurring reading appends after it. An `event` is the exception: its two slots are
+  // exclusive branches rather than one timeline (playing it resolves `effect` and pre-empts the
+  // `upkeep`; leaving it in hand fires `upkeep` and never `effect`), so joining them would state a
+  // sequence that can't happen. The band keeps the unplayed branch — the hazard the card is a warning
+  // about — and `describeConditions` prints the played one.
+  if (c.kind !== 'event') describeSignedResources(c.effect?.resources, parts);
   if (isStaffable(c)) {
     // A staffable's two recurring slots are in different units, so they read as separate deltas: the
     // flat `upkeep` maintenance, then the declarative `produces` its workers scale (shown as meeples,

@@ -155,7 +155,8 @@ Text only; the art stands as authored (🏰 Stronghold · ⛺ War Camp).
 
 - **The Stronghold face states both halves of the escalation.** It printed the auto-generated
   `+6🪙 · -2🪙`, which read the reprisal as flat and never mentioned the wall step; the face now carries
-  the plunder in the conditions band (`On play: +6🪙`) and the pressure in the text band
+  the plunder in the conditions band (`On play: +6🪙`, hand-written then and generated for every event
+  since) and the pressure in the text band
   (`−2🪙 worsening, cost +3⚔️`), with a `dynamicText` so a held copy prints the drain it will actually
   pay — `−2🪙`, `−4🪙`, `−6🪙` — the way Clay Tablet does.
 - **The failure hint was wrong, not just wordy.** It quoted the wall step as 2⚔️ (the *money* step's
