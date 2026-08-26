@@ -5,7 +5,7 @@
 > Final design decisions graduate to [`DESIGN.md`](../DESIGN.md); measured balance results
 > compress to `CHANGELOG.md` at ship. This file holds only *live* state.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — expansion/territory (Roads → Wheel), the branch's closing node.
 **Placement:** `prereqs: ['roads']`, bronze col 9 row -1.
 **Reward influence:** 12 (provisional).
@@ -102,6 +102,15 @@ clears the 6-territory goal with less overshoot and pays less toll doing it.
 **Writing is the deck's one dead card** — unplayed across all 200 greedy/planner runs, played once in
 10 oracle runs. Kept because the deck is the one the player arrives with.
 
-## Polish ⬜ (not started)
+## Polish ✅
 
-- Nothing yet — card display/text, art, lore.
+Text only; no face or art moved.
+
+- **Lore rewritten.** The old one opened on "the road is laid", which this mission contradicts — it is
+  still laying them. The new one makes distance the antagonist: a sack of grain carried on a back
+  arrives lighter than it left, having fed its carrier, and no length of stone repeals that — the axle
+  does. Expansion reads as the economic conclusion rather than an ambition.
+- **Both hints trimmed.** The victory hint named the two cards to climb with (`— build Roads (🪙+🔨)
+  and conquer (⚔️)`); the failure hint closed on "overreaching your economy ends the run in ruin",
+  which is the universal collapse every mission runs. Neither is this mission's to teach.
+- **The Wheel sticker** says `Any card that costs 🔨`; it was the catalogue's only "pays".

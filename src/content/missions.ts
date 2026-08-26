@@ -485,18 +485,18 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'wheel',
     name: 'The Wheel',
     lore:
-      'The road is laid, but the realm it binds now strains to hold together — every league of stone ' +
-      'demands hands to mend it, and the farther your borders reach, the more the roadbed eats. The ' +
-      'potter\'s wheel turns, and turned on its side it carries what a hundred bearers could not. Fit the ' +
-      'axle, spoke the rim, and let the cart do the hauling — expand until the valley is yours, and pray ' +
-      'your fields can feed the roads that made it one.',
+      'The far fields are yours on the tablets and nobody else\'s in fact, because a sack of grain ' +
+      'carried on a back from the upper valley arrives lighter than it left, having fed the man who ' +
+      'carried it. That is the whole limit of your kingdom, and no length of stone repeals it. Wheels ' +
+      'do. Cut the roadbed and put an axle on it, and land three ridges out becomes land that pays — ' +
+      'so keep cutting, and keep taking, for as long as the carts come back full.',
     prereqs: ['roads'],
     threats: ['overextension'],
     objectiveCardId: 'wheel_goal',
-    victoryHint: `Gain ${WHEEL_TERRITORY} territory — build Roads (🪙+🔨) and conquer (⚔️).`,
+    victoryHint: `Gain ${WHEEL_TERRITORY} territory.`,
     failureHint:
       `The first ${OVEREXTENSION_GRACE} territory you gain are toll-free; every one past that drains 🔨 in upkeep ` +
-      'each round, and overreaching your economy ends the run in ruin.',
+      'each round.',
     kind: 'standard',
     // Closes the expansion branch: the Wheel sticker (−1🔨 on any card paying 🔨) is the relief that
     // resolves the mission's own 🔨 crisis, and the two Caravans turn the 🪙 a wide realm earns back

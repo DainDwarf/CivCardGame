@@ -186,7 +186,7 @@ export const STICKERS: Record<string, StickerDef> = {
     name: 'Wheel',
     gives: '−1 🔨 off its price',
     charges: 'needs 🎭 level 1 to play',
-    appliesToLabel: 'Any card that pays 🔨',
+    appliesToLabel: 'Any card that costs 🔨',
     icon: '🛞',
     cost: 5,
     // Any card that actually pays 🔨, whatever its kind (so it can't be wasted on a card it can't
