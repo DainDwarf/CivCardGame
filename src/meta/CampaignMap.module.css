@@ -155,6 +155,56 @@
   clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 50%, calc(100% - 30px) 100%, 0 100%);
 }
 
+/* --- Next-age gutter (the mirror of the Nomadic one, on the right) --- */
+
+/* Same idea as `.paleoGutter`, reflected: an age slice with no nodes, parked past the timeline's
+   right edge (inline `left` = its width) so it's clipped by `.canvas` at rest and revealed only when
+   the right elastic-overscroll translates the timeline leftward. Its colours arrive as inline
+   `--map-age-*` properties rather than a fixed pair, since which age this is follows the content.
+   One thing does *not* mirror: content past the right edge counts toward `scrollWidth`, so the pan
+   extent subtracts this width back out (`scrollExtent` in CampaignMap.tsx) — without that the gutter
+   would simply be scrollable to, where the left one is unreachable by construction. */
+.futureGutter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+/* `.paleoGutterWash`'s gradient read in the other direction: `to left` puts 0% on the *far* edge, so
+   the same stop offsets dissolve toward the future instead of the deep past, and the last 64px land
+   on the preceding age's colour at the boundary for the same one-sided soft join. */
+.futureGutterWash {
+  position: absolute;
+  top: 80px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to left,
+    transparent 0,
+    var(--map-age-gutter-bg) calc(100% - 150px),
+    var(--map-age-gutter-bg) calc(100% - 64px),
+    var(--map-age-prev-bg) 100%
+  );
+}
+
+/* Left-aligns its title — the edge revealed first on a right pull, and clear of the right fade. The
+   chevron still points right: the arrow is chronology, not a pointer at the neighbour. */
+.futureGutterBand {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 28px;
+  background: linear-gradient(to left, transparent 0, var(--map-age-gutter-bg) calc(100% - 150px));
+  clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 50%, calc(100% - 30px) 100%, 0 100%);
+}
+
 /* --- Node area (the DAG) --- */
 
 /* The `background` is set inline (`ageBackdrop` in CampaignMap.tsx): a left→right gradient wash

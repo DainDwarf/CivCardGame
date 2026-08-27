@@ -501,9 +501,13 @@ logic that rides on it. **A building card *is* the building** — there's no sep
 - **`ages.ts`** — `AGES` (Stone → Bronze → Iron) plus `ageColSpans`, which derives each age's
   contiguous DAG **column slice** from its missions' `map.col`. `CampaignMap` positions each age's band
   + wash over its slice — purely mission-derived, so an age with no placed missions renders no band. The
-  decorative pre-Stone **Nomadic Age** gutter is the deliberate exception: no missions, drawn
-  CampaignMap-locally (not an `AGES` entry), parked off the left edge and revealed by the map's left
-  elastic-overscroll.
+  chronology then runs off **both ends** as a gutter apiece, each parked past its edge and revealed by
+  that side's elastic-overscroll: the decorative pre-Stone **Nomadic Age** behind (no missions, drawn
+  CampaignMap-locally, deliberately *not* an `AGES` entry), and ahead of the last band the `AGES` entry
+  after it — derived, so an age that later gains missions takes its real band and the gutter retires
+  itself. Only the right one costs anything: content past the right edge counts toward `scrollWidth`
+  where the left gutter's negative offset does not, so the pan extent subtracts its width back out
+  (`scrollExtent`), which is the whole of what keeps it hidden at rest.
 - **`cardAge.ts`** — `cardAge(cardId)`: a card's age, **derived not annotated** — the age of the mission
   whose `reward.unlockCardIds` grants it, or Stone for a card in `STARTING_COLLECTION`. `undefined` for
   one the campaign never hands out (a board's `prebuilt`, a mission-injected event/threat/objective),

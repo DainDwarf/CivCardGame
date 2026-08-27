@@ -63,24 +63,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   player and a first-time player felt it. **Explicitly low priority and not a publish blocker** (user
   call): nothing is confusing, nothing is broken, every feature is reachable — it is convenience only.
   No obvious cheap fix, hence the `[?]`.
-- **Mission-screen polish (`CampaignMap.tsx`)** `[size: M]` `[?]` — the two remaining passes over the
-  map's horizontal extent, both user-flagged optional and both now carrying an argument against:
-  - **An empty Iron Age gutter on the right**, mirroring the Nomadic one on the left — same
-    parked-off-the-edge treatment, revealed by right elastic-overscroll. Not symmetric in the data
-    though: Nomadic is deliberately *not* an `AGES` entry and never will be, while Iron **is** one that
-    simply has no missions placed yet, so `ageColSpans` gives it no span. Decide whether the gutter is
-    CampaignMap-local like Nomadic's or the zero-mission rendering of a real age. **Argues against
-    itself now that PUBLISH cuts the Iron Age**: Nomadic teases backwards, which costs nothing, while
-    an Iron gutter promises a fourth age just before the closing popup says 0.1 is the last version.
-    Either drop it or invert it into something that reads as an ending.
-  - **Don't let the pan reach Bronze before it is unlocked** — clamp the scroll extent to the ages the
-    player has opened, so the Bronze band isn't browsable until the Stone capstone (`first_temple`) is
-    cleared. Same reasoning as hiding locked unlockables: the next age's shape is a surprise.
-    **Contradicts the map's own silhouette rule**, where a locked node deliberately shows its position
-    and hides its identity — so the age past the frontier is already half-disclosed on purpose. What
-    survives is narrower: the age *band* names "Bronze Age" outright, which is more than a silhouette
-    gives away, so if the surprise worth protecting is the name, that is a band-label change and not a
-    scroll clamp.
 
 ## Run loop (`src/rules/`, `src/run/`)
 
@@ -289,6 +271,25 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The chronology runs off both ends of the campaign map** ✅ — the Nomadic gutter had no mirror, so
+  the timeline faded in from prehistory and then simply stopped. A second gutter is parked past the
+  right edge naming the age the chronology runs into, revealed by the right elastic-overscroll the
+  way Nomadic is by the left. Kept **as smoothness and symmetry, not a tease** (user call, over the
+  argument that PUBLISH's Iron cut makes it a promise): it closes the band rather than advertising
+  content. The join settles that in the pixels — one-sided like Nomadic/Stone rather than straddling
+  the boundary the way two real ages do, so both ends read as the map's *edge* (see DESIGN.md).
+  Two things don't mirror. The age is **derived** — the `AGES` entry after the last one with
+  a span — rather than authored as Iron, so an age that later gains missions gets its real band and
+  the gutter retires itself instead of doubling it; its colours ride in as inline `--map-age-*`
+  properties, the way `ageBackdrop` already builds its stops. And content past the right edge counts
+  toward `scrollWidth` where the left gutter's negative offset does not, so panning by `scrollWidth`
+  would simply scroll to the gutter; `scrollExtent` measures the **timeline's own box** instead. Not
+  `scrollWidth` minus the gutter width — that arithmetic shipped first and rested the map well left of
+  the Bronze band's end, since it assumes the gutter is the only thing the browser counts as overflow
+  past the timeline. Measuring the timeline is the same number by construction and holds whether or
+  not a gutter is drawn.
+  The item's third pass, clamping the pan short of Bronze, was **dropped**: it contradicts the map's
+  silhouette rule, which discloses a locked node's position on purpose.
 - **The campaign map opens on what there is to play** ✅ — `scrollLeft` was only ever written by the
   drag-to-pan handler, so the map rested at col 0 against the Nomadic gutter and every cleared mission
   had to be panned past to reach the frontier — a pan that grows with the campaign. A layout effect

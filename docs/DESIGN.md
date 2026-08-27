@@ -404,6 +404,14 @@ procedurally generated map.
   (the first campaign age, where buildings/territory/conquest/culture are unlocked) grows. It carries
   no missions, so it isn't one of the mission-derived age bands; the campaign map echoes it only as a
   purely decorative green gutter off the left edge, revealed when you elastic-overscroll leftward.
+  The map carries the **mirror of that gutter on the right**, naming whichever age the chronology runs
+  into past the last band — so history reads as continuing in both directions rather than starting and
+  stopping at the missions that happen to be built. It is smoothness, not a promise of content: the
+  ages beyond the campaign are a fact about the world, and the map is honest that it shows a slice of
+  one. Both gutters join their neighbour **one-sidedly** — the wash blends inside the gutter alone,
+  never bleeding its colour into the visible timeline — which is *not* how two real ages meet (those
+  straddle their shared boundary). That asymmetry is the point: it matches the two gutters to each
+  other, so each end reads as the map's edge rather than as a boundary into somewhere you can go.
 - Procedural variation (which nodes are offered, per-node modifiers/seeds) can layer
   on later; v1 is authored. 🔧
 

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { MISSIONS, infiniteMissionsInOrder, type MissionDef } from '../content/missions';
-import { ageColSpans } from '../content/ages';
+import { AGES, ageColSpans } from '../content/ages';
 import { BOARDS, type BoardId } from '../content/boards';
 import { CARDS } from '../content/cards';
 import { STICKERS } from '../content/stickers';
@@ -38,8 +38,8 @@ const AGE_BLEND = 32;
 // mist-fade rather than dragging past its hard edge into the bare ground.
 const GUTTER_W = 340;
 // Elastic overscroll (dragging past either end): the damped translate asymptotes to OVERSCROLL_MAX px
-// of give, then springs back over SPRING_MS on release. A left pull reveals the Nomadic Age gutter; a
-// right pull is an empty bounce past the last age.
+// of give, then springs back over SPRING_MS on release. Each pull reveals the gutter parked at that
+// end — the Nomadic Age behind, the next age ahead.
 const OVERSCROLL_MAX = 320;
 const SPRING_MS = 500;
 const SPRING_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -121,6 +121,11 @@ export function CampaignMap({
   // occupy, derived from those missions' `map.col` (`content/ages.ts`'s `ageColSpans`). With no
   // standard missions placed yet, this is `[]` — the map renders no bands (the dormant state).
   const spans = ageColSpans(missions);
+  // The age the chronology runs into past the last band — what the right gutter names. Derived as
+  // the `AGES` entry after the last *present* one rather than authored, so an age that later gains
+  // missions gets its real band and the gutter retires itself instead of doubling it. Undefined
+  // where the chronology has nothing after it, and in the dormant state, which draws no bands at all.
+  const nextAge = spans.length > 0 ? AGES[AGES.findIndex((a) => a.id === spans[spans.length - 1].age.id) + 1] : undefined;
   // px left edge of a column on the same grid the nodes use, so bands align over their columns.
   const colX = (col: number) => PAD_X + col * COL_W;
   // An age boundary belongs in the *gutter* between the two columns it separates, not on the later
@@ -160,6 +165,15 @@ export function CampaignMap({
   const panRef = useRef<{ startX: number; startScroll: number } | null>(null);
   const [dragging, setDragging] = useState(false);
 
+  // How far the pan may actually scroll: to the end of the *timeline*, which is not the end of the
+  // scrollable area. The right gutter sits past the timeline's content edge and so counts toward
+  // `scrollWidth` — unlike the left one, whose negative overflow isn't scrollable at all — so panning
+  // by `scrollWidth` would simply scroll to it. Measured off the timeline's own box rather than by
+  // subtracting the gutter's width back out of `scrollWidth`, so the extent stays the same number
+  // whether or not a gutter is drawn, and nothing here depends on what the browser counts as overflow.
+  const scrollExtent = (canvas: HTMLDivElement) =>
+    Math.max(0, (timelineRef.current?.offsetWidth ?? canvas.scrollWidth) - canvas.clientWidth);
+
   function beginPan(e: React.PointerEvent) {
     const canvas = canvasRef.current;
     if (!canvas || e.button !== 0) return;
@@ -175,11 +189,10 @@ export function CampaignMap({
     if (!canvas || !pan) return;
     // clientX is visual (post-scale) px; scrollLeft is layout px inside the scaled wrapper.
     const desired = pan.startScroll - (e.clientX - pan.startX) / uiScale;
-    const max = Math.max(0, canvas.scrollWidth - canvas.clientWidth);
-    const clamped = Math.max(0, Math.min(max, desired));
+    const clamped = Math.max(0, Math.min(scrollExtent(canvas), desired));
     canvas.scrollLeft = clamped;
     // Past an edge, scrollLeft can't follow — carry the overshoot as a damped translate on the
-    // timeline instead (a left pull reveals the Nomadic Age gutter; a right pull is an empty bounce).
+    // timeline instead, which is what slides that end's gutter into view.
     // Same layout-px space as scrollLeft, so no second /uiScale (the translate rides the scaled wrapper).
     if (timelineRef.current) timelineRef.current.style.transform = `translateX(${-rubberBand(desired - clamped)}px)`;
   }
@@ -204,7 +217,7 @@ export function CampaignMap({
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const max = Math.max(0, canvas.scrollWidth - canvas.clientWidth);
+    const max = scrollExtent(canvas);
     const frontier = missions.filter((m) => isAvailable(m, mapProgress) && !isCompleted(mapProgress, m.id));
     // Nothing left to play: rest against the far edge, where the campaign ends.
     if (frontier.length === 0) {
@@ -248,6 +261,32 @@ export function CampaignMap({
               <span className={styles.ageName}>Nomadic Age</span>
             </div>
           </div>
+
+          {/* The mirror on the right: the age the chronology runs into, carrying no missions and
+              parked past the timeline's right edge, revealed by the right elastic-overscroll. Unlike
+              Nomadic it takes its colours from `AGES` rather than a fixed pair, since which age this
+              is follows the content — hence the inline tokens, built the way `ageBackdrop` builds
+              its stops. `--map-age-prev-bg` is the band it joins, for the one-sided blend at the
+              boundary. */}
+          {nextAge && (
+            <div
+              className={styles.futureGutter}
+              data-age={nextAge.id}
+              aria-hidden="true"
+              style={{
+                width: `${GUTTER_W}px`,
+                left: `${timelineWidth}px`,
+                '--map-age-gutter-bg': `var(--map-age-${nextAge.id}-bg)`,
+                '--map-age-prev-bg': `var(--map-age-${spans[spans.length - 1].age.id}-bg)`,
+                '--map-age-text': `var(--map-age-${nextAge.id}-text)`,
+              } as React.CSSProperties}
+            >
+              <div className={styles.futureGutterWash} />
+              <div className={styles.futureGutterBand}>
+                <span className={styles.ageName}>{nextAge.name}</span>
+              </div>
+            </div>
+          )}
 
           {/* One arrow band per age, positioned over its own column slice (`ageColSpans`) rather
               than an equal share — empty until the first age's missions land. */}
