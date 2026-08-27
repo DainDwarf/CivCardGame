@@ -71,7 +71,7 @@
   |---|:-:|:-:|:-:|:-:|---|
   | Copper | ✅ | ✅ | ✅ | ✅ | [copper](missions/copper.md) |
   | Masonry | ✅ | ✅ | ✅ | ✅ | [masonry](missions/masonry.md) |
-  | Pyramid *(leaf)* | ✅ | ✅ | 🟡 | ⬜ | [pyramid](missions/pyramid.md) |
+  | Pyramid *(leaf)* | ✅ | ✅ | ✅ | ✅ | [pyramid](missions/pyramid.md) |
   | Accounting | ✅ | ✅ | ✅ | ✅ | [accounting](missions/accounting.md) |
   | Writing | ✅ | ✅ | ✅ | ✅ | [writing](missions/writing.md) |
   | Roads | ✅ | ✅ | ✅ | ✅ | [roads](missions/roads.md) |
@@ -98,8 +98,7 @@
   more than double the 7-mission Stone Age, all remixing existing mechanics. So author it in **order**,
   not as one push (each still balance-swept):
   1. **Copper** — DONE (see [`missions/copper.md`](missions/copper.md)).
-  2. **Masonry** — DONE, balance included (see [`missions/masonry.md`](missions/masonry.md)). Optional **Pyramid** leaf — implemented; **balance
-     reopened** by the stream session on how far the two boards diverge, and on the wonder it rewards
+  2. **Masonry** — DONE, balance included (see [`missions/masonry.md`](missions/masonry.md)). Optional **Pyramid** leaf — DONE, balance included
      (see [`missions/pyramid.md`](missions/pyramid.md)).
   3. **Accounting** — DONE, balance included (see [`missions/accounting.md`](missions/accounting.md)). **Writing** — DONE,
      balance included (see [`missions/writing.md`](missions/writing.md)). The optional **Hammurabi's Code** leaf off Writing

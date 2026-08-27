@@ -351,7 +351,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     failureHint: `The tomb must be finished within ${PHARAOH_DEADLINE} rounds, before Pharaoh's Reign ends.`,
     kind: 'standard',
     // An optional challenge leaf off Masonry — a bigger reward for a harder clear: unlocks the Pyramid
-    // wonder (the culture powerhouse). Influence amount provisional.
+    // wonder (the worker-free monument paying per card drawn past the base hand). Influence amount
+    // provisional.
     reward: { influence: 12, unlockCardIds: ['pyramid'] },
     map: { col: 7, row: 1 },
     age: 'bronze',

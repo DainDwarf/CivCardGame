@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createRun, defeatLabel, endTurn, applyMove, type RunState } from './engine';
 import { instancesFromCardIds, seedObjective } from '../rules';
+import { bumpCounter, setCounter } from '../rules/state';
 import { gainResources } from '../rules/effects';
 import { playCard } from './moves';
 import type { RunConfig } from '../contract';
@@ -23,6 +24,16 @@ const LOCAL: Record<string, CardDef> = {
           if (ctx.event?.type === 'draw' && ctx.event.source === 'effect') gainResources(ctx, { money: 1 });
         },
       },
+    },
+  },
+  // Tallies every draw on a per-copy counter and pays past the second one, zeroing the tally on the
+  // `endTurn` broadcast — the shape that reads the round-start refill as a *batch* rather than one
+  // event, so it can only score right if the whole refill reaches the bus at `beginTurn`'s flush.
+  test_draw_tally: {
+    id: 'test_draw_tally', name: 'Tally', kind: 'building', cost: {}, workers: 0,
+    on: {
+      draw: { resolve: (ctx) => { if (bumpCounter(ctx.self, 'drawn') > 2) gainResources(ctx, { money: 1 }); } },
+      endTurn: { resolve: ({ self }) => void setCounter(self, 'drawn', 0) },
     },
   },
   // Survival objective: win once ≥2 events have been beaten (sent to `removed`) with Military intact.
@@ -87,6 +98,22 @@ describe('event bus through the turn loop', () => {
     expect(state.G.hand.length).toBe(3);
     expect(state.G.resources.money).toBe(0); // round-start refill does NOT pay the observer
     expect(state.G.events).toEqual([]); // queue drained — committed-state invariant
+  });
+
+  it('the round-start refill reaches on-draw handlers, once per drawn card, tallied per round', () => {
+    let state = run();
+    state.G.resources.food = 50; // keep famine out of it
+    state.G.tableau = [{ id: 99, cardId: 'test_draw_tally', workers: 0 }]; // self-sufficient
+    state.G.hand = [];
+    state.G.deck = instancesFromCardIds(['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'], 200);
+    state.G.discard = [];
+    state.G.resources.money = 0;
+    state = endTurn(state); // beginTurn refills 4 → draws 3 and 4 pay
+    expect(state.G.hand.length).toBe(4);
+    expect(state.G.resources.money).toBe(2);
+    state = endTurn(state); // the hand recycles and refills 4 again, off a tally reset to zero
+    expect(state.G.resources.money).toBe(4); // 6 if the endTurn reset never ran
+    expect(state.G.events).toEqual([]);
   });
 
   it('an on-draw building pays out when a card effect (a draw action) draws', () => {

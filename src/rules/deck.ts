@@ -139,9 +139,8 @@ export function returnToDeck(ctx: EffectContext, cards: CardInstance[]): void {
  * hand + emit the `draw` event). No-op if the id isn't in the discard.
  *
  * Reusing `drawInstance` means recovery emits a `draw` event (`source: 'effect'`) — deliberate, so
- * on-draw observers treat a recovered card like any effect-drawn one. Harmless today (no on-draw
- * subscribers in the current set); a future card that must tell recovery apart can branch on a new
- * `DrawSource`.
+ * on-draw observers treat a recovered card like any effect-drawn one (the Pyramid pays for it). A card
+ * that must tell recovery apart can branch on a new `DrawSource`.
  */
 export function recoverFromDiscard(ctx: EffectContext, card: CardInstance): void {
   const idx = ctx.G.discard.findIndex((c) => c.id === card.id);

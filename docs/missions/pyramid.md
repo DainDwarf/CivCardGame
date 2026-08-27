@@ -3,27 +3,37 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance 🟡 · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the optional challenge leaf off Masonry.
 **Placement:** `prereqs: ['masonry']`, bronze col 6 row 1.
-**Reward influence:** 25 (challenge → bigger reward; provisional).
+**Reward influence:** 12 (challenge → bigger reward; provisional).
 
 ## Design ✅ (converged)
 
 - **Goal:** a money-weighted accumulation held at once — 50🪙 · 40🔨 · 🎭 level 2.
 - **Pressure:** the **Pharaoh's Reign** deadline threat — the first shipped use of the `defeat` hook
   (lose if the tomb isn't done by round `PHARAOH_DEADLINE` = 40; no drain, just the clock).
-- **Reward:** unlocks the **Pyramid** wonder — the culture powerhouse (+2🎭 +1🪙 per worker, 4 workers,
-  culture-L2 gated, −2🌾 upkeep while staffed).
+- **Reward:** unlocks the **Pyramid** wonder — the draw monument (+1🪙 +1🔨 per card drawn after the
+  first `BASE_HAND_SIZE`, no workers, no upkeep, culture-L2 gated). Its rate is the culture ladder's own
+  hand-size bonus, so L2 pays 2 a round before any draw card, and every effect draw stacks on top. Its
+  box reads out the turn's tally and what it paid.
 
 ## Implement ✅ (shipped)
 
 First shipped use of the `defeat` hook (a deadline, not a drain).
 
-## Balance 🟡 (reopened)
+## Balance ✅ (closed 2026-08-27)
 
-**Reopened by the 2026-08-24 stream session** — on the mission being board-dependent to the point of
-being two different missions, and on the wonder it hands back (see *Open*).
+**The mission is board-dependent, and that is accepted as the leaf's shape.** The committed fixtures
+fold to City `prover` 4/10 (six `noWinFound:deadEnd`) · `greedy` 1/100 against Chiefdom `prover` 10/10 ·
+`greedy` 73/100 on the *same* deck: the board Masonry's own upgrade hands you is the losing one, and the
+martial board fed by taking land is the one the deadline suits. An optional challenge leaf is allowed to
+have a right answer.
+
+**The wonder no longer competes with Göbekli Tepe on Göbekli's axis.** The culture producer it replaced
+was dominated on every term (dearer, more workers, a food rent, to trade 1🔨 per worker for 1🎭 into an
+age nothing reads culture in); the draw monument takes no workers and pays on the hand's width, which no
+other card touches. It stands in no fixture (it is this mission's reward), so no row moved.
 
 **The measured numbers live in the fixtures' own `results` keys** — read them with `npm run sim:report`,
 which is the authority. The transcribed table that stood here is deleted rather than refreshed: it had
@@ -42,21 +52,15 @@ deadline. The five structures want ~5 slots against City's 2, so ~3 Conquests ar
 remaining causes logged under [`../TODO.md`](../TODO.md) → *Simulator shaping*.
 
 **Fixtures ✅, two — one per board**, since City and Chiefdom reach this mission from opposite ends:
-`scripts/sim/baselines/pyramid.json` and `pyramid_chiefdom.json`, carrying the *same* 22-card deck. That
-they diverge as far as they do on one deck is the reopen.
+`scripts/sim/baselines/pyramid.json` and `pyramid_chiefdom.json`, carrying the *same* 22-card deck, so
+the board is the only variable between them.
 
-## Open
+## Polish ✅
 
-- **"The Pyramid just sucks rn" `[?]`** — *(2026-08-24 stream session)*, unelaborated. Two candidate
-  readings, both live: the **mission** is now wildly board-dependent — the committed fixtures fold to
-  City `prover` 4/10 (six `noWinFound:deadEnd`) · `greedy` 1/100 against Chiefdom `prover` 10/10 ·
-  `greedy` 73/100 on the *same* deck, so the board Masonry's own upgrade hands you is the losing one;
-  and the **wonder** is dominated by Göbekli Tepe, which this deck already owns (8🔨/L1/3 workers/no
-  upkeep, +1🔨+1🪙+1🎭 each, vs 10🔨+6🪙/L2/4 workers/−2🌾, +2🎭+1🪙 each — dearer on every axis to
-  trade 1🔨 per worker for 1🎭). Ask which before reworking either.
+**The wonder's face is two short lines** — `+1🪙 +1🔨 per card` / `after the first 4` — inside the
+card's fixed size in all three `CardFace` consumers, the threshold interpolated from `BASE_HAND_SIZE`
+rather than written. **Standing, its box reads the turn** — `Drawn 6 · +2🪙 +2🔨` — and a Pyramid still
+in hand shows the rule instead of a zero tally, since that is where the build decision is made.
+Feel-play signed off, a Writing recovery bumping the readout live.
 
-## Polish ⬜ (not started)
-
-- **Pyramid wonder card text overflows** — the effect text is too long; the bottom text overflows and
-  the card extends past its fixed size. `[?]`
-- Card display/text, art, lore.
+Mission text, art (🔺) and lore stand as shipped.

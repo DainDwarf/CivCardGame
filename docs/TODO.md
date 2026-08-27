@@ -144,8 +144,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   `events.ts`'s `dispatchEvent`). Make a built-but-idle building still pay its maintenance — an idle
   structure is a cost, not free. Reverses the documented "idle staffable box never reacts" contract, so
   decide the scope: upkeep only (production still gated on staffing), or the whole `endTurn` handler?
-  `workers: 0` cards (City Walls) are unaffected (always operating); the Pyramid's −2🌾 would then bleed
-  while idle. `[size: M]`
+  `workers: 0` cards (City Walls) are unaffected (always operating), and no shipped *staffable* prints an
+  `upkeep` today — so this buys nothing until one does, and the design question is whether a maintained
+  building is a shape worth having. `[size: M]`
 - **Card art must be unique across the player collection** — nothing pins it today, and the near-miss
   just happened: Fire wanted 🔥 and Raiding already held it (Raiding moved to 🏴). Two ownable cards
   sharing a glyph is a **bug** — the art is how a card is recognized on the board and in the picker.

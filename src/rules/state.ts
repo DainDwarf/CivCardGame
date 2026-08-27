@@ -238,6 +238,11 @@ export interface PendingInteraction {
   pick: number;
 }
 
+/** Cards drawn up to each round before the culture ladder's hand-size bonus — shared by the
+ *  `handSize` seed below and the Pyramid's face text (`content/cards.ts`), whose payout starts past
+ *  this many, so the printed threshold can't drift from the seeded one. */
+export const BASE_HAND_SIZE = 4;
+
 /** A zeroed baseline state — used by setup, tests, and (later) the simulator. */
 export function blankState(missionId: string): GameState {
   return {
@@ -252,7 +257,7 @@ export function blankState(missionId: string): GameState {
     workZone: [],
     threats: [],
     tradeRoutes: [],
-    handSize: 4,
+    handSize: BASE_HAND_SIZE,
     missionId,
     rngState: seededRng('blank').getState(),
     pendingInteraction: null,

@@ -1,5 +1,5 @@
 import { scaleResources, subtractResources } from '../rules/resources';
-import { bumpCounter, getCounter, setCounter, stripSticker, type CardInstance, type GameEventType, type GameState } from '../rules/state';
+import { BASE_HAND_SIZE, bumpCounter, getCounter, setCounter, stripSticker, type CardInstance, type GameEventType, type GameState } from '../rules/state';
 import { closeTradeRoute, routeStands } from '../rules/tradeRoutes';
 import { gainResources, type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
 import type { CardCost } from '../rules/cost';
@@ -331,6 +331,12 @@ function overextensionDrain(G: GameState): number {
  *  design: the Pyramid is an optional challenge leaf, not an impossible one. */
 export const PHARAOH_DEADLINE = 40;
 
+/** The Pyramid's rule as printed — its static `description` *and* what its `dynamicText` falls back to
+ *  for a copy that isn't standing yet, since a card in hand has no tally to report and the rule is what
+ *  the build decision needs. The threshold is `BASE_HAND_SIZE`, the same number `handSize` is seeded
+ *  from and the resolver compares against. */
+const PYRAMID_RULE_TEXT = `+1🪙 +1🔨 per card\nafter the first ${BASE_HAND_SIZE}`;
+
 /** How much stockpiled 🪙 breeds one extra Thief — shared by the `unguarded_wealth` threat's
  *  reshuffle spawn math and its readout, so the shown rate can't drift from the enforced one.
  *  Provisional (balance pending a sim sweep). */
@@ -563,15 +569,37 @@ export const CARDS: Record<string, CardDef> = {
     cost: { resources: { production: 8 }, cultureLevelReq: 1 }, workers: 3,
     produces: { resources: { production: 1, money: 1, culture: 1 } },
   },
-  // The culture powerhouse — heavy 🎭 per worker where Göbekli is a balanced generalist. The 🌾 upkeep
-  //   is the honest cost of the mortuary priests and labour it commands; the drain is *not* 🪙, which
-  //   would be a false cost against the 🪙 it produces.
+  // The draw monument, where Göbekli is a staffed generalist: it takes no workers and pays off the
+  //   *width* of the hand instead, so its rate is whatever the culture ladder and the deck's own draw
+  //   cards have already bought. The threshold is the run's live `G.handSize` — the culture bonus rides
+  //   on top of it and is exactly what gets through — and an effect draw (a Calendar pick, a Writing
+  //   recovery, both routed through `drawInstance`'s `draw` event) stacks on that. The payout lands at
+  //   the draw rather than at production so the same turn can spend it. The tally is zeroed on the
+  //   `endTurn` broadcast and refilled at `beginTurn`, so mid-turn it reads this turn's draws.
+  //   Invisible to the headless simulator: `sim/probes.ts`'s `producedGain` reads the printed `produces`
+  //   bag and no probe models an `on.*` handler, so every policy values this card at zero and never
+  //   builds it — a known blind spot, not a bug in a sweep that never plays it.
   pyramid: {
     id: 'pyramid', name: 'Pyramid', kind: 'wonder',
-    display: { art: '🔺', description: '+2🎭 +1🪙 per worker\n−2🌾 upkeep' },
-    cost: { resources: { production: 10, money: 6 }, cultureLevelReq: 2 }, workers: 4,
-    produces: { resources: { culture: 2, money: 1 } },
-    upkeep: { resources: { food: -2 } },
+    display: {
+      art: '🔺',
+      description: PYRAMID_RULE_TEXT,
+      dynamicText: (G, self) => {
+        if (!G.tableau.some((c) => c.id === self.id)) return PYRAMID_RULE_TEXT;
+        const drawn = getCounter(self, 'drawn');
+        const paid = Math.max(0, drawn - G.handSize);
+        return `Drawn ${drawn} · +${paid}🪙 +${paid}🔨`;
+      },
+    },
+    cost: { resources: { production: 10, money: 6 }, cultureLevelReq: 2 }, workers: 0,
+    on: {
+      draw: {
+        resolve: (ctx) => {
+          if (bumpCounter(ctx.self, 'drawn') > ctx.G.handSize) gainResources(ctx, { money: 1, production: 1 });
+        },
+      },
+      endTurn: { resolve: ({ self }) => void setCounter(self, 'drawn', 0) },
+    },
   },
 
   // — Actions —
