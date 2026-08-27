@@ -80,7 +80,7 @@
   | Raiding | ✅ | ✅ | ✅ | ✅ | [raiding](missions/raiding.md) |
   | Setting Sail | ✅ | ✅ | ✅ | ✅ | [setting-sail](missions/setting-sail.md) |
   | Sea Lanes | ✅ | ✅ | ✅ | ✅ | [sea-lanes](missions/sea-lanes.md) |
-  | Bronze *(convergence)* | ✅ | ✅ | ✅ | ⬜ | [bronze](missions/bronze.md) |
+  | Bronze *(convergence)* | ✅ | ✅ | ✅ | ✅ | [bronze](missions/bronze.md) |
   | Sword & chariot | ✅ | ✅ | ✅ | ⬜ | [sword-chariot](missions/sword-chariot.md) |
   | The Sea Peoples *(capstone)* | ✅ | ✅ | ✅ | ⬜ | [sea-peoples](missions/sea-peoples.md) |
   | Fall of the Bronze Age *(infinite)* | ✅ | ✅ | 🟡 | ⬜ | [fall-of-bronze](missions/fall-of-bronze.md) |

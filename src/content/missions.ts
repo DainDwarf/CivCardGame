@@ -565,13 +565,13 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'bronze',
     name: 'Bronze',
     lore:
-      'Copper is soft, and every hand that works it knows so — the axe that cut the timber for your ' +
-      'carts turns on the second oak. What hardens it was never in your hills: it comes up the roads ' +
-      'your carts cut, over the passes your riders hold, and off the islands your lanes reach, in grey ' +
-      'ingots nobody in the valley yet knows what to do with. Set the smiths to the crucible and let ' +
-      'them ruin as many pours as it takes — wrong heat, wrong measure, wrong mould — until the metal ' +
-      'comes out of the sand hard enough to hold an edge. And know that every pour that works is a ' +
-      'furnace that never goes cold again — and a furnace that never goes cold is never done eating.',
+      'You have held the stuff: a blade off a trader\'s belt that took the oak your own copper turned ' +
+      'on, and its owner would say only that there is tin in it. How much tin, at what heat, poured ' +
+      'into what — that he keeps, and so does everyone who knows. Your carts have asked up the roads, ' +
+      'your riders across the plains, your hulls along every coast the lanes reach, and the answer ' +
+      'comes back the same from all three: nobody here knows how. The metal comes to you and the ' +
+      'knowing does not. So find it out yourself — set the smiths to the crucible and let them ruin as ' +
+      'many pours as it takes.',
     // The convergence of the three middle branches — the carts, the riders and the hulls that between
     // them reach the tin.
     prereqs: ['wheel', 'raiding', 'sea_lanes'],
@@ -582,8 +582,8 @@ export const MISSIONS: Record<string, MissionDef> = {
     objectiveCardId: 'bronze_goal',
     victoryHint: `Master all ${BRONZE_TRIALS} Casting Trials, over a standing Tin Route.`,
     failureHint:
-      'A trial you cannot pour bleeds 2 🔨 at the end of each round, and every one you do master is a ' +
-      'furnace kept lit — 1 🔨 more every round after. Let the fires eat your industry bare and the run ends.',
+      'A trial you cannot pour costs 2 🔨, and every one you do master is a ' +
+      'furnace kept lit, costing 1 🔨 every round after.',
     kind: 'standard',
     // Both grants read the same tin gate this mission enforces by hand — the sticker charges it in place
     // of a price — so each is worth only what the trade branches keep open. Influence amount provisional.

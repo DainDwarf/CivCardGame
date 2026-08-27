@@ -121,8 +121,8 @@ export function describeCost(c: CardDef): string {
  *  worker-icon rendering.) */
 export function describeConditions(c: CardDef): string {
   const parts: string[] = [];
-  if (c.cost.cultureLevelReq) parts.push(`requires ${RESOURCE_ICON.culture} level ${c.cost.cultureLevelReq}`);
-  if (c.cost.discard) parts.push(`discard ${c.cost.discard}`);
+  if (c.cost.cultureLevelReq) parts.push(`Requires ${RESOURCE_ICON.culture} level ${c.cost.cultureLevelReq}`);
+  if (c.cost.discard) parts.push(`Discard ${c.cost.discard}`);
   if (c.kind === 'event') {
     // The half of the price `cost` can't carry (only the five core pools are spendable) and the
     // one-shot the payment buys, in the band that reads as terms of the play — leaving the text band

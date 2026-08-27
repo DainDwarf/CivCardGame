@@ -529,7 +529,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       art: '🏪',
       dynamicText: (G) => (tinRouteStands(G) ? '+3🪙 / round per worker' : 'no Tin Route — idle'),
-      note: 'Needs a Tin Route to build and to operate',
+      note: 'Needs a Tin Route',
     },
   },
 
@@ -606,7 +606,7 @@ export const CARDS: Record<string, CardDef> = {
   },
   conquest: {
     id: 'conquest', name: 'Conquest', kind: 'work', workers: 1,
-    display: { art: '🗡️', dynamicRule: 'cost doubles per use' },
+    display: { art: '🗡️', dynamicRule: 'Cost doubles per use' },
     // The `plays` counter rides with the instance everywhere it goes — onto the board, back to the
     //   discard, round to the deck — so the escalation is per *copy*: a second owned Conquest climbs
     //   on its own schedule. Bumping in `produces` rather than at play means an unstaffed box, which
@@ -825,7 +825,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       art: '🏴‍☠️',
       description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
-      dynamicRule: 'cost rises per wave repelled',
+      dynamicRule: 'Cost rises per wave repelled',
       note: 'Needs a Tin Route',
     },
     upkeep: RAID_LANDING,
@@ -845,7 +845,7 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       art: '🏴‍☠️',
       description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
-      dynamicRule: 'cost rises per wave repelled',
+      dynamicRule: 'Cost rises per wave repelled',
       note: 'Needs a Tin Route',
     },
     upkeep: RAID_LANDING,
@@ -868,7 +868,7 @@ export const CARDS: Record<string, CardDef> = {
     },
     display: {
       art: '❄️',
-      dynamicRule: 'cost rises per snap endured',
+      dynamicRule: 'Cost rises per snap endured',
     },
     upkeep: { resources: { food: -2 } },
   },
@@ -1366,7 +1366,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'charcoal_fuel', name: 'Charcoal Fuel', kind: 'threat', cost: {},
     display: {
       art: '🔥',
-      description: '−1🔨 per casting trial mastered',
+      description: '−1🔨 per casting trial removed',
       dynamicText: (G) => `−${trialsMastered(G)}🔨`,
     },
     upkeep: {

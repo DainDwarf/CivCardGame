@@ -41,6 +41,9 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   (`rules/population.ts`) already exists for exactly this, so the curve isn't re-derived in the UI. Note it
   is state-dependent: the same card shows a different number at pop 2 than at pop 5. `[size: S]` `[?]`
 
+- **Hand display breaks past 6 cards** — the hand row doesn't cope with a 7th card. Culture levels raise
+  hand size, so this is reachable in normal play from the culture missions on. `[size: S]`
+
 - **Discard-mode affordance when a play costs cards** `[size: S]` — *(beta playtest)* playing Fire
   (`cost: { discard: 1 }`) drops the player into choosing a card to give up with nothing saying so; the
   discard reads as cards vanishing. Wants a visible "choose N to discard" mode on the hand while the
@@ -109,6 +112,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     removal exists, a play-time `gate.check` leaks: `gate` is evaluated at play and `upkeep` fires at the
     `endTurn` boundary, so play-route → play-building → close-route-before-ending-turn pays zero 🪙 and
     keeps the building forever. Continuous gating also gives the Sea Peoples capstone its teeth.
+- **A card-prerequisite gate should be a declarative cost field** `[size: M]` — the tin gate is a
+  `cost.check` closure (`needsTinRoute`), so nothing can introspect it: the Marketplace and Casting Trial
+  only state it because someone hand-wrote a `note`, which can drift from the check, and a **Bronze Tools
+  sticker prints nothing at all** on the copy it gates — where Elegant's note appears for free, off the
+  declarative `cultureLevelReq` `describeConditions` reads. Wants a `CardCost` field naming the required
+  card (the vocabulary is deliberately closed and introspectable for exactly this), read by
+  `describeConditions` (the face), `costReason` (the gate) and `race.ts`'s `missingRoute` (the plan scan),
+  with the closure and the hand-written notes deleted.
 - **Escalating route rent** `[size: S]` `[?]` — routes ship with a **flat** rent. The treasury is the
   zone's *only* cap again, so the case for this is back at full strength. The originally-planned
   auto-cap is a rent that scales with the number of parallel

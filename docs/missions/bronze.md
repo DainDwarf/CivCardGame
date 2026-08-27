@@ -3,12 +3,12 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the **convergence** node: the three middle branches (Wheel+roads / Horse / Naval)
 rejoin here.
 **Placement:** `prereqs: ['wheel', 'raiding', 'sea_lanes']`, bronze col 11 row 0 (the three tips sit at
 col 10, rows −1/0/+1).
-**Reward influence:** provisional 12 (matches the standard Bronze nodes).
+**Reward influence:** provisional 6 (matches the standard Bronze nodes).
 
 ## Design ✅ (converged)
 
@@ -112,8 +112,24 @@ Convoy and Marketplace were all rated one node later, in
 [sword-chariot](sword-chariot.md)'s cells. The **Tin Route**'s own rating is settled here: this is the first cell
 where its gate is load-bearing, and it opens on most runs of both boards.
 
-## Polish ⬜
+## Polish ✅
 
-Not started — card text, art, lore, beyond the threat pass: the threat is renamed **Charcoal Fuel**
-(🔥), and its card comment, the mission lore's closing line and the `failureHint` all read the drain as
-the 🔨 it charges (fuel, not fees).
+The threat is **Charcoal Fuel** (🔥), reading its drain as the 🔨 it charges (fuel, not fees) and
+counting the pile the objective counts — *per casting trial removed*, one word for one tally.
+
+The **lore was rewritten around the secret rather than the metal**: the recipe is what the valley
+lacks, not the tin, and the three directions it has already asked — the roads, the plains, the coast —
+are this convergence's three prereqs, so the gate reads as earned rather than as tree-narrowing. The
+`failureHint` drops the generic-collapse closer and states only the two drains this mission adds; the
+per-round cadence goes unstated, being the standing rule fifteen missions in.
+
+Three corrections found here generalized across the arc and shipped ahead of it: the **🏝️ glyph no
+longer stands in for the Tin Route** anywhere text refers to it (the card keeps the art, where its name
+is printed beside it), a **note banner opens on a capital**, and the tin gate on the Marketplace and the
+Bronze Tools sticker states itself in the fewest words that carry it.
+
+**One gap, ticketed, not closed** ([`../TODO.md`](../TODO.md) → *Run loop*): the Bronze Tools sticker
+prints its gate nowhere on the copy it gates. Elegant's equivalent note comes free off the declarative
+`cultureLevelReq`; the tin gate is a `cost.check` closure, so there is nothing for a face to read, and
+every card stating it does so through a hand-written `note` that could drift from the check. The fix is
+a declarative field, which is code rather than text.
