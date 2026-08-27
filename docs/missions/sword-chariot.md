@@ -43,9 +43,11 @@ wrote down when Convoy shipped ("Sword & chariot and the Sea Peoples want standi
   threat `defeat` hook). Add only if Balance finds turtling free; the upkeep drain should already
   price delay.
 - **Reward — two grants**, the bronze military kit, split **standing vs. burst**:
-  - **Sword** (building) — the standing infantry: staffed, ⚔️ per worker per round, tin-gated
-    **continuously** — with no Tin Route standing it produces nothing that round (mothball, not
-    play-block; the gate the TODO's continuous-gating note calls for). Sits above City Walls without
+  - **Sword** (building) — the standing infantry: staffed, ⚔️ per worker per round, tin-gated **both
+    ways** — no Tin Route standing, no build (the Marketplace's rule), and a host already raised
+    produces nothing for as long as a cut lasts. Mothball *and* play-block: the continuous half is what
+    the TODO's note calls for, and it is the half a play-time gate cannot cover, the route being
+    cuttable long after the build. Sits above City Walls without
     invalidating it: Walls stay the workerless flat garrison, Sword scales with staffing.
   - **Chariot** (work box) — the elite troops: the War Horse successor, same shape with a better ⚔️
     rate per worker, cross-age progression paid for by its tin gate. Play-time gating suffices — a
@@ -106,10 +108,12 @@ is the standing set's first fixture carrying board stickers (2× Opulence):
 |---|---|---|---|
 | Warband (45 cards, conquest-fed, 2 double-Convoy routes) | 19% | 54% (win med 66) | 4/10 |
 | City (37 cards, Road-bought land, Convoyed Bartering) | 0% | 0% | 0/10 |
-| Port (34 cards + 2× Opulence, Merchant Ships) | 0% | 4% | 1/10 |
+| Port (34 cards + 2× Opulence, Merchant Ships) | 0% | 5% | 2/10 |
 
 City and Port were re-recorded when the Road went single-use ([`roads.md`](roads.md)): Port planner
-2→4 and prover 0→1/10, City unmoved at zero.
+2→4 and prover 0→1/10, City unmoved at zero. Both moved again on the Road's price cut to 2🪙+2🔨
+([`wheel.md`](wheel.md)) — Port planner 4→5 and prover 1→2/10, City still flat at zero in all three
+columns, its Road-bought land nowhere near the binding constraint.
 
 **The settled boards' near-zero columns are a fidelity artifact, not a rating** — the route-opening
 blind spot ([`../TODO.md`](../TODO.md) → *Simulator · Fidelity*, the `setting_sail`/`sea_lanes`

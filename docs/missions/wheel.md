@@ -64,12 +64,12 @@ arrived. Swept at the standing protocol:
 
 | policy | seeds | win rate | turns (min · med · max) | end terr | failure mode |
 |---|---|---|---|---|---|
-| greedy | 100 | 29% | 5 · 14 · 201 | 6.2 | ruin 68 · stall 3 |
-| planner | 100 | **53%** | 30 · 74.5 · 201 | 6.6 | stall 41 · ruin 6 |
-| prover | 10 | 2/10 proven | 1 · 1 · 87 | 3.2 | noWinFound:depth 8 |
+| greedy | 100 | 22% | 3 · 10 · 201 | 5.9 | ruin 75 · stall 2 · famine 1 |
+| planner | 100 | **48%** | 23 · 201 · 201 | 6.4 | stall 51 · ruin 1 |
+| prover | 10 | 2/10 proven | 1 · 1 · 85 | 3.2 | noWinFound:depth 8 |
 
 Read the planner column beside the prover's: 8 of 10 seeds decline at the root (`noWinFound:depth`),
-so the search bound sets the proven floor rather than the mission, and the planner's 47 losses are 41
+so the search bound sets the proven floor rather than the mission, and the planner's 52 losses are 51
 stalls — runs idling past the cutoff — with no famine in either competent column.
 
 **The Road is single-use** (a box that produces spends itself; an unstaffed one recycles), settled here
@@ -78,6 +78,16 @@ third expansion on. Measured across the 11 cells carrying it, with the race mode
 (`selfRemoves` probes `produces` as well as the play `effect`, so a spent box caps at the copies held):
 here planner 51→53, greedy 32→29, prover 3→2/10 — a wash inside seed churn — while the cells that
 stocked it for room paid: `bronze_city` 23→14, `sea_lanes_port` 11→2, `sea_peoples_city` 84→77.
+
+**Its price then came down to 2🪙+2🔨**, a copy now buying one segment rather than a run of them — and
+the mission built around Roads got *harder*: greedy **29→22%**, planner **53→48%**, with ruin taking 68→75
+of the greedy column and its median run 11 turns shorter. The other road cells lean the same way
+(`bronze_port` planner 5→0, `sea_lanes_city` 14→11, `wheel_chiefdom` 50→48); only `sword_chariot_port`
+gained. **A Road's price is not what a Road costs** — Overextension's −1🔨 per territory past the grace
+band is, and it is charged every round the land is held, so a cheaper segment only reaches that toll
+sooner. The competent columns churn hard here (planner flips 21 win→loss against 16 the other way for a
+net −5), so read the greedy −7 as the trustworthy figure and the planner's as boundary noise. Recorded
+rather than reverted; the lever the Road's cost actually answers to is the threat, not the sticker price.
 
 The 🔨 crisis the mission is named for shows up only in the greedy column, where 68 runs ruin — read
 that column as the one-ply plateau it is, not as the drain biting.

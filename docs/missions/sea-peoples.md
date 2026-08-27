@@ -145,17 +145,20 @@ reachable board line — cut, swept under the standing protocol, and recorded:
 
 | Cell | greedy | planner | prover |
 |---|---|---|---|
-| sea_peoples_city | 3% | **77%** | 10/10 |
+| sea_peoples_city | 4% | **84%** | 9/10 |
 | sea_peoples_port | 13% | **67%** | 10/10 |
-| sea_peoples_warband | 13% | **79%** | 9/10 |
+| sea_peoples_warband | 12% | **75%** | 9/10 |
 
 Far better than the sword-chariot shape the Design section braced for: the planner's numbers are a
 real reading, not a floor, and the prover's one miss (warband) is an ordinary `noWinFound:deadEnd`
 decline. The port deck was later trimmed from 6 to 4 tin routes when the copy ladder capped at ×4 —
 re-measured slightly *up* (13/67/10): the extra routes were rent-heavy dead weight, and the deck now
 fits the campaign's own faucet with no top-up.
-The city cell was re-recorded when the Road went single-use ([`roads.md`](roads.md)), planner 84→77.
-The huge greedy→planner gap (3→77 on city) is the capstone demanding actual planning, as it should.
+The city cell was re-recorded when the Road went single-use ([`roads.md`](roads.md)), planner 84→77, and
+again when Sword's play-time tin gate closed alongside the Road's price cut — city planner back to 84,
+warband 79→75. Warband carries no Road, so its −4 is the gate alone: a Sword can no longer be raised
+against tin that has not arrived yet.
+The huge greedy→planner gap (4→84 on city) is the capstone demanding actual planning, as it should.
 Defeat textures: port drowns in **bankruptcy** (its rent-heavy lane deck's own wages), warband in
 **famine**, greedy city in stalls. Every winning column repels for real (`sea_raid` plays high
 throughout). One noted wart, accepted as-is: the port cell wins at **1 population** — the lane deck
