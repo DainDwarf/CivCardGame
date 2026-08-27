@@ -437,7 +437,7 @@ export const CARDS: Record<string, CardDef> = {
   chariot: {
     id: 'chariot', name: 'Chariot', kind: 'work',
     cost: { resources: { money: 2 }, check: needsTinRoute }, workers: 1,
-    display: { art: '🎠', note: 'needs a 🏝️ route' },
+    display: { art: '🎠', note: 'Needs a Tin Route' },
     produces: { resources: { military: 5 } },
   },
   // Pays off the trade zone rather than at a flat rate, so it is worth nothing on an empty sea and more
@@ -528,8 +528,8 @@ export const CARDS: Record<string, CardDef> = {
     producesWhile: tinRouteStands,
     display: {
       art: '🏪',
-      dynamicText: (G) => (tinRouteStands(G) ? '+3🪙 / round per worker' : 'no 🏝️ route — idle'),
-      note: 'needs a 🏝️ route to build and to operate',
+      dynamicText: (G) => (tinRouteStands(G) ? '+3🪙 / round per worker' : 'no Tin Route — idle'),
+      note: 'Needs a Tin Route to build and to operate',
     },
   },
 
@@ -542,8 +542,8 @@ export const CARDS: Record<string, CardDef> = {
     display: {
       art: '🪖',
       description: '+2 ⚔️ / round\nper worker.',
-      dynamicText: (G) => (tinRouteStands(G) ? '+2⚔️ / round per worker' : 'no 🏝️ route — idle'),
-      note: 'needs a 🏝️ route to operate',
+      dynamicText: (G) => (tinRouteStands(G) ? '+2⚔️ / round per worker' : 'no Tin Route — idle'),
+      note: 'Needs a Tin Route to operate',
     },
     produces: { resources: { military: 2 } },
     producesWhile: tinRouteStands,
@@ -571,8 +571,8 @@ export const CARDS: Record<string, CardDef> = {
   storytelling: { id: 'storytelling', name: 'Storytelling', kind: 'work', cost: {}, workers: 1, display: { art: '🗣️' }, produces: { resources: { science: 1 } } },
   bow: {
     id: 'bow', name: 'Bow', kind: 'action', cost: { resources: { production: 2 } },
-    // The "single use" note is the face's heads-up for the self-removal below — kept in step with it.
-    display: { art: '🏹', note: 'single use' },
+    // The "Single use" note is the face's heads-up for the self-removal below — kept in step with it.
+    display: { art: '🏹', note: 'Single use' },
     // A one-shot: grant the military (declarative, folded first) then send this copy to `removed`
     // so it never recycles back into the deck. The play choke point skips its usual action→discard
     // file once the effect has already filed the copy (see `moves.ts`'s `playCard`).
@@ -601,7 +601,7 @@ export const CARDS: Record<string, CardDef> = {
   dogs: { id: 'dogs', name: 'Hunting', kind: 'work', cost: {}, workers: 1, display: { art: '🐕' }, produces: { resources: { military: 1 } } },
   raiding: {
     id: 'raiding', name: 'Raiding', kind: 'action', cost: { resources: { military: 3 } },
-    display: { art: '🏴', note: 'single use' },
+    display: { art: '🏴', note: 'Single use' },
     effect: { resources: { food: 4, production: 4 }, resolve: (ctx) => { removeFromRun(ctx); } },
   },
   conquest: {
@@ -628,7 +628,7 @@ export const CARDS: Record<string, CardDef> = {
   road: {
     id: 'road', name: 'Road', kind: 'work', workers: 1,
     cost: { resources: { money: 3, production: 3 } },
-    display: { art: '🛣️', note: 'single use' },
+    display: { art: '🛣️', note: 'Single use' },
     produces: { resources: { territory: 1 }, resolve: (ctx) => { removeFromRun(ctx); } },
   },
 
@@ -807,7 +807,7 @@ export const CARDS: Record<string, CardDef> = {
   casting_trial: {
     id: 'casting_trial', name: 'Casting Trial', kind: 'event',
     cost: { resources: { money: 4, science: 6 }, check: needsTinRoute },
-    display: { art: '🫗', note: 'needs a 🏝️ route' },
+    display: { art: '🫗', note: 'Needs a Tin Route' },
     upkeep: { resources: { production: -2 } },
   },
   // Sea Raid: repelling a wave is playing it — the ⚔️ buys the beach back and the play choke sends it
@@ -826,7 +826,7 @@ export const CARDS: Record<string, CardDef> = {
       art: '🏴‍☠️',
       description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
       dynamicRule: 'cost rises per wave repelled',
-      note: 'needs a 🏝️ route',
+      note: 'Needs a Tin Route',
     },
     upkeep: RAID_LANDING,
   },
@@ -846,7 +846,7 @@ export const CARDS: Record<string, CardDef> = {
       art: '🏴‍☠️',
       description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
       dynamicRule: 'cost rises per wave repelled',
-      note: 'needs a 🏝️ route',
+      note: 'Needs a Tin Route',
     },
     upkeep: RAID_LANDING,
   },

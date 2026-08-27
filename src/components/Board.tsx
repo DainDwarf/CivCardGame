@@ -715,7 +715,7 @@ function whyUnplayable(card: CardDef, G: GameState, self: CardInstance): string 
     case 'noIdlePopulation':
       return `need an idle ${RESOURCE_ICON.population}`;
     case 'missingRoute':
-      return `need a standing ${artFor(CARDS[reason.cardId])} route`;
+      return `need a standing ${CARDS[reason.cardId].name}`;
   }
 }
 

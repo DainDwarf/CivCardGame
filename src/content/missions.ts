@@ -580,7 +580,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     // so the mission can't seed a different count than the win asks for.
     events: Array.from({ length: BRONZE_TRIALS }, () => 'casting_trial'),
     objectiveCardId: 'bronze_goal',
-    victoryHint: `Master all ${BRONZE_TRIALS} Casting Trials, over a standing 🏝️ tin route.`,
+    victoryHint: `Master all ${BRONZE_TRIALS} Casting Trials, over a standing Tin Route.`,
     failureHint:
       'A trial you cannot pour bleeds 2 🔨 at the end of each round, and every one you do master is a ' +
       'furnace kept lit — 1 🔨 more every round after. Let the fires eat your industry bare and the run ends.',
@@ -641,7 +641,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     events: Array.from({ length: INVASION_WAVES }, () => 'sea_raid'),
     objectiveCardId: 'sea_peoples_goal',
     victoryHint:
-      `Repel all ${INVASION_WAVES} Sea Raids, every one of them over a standing 🏝️ tin route.`,
+      `Repel all ${INVASION_WAVES} Sea Raids, every one of them over a standing Tin Route.`,
     failureHint:
       'A wave you cannot repel falls on your trade routes — cutting every lane no escort holds, and ' +
       'burning 🌾 and 🔨 once none is left standing. Lose the tin and no wave after it can be answered ' +

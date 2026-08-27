@@ -166,7 +166,7 @@ export const STICKERS: Record<string, StickerDef> = {
     id: 'bronze_tools',
     name: 'Bronze Tools',
     gives: '+1 🔨 per staffed worker',
-    charges: 'needs a 🏝️ route standing to play and to work',
+    charges: 'needs a Tin Route standing to play and to work',
     appliesToLabel: 'Buildings/works producing 🔨',
     icon: '🛠️',
     cost: 5,
