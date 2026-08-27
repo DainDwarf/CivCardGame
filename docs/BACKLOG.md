@@ -83,7 +83,7 @@
   | Bronze *(convergence)* | ✅ | ✅ | ✅ | ✅ | [bronze](missions/bronze.md) |
   | Sword & chariot | ✅ | ✅ | ✅ | ✅ | [sword-chariot](missions/sword-chariot.md) |
   | The Sea Peoples *(capstone)* | ✅ | ✅ | ✅ | ✅ | [sea-peoples](missions/sea-peoples.md) |
-  | Fall of the Bronze Age *(infinite)* | ✅ | ✅ | 🟡 | ✅ | [fall-of-bronze](missions/fall-of-bronze.md) |
+  | Fall of the Bronze Age *(infinite)* | ✅ | ✅ | ✅ | ✅ | [fall-of-bronze](missions/fall-of-bronze.md) |
 
   **Decided structure** (with the user):
   - The three middle branches (**Wheel+roads / Horse / Naval**) are **2 missions each**; Copper and
@@ -140,7 +140,7 @@
   - **Fall of the Bronze Age** (infinite, scored survival) — decided, see
     [missions/fall-of-bronze.md](missions/fall-of-bronze.md): the Long Storm feeds endless
     `endless_raid`s into the deck; scored by **waves repelled** (the objective-card `score` seam), not
-    rounds survived. Sim-measured through that same measure; feel-play is what's left.
+    rounds survived. Sim-measured through that same measure, feel-play signed off.
 
   **Measurement debt carried in from the rebalance** — two items that pass ran up which are this arc's
   to clear, not the rebalance's:

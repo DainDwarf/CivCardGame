@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance 🟡 (sim-measured and applied; feel-play pending) · Polish ✅
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the age's **scored survival infinite** (its Ice Age), opened by clearing
 [The Sea Peoples](sea-peoples.md); the campaign's last unlock.
 **Placement:** `prereqs: ['sea_peoples']`, `kind: 'infinite'` — no map node, campaign-banner only.
@@ -75,7 +75,7 @@ tally the capstone's win threshold and the repel ladder read, so the three can n
 spawns one `endless_raid` via `spawnIntoDeck` — fresh instance ids, deterministic shuffle-in, the
 face counting down to the next wave.
 
-## Balance 🟡
+## Balance ✅
 
 **Fixtured** — `scripts/sim/baselines/fall_of_bronze.json` pins the capstone's City deck + board,
 recorded at `greedy`/`planner` @20 with **no prover** (a never-winning objective declines every seed,
@@ -107,9 +107,9 @@ its within-turn search cap under-finds three-action repel lines (TODO → *Simul
 0.1), so read greedy as the search-independent floor; and the biggest untapped lever is the deck's
 own ⚔️ throughput — a stronger Bronze military economy raises the tally with no mission edit.
 
-The pass left open is **feel-play**: the pacing against a hand-piloted deck, and the turtle watch
-above (the sim's turtle reading is that hiding banks nothing — the score is waves, and the policies
-spend on repels whenever they can afford them).
+**Feel-play signed off** with no number moved. The turtle watch closed with it — hiding banks nothing,
+since the score is waves and the census grows either way; the burn-scales-with-census knob stays in
+the pocket, unused.
 
 ## Polish ✅
 
