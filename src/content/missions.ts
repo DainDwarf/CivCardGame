@@ -118,9 +118,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'first_settlement',
     name: 'The First Settlement',
     lore:
-      'Today your tribe has found a very promising land, one that could sustain your people for a long ' +
-      'time to come. Now you must make this place yours — and defend it from anything that would take ' +
-      'it from you.',
+      'The scouts have come back, and for once they all agree: a river that does not run dry, a slope ' +
+      'the frost leaves alone, good flint in the cutbank. Your people have walked past a hundred such ' +
+      'places on the way to somewhere else. Not this one. Stack the timber, sharpen the spears, and let ' +
+      'the land learn whose it is.',
     prereqs: [],
     objectiveCardId: 'first_settlement_goal',
     victoryHint: 'Stockpile 10 🔨 production and 10 ⚔️ military.',
@@ -134,9 +135,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'growing_numbers',
     name: 'Growing Numbers',
     lore:
-      'Your people have lived in this new place in peace for several seasons now. It is, at last, a ' +
-      'place you could call home. All that remains is to raise a roof over your heads, and to make ' +
-      'sure you never run out of food to eat.',
+      'Several seasons on, and the river has kept its word. Nobody speaks of moving on any more; they ' +
+      'speak of whose child was born here, and where next year\'s grain will go. A camp is a place you ' +
+      'can leave. A home is a roof raised to last, a field cleared past the fire\'s light, and enough ' +
+      'ground to hold both — and once it stands, no one in it can be allowed to go hungry.',
     prereqs: ['first_settlement'],
     objectiveCardId: 'growing_numbers_goal',
     victoryHint: `Build a 🛖 Hut and a 🌱 Farm, while holding ${GROWING_NUMBERS_TERRITORY} 🏞️ territory.`,
@@ -157,9 +159,10 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'raiders_at_border',
     name: 'Raiders at the Border',
     lore:
-      'Your settlement is stronger than it has ever been — and that has not gone unnoticed. Less ' +
-      'fortunate tribes around your village have grown envious, and now turn to violence to survive. ' +
-      'It is time to defend the food supplies you worked so hard to gather.',
+      'A full granary can be seen from a long way off. The tribes on the far ridge had the same winter ' +
+      'you did and came out of it with less, and hunger does its counting quickly: what you have, and ' +
+      'how few of you stand between it and them. Meet them at the boundary stones. The grain is yours ' +
+      'for exactly as long as you can say so.',
     prereqs: ['growing_numbers'],
     // One `raider` event per wave, tied to the objective's threshold by the shared RAIDER_WAVES const
     // so the mission can't seed a different count than the win asks for. `Array.from` (not `.fill`)
