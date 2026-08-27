@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { defeatLabel } from '../run/engine';
 import { diffRecords, formatDiffReport, groupRecords, summarize, unpairDiff } from './report';
 import { runBatch, type Scenario } from './batch';
 import { simConfig, simulateRun, createRandomPolicy, STALL_REASON, WIN_OUTCOME, type RunRecord } from './index';
@@ -160,7 +161,7 @@ describe('simulateRun cardPlays instrumentation', () => {
     const config = simConfig({ deckCardIds: FIXTURE_DECK, board: TEST_BOARD_ID, missionId: 'test_unwinnable', seed: 'cfg-0' });
     const o = simulateRun(config, createRandomPolicy('pol-0'), { maxRounds: 0 });
     expect(o.result.outcome).toBe('defeat');
-    expect(o.gameover.reason).toBe(STALL_REASON);
+    expect(o.gameover.cause && defeatLabel(o.gameover.cause)).toBe(STALL_REASON);
     expect(o.result.stats.turnsTaken).toBe(o.finalState.round); // built through the real toRunResult
   });
 });

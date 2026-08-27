@@ -1,6 +1,7 @@
 import { MISSIONS } from '../content/missions';
 import { variantKey, type DeckCard } from '../rules/deckBuilder';
 import { CORE_KEYS, STRATEGIC_KEYS, emptyResources, type Resources } from '../rules/resources';
+import { defeatLabel } from '../run/engine';
 import type { Scenario } from './batch';
 import type { SimOutcome } from './simulate';
 
@@ -18,10 +19,10 @@ export interface RunRecord {
   policy: string;
   /** The batch seed index, i.e. the `--seed <i>` that replays this exact run. */
   seed: number;
-  /** `'win'` on a victory, else the authoritative `gameover.reason` verbatim. One column rather than an
-   *  outcome/reason pair: wins are `=== 'win'`, defeats `!== 'win'`, one cause an equality — and no
-   *  reason can collide, they are `CollapseReason`s, `stall`, `noWinFound:<bound>` or a threat's text.
-   *  `'unknown'` is the one value no card authored — a defeat the engine gave no reason for. */
+  /** `'win'` on a victory, else the authoritative `gameover.cause` flattened by `defeatLabel`. One
+   *  column rather than an outcome/reason pair: wins are `=== 'win'`, defeats `!== 'win'`, one cause an
+   *  equality — and no label can collide, they are `CollapseReason`s, `stall`, `noWinFound:<bound>` or a
+   *  threat's text. `'unknown'` is the one value no card authored — a defeat carrying no cause. */
   outcome: string;
   turns: number;
   /** What the attempt scored under the mission's own measure (`RunResult.stats.score`) — the Influence a
@@ -85,7 +86,12 @@ export function toRunRecord(scenario: Scenario, policy: string, seed: number, o:
     cell: scenario.label,
     policy,
     seed,
-    outcome: o.result.outcome === 'victory' ? WIN_OUTCOME : o.gameover.reason ?? 'unknown',
+    outcome:
+      o.result.outcome === 'victory'
+        ? WIN_OUTCOME
+        : o.gameover.cause
+          ? defeatLabel(o.gameover.cause)
+          : 'unknown',
     turns: o.result.stats.turnsTaken,
     score: o.result.stats.score ?? 0,
     actions: o.actionsApplied,

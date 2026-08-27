@@ -17,7 +17,7 @@ import {
   workerCapOf,
   unplayableReason,
 } from '../rules';
-import type { CoreCollapseReason } from '../rules';
+import type { CollapseReason, CoreCollapseReason } from '../rules';
 import { CARDS, isStaffable, isStructure, type CardDef } from '../content/cards';
 import { MISSIONS } from '../content/missions';
 import type { GameState } from '../rules';
@@ -1589,7 +1589,7 @@ export function Board({
     }
   }
 
-  const COLLAPSE_MESSAGES: Record<string, string> = {
+  const COLLAPSE_MESSAGES: Record<CollapseReason, string> = {
     famine:     'famine struck — your people starved.',
     ruin:       'ruin befell — your economy collapsed.',
     bankruptcy: 'bankruptcy struck — your treasury ran dry.',
@@ -2155,7 +2155,13 @@ export function Board({
     {/* End-of-run overlay — outside .app so boardInert doesn't affect it. */}
     {gameover && !overlayMinimized && (() => {
       const won = gameover.outcome === 'victory';
-      const defeatMessage = (gameover.reason && COLLAPSE_MESSAGES[gameover.reason]) ?? 'your civilization has fallen.';
+      // A threat writes its own sentence; only a collapse hands over a key to render prose for. The
+      // fallback covers a defeat carrying no cause at all, never a cause this doesn't know how to read.
+      const defeatMessage = !gameover.cause
+        ? 'your civilization has fallen.'
+        : gameover.cause.kind === 'collapse'
+          ? COLLAPSE_MESSAGES[gameover.cause.reason]
+          : gameover.cause.message;
       // Preview-only: mirrors the same computeRewards call App.tsx's recordResult makes for
       // real on End Run, off the same pre-run mapProgress/collection, so the two can't diverge.
       // An 'infinite' mission has no win state and never touches mapProgress — its Influence

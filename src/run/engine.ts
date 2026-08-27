@@ -2,7 +2,29 @@ import { createInitialState } from './setup';
 import { applyUpkeep, cloneState, coreCollapse, drawUpTo, flushEvents, populationCollapse, runScore, settleEndOfTurn, snapshot, type CollapseReason, type GameState } from '../rules';
 import type { RunConfig, RunResult } from '../contract';
 
-export type Gameover = { outcome: 'victory' | 'defeat'; reason?: CollapseReason | string; missionId: string };
+/**
+ * Why a run ended in defeat. Two variants, and the discriminator is **translate or print**: a
+ * `collapse` carries the universal reason as a *key* the shell renders its own prose for, while
+ * `stated` carries text already written for the player — a threat's `defeat` hook, which authors the
+ * sentence itself because only the card knows what happened.
+ *
+ * One field held both before, typed `CollapseReason | string` — a union that isn't one, since the
+ * literals widen to `string` and the distinction is erased at the declaration. Nothing at a call site
+ * could then tell a key from a sentence, so the shell keyed a lookup off both and silently dropped
+ * every authored one.
+ */
+export type DefeatCause =
+  | { kind: 'collapse'; reason: CollapseReason }
+  | { kind: 'stated'; message: string };
+
+export type Gameover = { outcome: 'victory' | 'defeat'; cause?: DefeatCause; missionId: string };
+
+/** The defeat cause as one flat bucket string — a collapse by its key, anything stated verbatim. The
+ *  form a *tally* wants (`sim/record.ts`'s `outcome` column), where the shell instead branches on the
+ *  variant to render prose. */
+export function defeatLabel(cause: DefeatCause): string {
+  return cause.kind === 'collapse' ? cause.reason : cause.message;
+}
 
 export interface RunState {
   G: GameState;
@@ -20,8 +42,10 @@ function checkEndIf(state: RunState): RunState {
   // threat fires — or on the play that spends their last citizen — still wins.
   if (G.pendingVictory) return { ...state, gameover: { outcome: 'victory', missionId: G.missionId } };
   const collapse = coreCollapse(G.resources) ?? populationCollapse(G.resources);
-  if (collapse) return { ...state, gameover: { outcome: 'defeat', reason: collapse, missionId: G.missionId } };
-  if (G.pendingDefeat) return { ...state, gameover: { outcome: 'defeat', reason: G.pendingDefeat.reason, missionId: G.missionId } };
+  if (collapse)
+    return { ...state, gameover: { outcome: 'defeat', cause: { kind: 'collapse', reason: collapse }, missionId: G.missionId } };
+  if (G.pendingDefeat)
+    return { ...state, gameover: { outcome: 'defeat', cause: { kind: 'stated', message: G.pendingDefeat.reason }, missionId: G.missionId } };
   return state;
 }
 

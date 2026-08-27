@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { createRun, endTurn, applyMove, type RunState } from './engine';
+import { createRun, defeatLabel, endTurn, applyMove, type RunState } from './engine';
 import { instancesFromCardIds, seedObjective } from '../rules';
 import { gainResources } from '../rules/effects';
 import { playCard } from './moves';
@@ -117,7 +117,24 @@ describe('deadline: win (objective) and lose (threat) reconciled by checkEndIf o
     state.G.resources.science = 5; // short of the 10 goal
     state.G.round = 5;
     state = endTurn(state); // beginTurn advances to round 6 → deadline fires
-    expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'test deadline' });
+    expect(state.gameover).toMatchObject({
+      outcome: 'defeat',
+      cause: { kind: 'stated', message: 'test deadline' },
+    });
+  });
+
+  // The pair that pins the distinction: a threat authors its own sentence and the engine passes it
+  // through untouched, while a collapse hands over a key for the shell to render prose for. Held apart
+  // here because one field carrying both is what let the shell key a lookup off a written sentence.
+  it('a collapse names its reason as a key, where a threat states its own message', () => {
+    let state = run();
+    state.G.resources.food = -1; // famine, the universal collapse
+    state = endTurn(state);
+    expect(state.gameover).toMatchObject({
+      outcome: 'defeat',
+      cause: { kind: 'collapse', reason: 'famine' },
+    });
+    expect(state.gameover?.cause && defeatLabel(state.gameover.cause)).toBe('famine');
   });
 
   it('reaching the goal as the deadline lands still wins — the win flag is read first', () => {
@@ -181,7 +198,7 @@ describe('event resolution', () => {
     // Ending the turn *without* playing the event lets it strike: the drain fires at upkeep, Military
     // collapses, and (since the auto-resolve files to discard, not removed) the objective stays one short.
     state = endTurn(state);
-    expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'revolt' });
+    expect(state.gameover).toMatchObject({ outcome: 'defeat', cause: { kind: 'collapse', reason: 'revolt' } });
   });
 });
 
@@ -194,7 +211,7 @@ describe('extinction: the population pool emptying ends the run at that boundary
     state.G.resources.population = 1;
     state.G.hand = instancesFromCardIds(['test_launch'], 100);
     state = applyMove(state, playCard, 0);
-    expect(state.gameover).toMatchObject({ outcome: 'defeat', reason: 'extinction' });
+    expect(state.gameover).toMatchObject({ outcome: 'defeat', cause: { kind: 'collapse', reason: 'extinction' } });
     expect(state.G.round).toBe(1); // the move's own flush, not a later boundary
   });
 

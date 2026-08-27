@@ -148,7 +148,13 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
   // Reads the loop's live `state`/counters, so a synthesized defeat carries the same payload a natural
   // gameover would.
   const endWith = (reason: string): SimOutcome => {
-    const gameover: Gameover = { outcome: 'defeat', reason, missionId: state.G.missionId };
+    // `stated`, not `collapse`: a drive-loop verdict is a final label the tally files as-is, not a key
+    // the shell would render prose for — and none of these ever reaches a shell.
+    const gameover: Gameover = {
+      outcome: 'defeat',
+      cause: { kind: 'stated', message: reason },
+      missionId: state.G.missionId,
+    };
     return { result: toRunResult(state.G, gameover), gameover, finalState: state.G, actionsApplied, cardPlays };
   };
   while (!state.gameover) {

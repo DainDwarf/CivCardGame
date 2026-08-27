@@ -34,7 +34,11 @@ function outcome(opts: {
       missionId: 'test',
       stats: { turnsTaken: opts.turnsTaken ?? 1, ...(opts.score !== undefined ? { score: opts.score } : {}), finalResources },
     },
-    gameover: { outcome: opts.outcome, reason: opts.reason, missionId: 'test' },
+    gameover: {
+      outcome: opts.outcome,
+      ...(opts.reason !== undefined ? { cause: { kind: 'stated' as const, message: opts.reason } } : {}),
+      missionId: 'test',
+    },
     finalState: blankState('test'),
     actionsApplied: 7,
     cardPlays: opts.cardPlays ?? {},

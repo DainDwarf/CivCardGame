@@ -160,7 +160,11 @@ describe('run loop (headless integration)', () => {
     client.events.endTurn(); // food 0
     client.events.endTurn(); // food -1 -> famine
     const { ctx } = client.getState();
-    expect(ctx.gameover).toEqual({ outcome: 'defeat', reason: 'famine', missionId: 'test' });
+    expect(ctx.gameover).toEqual({
+      outcome: 'defeat',
+      cause: { kind: 'collapse', reason: 'famine' },
+      missionId: 'test',
+    });
     client.stop();
   });
 
@@ -174,7 +178,11 @@ describe('run loop (headless integration)', () => {
     client.events.endTurn(); // production 1 − 2(decay) = -1 -> ruin
     const { G, ctx } = client.getState();
     expect(G.resources.food).toBe(7); // climbed throughout — famine wasn't the cause
-    expect(ctx.gameover).toEqual({ outcome: 'defeat', reason: 'ruin', missionId: 'test' });
+    expect(ctx.gameover).toEqual({
+      outcome: 'defeat',
+      cause: { kind: 'collapse', reason: 'ruin' },
+      missionId: 'test',
+    });
     client.stop();
   });
 

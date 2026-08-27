@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { defeatLabel } from '../run/engine';
 import type { CardDef } from '../content/cards';
 import {
   installFixtures,
@@ -113,9 +114,9 @@ describe('seeded oracle — winnability search + replay seam', () => {
       const out = simulateRun(config, policy);
 
       expect(policy.foundLine).toBe(false);
-      expect(out.gameover.reason).toBe(noWinReason('deadEnd'));
+      expect(out.gameover.cause && defeatLabel(out.gameover.cause)).toBe(noWinReason('deadEnd'));
       // Still greppable as one family, so a report can split by bound or fold them back together.
-      expect(out.gameover.reason?.startsWith(NO_WIN_REASON)).toBe(true);
+      expect(noWinReason('deadEnd').startsWith(NO_WIN_REASON)).toBe(true);
       // Declined before dispatching anything, so the reason can't be a stand-in policy's collapse.
       expect(out.actionsApplied).toBe(0);
     },

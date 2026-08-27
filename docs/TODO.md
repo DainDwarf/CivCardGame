@@ -287,6 +287,18 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **A mission's own defeat line reaches the gameover screen** ✅ — a threat authoring its own defeat
+  sentence (the Pyramid's *the pharaoh died before his tomb was ready*, Setting Sail's *the crews left
+  for another port*) had it swallowed: the panel showed the generic "your civilization has fallen."
+  instead. `Gameover.reason` was typed `CollapseReason | string` — a union that isn't one, since the
+  literals widen to `string` and the distinction dies at the declaration — so the shell keyed
+  `COLLAPSE_MESSAGES` off a written sentence and missed. Now a **`DefeatCause`** discriminated on
+  *translate or print*: `collapse` carries the key the shell renders prose for, `stated` carries text a
+  card already wrote. Two things fall out — `COLLAPSE_MESSAGES` is `Record<CollapseReason, string>` and
+  so compiler-total (a new collapse kind now fails the build rather than silently rendering the
+  fallback), and the fallback covers only a defeat carrying no cause at all. `defeatLabel` flattens a
+  cause back to the one bucket string a tally wants, so `sim/record.ts`'s `outcome` column is unchanged
+  and no fixture moves (verified by replaying `setting_sail_city` seeds 0–4 against their recorded rows).
 - **An event face states one branch, not both** ✅ — `describeCard` led with the play-time `effect` for
   every kind and appended the recurring reading after it, which for an `event` joins two *exclusive*
   branches: playing it resolves `effect` and pre-empts the `upkeep`, while leaving it in hand fires
@@ -710,7 +722,7 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 - **A `prover` policy, and an honest oracle** ✅ — `oracle`'s win rate silently meant "winnable by search
   **or** by the fallback policy", because a seed whose search found no line was played out by another
   brain and its collapse filed under the oracle's name. Two changes. `Policy.abort` is a new seam — a
-  policy returns a `gameover.reason` to decline a run outright, mirroring how the drive loop synthesizes
+  policy returns a defeat reason to decline a run outright, mirroring how the drive loop synthesizes
   `stall`; `simulate.ts` consults it before each action. On it rides **`prover`**: the same search with no
   fallback, so its wins are search-proven and every other seed reports `noWinFound:<bound>`.
   Read an `oracle` number as a ceiling on *play* and a `prover` number as a lower bound on *winnability* —
