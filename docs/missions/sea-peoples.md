@@ -20,7 +20,7 @@ finally spent, and the thing it is spent *through* is the thing under attack.
 
 - **Goal: repel all N invasion-wave events** — seeded-completion (all N seeded at setup, paced by the
   deck like the Raiders waves): playing one costs ⚔️ (escalating per wave repelled) and sends it to
-  `removed`, which the goal counts. **Every wave is tin-gated** (`needsTinRoute`): no standing tin
+  `removed`, which the goal counts. **Every wave is tin-gated** (`cost.requiresRoute`): no standing tin
   route, no repelling. A tinless deck is a death trap *by construction* — the Bronze mission's own
   no-safety-net precedent, visible on the wave's face and in the mission flow popup. This is what
   keeps tin the solution rather than the problem: with War Horse/Hunting/City Walls as ungated ⚔️
@@ -108,9 +108,9 @@ hint.
 resolve nothing, go to `removed` with its upkeep pre-empted — and `removed` is what the goal counts.
 Its price is **8⚔️ + 4⚔️ per wave already repelled** (8/12/16/20/24, 80⚔️ over the run), a `cost.resolve`
 reading the same `wavesRepelled` tally off `removed` and deriving from the base it is handed, so a
-sticker discount compounds with the ladder rather than being applied on top of it. `check:
-needsTinRoute` is the hard gate: with no tin route standing the face carries the `missingRoute` reason
-and the wave cannot be repelled at all.
+sticker discount compounds with the ladder rather than being applied on top of it. `requiresRoute:
+'tin_route'` is the hard gate: with no tin route standing the face states the requirement and carries the
+`missingRoute` reason, and the wave cannot be repelled at all.
 
 **The cut** rides the wave's own `upkeep`, which fires only on the unplayed path (`resolveHandEvents`,
 inside `settleEndOfTurn`) — deliberately *not* an `on.endTurn` handler or a threat drain, either of

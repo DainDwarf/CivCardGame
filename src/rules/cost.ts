@@ -1,6 +1,7 @@
 import { canAfford, subtractResources, type CoreResources } from './resources';
 import { cultureLevel } from './culture';
 import { effectiveCard, effectiveCost } from './stickers';
+import { routeStands } from './tradeRoutes';
 import type { CardDef } from '../content/cards';
 import type { CardInstance, GameState } from './state';
 
@@ -13,13 +14,13 @@ import type { CardInstance, GameState } from './state';
 export type UnplayableReason =
   | { kind: 'cost'; missing: Partial<CoreResources> }
   | { kind: 'cultureLevel'; required: number }
+  /** A standing trade route of a *named* card is missing — the route's identity is the payload, since
+   *  what such a gate buys is access to that one thing rather than trade in general. */
+  | { kind: 'missingRoute'; cardId: string }
   | { kind: 'territory' }
   | { kind: 'emptyDrawPile' }
   | { kind: 'discardEmpty' }
-  | { kind: 'noIdlePopulation' }
-  /** A standing trade route of a *named* card is missing — the route's identity is the payload, since
-   *  what such a gate buys is access to that one thing rather than trade in general. */
-  | { kind: 'missingRoute'; cardId: string };
+  | { kind: 'noIdlePopulation' };
 
 /** What a cost closure may read: the live state and the exact copy being priced. Mirrors
  *  `effects.ts`'s `EffectContext`. */
@@ -53,6 +54,16 @@ export interface CardCost {
   discard?: number;
   /** Culture level required — a prerequisite, not a price; culture is never consumed. */
   cultureLevelReq?: number;
+  /**
+   * A trade route that must stand for this play, by cardId — a prerequisite like `cultureLevelReq`,
+   * not a price: the route is not consumed, and what the gate buys is access to that *one* route
+   * rather than to trade in general.
+   *
+   * Routes alone because routes are the only standing thing the catalogue gates on. A gate wanting a
+   * standing *building* widens this field to name the zone; it does not earn a second field beside
+   * it — the refusal (`missingRoute`) and every reader already carry nothing but a bare cardId.
+   */
+  requiresRoute?: string;
   /**
    * This copy's *actual* cost when it isn't the declarative one — a price that scales with its own
    * play count, with the board, with anything. Returns a whole `CardCost`, which the engine then
@@ -110,6 +121,8 @@ export function costReason(card: CardDef, ctx: CostContext): UnplayableReason | 
   }
   if (cost.cultureLevelReq && cultureLevel(ctx.G.resources.culture) < cost.cultureLevelReq)
     return { kind: 'cultureLevel', required: cost.cultureLevelReq };
+  if (cost.requiresRoute && !routeStands(ctx.G, cost.requiresRoute))
+    return { kind: 'missingRoute', cardId: cost.requiresRoute };
   return cost.check?.(ctx) ?? null;
 }
 

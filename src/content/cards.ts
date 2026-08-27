@@ -1,8 +1,8 @@
 import { scaleResources, subtractResources } from '../rules/resources';
 import { bumpCounter, getCounter, setCounter, stripSticker, type CardInstance, type GameEventType, type GameState } from '../rules/state';
-import { closeTradeRoute } from '../rules/tradeRoutes';
+import { closeTradeRoute, routeStands } from '../rules/tradeRoutes';
 import { gainResources, type CardEffect, type GainModifier, suspendChoice } from '../rules/effects';
-import type { CardCost, CostContext, UnplayableReason } from '../rules/cost';
+import type { CardCost } from '../rules/cost';
 import { drawInstance, peekTop, recoverFromDiscard, removeFromRun, spawnIntoDeck } from '../rules/deck';
 import { assignedWorkers, freePopulation } from '../rules/population';
 import { cultureForLevel, cultureProgress } from '../rules/culture';
@@ -352,18 +352,12 @@ function trialsMastered(G: GameState): number {
  *  threshold and the mission's `victoryHint` (`content/missions.ts`). */
 export const MUSTER_TARGET = 40;
 
-/** Whether the tin is reaching the valley right now. Keyed on the route's own id rather than on the
- *  zone being non-empty — what the Bronze cards buy is tin, not trade. The one definition behind every
- *  shape the gate takes: a play-time `CardCost.check`, a `producesWhile` production gate, and the
- *  Bronze Tools sticker's continuous half (`content/stickers.ts`). */
+/** Whether the tin is reaching the valley right now — the continuous half of the Bronze gate, for the
+ *  slots that take a predicate rather than the declarative `cost.requiresRoute`: a `producesWhile`
+ *  production gate and the Bronze Tools sticker's own +1 (`content/stickers.ts`). */
 export function tinRouteStands(G: GameState): boolean {
-  return G.tradeRoutes.some((r) => r.cardId === 'tin_route');
+  return routeStands(G, 'tin_route');
 }
-
-/** The Bronze cards' standing-access gate as a play-time cost check. Exported because
- *  `content/stickers.ts` folds it onto a stickered copy's cost as the Bronze Tools charge-back. */
-export const needsTinRoute = ({ G }: CostContext): UnplayableReason | null =>
-  tinRouteStands(G) ? null : { kind: 'missingRoute', cardId: 'tin_route' };
 
 /** How many invasion waves "The Sea Peoples" seeds — shared by the mission's injected event list
  *  (`content/missions.ts`), the `sea_peoples_goal` win threshold, and its progress readout. */
@@ -436,8 +430,8 @@ export const CARDS: Record<string, CardDef> = {
   // A box lives one turn, so gating the play gates every round it could ever run.
   chariot: {
     id: 'chariot', name: 'Chariot', kind: 'work',
-    cost: { resources: { money: 2 }, check: needsTinRoute }, workers: 1,
-    display: { art: '🎠', note: 'Needs a Tin Route' },
+    cost: { resources: { money: 2 }, requiresRoute: 'tin_route' }, workers: 1,
+    display: { art: '🎠' },
     produces: { resources: { military: 5 } },
   },
   // Pays off the trade zone rather than at a flat rate, so it is worth nothing on an empty sea and more
@@ -523,27 +517,25 @@ export const CARDS: Record<string, CardDef> = {
 
   marketplace: {
     id: 'marketplace', name: 'Marketplace', kind: 'building',
-    cost: { resources: { production: 4 }, check: needsTinRoute }, workers: 1,
+    cost: { resources: { production: 4 }, requiresRoute: 'tin_route' }, workers: 1,
     produces: { resources: { money: 3 } },
     producesWhile: tinRouteStands,
     display: {
       art: '🏪',
       dynamicText: (G) => (tinRouteStands(G) ? '+3🪙 / round per worker' : 'no Tin Route — idle'),
-      note: 'Needs a Tin Route',
     },
   },
 
-  // The tin gate sits on production, not on `cost`: a host already raised goes dark for as long as the
-  //   route is cut and comes back when it reopens, where a play-time gate could only ever have refused
-  //   the build.
+  // Gated both ways, as the Marketplace is: the cost refuses the build, and `producesWhile` mothballs a
+  //   host already raised for as long as a cut lasts — which the play-time gate cannot do, the route
+  //   being cuttable long after the build.
   sword: {
     id: 'sword', name: 'Sword', kind: 'building',
-    cost: { resources: { production: 4 } }, workers: 2,
+    cost: { resources: { production: 4 }, requiresRoute: 'tin_route' }, workers: 2,
     display: {
       art: '🪖',
       description: '+2 ⚔️ / round\nper worker.',
       dynamicText: (G) => (tinRouteStands(G) ? '+2⚔️ / round per worker' : 'no Tin Route — idle'),
-      note: 'Needs a Tin Route to operate',
     },
     produces: { resources: { military: 2 } },
     producesWhile: tinRouteStands,
@@ -801,32 +793,31 @@ export const CARDS: Record<string, CardDef> = {
     effect: { resources: { population: -1 } },
   },
   // Casting Trial: pouring the alloy *is* playing it — the play choke sends it to `removed`, which
-  //   `bronze_goal` counts. Its `check` is the mission teaching the tin gate one node before the
+  //   `bronze_goal` counts. Its tin gate is the mission teaching that gate one node before the
   //   tin-gated rewards land: a trial drawn before any route opens is unplayable by rule, so its 🔨
   //   bleed is partly unavoidable.
   casting_trial: {
     id: 'casting_trial', name: 'Casting Trial', kind: 'event',
-    cost: { resources: { money: 4, science: 6 }, check: needsTinRoute },
-    display: { art: '🫗', note: 'Needs a Tin Route' },
+    cost: { resources: { money: 4, science: 6 }, requiresRoute: 'tin_route' },
+    display: { art: '🫗' },
     upkeep: { resources: { production: -2 } },
   },
   // Sea Raid: repelling a wave is playing it — the ⚔️ buys the beach back and the play choke sends it
   //   to `removed`, which `sea_peoples_goal` counts. The price climbs off that same tally (`raidLadder`),
-  //   so a host that answered the last wave is short for the next. Its `check` is the arc's tin gate at
+  //   so a host that answered the last wave is short for the next. Its tin gate is the arc's at
   //   its sharpest: the raid that cuts the lane is the reason there is no bronze to meet the one behind
   //   it. Left in hand it falls on whatever stands between it and the coast (`RAID_LANDING`).
   sea_raid: {
     id: 'sea_raid', name: 'Sea Raid', kind: 'event',
     cost: {
       resources: { military: 8 },
-      check: needsTinRoute,
+      requiresRoute: 'tin_route',
       resolve: raidLadder,
     },
     display: {
       art: '🏴‍☠️',
       description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
       dynamicRule: 'Cost rises per wave repelled',
-      note: 'Needs a Tin Route',
     },
     upkeep: RAID_LANDING,
   },
@@ -839,14 +830,13 @@ export const CARDS: Record<string, CardDef> = {
     id: 'endless_raid', name: 'Endless Raid', kind: 'event',
     cost: {
       resources: { military: 4 },
-      check: needsTinRoute,
+      requiresRoute: 'tin_route',
       resolve: raidLadder,
     },
     display: {
       art: '🏴‍☠️',
       description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
       dynamicRule: 'Cost rises per wave repelled',
-      note: 'Needs a Tin Route',
     },
     upkeep: RAID_LANDING,
   },

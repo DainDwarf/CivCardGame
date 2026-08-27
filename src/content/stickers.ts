@@ -1,7 +1,7 @@
 import type { Resources } from '../rules/resources';
 import type { CardCost } from '../rules/cost';
 import type { GameState } from '../rules/state';
-import { needsTinRoute, tinRouteStands, type CardDef } from './cards';
+import { tinRouteStands, type CardDef } from './cards';
 
 /**
  * Card stickers (docs/DESIGN.md, "Economy & progression"): permanent,
@@ -179,7 +179,7 @@ export const STICKERS: Record<string, StickerDef> = {
     // A surcharge in the one currency `applyCost`'s resource fields can't name. Setting the gate rather
     // than composing with an existing one is what keeps two attached copies commutative — the catalogue
     // has one such gate, so there is nothing to compose with.
-    applyCost: (cost) => ({ ...cost, check: needsTinRoute }),
+    applyCost: (cost) => ({ ...cost, requiresRoute: 'tin_route' }),
   },
   wheel: {
     id: 'wheel',

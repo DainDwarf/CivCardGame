@@ -68,10 +68,11 @@ threat over the `sword_chariot_goal` objective — no events, alone among the ar
 and its readout, and no `defeat` hook — an unpayable payroll is the universal 🪙 collapse, which
 `checkEndIf` reads after victory, so reaching the muster on the round the treasury empties still wins.
 
-The tin gate now has one definition in two shapes: `tinRouteStands` is the bare predicate,
-`needsTinRoute` the play-time `CardCost.check` wrapping it (still exported for the Bronze Tools
-charge-back). Chariot takes the check, where a one-turn box makes play-time gating continuous by
-itself. Sword takes the predicate on the *production* side, as a `CardDef.producesWhile` over a
+The tin gate has one definition in two shapes: the declarative `CardCost.requiresRoute` refuses the
+play, and `tinRouteStands` — the bare predicate over `rules/tradeRoutes.ts`'s `routeStands` — gates
+production. Chariot takes the cost half alone, where a one-turn box makes play-time gating continuous by
+itself. Sword takes both, as the Marketplace does: the cost half refuses the build, and the predicate
+rides the *production* side as a `CardDef.producesWhile` over a
 declarative `produces` — so it mothballs whole rounds while keeping the per-worker scaling
 `resolveProduction` owns and its printed ⚔️ legible to `race.ts`'s plan scan and `enablers.ts`, both of
 which walk `produces.resources`. (The declarative gate is [The Sea Peoples](sea-peoples.md)'s seam,

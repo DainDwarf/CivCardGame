@@ -107,19 +107,12 @@ later — promote items into `DESIGN.md` / real work, or drop them.
       `pendingToken` joins them positionally while `keyOf` folds `tradeRoutes` as a multiset.
     - Gate it in `playability.ts` on at least one standing route — a zero-option `pendingInteraction`
       is an unrecoverable soft-lock (non-cancelable, `endTurn` no-ops, undo blocked).
-  - **Bronze gating stays continuous, not play-time.** A bronze card checks for a route every round (on
-    `produces`), so losing tin **mothballs** the forge rather than preventing its construction. Once
-    removal exists, a play-time `gate.check` leaks: `gate` is evaluated at play and `upkeep` fires at the
-    `endTurn` boundary, so play-route → play-building → close-route-before-ending-turn pays zero 🪙 and
-    keeps the building forever. Continuous gating also gives the Sea Peoples capstone its teeth.
-- **A card-prerequisite gate should be a declarative cost field** `[size: M]` — the tin gate is a
-  `cost.check` closure (`needsTinRoute`), so nothing can introspect it: the Marketplace and Casting Trial
-  only state it because someone hand-wrote a `note`, which can drift from the check, and a **Bronze Tools
-  sticker prints nothing at all** on the copy it gates — where Elegant's note appears for free, off the
-  declarative `cultureLevelReq` `describeConditions` reads. Wants a `CardCost` field naming the required
-  card (the vocabulary is deliberately closed and introspectable for exactly this), read by
-  `describeConditions` (the face), `costReason` (the gate) and `race.ts`'s `missingRoute` (the plan scan),
-  with the closure and the hand-written notes deleted.
+  - **Bronze gating must stay continuous *as well as* play-time.** A bronze structure carries both:
+    `cost.requiresRoute` refuses the build, and `producesWhile` checks for the route every round. Dropping
+    the continuous half once removal exists leaks — a play-time gate is evaluated at play while `upkeep`
+    fires at the `endTurn` boundary, so play-route → play-building → close-route-before-ending-turn would
+    pay zero 🪙 and keep the building forever. The continuous half is also what gives the Sea Peoples
+    capstone its teeth.
 - **Escalating route rent** `[size: S]` `[?]` — routes ship with a **flat** rent. The treasury is the
   zone's *only* cap again, so the case for this is back at full strength. The originally-planned
   auto-cap is a rent that scales with the number of parallel
@@ -410,6 +403,18 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   above already owns: `setting_sail_city` planner 24 → 15% and prover 8 → 6/10, `sea_lanes` planner
   18/2/17 → 13/5/11%, `wheel` prover 8 → 3/10, and `bronze_port`'s prover back to ten root refusals at zero
   actions. `harsh_winter` holds at 85/89% under the two drive-loop tiers.
+- **A card-prerequisite gate is a declarative cost field** ✅ — the tin gate was a `cost.check` closure
+  (`needsTinRoute`), so nothing could introspect it: five cards restated it in a hand-written `note` that
+  could drift from the check, and the Bronze Tools sticker printed nothing at all on the copy it gated.
+  `CardCost.requiresRoute` names the route by cardId, read by `costReason` (the gate), `describeConditions`
+  (the face — so a *sticker's* gate prints itself for free) and `race.ts`'s `gatedOn` (the plan scan);
+  `rules/tradeRoutes.ts`'s new `routeStands` is the zone's one read behind it and behind the `producesWhile`
+  half. The closure and all five notes are deleted. Routes alone is deliberate — a gate wanting a standing
+  *building* widens this field rather than earning a second beside it.
+  **Sword's missing gate went with it**: it carried the `producesWhile` half alone, so it could be built
+  with no tin standing and sat dark waiting for some — where the Marketplace refuses the build outright. It
+  now carries both, so `fall_of_bronze`, `sea_peoples_city` and `sea_peoples_warband` owe a re-record off
+  CI's sweep.
 - **The race plan runs a `missingRoute` gate's prerequisite** ✅ — a `cost.check` refusing until a named
   card stands (`UnplayableReason.missingRoute` — the tin gate) was invisible to `race.ts`: the gated goal's
   clock read reachable while `enumerateActions` refused every play, and opening the route bought nothing but

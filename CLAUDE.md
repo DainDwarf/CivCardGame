@@ -277,7 +277,7 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   primitive itself stays look-only.
 - **`cost.ts`** — the **cost spine**, the counterpart of `effects.ts`: one `CardCost` descriptor holding
   everything it takes to play a card (`resources` spent, `discard`ed cards, a `cultureLevelReq`
-  prerequisite) plus two closures that compose with those fields — `resolve` (this copy's *actual* cost
+  prerequisite, a `requiresRoute` standing-trade-route prerequisite) plus two closures that compose with those fields — `resolve` (this copy's *actual* cost
   when it isn't the declarative one, e.g. a price that doubles per play, handed the base to derive from)
   and `check` (a bespoke precondition, like a peek card needing a non-empty pile). `currentCost` is the
   single seam every price flows through — the sticker fold (over the *whole* descriptor, so a sticker may
@@ -342,7 +342,9 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   drain, so the card computes its own behaviour. A threat's *driven* defeat (a deadline, not a drain)
   is a separate pure-read `defeat` hook; `defeatMet`/`evaluateDefeat` re-derive it into
   `G.pendingDefeat` set-or-clear each flush — never mutated mid-dispatch.
-- **`tradeRoutes.ts`** — the player-played counterpart to `threats.ts`: `openTradeRoute` files a played
+- **`tradeRoutes.ts`** — the player-played counterpart to `threats.ts`. `routeStands(G, cardId)` is the
+  zone's one read for "is a route of *this* card standing", shared by `cost.ts`'s `requiresRoute` gate, a
+  `producesWhile` production gate and a sticker's continuous half. `openTradeRoute` files a played
   `trade` card into `G.tradeRoutes` (resolving its one-time entry `effect`), where the `endTurn`
   broadcast ticks it like a threat — flat `produces` yield plus `upkeep` rent, no worker scaling.
   A route takes **no workers** and **no territory**, and no player move removes one — so the rent alone
@@ -687,8 +689,8 @@ answers no human can play enough games to reach. It re-implements **no** game lo
   (reading the same at one copy and two), else the copies the run circulates — so a route short of the
   whole goal isn't dropped: the leaf composes the ceilinged routes cheapest-first into a **cover** — one
   summed bill netted against the bank once, folded against the latest member's delivery. A route whose
-  `cost.check` refuses the play until a named card stands (`UnplayableReason`'s `missingRoute`) carries
-  that card as a **prerequisite**, and the leaf runs its landing clock **serially in front** — zero once it
+  `cost.requiresRoute` refuses the play until a named card stands (`UnplayableReason`'s `missingRoute`)
+  carries that card as a **prerequisite**, and the leaf runs its landing clock **serially in front** — zero once it
   stands, which is the whole gradient for landing a card the goal itself measures nowhere.
   `T̂loss` is
   the shortest pool runway (a deepening drain enters as a quadratic root; a recurring `event` charges at

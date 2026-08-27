@@ -162,12 +162,7 @@ const FIXTURES: Record<string, CardDef> = {
   },
   race_gated_relic: {
     id: 'race_gated_relic', name: 'Race Gated Relic', kind: 'action',
-    cost: {
-      resources: { production: 4 },
-      check: ({ G }) => (G.tradeRoutes.some((r) => r.cardId === 'race_gate_route')
-        ? null
-        : { kind: 'missingRoute', cardId: 'race_gate_route' }),
-    },
+    cost: { resources: { production: 4 }, requiresRoute: 'race_gate_route' },
   },
   race_goal_gated: {
     id: 'race_goal_gated', name: 'Race Goal Gated', kind: 'objective', cost: {},

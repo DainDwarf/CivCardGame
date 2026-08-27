@@ -47,6 +47,20 @@ describe('unplayableReason', () => {
     expect(unplayableReason(G, card, self)).toEqual({ kind: 'territory' });
   });
 
+  it('gates a card on a named standing route, and names the route it wants', () => {
+    const card: CardDef = { ...baseCard, cost: { requiresRoute: 'test_route' } };
+    const noRoute = blankState('test');
+    expect(unplayableReason(noRoute, card, self)).toEqual({ kind: 'missingRoute', cardId: 'test_route' });
+
+    const otherRoute = blankState('test'); // a standing route of a *different* card does not open the gate
+    otherRoute.tradeRoutes = [{ id: 1, cardId: 'test_other_route', workers: 0 }];
+    expect(unplayableReason(otherRoute, card, self)).toEqual({ kind: 'missingRoute', cardId: 'test_route' });
+
+    const standing = blankState('test');
+    standing.tradeRoutes = [{ id: 1, cardId: 'test_route', workers: 0 }];
+    expect(unplayableReason(standing, card, self)).toBeNull();
+  });
+
   it("returns a card's bespoke cost.check reason (e.g. a recover card needs a non-empty discard)", () => {
     const G = blankState('test');
     const card: CardDef = {

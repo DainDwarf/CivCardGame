@@ -50,9 +50,9 @@ col 10, rows −1/0/+1).
 
 The `bronze` mission (bronze col 11 row 0, prereqs `wheel`/`raiding`/`sea_lanes`, 12⭐) seeding the
 `charcoal_fuel` threat and 4 `casting_trial` events over the `bronze_goal` objective; the `marketplace`
-card and `bronze_tools` sticker as rewards. The tin gate is one shared `CardCost.check`
-(`needsTinRoute`, exported from `content/cards.ts`) with its own `missingRoute` reason variant; the
-sticker folds the same check onto a stickered copy via `applyCost`. The threat's drain and the goal
+card and `bronze_tools` sticker as rewards. The tin gate is the declarative `CardCost.requiresRoute`
+naming `tin_route`, with its own `missingRoute` reason variant; the sticker folds the same field onto a
+stickered copy via `applyCost`. The threat's drain and the goal
 read one `trialsMastered` tally off `removed`, so the price the threat charges can't drift from the
 mastery the win counts.
 
@@ -128,8 +128,6 @@ longer stands in for the Tin Route** anywhere text refers to it (the card keeps 
 is printed beside it), a **note banner opens on a capital**, and the tin gate on the Marketplace and the
 Bronze Tools sticker states itself in the fewest words that carry it.
 
-**One gap, ticketed, not closed** ([`../TODO.md`](../TODO.md) → *Run loop*): the Bronze Tools sticker
-prints its gate nowhere on the copy it gates. Elegant's equivalent note comes free off the declarative
-`cultureLevelReq`; the tin gate is a `cost.check` closure, so there is nothing for a face to read, and
-every card stating it does so through a hand-written `note` that could drift from the check. The fix is
-a declarative field, which is code rather than text.
+The Bronze Tools sticker prints its gate on the copy it gates, the way Elegant's note comes free off
+`cultureLevelReq`: `requiresRoute` is declarative, so `describeConditions` reads it off the folded cost
+and no card restates it in a hand-written `note`.

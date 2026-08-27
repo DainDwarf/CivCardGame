@@ -2,6 +2,14 @@ import { resolveCard } from './effects';
 import { emitEvent } from './events';
 import type { CardInstance, GameState } from './state';
 
+/** Whether a route of this card stands right now. Keyed on the route's own cardId rather than on the
+ *  zone being non-empty: a gate on one route buys access to what that route carries, not to trade. The
+ *  one definition behind every shape such a gate takes — `cost.ts`'s `requiresRoute`, a `producesWhile`
+ *  production gate, a sticker's continuous half. */
+export function routeStands(G: GameState, cardId: string): boolean {
+  return G.tradeRoutes.some((r) => r.cardId === cardId);
+}
+
 /** Open a trade route: place a played `trade` card into the standing trade zone and resolve its
  *  one-time entry `effect` once (a no-op for the usual `effect`-less route, the same way `addBuilding`
  *  pairs with a placement effect in `moves.ts`). The route's *recurring* exchange is separate — it ticks

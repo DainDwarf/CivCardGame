@@ -13,6 +13,7 @@ import {
   isOperating,
   producingUnits,
   resolveEndTurn,
+  routeStands,
   runScore,
   scaleResources,
   type CardInstance,
@@ -266,8 +267,8 @@ export interface LandingPlan {
    *  *distinct* cards present caps every route at one card's worth, which is what makes a goal asking for
    *  two of them reachable only by two different cards: hence `cover`. */
   cap?: number;
-  /** A card whose standing this route's own `cost.check` refuses the play without — the prerequisite
-   *  `gateOf` lands in front of the route. */
+  /** A card whose standing this route's own `cost.requiresRoute` refuses the play without — the
+   *  prerequisite `gateOf` lands in front of the route. */
   requires?: string;
 }
 
@@ -1523,18 +1524,18 @@ function goalClock(
 
 /**
  * The card this copy's cost refuses the play without, read through the one seam a price may be read
- * through, so a check a sticker materialized lands here too.
+ * through, so a gate a sticker put on the copy lands here too.
  *
- * Only `missingRoute` names one. It is the single refusal whose payload identifies a card the run can go and
- * land — the rest say the moment is wrong (an empty pile, a committed citizen), which the clocks around it
- * already measure and no plan can shorten by adding a card. Unknown to the catalogue is no prerequisite
- * either: the leaf would price a card that does not exist.
+ * `requiresRoute` is the only prerequisite naming a card. The rest of a cost says the moment is wrong (an
+ * empty pile, a committed citizen), which the clocks around it already measure and no plan can shorten by
+ * adding a card. A route already standing is likewise none: the play it gates is legal now. Unknown to the
+ * catalogue is no prerequisite either — the leaf would price a card that does not exist.
  */
 function gatedOn(G: GameState, card: CardDef, self: CardInstance | undefined): string | undefined {
   if (!self) return undefined;
-  const reason = currentCost(card, { G, self }).check?.({ G, self });
-  if (reason?.kind !== 'missingRoute') return undefined;
-  return CARDS[reason.cardId] ? reason.cardId : undefined;
+  const required = currentCost(card, { G, self }).requiresRoute;
+  if (!required || routeStands(G, required)) return undefined;
+  return CARDS[required] ? required : undefined;
 }
 
 /** One route's verdict at the run root. `t` is read at the income and workforce the root happens to have, so

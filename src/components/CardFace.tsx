@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { isStaffable, type CardDef } from '../content/cards';
+import { CARDS, isStaffable, type CardDef } from '../content/cards';
 import { STICKERS } from '../content/stickers';
 import { type CoreResources, type Resources } from '../rules';
 import { cardWorkerCap } from '../rules/population';
@@ -114,14 +114,17 @@ export function describeCost(c: CardDef): string {
   return parts.join(' · ');
 }
 
-/** Presentation-only summary of a card's extra conditions for play — culture-level gate, discard
- *  cost, an event's play-time `effect`, a dynamic card's scaling rule (`dynamicRule`) and its authored
- *  `note` — shown in their own banded section on the card face, which renders at all only when one of
+/** Presentation-only summary of a card's extra conditions for play — culture-level gate, standing-route
+ *  prerequisite, discard cost, an event's play-time `effect`, a dynamic card's scaling rule
+ *  (`dynamicRule`) and its authored `note`. Reading the declarative `cost` is what lets a gate a
+ *  *sticker* put on the copy print itself, where an authored `note` states only what the base card was
+ *  written to state — shown in their own banded section on the card face, which renders at all only when one of
  *  them applies. (Work cards show their worker spaces as a meeple column instead, via the shared
  *  worker-icon rendering.) */
 export function describeConditions(c: CardDef): string {
   const parts: string[] = [];
   if (c.cost.cultureLevelReq) parts.push(`Requires ${RESOURCE_ICON.culture} level ${c.cost.cultureLevelReq}`);
+  if (c.cost.requiresRoute) parts.push(`Needs a ${CARDS[c.cost.requiresRoute].name}`);
   if (c.cost.discard) parts.push(`Discard ${c.cost.discard}`);
   if (c.kind === 'event') {
     // The half of the price `cost` can't carry (only the five core pools are spendable) and the
