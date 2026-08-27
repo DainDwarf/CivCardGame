@@ -3,11 +3,11 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the post-convergence spine: [Bronze](bronze.md) → **Sword & chariot** → The Sea
 Peoples (capstone).
 **Placement:** `prereqs: ['bronze']`, bronze col 12 row 0.
-**Reward influence:** provisional 12 (matches the standard Bronze nodes).
+**Reward influence:** provisional 6 (matches the standard Bronze nodes).
 
 ## Design ✅ (converged — numbers are Implement's)
 
@@ -60,7 +60,7 @@ wrote down when Convoy shipped ("Sword & chariot and the Sea Peoples want standi
 
 ## Implement ✅ (shipped)
 
-The `sword_chariot` mission (bronze col 12 row 0, prereqs `bronze`, 12⭐) seeding the `soldiers_wages`
+The `sword_chariot` mission (bronze col 12 row 0, prereqs `bronze`, 6⭐) seeding the `soldiers_wages`
 threat over the `sword_chariot_goal` objective — no events, alone among the arc's late nodes; the
 `sword` building and `chariot` work box as rewards. The goal is the plain declarative threshold over
 `G.resources.military`, tied to the `victoryHint` by a shared `MUSTER_TARGET`. The threat is the
@@ -141,6 +141,29 @@ building deck, ending the "degenerate cell" reading), **Convoy** (both forms), *
 (first rating — 104 plays/100 in Port's planner runs, zero dead cards in that deck), **Marketplace**
 and **Bronze Tools** (load-bearing in all three decks). The **Wheel sticker** remains unmeasured.
 
-## Polish ⬜
+## Polish ✅
 
-Not started — card text, art, lore.
+**The lore was rewritten plain and its closer replaced.** The old one ended on "the metal is the cheap
+part", which reads as a shrug at the three branches and the convergence the player just spent five
+missions on — the bronze is not cheap, it is the thing they built the lanes for. Both bills stand
+instead: a soldier is fed and paid, and his bronze is bought and bought again, because the islands never
+sell you the last of it. The prose lost its fancier register with it — short sentences, plain words.
+
+**The hints and readouts came down to the number.** The victory hint is `Hold 40 ⚔️ at once.` — the
+held-not-spent clause the one-voice pass had kept is gone, "Hold" carrying it — and the objective card
+was aligned to the same verb, which makes this the first mission on it (the sweep over every other
+hold-a-pool objective is the follow-up). The failure hint drops both the generic-collapse closer and the
+per-round cadence, and stops charging "the palace" where the player is the palace; the threat's own face
+reads `−1🪙 per 5 ⚔️ past 10`.
+
+**Two card faces stopped over-explaining their rate.** Sword and Marketplace printed
+`+2⚔️ / round per worker`, where every other building's box and face print the bare `+2⚔️` and let the
+meeple column say per-worker. The Sword's static `description` went with it, so the card derives one
+reading for the meta screens and the board alike; the `no Tin Route — idle` branch stays, being the one
+thing the number can't say. The Chariot's hand-written tin note is gone too — the declarative
+`requiresRoute` prints it now.
+
+**Chariot art 🎠 → 🛞.** The carousel horse was a fairground ride standing in for a war cart; the wheel
+is the half that makes it a chariot rather than a horse, and it separates cleanly from the three horse
+glyphs the age already carries. It collides with the Wheel *sticker* — accepted knowingly: the
+uniqueness rule is within `CARDS`, and no surface shows the two side by side. The Sword keeps 🪖.

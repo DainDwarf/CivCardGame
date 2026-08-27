@@ -599,22 +599,18 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'sword_chariot',
     name: 'Sword & Chariot',
     lore:
-      'Your pours came out hard — and so did everyone else\'s. Every chief with a lane to the islands ' +
-      'is casting now: edges that hold to the end of a day\'s fighting, axles that take a charge, and ' +
-      'men behind them who no longer stop to re-knap a blade. There is no advantage left in knowing ' +
-      'how. There is only the advantage of number. So keep the smiths at the moulds and the tin ' +
-      'coming, break more horses to the pole, and put under arms a host larger than anything the ' +
-      'world has yet had to count. The metal is the cheap part: every spear you keep standing is a ' +
-      'man who eats and is paid out of the palace stores for as long as he stands.',
+      'You are not the only ones pouring any more. Every chief with a lane to the islands has bronze, ' +
+      'and their blades hold as long as yours do. When both sides carry the same edge, the fight is ' +
+      'settled by how many carry it. So arm more men than the world has counted before. But a soldier ' +
+      'has to be fed and paid, and his bronze has to be bought and bought again — the islands never ' +
+      'sell you the last of it. Neither bill ever stops.',
     prereqs: ['bronze'],
     threats: ['soldiers_wages'],
     // No events, alone among the arc's late nodes: the goal is a standing muster rather than a set of
     // one-shots to work through, so the pressure is the payroll the muster itself raises.
     objectiveCardId: 'sword_chariot_goal',
-    victoryHint: `Muster ${MUSTER_TARGET} ⚔️ at once — a host held, not a host spent.`,
-    failureHint:
-      'Every 5 ⚔️ you hold past the first 10 costs the palace 1 🪙 in wages at the end of each round; ' +
-      'bleed the treasury dry and the run ends.',
+    victoryHint: `Hold ${MUSTER_TARGET} ⚔️ at once.`,
+    failureHint: 'Every 5 ⚔️ you hold past the first 10 costs 1 🪙 in wages.',
     kind: 'standard',
     // Opens the bronze military kit, split standing vs. burst: the Sword (⚔️ per worker every round, and
     // dark for as long as the tin route is cut) and the Chariot (the War Horse successor, a better rate

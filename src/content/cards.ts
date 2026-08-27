@@ -431,7 +431,7 @@ export const CARDS: Record<string, CardDef> = {
   chariot: {
     id: 'chariot', name: 'Chariot', kind: 'work',
     cost: { resources: { money: 2 }, requiresRoute: 'tin_route' }, workers: 1,
-    display: { art: '🎠' },
+    display: { art: '🛞' },
     produces: { resources: { military: 5 } },
   },
   // Pays off the trade zone rather than at a flat rate, so it is worth nothing on an empty sea and more
@@ -522,7 +522,7 @@ export const CARDS: Record<string, CardDef> = {
     producesWhile: tinRouteStands,
     display: {
       art: '🏪',
-      dynamicText: (G) => (tinRouteStands(G) ? '+3🪙 / round per worker' : 'no Tin Route — idle'),
+      dynamicText: (G) => (tinRouteStands(G) ? '+3🪙' : 'no Tin Route — idle'),
     },
   },
 
@@ -534,8 +534,7 @@ export const CARDS: Record<string, CardDef> = {
     cost: { resources: { production: 4 }, requiresRoute: 'tin_route' }, workers: 2,
     display: {
       art: '🪖',
-      description: '+2 ⚔️ / round\nper worker.',
-      dynamicText: (G) => (tinRouteStands(G) ? '+2⚔️ / round per worker' : 'no Tin Route — idle'),
+      dynamicText: (G) => (tinRouteStands(G) ? '+2⚔️' : 'no Tin Route — idle'),
     },
     produces: { resources: { military: 2 } },
     producesWhile: tinRouteStands,
@@ -1141,7 +1140,7 @@ export const CARDS: Record<string, CardDef> = {
   sword_chariot_goal: {
     id: 'sword_chariot_goal', name: 'Sword & Chariot', kind: 'objective', cost: {},
     goals: [{ icon: '⚔️', measure: (G) => G.resources.military, target: MUSTER_TARGET }],
-    display: { description: `Muster ${MUSTER_TARGET} ⚔️ at once` },
+    display: { description: `Hold ${MUSTER_TARGET} ⚔️ at once` },
   },
 
   // A raid reaches `removed` only by being played, so counting them there counts the waves thrown back.
@@ -1392,7 +1391,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'soldiers_wages', name: "Soldiers' Wages", kind: 'threat', cost: {},
     display: {
       art: '💸',
-      description: '−1🪙 per 5 ⚔️ held past the first 10',
+      description: '−1🪙 per 5 ⚔️ past 10',
       dynamicText: (G) => `−${soldiersWages(G)}🪙`,
     },
     upkeep: {
