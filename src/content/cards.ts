@@ -619,7 +619,7 @@ export const CARDS: Record<string, CardDef> = {
   //   recycles like any work card.
   road: {
     id: 'road', name: 'Road', kind: 'work', workers: 1,
-    cost: { resources: { money: 3, production: 3 } },
+    cost: { resources: { money: 2, production: 2 } },
     display: { art: '🛣️', note: 'Single use' },
     produces: { resources: { territory: 1 }, resolve: (ctx) => { removeFromRun(ctx); } },
   },

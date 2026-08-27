@@ -18,7 +18,7 @@
   otherwise "pave now or pay 🔨 later" is a weak decision; the food bleed makes it a real
   🔨-to-pave vs. 🌾-to-survive squeeze. (Sibling signatures: Copper 🔨-threat, Writing 🔬-escalating,
   Roads 🌾-flat.)
-- **Reward:** unlocks the **Road** (work card, 1 worker, 3🪙+3🔨 → +1 territory, **single-use** — a
+- **Reward:** unlocks the **Road** (work card, 1 worker, 2🪙+2🔨 → +1 territory, **single-use** — a
   box that produces spends itself, an unstaffed one recycles; Conquest's economic twin, at a flat price
   paid once per copy where Conquest's doubles), the tool the Wheel mission's territory goal is built
   around.
@@ -63,7 +63,8 @@ Settlement having been upgraded away at Masonry — but it has no committed cell
 - **The Road's own price settled at Wheel**, the first cell that stocks it (it is this mission's
   *reward*, so absent from the fixture that would price it — the same shape as the Forge at
   `finding_copper`). A flat 3🪙+3🔨 against Conquest's 2⚔️ *doubling per copy-use* overtook Conquest
-  from the third expansion on, so the Road went **single-use**: each copy pays its +1 once per run.
+  from the third expansion on, so the Road went **single-use**: each copy pays its +1 once per run — and
+  once a copy buys one segment rather than a run of them, that flat price came down to **2🪙+2🔨**.
   Measured in [`wheel.md`](wheel.md).
 
 ## Polish ✅
