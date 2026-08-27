@@ -136,7 +136,7 @@ export function describeConditions(c: CardDef): string {
   }
   if (c.display?.dynamicRule) parts.push(c.display.dynamicRule);
   if (c.display?.note) parts.push(c.display.note);
-  return parts.join(' · ');
+  return parts.join('\n');
 }
 
 /** Presentation-only summary of a staffable's output for one round it stands — a building/wonder every

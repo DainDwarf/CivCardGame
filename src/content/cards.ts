@@ -386,11 +386,15 @@ function wavesRepelled(G: GameState): number {
   return G.removed.filter((c) => c.cardId === 'sea_raid' || c.cardId === 'endless_raid').length;
 }
 
-/** The repel ladder both wave cards climb: +4⚔️ per wave already repelled, derived off whatever base the
- *  card (post-sticker) hands in — so the two waves differ only in their printed beach price. */
+/** The ⚔️ every wave already repelled adds to the next one's beach price — shared by the ladder below
+ *  and the rule both wave cards print, so a face can't quote a step the ladder doesn't climb. */
+const RAID_STEP = 4;
+
+/** The repel ladder both wave cards climb, derived off whatever base the card (post-sticker) hands in —
+ *  so the two waves differ only in their printed beach price. */
 const raidLadder: NonNullable<CardCost['resolve']> = ({ G }, base) => ({
   ...base,
-  resources: { ...base.resources, military: (base.resources?.military ?? 0) + 4 * wavesRepelled(G) },
+  resources: { ...base.resources, military: (base.resources?.military ?? 0) + RAID_STEP * wavesRepelled(G) },
 });
 
 /** The unrepelled wave's landing, shared by both wave cards: routes stand → each is judged alone (an
@@ -408,6 +412,12 @@ const RAID_LANDING: CardEffect = {
     }
   },
 };
+
+/** The half of `RAID_LANDING` the coming boundary will take, branched off the same zone read — so a
+ *  wave in hand states the landing it will actually make. Both cards' static `description` keeps
+ *  stating both, for the mission-flow popup that has no run to read. */
+const raidLandingText = (G: GameState): string =>
+  G.tradeRoutes.length ? 'Discards all trades' : '−3🌾 −2🔨';
 
 /** The 🪙 the standing host costs the palace next round — shared by the `soldiers_wages` drain and its
  *  readout, so the face can't quote a wage bill the threat doesn't take. The levy is free; only the
@@ -815,8 +825,9 @@ export const CARDS: Record<string, CardDef> = {
     },
     display: {
       art: '🏴‍☠️',
-      description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
-      dynamicRule: 'Cost rises per wave repelled',
+      description: 'Discards all trades\nelse −3🌾 −2🔨',
+      dynamicText: raidLandingText,
+      dynamicRule: `Cost +${RAID_STEP}⚔️ per wave`,
     },
     upkeep: RAID_LANDING,
   },
@@ -834,8 +845,9 @@ export const CARDS: Record<string, CardDef> = {
     },
     display: {
       art: '🏴‍☠️',
-      description: 'Unrepelled: cuts each unescorted route\n(an escort dies instead), else −3🌾 −2🔨',
-      dynamicRule: 'Cost rises per wave repelled',
+      description: 'Discards all trades\nelse −3🌾 −2🔨',
+      dynamicText: raidLandingText,
+      dynamicRule: `Cost +${RAID_STEP}⚔️ per wave`,
     },
     upkeep: RAID_LANDING,
   },

@@ -623,28 +623,22 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'sea_peoples',
     name: 'The Sea Peoples',
     lore:
-      'Your smiths pour the hardest bronze the world has yet seen, and not one grain of the tin in it ' +
-      'came out of your own ground: it crosses nine days of open water in hulls you have to keep afloat. ' +
-      'There are sails on that water now that answer to no palace — peoples burned off coasts further ' +
-      'east, come not to trade and not to hold ground, but to take what a season yields and be gone ' +
-      'before your host reaches the shore. Meet them on the beach with everything the age has given you, ' +
-      'and keep the lanes open while you do it, because every one they cut takes the metal out of your ' +
-      'hands. Cities older and richer than yours are going dark up the coast; the ones still standing ' +
-      'when the season turns are not the ones that won a battle, but the ones still fed and still supplied.',
+      'Sails on the horizon flying no one\'s colours. They do not want your land and they do not want ' +
+      'your throne — only what the season made, taken and gone before your soldiers reach the beach. ' +
+      'Your bronze is better than anything they carry, so meet them on the sand. But every grain of tin ' +
+      'in that bronze crossed nine days of open water, and a hull is easier to burn than a city is to ' +
+      'storm. They do not have to beat your army. They only have to reach your lanes.',
     prereqs: ['sword_chariot'],
     // One `sea_raid` per wave, tied to the objective's threshold by the shared INVASION_WAVES const so
     // the mission can't seed a different count than the win asks for.
     events: Array.from({ length: INVASION_WAVES }, () => 'sea_raid'),
     objectiveCardId: 'sea_peoples_goal',
-    victoryHint:
-      `Repel all ${INVASION_WAVES} Sea Raids, every one of them over a standing Tin Route.`,
-    failureHint:
-      'A wave you cannot repel falls on your trade routes — cutting every lane no escort holds, and ' +
-      'burning 🌾 and 🔨 once none is left standing. Lose the tin and no wave after it can be answered ' +
-      'at all.',
+    victoryHint: `Repel all ${INVASION_WAVES} Sea Raids, while having a Tin Route.`,
+    failureHint: 'Sea Raids discard your trade routes, unless a Convoy protects them.',
     kind: 'standard',
-    // The age ends here, so the reward is Influence alone — no card, no sticker, no board.
-    reward: { influence: 6 },
+    // The age ends here, so the reward is Influence alone — no card, no sticker, no board. The
+    // capstone premium is the whole payout, so it carries the arc's largest purse.
+    reward: { influence: 20 },
     map: { col: 13, row: 0 },
     age: 'bronze',
   },

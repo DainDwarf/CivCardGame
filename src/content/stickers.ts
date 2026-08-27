@@ -141,8 +141,8 @@ export const STICKERS: Record<string, StickerDef> = {
   convoy: {
     id: 'convoy',
     name: 'Convoy',
-    gives: '+1 ⚔️ every round it stands',
-    charges: '−1 🪙 upkeep every round',
+    gives: '+1 ⚔️, protects once from event',
+    charges: '−1 🪙 upkeep',
     appliesToLabel: 'Trade routes',
     icon: '🛡️',
     cost: 5,

@@ -3,12 +3,12 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance ✅ · Polish ✅
 **Branch:** Bronze — the **capstone**: [Sword & chariot](sword-chariot.md) → **The Sea Peoples**;
 clearing it unlocks the *Fall of the Bronze Age* infinite (its own design, not this dossier's).
 **Placement:** `prereqs: ['sword_chariot']`, bronze col 13 row 0.
-**Reward influence:** provisional — weigh the capstone premium at Balance; the reward's real payload
-is the infinite unlock.
+**Reward influence:** 20 — the arc's largest purse, since the reward is Influence alone and the
+capstone premium has nowhere else to land; the other payload is the infinite unlock.
 
 ## Design ✅ (converged — numbers are Implement's)
 
@@ -98,7 +98,7 @@ finally spent, and the thing it is spent *through* is the thing under attack.
 
 ## Implement ✅ (shipped)
 
-The `sea_peoples` mission (bronze col 13 row 0, prereqs `sword_chariot`, 12⭐ and no unlock card — the
+The `sea_peoples` mission (bronze col 13 row 0, prereqs `sword_chariot`, 20⭐ and no unlock card — the
 *Fall of the Bronze Age* infinite ([fall-of-bronze](fall-of-bronze.md)) names this mission as its own
 prereq, which is the whole unlock) seeding **5** `sea_raid` events over the `sea_peoples_goal`
 objective — **no threat**, per the design. `INVASION_WAVES` is the one number behind the seed count, the win threshold and the victory
@@ -164,6 +164,42 @@ Defeat textures: port drowns in **bankruptcy** (its rent-heavy lane deck's own w
 throughout). One noted wart, accepted as-is: the port cell wins at **1 population** — the lane deck
 never grows, all coin and canvas. Verdict: shipped at these numbers.
 
-## Polish ⬜
+## Polish ✅
 
-Not started — card text, art, lore.
+**The Sea Raid was the most text-heavy card in the catalogue**, and a third of what it printed was
+someone else's rule: the escort clause describes what a **Convoy** does, while the Convoy seal itself
+said only what it yields and what it charges. The seal now carries it (`+1 ⚔️, protects once from
+event`) and the raid states its own landing alone. What is left came down to two lines a piece —
+`Discards all trades` / `else −3🌾 −2🔨` over `Needs a Tin Route` / `Cost +4⚔️ per wave` — against a
+wrap budget of roughly twenty character-widths on the 118px face, which is what had been costing the
+art band its room. "Discards" over "cuts" because `closeTradeRoute` files the route to the discard,
+where it can be played again; "cut" read as destroyed. `RAID_STEP` came out of `raidLadder` so the
+printed step and the charged one are one number.
+
+**A wave in hand states the landing it will actually make** — `dynamicText` branching on
+`G.tradeRoutes.length`, the same read `RAID_LANDING` branches on, so the face and the resolver cannot
+disagree. The static `description` keeps stating both branches, being what the mission-flow popup
+renders with no run to read. It still says `Discards all trades` where every standing route is
+escorted and the landing would strip Convoys instead: the escort rule lives on the seal now, and the
+face states the default rather than re-deriving the sticker's exception.
+
+**The conditions band stacks its clauses** rather than joining them with ` · ` (`describeConditions`,
+plus `white-space: pre-line` on `.cardConditions` to honour it). Sea Raid is the only card in the
+catalogue carrying two clauses of its own; every other multi-clause face is a stickered copy, where
+Elegant or Wheel adds a culture requirement above the base card's note. `.cardMid` is `flex: 1;
+min-height: 0`, so the extra line takes room from the art rather than pushing a band off the card.
+
+**Both hints came down to one line.** The failure hint had been narrating the spiral in three clauses,
+two of which the card face now prints itself; it names the mechanic and the counterplay instead —
+*Sea Raids discard your trade routes, unless a Convoy protects them.* The rule the rework settled: a
+`failureHint` explains the gameplay that ends the run, not the lore around it, and points at the card
+or sticker that answers it.
+
+**The lore lost half its length and all of its register.** 140 words of *sails that answer to no
+palace* became 88 of plain sentences, ending on the threat model rather than on scene-setting: they do
+not have to beat your army, they only have to reach your lanes. The player's bronze stays the best on
+the board — the arc earned that, and the danger is the sea, not the fight. It names no wave count, so
+`INVASION_WAVES` remains the only place the 5 lives.
+
+**Reward set to 20⭐**, the arc's largest. Influence is the entire payout here — no card, no sticker,
+no board — so the capstone premium has nowhere else to land.
