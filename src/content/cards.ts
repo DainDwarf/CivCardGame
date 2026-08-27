@@ -553,7 +553,7 @@ export const CARDS: Record<string, CardDef> = {
   // — Wonders —
   gobekli_tepe: {
     id: 'gobekli_tepe', name: 'Göbekli Tepe', kind: 'wonder',
-    display: { art: '🗿', description: '+1🔨 +1🪙 +1🎭\nper worker.' },
+    display: { art: '🗿', description: '+1🔨 +1🪙 +1🎭\nper worker' },
     cost: { resources: { production: 8 }, cultureLevelReq: 1 }, workers: 3,
     produces: { resources: { production: 1, money: 1, culture: 1 } },
   },
@@ -562,7 +562,7 @@ export const CARDS: Record<string, CardDef> = {
   //   would be a false cost against the 🪙 it produces.
   pyramid: {
     id: 'pyramid', name: 'Pyramid', kind: 'wonder',
-    display: { art: '🔺', description: '+2🎭 +1🪙 per worker.\n−2🌾 upkeep.' },
+    display: { art: '🔺', description: '+2🎭 +1🪙 per worker\n−2🌾 upkeep' },
     cost: { resources: { production: 10, money: 6 }, cultureLevelReq: 2 }, workers: 4,
     produces: { resources: { culture: 2, money: 1 } },
     upkeep: { resources: { food: -2 } },
@@ -1023,7 +1023,7 @@ export const CARDS: Record<string, CardDef> = {
       description: 'Hold 50 🪙, 40 🔨\nReach 🎭 level 2',
       dynamicText: (G) =>
         `🪙 ${Math.min(G.resources.money, 50)}/50 · ` +
-        `🔨 ${Math.min(G.resources.production, 40)}/40 · ` +
+        `🔨 ${Math.min(G.resources.production, 40)}/40\n` +
         `🎭 Level ${Math.min(cultureProgress(G.resources.culture).level, 2)}/2`,
     },
   },
@@ -1310,7 +1310,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'pharaohs_reign', name: "Pharaoh's Reign", kind: 'threat', cost: {},
     display: {
       art: '⏳',
-      description: `Complete the tomb within ${PHARAOH_DEADLINE} rounds.`,
+      description: `Complete Pyramid within ${PHARAOH_DEADLINE} rounds`,
       dynamicText: (G) => `⏳ ${Math.max(0, PHARAOH_DEADLINE - G.round + 1)} rounds left`,
     },
     defeat: (G) => G.round > PHARAOH_DEADLINE && 'the pharaoh died before his tomb was ready',

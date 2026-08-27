@@ -347,7 +347,7 @@ export const MISSIONS: Record<string, MissionDef> = {
     prereqs: ['masonry'],
     threats: ['pharaohs_reign'],
     objectiveCardId: 'pyramid_goal',
-    victoryHint: "Amass 50 🪙, 40 🔨, and 🎭 culture level 2 before the pharaoh's reign ends.",
+    victoryHint: 'Amass 50 🪙, 40 🔨, and reach 🎭 culture level 2.',
     failureHint: `The tomb must be finished within ${PHARAOH_DEADLINE} rounds, before Pharaoh's Reign ends.`,
     kind: 'standard',
     // An optional challenge leaf off Masonry — a bigger reward for a harder clear: unlocks the Pyramid
