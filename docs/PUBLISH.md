@@ -65,8 +65,11 @@ the infinite is the casualty, The Sea Peoples' reward simply drops the unlock.)
   payout + one tinted insert per outcome (the sealed no-name teaser being its gold variant), and the
   unlock reveal now plays on the return into the meta menu
   (TODO → *Done / shipped* has the full entry).
-- **Per-mission Polish stage** — card text, art, lore across Stone + Bronze (the ⬜ column in
-  BACKLOG's status boards). A light pass: readable and consistent beats exhaustive.
+- ~~**Per-mission Polish stage**~~ ✅ — card text, art, lore across Stone + Bronze; every row of
+  BACKLOG's status board is ✅, Pyramid the last (2026-08-27).
+- **Per-window meta-menu polish** — the same light pass over each meta screen in turn (Mission map,
+  Collection, Board, Decks, Stats, the deck editor): readable and consistent beats exhaustive. Planned
+  for 2026-08-28.
 - **Three generic popups** — **publish blocker.** Generic (not per-mission), each shown once:
   1. **The run** — how a turn plays, and the card types (building / action / work / trade / event /
      the mission's threat and objective). This is also where the **event** rule now lives — play it
