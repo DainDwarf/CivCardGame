@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { MISSIONS, infiniteMissionsInOrder, type MissionDef } from '../content/missions';
 import { ageColSpans } from '../content/ages';
 import { BOARDS, type BoardId } from '../content/boards';
@@ -194,6 +194,28 @@ export function CampaignMap({
       timelineRef.current.style.transform = 'translateX(0)';
     }
   }
+
+  // Open on what there is to play. Resting at scroll 0 puts the view on col 0 — hard against the
+  // Nomadic gutter — so every mission already cleared has to be panned past to reach the frontier,
+  // and the further the campaign runs the longer that pan gets. Layout-effect so the canvas is never
+  // painted at the left edge first; `scrollLeft`/`clientWidth` are both layout px inside the UI-scale
+  // wrapper, so neither is converted (unlike `movePan`'s visual-px `clientX`). Mount only:
+  // re-centring mid-session would yank the view out from under a player who has panned.
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const max = Math.max(0, canvas.scrollWidth - canvas.clientWidth);
+    const frontier = missions.filter((m) => isAvailable(m, mapProgress) && !isCompleted(mapProgress, m.id));
+    // Nothing left to play: rest against the far edge, where the campaign ends.
+    if (frontier.length === 0) {
+      canvas.scrollLeft = max;
+      return;
+    }
+    // The leftmost of several, not their midpoint — branches fan out across columns, and an average
+    // centres the gap between them, which can leave every one of them off-screen.
+    const centre = colX(Math.min(...frontier.map((m) => m.map!.col))) + NODE_W / 2;
+    canvas.scrollLeft = Math.max(0, Math.min(max, centre - canvas.clientWidth / 2));
+  }, []);
 
   return (
     <div className={styles.screen}>

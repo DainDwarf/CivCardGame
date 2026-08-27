@@ -63,20 +63,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   player and a first-time player felt it. **Explicitly low priority and not a publish blocker** (user
   call): nothing is confusing, nothing is broken, every feature is reachable — it is convenience only.
   No obvious cheap fix, hence the `[?]`.
-- **Mission-screen polish (`CampaignMap.tsx`)** `[size: M]` `[?]` — three passes over the map's
-  horizontal extent, all user-flagged optional:
-  - **Open centred on the available missions.** The map has no initial scroll at all (`scrollLeft` is
-    only ever set from the drag-to-pan handler), so it opens at the far left on the Nomadic gutter and
-    the player pans right past every cleared mission to reach what they can actually play. Centre the
-    canvas on `campaign.ts`'s available set on mount.
+- **Mission-screen polish (`CampaignMap.tsx`)** `[size: M]` `[?]` — the two remaining passes over the
+  map's horizontal extent, both user-flagged optional and both now carrying an argument against:
   - **An empty Iron Age gutter on the right**, mirroring the Nomadic one on the left — same
     parked-off-the-edge treatment, revealed by right elastic-overscroll. Not symmetric in the data
     though: Nomadic is deliberately *not* an `AGES` entry and never will be, while Iron **is** one that
     simply has no missions placed yet, so `ageColSpans` gives it no span. Decide whether the gutter is
-    CampaignMap-local like Nomadic's or the zero-mission rendering of a real age.
+    CampaignMap-local like Nomadic's or the zero-mission rendering of a real age. **Argues against
+    itself now that PUBLISH cuts the Iron Age**: Nomadic teases backwards, which costs nothing, while
+    an Iron gutter promises a fourth age just before the closing popup says 0.1 is the last version.
+    Either drop it or invert it into something that reads as an ending.
   - **Don't let the pan reach Bronze before it is unlocked** — clamp the scroll extent to the ages the
     player has opened, so the Bronze band isn't browsable until the Stone capstone (`first_temple`) is
     cleared. Same reasoning as hiding locked unlockables: the next age's shape is a surprise.
+    **Contradicts the map's own silhouette rule**, where a locked node deliberately shows its position
+    and hides its identity — so the age past the frontier is already half-disclosed on purpose. What
+    survives is narrower: the age *band* names "Bronze Age" outright, which is more than a silhouette
+    gives away, so if the surprise worth protecting is the name, that is a band-label change and not a
+    scroll clamp.
 
 ## Run loop (`src/rules/`, `src/run/`)
 
@@ -285,6 +289,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The campaign map opens on what there is to play** ✅ — `scrollLeft` was only ever written by the
+  drag-to-pan handler, so the map rested at col 0 against the Nomadic gutter and every cleared mission
+  had to be panned past to reach the frontier — a pan that grows with the campaign. A layout effect
+  now centres the **leftmost** frontier mission (available, not yet cleared), and rests against the
+  map's far edge once nothing is uncleared. Leftmost rather than the frontier's midpoint because
+  branches fan out across columns and an average centres the *gap* between them, which can leave every
+  one off-screen. Layout-effect so the canvas is never painted at the left edge first, and mount-only
+  so it can't yank the view from a player who has panned. The item's other two passes stayed open,
+  each with an argument against.
 - **The three deck actions read as three** ✅ — a first-time player missed Copy entirely: Edit and Copy
   shared one class, so the tile carried three same-weight pills and the eye took the row as one object,
   reading the first label and the red one at the end. Copy is *not* secondary — you reach for it as

@@ -583,6 +583,10 @@ logic that rides on it. **A building card *is* the building** — there's no sep
     second click, re-clicking the selected deck opening its list-view and the selected board its
     `BoardZoomOverlay` (which a *revealed* board reward in the detail step also opens; the
     `locked`/`upgrade` teasers stay inert). Infinite missions render in a bottom banner, not as nodes.
+    It opens centred on the **leftmost frontier mission** — available but not yet cleared — so the pan
+    starts at what there is to play rather than at col 0's Nomadic gutter, and against the map's far
+    edge once nothing is left uncleared; mount only, since re-centring would yank the view from a
+    player who has panned.
   - `Collection.tsx` — owned cards (omits locked ones) beside a sticky sticker tray with the Board
     menu's chrome, where a seal is a **filter** rather than a drag handle: selecting one narrows the
     grid to the cards it fits (so "what can this sticker go on?" is askable without opening copies) and
