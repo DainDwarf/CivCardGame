@@ -19,7 +19,7 @@ the idea lands here as a one-liner without derailing what we're doing. We triage
 later — promote items into `DESIGN.md` / real work, or drop them.
 
 > Tags (optional): `[size: S/M/L]` rough effort · `[?]` needs design discussion ·
-> `[blocked]` waiting on something else.
+> `[blocked]` waiting on something else · `[bug]` shipped behaviour is wrong.
 
 ## UI (`src/components/`)
 
@@ -82,6 +82,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
     cleared. Same reasoning as hiding locked unlockables: the next age's shape is a surprise.
 
 ## Run loop (`src/rules/`, `src/run/`)
+
+- **A raid's escort never survives the cut** `[bug]` `[size: S]` — `RAID_LANDING`
+  (`content/cards.ts`) closes a route *only* where `stripSticker(route, 'convoy')` fails, so carrying
+  an escort is exactly what stops the cut and a route always reaches the discard already bare of
+  Convoys. [The Sea Peoples](missions/sea-peoples.md) asks for the opposite: a cut route re-standing
+  with its **surviving** convoys. `closeTradeRoute` does carry stickers across, so the mechanism is
+  there and it is Convoy alone that can never reach it — a Bartering comes back with its Irrigation, a
+  Coastal Route with its Bronze Tools, and the Tin Route (which no other sticker fits) always comes
+  back plain. The fix is to strip *and* cut in one landing, so an escort softens the blow instead of
+  absorbing it. **Deferred past publish by decision** — it moves the mission's difficulty and owes
+  `sea_peoples_city` / `_port` / `_warband` a re-sweep. Same shape applies to `endless_raid`.
 
 - **Removal cards — trade cancellation + building destroy** `[size: M]` `[?]` — the trade zone ships with
   routes **permanent**; this is the half deliberately held back. Playing a trade route would *also* mint a

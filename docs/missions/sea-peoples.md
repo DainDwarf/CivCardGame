@@ -126,6 +126,16 @@ fixture now carries two real `sea_raid`s over one escorted and one bare lane.
 stripped copy reads as the plain card it now is, and the array rebuilt rather than spliced so nothing
 sharing it is written through. The meta collection is never in reach of it.
 
+**Shipped short of the design on one point, unreported until Polish: an escort never rides the
+discard.** Design asks a cut route to re-stand with its surviving Convoys. It cannot, because
+`RAID_LANDING` closes a route *only* where the strip fails — carrying an escort is exactly what stops
+the cut, so a route reaches the discard already bare of them. The carrying mechanism is genuinely
+there (`closeTradeRoute` takes only `workers` off, so a Bartering keeps its Irrigation and a Coastal
+Route its Bronze Tools); it is the Convoy specifically that can never survive to use it, and the Tin
+Route — which no sticker but Convoy fits — always comes back plain. **Kept as shipped**, pre-publish:
+closing it means stripping *and* cutting in one landing, so the escort softens the blow rather than
+absorbing it, which moves the mission's difficulty and owes all three fixtures a re-sweep.
+
 Two content edits fall out: Sea Lanes' `victoryHint` and the `sea_lanes_goal` comment no longer claim
 that *nothing* closes a route, since now something does.
 
