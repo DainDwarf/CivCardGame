@@ -878,7 +878,7 @@ export const CARDS: Record<string, CardDef> = {
       { icon: '🔨', measure: (G) => G.resources.production, target: 10 },
       { icon: '⚔️', measure: (G) => G.resources.military, target: 10 },
     ],
-    display: { description: '10 🔨 and 10 ⚔️' },
+    display: { description: 'Hold 10 🔨 and 10 ⚔️' },
   },
   growing_numbers_goal: {
     id: 'growing_numbers_goal', name: 'Growing Numbers', kind: 'objective', cost: {},
@@ -948,7 +948,7 @@ export const CARDS: Record<string, CardDef> = {
   reading_seasons_goal: {
     id: 'reading_seasons_goal', name: 'Reading the Seasons', kind: 'objective', cost: {},
     goals: [{ icon: '🔬', measure: (G) => G.resources.science, target: 10 }],
-    display: { description: 'Reach 10 🔬' },
+    display: { description: 'Hold 10 🔬' },
   },
 
   // Culture is never spent, so `culture >= cultureForLevel(N)` is exactly `cultureLevel >= N`. The
@@ -972,7 +972,7 @@ export const CARDS: Record<string, CardDef> = {
       { icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(2) },
     ],
     display: {
-      description: 'Have 3 🧍 and 🎭 level 2',
+      description: 'Hold 3 🧍\nReach 🎭 level 2',
       dynamicText: (G) =>
         `🧍 ${Math.min(G.resources.population, 3)}/3 · ` +
         `🎭 Level ${Math.min(cultureProgress(G.resources.culture).level, 2)}/2`,
@@ -983,7 +983,7 @@ export const CARDS: Record<string, CardDef> = {
   masonry_goal: {
     id: 'masonry_goal', name: 'Masonry', kind: 'objective', cost: {},
     goals: [{ icon: '🧍', measure: (G) => G.resources.population, target: 5 }],
-    display: { description: 'Reach 5 🧍' },
+    display: { description: 'Hold 5 🧍' },
   },
 
   // Accounting's ledger goal: a single money threshold. The fight isn't the number — it's holding it
@@ -992,7 +992,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'accounting_goal', name: 'Accounting', kind: 'objective', cost: {},
     goals: [{ icon: '🪙', measure: (G) => G.resources.money, target: 40 }],
     display: {
-      description: 'Reach 40 🪙',
+      description: 'Hold 40 🪙',
       dynamicText: (G) => `🪙 ${Math.min(G.resources.money, 40)}/40`,
     },
   },
@@ -1008,7 +1008,7 @@ export const CARDS: Record<string, CardDef> = {
       { icon: '🎭', measure: (G) => G.resources.culture, target: cultureForLevel(2) },
     ],
     display: {
-      description: 'Have 50 🪙, 40 🔨, and 🎭 level 2',
+      description: 'Hold 50 🪙, 40 🔨\nReach 🎭 level 2',
       dynamicText: (G) =>
         `🪙 ${Math.min(G.resources.money, 50)}/50 · ` +
         `🔨 ${Math.min(G.resources.production, 40)}/40 · ` +
@@ -1140,7 +1140,7 @@ export const CARDS: Record<string, CardDef> = {
   sword_chariot_goal: {
     id: 'sword_chariot_goal', name: 'Sword & Chariot', kind: 'objective', cost: {},
     goals: [{ icon: '⚔️', measure: (G) => G.resources.military, target: MUSTER_TARGET }],
-    display: { description: `Hold ${MUSTER_TARGET} ⚔️ at once` },
+    display: { description: `Hold ${MUSTER_TARGET} ⚔️` },
   },
 
   // A raid reaches `removed` only by being played, so counting them there counts the waves thrown back.

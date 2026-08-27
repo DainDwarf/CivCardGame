@@ -403,6 +403,17 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   above already owns: `setting_sail_city` planner 24 → 15% and prover 8 → 6/10, `sea_lanes` planner
   18/2/17 → 13/5/11%, `wheel` prover 8 → 3/10, and `bronze_port`'s prover back to ten root refusals at zero
   actions. `harsh_winter` holds at 85/89% under the two drive-loop tiers.
+- **One keyword for a hold-this-much objective** ✅ — the same shape was worded eight ways across the
+  objective cards (`10 🔨 and 10 ⚔️`, *Reach* 10 🔬, *Have* 3 🧍, *Reach* 40 🪙, …). They all read **Hold**
+  now, which is the one that's true: every such goal measures a live pool at an instant, so a run that
+  banks the amount and spends it has not cleared. The split that survives is semantic, not stylistic —
+  **Reach** stays on a culture level (culture is never spent, so a level once climbed cannot be lost) and
+  **Gain** on the Wheel (its measure is territory *since setup*, deliberately, so the goal reads the same
+  on every board), and the two multi-term cards put each keyword on the term it governs, over two lines.
+  The rule behind it: **a card states the mechanic in short, precise, non-variant keywords; a
+  `victoryHint` may vary for flavour.** So the hints keep Stockpile / Amass / Grow your civilization and
+  none of them moved — the two surfaces are allowed to differ, in that direction only.
+
 - **A card-prerequisite gate is a declarative cost field** ✅ — the tin gate was a `cost.check` closure
   (`needsTinRoute`), so nothing could introspect it: five cards restated it in a hand-written `note` that
   could drift from the check, and the Bronze Tools sticker printed nothing at all on the copy it gated.
