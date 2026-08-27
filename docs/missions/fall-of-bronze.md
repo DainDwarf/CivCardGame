@@ -3,7 +3,7 @@
 > Per-mission working state. Arc-level view in [`../BACKLOG.md`](../BACKLOG.md); final decisions →
 > [`DESIGN.md`](../DESIGN.md); measured results → `CHANGELOG.md` at ship. Live state only.
 
-**Stage:** Design ✅ · Implement ✅ · Balance 🟡 (sim-measured and applied; feel-play pending) · Polish ⬜
+**Stage:** Design ✅ · Implement ✅ · Balance 🟡 (sim-measured and applied; feel-play pending) · Polish ✅
 **Branch:** Bronze — the age's **scored survival infinite** (its Ice Age), opened by clearing
 [The Sea Peoples](sea-peoples.md); the campaign's last unlock.
 **Placement:** `prereqs: ['sea_peoples']`, `kind: 'infinite'` — no map node, campaign-banner only.
@@ -50,7 +50,8 @@ machinery with the cap taken off — no new mechanics, one new threat card.
 
 The `fall_of_bronze` mission (`kind: 'infinite'`, prereqs `sea_peoples`, `scoreUnit: '⭐'` — the best
 recorded is the Influence banked, not a wave count) seeds **3** `endless_raid` events over the
-`fall_of_bronze_goal` objective and the **`catastrophe`** threat.
+`fall_of_bronze_goal` objective and the **`long_storm`** threat (Design's *Catastrophe*, renamed at
+Polish).
 
 **`endless_raid`** is the Sea Raid's machinery on its own card at a **4⚔️** beach price: the two
 waves share one `raidLadder` cost resolve (+4⚔️ per wave repelled) and one `RAID_LANDING` upkeep
@@ -70,9 +71,9 @@ display-only label the Stats best-scores board renders (default `'rounds'`).
 tally the capstone's win threshold and the repel ladder read, so the three can never disagree on what
 "repelled" means; the payout doubles it.
 
-**`catastrophe`** ticks a `clock` counter in its `upkeep` and every `RAID_SPAWN_PERIOD` (6) rounds
+**`long_storm`** ticks a `clock` counter in its `upkeep` and every `RAID_SPAWN_PERIOD` (6) rounds
 spawns one `endless_raid` via `spawnIntoDeck` — fresh instance ids, deterministic shuffle-in, the
-face counting down to the next sails.
+face counting down to the next wave.
 
 ## Balance 🟡
 
@@ -110,6 +111,40 @@ The pass left open is **feel-play**: the pacing against a hand-piloted deck, and
 above (the sim's turtle reading is that hiding banks nothing — the score is waves, and the policies
 spend on repels whenever they can afford them).
 
-## Polish ⬜
+## Polish ✅
 
-Not started — card text, art, lore review.
+Polished **as a pair with `ice_age`**, the Stone infinite it was designed to echo. The two now say the
+same things the same way at every surface, so a player who met the Long Winter reads this mission on
+sight:
+
+| | Ice Age | Fall of the Bronze Age |
+|---|---|---|
+| objective title | Ice Age | Bronze Age |
+| objective text | Remove as many Cold Snaps as you can. | Remove as many Endless Raids as you can. |
+| objective art | ⭐ | ⭐ |
+| readout | `3❄️ removed` / `3⭐` | `3🏴‍☠️ removed` / `6⭐` |
+| threat | The Long Winter | The Long Storm |
+| threat text | Adds a Cold Snap in the deck every 6 rounds | Adds an Endless Raid in the deck every 6 rounds |
+| threat readout | `Next ❄️ in 4` | `Next 🏴‍☠️ in 4` |
+| victory hint | Gain 1⭐ Influence for every Cold Snap you removed. | Gain 2⭐ Influence for every Endless Raid you removed. |
+| failure hint | Every Cold Snap costs 2🔨 more to remove… | Every Endless Raid costs 4⚔️ more to remove… |
+
+**The objective art is the ⭐ Influence glyph on both**, which is the one thing telling a player at a
+glance that these missions pay per removal rather than per round. The rewardless sandbox keeps 🏖️, so
+the star reads as "this one banks".
+
+**The threat is `long_storm`, not `catastrophe`.** *The Catastrophe* named the outcome; every other
+threat names the standing condition, and its Stone twin is *The Long Winter*. The id was renamed with
+the name — a threat is not zero-filled into `cardsPlayed` (deck + `events` + `alsoDisplay` only), so
+no recorded row moved and no fixture was re-cut.
+
+**Both ladders' steps are shared constants** — `SNAP_STEP` (2🔨) and the now-exported `RAID_STEP`
+(4⚔️) — so a failure hint and a card's rule line cannot quote a step the cost resolve doesn't charge.
+
+**Lore cut 121 words → 28**, to the Ice Age's two-beat shape: state the dependency, ask the question.
+It leads on the tin road because losing the last route is the hard failure the hint now names, and
+that dependency is the real Late Bronze Age collapse in one line.
+
+The Bronze failure hint keeps a second sentence the Ice Age has no counterpart for — *"Without a Tin
+Route, none can be removed at all."* The `requiresRoute` gate is a distinct way to lose, so symmetry
+gives way to it.

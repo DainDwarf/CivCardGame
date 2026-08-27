@@ -52,8 +52,10 @@ the infinite is the casualty, The Sea Peoples' reward simply drops the unlock.)
 - **Endless small polish** — a look at `ice_age`/`sandbox` with 0.1 eyes: rough edges only, no
   redesign. ~~One named item: **re-score `ice_age`** off the objective-card `score` seam — its
   rounds-survived payout is a no-brain "launch, skip every turn, collect ⭐" grind, which defeats the
-  purpose of a scored survival mission.~~ ✅ — it pays 1⭐ per ❄️ cold snap endured, on the Fall of
+  purpose of a scored survival mission.~~ ✅ — it pays 1⭐ per ❄️ cold snap removed, on the Fall of
   the Bronze Age mechanism: the Long Winter spawns snaps, you burn 🔨 to answer each or it burns 🌾.
+  `ice_age`'s text pass is done, alongside the Bronze infinite it mirrors
+  ([`missions/fall-of-bronze.md`](missions/fall-of-bronze.md) → *Polish*); `sandbox` is what's left.
 
 ### 3 — Polish
 

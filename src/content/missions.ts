@@ -1,7 +1,7 @@
 import type { GameState } from '../rules/state';
 import { addThreat, instancesFromCardIds, nextInstanceId, shuffleFromState } from '../rules';
 import { isAvailable } from '../rules/campaign';
-import { BRONZE_TRIALS, CLAY_TABLETS, COLD_SNAP_PERIOD, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, INVASION_WAVES, MUSTER_TARGET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_SPAWN_PERIOD, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
+import { BRONZE_TRIALS, CLAY_TABLETS, COPPER_VEINS, CREW_PATIENCE, FIRST_TRADES_FOOD, GROWING_NUMBERS_TERRITORY, HARSH_WINTER_BREAK, HARSH_WINTER_ONSET, INVASION_WAVES, MUSTER_TARGET, OVEREXTENSION_GRACE, PHARAOH_DEADLINE, RAID_STEP, RAID_TARGETS, RAIDER_WAVES, ROADWORKS, SEA_LANE_ROUTES, SNAP_STEP, THIEVES_PER_GOLD, VOYAGES, WHEEL_TERRITORY, WILD_HORSES } from './cards';
 
 /**
  * A mission is the unit of a run. It defines the win (objective) and any
@@ -657,12 +657,9 @@ export const MISSIONS: Record<string, MissionDef> = {
     // thinner. The Long Winter supplies the rest, forever.
     events: ['cold_snap', 'cold_snap'],
     objectiveCardId: 'ice_age_goal',
-    victoryHint:
-      'Outlast a winter that never breaks, earning 1⭐ Influence for every ❄️ cold snap you burn ' +
-      'fuel to endure.',
+    victoryHint: 'Gain 1⭐ Influence for every Cold Snap you removed.',
     failureHint:
-      `A fresh cold snap joins the deck every ${COLD_SNAP_PERIOD} rounds, each dearer to endure than ` +
-      'the last. Every one left unendured burns 🌾 for as long as it keeps coming round.',
+      `Every Cold Snap costs ${SNAP_STEP}🔨 more to remove, eventually overrunning your production.`,
     kind: 'infinite',
     scoreUnit: '⭐',
   },
@@ -670,25 +667,19 @@ export const MISSIONS: Record<string, MissionDef> = {
     id: 'fall_of_bronze',
     name: 'Fall of the Bronze Age',
     lore:
-      'You met one season of sails and are still standing, which is more than most coasts can say. ' +
-      'But the season did not end, because it was never a season: the peoples of the sea have nowhere ' +
-      'to go back to, and behind every fleet you turn away rides another with less to lose. The ' +
-      'palaces up the coast have stopped answering; the last tablets their scribes fired say only ' +
-      'what yours will one day say — the ships came again. So hold the lanes. Hold them again. Hold ' +
-      'them until you cannot, and let the count of waves you threw back into the sea be what the next ' +
-      'age remembers of you.',
+      'Bronze needs tin from the far side of the world, so every palace on this sea lives by its ' +
+      'ships. Should armed fleets come in their place, how many could you turn back?',
     // Opened by the Bronze capstone — the age's scored survival mission (its Ice Age). The score is
     // *waves repelled*, not rounds survived: sitting out the storm banks nothing.
     prereqs: ['sea_peoples'],
-    threats: ['catastrophe'],
-    // Opens two waves short of the capstone's five — the Catastrophe supplies the rest, forever.
+    threats: ['long_storm'],
+    // Opens two waves short of the capstone's five — the Long Storm supplies the rest, forever.
     events: ['endless_raid', 'endless_raid', 'endless_raid'],
     objectiveCardId: 'fall_of_bronze_goal',
-    victoryHint:
-      'Hold the lanes against a tide that never ends, earning 2⭐ Influence for every 🏴‍☠️ wave repelled.',
+    victoryHint: 'Gain 2⭐ Influence for every Endless Raid you removed.',
     failureHint:
-      `Fresh raids join the deck every ${RAID_SPAWN_PERIOD} rounds, each dearer to repel than the ` +
-      'last. When the tin lanes fall, no wave after can be answered.',
+      `Every Endless Raid costs ${RAID_STEP}⚔️ more to remove, eventually overrunning your military. ` +
+      'Without a Tin Route, none can be removed at all.',
     kind: 'infinite',
     scoreUnit: '⭐',
   },

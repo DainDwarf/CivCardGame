@@ -363,13 +363,18 @@ export function tinRouteStands(G: GameState): boolean {
  *  (`content/missions.ts`), the `sea_peoples_goal` win threshold, and its progress readout. */
 export const INVASION_WAVES = 5;
 
-/** How often the Catastrophe adds a fresh `endless_raid` to the deck in "Fall of the Bronze Age" —
- *  shared by the threat's clock, its face, and the mission's failure hint (`content/missions.ts`). */
+/** How often the Long Storm adds a fresh `endless_raid` to the deck in "Fall of the Bronze Age" —
+ *  shared by the threat's clock and its face. */
 export const RAID_SPAWN_PERIOD = 6;
 
 /** How often the Long Winter adds a fresh `cold_snap` to the deck in "Return of the Ice Age" — shared
- *  by the threat's clock, its face, and the mission's failure hint (`content/missions.ts`). */
+ *  by the threat's clock and its face. */
 export const COLD_SNAP_PERIOD = 6;
+
+/** The 🔨 every snap already endured adds to the next one's fuel bill — shared by the ladder below, the
+ *  rule the snap prints, and the mission's failure hint (`content/missions.ts`), so neither can quote a
+ *  step the ladder doesn't climb. */
+export const SNAP_STEP = 2;
 
 /** Snaps already endured: a snap reaches `removed` only by being played (burning the 🔨 stores that keep
  *  the hearths lit), while one left to bite files to the discard and comes round again — so the count
@@ -386,9 +391,10 @@ function wavesRepelled(G: GameState): number {
   return G.removed.filter((c) => c.cardId === 'sea_raid' || c.cardId === 'endless_raid').length;
 }
 
-/** The ⚔️ every wave already repelled adds to the next one's beach price — shared by the ladder below
- *  and the rule both wave cards print, so a face can't quote a step the ladder doesn't climb. */
-const RAID_STEP = 4;
+/** The ⚔️ every wave already repelled adds to the next one's beach price — shared by the ladder below,
+ *  the rule both wave cards print, and the endless mission's failure hint (`content/missions.ts`), so
+ *  none of them can quote a step the ladder doesn't climb. */
+export const RAID_STEP = 4;
 
 /** The repel ladder both wave cards climb, derived off whatever base the card (post-sticker) hands in —
  *  so the two waves differ only in their printed beach price. */
@@ -863,13 +869,13 @@ export const CARDS: Record<string, CardDef> = {
         ...base,
         resources: {
           ...base.resources,
-          production: (base.resources?.production ?? 0) + 2 * snapsEndured(G),
+          production: (base.resources?.production ?? 0) + SNAP_STEP * snapsEndured(G),
         },
       }),
     },
     display: {
       art: '❄️',
-      dynamicRule: 'Cost rises per snap endured',
+      dynamicRule: `Cost +${SNAP_STEP}🔨 per snap`,
     },
     upkeep: { resources: { food: -2 } },
   },
@@ -1183,28 +1189,28 @@ export const CARDS: Record<string, CardDef> = {
   //   census. Its `score` pays 1⭐ per *snap endured* — never the rounds survived — so the payout rewards
   //   feeding the hearths, and a run that skips its turns banks nothing.
   ice_age_goal: {
-    id: 'ice_age_goal', name: 'Return of the Ice Age', kind: 'objective', cost: {},
+    id: 'ice_age_goal', name: 'Ice Age', kind: 'objective', cost: {},
     goals: [{ icon: '🧊', measure: () => 0, target: 1, met: () => false }],
     score: snapsEndured,
     display: {
-      art: '🧊',
-      description: 'Outlast the deepening cold, front by front.',
-      dynamicText: (G) => `❄️ ${snapsEndured(G)} endured · ${snapsEndured(G)}⭐ · round ${G.round}`,
+      art: '⭐',
+      description: 'Remove as many Cold Snaps as you can.',
+      dynamicText: (G) => `${snapsEndured(G)}❄️ removed\n${snapsEndured(G)}⭐`,
     },
   },
 
   // Fall of the Bronze Age is the Bronze endless survival mission: never-winning like the other two,
-  //   bounded by the Catastrophe's ever-growing raid census. Its `score` pays 2⭐ per *wave repelled* —
+  //   bounded by the Long Storm's ever-growing raid census. Its `score` pays 2⭐ per *wave repelled* —
   //   never the rounds survived — so the payout rewards holding the lanes and fighting, and a run that
   //   hides from the storm banks nothing.
   fall_of_bronze_goal: {
-    id: 'fall_of_bronze_goal', name: 'Fall of the Bronze Age', kind: 'objective', cost: {},
+    id: 'fall_of_bronze_goal', name: 'Bronze Age', kind: 'objective', cost: {},
     goals: [{ icon: '🌊', measure: () => 0, target: 1, met: () => false }],
     score: (G) => 2 * wavesRepelled(G),
     display: {
-      art: '🌊',
-      description: 'Hold back the endless tide, wave by wave.',
-      dynamicText: (G) => `🏴‍☠️ ${wavesRepelled(G)} repelled · ${2 * wavesRepelled(G)}⭐ · round ${G.round}`,
+      art: '⭐',
+      description: 'Remove as many Endless Raids as you can.',
+      dynamicText: (G) => `${wavesRepelled(G)}🏴‍☠️ removed\n${2 * wavesRepelled(G)}⭐`,
     },
   },
 
@@ -1234,15 +1240,15 @@ export const CARDS: Record<string, CardDef> = {
     },
   },
   // Return of the Ice Age's engine: a steady clock feeding fresh `cold_snap`s into the deck (via
-  //   `spawnIntoDeck`, like the Catastrophe's raids), so the circulating census — and with it the
+  //   `spawnIntoDeck`, like the Long Storm's raids), so the circulating census — and with it the
   //   per-round 🌾 burn of every front left unendured — grows without bound while the fuel ladder climbs.
   //   That census *is* the deepening cold; no separate resource ramp needed.
   long_winter: {
     id: 'long_winter', name: 'The Long Winter', kind: 'threat', cost: {},
     display: {
       art: '🧊',
-      description: `A fresh ❄️ cold snap joins the deck every ${COLD_SNAP_PERIOD} rounds`,
-      dynamicText: (_G, self) => `next bites in ${COLD_SNAP_PERIOD - getCounter(self, 'clock')}`,
+      description: `Adds a Cold Snap in the deck every ${COLD_SNAP_PERIOD} rounds`,
+      dynamicText: (_G, self) => `Next ❄️ in ${COLD_SNAP_PERIOD - getCounter(self, 'clock')}`,
     },
     upkeep: {
       resolve: (ctx) => {
@@ -1416,12 +1422,12 @@ export const CARDS: Record<string, CardDef> = {
   //   `spawnIntoDeck`, like the Thieves), so the circulating census — and with it the per-round
   //   cut/burn of every wave left unanswered — grows without bound while the repel ladder climbs.
   //   That census *is* the mission's deepening drain; no separate resource ramp needed.
-  catastrophe: {
-    id: 'catastrophe', name: 'The Catastrophe', kind: 'threat', cost: {},
+  long_storm: {
+    id: 'long_storm', name: 'The Long Storm', kind: 'threat', cost: {},
     display: {
       art: '🌊',
-      description: `A fresh 🏴‍☠️ raid joins the deck every ${RAID_SPAWN_PERIOD} rounds`,
-      dynamicText: (_G, self) => `next sails in ${RAID_SPAWN_PERIOD - getCounter(self, 'clock')}`,
+      description: `Adds an Endless Raid in the deck every ${RAID_SPAWN_PERIOD} rounds`,
+      dynamicText: (_G, self) => `Next 🏴‍☠️ in ${RAID_SPAWN_PERIOD - getCounter(self, 'clock')}`,
     },
     upkeep: {
       resolve: (ctx) => {
