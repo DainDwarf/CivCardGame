@@ -18,7 +18,7 @@ import styles from './Decks.module.css';
  * Edit / Copy / Delete on the tile, Edit / Copy in the overlay. "New Deck" is the grid's
  * own next slot — a hollow tile after the last deck — rather than a button above the grid.
  * The `MAX_DECKS` cap is a core rule (see `rules/deckBuilder.ts`); that slot simply doesn't
- * render once the cap is hit. Copy (tile and list-view, same accent color as Edit)
+ * render once the cap is hit. Copy (tile and list-view)
  * duplicates a deck's cards into a fresh, unsaved `DeckDef` and opens the editor on it —
  * exactly like "New Deck" but pre-filled, so nothing is persisted until Save there — and is
  * gated at `MAX_DECKS` the same way, since it also adds a deck rather than editing one in place.
@@ -76,11 +76,12 @@ export function Decks({
                     onEdit(deck);
                   }}
                 >
+                  <span aria-hidden="true">✎</span>
                   Edit
                 </button>
                 <button
                   type="button"
-                  className={styles.editActionBtn}
+                  className={styles.copyActionBtn}
                   disabled={atCap}
                   title={copyTitle}
                   onClick={(e) => {
@@ -89,6 +90,7 @@ export function Decks({
                     onCopy(deck);
                   }}
                 >
+                  <span aria-hidden="true">❐</span>
                   Copy
                 </button>
                 <button
@@ -107,6 +109,7 @@ export function Decks({
                     if (confirmingDeleteId === deck.id) setConfirmingDeleteId(null);
                   }}
                 >
+                  <span aria-hidden="true">✕</span>
                   {confirmingDeleteId === deck.id ? 'Confirm?' : 'Delete'}
                 </button>
               </>
@@ -132,15 +135,17 @@ export function Decks({
           actions={
             <>
               <button type="button" className={styles.panelEditBtn} onClick={() => onEdit(selected)}>
+                <span aria-hidden="true">✎</span>
                 Edit
               </button>
               <button
                 type="button"
-                className={styles.panelEditBtn}
+                className={styles.panelCopyBtn}
                 disabled={atCap}
                 title={copyTitle}
                 onClick={() => onCopy(selected)}
               >
+                <span aria-hidden="true">❐</span>
                 Copy
               </button>
             </>

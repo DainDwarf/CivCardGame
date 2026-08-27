@@ -52,60 +52,90 @@
 
 /* --- Store-mutation buttons passed into DeckTile / DeckListOverlay via their `actions`
    slots. Presentation-only styling here; the shared tile/overlay layout lives in
-   components/DeckDisplay.module.css. --- */
+   components/DeckDisplay.module.css.
 
+   Three actions you reach for equally often, so each keeps a solid fill and they separate by
+   hue alone — plus a leading glyph, which no theme can flatten the way it can two fills. --- */
+
+.editActionBtn,
+.copyActionBtn,
 .deleteActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   padding: 0.35rem 0.7rem;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-on-accent);
-  background: var(--danger-strong);
   border: none;
   border-radius: 6px;
   cursor: pointer;
-}
-
-.deleteActionBtn:hover {
-  background: var(--danger-strong-hover);
 }
 
 .editActionBtn {
-  padding: 0.35rem 0.7rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-on-accent);
   background: var(--accent);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
 }
 
 .editActionBtn:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 
-.editActionBtn:disabled {
+.copyActionBtn {
+  background: var(--accent-alt);
+}
+
+.copyActionBtn:hover:not(:disabled) {
+  background: var(--accent-alt-hover);
+}
+
+.deleteActionBtn {
+  background: var(--danger-strong);
+}
+
+.deleteActionBtn:hover:not(:disabled) {
+  background: var(--danger-strong-hover);
+}
+
+.editActionBtn:disabled,
+.copyActionBtn:disabled,
+.deleteActionBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.panelEditBtn {
+.panelEditBtn,
+.panelCopyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   padding: 0.4rem 0.9rem;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-on-accent);
-  background: var(--accent);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   flex-shrink: 0;
 }
 
+.panelEditBtn {
+  background: var(--accent);
+}
+
 .panelEditBtn:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 
-.panelEditBtn:disabled {
+.panelCopyBtn {
+  background: var(--accent-alt);
+}
+
+.panelCopyBtn:hover:not(:disabled) {
+  background: var(--accent-alt-hover);
+}
+
+.panelEditBtn:disabled,
+.panelCopyBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

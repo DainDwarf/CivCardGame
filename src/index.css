@@ -70,6 +70,15 @@
   --accent-bg: #e7f0fc;          /* selected nav / option background */
   --focus-ring: #3b7dd8;         /* focus outlines (shares the accent value) */
 
+  /* ── Co-equal action (green) ──────────────────────────
+     The third fill in a row of equally-weighted actions, where `--accent` is already taken and
+     `--danger-strong` would read as destructive. Per theme it is the Work-card green — the one
+     hue the CVD themes already hold apart from both Building's blue and the red/orange kinds —
+     deepened here and in Dark, where a small bold label on the fill needs more contrast than a
+     card banner does. Its own token rather than `--card-work-banner`: same value, different role. */
+  --accent-alt: #29786d;
+  --accent-alt-hover: #1f5d55;
+
   /* ── Buyable-hint (gold) ──────────────────────────────
      The at-a-glance "Influence can still be usefully spent here" signal across the meta buy
      surfaces (Collection card border, Board open-slots, tray-badge borders, the buy-a-copy ghost
@@ -269,6 +278,10 @@
   --accent-bg: #1e3350;
   --focus-ring: #5b9bea;
 
+  /* ── Co-equal action (green) — lifted off the dark ground ── */
+  --accent-alt: #3aa89a;
+  --accent-alt-hover: #52bdb0;
+
   /* ── Buyable-hint (gold) — brighter on dark surfaces ── */
   --hint-gold: #f0c236;
   --hint-gold-rgb: 240 194 54;
@@ -423,6 +436,10 @@
   --accent-bg: #e3f0f8;
   --focus-ring: #0072b2;
 
+  /* ── Co-equal action (green) ── */
+  --accent-alt: #009e73;
+  --accent-alt-hover: #007d5b;
+
   /* ── Card kinds ── */
   --card-building-banner: #0072b2;
   --card-building-band: #e3f0f8;
@@ -500,6 +517,10 @@
   --accent-soft: #8fbdd9;
   --accent-bg: #e3f0f8;
   --focus-ring: #0072b2;
+
+  /* ── Co-equal action (green) ── */
+  --accent-alt: #00ab80;
+  --accent-alt-hover: #008a67;
 
   /* ── Card kinds ── */
   --card-building-banner: #0072b2;
@@ -580,6 +601,10 @@
   --accent-soft: #b0b2ea;
   --accent-bg: #e8e8fb;
   --focus-ring: #4a4fd6;
+
+  /* ── Co-equal action (green) — the grass green Work is pushed to, away from the indigo ── */
+  --accent-alt: #3f9142;
+  --accent-alt-hover: #337535;
 
   /* ── Card kinds ── */
   --card-building-banner: #4a4fd6;

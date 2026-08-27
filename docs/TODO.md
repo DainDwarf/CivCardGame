@@ -50,9 +50,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   payment is pending. Fire is the **only** card with a discard cost today, but `discard` is a first-class
   `CardCost` field, so hang this off `cost.ts`'s `discardCount` choke point — any play that sacrifices
   cards enters the mode — never a Fire branch.
-- **Deck Copy button goes unseen** `[size: S]` — *(beta playtest)* a first-time player missed Copy
-  entirely on the deck tile (`DeckDisplay.tsx`'s `DeckTile`) — it reads as one of three same-weight
-  buttons beside Edit/Delete. Wants a distinct accent, or a different affordance altogether.
 - **Resource-icon tooltips on a zoomed card** `[size: S]` — *(beta playtest)* hovering a resource glyph
   in `CardZoomOverlay` should name the pool. The 8 icons are the game's whole economic vocabulary and
   nothing teaches them; the zoom is where a player is already looking closely. Per the tooltip
@@ -288,6 +285,20 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The three deck actions read as three** ✅ — a first-time player missed Copy entirely: Edit and Copy
+  shared one class, so the tile carried three same-weight pills and the eye took the row as one object,
+  reading the first label and the red one at the end. Copy is *not* secondary — you reach for it as
+  often as Edit — so all three keep a solid fill and separate by hue instead, over a new
+  **`--accent-alt`** (+ hover) authored in all five themes. Its value is the Work-card green, which is
+  the one hue the CVD themes already hold apart from both Building's blue and the red/orange kinds —
+  so Tritanopia's blue-vs-green fix (accent → indigo, Work → grass green) is inherited for free, and
+  `--action` amber is ruled out by colliding with Deuteranopia's and Protanopia's burnt-orange
+  `--danger-strong`. Deepened in Light/Dark, where a small bold label on the fill wants more contrast
+  than a card banner does; its own token rather than `--card-work-banner`, so re-tuning the Work kind
+  can't move the Decks screen. Each button also took a leading glyph — `✎` / `❐` / `✕`, the last
+  already the app's "destroy this" mark on a sticker badge — since a shape survives a palette a fill
+  can't. `❐` (U+2750) only after `⧉` (U+29C9) was measured rendering as a **colour** glyph on
+  Windows/Chrome, a font substitution that ignores both `color` and a VS15 text-presentation request.
 - **A mission's own defeat line reaches the gameover screen** ✅ — a threat authoring its own defeat
   sentence (the Pyramid's *the pharaoh died before his tomb was ready*, Setting Sail's *the crews left
   for another port*) had it swallowed: the panel showed the generic "your civilization has fallen."
