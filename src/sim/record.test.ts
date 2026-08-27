@@ -12,6 +12,7 @@ import {
 import type { Scenario } from './batch';
 import type { SimOutcome } from './simulate';
 import { MISSIONS } from '../content/missions';
+import { ORIGIN_BOARD_ID } from '../content/boards';
 import { blankState } from '../rules';
 import { emptyResources, type Resources } from '../rules/resources';
 
@@ -32,6 +33,7 @@ function outcome(opts: {
     result: {
       outcome: opts.outcome,
       missionId: 'test',
+      boardId: ORIGIN_BOARD_ID,
       stats: { turnsTaken: opts.turnsTaken ?? 1, ...(opts.score !== undefined ? { score: opts.score } : {}), finalResources },
     },
     gameover: {

@@ -41,6 +41,10 @@ export interface RunConfig {
    *  lookup by this id, so a run stays reproducible even if the source deck is later
    *  edited or deleted from the player's store. */
   deckId: string;
+  /** The deck's name as it read at launch, carried for the same display/record-keeping reason as
+   *  `deckId` and snapshotted for the reason that id can't be: the run log outlives the deck, which
+   *  the player may rename or delete. Absent on a headless `simConfig` run, which has no player deck. */
+  deckName?: string;
   /** Drives every deterministic draw this run makes — same seed, same run. */
   seed: string;
 }
@@ -53,6 +57,12 @@ export interface RunConfig {
 export interface RunResult {
   outcome: 'victory' | 'defeat';
   missionId: string;
+  /** The loadout the attempt was made with, so the Stats run log can say what was played and not
+   *  just which mission. The two are recorded differently on purpose: a `BoardId` is a stable
+   *  catalogue key, so the name is looked up and follows a rename, while a deck is player-owned and
+   *  may be renamed or deleted out from under the log, so its name is snapshotted (`RunConfig.deckName`). */
+  boardId: BoardId;
+  deckName?: string;
   stats: {
     turnsTaken: number;
     /** The attempt's score under the mission's own measure — the objective card's `score`
@@ -89,6 +99,7 @@ export function buildRunConfig(
     boardStickers: boardStickers[selection.boardId] ?? [],
     missionId: selection.missionId,
     deckId: selection.deckId,
+    deckName: decks.find((d) => d.id === selection.deckId)?.name,
     seed,
   };
 }

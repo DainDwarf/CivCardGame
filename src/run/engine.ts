@@ -64,12 +64,16 @@ export function createRun(config: RunConfig): RunState {
   return beginTurn({ G: createInitialState(config), gameover: undefined });
 }
 
-/** Promote a finished run's state into the minimal `RunResult` handed back to the meta loop. */
-export function toRunResult(G: GameState, gameover: Gameover): RunResult {
+/** Promote a finished run's state into the minimal `RunResult` handed back to the meta loop. The
+ *  config comes back in for the loadout alone: `G` knows the mission but not which board or deck the
+ *  run was launched with, and the meta loop's run log reports all three. */
+export function toRunResult(G: GameState, gameover: Gameover, config: RunConfig): RunResult {
   const score = runScore(G);
   return {
     outcome: gameover.outcome,
     missionId: gameover.missionId,
+    boardId: config.board,
+    ...(config.deckName !== undefined ? { deckName: config.deckName } : {}),
     stats: {
       turnsTaken: G.round,
       // Omitted rather than zero-filled where the objective declares no measure: a scored zero and an

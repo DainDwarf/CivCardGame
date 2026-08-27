@@ -4,6 +4,7 @@ import type { DeckSeed } from '../content/decks';
 import { buildSeedDecks } from '../rules/deckBuilder';
 import { collectionFromCounts, copiesOwned } from '../rules/collection';
 import type { RunResult } from '../contract';
+import { ORIGIN_BOARD_ID } from '../content/boards';
 import type { MissionDef } from '../content/missions';
 
 // `applyRunResult` and the save round-trip are pure mechanism — they never validate a cardId against
@@ -28,6 +29,7 @@ function sampleRunResult(): RunResult {
   return {
     outcome: 'victory',
     missionId: 'first-harvest',
+    boardId: ORIGIN_BOARD_ID,
     stats: {
       turnsTaken: 12,
       score: 12,
@@ -197,6 +199,7 @@ function runResult(missionId: string, outcome: RunResult['outcome'], turnsTaken:
   return {
     outcome,
     missionId,
+    boardId: ORIGIN_BOARD_ID,
     stats: {
       turnsTaken,
       score,

@@ -88,12 +88,13 @@ function defaultTargets(): string[] {
  * display-only, but the Stats run-history row renders every pool, so it's written over *every* key of
  * `emptyResources()` rather than spelled out as a literal — a resource added later can't leave a hole.
  */
-function runResult(mission: MissionDef, rng: Rng): RunResult {
+function runResult(mission: MissionDef, rng: Rng, loadout: { boardId: BoardId; deckName?: string }): RunResult {
   const infinite = mission.kind === 'infinite';
   const finalResources = emptyResources();
   for (const key of [...CORE_KEYS, ...STRATEGIC_KEYS]) finalResources[key] = randInt(rng, 0, 12);
   const turnsTaken = infinite ? randInt(rng, 15, 40) : randInt(rng, 6, 18);
   return {
+    ...loadout,
     // An infinite mission has no win condition, so a real attempt only ever ends in collapse — it
     // pays out and scores off `stats.score` either way. Calling it a victory would credit the lifetime
     // win rate with a win the mission can't produce.
@@ -327,7 +328,16 @@ for (const fixture of fixtures) {
 }
 
 let store: PlayerStore = emptyStore();
-for (const mission of missions) store = applyRunResult(store, runResult(mission, rng), mission);
+for (const mission of missions) {
+  // Drawn from what the player held when this run would have happened — boards unlock as the walk
+  // folds, so an early row can't claim a board the campaign hadn't opened yet.
+  const boards = Object.keys(store.unlockedBoards) as BoardId[];
+  const loadout = {
+    boardId: boards[randInt(rng, 0, boards.length - 1)],
+    deckName: store.decks[randInt(rng, 0, store.decks.length - 1)]?.name,
+  };
+  store = applyRunResult(store, runResult(mission, rng, loadout), mission);
+}
 
 const purchases = fixtures.length > 0 ? outfit(store, fixtures) : undefined;
 if (purchases) store = purchases.store;

@@ -155,7 +155,7 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
       cause: { kind: 'stated', message: reason },
       missionId: state.G.missionId,
     };
-    return { result: toRunResult(state.G, gameover), gameover, finalState: state.G, actionsApplied, cardPlays };
+    return { result: toRunResult(state.G, gameover, config), gameover, finalState: state.G, actionsApplied, cardPlays };
   };
   while (!state.gameover) {
     if (state.G.round > maxRounds) {
@@ -189,7 +189,7 @@ export function simulateRun(config: RunConfig, policy: Policy, opts: SimOptions 
   }
 
   return {
-    result: toRunResult(state.G, state.gameover),
+    result: toRunResult(state.G, state.gameover, config),
     gameover: state.gameover,
     finalState: state.G,
     actionsApplied,

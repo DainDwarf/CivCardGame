@@ -1,6 +1,6 @@
 import { MISSIONS, infiniteMissionsInOrder } from '../content/missions';
 import { CARDS, isDeckable } from '../content/cards';
-import { prebuiltCardIds } from '../content/boards';
+import { BOARDS, prebuiltCardIds } from '../content/boards';
 import { RESOURCE_ICON } from '../components/CardFace';
 import type { RunResult } from '../contract';
 import { distinctCardIdsOwned, type OwnedCards } from '../rules/collection';
@@ -48,12 +48,17 @@ export function Stats({
   const { runsPlayed, victories, influenceEarned } = lifetime;
   const winRate = runsPlayed > 0 ? Math.round((victories / runsPlayed) * 100) : null;
 
-  const leaderboard = infiniteMissionsInOrder(mapProgress).map((m) => ({
-    id: m.id,
-    name: m.name,
-    best: bestInfinite[m.id] ?? null,
-    unit: m.scoreUnit ?? 'rounds',
-  }));
+  // Only a mission whose objective declares a `score` measure has a best to compare — an unscored
+  // one (the sandbox) records none, so it would sit here reading "not attempted" forever. Derived
+  // from the measure itself rather than from `rewardless`, which is a payout fact, not a scoring one.
+  const leaderboard = infiniteMissionsInOrder(mapProgress)
+    .filter((m) => CARDS[m.objectiveCardId]?.score !== undefined)
+    .map((m) => ({
+      id: m.id,
+      name: m.name,
+      best: bestInfinite[m.id] ?? null,
+      unit: m.scoreUnit ?? 'rounds',
+    }));
   const topScore = Math.max(1, ...leaderboard.map((row) => row.best ?? 0));
 
   return (
@@ -74,7 +79,7 @@ export function Stats({
       <section className={styles.panel}>
         <h2 className={styles.panelLabel}>Infinite missions · best scores</h2>
         {leaderboard.length === 0 ? (
-          <p className={styles.empty}>No endless missions yet.</p>
+          <p className={styles.empty}>No scored endless missions yet.</p>
         ) : (
           <ul className={styles.leaderboard}>
             {leaderboard.map((row) => (
@@ -118,9 +123,15 @@ export function Stats({
                 <span className={result.outcome === 'victory' ? styles.victory : styles.defeat}>
                   {result.outcome === 'victory' ? '🏛️ Victory' : '💀 Defeat'}
                 </span>
-                <span className={styles.mission}>{MISSIONS[result.missionId].name}</span>
-                <span className={styles.detail}>round {result.stats.turnsTaken}</span>
-                <span className={styles.detail}>
+                {/* The two elastic columns ellipsize, so each carries its own full text as a title. */}
+                <span className={styles.mission} title={MISSIONS[result.missionId].name}>
+                  {MISSIONS[result.missionId].name}
+                </span>
+                <span className={styles.loadout} title={loadoutLabel(result)}>
+                  {loadoutLabel(result)}
+                </span>
+                <span className={styles.round}>round {result.stats.turnsTaken}</span>
+                <span className={styles.pools}>
                   {RESOURCE_ICON.population}{result.stats.finalResources.population} · {RESOURCE_ICON.territory}
                   {result.stats.finalResources.territory} · {RESOURCE_ICON.culture}
                   {result.stats.finalResources.culture}
@@ -132,6 +143,12 @@ export function Stats({
       </details>
     </div>
   );
+}
+
+/** `Board · Deck` for a run-log row, dropping whichever half the record doesn't carry. The board's
+ *  name is read live off the catalogue; the deck's was snapshotted at launch (see `RunResult`). */
+function loadoutLabel(result: RunResult): string {
+  return [BOARDS[result.boardId]?.name, result.deckName].filter(Boolean).join(' · ');
 }
 
 /** One hero stat tile. `denom` renders a muted "/ N" beside the value; `accent`/`icon`/`sub` are optional accents. */

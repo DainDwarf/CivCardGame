@@ -185,15 +185,24 @@
   gap: 0.5rem;
 }
 
+/* A log is read down a column, not across a line: fixed tracks for the verdict and the round so
+   neither is nudged by the length of the mission name beside it, and the two elastic tracks share
+   what's left and ellipsize rather than wrap. */
 .row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1.1fr) minmax(0, 1fr) 5rem max-content;
   align-items: center;
   gap: 1rem;
   padding: 0.7rem 0.9rem;
   background: var(--surface);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  flex-wrap: wrap;
+}
+
+.row > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .victory {
@@ -210,8 +219,20 @@
   font-weight: 600;
 }
 
-.detail {
+.loadout {
+  color: var(--text-subtle);
+  font-size: 0.85rem;
+}
+
+.round {
   color: var(--text-secondary);
   font-size: 0.85rem;
-  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.pools {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  justify-self: end;
 }

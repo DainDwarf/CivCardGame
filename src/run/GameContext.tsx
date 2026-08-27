@@ -35,8 +35,8 @@ interface GameContextValue {
 
 /** Turns a finished `RunState` into the `RunResult` handed to `onRunEnd`/`onRestart`, or
  *  `undefined` if the run isn't over yet (nothing to report). */
-function finishedResult(state: RunState): RunResult | undefined {
-  return state.gameover ? toRunResult(state.G, state.gameover) : undefined;
+function finishedResult(state: RunState, config: RunConfig): RunResult | undefined {
+  return state.gameover ? toRunResult(state.G, state.gameover, config) : undefined;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -137,7 +137,7 @@ export function GameProvider({
     // config.deck directly (rather than re-resolving deckId against the player's deck
     // store, which GameProvider never receives) — see contract.ts's reshuffleRunConfig.
     restart: () => {
-      const result = finishedResult(present);
+      const result = finishedResult(present, config);
       if (result) onRestart?.(result);
       dispatch({
         type: 'restart',
@@ -151,7 +151,7 @@ export function GameProvider({
   const canUndo = past.length > 0 && !present.gameover && !present.G.pendingInteraction;
 
   function endRun() {
-    const result = finishedResult(present);
+    const result = finishedResult(present, config);
     if (result) onRunEnd(result);
   }
 

@@ -614,7 +614,11 @@ logic that rides on it. **A building card *is* the building** — there's no sep
     denominator is a deliberate collectathon hook), the infinite best-scores board, and a run-history
     log. Lifetime numbers come from persistent `PlayerStore` counters (`lifetime`/`bestInfinite`,
     folded in `applyRunResult`) — **never** from `runHistory`, which is capped at `HISTORY_LIMIT` and
-    would undercount once trimmed.
+    would undercount once trimmed. The best-scores board covers the infinite missions whose objective
+    declares a `score` measure — the sandbox records no best, so it is listed on the campaign map's
+    banner but not here. The log is a **column grid**, not a text line: the verdict and the round sit
+    in fixed tracks so neither is nudged by the mission name, and each row names the loadout it was
+    played with (`RunResult.boardId` looked up live, `deckName` snapshotted at launch).
   - `DeckEditor.tsx` (opened from `Decks.tsx`, not a nav tab) — edits one `DeckDef` in place: a picker
     grid over a deck banner, cards moved by click or the hand-rolled pointer-drag through
     `rules/deckBuilder.ts`. Both grids are one ×N tile per **variant** (`ownedVariantsOf`), each tile
