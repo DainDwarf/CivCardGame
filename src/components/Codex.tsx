@@ -5,7 +5,7 @@ import {
   CODEX_CARD_KINDS,
   CODEX_GLOSSARY,
 } from '../content/codex';
-import { RESOURCE_ICON } from './CardFace';
+import { bannerHue, RESOURCE_ICON } from './CardFace';
 import styles from './Codex.module.css';
 
 type SubjectId = 'resources' | 'cardTypes' | 'playATurn' | 'influence' | 'glossary';
@@ -50,7 +50,7 @@ export function Codex() {
         {subject === 'resources' && (
           <section className={styles.topic}>
             <h4 className={styles.topicTitle}>Resources</h4>
-            <p className={styles.lead}>Your civilization runs on resources, grouped into two families: core resources you spend, and strategic resources that shape how you grow.</p>
+            <p className={styles.lead}>Resources come in two families: the five core resources, which pay for cards, and the three strategic resources, each setting a capacity of its own.</p>
             <p className={`${styles.callout} ${styles.calloutWarning}`}>If any core resource drops below zero, the run ends immediately.</p>
 
             <h5 className={styles.subTitle}>Core</h5>
@@ -84,8 +84,14 @@ export function Codex() {
             <h4 className={styles.topicTitle}>Card types</h4>
             <dl className={styles.defList}>
               {CODEX_CARD_KINDS.map((c) => (
-                <div className={styles.defRow} key={c.kind}>
-                  <dt className={styles.defTerm}>{c.name}</dt>
+                // The hue rides in as a custom property built from the kind, the way CampaignMap's
+                // age backdrop builds its own — one rule below styles all eight rows.
+                <div
+                  className={`${styles.defRow} ${styles.kindRow}`}
+                  key={c.kind}
+                  style={{ '--kind-hue': `var(--card-${bannerHue(c.kind)}-banner)` } as React.CSSProperties}
+                >
+                  <dt className={`${styles.defTerm} ${styles.kindBanner}`}>{c.name}</dt>
                   <dd className={styles.defDesc}>{c.definition}</dd>
                 </div>
               ))}
@@ -95,32 +101,52 @@ export function Codex() {
 
         {subject === 'playATurn' && (
           <section className={styles.topic}>
-            <h4 className={styles.topicTitle}>Turn structure</h4>
+            <h4 className={styles.topicTitle}>Play a turn</h4>
+
+            <h5 className={styles.subTitle}>Your deck</h5>
+            <p className={styles.lead}>You build your deck before the run, and you cannot change it once the run has started.</p>
+            <ul className={styles.bullets}>
+              <li>When your deck runs out, the discard pile is shuffled back into a new draw.</li>
+              <li>A removed card does not go to the discard pile. It is out of the run for good.</li>
+              <li>A mission shuffles its own event cards into your deck at the start, and some missions can even add more while you play.</li>
+            </ul>
+
+            <h5 className={styles.subTitle}>Turn structure</h5>
             <p className={styles.lead}>Each round runs through four phases.</p>
             <ol className={styles.phases}>
               <li><span className={styles.phaseName}>Draw</span> — refill your hand.</li>
               <li><span className={styles.phaseName}>Action</span> — play your cards and assign your workers.</li>
-              <li><span className={styles.phaseName}>Upkeep</span> — staffed buildings and work cards produce, unplayed events strike, threats take their toll, and your population eats its food.</li>
+              <li><span className={styles.phaseName}>Upkeep</span> — staffed buildings and work cards produce and threats take their upkeep, then any unplayed event strikes, and finally your population eats its food.</li>
               <li><span className={styles.phaseName}>End</span> — your hand and all your work cards go to the discard pile.</li>
             </ol>
+
+            <h5 className={styles.subTitle}>Workers</h5>
+            <p className={styles.lead}>Your population is your workforce — every {RESOURCE_ICON.population} is one worker.</p>
+            <ul className={styles.bullets}>
+              <li>Every building and work card shows how many workers it can take. It produces nothing until at least one worker stands on it, and from there its output scales: two workers produce twice what one does.</li>
+              <li>Some cards take no workers at all. Those always produce their output.</li>
+              <li>Workers are never spent. They stay where you put them, and you can move them between cards freely on your own turn.</li>
+              <li>Playing a building or work card staffs it straight away from your idle workers.</li>
+              <li>A work card hands its workers back when it goes to the discard at end of turn; a building keeps its workers until you move them.</li>
+            </ul>
           </section>
         )}
 
         {subject === 'influence' && (
           <section className={styles.topic}>
-            <h4 className={styles.topicTitle}>Influence</h4>
+            <h4 className={styles.topicTitle}><span aria-hidden="true">⭐</span> Influence</h4>
             <p className={styles.lead}>Influence is the currency you carry between runs — earned by playing missions, spent to strengthen your collection.</p>
 
             <h5 className={styles.subTitle}>Earning it</h5>
             <ul className={styles.bullets}>
-              <li>Clear a mission for the first time to earn its Influence reward.</li>
-              <li>Endless missions pay out for how long you survive, and can be played as many times as you want.</li>
+              <li>Clear a mission for the first time to earn its Influence reward. Replaying it pays nothing.</li>
+              <li>An endless mission has no victory — it runs until your civilization collapses, and you can attempt it as often as you like. It pays Influence for what its objective card counts, and the card tracks that live as you play.</li>
             </ul>
 
             <h5 className={styles.subTitle}>Spending it</h5>
             <ul className={styles.bullets}>
               <li>Buy extra copies of cards you already own, so you can field more of them in a deck.</li>
-              <li>Attach <strong>stickers</strong> — permanent upgrades that make a card copy or a government board stronger. Each copy and each board holds only so many, so choose them with care.</li>
+              <li>Attach <strong>stickers</strong> — permanent upgrades that make a card copy or a government board stronger.</li>
             </ul>
           </section>
         )}

@@ -73,13 +73,13 @@
 
 .topicTitle {
   margin: 0 0 0.35rem;
-  font-size: 1rem;
+  font-size: 1.08rem;
   color: var(--text-strong);
 }
 
 .subTitle {
   margin: 0.8rem 0 0.4rem;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -89,8 +89,8 @@
 .lead {
   margin: 0 0 0.6rem;
   color: var(--text-subtle);
-  font-size: 0.85rem;
-  line-height: 1.4;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .defList {
@@ -107,15 +107,36 @@
 
 .defTerm {
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: var(--text-body);
 }
 
 .defDesc {
   margin: 0.1rem 0 0;
   color: var(--text-secondary);
-  font-size: 0.83rem;
-  line-height: 1.4;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* A card-kind row wears its kind's colour twice: an edge down the row, and the name in the same
+   banner the real card face prints it on (`CardFace`'s `bannerHue` picks the hue). */
+.kindRow {
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--kind-hue);
+}
+
+.kindBanner {
+  display: inline-block;
+  padding: 0.1rem 0.45rem 0.12rem;
+  border-radius: 4px;
+  background: var(--kind-hue);
+  color: var(--text-on-accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.kindRow .defDesc {
+  margin-top: 0.28rem;
 }
 
 .callout {
@@ -124,8 +145,8 @@
   border-radius: 8px;
   background: var(--callout-bg);
   color: var(--callout-text);
-  font-size: 0.82rem;
-  line-height: 1.4;
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .calloutWarning {
@@ -139,8 +160,8 @@
   margin: 0;
   padding-left: 1.1rem;
   color: var(--text-secondary);
-  font-size: 0.83rem;
-  line-height: 1.45;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .bullets li,

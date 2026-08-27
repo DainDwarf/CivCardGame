@@ -28,6 +28,15 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   ~3.74:1 white-on-red — short of WCAG AA (4.5:1) for its bold ~15.7px size, in both light and dark.
   A transversal color-token decision (darken `--danger-strong` or bump the label size), not a
   per-dialog fix — touch it once so every danger button stays consistent. `[size: S] [?]`
+- **Card-banner text contrast (app-wide)** — the same shape as the danger-button item above, on the
+  card-kind palette: white on `--card-wonder-banner` / `--card-work-banner` / `--card-action-banner`
+  measures 3.25 / 3.35 / 3.41:1, under AA in *every* theme, and bottoms out at **1.96:1** for Wonder in
+  tritanopia — where the hue shift to `#e0b400` that fixed its confusability with Event/Threat is
+  exactly what pushed it too light. The card face is the surface that hurts: its banner is 0.55rem bold
+  uppercase, well under even the AA-large floor, where the Codex pill wearing the same hues is 0.85rem.
+  So the fix is on the tokens (darken the three, or darken tritanopia's Wonder alone and re-check the
+  collision it was raised to solve), not on either call site. Measured 2026-08-28 by the CVD pass over
+  the Codex card-kind rows. `[size: S] [?]`
 - **Per-pip worker drag** — independent per-pip *drag* (drag a specific pip to another box); box-level
   worker drag still moves one worker at a time. Deferred follow-up from the shipped multi-pip staffing UI. `[?]`
 - **Bulk-move modifier for worker transfers** — a modifier (e.g. shift-drag) to move N workers from one building to another in one gesture, instead of one pip-drag per worker. Now unblocked (multi-pip staffing exists). `[size: S] [?]`
@@ -54,10 +63,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   in `CardZoomOverlay` should name the pool. The 8 icons are the game's whole economic vocabulary and
   nothing teaches them; the zoom is where a player is already looking closely. Per the tooltip
   convention, keep the text generic — name the resource, don't cite cards or missions.
-- **Codex: culture vs culture *level*** `[size: S]` — *(beta playtest)* the Codex entry
-  (`content/codex.ts`) runs the two together. Say plainly that 🎭 is the stockpiled pool, that the
-  *level* is the tier derived from it, that `cultureLevelReq` gates against the level, and what the
-  thresholds are.
 - **Buy copies / stickers from inside the Deck Editor** `[size: M]` `[?]` — *(beta playtest)* hitting a
   card you don't own enough of means leaving the editor for the Collection and coming back. Both the
   player and a first-time player felt it. **Explicitly low priority and not a publish blocker** (user
@@ -271,6 +276,24 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The Codex explains mechanics, not atmosphere** ✅ — a pass over all five pages, taken ahead of the
+  tutorial popups that draw on its wording. Two factual errors went out with it: an endless mission was
+  described as paying for *how long you survive*, where both shipped ones score hazards **removed** — so
+  the text told the player to turtle, which scores nothing — and the upkeep order listed threats after
+  unplayed events, where production and threats tick together in one `endTurn` broadcast ahead of them.
+  Two mechanics had no explanation anywhere: **staffing** (`codex.ts`'s own docstring already claimed a
+  staffing page that did not exist — the beta's "the run loop is not self-explanatory" finding) and the
+  **deck cycle** (nothing said the discard reshuffles back, that a removed card is gone for good, or that
+  a mission pushes its own cards in). Both landed as sections of *Play a turn*, now Your deck → Turn
+  structure → Workers. Closes **Codex: culture vs culture level**: 🎭 is named as a stockpile that is
+  never spent, the *level* as the thing that gets read, and the four thresholds interpolate from
+  `cultureForLevel` rather than being transcribed. The rest was flavour giving way to the rule it stood
+  in for — the food curve stated as its actual ladder, Money and Military named by what they are spent
+  on, Threat by what it does rather than exhorting you to outpace it — plus Territory de-duplicated down
+  to its resource row. Card-kind rows now wear their kind's banner hue (a rail, and the name on the same
+  pill the card face prints), which is what `CardFace`'s new `bannerHue` export is for: the
+  threat-reuses-event-red aliasing is read from there rather than restated. Body text steps up to the
+  mission-lore size, every step lifted by one ratio so the hierarchy holds.
 - **The chronology runs off both ends of the campaign map** ✅ — the Nomadic gutter had no mirror, so
   the timeline faded in from prehistory and then simply stopped. A second gutter is parked past the
   right edge naming the age the chronology runs into, revealed by the right elastic-overscroll the

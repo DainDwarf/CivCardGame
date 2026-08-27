@@ -218,16 +218,39 @@ export function describeCard(c: CardDef): string {
   return parts.join(' · ') || 'No effect';
 }
 
+/** The kind whose banner hue a card wears. Every kind wears its own but `threat`, which reuses the
+ *  event red — the same CVD-vetted hazard colour, told apart by its label alone. Exported because a
+ *  surface outside the face may need the hue without the face's classes (the Codex's card-kind
+ *  list), and the aliasing must be read from here rather than restated. */
+export function bannerHue(kind: CardDef['kind']): Exclude<CardDef['kind'], 'threat'> {
+  return kind === 'threat' ? 'event' : kind;
+}
+
+const BANNER_LABEL: Record<CardDef['kind'], string> = {
+  building: 'Building',
+  wonder: 'Wonder',
+  work: 'Work',
+  action: 'Action',
+  trade: 'Trade',
+  event: 'Event',
+  threat: 'Threat',
+  objective: 'Objective',
+};
+
+/** Keyed by hue rather than by kind, so there is no `threat` entry to disagree with `bannerHue`. */
+const BANNER_VARIANT: Record<Exclude<CardDef['kind'], 'threat'>, string> = {
+  building: styles.bannerBuilding,
+  wonder: styles.bannerWonder,
+  work: styles.bannerWork,
+  action: styles.bannerAction,
+  trade: styles.bannerTrade,
+  event: styles.bannerEvent,
+  objective: styles.bannerObjective,
+};
+
 /** The card's type banner — label + colour variant, shown under the name. */
 function cardBanner(c: CardDef): { label: string; variant: string } {
-  if (c.kind === 'threat') return { label: 'Threat', variant: styles.bannerEvent };
-  if (c.kind === 'event') return { label: 'Event', variant: styles.bannerEvent };
-  if (c.kind === 'objective') return { label: 'Objective', variant: styles.bannerObjective };
-  if (c.kind === 'work') return { label: 'Work', variant: styles.bannerWork };
-  if (c.kind === 'wonder') return { label: 'Wonder', variant: styles.bannerWonder };
-  if (c.kind === 'action') return { label: 'Action', variant: styles.bannerAction };
-  if (c.kind === 'trade') return { label: 'Trade', variant: styles.bannerTrade };
-  return { label: 'Building', variant: styles.bannerBuilding };
+  return { label: BANNER_LABEL[c.kind], variant: BANNER_VARIANT[bannerHue(c.kind)] };
 }
 
 /** The colour variant a card face uses, by kind (event/threat = danger, objective = violet goal,
