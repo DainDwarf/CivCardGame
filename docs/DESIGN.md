@@ -695,8 +695,11 @@ reservoir rather than a phase to schedule.
 
 **Publishing.** Pages already serves `Latest` off the tail of CI, so hosting is solved and **itch.io
 is bought for discovery and a comment thread** rather than for hosting — which makes the community
-item a feedback funnel first and a set of badges second. One constraint is stated on the page rather
-than absorbed by the build: the UI is mouse-only by design, so the demo is desktop-only.
+item a feedback funnel first and a set of badges second. itch does host its own copy (an HTML game
+there is an upload, not an embedded URL), so that copy is pushed by the same CI tail, behind the same
+gate, and never by hand — the one way it can't fall behind the Pages build. One constraint is stated
+on the page rather than absorbed by the build: the UI is mouse-only by design, so the demo is
+desktop-only.
 
 ## Deferred decisions
 

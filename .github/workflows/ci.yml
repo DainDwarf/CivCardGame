@@ -144,6 +144,38 @@ jobs:
         with:
           path: dist
 
+  # The itch.io copy of the same commit, behind the same gate as Pages, so the two hosts can't drift. itch
+  # serves an HTML game off its own CDN rather than embedding a URL, so the build is pushed to it — through
+  # butler (wharf), the only write path itch offers for uploads — from a relative-base bundle, since the
+  # Pages build is baked to `/CivCardGame/`. The channel's "playable in browser" flag and the embed size
+  # are page-side settings set once on the itch dashboard; a push updates the file beneath them.
+  itch:
+    name: push itch.io
+    if: github.ref == 'refs/heads/Latest'
+    needs: [check, standing-set, baselines]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:itch
+      # broth's URL is permanent and always the latest stable; the download page's links expire.
+      - name: Install butler
+        run: |
+          curl -sSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip butler && chmod +x butler
+          ./butler version
+      - name: Push
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          ./butler push dist-itch daindwarf/age-of-deckbuilder-prelude:html \
+            --userversion "$(node -p 'require("./package.json").version')"
+
   deploy:
     name: deploy Pages
     needs: pages

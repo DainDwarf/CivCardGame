@@ -273,3 +273,13 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.1** has already moved to `CHANGELOG.md`.
 
+- **The itch.io copy is pushed by CI, behind the Pages gate** ✅ — itch hosts an HTML game as an
+  upload, not an embedded URL, so the published copy would otherwise be a hand-rebuilt zip that goes
+  stale against Pages on the first 0.1.x patch. `ci.yml` grew an `itch` job on the same `Latest` tail:
+  `npm run build:itch` (the bundle at a **relative** base — the Pages one is baked to `/CivCardGame/`
+  and 404s every asset on itch) then `butler push dist-itch daindwarf/age-of-deckbuilder-prelude:html
+  --userversion <package.json version>`, butler fetched from broth's permanent URL and authenticated by
+  the `BUTLER_API_KEY` repo secret. butler because it is the only write path: the server-side API
+  lists uploads and serves downloads but creates none. The "playable in browser" flag, the project
+  kind and the embed viewport are page-side settings set once after the first push.
+

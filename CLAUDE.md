@@ -58,7 +58,10 @@ surprise, so nothing shows a locked placeholder or a total count.
 ## Commands
 
 - `npm run dev` — Vite dev server.
-- `npm run build` — type-check (`tsc --noEmit`) then produce a production bundle.
+- `npm run build` — type-check (`tsc --noEmit`) then produce a production bundle (the GitHub Pages one,
+  baked to `vite.config.ts`'s `/CivCardGame/` base). `npm run build:itch` — the same bundle at a
+  **relative** base into `dist-itch/`, which is what itch.io's HTML embed can serve (an absolute base
+  404s every asset there); no type-check, since it runs in CI after `build` already did.
 - `npm run typecheck` — type-check only: `src` (`tsconfig.json`) then `scripts`
   (`tsconfig.scripts.json`, the Node-targeted project — dev scripts import `src`, so a contract change
   that breaks one surfaces here).
@@ -222,8 +225,12 @@ paying for the sweep again locally. `scripts/baselineMatrix.mjs` derives the fan
 own `results` keys and row counts rather than naming the protocol, so a cell measured under a different
 policy set re-verifies under that set. Its `--verify` mode is a **separate job**: an unmeasured fixture
 has nothing to sweep and so falls out of the matrix, and a fixture is cut *by* a balance pass, so one
-committed without its rows is an accident and fails there rather than passing in silence. The Pages
-deploy is the same DAG's tail, gated on all three jobs and on `Latest` — a red baseline blocks it.
+committed without its rows is an accident and fails there rather than passing in silence. The two
+deploys are the same DAG's tail, each gated on all three jobs and on `Latest` — a red baseline blocks
+both: the **Pages** deploy, and the **itch.io** push (`build:itch` → `butler push` to the
+`daindwarf/age-of-deckbuilder-prelude:html` channel, authenticated by the `BUTLER_API_KEY` repo secret,
+stamped with `package.json`'s version). One push of `Latest` updates both hosts, so neither can go stale
+against the other.
 
 ## Architecture
 
