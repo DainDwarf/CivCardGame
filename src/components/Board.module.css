@@ -934,10 +934,11 @@
   z-index: 3;
 }
 
-/* Can't currently afford it — dimmed, but still inspectable (click to zoom). */
+/* Can't currently afford it — dimmed, but still inspectable (click to zoom). Dimmed by filter
+   alone: hand cards fan over each other, so any alpha here would composite the neighbour
+   underneath into this face and read as one muddy shape. */
 .unaffordable {
-  opacity: 0.5;
-  filter: grayscale(0.4);
+  filter: grayscale(0.6) brightness(0.8);
 }
 
 /* The source card while its clone is being dragged — held in place, faded, no hover lift. */
