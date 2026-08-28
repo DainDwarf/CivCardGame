@@ -4,6 +4,117 @@ All notable changes to CivCardGame are documented here. Loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions before 1.0 track
 development phases, not stable public releases.
 
+## [0.1.0] — 2026-08-28 — Age of Deckbuilder: Prelude
+
+The first public build, and the project's **last planned version**: what it teaches goes into a
+successor game designed from scratch, not into further ages here. It closes Phase 4 with the
+**entire Bronze Age arc** — fifteen missions on the new trade-route economy, ending at the Bronze
+collapse — a restructured Stone Age with the resource economy rebalanced beneath it, the
+onboarding popups the beta playtest asked for, and the publish surface. The **Iron Age is cut**,
+along with the culture rework, the endless rework and the scripted per-mission tutorial. The game
+is published as **Age of Deckbuilder: Prelude**; *CivCardGame* stays the working title on the code.
+**0.1 ends pre-alpha**: from here on a changed save shape owes a migration instead of a reset.
+
+### The Bronze Age arc (15 missions)
+
+The arc forks off The First Temple, converges twice and ends at a collapse: **Finding Copper** /
+**Masonry** → **Accounting** → **Writing** → three two-mission branches (**Roads → The Wheel** for
+expansion, **Horse Taming → Raiding** for the military, **Setting Sail → Sea Lanes** at sea) →
+**Bronze** → **Sword & Chariot** → **The Sea Peoples**, whose clear unlocks the **Fall of the Bronze
+Age** endless mission; **Pyramid** hangs off Masonry as an optional leaf. No new resources — the
+age's throughline is money, spent through standing trade routes and, at its end, the tin they carry.
+
+- **Finding Copper** — play out three Copper Veins while a Failing Tools threat taxes every worker staffed in a building; unlocks the **Forge**.
+- **Masonry** — grow to 5 population with no threat at all, only the Huts you have to buy: the first mission that forces the shop. Unlocks **House** and **City Walls**, and upgrades Settlement → **City**.
+- **Pyramid** *(leaf)* — hold 50🪙 · 40🔨 · culture level 2 at once before the Pharaoh's Reign ends at round 40 — the first deadline threat; unlocks the **Pyramid** wonder, which pays for every card drawn past the base hand.
+- **Accounting** — reach 40🪙 while Unguarded Wealth breeds a **Thief** into your deck for every ten coins you hold; unlocks the **Trader** and the **Opulence** board sticker.
+- **Writing** — record five Clay Tablets, each unrecorded one bleeding more science every round it recurs; unlocks the **Archives** and the **Writing** action (recover a card from the discard).
+- **Roads** — pave six Roadworks in production while every unpaved one in hand eats food; unlocks the single-use **Road**, Conquest's economic twin.
+- **The Wheel** — reach 6 territory under Overextension, which taxes every tile past the second the turn you take it; unlocks the **Wheel** sticker and the two **Caravans**.
+- **Horse Taming** — tame five Wild Horses, each tamed one adding a mouth to feed; unlocks **War Horse** and the single-use **Raiding**.
+- **Raiding** — sack four Strongholds whose walls grow, and retaliate harder, every round they stand — a per-copy escalating price; upgrades Chiefdom → **Warband**.
+- **Setting Sail** — launch three Voyages, each sailing with a citizen for good, before twelve idle rounds make the crews leave; unlocks the **Port** board (a third government line) and the **Coastal Route**.
+- **Sea Lanes** — hold four trade routes open at once under Escort Duty, which charges military per open route; unlocks the **Tin Route**, the **Merchant Ship** and the **Convoy** sticker.
+- **Bronze** *(convergence)* — master four Casting Trials, each needing a standing Tin Route, while Charcoal Fuel taxes what you have already mastered; unlocks the **Marketplace** and the **Bronze Tools** sticker, both tin-gated.
+- **Sword & Chariot** — hold 40⚔️ while Soldiers' Wages charge for every five above ten; the **Sword** it unlocks goes cold whenever the tin stops, the **Chariot** beside it.
+- **The Sea Peoples** *(capstone)* — repel five Sea Raids of rising strength, each needing tin; an unanswered raid cuts every un-escorted trade route. No card: the reward is 20⭐ and the endless mission.
+- **Fall of the Bronze Age** *(endless)* — the Long Storm feeds raids into the deck forever, each dearer than the last; scored by **waves repelled**, so holding the lanes pays and hiding does not.
+- **Eighteen new cards, three card stickers, one board sticker, three boards** — the catalogue above, plus the **Wharf** and **War Camp** the Port and Warband stand pre-built.
+
+### The Stone Age, restructured
+
+- **Resource-economy rebalance** — converters cut to 1 per worker, food upkeep now superlinear (`floor(pop²/4)`), Conquest a per-copy doubling price, and money moved into the Stone Age on its producer side (**Bead Workshop**, the **Bartering** route). Every standard mission re-rated, re-fixtured and re-swept.
+- **Pressure-first branches** — **The First Trades** and **Harsh Winter** open the two branches (replacing Rites & Rituals and Restless People as the fork), and **Rites & Rituals** returns as the culture node both branches reconverge on, granting the **Elegant** sticker before the wonder capstone.
+- **Card changes** — Harsh Winter grants **Fire**, Reading the Seasons grants the **Sun Stone** and a reworked **Calendar** (peek at three, draw one), Dogs became the free **Hunting** work box, Cave Art was deleted, The First Temple dropped its two hoard terms, Growing Numbers asks 2 territory, Masonry's goal came down to 5 population (the Stone → Bronze cliff a first-time player stalled on).
+- **Chiefdom stands a Raider Camp** — a pre-built card paying +4🌾 per territory taken: the board's perk is a card you can read, not a hidden clause. Measured to put Chiefdom ahead on three cells and behind on seven.
+- **Return of the Ice Age re-scored** — the winter comes in cold fronts that spawn into the deck; the score is 1⭐ per snap removed, not rounds survived, so idling banks nothing.
+- **Objective cards and hints speak with one voice** — a card states the mechanic in fixed keywords (**Hold** a pool, **Reach** a culture level, **Gain** territory, *Play all N …*); the victory hint keeps the flavour verb and stops repeating the price the card prints.
+
+### Rules and the card model
+
+- **Trade routes** — a `trade` card kind and a standing `tradeRoutes` zone: a route opens for a price, then pays its yield and charges its rent every round; it takes no workers and no territory, and only its rent bounds it (an unpayable one collapses into bankruptcy). Routes are permanent — nothing the player does closes one.
+- **A card effect can cut a route** — `closeTradeRoute` files a route back to the discard, stickers riding along, and `stripSticker` takes one layer off a run copy: the Sea Peoples' raid, and the Convoy as ablative armour.
+- **The cost spine** — one `CardCost` descriptor (resources, discards, a culture-level prerequisite, a required route) plus a `resolve` closure for a price that scales per copy; stickers fold before the closure, so a discount compounds with an escalation.
+- **Declarative gates** — `requiresRoute` refuses a play until a named route stands (the tin gate, printed on the face straight from the field, and on a sticker that carries it), and `producesWhile` mothballs a standing producer's output for any round its condition reads false.
+- **A standing card can bend what others yield** — `modifyGain`, folded over every standing card after the copy's own stickers; and a board can stand pre-built structures on the table at setup.
+- **A card can spend itself** — `removeFromRun`, the single-use verb behind Bow, Raiding and Road; a played card carries its own identity onto the board, and a filed work card keeps its stickers and counters.
+- **A mission scores only what its objective measures** — an endless mission's payout is the objective card's own `score` measure (waves repelled, snaps cleared); an objective declaring none pays nothing.
+- **Extinction** — a civilization at 0 population is finished, checked beside the core pools on the play that empties it; victory still wins first.
+- **Threats and events grew teeth** — a threat may own a deadline (`defeat`) rather than a drain; a card may breed cards into the deck mid-run; a counter may reset; a threat's own defeat sentence now reaches the gameover panel instead of the generic line.
+- **Stickers are trade-offs** — every sticker gives one thing and charges for it in another currency; a surcharge may land on a field the card never printed (a free work box taking a price, a yieldless card gaining one), and two stickers meeting on a copy must commute.
+- **Territory caps the tableau alone** — a shared cap over buildings, work and routes was shipped, played and reverted; work boxes and routes are bounded by their own economics, and Conquest and Road are work cards again.
+- **The Influence economy retuned** — every mission reward halved, the copy ladder cut to ×1→×2→×3→×4 at a flat price per age (2⭐ a Stone copy, 4⭐ a Bronze one, read off the card's unlocking mission), and sticker prices brought down to what the faucet has delivered by the mission that unlocks each.
+- **No lower bound on deck size** — the minimum was protecting against nothing the game doesn't already punish.
+- **The save carries its schema version** — the browser profile and an exported `.civsave` share one versioned envelope, read through one seam, so a later change to the save shape migrates instead of resetting; a pre-0.1 profile reads as version 1 and carries over.
+
+### The run screen
+
+- **Three board zones** — buildings on the territory grid, this turn's work boxes on a strip below it, and a trade column of standing routes, all drawn as the one `BoardBox` that staffs and zooms the same wherever it stands.
+- **The end-of-run panel** — slimmed to the payout and one tinted insert per outcome, a sealed no-name teaser where the clear carries unlocks; the celebration itself moved to the meta menu (below).
+- **The hand fans tighter instead of spilling** past six cards, and an unplayable card dims without showing its neighbour through it.
+- **Card faces say less, and say it right** — an event face states the unplayed branch and prints the played one as *On play*, dropping the play-to-remove banner (the tutorial teaches the rule); a threat's drain readout states the toll; a gate names the route it wants; the territory glyph is 🏞️.
+- **Pet the doggo** — clicking the Hunting card's art in the zoom overlay does what you'd hope.
+
+### The meta menu
+
+- **The unlock reveal** — a first clear returns to the meta menu through an Influence count-up and each new card, sticker or board entering one at a time as its real widget (a board upgrade framed *from ⟶ to*); click to hurry, Skip, Continue.
+- **The sticker seal** — one widget for a card or board sticker: a wax seal beside a plaque carrying the name, the applies-to rule and a ledger of what it gives against what it charges; locked, it withholds the bargain and the catalogue alike. It is also the merchandise in every buy tray.
+- **The Collection as a shop** — the sticker tray is a **filter** (select a seal to see what it fits), the ×N badge goes gold with a ▲ when another copy is affordable, an open sticker slot goes gold when one would land, and the next copy is bought from a **ghost tile** trailing the owned copies.
+- **A board zooms like a card**, beside a real face for each structure it stands pre-built — from the Board menu, the launch popup and a revealed board reward.
+- **The deck editor** — the tray no longer overlays the picker (a click there was toggling a hidden card), leaving with unsaved changes asks first, and the three deck actions — Edit, Copy, Delete — read as three.
+- **The campaign map** — opens centred on the leftmost mission left to play; the chronology runs off both ends as a Nomadic gutter behind and the next age ahead, each revealed by elastic overscroll; a mission's detail panel shows the cards a run only breeds mid-play.
+- **The run log** — a column grid, verdict and round in fixed tracks, each row naming the board and deck it was played with.
+
+### Onboarding and publishing
+
+- **The Codex explains mechanics** — a rewrite of all five pages, adding the two nothing explained (staffing, the deck cycle) and correcting two rules it had wrong.
+- **Two one-time tutorial popups** — *How to play* on the first run screen, *Between missions* once the first victory's reveal is dismissed (that the player builds their own deck, unlike a roguelike deckbuilder); each authored once and doubling as a Codex page.
+- **The end-of-campaign note and an About page** — clearing the last mission opens a thank-you, the plan for the future and the feedback links (Discord, GitHub); the ☰ menu's About page holds them permanently, with the build version.
+- **Renamed** — every player-facing surface reads *Age of Deckbuilder: Prelude* off one source; the save file, the code and the repo keep the working title.
+
+### The simulator and the balance tooling
+
+- **The `planner` policy** — a fair, determinized expectimax over sampled worlds (the deck as an unordered multiset, never the real order) that clears the setup chains the one-ply greedies plateau on; calibrated, profiled and shipped in two tiers.
+- **`prover`, and an honest `oracle`** — the search with no fallback, so its win rate is the search-proven winnability lower bound, each decline naming the bound that stopped it (`budget` / `depth` / `deadEnd`).
+- **The race-margin scorer** — every competent policy ranks a state by the rounds between the win and death: per-goal completion clocks off landing plans (payment against the run's income, delivery off the deck's circulation, a gate's prerequisite run serially in front), the shortest pool runway with deepening drains and deadline probes, a charge for the rescue a threatened pool has not yet made, and a score term for a never-winning objective. Replaces the score-band leaf, kept as a frozen `--scorer band` second opinion.
+- **Measure, then fold** — a sweep emits one CSV row per run as it lands and aggregates nothing; `sim:report` folds a sweep or a committed fixture identically, `--against` reports a sweep as a delta down to which seeds crossed the win/defeat line, `--format csv` flattens the standing set into one table a SQL engine queries, and `sim:record` commits rows into the fixtures that produced them.
+- **Baseline fixtures that hold their own rows** — self-contained mission × deck × board cells carrying their measurement verbatim, one per measured mission (per board where the campaign reaches it from two), the simulator's regression pins.
+- **`sim:valuation`** — prints the goal valuation the policies steer by (every clock, route, cover, gate and weight), so "is the mission hard or the policy blind?" no longer needs arithmetic by hand.
+- **`seed-save --fixture`** — seeds the save a fixture's cell is measured from, deck bought through the real shop paths, so any cell can be hand-piloted under exactly its conditions.
+- **`npm run economy`** — the Influence faucet ledger and the price list, computed off content.
+- **Continuous integration** — typecheck · test · build on every push, plus one runner per baseline fixture asserting the standing set still reproduces byte for byte; the Pages deploy is the workflow's tail, so a moved baseline blocks a release.
+- **Speed** — `cloneState` spelled out field by field (the clone frame's share fell from ~40% to single digits), the transposition key hashed, sampled worlds grafted onto line states, leaf values cached, and the dev scripts bundled by esbuild instead of `tsx`.
+- **Search fidelity** — a discard cost's target is a searched decision, a parked peek is valued through its answers, a policy stalls out as a recorded `stall`, and `--max-rounds` / `--search-beam` bound the search the sweep asks for.
+
+### Fixes
+
+- **The deck editor's tray overlaid its picker**, silently toggling a card under the hidden band.
+- **A card's price is the core five**, never a strategic pool; a pile tile groups by content so a per-copy price can't merge; a face reads its recurring half by unit.
+- **The planner looped forever on a parked peek**; the Calendar's price came down to one science.
+- **An escort sails with its lane** — a Convoy on a yieldless route still pays its ⚔️.
+- **A hand event's drain was counted as permanent** by the projection that buffers against it.
+- **Mission prereq ids are coherence-checked** — a typo or a cycle no longer drops a mission out of the campaign in silence.
+
 ## [0.0.4] — 2026-07-16 — Phase 4 (part 1): The Stone Age Arc
 
 Phase 4 is content and balance. This release wipes the content to a clean slate,

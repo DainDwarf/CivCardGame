@@ -18,9 +18,9 @@
 > are noted inline.
 >
 > **This board tracks progress against [`DESIGN.md`](DESIGN.md) → *Demo scope*** — the 0.1 public
-> build, the project's final planned scope; the execution plan for reaching it is
-> [`PUBLISH.md`](PUBLISH.md). The ordering stated there (Bronze time-boxed → transversal fixes →
-> polish → publish) constrains the otherwise loose step sequence below.
+> build, the project's final planned scope. Every row is ✅ and 0.1 is published; what remains here
+> is the reference material for a successor (the cut Iron arc, the scripted tutorial layer) and the
+> measurement debt the arc carried.
 
 - **Steps 1–6 — SHIPPED** ✅ (v0.0.4) — content reset, the Paleolithic start, the headless
   simulator, the ages-map infrastructure, and the **full Stone Age arc** (missions 6.1–6.7, the
@@ -183,7 +183,7 @@
     - Central Arabia (maybe) — a trade/desert line, tentative third branch
 
 - **Step 9 — Tutorial onboarding UI** — cut down to a **minimal slice for 0.1** (see
-  [`DESIGN.md`](DESIGN.md) → *Demo scope*, [`PUBLISH.md`](PUBLISH.md) → step 3): the scripted
+  [`DESIGN.md`](DESIGN.md) → *Demo scope*): the scripted
   per-mission layer below stays cut and is kept only as reference for the successor project, but
   **two generic tutorial popups ship, plus an end-of-campaign note, and all three are publish
   blockers**. Decided 2026-08-26 off the

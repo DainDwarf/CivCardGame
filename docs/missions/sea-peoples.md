@@ -89,8 +89,7 @@ finally spent, and the thing it is spent *through* is the thing under attack.
   columns as a floor and the `prover` weighed accordingly. The produces-gate seam above is the one
   fidelity investment this pass makes; the `1/handSize` delivery ticket stays deferred.
 - **Reward:** unlocks the **Fall of the Bronze Age** infinite, plus Influence. Deliberately no card —
-  the age ends here, and the reward is the abyss. (Per [`PUBLISH.md`](../PUBLISH.md): if the
-  infinite is cut, the reward simply drops the unlock.)
+  the age ends here, and the reward is the abyss.
 - **Lore seam:** the capstone springs what the arc telegraphed — the palaces cast the finest bronze
   in the world, and the world it depends on is nine days of open water. The Sea Peoples are not an
   army to defeat but a storm to outlast with your lifelines intact; the win is repelling the raids

@@ -615,15 +615,16 @@ day the scorer is deleted instead.
   currency, the shop (copy tiers + card *and* board stickers), the campaign-map DAG (binary
   + infinite missions, prereq gating), reward/unlock wiring — plus the card-effect
   **resolver spine** and **event bus** underneath. See *Economy & progression*.
-- **Phase 4 — Content & balance** (in progress): reset all content and rebuild it as the
-  **first three ages — Stone Age, Bronze Age, Iron Age**. The **Stone Age** — the tutorial
-  age, introducing every core mechanic (buildings, territory, conquest, culture) — is
-  **shipped**, along with the deferred **deck-construction constraints** (the copy cap, hand
-  limit) and the **headless simulator** (`src/sim/`) used to tune it; boards and card/board
-  stickers were reset alongside the cards, and **stickers now unlock through mission rewards**
-  (breadth), not only the shop. **Bronze Age + Iron Age remain ahead** — content expansion
-  only, no new mechanics (their flavor is undecided beyond the historical period). No new
-  resources this phase. See BACKLOG.md for the step breakdown.
+- **Phase 4 — Content & balance** ✅ [`v0.0.4`](../CHANGELOG.md) + [`v0.1`](../CHANGELOG.md):
+  reset all content and rebuild it age by age. The **Stone Age** — the tutorial age, introducing
+  every core mechanic (buildings, territory, conquest, culture) — shipped first, along with the
+  deferred **deck-construction constraints** (the copy cap, hand limit) and the **headless
+  simulator** (`src/sim/`) used to tune it; boards and card/board stickers were reset alongside
+  the cards, and **stickers now unlock through mission rewards** (breadth), not only the shop.
+  The **Bronze Age** followed — content expansion on the trade-route zone, ending at the Bronze
+  collapse — and the phase closed with the resource-economy rebalance, the race-margin scorer,
+  the onboarding popups and the publish surface. The **Iron Age was cut** with the 0.1 scope (see
+  *Demo scope* below). No new resources this phase.
 
 ## Demo scope 🔧
 
@@ -632,8 +633,8 @@ teaches moves into a successor game designed from scratch, not into further ages
 [`IDEAS.md`](IDEAS.md) frames ten ages through the Space Age; 0.1 ships two. The point of drawing
 the line this tight is that a scope with no stated edge can never close — and this one must.
 
-**In scope** — the Stone Age ✅ and the **Bronze Age** (its remaining nodes authored trunk-first
-under a time-box, so the arc ends coherently wherever the box closes), plus:
+**In scope** — the Stone Age ✅ and the **Bronze Age** ✅ (authored trunk-first under a time-box,
+so the arc would end coherently wherever the box closed — it closed with the whole arc in), plus:
 
 - **Culture as it stands** — the gauge is the weakest leg of the eight resources and ships anyway;
   the rework is cancelled, jank accepted. **Hammurabi's Code**, held back as that rework's vehicle,

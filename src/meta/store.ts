@@ -82,13 +82,46 @@ export function emptyStore(): PlayerStore {
 }
 
 /**
- * Shape-check shared by `loadStore` (reading the live localStorage key) and `importSave`
- * (reading a pasted/uploaded save file). Returns `null` if `raw` doesn't parse as a
- * `PlayerStore` — every field is required, with no fallback for a missing/old-shaped one
- * (pre-alpha: no save migration, see docs/TODO.md). This also catches a malformed
- * `collection` (a bare `{ cardId: count }` map, not `{ instances, nextId }`): without the
- * nested check it would pass the loose `typeof === 'object'` test and only fail much later,
- * deep inside `copiesOwned`.
+ * Every persisted `PlayerStore` — the live `localStorage` key and an exported `.civsave` alike —
+ * travels inside this envelope, so both carry the schema version the payload was written under.
+ * `PlayerStore` is a growing shape, and a save (a file on a player's disk, a browser profile not
+ * opened since last month) can predate any change to it; the number is what a migration keys off,
+ * instead of re-guessing the vintage from which fields are present. Bump it with the shape, and
+ * chain the upgrade in `readSaved`.
+ */
+const SCHEMA_VERSION = 1;
+
+interface SaveEnvelope {
+  schemaVersion: number;
+  savedAt: string;
+  store: PlayerStore;
+}
+
+function wrap(store: PlayerStore): SaveEnvelope {
+  return { schemaVersion: SCHEMA_VERSION, savedAt: new Date().toISOString(), store };
+}
+
+/**
+ * Reads a parsed envelope back into a `PlayerStore`, or `null` when it can't be one — the single
+ * seam `loadStore` and `importSave` both read through, which is where a schema migration goes: an
+ * older `schemaVersion` is upgraded step by step to the current one *before* the shape check. A
+ * payload with no envelope at all is the pre-0.1 `localStorage` shape (a bare `PlayerStore`), read
+ * as version 1 so a profile from the beta builds carries over.
+ */
+export function readSaved(parsed: unknown): PlayerStore | null {
+  if (!parsed || typeof parsed !== 'object') return null;
+  const obj = parsed as Record<string, unknown>;
+  const [schemaVersion, store] = 'schemaVersion' in obj ? [obj.schemaVersion, obj.store] : [1, obj];
+  if (schemaVersion !== SCHEMA_VERSION) return null;
+  return parsePlayerStore(store);
+}
+
+/**
+ * Shape-check behind `readSaved`. Returns `null` if `raw` doesn't parse as a *current*
+ * `PlayerStore` — every field is required, since a payload written under an older schema reaches
+ * this only after `readSaved` has upgraded it. This also catches a malformed `collection` (a bare
+ * `{ cardId: count }` map, not `{ instances, nextId }`): without the nested check it would pass the
+ * loose `typeof === 'object'` test and only fail much later, deep inside `copiesOwned`.
  */
 function parsePlayerStore(raw: unknown): PlayerStore | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -134,7 +167,7 @@ export function loadStore(): PlayerStore {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptyStore();
-    return parsePlayerStore(JSON.parse(raw)) ?? emptyStore();
+    return readSaved(JSON.parse(raw)) ?? emptyStore();
   } catch {
     return emptyStore();
   }
@@ -143,7 +176,7 @@ export function loadStore(): PlayerStore {
 /** Writes the store to `localStorage`. Failures (quota, private browsing) are swallowed — the run continues in-memory-only. */
 export function saveStore(store: PlayerStore): void {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(wrap(store)));
   } catch {
     // Ignored — see doc comment above.
   }
@@ -229,22 +262,6 @@ export function applyRunResult(store: PlayerStore, result: RunResult, mission: M
   };
 }
 
-/**
- * The exported-save wire format: a base64-encoded envelope around a `PlayerStore`
- * snapshot. `schemaVersion` exists because `PlayerStore` is a growing shape (`decks`,
- * then `influence`/`collection`/`mapProgress`, more to come) and an exported file can
- * sit on a player's disk across several of those changes, unlike the live localStorage
- * key which is migrated in place by `parsePlayerStore`. A future bump adds a migration
- * path keyed off this number rather than re-guessing from field presence.
- */
-const SCHEMA_VERSION = 1;
-
-interface SaveFile {
-  schemaVersion: typeof SCHEMA_VERSION;
-  exportedAt: string;
-  store: PlayerStore;
-}
-
 /** Unicode-safe base64 encode — plain `btoa` throws on any character outside Latin1, and deck names are free-text. */
 function encodeBase64(text: string): string {
   const bytes = new TextEncoder().encode(text);
@@ -260,10 +277,10 @@ function decodeBase64(base64: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-/** Serializes a `PlayerStore` into a base64 save-file string, for the game menu's Save submenu to hand to the player as a download. */
+/** Serializes a `PlayerStore` into a base64 save-file string — the same envelope `saveStore` writes,
+ *  encoded — for the game menu's Save submenu to hand to the player as a download. */
 export function exportSave(store: PlayerStore): string {
-  const file: SaveFile = { schemaVersion: SCHEMA_VERSION, exportedAt: new Date().toISOString(), store };
-  return encodeBase64(JSON.stringify(file));
+  return encodeBase64(JSON.stringify(wrap(store)));
 }
 
 export type ImportResult = { ok: true; store: PlayerStore } | { ok: false; error: string };
@@ -284,11 +301,7 @@ export function importSave(base64: string): ImportResult {
     return { ok: false, error: 'This file is not a valid save (corrupt data).' };
   }
 
-  if (!parsed || typeof parsed !== 'object' || (parsed as Record<string, unknown>).schemaVersion !== SCHEMA_VERSION) {
-    return { ok: false, error: `This file is not a recognized ${GAME_NAME} save.` };
-  }
-
-  const store = parsePlayerStore((parsed as SaveFile).store);
+  const store = readSaved(parsed);
   if (!store) return { ok: false, error: `This file is not a recognized ${GAME_NAME} save.` };
   return { ok: true, store };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyRunResult, exportSave, importSave, type PlayerStore } from './store';
+import { applyRunResult, exportSave, importSave, readSaved, type PlayerStore } from './store';
 import type { DeckSeed } from '../content/decks';
 import { buildSeedDecks } from '../rules/deckBuilder';
 import { collectionFromCounts, copiesOwned } from '../rules/collection';
@@ -135,6 +135,22 @@ describe('exportSave / importSave', () => {
     );
     const result = importSave(bogus);
     expect(result.ok).toBe(false);
+  });
+});
+
+describe('readSaved', () => {
+  it('reads the envelope saveStore/exportSave write', () => {
+    const store = sampleStore();
+    expect(readSaved({ schemaVersion: 1, savedAt: '2026-08-28T00:00:00.000Z', store })).toEqual(store);
+  });
+
+  it('reads a bare pre-envelope store as schema version 1', () => {
+    const store = sampleStore();
+    expect(readSaved(store)).toEqual(store);
+  });
+
+  it('rejects an envelope from a schema it does not know', () => {
+    expect(readSaved({ schemaVersion: 999, store: sampleStore() })).toBeNull();
   });
 });
 

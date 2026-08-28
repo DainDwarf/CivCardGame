@@ -30,9 +30,11 @@ Two loops:
   the shop, and mission selection. `src/contract.ts` (`RunConfig`/`RunResult`) is the spine between
   the loops; `src/app/App.tsx` switches between the meta menu and a run.
 
-**Progress.** The run loop, meta shell, and economy/progression are all built, and the **Stone Age
-content arc is shipped** — the tutorial age, exercising every core mechanic. The content-and-balance
-pass continues into the Bronze and Iron ages.
+**Progress.** The run loop, meta shell, and economy/progression are all built, and both content arcs
+are shipped — the **Stone Age** (the tutorial age, exercising every core mechanic) and the **Bronze
+Age** (content expansion, ending at the Bronze collapse). That is the whole planned scope: **0.1** is
+the published build and the project's last planned version (`docs/DESIGN.md` → *Demo scope*); what
+comes after is 0.1.x patches off feedback, not new ages.
 
 The economy/progression systems that exist (each detailed in the Architecture map below, rationalized
 in DESIGN.md):
@@ -659,7 +661,11 @@ logic that rides on it. **A building card *is* the building** — there's no sep
     one-at-a-time pacing (that's information) and collapses only the travel.
   - `store.ts` — persists `PlayerStore` to `localStorage` (`loadStore`/`saveStore`, seeded from
     `content/` on a fresh profile); `applyRunResult` is the pure fold that records a finished run.
-    Pre-alpha: an unrecognized store shape resets to `emptyStore()`, no migration.
+    The `localStorage` key and an exported `.civsave` carry the **same envelope** (`schemaVersion` +
+    `savedAt` + the store), read back through one seam, `readSaved` — an unrecognized payload resets
+    to `emptyStore()`, which is why, with 0.1 published and pre-alpha over, a change to the
+    `PlayerStore` shape **owes a migration** there, keyed off the version, bumped with the shape (a
+    reset would wipe a real player's progress; see DESIGN.md → *Demo scope*).
 - **`components/GameMenu.tsx`** — the global-action surface (a top-right burger): **Save**
   (export/import/clear the whole `PlayerStore` as a base64 `.civsave`; destructive actions behind a
   confirm), **Config** (the player-facing half of device-local `Settings` in `meta/settings.ts` — theme,
