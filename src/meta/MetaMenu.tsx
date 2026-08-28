@@ -13,6 +13,7 @@ import type { BoardStickers } from '../rules/boardStickers';
 import type { BoardId } from '../content/boards';
 import { anyCardUpgradeAvailable, anyBoardUpgradeAvailable } from '../rules/upgrades';
 import { UnlockReveal, type RunReveal } from './UnlockReveal';
+import { GAME_TITLE, GAME_SUBTITLE } from '../content/about';
 import styles from './MetaMenu.module.css';
 
 type Screen = 'mission' | 'collection' | 'board' | 'decks' | 'stats' | 'deckEditor';
@@ -160,7 +161,10 @@ export function MetaMenu({
   return (
     <div className={styles.shell}>
       <nav className={styles.nav}>
-        <h1 className={styles.gameTitle}>CivCardGame</h1>
+        <h1 className={styles.gameTitle}>
+          {GAME_TITLE}
+          <span className={styles.gameSubtitle}>{GAME_SUBTITLE}</span>
+        </h1>
         <div className={styles.influenceBadge}>
           <span aria-hidden="true">⭐</span>
           <span ref={influenceValueRef}>{influence}</span>

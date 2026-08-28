@@ -10,6 +10,11 @@ import type { CodexBlock } from './codex';
  * tense of the closing line are the surface's, and everything else is authored once.
  */
 
+/** The published name, in its two halves — the nav sets the subtitle on its own line — and joined. */
+export const GAME_TITLE = 'Age of Deckbuilder';
+export const GAME_SUBTITLE = 'Prelude';
+export const GAME_NAME = `${GAME_TITLE}: ${GAME_SUBTITLE}`;
+
 /** Which surface is drawing the note. */
 export type AboutSurface = 'end' | 'about';
 

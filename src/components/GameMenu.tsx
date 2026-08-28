@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { version } from '../../package.json';
+import { GAME_NAME } from '../content/about';
 import { emptyStore, exportSave, importSave, type PlayerStore } from '../meta/store';
 import { UI_SCALE_MIN, UI_SCALE_MAX, THEMES, resetTutorialFlags, type Settings } from '../meta/settings';
 import { Codex } from './Codex';
@@ -63,7 +64,7 @@ export interface RunMenuControls {
 
 /** Filename timestamp — just the date, since a player is unlikely to export twice in one day. */
 function saveFileName(): string {
-  return `civcardgame-save-${new Date().toISOString().slice(0, 10)}.civsave`;
+  return `age-of-deckbuilder-save-${new Date().toISOString().slice(0, 10)}.civsave`;
 }
 
 /**
@@ -231,7 +232,7 @@ export function GameMenu({
             <button type="button" className={styles.closeBtn} onClick={close}>
               Close
             </button>
-            <p className={styles.version}>CivCardGame v{version}</p>
+            <p className={styles.version}>{GAME_NAME} v{version}</p>
           </div>
 
           {submenu && (

@@ -9,6 +9,7 @@ import { applyBoardUpgrade } from '../rules/boardUpgrade';
 import { computeRewards } from '../rules/rewards';
 import { isCompleted } from '../rules/campaign';
 import { ORIGIN_BOARD_ID } from '../content/boards';
+import { GAME_NAME } from '../content/about';
 
 /**
  * The persisted player store (`localStorage`). `mapProgress` is a completed-mission-ids
@@ -284,10 +285,10 @@ export function importSave(base64: string): ImportResult {
   }
 
   if (!parsed || typeof parsed !== 'object' || (parsed as Record<string, unknown>).schemaVersion !== SCHEMA_VERSION) {
-    return { ok: false, error: 'This file is not a recognized CivCardGame save.' };
+    return { ok: false, error: `This file is not a recognized ${GAME_NAME} save.` };
   }
 
   const store = parsePlayerStore((parsed as SaveFile).store);
-  if (!store) return { ok: false, error: 'This file is not a recognized CivCardGame save.' };
+  if (!store) return { ok: false, error: `This file is not a recognized ${GAME_NAME} save.` };
   return { ok: true, store };
 }

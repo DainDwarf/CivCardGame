@@ -88,8 +88,10 @@ the infinite is the casualty, The Sea Peoples' reward simply drops the unlock.)
 
 ### 4 — Publish surface
 
-- **Rename the game to *Age of Deckbuilder: Prelude*** — **publish blocker.** *CivCardGame* is the
-  working title; the published build, its page and every player-facing surface carry the real name.
+- ~~**Rename the game to *Age of Deckbuilder: Prelude***~~ ✅ — every player-facing surface (the
+  tab title, the nav, the two version lines, the save-file errors, the exported filename) reads the
+  real name off `content/about.ts`'s `GAME_NAME`. *CivCardGame* stays the working title on the code,
+  the repo, the Pages path and the `localStorage` keys (renaming those would orphan every save).
 - **itch.io page** — description, screenshots, the how-to-play blurb; desktop-only and mouse-only
   stated plainly on the page.
 - **Feedback funnel** — itch comments at minimum; the in-game Discord/GitHub links (`content/links.ts`,

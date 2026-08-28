@@ -35,6 +35,16 @@
   text-align: center;
 }
 
+.gameSubtitle {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
 .navBtn {
   display: flex;
   align-items: center;

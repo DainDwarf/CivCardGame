@@ -4,8 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-CivCardGame is a **single-player**, browser-based **roguelite deckbuilder** about building a
-civilization solo — there is **no AI or human opponent**. Stack: TypeScript · Vite · React 18 ·
+CivCardGame (the working title — published as **Age of Deckbuilder: Prelude**, the name every
+player-facing surface reads off `content/about.ts`'s `GAME_NAME`) is a **single-player**, browser-based
+**roguelite deckbuilder** about building a civilization solo — there is **no AI or human opponent**. Stack: TypeScript · Vite · React 18 ·
 Vitest. See [`docs/DESIGN.md`](docs/DESIGN.md) for the full game design, the *why* behind every
 system below, and the roadmap.
 
@@ -523,7 +524,10 @@ logic that rides on it. **A building card *is* the building** — there's no sep
 - **`links.ts`** — `LINKS`, the outbound bouquet (Discord, GitHub) as `{ id, label, url, icon }`, so the
   set is edited in one place. Every renderer opens them in a new tab — the published build runs inside
   an itch.io iframe, where a same-tab navigation replaces the game.
-- **`about.ts`** — `ABOUT_TITLE` + `aboutNote(surface)`, the author's note as a `CodexBlock[]` so it
+- **`about.ts`** — the published name (`GAME_TITLE`/`GAME_SUBTITLE`, joined as `GAME_NAME` — the one
+  source every player-facing surface reads: the nav, the version lines, the save-file errors; only
+  `index.html`'s static `<title>` repeats it) plus `ABOUT_TITLE` + `aboutNote(surface)`, the author's
+  note as a `CodexBlock[]` so it
   draws through the same renderer the tutorial texts do (`components/AboutPage.tsx`). The middle is
   authored once; the `'end'` surface (the popup, read with the campaign just finished) and the `'about'`
   one (the ☰ page, read at any point of it) differ only in the framing sentence and the closing line's

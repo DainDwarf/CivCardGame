@@ -1,5 +1,5 @@
 import { version } from '../../package.json';
-import { aboutNote, type AboutSurface } from '../content/about';
+import { aboutNote, GAME_NAME, type AboutSurface } from '../content/about';
 import { LINKS } from '../content/links';
 import { CodexBlocks } from './CodexBlocks';
 import styles from './AboutPage.module.css';
@@ -28,7 +28,7 @@ export function AboutPage({ surface }: { surface: AboutSurface }) {
           </a>
         ))}
       </div>
-      <p className={styles.version}>CivCardGame v{version}</p>
+      <p className={styles.version}>{GAME_NAME} v{version}</p>
     </div>
   );
 }
