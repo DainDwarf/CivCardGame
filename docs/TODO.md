@@ -50,9 +50,6 @@ later — promote items into `DESIGN.md` / real work, or drop them.
   (`rules/population.ts`) already exists for exactly this, so the curve isn't re-derived in the UI. Note it
   is state-dependent: the same card shows a different number at pop 2 than at pop 5. `[size: S]` `[?]`
 
-- **Hand display breaks past 6 cards** — the hand row doesn't cope with a 7th card. Culture levels raise
-  hand size, so this is reachable in normal play from the culture missions on. `[size: S]`
-
 - **Discard-mode affordance when a play costs cards** `[size: S]` — *(beta playtest)* playing Fire
   (`cost: { discard: 1 }`) drops the player into choosing a card to give up with nothing saying so; the
   discard reads as cards vanishing. Wants a visible "choose N to discard" mode on the hand while the
@@ -275,6 +272,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > entries. **Mission** work is *not* archived here — a finished mission's record is its dossier
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
+
+- **The hand fans tighter instead of spilling** ✅ — the hand row was a centred flex with a flat
+  −7px overlap, so from 7 cards (culture level 3, reachable in any long run) it overflowed off *both*
+  ends and the leftmost cards became unreachable. `.hand` is now an inline-size container and each
+  card solves its own overlap from the row's real width — `max(7px, (118·N − 100cqw) / 2(N−1))`, the
+  `N−1` because the two end cards' outer margins push the visual extent back out — so −7px stays the
+  floor (a 4–6 card hand is pixel-identical) and 7, 8, 9 cards fit at any window width. The face
+  stays 118×162; no JS measurement, the browser re-solves on every resize and hand change.
 
 - **The end-of-campaign note + an About page** ✅ — the author's note, the outbound link row
   (`content/links.ts`, Discord + GitHub, each opening a new tab so the itch iframe survives) and the

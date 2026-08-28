@@ -908,6 +908,7 @@
   align-items: flex-end;
   min-height: 162px;
   padding-top: 20px; /* headroom for the hover lift */
+  container-type: inline-size;
 }
 
 /* The card's own box/border/kind-coloring/inner layout lives in CardFace.module.css — this file
@@ -916,7 +917,15 @@
 /* Hand cards overlap like cards held in a hand, and lift on hover; a pile-viewer tile or a
    deck-editor grid tile doesn't want either. */
 .handCard {
-  margin: 0 -7px;
+  /* The row renders `118px·N − 2·overlap·(N−1)` wide, so solving that against the row's own inline
+     size fans the cards tighter as the hand grows (hand size is 4 + culture level, so it outgrows a
+     flat −7px) — the whole row stays reachable instead of spilling off both centred ends. −7px is
+     the floor, so any hand that already fits is untouched. `--hand-count` comes from Board.tsx. */
+  --overlap: max(
+    7px,
+    calc((118px * var(--hand-count, 1) - 100cqw) / (2 * max(1, var(--hand-count, 1) - 1)))
+  );
+  margin: 0 calc(-1 * var(--overlap));
 }
 
 .handCard:hover {

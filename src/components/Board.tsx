@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { CardInstance, CoreResources, PlacedCard, Resources } from '../rules';
 import { useGame } from '../run/GameContext';
 import {
@@ -1824,7 +1824,7 @@ export function Board({
             {rejectMsg && (
               <p className={styles.rejectToast} role="alert">{rejectMsg}</p>
             )}
-            <div className={styles.hand}>
+            <div className={styles.hand} style={{ '--hand-count': hand.length } as CSSProperties}>
               {hand.length === 0 && <p className={styles.empty}>No cards in hand.</p>}
               {hand.map((card) => {
                 const c = CARDS[card.cardId];
