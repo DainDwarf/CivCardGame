@@ -1,7 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { version } from '../../package.json';
 import { emptyStore, exportSave, importSave, type PlayerStore } from '../meta/store';
-import { UI_SCALE_MIN, UI_SCALE_MAX, THEMES, type Settings } from '../meta/settings';
+import { UI_SCALE_MIN, UI_SCALE_MAX, THEMES, resetTutorialFlags, type Settings } from '../meta/settings';
 import { Codex } from './Codex';
 import styles from './GameMenu.module.css';
 
@@ -81,7 +81,8 @@ function saveFileName(): string {
  *
  * `settings`/`onUpdateSettings` back the Config submenu — device-local preferences
  * (`meta/settings.ts`), deliberately kept out of `PlayerStore` so they survive a
- * Save-submenu Load/Clear untouched. Two controls (confirm-end-turn toggle, UI-size
+ * Save-submenu Load/Clear (bar the tutorial flags a Clear rewinds — see `confirmPending`).
+ * Two controls (confirm-end-turn toggle, UI-size
  * slider), each calling `onUpdateSettings` directly on change (no pending/confirm step —
  * neither is destructive). The UI-size slider drives `settings.uiScale`, applied by
  * `App.tsx`'s `transform: scale()` wrapper.
@@ -177,6 +178,10 @@ export function GameMenu({
       close();
       return;
     }
+    // Clear is the one place settings and the store move together: the emptied save is a new
+    // player, so the tutorials are owed again — while a Load keeps them, that player having
+    // already been onboarded. Written before `onImportStore`, which reloads the page.
+    if (pending.kind === 'clear') onUpdateSettings(resetTutorialFlags(settings));
     onImportStore(pending.kind === 'import' ? pending.store : emptyStore());
     // onImportStore reloads the app, so no success message is shown here — the fresh
     // screen is the feedback. (The error path in handleFileChosen still uses importMessage.)

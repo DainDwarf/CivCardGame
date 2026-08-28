@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import {
+  CODEX_BETWEEN_MISSIONS,
   CODEX_CORE_RESOURCES,
+  CODEX_HOW_TO_PLAY,
   CODEX_STRATEGIC,
   CODEX_CARD_KINDS,
   CODEX_GLOSSARY,
 } from '../content/codex';
 import { bannerHue, RESOURCE_ICON } from './CardFace';
+import { CodexBlocks } from './CodexBlocks';
 import styles from './Codex.module.css';
 
-type SubjectId = 'resources' | 'cardTypes' | 'playATurn' | 'influence' | 'glossary';
+type SubjectId = 'howToPlay' | 'resources' | 'cardTypes' | 'playATurn' | 'influence' | 'betweenMissions' | 'glossary';
 
 const SUBJECTS: { id: SubjectId; label: string }[] = [
+  { id: 'howToPlay', label: 'How to play' },
+  { id: 'betweenMissions', label: 'Between missions' },
   { id: 'resources', label: 'Resources' },
   { id: 'influence', label: 'Influence' },
   { id: 'cardTypes', label: 'Card types' },
@@ -23,13 +28,13 @@ const SUBJECTS: { id: SubjectId; label: string }[] = [
  * submenu. Deliberately **pure and static** — it takes no props and never reads run
  * state (`useGame`), so it renders identically on the meta menu and mid-run.
  *
- * A left-nav subject list over a scrolling content pane (rather than one long scroll)
- * — the subjects are Resources, Card types, Play a turn, Influence, and Glossary.
- * The list-shaped pages come from `content/codex.ts`; the narrative pages are authored
- * here.
+ * A left-nav subject list over a scrolling content pane (rather than one long scroll).
+ * The list-shaped pages come from `content/codex.ts`, as do the two block-rendered ones — those
+ * two double as the one-time tutorial popups, so they are drawn here through the same shared
+ * `CodexBlocks`. The remaining narrative pages are authored here.
  */
 export function Codex() {
-  const [subject, setSubject] = useState<SubjectId>('resources');
+  const [subject, setSubject] = useState<SubjectId>('howToPlay');
 
   return (
     <div className={styles.codex}>
@@ -47,6 +52,20 @@ export function Codex() {
       </nav>
 
       <div className={styles.page}>
+        {subject === 'howToPlay' && (
+          <section className={styles.topic}>
+            <h4 className={styles.topicTitle}>How to play</h4>
+            <CodexBlocks blocks={CODEX_HOW_TO_PLAY} />
+          </section>
+        )}
+
+        {subject === 'betweenMissions' && (
+          <section className={styles.topic}>
+            <h4 className={styles.topicTitle}>Between missions</h4>
+            <CodexBlocks blocks={CODEX_BETWEEN_MISSIONS} />
+          </section>
+        )}
+
         {subject === 'resources' && (
           <section className={styles.topic}>
             <h4 className={styles.topicTitle}>Resources</h4>

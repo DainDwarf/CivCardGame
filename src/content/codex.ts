@@ -1,15 +1,22 @@
-import type { CardKind } from './cards';
+import { CARDS, type CardKind } from './cards';
+import { MISSIONS } from './missions';
 import { cultureForLevel } from '../rules/culture';
 import { MAX_WONDERS_PER_DECK } from '../rules/deckBuilder';
-import type { CoreResources, StrategicResources } from '../rules/resources';
+import { BASE_HAND_SIZE } from '../rules/state';
+import type { CoreResources, Resources, StrategicResources } from '../rules/resources';
 
 /**
  * Reference text for the Codex submenu (`components/Codex.tsx`) — the in-game "how the
- * game works" glossary, reachable from both the meta menu and mid-run. This holds the
- * *list-shaped* pages (the resource tables, the card-kind table, the keyword glossary) as
- * typed data; the narrative sections (your deck, turn structure, workers) are authored as prose
- * directly in the component. It's UI reference text, not game logic — there's precedent for such
- * strings living in `content/` (missions' `victoryHint`/`failureHint`).
+ * game works" glossary, reachable from both the meta menu and mid-run. It's UI reference text,
+ * not game logic — there's precedent for such strings living in `content/` (missions'
+ * `victoryHint`/`failureHint`).
+ *
+ * Two shapes live here. The *list-shaped* pages (the resource tables, the card-kind table, the
+ * keyword glossary) are typed rows the component lays out itself. The two *block-rendered* texts
+ * (`CODEX_HOW_TO_PLAY`, `CODEX_BETWEEN_MISSIONS`) are `CodexBlock[]` drawn by
+ * `components/CodexBlocks.tsx`, because each is shown twice — as a Codex page and as its one-time
+ * tutorial popup (`components/TutorialPopup.tsx`) — and one authored copy is what keeps the two
+ * surfaces identical. The remaining narrative pages are authored as prose in the component.
  *
  * A rule's *tuned number* (e.g. the wonder-per-deck cap) is always interpolated live from
  * `rules/` — here or by the component — never transcribed as a literal, which would silently
@@ -123,4 +130,129 @@ export const CODEX_GLOSSARY: GlossaryEntry[] = [
   { term: 'Discard cost', definition: 'You must discard that many other cards from your hand to play it.' },
   { term: 'Culture requirement', definition: 'You can only play the card once your culture level has reached the number shown. Playing it spends no culture.' },
   { term: 'Single use', definition: 'Instead of being discarded, this card is removed from the run once used.' },
+];
+
+/** A fragment of a block-rendered paragraph: prose, a bolded run, or a run of resource glyphs.
+ *  The glyph map is `CardFace.tsx`'s `RESOURCE_ICON` — shell, which the core may not import — so a
+ *  span names the *resources* and the renderer looks their icons up. */
+export type CodexSpan = string | { bold: string } | { icons: (keyof Resources)[] };
+
+/** One entry of a `steps`/`bullets` block. The renderer prints `name — text`. */
+export interface CodexListItem {
+  name: string;
+  text: string;
+}
+
+/** One block of a block-rendered Codex text (`components/CodexBlocks.tsx`). `steps` is ordered,
+ *  `bullets` is not; neither surface knows which blocks it is drawing. */
+export type CodexBlock =
+  | { kind: 'para'; spans: CodexSpan[] }
+  | { kind: 'steps'; heading: string; items: CodexListItem[] }
+  | { kind: 'bullets'; heading: string; items: CodexListItem[] };
+
+/** The first mission's card unlocks — the campaign's DAG roots (no `prereqs`) are the only missions
+ *  a fresh player can clear first, so by the time `CODEX_BETWEEN_MISSIONS` fires these are exactly
+ *  the cards just handed over. */
+const rootUnlockCardIds = Object.values(MISSIONS)
+  .filter((m) => m.prereqs.length === 0)
+  .flatMap((m) => m.reward?.unlockCardIds ?? []);
+
+const listAnd = (parts: string[]): string =>
+  parts.length <= 1 ? parts[0] ?? '' : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+
+const rootUnlockNames = listAnd(rootUnlockCardIds.map((id) => `${CARDS[id].display?.art ?? ''} ${CARDS[id].name}`.trim()));
+
+/** The run-loop primer: the Codex's first page, and the popup shown the first time a run opens. */
+export const CODEX_HOW_TO_PLAY: CodexBlock[] = [
+  {
+    kind: 'para',
+    spans: [{ bold: 'Your goal is on the objective card' }, ', on the left of the board. Meet it and you win the mission.'],
+  },
+  {
+    kind: 'para',
+    spans: [
+      { bold: 'Losing' },
+      ' — if any core resource (',
+      { icons: CODEX_CORE_RESOURCES.map((r) => r.key) },
+      ') drops below zero, the run ends. A bigger population eats more food each round.',
+    ],
+  },
+  {
+    kind: 'steps',
+    heading: 'Each round',
+    items: [
+      { name: 'Draw', text: `you draw a new hand from your deck, ${BASE_HAND_SIZE} cards by default.` },
+      { name: 'Play', text: "play cards from your hand. A card's cost is printed in its upper right corner." },
+      {
+        name: 'Staff',
+        text: 'buildings and work cards need workers to produce. Playing those cards automatically staffs them from your idle population. You can freely drag workers between cards to change who does what.',
+      },
+      {
+        name: 'End round',
+        text: 'staffed cards produce, then your population eats food. Your hand goes to the discard pile, and the next round starts.',
+      },
+    ],
+  },
+  {
+    kind: 'bullets',
+    heading: 'Card types',
+    items: [
+      { name: 'Action', text: 'an immediate effect, then discard.' },
+      { name: 'Work', text: 'staff it, it produces once at the end of the round, then returns to the discard pile.' },
+      { name: 'Building', text: 'takes one territory slot and stays for the rest of the run, producing every round while staffed.' },
+      { name: 'Trade route', text: 'pay to open it. It produces every round, but charges rent every round, and you cannot close it.' },
+      {
+        name: 'Event',
+        text: 'a mission shuffles these into your deck. Pay its cost to play it and it is removed from the run. Leave it in your hand and it strikes at the end of the round, then goes to your discard pile and comes back later.',
+      },
+      { name: 'Threat', text: 'pinned to your board by the mission. You cannot play it, and it takes its toll every round.' },
+    ],
+  },
+  {
+    kind: 'para',
+    spans: ['Your deck cannot be changed during a run. When the draw pile is empty, the discard pile is shuffled into a new one.'],
+  },
+  { kind: 'para', spans: ['Full rules are in the ', { bold: 'Codex' }, ', in the ☰ menu.'] },
+];
+
+/** The meta-loop primer: a Codex page, and the popup shown once the player's first victory has
+ *  handed back a Collection they now have to build a deck out of. */
+export const CODEX_BETWEEN_MISSIONS: CodexBlock[] = [
+  {
+    kind: 'para',
+    spans: [
+      { bold: 'New cards do not join your deck on their own.' },
+      ' Cards you unlock go to your ',
+      { bold: 'Collection' },
+      '. A run never changes your deck: you build it yourself and edit it by hand, between missions, in the ',
+      { bold: 'Decks' },
+      ' screen.',
+    ],
+  },
+  {
+    kind: 'para',
+    spans: [
+      { bold: 'Each mission asks for something different.' },
+      " Read the mission's goal on the map before you launch. Some goals can only be reached with specific cards — if your deck cannot get there, you need to change your deck.",
+    ],
+  },
+  {
+    kind: 'bullets',
+    heading: 'Where things are',
+    items: [
+      { name: 'Mission', text: 'the campaign map. Pick your next mission and launch it with a deck and a board.' },
+      { name: 'Collection', text: 'every card you own. Spend ⭐ Influence here on extra copies and on stickers.' },
+      { name: 'Board', text: 'your governments. A board sets the resources you start a run with.' },
+      { name: 'Decks', text: 'build, copy and edit your decks.' },
+    ],
+  },
+  {
+    kind: 'para',
+    spans: [
+      { bold: `Your next mission needs the cards you have just unlocked: ${rootUnlockNames}.` },
+      ' Open ',
+      { bold: 'Decks' },
+      ' and add them now.',
+    ],
+  },
 ];

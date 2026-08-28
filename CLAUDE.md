@@ -644,15 +644,28 @@ logic that rides on it. **A building card *is* the building** — there's no sep
     Pre-alpha: an unrecognized store shape resets to `emptyStore()`, no migration.
 - **`components/GameMenu.tsx`** — the global-action surface (a top-right burger): **Save**
   (export/import/clear the whole `PlayerStore` as a base64 `.civsave`; destructive actions behind a
-  confirm), **Config** (device-local `Settings` in `meta/settings.ts` — theme, a confirm-before-ending
-  toggle, the UI-size slider), and **Codex** (a static rules reference, data in `content/codex.ts`). On
-  the run screen a `runControls` prop adds **Restart / End Run**.
+  confirm), **Config** (the player-facing half of device-local `Settings` in `meta/settings.ts` — theme,
+  a confirm-before-ending toggle, the UI-size slider; the `seen…Intro` flags live there too but are
+  written only by dismissing the prompt they gate — and by Save's Clear, which rewinds the two
+  tutorial ones so an emptied save is onboarded again), and **Codex** (a static rules reference, data in `content/codex.ts`). On
+  the run screen a `runControls` prop adds **Restart / End Run**. The Codex's pages come in two shapes:
+  the list-shaped ones the component lays out itself, and the two **block-rendered** texts
+  (`CODEX_HOW_TO_PLAY`, `CODEX_BETWEEN_MISSIONS`) drawn by `components/CodexBlocks.tsx` — a
+  `CodexBlock[]` of paragraphs / numbered steps / bullets, authored once because each is *also* a
+  one-time tutorial popup (`TutorialPopup.tsx`). A block's spans name resource *keys*, not glyphs
+  (`RESOURCE_ICON` is shell, which the core may not import); the renderer resolves them.
+- **`components/ModalPrompt.tsx`** — the chrome every one-time prompt shares: scrim, titled panel with
+  a body that scrolls inside its own bounded height (never the document), one dismiss button, and no
+  click-outside-to-close. Worn by `AccessibilityWelcome` and both `TutorialPopup`s (`wide`).
 - **`app/App.tsx`** — switches between `<MetaMenu>` (calls `onLaunch` with an assembled `RunConfig`) and
   `<GameProvider>` + `<Board>`. Owns the meta write paths — `recordResult` (via `applyRunResult`),
   `buyCardTier`, `attachSticker`, `saveDeck` — each persisting the updated `PlayerStore`. `recordResult`
   also derives the **transient reveal** (the payout as the fold's Influence difference + `pendingUnlocks`
   off the pre-fold store) into plain App state handed to `MetaMenu` — deliberately ephemeral: nothing
-  persists, a refresh loses the animation but never the unlocks.
+  persists, a refresh loses the animation but never the unlocks. It also owns the **one-time prompts**,
+  mounted at most one at a time in a single priority chain: `AccessibilityWelcome`, then the run popup
+  (a run screen showing), then the meta popup (menu ∧ no reveal pending ∧ `lifetime.victories ≥ 1`),
+  each gated on its `meta/settings.ts` `seen…Intro` flag and dismissing through `persistSettings`.
 - **`main.tsx`** — mounts `<App>` in `<StrictMode>` and imports `src/index.css` (the one global
   stylesheet: the theme palette + the few `body` resets that can't live in a module). Sets `data-theme`
   on `documentElement` before first paint (no theme flash).

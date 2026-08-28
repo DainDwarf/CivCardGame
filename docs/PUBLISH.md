@@ -70,12 +70,14 @@ the infinite is the casualty, The Sea Peoples' reward simply drops the unlock.)
 - **Per-window meta-menu polish** — the same light pass over each meta screen in turn (Mission map,
   Collection, Board, Decks, Stats, the deck editor): readable and consistent beats exhaustive. Planned
   for 2026-08-28.
-- **Three generic popups** — **publish blocker.** Generic (not per-mission), each shown once:
+- **Three generic popups** — **publish blocker.** Generic (not per-mission), each shown once. 1 and 2
+  shipped 2026-08-28, each also a Codex page; 3 remains:
   1. **The run** — how a turn plays, and the card types (building / action / work / trade / event /
      the mission's threat and objective). This is also where the **event** rule now lives — play it
      to remove it unresolved, leave it and it fires at end of round and recurs — since the event
      faces no longer print it.
-  2. **The meta menu** — the campaign map, the Collection/shop, and above all that **the player
+  2. **The meta menu**, once the **first victory's unlock reveal is dismissed** (not on the first
+     landing) — the campaign map, the Collection/shop, and above all that **the player
      edits their own deck** (unlike a standard roguelike deckbuilder, where the run builds it).
   3. **The end** — on clearing the campaign's last mission: a thank-you note, the contact / feedback
      links (the funnel from step 4, surfaced in-game), and the plan for the future — 0.1 is this

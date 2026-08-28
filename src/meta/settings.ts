@@ -1,8 +1,9 @@
 /**
  * Local device preferences (game menu's Config submenu) — deliberately kept out of
- * `PlayerStore`: unlike decks/run history, these aren't game progress, so they aren't
- * part of Save's export/import/clear and don't get wiped when the player loads or
- * clears a save.
+ * `PlayerStore`: unlike decks/run history, these aren't game progress, so they aren't part
+ * of Save's export/import/clear and survive both untouched. The one exception is a *clear*,
+ * which resets the tutorial flags through `resetTutorialFlags` — an emptied store is a new
+ * player, owed the onboarding again.
  */
 /**
  * The color themes offered by the Config picker — the single source of truth for both
@@ -75,6 +76,15 @@ export interface Settings {
    * *some* stored settings, therefore isn't fresh) doesn't get the prompt retroactively.
    */
   seenAccessibilityIntro: boolean;
+  /**
+   * Whether the player has already dismissed the one-time "How to play" popup
+   * (`TutorialPopup.tsx`, mounted by App.tsx the first time a run screen shows). A *missing*
+   * field parses to `false`, unlike `seenAccessibilityIntro`: an existing profile has never been
+   * shown this and still owes it once.
+   */
+  seenRunIntro: boolean;
+  /** The same, for the "Between missions" popup shown once the first victory's reveal is dismissed. */
+  seenMetaIntro: boolean;
 }
 
 /** Bounds for `uiScale`, shared by the parser's clamp and the Config slider (GameMenu.tsx). */
@@ -86,7 +96,18 @@ export const DEFAULT_SETTINGS: Settings = {
   uiScale: 1,
   theme: 'system',
   seenAccessibilityIntro: false,
+  seenRunIntro: false,
+  seenMetaIntro: false,
 };
+
+/**
+ * The preferences a Save-submenu Clear rewinds (`GameMenu.tsx`'s confirm path): the two
+ * tutorial popups are owed again. `seenAccessibilityIntro` is left alone — the theme and
+ * UI-size choices it fronts survive the clear, so re-asking would ask nothing.
+ */
+export function resetTutorialFlags(settings: Settings): Settings {
+  return { ...settings, seenRunIntro: false, seenMetaIntro: false };
+}
 
 const STORAGE_KEY = 'civcardgame:settings';
 
@@ -101,7 +122,9 @@ function isTheme(v: unknown): v is Theme {
   return THEMES.some((t) => t.id === v);
 }
 
-function parseSettings(raw: unknown): Settings | null {
+/** Exported for its own unit test: the parse is where each `seen…` field's missing-value rule
+ *  lives, and `loadSettings` can only reach it through `localStorage`. */
+export function parseSettings(raw: unknown): Settings | null {
   if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
   return {
@@ -111,6 +134,8 @@ function parseSettings(raw: unknown): Settings | null {
     // See the field's doc comment: a missing value here means "settings already existed
     // before this field did", not "fresh profile" — default to true, not DEFAULT_SETTINGS.
     seenAccessibilityIntro: typeof obj.seenAccessibilityIntro === 'boolean' ? obj.seenAccessibilityIntro : true,
+    seenRunIntro: typeof obj.seenRunIntro === 'boolean' ? obj.seenRunIntro : false,
+    seenMetaIntro: typeof obj.seenMetaIntro === 'boolean' ? obj.seenMetaIntro : false,
   };
 }
 

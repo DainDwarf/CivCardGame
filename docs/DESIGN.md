@@ -643,13 +643,23 @@ under a time-box, so the arc ends coherently wherever the box closes), plus:
 - **Polish** — the victory/gameover → meta hand-back flow, and each mission's card text / art /
   lore.
 - **Onboarding, minimal** — **three generic popups**, each shown once (device-local `Settings`,
-  not `PlayerStore`): one for the **run** (how a turn plays, the card types — including the event
-  rule, which the event faces no longer print), one for the **meta menu** (the map, the Collection
-  as shop, and that **the player edits their own deck**, unlike a standard roguelike deckbuilder),
-  and one at the **end of the campaign** (a thank-you, the contact/feedback links, and the plan for
-  the future — the successor game). Publish blockers: the beta playtest showed the Codex + an
-  itch-page blurb don't carry onboarding alone. The itch page still carries a how-to-play blurb
-  pointing at the Codex.
+  not `PlayerStore` — though clearing the save rewinds those flags, so a wiped profile is onboarded
+  again): one for the **run** (how a turn plays, the card types — including the event
+  rule, which the event faces no longer print), shown the first time a run screen opens; one for the
+  **meta menu** (the map, the Collection as shop, and that **the player edits their own deck**,
+  unlike a standard roguelike deckbuilder), shown once the **first victory's unlock reveal has been
+  dismissed** rather than on the first landing — before a win there is no Collection to build out of,
+  and a lost first mission leaves nothing to edit; and one at the **end of the campaign** (a
+  thank-you, the contact/feedback links, and the plan for the future — the successor game). Publish
+  blockers: the beta playtest showed the Codex + an itch-page blurb don't carry onboarding alone. The
+  itch page still carries a how-to-play blurb pointing at the Codex.
+
+  Each popup's text is also a **Codex page**, authored once as data and drawn by one renderer, so it
+  can be reopened from the ☰ menu and the two surfaces cannot drift. The texts stay **generic but
+  derived**: no mission or card is transcribed, yet the meta popup can still tell the player which
+  cards to go add, because its trigger pins *which* clear just happened — the campaign's DAG root —
+  and the line reads that mission's own `unlockCardIds`. It follows the content instead of describing
+  it.
 - **Community + publish** — outbound links (Discord / GitHub / contact), the feedback funnel, the
   itch page.
 

@@ -190,17 +190,20 @@
   2026-08-23 beta playtest, which showed the Codex + itch blurb don't carry onboarding: the **run
   loop** was not self-explanatory, and **deck editing** was discovered late and painfully (the campaign
   forces it at `growing_numbers`, so friction, not a wall). "Seen" state lives in device-local
-  `Settings` (`meta/settings.ts`), **not** `PlayerStore` (not game progress).
+  `Settings` (`meta/settings.ts`), **not** `PlayerStore` (not game progress) — though clearing the
+  save rewinds it, so a wiped profile is onboarded again.
 
-  - **9.a — The run popup** `[size: M]` — one generic popup on (first) entering a run: how a turn
+  - ~~**9.a — The run popup**~~ ✅ `[size: M]` — one generic popup on (first) entering a run: how a turn
     plays (draw → play/staff → end turn → upkeep), and the **card types** — building / action / work /
     trade / event, plus the mission's threat and objective cards. Carries the **event** rule in full
     (play it to remove it unresolved; leave it in hand and it fires at end of round, then returns to
     the discard and recurs) — the event faces **no longer print** the `play to remove · resolves at end
     of round` banner (removed 2026-08-26 to cut face text), so this popup and play itself are what
     teach it.
-  - **9.b — The meta-menu popup** `[size: M]` — one generic popup on (first) landing in the meta
-    menu: the campaign map, the Collection as the shop, and above all that **the player builds and
+  - ~~**9.b — The meta-menu popup**~~ ✅ `[size: M]` — one generic popup on the meta menu **after the
+    first victory's unlock reveal has been dismissed** (never on a fresh profile's first landing, and
+    never after a lost first mission — there is nothing to edit yet): the campaign map, the
+    Collection as the shop, and above all that **the player builds and
     edits their own deck** — the opposite of a standard roguelike deckbuilder, where the run assembles
     it — so a locked deck that isn't working is fixed in the Decks screen, not by replaying.
   - **9.c — The end popup** `[size: S]` — on first clearing the campaign's **last standard mission**
@@ -210,8 +213,9 @@
     the future**: 0.1 is the last planned version, and what it teaches goes into a successor game
     designed from scratch. Plays after the unlock reveal, not over it.
 
-  All three are generic, not mission-scripted: nothing in them names a specific card or mission (the
-  tooltip convention), so they stay true as content moves.
+  All three are generic, not mission-scripted: none is authored against a particular mission, so they
+  stay true as content moves. The one place a popup names cards, it derives them (see
+  [`DESIGN.md`](DESIGN.md) → *Demo scope*).
 
   **Per-mission tutorial substeps** *(reference only — cut)* — one scripted lesson per Stone Age
   mission, covering the

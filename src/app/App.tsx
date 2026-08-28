@@ -3,6 +3,8 @@ import { MetaMenu } from '../meta/MetaMenu';
 import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
 import { AccessibilityWelcome } from '../components/AccessibilityWelcome';
+import { TutorialPopup } from '../components/TutorialPopup';
+import { CODEX_BETWEEN_MISSIONS, CODEX_HOW_TO_PLAY } from '../content/codex';
 import { GameProvider, useGame } from '../run/GameContext';
 import { applyRunResult, loadStore, saveStore, type PlayerStore } from '../meta/store';
 import type { RunReveal } from '../meta/UnlockReveal';
@@ -322,13 +324,30 @@ export function App() {
         }}
         aria-hidden="true"
       />
-      {!settings.seenAccessibilityIntro && (
+      {/* One prompt at a time, in priority order: an imported save on a new device can satisfy the
+          accessibility gate and a tutorial gate on the same landing, and the display settings come
+          first — the tutorial popup waits for that dismissal. The meta popup fires only once the
+          player has actually won something and its unlock reveal is off the screen, so it lands on a
+          Collection there is something to do with. */}
+      {!settings.seenAccessibilityIntro ? (
         <AccessibilityWelcome
           settings={settings}
           onUpdateSettings={persistSettings}
           onDismiss={() => persistSettings({ ...settings, seenAccessibilityIntro: true })}
         />
-      )}
+      ) : view.screen === 'run' && !settings.seenRunIntro ? (
+        <TutorialPopup
+          title="How to play"
+          blocks={CODEX_HOW_TO_PLAY}
+          onDismiss={() => persistSettings({ ...settings, seenRunIntro: true })}
+        />
+      ) : view.screen === 'menu' && reveal === null && store.lifetime.victories >= 1 && !settings.seenMetaIntro ? (
+        <TutorialPopup
+          title="Between missions"
+          blocks={CODEX_BETWEEN_MISSIONS}
+          onDismiss={() => persistSettings({ ...settings, seenMetaIntro: true })}
+        />
+      ) : null}
     </div>
   );
 }

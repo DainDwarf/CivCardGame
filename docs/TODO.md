@@ -276,6 +276,14 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The two generic tutorial popups** ✅ — *How to play* on the first run screen and *Between missions*
+  once the first victory's unlock reveal is dismissed, each shown once off a device-local `Settings`
+  flag (a missing flag reads *unseen*, so every existing profile is owed both). Each text is authored
+  once as `CodexBlock[]` data in `content/codex.ts` and drawn by one `CodexBlocks` renderer, so the
+  popup and its new Codex page are the same content — *How to play* is now the Codex's default page.
+  `AccessibilityWelcome`'s scrim/panel/button became the shared `ModalPrompt`, whose body scrolls
+  inside the panel with the dismiss button pinned below it.
+
 - **The Codex explains mechanics, not atmosphere** ✅ — a pass over all five pages, taken ahead of the
   tutorial popups that draw on its wording. Two factual errors went out with it: an endless mission was
   described as paying for *how long you survive*, where both shipped ones score hazards **removed** — so

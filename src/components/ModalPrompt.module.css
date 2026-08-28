@@ -1,0 +1,88 @@
+/* Sits above everything, including the fade-to-black screen transition (App.module.css's
+   .transitionOverlay, z-index 200). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(var(--scrim-rgb) / 0.6);
+  animation: promptFadeIn 0.2s ease;
+}
+
+/* A flex column so .body owns the scrolling and the dismiss button stays pinned below it — the
+   viewport caps are divided by --ui-scale (App.tsx's transform wrapper) so they track the real
+   screen instead of being re-scaled past it. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  max-height: calc(90vh / var(--ui-scale, 1));
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-radius: 14px;
+  background: var(--surface-raised);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5);
+  text-align: left;
+  animation: promptZoomIn 0.2s ease-out;
+}
+
+.panelWide {
+  width: min(40rem, calc(90vw / var(--ui-scale, 1)));
+  max-height: calc(86vh / var(--ui-scale, 1));
+}
+
+.title {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  text-align: center;
+  color: var(--text-strong);
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* Bleed a touch into the panel padding and keep clear of the scrollbar. */
+  padding-right: 0.4rem;
+  margin-right: -0.4rem;
+}
+
+.button {
+  flex: none;
+  width: 100%;
+  margin-top: 1.4rem;
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-on-accent);
+  background: var(--accent);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--accent-hover);
+}
+
+@keyframes promptFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes promptZoomIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
