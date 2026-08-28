@@ -85,6 +85,8 @@ export interface Settings {
   seenRunIntro: boolean;
   /** The same, for the "Between missions" popup shown once the first victory's reveal is dismissed. */
   seenMetaIntro: boolean;
+  /** The same, for the author's note shown once the campaign's last standard mission is cleared. */
+  seenEndNote: boolean;
 }
 
 /** Bounds for `uiScale`, shared by the parser's clamp and the Config slider (GameMenu.tsx). */
@@ -98,15 +100,17 @@ export const DEFAULT_SETTINGS: Settings = {
   seenAccessibilityIntro: false,
   seenRunIntro: false,
   seenMetaIntro: false,
+  seenEndNote: false,
 };
 
 /**
- * The preferences a Save-submenu Clear rewinds (`GameMenu.tsx`'s confirm path): the two
- * tutorial popups are owed again. `seenAccessibilityIntro` is left alone — the theme and
- * UI-size choices it fronts survive the clear, so re-asking would ask nothing.
+ * The preferences a Save-submenu Clear rewinds (`GameMenu.tsx`'s confirm path): every popup gated
+ * on campaign progress is owed again, since the emptied store has none.
+ * `seenAccessibilityIntro` is left alone — the theme and UI-size choices it fronts survive the
+ * clear, so re-asking would ask nothing.
  */
 export function resetTutorialFlags(settings: Settings): Settings {
-  return { ...settings, seenRunIntro: false, seenMetaIntro: false };
+  return { ...settings, seenRunIntro: false, seenMetaIntro: false, seenEndNote: false };
 }
 
 const STORAGE_KEY = 'civcardgame:settings';
@@ -136,6 +140,7 @@ export function parseSettings(raw: unknown): Settings | null {
     seenAccessibilityIntro: typeof obj.seenAccessibilityIntro === 'boolean' ? obj.seenAccessibilityIntro : true,
     seenRunIntro: typeof obj.seenRunIntro === 'boolean' ? obj.seenRunIntro : false,
     seenMetaIntro: typeof obj.seenMetaIntro === 'boolean' ? obj.seenMetaIntro : false,
+    seenEndNote: typeof obj.seenEndNote === 'boolean' ? obj.seenEndNote : false,
   };
 }
 

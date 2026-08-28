@@ -7,6 +7,8 @@ import {
   prereqClosure,
   foldOrder,
   cumulativeInfluenceInto,
+  terminalStandardMissions,
+  lastStandardMission,
 } from './campaign';
 import { MISSIONS, type MissionDef } from '../content/missions';
 
@@ -110,6 +112,31 @@ describe('campaign DAG walk', () => {
   it('cumulativeInfluenceInto ignores infinite-mission prereqs (they have no fixed reward)', () => {
     const scored = { ...mission('scored', ['root']), kind: 'infinite' as const, reward: undefined };
     expect(cumulativeInfluenceInto({ root, scored }, 'scored')).toBe(5); // root only; scored pays per attempt
+  });
+
+  it('terminalStandardMissions finds the standard tips, ignoring infinite dependents', () => {
+    const leaf = mission('leaf', ['a']);
+    const endless: MissionDef = { ...mission('endless', ['join']), kind: 'infinite', reward: undefined };
+    const registry = { root, a, b, join, leaf, endless };
+    // `join` is a tip despite `endless` naming it; `leaf` is a second tip on a parallel branch.
+    expect(terminalStandardMissions(registry).map((m) => m.id).sort()).toEqual(['join', 'leaf']);
+  });
+
+  it('lastStandardMission breaks a tie between tips on the authored chronology, not the DAG', () => {
+    const trunkEnd = { ...mission('trunk_end', ['join']), map: { col: 9, row: 0 } };
+    const sideLeaf = { ...mission('side_leaf', ['a']), map: { col: 4, row: 1 } };
+    const registry = { root, a, b, join, trunk_end: trunkEnd, side_leaf: sideLeaf };
+    // Both are dependency-free, so the DAG alone can't separate them.
+    expect(terminalStandardMissions(registry).map((m) => m.id).sort()).toEqual(['side_leaf', 'trunk_end']);
+    expect(lastStandardMission(registry)?.id).toBe('trunk_end');
+  });
+
+  it('pins the real campaign: exactly one tip sits furthest along the chronology', () => {
+    // The end-of-campaign note fires on that one mission. Two tips sharing the greatest col would
+    // leave "the end of the campaign" ambiguous — a content decision, not a tie for code to break.
+    const cols = terminalStandardMissions(MISSIONS).map((m) => m.map?.col ?? 0);
+    const furthest = Math.max(...cols);
+    expect(cols.filter((col) => col === furthest)).toHaveLength(1);
   });
 
   it('pins the real campaign: Influence arriving at Masonry', () => {

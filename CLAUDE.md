@@ -428,6 +428,12 @@ adding a rule, put the logic here and test it directly — never bury it in a mo
   Also the DAG-walk primitives shared by the dev scripts — `prereqClosure` (a target's transitive
   prereqs), `foldOrder` (topological sort so prereqs fold first), and `cumulativeInfluenceInto` (the
   guaranteed Influence arriving at a mission); `seed-save.ts` and `economy.ts` both consume these.
+  Where the campaign *ends* takes two of them: `terminalStandardMissions` reads the DAG's tips —
+  every `'standard'` mission no other `'standard'` mission names as a prereq (infinite dependents
+  excluded, or the arc's own endless mission would hide its capstone), a **list** because an optional
+  side leaf is as dependency-free as the capstone — and `lastStandardMission` picks the one furthest
+  along `map.col`, the same authored chronology `content/ages.ts` derives its bands from. `App.tsx`
+  fires the end-of-campaign note on that one being cleared.
 - **`upgrades.ts`** — the **available-upgrade hints**: per-tile `boardUpgradeAvailable` and, on the card
   side, the two causes **split** — `shop.ts`'s `canBuyTier` unwrapped for the copy half, and
   `stickerUpgradeAvailableFor` (one named sticker) folded by `stickerUpgradeAvailable` (any unlocked
@@ -514,6 +520,14 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   which `rules/shop.ts` reads as "not for sale"; `content/cards.test.ts` pins that no *buyable* card
   lands there. Walks the live `MISSIONS` per call rather than folding a map at import, so
   `rules/testFixtures.ts`'s spliced-in entries are visible like they are to every other catalogue read.
+- **`links.ts`** — `LINKS`, the outbound bouquet (Discord, GitHub) as `{ id, label, url, icon }`, so the
+  set is edited in one place. Every renderer opens them in a new tab — the published build runs inside
+  an itch.io iframe, where a same-tab navigation replaces the game.
+- **`about.ts`** — `ABOUT_TITLE` + `aboutNote(surface)`, the author's note as a `CodexBlock[]` so it
+  draws through the same renderer the tutorial texts do (`components/AboutPage.tsx`). The middle is
+  authored once; the `'end'` surface (the popup, read with the campaign just finished) and the `'about'`
+  one (the ☰ page, read at any point of it) differ only in the framing sentence and the closing line's
+  tense.
 
 ### Shell — run loop (`src/run/`)
 
@@ -645,9 +659,11 @@ logic that rides on it. **A building card *is* the building** — there's no sep
 - **`components/GameMenu.tsx`** — the global-action surface (a top-right burger): **Save**
   (export/import/clear the whole `PlayerStore` as a base64 `.civsave`; destructive actions behind a
   confirm), **Config** (the player-facing half of device-local `Settings` in `meta/settings.ts` — theme,
-  a confirm-before-ending toggle, the UI-size slider; the `seen…Intro` flags live there too but are
-  written only by dismissing the prompt they gate — and by Save's Clear, which rewinds the two
-  tutorial ones so an emptied save is onboarded again), and **Codex** (a static rules reference, data in `content/codex.ts`). On
+  a confirm-before-ending toggle, the UI-size slider; the `seen…` popup flags live there too but are
+  written only by dismissing the prompt they gate — and by Save's Clear, which rewinds the
+  progress-gated ones so an emptied save is onboarded again), **Codex** (a static rules reference, data
+  in `content/codex.ts`), and **About** (`components/AboutPage.tsx` — the author's note, the
+  `content/links.ts` row and the `package.json` version). On
   the run screen a `runControls` prop adds **Restart / End Run**. The Codex's pages come in two shapes:
   the list-shaped ones the component lays out itself, and the two **block-rendered** texts
   (`CODEX_HOW_TO_PLAY`, `CODEX_BETWEEN_MISSIONS`) drawn by `components/CodexBlocks.tsx` — a
@@ -656,7 +672,12 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   (`RESOURCE_ICON` is shell, which the core may not import); the renderer resolves them.
 - **`components/ModalPrompt.tsx`** — the chrome every one-time prompt shares: scrim, titled panel with
   a body that scrolls inside its own bounded height (never the document), one dismiss button, and no
-  click-outside-to-close. Worn by `AccessibilityWelcome` and both `TutorialPopup`s (`wide`).
+  click-outside-to-close. Worn by `AccessibilityWelcome`, both `TutorialPopup`s and the
+  end-of-campaign note (all `wide`).
+- **`components/AboutPage.tsx`** — the author's note (`content/about.ts`), the `content/links.ts` button
+  row and the build version, on the two surfaces that show them: the ☰ menu's About submenu and the
+  one-time end-of-campaign popup, each passing its `surface` so the note takes that surface's framing.
+  The note's opening line is the popup's panel title, so the page itself doesn't draw it.
 - **`app/App.tsx`** — switches between `<MetaMenu>` (calls `onLaunch` with an assembled `RunConfig`) and
   `<GameProvider>` + `<Board>`. Owns the meta write paths — `recordResult` (via `applyRunResult`),
   `buyCardTier`, `attachSticker`, `saveDeck` — each persisting the updated `PlayerStore`. `recordResult`
@@ -665,7 +686,8 @@ logic that rides on it. **A building card *is* the building** — there's no sep
   persists, a refresh loses the animation but never the unlocks. It also owns the **one-time prompts**,
   mounted at most one at a time in a single priority chain: `AccessibilityWelcome`, then the run popup
   (a run screen showing), then the meta popup (menu ∧ no reveal pending ∧ `lifetime.victories ≥ 1`),
-  each gated on its `meta/settings.ts` `seen…Intro` flag and dismissing through `persistSettings`.
+  then the end-of-campaign note (menu ∧ no reveal pending ∧ `lastStandardMission` cleared), each
+  gated on its `meta/settings.ts` `seen…` flag and dismissing through `persistSettings`.
 - **`main.tsx`** — mounts `<App>` in `<StrictMode>` and imports `src/index.css` (the one global
   stylesheet: the theme palette + the few `body` resets that can't live in a module). Sets `data-theme`
   on `documentElement` before first paint (no theme flash).

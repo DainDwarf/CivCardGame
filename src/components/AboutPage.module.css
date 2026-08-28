@@ -1,0 +1,48 @@
+/* The viewport cap is divided by --ui-scale (App.tsx's transform wrapper) so it tracks the real
+   screen instead of being re-scaled past it. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  max-height: calc(64vh / var(--ui-scale, 1));
+  overflow-y: auto;
+  text-align: left;
+  /* Bleed a touch into the panel padding and keep clear of the scrollbar. */
+  padding-right: 0.4rem;
+  margin-right: -0.4rem;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-on-accent);
+  background: var(--accent);
+  border-radius: 9px;
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--accent-hover);
+}
+
+.linkIcon {
+  font-size: 1.05rem;
+}
+
+.version {
+  margin: 0;
+  text-align: center;
+  color: var(--text-disabled);
+  font-size: 0.75rem;
+}

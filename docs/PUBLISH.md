@@ -70,8 +70,9 @@ the infinite is the casualty, The Sea Peoples' reward simply drops the unlock.)
 - **Per-window meta-menu polish** — the same light pass over each meta screen in turn (Mission map,
   Collection, Board, Decks, Stats, the deck editor): readable and consistent beats exhaustive. Planned
   for 2026-08-28.
-- **Three generic popups** — **publish blocker.** Generic (not per-mission), each shown once. 1 and 2
-  shipped 2026-08-28, each also a Codex page; 3 remains:
+- ~~**Three generic popups**~~ ✅ — Generic (not per-mission), each shown once. 1 and 2 shipped
+  2026-08-28, each also a Codex page; 3 the same day, with the ☰ menu's About page as its permanent
+  home:
   1. **The run** — how a turn plays, and the card types (building / action / work / trade / event /
      the mission's threat and objective). This is also where the **event** rule now lives — play it
      to remove it unresolved, leave it and it fires at end of round and recurs — since the event
@@ -91,7 +92,8 @@ the infinite is the casualty, The Sea Peoples' reward simply drops the unlock.)
   working title; the published build, its page and every player-facing surface carry the real name.
 - **itch.io page** — description, screenshots, the how-to-play blurb; desktop-only and mouse-only
   stated plainly on the page.
-- **Feedback funnel** — itch comments at minimum; Discord/GitHub/contact links as wanted.
+- **Feedback funnel** — itch comments at minimum; the in-game Discord/GitHub links (`content/links.ts`,
+  surfaced by the About page and the end-of-campaign note) mirrored on the page.
 - **Version bump to 0.1** — CHANGELOG cut from the dossiers + TODO's *Done / shipped*; this file
   deleted.
 

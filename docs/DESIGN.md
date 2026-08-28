@@ -650,9 +650,18 @@ under a time-box, so the arc ends coherently wherever the box closes), plus:
   unlike a standard roguelike deckbuilder), shown once the **first victory's unlock reveal has been
   dismissed** rather than on the first landing — before a win there is no Collection to build out of,
   and a lost first mission leaves nothing to edit; and one at the **end of the campaign** (a
-  thank-you, the contact/feedback links, and the plan for the future — the successor game). Publish
+  thank-you, the contact/feedback links, and the plan for the future — the successor game), fired
+  once the campaign's **last** standard mission is cleared. That mission is derived twice over: the
+  DAG's tips are the `standard` missions no *other* `standard` mission names as a prereq (infinite
+  dependents excluded, so the arc's own endless mission can't hide its capstone), and the last of
+  them is the tip furthest along the map's `col` chronology — an optional side leaf ends no campaign,
+  yet reads to the DAG exactly like the capstone does. Publish
   blockers: the beta playtest showed the Codex + an itch-page blurb don't carry onboarding alone. The
   itch page still carries a how-to-play blurb pointing at the Codex.
+
+  The end note is the one with a permanent home rather than a Codex page: the ☰ menu's **About**
+  submenu carries it, the same link row and the build version, reachable from the meta menu and
+  mid-run alike.
 
   Each popup's text is also a **Codex page**, authored once as data and drawn by one renderer, so it
   can be reopened from the ☰ menu and the two surfaces cannot drift. The texts stay **generic but

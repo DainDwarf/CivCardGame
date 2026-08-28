@@ -206,12 +206,16 @@
     Collection as the shop, and above all that **the player builds and
     edits their own deck** — the opposite of a standard roguelike deckbuilder, where the run assembles
     it — so a locked deck that isn't working is fixed in the Decks screen, not by replaying.
-  - **9.c — The end popup** `[size: S]` — on first clearing the campaign's **last standard mission**
-    (the node with no dependents — derived from the DAG, never a hard-coded id, so it follows
-    wherever the time-box ends the Bronze arc): a **thank-you** note, the **contact / feedback
-    links** (the same funnel the itch page carries — Discord / GitHub / contact), and the **plan for
-    the future**: 0.1 is the last planned version, and what it teaches goes into a successor game
-    designed from scratch. Plays after the unlock reveal, not over it.
+  - ~~**9.c — The end popup**~~ ✅ `[size: S]` — on first clearing the campaign's **last standard
+    mission**, derived rather than hard-coded so it follows wherever the time-box ends the arc: the
+    DAG's tips are the `standard` missions no *other* `standard` mission names as a prereq (infinite
+    dependents excluded, or the Bronze capstone's endless would hide it), and the **last** one is the
+    tip furthest along the map's `col` chronology — a side leaf hanging off the trunk is as
+    dependency-free as the capstone, so the DAG alone can't say which ends the campaign. It carries a
+    **thank-you** note, the **contact / feedback links** (the same funnel the itch page carries —
+    Discord / GitHub), and the **plan for the future**: 0.1 is the last planned version, and what it
+    teaches goes into a successor game designed from scratch. Plays after the unlock reveal, not over
+    it, and lives permanently on the ☰ menu's new **About** page.
 
   All three are generic, not mission-scripted: none is authored against a particular mission, so they
   stay true as content moves. The one place a popup names cards, it derives them (see

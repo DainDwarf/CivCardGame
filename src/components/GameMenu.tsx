@@ -3,6 +3,7 @@ import { version } from '../../package.json';
 import { emptyStore, exportSave, importSave, type PlayerStore } from '../meta/store';
 import { UI_SCALE_MIN, UI_SCALE_MAX, THEMES, resetTutorialFlags, type Settings } from '../meta/settings';
 import { Codex } from './Codex';
+import { AboutPage } from './AboutPage';
 import styles from './GameMenu.module.css';
 
 /** A destructive action pending the player's confirmation (see `PendingAction` usage below). */
@@ -15,11 +16,13 @@ interface MenuItem {
 }
 
 /** The game-menu items: Manage Save (backups), Config (device
- *  preferences), Codex (the rules reference — see `Codex.tsx`). */
+ *  preferences), Codex (the rules reference — see `Codex.tsx`), About (the author's note, the
+ *  outbound links and the build version — see `AboutPage.tsx`). */
 const MENU_ITEMS: MenuItem[] = [
   { id: 'save', icon: '💾', label: 'Manage Save' },
   { id: 'config', icon: '⚙️', label: 'Config' },
   { id: 'codex', icon: '📖', label: 'Codex' },
+  { id: 'about', icon: 'ℹ️', label: 'About' },
 ];
 
 /** Appended after `MENU_ITEMS` only when `runControls` is supplied — i.e. only on the
@@ -242,7 +245,13 @@ export function GameMenu({
               }}
             >
               <div
-                className={submenu.id === 'codex' ? `${styles.submenuPanel} ${styles.submenuPanelCodex}` : styles.submenuPanel}
+                className={
+                  submenu.id === 'codex'
+                    ? `${styles.submenuPanel} ${styles.submenuPanelCodex}`
+                    : submenu.id === 'about'
+                      ? `${styles.submenuPanel} ${styles.submenuPanelAbout}`
+                      : styles.submenuPanel
+                }
                 onClick={(e) => e.stopPropagation()}
               >
                 <h3 className={styles.submenuTitle}>
@@ -368,6 +377,8 @@ export function GameMenu({
                   </div>
                 ) : submenu.id === 'codex' ? (
                   <Codex />
+                ) : submenu.id === 'about' ? (
+                  <AboutPage surface="about" />
                 ) : (
                   <p className={styles.submenuEmpty}>Nothing here yet.</p>
                 )}

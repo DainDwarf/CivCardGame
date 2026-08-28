@@ -148,6 +148,12 @@
   width: min(44rem, calc(92vw / var(--ui-scale, 1)));
 }
 
+/* About is prose, which needs a paragraph's measure — the same width the tutorial popups take
+   (ModalPrompt.module.css's .panelWide), so the note reads identically on both its surfaces. */
+.submenuPanelAbout {
+  width: min(40rem, calc(90vw / var(--ui-scale, 1)));
+}
+
 .submenuTitle {
   margin: 0 0 0.75rem;
   font-size: 1.1rem;

@@ -4,12 +4,15 @@ import { Board } from '../components/Board';
 import { GameMenu } from '../components/GameMenu';
 import { AccessibilityWelcome } from '../components/AccessibilityWelcome';
 import { TutorialPopup } from '../components/TutorialPopup';
+import { ModalPrompt } from '../components/ModalPrompt';
+import { AboutPage } from '../components/AboutPage';
 import { CODEX_BETWEEN_MISSIONS, CODEX_HOW_TO_PLAY } from '../content/codex';
+import { ABOUT_TITLE } from '../content/about';
 import { GameProvider, useGame } from '../run/GameContext';
 import { applyRunResult, loadStore, saveStore, type PlayerStore } from '../meta/store';
 import type { RunReveal } from '../meta/UnlockReveal';
 import { pendingUnlocks } from '../rules/rewards';
-import { isCompleted } from '../rules/campaign';
+import { isCompleted, lastStandardMission } from '../rules/campaign';
 import { MAX_DECKS } from '../rules/deckBuilder';
 import { buyTier } from '../rules/shop';
 import { buySticker, removeSticker } from '../rules/stickers';
@@ -28,6 +31,11 @@ type View = { screen: 'menu' } | { screen: 'run'; config: RunConfig };
  *  and (via inline `transitionDuration`) the CSS animation, so this is the one place
  *  to retune it. */
 const FADE_MS = 300;
+
+/** Where the campaign ends, derived rather than named so it follows the content: the DAG tip
+ *  furthest along the map's chronology (`rules/campaign.ts`). Clearing it earns the end-of-campaign
+ *  note. */
+const CAMPAIGN_END_MISSION = lastStandardMission(MISSIONS);
 
 /**
  * Bridges `useGame()` into `GameMenu`'s `runControls` prop — must render inside
@@ -328,7 +336,8 @@ export function App() {
           accessibility gate and a tutorial gate on the same landing, and the display settings come
           first — the tutorial popup waits for that dismissal. The meta popup fires only once the
           player has actually won something and its unlock reveal is off the screen, so it lands on a
-          Collection there is something to do with. */}
+          Collection there is something to do with — and the end note waits on a reveal the same way,
+          so the last mission's payout is celebrated before the campaign is called finished. */}
       {!settings.seenAccessibilityIntro ? (
         <AccessibilityWelcome
           settings={settings}
@@ -347,6 +356,19 @@ export function App() {
           blocks={CODEX_BETWEEN_MISSIONS}
           onDismiss={() => persistSettings({ ...settings, seenMetaIntro: true })}
         />
+      ) : view.screen === 'menu' &&
+        reveal === null &&
+        !!CAMPAIGN_END_MISSION &&
+        isCompleted(store.mapProgress, CAMPAIGN_END_MISSION.id) &&
+        !settings.seenEndNote ? (
+        <ModalPrompt
+          title={ABOUT_TITLE}
+          buttonLabel="Close"
+          onDismiss={() => persistSettings({ ...settings, seenEndNote: true })}
+          wide
+        >
+          <AboutPage surface="end" />
+        </ModalPrompt>
       ) : null}
     </div>
   );

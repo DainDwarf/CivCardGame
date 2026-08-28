@@ -41,6 +41,36 @@ export function standardMissionProgress(
 }
 
 /**
+ * The DAG's tips: every `'standard'` mission no *other* standard mission names as a prereq. Infinite
+ * missions are excluded from the dependents on purpose — one hangs off the Bronze capstone, so
+ * counting them would leave the arc with no tip at all.
+ *
+ * A list, because the DAG genuinely ends in several branch tips at once: an optional challenge leaf
+ * dangles off the trunk with nothing after it, exactly like the trunk's own capstone. Which of them
+ * is the *campaign's* end is a separate question — `lastStandardMission`.
+ */
+export function terminalStandardMissions(missions: Record<string, MissionDef>): MissionDef[] {
+  const standard = Object.values(missions).filter((mission) => mission.kind === 'standard');
+  const depended = new Set(standard.flatMap((mission) => mission.prereqs));
+  return standard.filter((mission) => !depended.has(mission.id));
+}
+
+/**
+ * Where the campaign ends: the tip sitting furthest along `map.col`, the authored chronology slot.
+ * The DAG alone can't answer this — a side leaf is as dependency-free as the trunk's capstone — so
+ * the tie-break is the same field `content/ages.ts` derives its age bands from: further right is
+ * later in history, and the rightmost tip is the end of the arc.
+ *
+ * `undefined` only for a catalogue with no standard missions at all.
+ */
+export function lastStandardMission(missions: Record<string, MissionDef>): MissionDef | undefined {
+  return terminalStandardMissions(missions).reduce<MissionDef | undefined>(
+    (last, mission) => (!last || (mission.map?.col ?? 0) > (last.map?.col ?? 0) ? mission : last),
+    undefined,
+  );
+}
+
+/**
  * Every mission that must be cleared to reach `targetIds` — their transitive prereqs *plus
  * themselves*, walked backward through the DAG. Throws if a named prereq doesn't exist (the caller
  * decides how to surface that; `scripts/seed-save.ts` and `scripts/economy.ts` turn it into a clean

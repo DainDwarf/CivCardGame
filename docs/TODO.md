@@ -276,6 +276,16 @@ later — promote items into `DESIGN.md` / real work, or drop them.
 > (`docs/missions/<name>.md`), tracked in [`BACKLOG.md`](BACKLOG.md); the changelog is drawn from
 > both. Everything through **v0.0.4** has already moved to `CHANGELOG.md`.
 
+- **The end-of-campaign note + an About page** ✅ — the author's note, the outbound link row
+  (`content/links.ts`, Discord + GitHub, each opening a new tab so the itch iframe survives) and the
+  build version, as one `AboutPage` on two surfaces: the ☰ menu's new **About** submenu, permanently,
+  and a one-time `ModalPrompt` on the meta menu once the campaign is finished. The end is derived,
+  not named — `campaign.ts`'s `terminalStandardMissions` reads the DAG's tips (every `standard`
+  mission no other `standard` mission depends on, infinite dependents excluded) and
+  `lastStandardMission` picks the one furthest along `map.col`, since an optional side leaf is as
+  dependency-free as the capstone. Clearing it fires the note behind a `seenEndNote` flag
+  `resetTutorialFlags` rewinds with the other two.
+
 - **The two generic tutorial popups** ✅ — *How to play* on the first run screen and *Between missions*
   once the first victory's unlock reveal is dismissed, each shown once off a device-local `Settings`
   flag (a missing flag reads *unseen*, so every existing profile is owed both). Each text is authored
